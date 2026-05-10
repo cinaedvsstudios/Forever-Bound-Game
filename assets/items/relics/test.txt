@@ -1,0 +1,2 @@
+Test placeholder for assets/items/relics
+This file exists so GitHub uploads and displays this folder. It can be deleted later after real files are added.
