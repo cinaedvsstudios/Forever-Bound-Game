@@ -1,0 +1,15 @@
+{
+  "id": "ch00_q00_test_scene",
+  "mode": "scene",
+  "name": "Test Scene",
+  "background": "assets/scenes/ch00/placeholder_scene_bg.png",
+  "playerStart": {
+    "x": 100,
+    "y": 100
+  },
+  "status": {
+    "location": "Test Scene",
+    "quest": "Chronicle 0",
+    "calling": "Begin"
+  }
+}
