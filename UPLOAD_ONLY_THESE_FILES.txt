@@ -1,0 +1,13 @@
+Upload/replace only these files in GitHub. Do NOT upload node_modules, dist, package-lock, or test folders.
+
+Required:
+- index.html -> root
+- src/main.js -> src/main.js
+- src/style.css -> src/style.css
+- data/screens/title_screen.json -> data/screens/title_screen.json
+- data/editor/editor_settings.json -> data/editor/editor_settings.json
+
+Optional:
+- data/scenes/ch00_q00_forest_route.json -> data/scenes/ch00_q00_forest_route.json
+
+After uploading, hard refresh with Ctrl+F5.
