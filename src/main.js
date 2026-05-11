@@ -46,7 +46,7 @@ function createGame() {
               <h1 class="fallback-logo">Forever Bound</h1>
               <p>In a world filled with ancient magic, a love that spans centuries is bound by fate, torn by dark forces, and rekindled across lifetimes.</p>
             </div>
-
+<br><Br>
             <div class="title-buttons">
               <a class="fb-button title-link" href="./editor.html">Scene Editor</a>
               <button class="fb-button" id="start-game">Start Game</button>
