@@ -1,0 +1,72 @@
+{
+  "id": "title_screen",
+  "screenType": "static",
+  "theme": {
+    "backgroundMode": "gradient",
+    "backgroundImage": "",
+    "backgroundGradient": "radial-gradient(circle at center, rgba(92, 32, 140, 0.45), transparent 45%), linear-gradient(135deg, #170818, #030205 65%, #1c0e08)"
+  },
+  "branding": {
+    "studioName": "CINAEDVS Studios",
+    "studioUrl": "https://sites.google.com/view/cinaedvs/home",
+    "studioIcon": "assets/branding/cinaedvs_studios_logo.png",
+    "mainLogo": "assets/branding/forever_bound_logo.png",
+    "fallbackTitle": "Forever Bound",
+    "logoScale": 1.5,
+    "tagline": "In a world filled with ancient magic, a love that spans centuries is bound by fate, torn by dark forces, and rekindled across lifetimes."
+  },
+  "buttons": [
+    {
+      "id": "start",
+      "label": "Start Game",
+      "action": "startGame",
+      "sound": "assets/audio/sfx/sfx_start_game_01.mp3"
+    },
+    {
+      "id": "continue",
+      "label": "Continue",
+      "action": "showNotice",
+      "notice": "Continue is not connected yet.",
+      "sound": "assets/audio/sfx/sfx_ui_click_01.mp3"
+    },
+    {
+      "id": "options",
+      "label": "Options",
+      "action": "showNotice",
+      "notice": "Options will be added later.",
+      "sound": "assets/audio/sfx/sfx_ui_click_01.mp3"
+    },
+    {
+      "id": "credits",
+      "label": "Credits",
+      "action": "showNotice",
+      "notice": "Credits will be added later.",
+      "sound": "assets/audio/sfx/sfx_ui_click_01.mp3"
+    },
+    {
+      "id": "editor",
+      "label": "Artifex Editor",
+      "action": "openEditor",
+      "sound": "assets/audio/sfx/sfx_ui_click_01.mp3"
+    }
+  ],
+  "footer": {
+    "text": "\u00a9 CINAEDVS Studios 2026",
+    "foreverBoundText": "Forever Bound website",
+    "foreverBoundUrl": "https://sites.google.com/view/foreverbound"
+  },
+  "audio": {
+    "music": "assets/audio/music/mus_title_theme.mp3",
+    "ambience": "",
+    "buttonPressSound": "assets/audio/sfx/sfx_ui_click_01.mp3",
+    "startSound": "assets/audio/sfx/sfx_start_game_01.mp3",
+    "musicVolume": 0.55,
+    "ambienceVolume": 0.45,
+    "sfxVolume": 0.75,
+    "loopMusic": true,
+    "loopAmbience": true
+  },
+  "editor": {
+    "notes": "This title screen is editable in Artifex as a Static Screen. Export this JSON and replace data/screens/title_screen.json in GitHub."
+  }
+}

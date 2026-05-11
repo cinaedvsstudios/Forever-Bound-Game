@@ -1,12 +1,48 @@
 {
   "id": "ch00_q00_forest_route",
-  "chronicle": "ch00",
-  "quest": "q00",
-  "mode": "scene",
-  "name": "Silva Tenebrosa",
-  "calling": "Follow the forest path",
-  "background": "/assets/scenes/ch00/ch00_q00_forest_route_bg1.png",
-  "playerStart": { "xPercent": 50, "yPercent": 77 },
-  "walkBounds": { "minXPercent": 7, "maxXPercent": 93, "minYPercent": 58, "maxYPercent": 86 },
-  "notes": "The current code has these values hardcoded for this first shell. Later phases should load this data dynamically."
+  "screenType": "travel",
+  "name": "Forest Route Test",
+  "quest": "Chronicle 0 Prototype",
+  "calling": "Walk through the forest route.",
+  "background": {
+    "image": "assets/scenes/ch00/ch00_q00_forest_route_bg.png",
+    "width": 3000,
+    "height": 1080,
+    "fit": "cover",
+    "scrollEnabled": true,
+    "loopBackground": false
+  },
+  "player": {
+    "sprite": "assets/characters/mel/mel_idle.png",
+    "startX": 240,
+    "startY": 790,
+    "widthPercent": 13.5,
+    "shadow": {
+      "opacity": 0.6,
+      "width": 120,
+      "height": 26,
+      "blur": 10
+    }
+  },
+  "travel": {
+    "groundY": 790,
+    "cameraFollow": true,
+    "cameraMinX": 0,
+    "cameraMaxX": 1920,
+    "endpointX": 2820,
+    "destinationScene": "placeholder_destination"
+  },
+  "layers": [],
+  "objects": [],
+  "audio": {
+    "music": "",
+    "ambience": "assets/audio/ambience/amb_forest_day_loop.mp3",
+    "transitionSound": "assets/audio/sfx/sfx_transition_forest_01.mp3",
+    "buttonPressSound": "assets/audio/sfx/sfx_ui_click_01.mp3",
+    "musicVolume": 0.45,
+    "ambienceVolume": 0.5,
+    "sfxVolume": 0.75,
+    "loopMusic": true,
+    "loopAmbience": true
+  }
 }

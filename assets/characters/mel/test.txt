@@ -1,1 +1,1 @@
-Replace this with the real image assets listed in docs/PHASE_1_TESTING.md.
+Placeholder so GitHub keeps this folder visible.

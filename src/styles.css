@@ -1,0 +1,329 @@
+/*
+Forever Bound Game — Phase 1–3 Manual Prototype
+Default base screen: 2400 × 1080, 20:9 landscape phone-friendly frame.
+*/
+
+:root {
+  --fb-bg: #070506;
+  --fb-ink: #fff6d9;
+  --fb-parchment: #f8f0c8;
+  --fb-copper: #b66a3c;
+  --fb-copper-light: #e89068;
+  --fb-bronze: #a97a36;
+  --fb-purple-dark: #240d36;
+  --fb-purple: #583487;
+  --fb-panel: rgba(31, 20, 16, 0.82);
+  --fb-panel-deep: rgba(13, 8, 7, 0.9);
+  --fb-border: rgba(214, 134, 82, 0.75);
+  --fb-holy-blue: #87dfff;
+  --fb-corruption-green: #29e36c;
+  --fb-danger-red: #cc3131;
+  --fb-job-yellow: #d6a24c;
+
+  --game-width: 2400;
+  --game-height: 1080;
+  --game-aspect: 20 / 9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #000;
+  color: var(--fb-ink);
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+button {
+  font: inherit;
+}
+
+#app-shell {
+  width: 100vw;
+  height: 100vh;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at center, rgba(58, 30, 80, 0.28), transparent 42%),
+    #000;
+}
+
+.game-frame {
+  position: relative;
+  width: min(100vw, calc(100vh * (20 / 9)));
+  aspect-ratio: var(--game-aspect);
+  max-height: 100vh;
+  overflow: hidden;
+  background: var(--fb-bg);
+  border: 1px solid rgba(180, 110, 70, 0.55);
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.85);
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+}
+
+.hidden {
+  display: none;
+}
+
+.title-screen {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.title-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url("../assets/branding/title_background.jpg");
+  background-size: cover;
+  background-position: center;
+  filter: saturate(1.1) contrast(1.05);
+  transform: scale(1.02);
+}
+
+.title-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.15) 35%, rgba(0, 0, 0, 0.75) 100%),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.55));
+}
+
+.title-content {
+  position: relative;
+  z-index: 1;
+  width: min(78%, 1200px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(10px, 2vh, 28px);
+  text-align: center;
+}
+
+.title-logo {
+  width: min(900px, 82%);
+  height: auto;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.75));
+}
+
+.title-subtitle {
+  margin: 0;
+  color: var(--fb-parchment);
+  font-size: clamp(16px, 2.1vw, 34px);
+  letter-spacing: 0.05em;
+  text-shadow: 0 3px 8px rgba(0, 0, 0, 0.85);
+}
+
+.title-actions {
+  display: flex;
+  gap: clamp(10px, 1.4vw, 24px);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.fb-button {
+  min-width: clamp(130px, 14vw, 260px);
+  padding: clamp(10px, 1.1vw, 18px) clamp(18px, 2vw, 36px);
+  border-radius: 999px;
+  border: 2px solid var(--fb-border);
+  background:
+    linear-gradient(to bottom, rgba(255, 186, 138, 0.98), rgba(178, 91, 48, 0.98));
+  color: #1c0d08;
+  font-weight: 800;
+  font-size: clamp(16px, 1.8vw, 30px);
+  cursor: pointer;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.35),
+    0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.fb-button:hover {
+  filter: brightness(1.08);
+}
+
+.fb-button.secondary {
+  background:
+    linear-gradient(to bottom, rgba(71, 30, 86, 0.96), rgba(31, 12, 46, 0.96));
+  color: var(--fb-ink);
+}
+
+.fb-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.prototype-note {
+  margin: 0;
+  color: rgba(255, 246, 217, 0.72);
+  font-size: clamp(12px, 1.1vw, 18px);
+}
+
+.game-screen {
+  background: #111;
+}
+
+.scene-layer {
+  position: absolute;
+  inset: 0;
+  background-image: url("../assets/scenes/ch00/ch00_q00_forest_route_bg.png");
+  background-size: cover;
+  background-position: center;
+}
+
+.hud {
+  position: absolute;
+  z-index: 20;
+}
+
+.top-hud {
+  top: 2.5%;
+  left: 2.5%;
+  right: 2.5%;
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 1.2%;
+  pointer-events: none;
+}
+
+.hud-panel {
+  min-height: clamp(48px, 7vh, 82px);
+  padding: clamp(8px, 1vw, 16px);
+  border: 1px solid var(--fb-border);
+  border-radius: 18px;
+  background:
+    linear-gradient(to bottom, rgba(38, 21, 16, 0.82), rgba(12, 8, 7, 0.86));
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.hud-label {
+  color: var(--fb-copper-light);
+  font-size: clamp(11px, 1vw, 17px);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.hud-text,
+.hearts,
+.active-item-box {
+  color: var(--fb-ink);
+  font-size: clamp(14px, 1.4vw, 24px);
+}
+
+.hearts {
+  color: #f1c15a;
+  letter-spacing: 0.08em;
+}
+
+.status-panel {
+  border-color: rgba(150, 83, 202, 0.85);
+}
+
+.active-item-panel {
+  text-align: center;
+}
+
+.mel {
+  position: absolute;
+  z-index: 10;
+  width: 9.2%;
+  max-width: 220px;
+  min-width: 70px;
+  transform: translate(-50%, -100%);
+  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.65));
+  user-select: none;
+  pointer-events: none;
+}
+
+.controls-overlay {
+  position: absolute;
+  inset: auto 2.5% 3% 2.5%;
+  z-index: 30;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.controls-overlay button {
+  pointer-events: auto;
+}
+
+.dpad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.dpad button,
+.round-button,
+.small-button {
+  border: 1px solid rgba(255, 220, 170, 0.28);
+  color: var(--fb-ink);
+  background: rgba(26, 22, 20, 0.55);
+  backdrop-filter: blur(4px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.dpad button {
+  width: clamp(44px, 5vw, 80px);
+  height: clamp(38px, 4.4vw, 72px);
+  border-radius: 14px;
+  font-size: clamp(15px, 1.5vw, 25px);
+}
+
+.nes-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  gap: clamp(8px, 1vw, 16px);
+  align-items: center;
+}
+
+.round-button {
+  width: clamp(48px, 5.4vw, 92px);
+  height: clamp(48px, 5.4vw, 92px);
+  border-radius: 999px;
+  font-size: clamp(16px, 1.6vw, 28px);
+  font-weight: 800;
+}
+
+.round-button.main {
+  background:
+    linear-gradient(to bottom, rgba(238, 96, 72, 0.88), rgba(142, 36, 31, 0.88));
+}
+
+.small-button {
+  height: clamp(36px, 3.8vw, 62px);
+  padding: 0 clamp(10px, 1.2vw, 20px);
+  border-radius: 999px;
+  font-size: clamp(11px, 1vw, 17px);
+}
+
+@media (max-width: 800px) {
+  .top-hud {
+    grid-template-columns: 1fr 1.5fr 1fr;
+  }
+
+  .hud-panel {
+    border-radius: 12px;
+  }
+
+  .title-content {
+    width: 92%;
+  }
+}

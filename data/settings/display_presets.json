@@ -1,0 +1,31 @@
+{
+  "defaultAspect": "20:9",
+  "logicalWidth": 2400,
+  "logicalHeight": 1080,
+  "displayPresets": [
+    {
+      "id": "phone_wide",
+      "label": "Phone Wide",
+      "aspect": "20 / 9",
+      "description": "Default landscape phone layout."
+    },
+    {
+      "id": "phone_classic",
+      "label": "Phone Classic",
+      "aspect": "19.5 / 9",
+      "description": "Slightly less wide modern phone layout."
+    },
+    {
+      "id": "video_standard",
+      "label": "16:9",
+      "aspect": "16 / 9",
+      "description": "Desktop and video-friendly layout."
+    },
+    {
+      "id": "fill_screen",
+      "label": "Fill Screen",
+      "aspect": "auto",
+      "description": "Future option. Fills available space with safer scaling rules."
+    }
+  ]
+}

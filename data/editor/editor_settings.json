@@ -1,0 +1,68 @@
+{
+  "id": "artifex_editor_settings",
+  "version": "0.2.0",
+  "defaultScreenType": "static",
+  "defaultGridSize": 40,
+  "snapToGrid": false,
+  "showGuidesByDefault": true,
+  "showJsonPreviewByDefault": true,
+  "defaultVolumes": {
+    "music": 0.55,
+    "ambience": 0.45,
+    "sfx": 0.75
+  },
+  "folders": [
+    {
+      "label": "Branding",
+      "path": "assets/branding/"
+    },
+    {
+      "label": "Chronicle 0 Scenes",
+      "path": "assets/scenes/ch00/"
+    },
+    {
+      "label": "Mel",
+      "path": "assets/characters/mel/"
+    },
+    {
+      "label": "UI",
+      "path": "assets/ui/"
+    },
+    {
+      "label": "Music",
+      "path": "assets/audio/music/"
+    },
+    {
+      "label": "Ambience",
+      "path": "assets/audio/ambience/"
+    },
+    {
+      "label": "SFX",
+      "path": "assets/audio/sfx/"
+    },
+    {
+      "label": "Scene Data",
+      "path": "data/scenes/"
+    },
+    {
+      "label": "Screen Data",
+      "path": "data/screens/"
+    },
+    {
+      "label": "Editor Data",
+      "path": "data/editor/"
+    },
+    {
+      "label": "Map Data",
+      "path": "data/map/"
+    }
+  ],
+  "help": {
+    "defaultSection": "quick-start",
+    "tutorialsAvailable": [
+      "editor",
+      "travel",
+      "ui"
+    ]
+  }
+}
