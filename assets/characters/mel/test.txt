@@ -1,2 +1,1 @@
-Test placeholder for assets/characters/mel
-This file exists so GitHub uploads and displays this folder. It can be deleted later after real files are added.
+Replace this with the real image assets listed in docs/PHASE_1_TESTING.md.
