@@ -37,16 +37,16 @@ function createGame() {
         <section class="title-screen">
           <div class="title-content">
             <div class="studio-mark">
-              <img src="${ASSETS.studioLogo}" alt="Created by CINAEDVS Studios" />
-              <span>Created by CINAEDVS Studios</span>
+              <img src="${ASSETS.studioLogo}" alt="CINAEDVUS Studios" />
+              <span>CINAEDVUS Studios</span>
             </div>
 
             <div class="logo-stack">
               <img class="main-logo" src="${ASSETS.foreverBoundLogo}" alt="Forever Bound" />
               <h1 class="fallback-logo">Forever Bound</h1>
-              <p>In a world filled with ancient magic, a love that spans centuries is bound by fate, torn by dark forces, and rekindled across lifetimes.</p>
+              <p>A lightweight browser-based 2D companion game.</p>
             </div>
-<br><Br>
+
             <div class="title-buttons">
               <a class="fb-button title-link" href="./editor.html">Scene Editor</a>
               <button class="fb-button" id="start-game">Start Game</button>
