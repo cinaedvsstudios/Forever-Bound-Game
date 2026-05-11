@@ -48,6 +48,7 @@ function createGame() {
             </div>
 
             <div class="title-buttons">
+              <a class="fb-button title-link" href="./editor.html">Scene Editor</a>
               <button class="fb-button" id="start-game">Start Game</button>
               <button class="fb-button" type="button">Continue</button>
               <button class="fb-button" type="button">Options</button>
@@ -77,7 +78,6 @@ function createGame() {
 
           <div class="player"></div>
 
-          <div class="dev-note">Test build: use Arrow Keys or WASD to move Mel.</div>
 
           <div class="controls">
             <div class="dpad">
