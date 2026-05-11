@@ -1,0 +1,12 @@
+{
+  "id": "ch00_q00_forest_route",
+  "chronicle": "ch00",
+  "quest": "q00",
+  "mode": "scene",
+  "name": "Silva Tenebrosa",
+  "calling": "Follow the forest path",
+  "background": "/assets/scenes/ch00/ch00_q00_forest_route_bg1.png",
+  "playerStart": { "xPercent": 50, "yPercent": 77 },
+  "walkBounds": { "minXPercent": 7, "maxXPercent": 93, "minYPercent": 58, "maxYPercent": 86 },
+  "notes": "The current code has these values hardcoded for this first shell. Later phases should load this data dynamically."
+}
