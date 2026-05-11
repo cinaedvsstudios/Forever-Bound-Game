@@ -1,0 +1,19 @@
+{
+  "id": "ch00_q00_forest_route",
+  "mode": "travel",
+  "locationName": "Silva Tenebrosa",
+  "questName": "Quest 0.0",
+  "callingText": "Follow the forest path",
+  "background": "assets/scenes/ch00/YOUR_FOREST_FILE_NAME.png",
+  "playerStart": {
+    "x": 78,
+    "y": 70
+  },
+  "walkableArea": {
+    "x": 0,
+    "y": 58,
+    "width": 100,
+    "height": 28
+  },
+  "objects": []
+}
