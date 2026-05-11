@@ -38,7 +38,7 @@ function createGame() {
           <div class="title-content">
             <div class="studio-mark">
               <img src="${ASSETS.studioLogo}" alt="Created by CINAEDVS Studios" />
-              <span>CINAEDVUS Studios</span>
+              <span>Created by CINAEDVS Studios</span>
             </div>
 
             <div class="logo-stack">
