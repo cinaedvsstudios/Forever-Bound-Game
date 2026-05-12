@@ -1,112 +1,692 @@
-:root {
-  --artifex-font: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --artifex-title-purple: #d58cff;
-  --artifex-topbar-bg: linear-gradient(180deg, rgba(30, 5, 48, 0.98), rgba(9, 3, 13, 0.98));
-  --artifex-left-card-opacity: 0.95;
-  --artifex-right-card-opacity: 0.95;
-  --artifex-panel-bg-image: none;
-  --artifex-topbar-bg-image: none;
-  --artifex-sidebar-bg-image: none;
-  --artifex-card-bg-image: none;
-}
+/*
+  Artifex Appearance Patch
+  File path: src/artifex_appearance_patch.js
 
-html, body, #app, .artifex-shell, .artifex-shell * {
-  font-family: var(--artifex-font) !important;
-}
+  This adds live appearance controls to the Artifex Settings window without
+  replacing artifex_game.js.
+*/
 
-.artifex-topbar {
-  background-image: var(--artifex-topbar-bg-image), var(--artifex-topbar-bg) !important;
-  background-size: cover !important;
-  background-position: center !important;
-}
+(() => {
+  "use strict";
 
-.artifex-brand {
-  color: var(--artifex-title-purple) !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  background: transparent !important;
-  text-shadow: 0 0 14px rgba(213, 140, 255, 0.65) !important;
-}
+  const STORAGE_KEY = "foreverBound.artifex.appearance.v1";
 
-.artifex-brand img,
-.artifex-brand .brand-icon,
-.artifex-brand::before {
-  border: 0 !important;
-  box-shadow: none !important;
-  outline: 0 !important;
-}
+  const DEFAULT_APPEARANCE = {
+    fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 
-.editor-panel {
-  background-image: var(--artifex-sidebar-bg-image), var(--artifex-panel-bg-image) !important;
-  background-size: cover !important;
-  background-position: center !important;
-}
+    colors: {
+      topBarBackground: "#16051f",
+      topBarText: "#d58cff",
+      primaryButtonBackground: "#3b1258",
+      primaryButtonBorder: "#b66cff",
+      primaryButtonText: "#ffffff",
+      panelBackground: "#180b08",
+      cardBackground: "#24100c",
+      cardBorder: "#a86436",
+      headingText: "#ffb36b",
+      bodyText: "#fff4d2",
+      mutedText: "#c8a982",
+      inputBackground: "#120705",
+      inputText: "#ffffff",
+      scrollbar: "#b87848",
+      guideColor: "#b66cff",
+      selectedElement: "#d58cff"
+    },
 
-.editor-panel.left .editor-section,
-.editor-panel.left .panel-card,
-.editor-panel.left details.editor-section {
-  background-color: rgba(24, 12, 8, var(--artifex-left-card-opacity)) !important;
-  background-image: var(--artifex-card-bg-image) !important;
-  background-size: cover !important;
-  background-position: center !important;
-}
+    backgroundImages: {
+      editorPage: "",
+      topBar: "",
+      leftSidebar: "",
+      rightSidebar: "",
+      settingsModal: "",
+      cards: ""
+    },
 
-.editor-panel.right .editor-section,
-.editor-panel.right .panel-card,
-.editor-panel.right details.editor-section {
-  background-color: rgba(24, 12, 8, var(--artifex-right-card-opacity)) !important;
-  background-image: var(--artifex-card-bg-image) !important;
-  background-size: cover !important;
-  background-position: center !important;
-}
+    opacity: {
+      leftSidebarCards: 95,
+      rightSidebarCards: 95,
+      settingsModal: 98,
+      topBar: 98
+    },
 
-.artifex-shell.artifex-patch-hide-right .artifex-main {
-  grid-template-columns: minmax(340px, 390px) minmax(0, 1fr) !important;
-}
+    layout: {
+      showRightPanelByDefault: false
+    },
 
-.artifex-shell.artifex-patch-hide-right #rightPanel {
-  display: none !important;
-}
+    branding: {
+      logoHasBorder: false,
+      titleColor: "#d58cff"
+    }
+  };
 
-.artifex-appearance-card {
-  border: 1px solid rgba(213, 140, 255, 0.55);
-  box-shadow: 0 0 18px rgba(143, 66, 255, 0.18);
-}
+  let appearance = mergeDeep(DEFAULT_APPEARANCE, loadStoredAppearance());
+  let rightPanelDefaultAppliedTo = new WeakSet();
 
-.artifex-appearance-grid {
-  display: grid;
-  grid-template-columns: minmax(160px, 1fr) minmax(160px, 1fr);
-  gap: 10px;
-}
-
-.artifex-appearance-grid label,
-.artifex-opacity-row label {
-  display: grid;
-  gap: 4px;
-  color: var(--fb-muted, #c8a982);
-  font-size: 12px;
-}
-
-.artifex-appearance-grid input[type="color"] {
-  height: 36px;
-  padding: 3px;
-}
-
-.artifex-opacity-row {
-  display: grid;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.artifex-appearance-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 12px;
-}
-
-@media (max-width: 900px) {
-  .artifex-appearance-grid {
-    grid-template-columns: 1fr;
+  function clone(value) {
+    return JSON.parse(JSON.stringify(value));
   }
-}
+
+  function mergeDeep(base, override) {
+    const output = clone(base);
+
+    for (const [key, value] of Object.entries(override || {})) {
+      if (
+        value &&
+        typeof value === "object" &&
+        !Array.isArray(value) &&
+        output[key] &&
+        typeof output[key] === "object" &&
+        !Array.isArray(output[key])
+      ) {
+        output[key] = mergeDeep(output[key], value);
+      } else {
+        output[key] = value;
+      }
+    }
+
+    return output;
+  }
+
+  function loadStoredAppearance() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    } catch {
+      return {};
+    }
+  }
+
+  function saveAppearance() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(appearance, null, 2));
+  }
+
+  function getValue(path) {
+    return path.split(".").reduce((obj, key) => obj?.[key], appearance);
+  }
+
+  function setValue(path, value) {
+    const parts = path.split(".");
+    let obj = appearance;
+
+    while (parts.length > 1) {
+      const key = parts.shift();
+      obj[key] ||= {};
+      obj = obj[key];
+    }
+
+    obj[parts[0]] = value;
+    saveAppearance();
+    applyAppearance();
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "\"": "&quot;",
+      "'": "&#39;"
+    }[char]));
+  }
+
+  function cssUrl(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "none";
+    return `url("${raw.replace(/"/g, '\\"')}")`;
+  }
+
+  function toAlpha(value, fallback = 100) {
+    const number = Number(value);
+    const safe = Number.isFinite(number) ? number : fallback;
+    return Math.max(0, Math.min(100, safe)) / 100;
+  }
+
+  function hexToRgb(hex, fallback = [36, 16, 12]) {
+    const clean = String(hex || "").trim();
+    const match = clean.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+
+    if (!match) return fallback;
+
+    return [
+      parseInt(match[1], 16),
+      parseInt(match[2], 16),
+      parseInt(match[3], 16)
+    ];
+  }
+
+  function rgba(hex, alpha, fallback) {
+    const [r, g, b] = hexToRgb(hex, fallback);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  function applyAppearance() {
+    const c = appearance.colors;
+    const img = appearance.backgroundImages;
+    const opacity = appearance.opacity;
+
+    const leftCardBg = rgba(c.cardBackground, toAlpha(opacity.leftSidebarCards, 95), [36, 16, 12]);
+    const rightCardBg = rgba(c.cardBackground, toAlpha(opacity.rightSidebarCards, 95), [36, 16, 12]);
+    const modalBg = rgba(c.panelBackground, toAlpha(opacity.settingsModal, 98), [24, 12, 8]);
+    const topBarBg = rgba(c.topBarBackground, toAlpha(opacity.topBar, 98), [22, 5, 31]);
+
+    let style = document.getElementById("artifex-appearance-live-style");
+
+    if (!style) {
+      style = document.createElement("style");
+      style.id = "artifex-appearance-live-style";
+      document.head.appendChild(style);
+    }
+
+    style.textContent = `
+      html,
+      body,
+      #app,
+      .artifex-shell,
+      .artifex-shell * {
+        font-family: ${appearance.fontFamily || DEFAULT_APPEARANCE.fontFamily} !important;
+      }
+
+      .artifex-shell {
+        color: ${c.bodyText} !important;
+        background-image: ${cssUrl(img.editorPage)} !important;
+        background-size: cover !important;
+        background-position: center !important;
+      }
+
+      .artifex-topbar {
+        background-image:
+          ${cssUrl(img.topBar)},
+          linear-gradient(180deg, ${topBarBg}, rgba(5, 2, 8, ${toAlpha(opacity.topBar, 98)})) !important;
+        background-size: cover !important;
+        background-position: center !important;
+      }
+
+      .artifex-brand {
+        color: ${appearance.branding.titleColor || c.topBarText} !important;
+        border: 0 !important;
+        outline: 0 !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        text-shadow: 0 0 14px ${rgba(appearance.branding.titleColor || c.topBarText, 0.65, [213, 140, 255])} !important;
+      }
+
+      .artifex-brand img,
+      .artifex-brand svg,
+      .artifex-brand .brand-icon,
+      .artifex-brand::before {
+        border: 0 !important;
+        outline: 0 !important;
+        box-shadow: none !important;
+        background: transparent !important;
+      }
+
+      .artifex-shell button,
+      .artifex-shell .editor-pill,
+      .artifex-shell .editor-icon-button,
+      .artifex-topbar a {
+        background-color: ${c.primaryButtonBackground} !important;
+        border-color: ${c.primaryButtonBorder} !important;
+        color: ${c.primaryButtonText} !important;
+      }
+
+      .artifex-shell button:hover,
+      .artifex-shell .editor-pill:hover,
+      .artifex-shell .editor-icon-button:hover {
+        border-color: ${c.selectedElement} !important;
+        box-shadow: 0 0 14px ${rgba(c.selectedElement, 0.45, [213, 140, 255])} !important;
+      }
+
+      .artifex-shell .is-active,
+      .artifex-shell button.is-active,
+      .artifex-shell .editor-pill.is-active {
+        border-color: ${c.selectedElement} !important;
+        box-shadow: 0 0 16px ${rgba(c.selectedElement, 0.55, [213, 140, 255])} !important;
+      }
+
+      .editor-panel.left {
+        background-image:
+          ${cssUrl(img.leftSidebar)},
+          linear-gradient(180deg, ${c.panelBackground}, #050407) !important;
+        background-size: cover !important;
+        background-position: center !important;
+      }
+
+      .editor-panel.right {
+        background-image:
+          ${cssUrl(img.rightSidebar)},
+          linear-gradient(180deg, ${c.panelBackground}, #050407) !important;
+        background-size: cover !important;
+        background-position: center !important;
+      }
+
+      .editor-panel.left .editor-section,
+      .editor-panel.left details.editor-section,
+      .editor-panel.left .panel-card {
+        background-color: ${leftCardBg} !important;
+        background-image: ${cssUrl(img.cards)} !important;
+        background-size: cover !important;
+        background-position: center !important;
+        border-color: ${c.cardBorder} !important;
+      }
+
+      .editor-panel.right .editor-section,
+      .editor-panel.right details.editor-section,
+      .editor-panel.right .panel-card {
+        background-color: ${rightCardBg} !important;
+        background-image: ${cssUrl(img.cards)} !important;
+        background-size: cover !important;
+        background-position: center !important;
+        border-color: ${c.cardBorder} !important;
+      }
+
+      .artifex-shell h1,
+      .artifex-shell h2,
+      .artifex-shell h3,
+      .artifex-shell summary h3,
+      .artifex-shell .card-title-row h2,
+      .artifex-shell .card-title-row h3 {
+        color: ${c.headingText} !important;
+      }
+
+      .artifex-shell,
+      .artifex-shell p,
+      .artifex-shell label,
+      .artifex-shell .small-text,
+      .artifex-shell .file-name-pill,
+      .artifex-shell .upload-note {
+        color: ${c.bodyText} !important;
+      }
+
+      .artifex-shell .small-text,
+      .artifex-shell .upload-note,
+      .artifex-shell .file-name-pill {
+        color: ${c.mutedText} !important;
+      }
+
+      .artifex-shell input,
+      .artifex-shell textarea,
+      .artifex-shell select {
+        background-color: ${c.inputBackground} !important;
+        color: ${c.inputText} !important;
+        border-color: ${c.cardBorder} !important;
+      }
+
+      .artifex-shell input[type="checkbox"] {
+        accent-color: ${c.selectedElement};
+      }
+
+      .editor-grid,
+      .editor-grid *,
+      .grid-line,
+      .grid-label,
+      .editor-grid-label {
+        border-color: ${c.guideColor} !important;
+        color: ${c.guideColor} !important;
+      }
+
+      .editor-element.selected,
+      .stage-element.selected,
+      .editor-element.is-selected,
+      .stage-element.is-selected {
+        outline-color: ${c.selectedElement} !important;
+        box-shadow: 0 0 18px ${rgba(c.selectedElement, 0.75, [213, 140, 255])} !important;
+      }
+
+      .settings-modal,
+      .settings-window,
+      .artifex-settings-modal,
+      .editor-modal,
+      .tutorial-window,
+      .modal-content,
+      .modal-card,
+      [role="dialog"] {
+        background-color: ${modalBg} !important;
+        background-image:
+          ${cssUrl(img.settingsModal)},
+          linear-gradient(180deg, ${modalBg}, rgba(0, 0, 0, ${toAlpha(opacity.settingsModal, 98)})) !important;
+        background-size: cover !important;
+        background-position: center !important;
+      }
+
+      .artifex-shell ::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+      }
+
+      .artifex-shell ::-webkit-scrollbar-thumb {
+        background: ${c.scrollbar};
+        border-radius: 999px;
+      }
+
+      .artifex-appearance-card {
+        border: 1px solid ${c.selectedElement} !important;
+        box-shadow: 0 0 18px ${rgba(c.selectedElement, 0.24, [213, 140, 255])} !important;
+      }
+
+      .artifex-appearance-grid {
+        display: grid;
+        grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr);
+        gap: 10px;
+      }
+
+      .artifex-appearance-grid label,
+      .artifex-opacity-row label,
+      .artifex-font-row label {
+        display: grid;
+        gap: 4px;
+        font-size: 12px;
+      }
+
+      .artifex-appearance-grid input[type="color"] {
+        height: 36px;
+        padding: 3px;
+      }
+
+      .artifex-opacity-row,
+      .artifex-font-row {
+        display: grid;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .artifex-appearance-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+
+      .artifex-appearance-note {
+        margin-top: 8px;
+        font-size: 12px;
+        color: ${c.mutedText} !important;
+      }
+
+      .artifex-shell.artifex-force-right-hidden .artifex-main {
+        grid-template-columns: minmax(340px, 390px) minmax(0, 1fr) !important;
+      }
+
+      .artifex-shell.artifex-force-right-hidden #rightPanel {
+        display: none !important;
+      }
+
+      @media (max-width: 900px) {
+        .artifex-appearance-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    `;
+  }
+
+  function isVisible(element) {
+    if (!element || element === document.body || element === document.documentElement) return false;
+
+    const style = window.getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+
+    return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+  }
+
+  function findSettingsHost() {
+    const directSelectors = [
+      ".settings-modal",
+      ".settings-window",
+      ".artifex-settings-modal",
+      ".editor-modal",
+      ".modal-content",
+      ".modal-card",
+      "[role='dialog']"
+    ];
+
+    for (const selector of directSelectors) {
+      const candidates = [...document.querySelectorAll(selector)].filter((element) => {
+        const text = element.textContent || "";
+        return isVisible(element) && /Artifex Settings|Settings/i.test(text) && element.querySelector("input, textarea, button");
+      });
+
+      if (candidates.length) return candidates[0];
+    }
+
+    const headings = [...document.querySelectorAll("h1, h2, h3, summary, .modal-title, .window-title")];
+
+    for (const heading of headings) {
+      if (!/Artifex Settings|Settings/i.test((heading.textContent || "").trim())) continue;
+
+      let current = heading.parentElement;
+
+      while (current && current !== document.body) {
+        if (current.querySelector("input, textarea, button") && isVisible(current)) {
+          const text = current.textContent || "";
+          if (/Default Files|File Directories|editor_settings|settings/i.test(text)) return current;
+        }
+
+        current = current.parentElement;
+      }
+    }
+
+    return null;
+  }
+
+  function field(label, type, path, attrs = "") {
+    const value = getValue(path);
+
+    return `
+      <label>
+        <span>${escapeHtml(label)}</span>
+        <input type="${type}" data-artifex-appearance-setting="${escapeHtml(path)}" value="${escapeHtml(value)}" ${attrs}>
+      </label>
+    `;
+  }
+
+  function checkbox(label, path) {
+    return `
+      <label>
+        <span>${escapeHtml(label)}</span>
+        <input type="checkbox" data-artifex-appearance-setting="${escapeHtml(path)}" ${getValue(path) ? "checked" : ""}>
+      </label>
+    `;
+  }
+
+  function injectAppearancePanel() {
+    const host = findSettingsHost();
+
+    if (!host || host.querySelector(".artifex-appearance-card")) return;
+
+    const section = document.createElement("section");
+    section.className = "editor-section artifex-appearance-card";
+
+    section.innerHTML = `
+      <h3>Appearance / Custom Colours</h3>
+
+      <div class="artifex-font-row">
+        ${field("Editor font family", "text", "fontFamily")}
+      </div>
+
+      <div class="artifex-appearance-grid">
+        ${field("Top bar background", "color", "colors.topBarBackground")}
+        ${field("Title / top text", "color", "branding.titleColor")}
+        ${field("Button background", "color", "colors.primaryButtonBackground")}
+        ${field("Button border", "color", "colors.primaryButtonBorder")}
+        ${field("Button text", "color", "colors.primaryButtonText")}
+        ${field("Panel background", "color", "colors.panelBackground")}
+        ${field("Card background", "color", "colors.cardBackground")}
+        ${field("Card border", "color", "colors.cardBorder")}
+        ${field("Heading text", "color", "colors.headingText")}
+        ${field("Body text", "color", "colors.bodyText")}
+        ${field("Muted text", "color", "colors.mutedText")}
+        ${field("Input background", "color", "colors.inputBackground")}
+        ${field("Input text", "color", "colors.inputText")}
+        ${field("Scrollbar", "color", "colors.scrollbar")}
+        ${field("Guide / grid colour", "color", "colors.guideColor")}
+        ${field("Selected element", "color", "colors.selectedElement")}
+
+        ${field("Editor page background URL", "text", "backgroundImages.editorPage", 'placeholder="assets/ui/background.png"')}
+        ${field("Top bar background URL", "text", "backgroundImages.topBar", 'placeholder="assets/ui/topbar.png"')}
+        ${field("Left sidebar background URL", "text", "backgroundImages.leftSidebar", 'placeholder="assets/ui/left_panel.png"')}
+        ${field("Right sidebar background URL", "text", "backgroundImages.rightSidebar", 'placeholder="assets/ui/right_panel.png"')}
+        ${field("Settings modal background URL", "text", "backgroundImages.settingsModal", 'placeholder="assets/ui/modal.png"')}
+        ${field("Card background URL", "text", "backgroundImages.cards", 'placeholder="assets/ui/card.png"')}
+      </div>
+
+      <div class="artifex-opacity-row">
+        ${field("Left sidebar card opacity", "range", "opacity.leftSidebarCards", 'min="20" max="100" step="1"')}
+        ${field("Right sidebar card opacity", "range", "opacity.rightSidebarCards", 'min="20" max="100" step="1"')}
+        ${field("Settings modal opacity", "range", "opacity.settingsModal", 'min="20" max="100" step="1"')}
+        ${field("Top bar opacity", "range", "opacity.topBar", 'min="20" max="100" step="1"')}
+        ${checkbox("Show right panel by default", "layout.showRightPanelByDefault")}
+      </div>
+
+      <div class="artifex-appearance-actions">
+        <button type="button" class="editor-pill" data-artifex-appearance-action="apply">Apply live</button>
+        <button type="button" class="editor-pill" data-artifex-appearance-action="download">Download editor_settings.appearance.json</button>
+        <button type="button" class="editor-pill" data-artifex-appearance-action="reset">Reset appearance</button>
+      </div>
+
+      <div class="artifex-appearance-note">
+        These appearance settings update live and are saved in this browser. Use the download button to keep a copy with the repo.
+      </div>
+    `;
+
+    host.appendChild(section);
+
+    section.querySelectorAll("[data-artifex-appearance-setting]").forEach((input) => {
+      const update = () => {
+        const path = input.dataset.artifexAppearanceSetting;
+        const value = input.type === "checkbox" ? input.checked : input.value;
+
+        setValue(path, value);
+
+        if (path === "layout.showRightPanelByDefault") {
+          setRightPanelVisible(Boolean(value));
+        }
+      };
+
+      input.addEventListener("input", update);
+      input.addEventListener("change", update);
+    });
+
+    section.querySelector("[data-artifex-appearance-action='apply']")?.addEventListener("click", () => {
+      applyAppearance();
+      setRightPanelVisible(Boolean(appearance.layout.showRightPanelByDefault));
+    });
+
+    section.querySelector("[data-artifex-appearance-action='download']")?.addEventListener("click", downloadAppearanceSettings);
+
+    section.querySelector("[data-artifex-appearance-action='reset']")?.addEventListener("click", () => {
+      appearance = clone(DEFAULT_APPEARANCE);
+      saveAppearance();
+      applyAppearance();
+      setRightPanelVisible(Boolean(appearance.layout.showRightPanelByDefault));
+      section.remove();
+      injectAppearancePanel();
+    });
+  }
+
+  function downloadAppearanceSettings() {
+    const payload = {
+      id: "artifex_editor_settings_appearance",
+      version: "1.0.0",
+      appearance
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "editor_settings.appearance.json";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(url);
+  }
+
+  function rightPanelIsVisible() {
+    const shell = document.querySelector(".artifex-shell");
+    const panel = document.querySelector("#rightPanel");
+
+    if (!shell || !panel) return true;
+
+    if (shell.classList.contains("no-right") || shell.classList.contains("artifex-force-right-hidden")) {
+      return false;
+    }
+
+    return window.getComputedStyle(panel).display !== "none";
+  }
+
+  function setRightPanelVisible(visible) {
+    const shell = document.querySelector(".artifex-shell");
+    const panel = document.querySelector("#rightPanel");
+    const button = document.querySelector("#rightPanelBtn");
+
+    if (!shell || !panel) return;
+
+    const currentlyVisible = rightPanelIsVisible();
+
+    if (button && currentlyVisible !== visible) {
+      button.click();
+      return;
+    }
+
+    shell.classList.toggle("artifex-force-right-hidden", !visible);
+    panel.style.display = visible ? "" : "none";
+  }
+
+  function applyRightPanelDefault() {
+    const shell = document.querySelector(".artifex-shell");
+
+    if (!shell || rightPanelDefaultAppliedTo.has(shell)) return;
+
+    rightPanelDefaultAppliedTo.add(shell);
+
+    setRightPanelVisible(Boolean(appearance.layout.showRightPanelByDefault));
+  }
+
+  function cleanTopLeftBranding() {
+    const brand = document.querySelector(".artifex-brand");
+
+    if (!brand) return;
+
+    brand.style.color = appearance.branding.titleColor || appearance.colors.topBarText;
+    brand.style.border = "0";
+    brand.style.outline = "0";
+    brand.style.boxShadow = "none";
+    brand.style.background = "transparent";
+
+    brand.querySelectorAll("img, svg, .brand-icon").forEach((child) => {
+      child.style.border = "0";
+      child.style.outline = "0";
+      child.style.boxShadow = "none";
+      child.style.background = "transparent";
+    });
+  }
+
+  function tick() {
+    applyAppearance();
+    applyRightPanelDefault();
+    cleanTopLeftBranding();
+    injectAppearancePanel();
+  }
+
+  function start() {
+    applyAppearance();
+
+    const observer = new MutationObserver(() => {
+      window.requestAnimationFrame(tick);
+    });
+
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true
+    });
+
+    window.setInterval(tick, 1200);
+    tick();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start, { once: true });
+  } else {
+    start();
+  }
+})();
