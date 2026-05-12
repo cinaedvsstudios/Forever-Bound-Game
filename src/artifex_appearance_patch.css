@@ -1,0 +1,112 @@
+:root {
+  --artifex-font: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --artifex-title-purple: #d58cff;
+  --artifex-topbar-bg: linear-gradient(180deg, rgba(30, 5, 48, 0.98), rgba(9, 3, 13, 0.98));
+  --artifex-left-card-opacity: 0.95;
+  --artifex-right-card-opacity: 0.95;
+  --artifex-panel-bg-image: none;
+  --artifex-topbar-bg-image: none;
+  --artifex-sidebar-bg-image: none;
+  --artifex-card-bg-image: none;
+}
+
+html, body, #app, .artifex-shell, .artifex-shell * {
+  font-family: var(--artifex-font) !important;
+}
+
+.artifex-topbar {
+  background-image: var(--artifex-topbar-bg-image), var(--artifex-topbar-bg) !important;
+  background-size: cover !important;
+  background-position: center !important;
+}
+
+.artifex-brand {
+  color: var(--artifex-title-purple) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  text-shadow: 0 0 14px rgba(213, 140, 255, 0.65) !important;
+}
+
+.artifex-brand img,
+.artifex-brand .brand-icon,
+.artifex-brand::before {
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+}
+
+.editor-panel {
+  background-image: var(--artifex-sidebar-bg-image), var(--artifex-panel-bg-image) !important;
+  background-size: cover !important;
+  background-position: center !important;
+}
+
+.editor-panel.left .editor-section,
+.editor-panel.left .panel-card,
+.editor-panel.left details.editor-section {
+  background-color: rgba(24, 12, 8, var(--artifex-left-card-opacity)) !important;
+  background-image: var(--artifex-card-bg-image) !important;
+  background-size: cover !important;
+  background-position: center !important;
+}
+
+.editor-panel.right .editor-section,
+.editor-panel.right .panel-card,
+.editor-panel.right details.editor-section {
+  background-color: rgba(24, 12, 8, var(--artifex-right-card-opacity)) !important;
+  background-image: var(--artifex-card-bg-image) !important;
+  background-size: cover !important;
+  background-position: center !important;
+}
+
+.artifex-shell.artifex-patch-hide-right .artifex-main {
+  grid-template-columns: minmax(340px, 390px) minmax(0, 1fr) !important;
+}
+
+.artifex-shell.artifex-patch-hide-right #rightPanel {
+  display: none !important;
+}
+
+.artifex-appearance-card {
+  border: 1px solid rgba(213, 140, 255, 0.55);
+  box-shadow: 0 0 18px rgba(143, 66, 255, 0.18);
+}
+
+.artifex-appearance-grid {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(160px, 1fr);
+  gap: 10px;
+}
+
+.artifex-appearance-grid label,
+.artifex-opacity-row label {
+  display: grid;
+  gap: 4px;
+  color: var(--fb-muted, #c8a982);
+  font-size: 12px;
+}
+
+.artifex-appearance-grid input[type="color"] {
+  height: 36px;
+  padding: 3px;
+}
+
+.artifex-opacity-row {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.artifex-appearance-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+@media (max-width: 900px) {
+  .artifex-appearance-grid {
+    grid-template-columns: 1fr;
+  }
+}
