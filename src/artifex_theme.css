@@ -1,0 +1,407 @@
+/* ===========================================================================
+   ARTIFEX THEME OVERRIDE
+   Forever Bound / Cinaedvs purple-copper editor skin
+
+   Put this file here:
+   src/artifex_theme.css
+
+   Then link it AFTER the main stylesheet in index.html:
+
+   <link rel="stylesheet" href="./src/style.css" />
+   <link rel="stylesheet" href="./src/artifex_theme.css" />
+
+   This file assumes the Artifex logo is here:
+   assets/branding/ARTIFEXlogo.png
+
+   Because this CSS file sits inside /src, the logo path below is:
+   ../assets/branding/ARTIFEXlogo.png
+   =========================================================================== */
+
+:root {
+  --fb-black: #050307;
+  --fb-panel: rgba(28, 15, 12, 0.92);
+  --fb-panel-deep: rgba(14, 7, 8, 0.98);
+  --fb-wood: #21120d;
+  --fb-wood-soft: #2c1a13;
+  --fb-copper: #b66a3c;
+  --fb-copper-bright: #f09a62;
+  --fb-copper-hot: #ffb076;
+  --fb-copper-soft: rgba(224, 141, 90, 0.62);
+  --fb-copper-faint: rgba(224, 141, 90, 0.28);
+  --fb-purple-dark: #1b0a29;
+  --fb-purple: #351250;
+  --fb-purple-mid: #542486;
+  --fb-purple-rich: #6a35a3;
+  --fb-purple-bright: #a85cff;
+  --fb-purple-glow: rgba(151, 76, 255, 0.58);
+  --fb-text: #fff3d2;
+  --fb-text-bright: #fff8e7;
+  --fb-muted: #d4b58c;
+  --fb-guide: rgba(168, 92, 255, 0.96);
+}
+
+.artifex-shell,
+.editor-shell,
+body:has(.artifex-topbar) {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(92, 37, 143, 0.20), transparent 34%),
+    radial-gradient(circle at 85% 8%, rgba(182, 106, 60, 0.10), transparent 28%),
+    linear-gradient(135deg, #090407, #050203 62%, #140906);
+  color: var(--fb-text);
+}
+
+.game-frame {
+  border-color: rgba(240, 154, 98, 0.58);
+  box-shadow:
+    0 0 44px rgba(104, 45, 155, 0.32),
+    inset 0 0 26px rgba(0, 0, 0, 0.48);
+}
+
+.artifex-topbar,
+.editor-topbar {
+  min-height: 56px;
+  background:
+    linear-gradient(90deg, rgba(21, 10, 8, 0.98), rgba(38, 14, 61, 0.98) 28%, rgba(23, 9, 37, 0.98) 76%, rgba(21, 10, 8, 0.98));
+  border-bottom: 1px solid rgba(240, 154, 98, 0.62);
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.48),
+    inset 0 -1px 0 rgba(168, 92, 255, 0.14);
+  overflow: visible;
+  position: relative;
+  z-index: 5000;
+}
+
+.artifex-brand {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px 0 4px;
+  color: var(--fb-copper-bright);
+  letter-spacing: 0.13em;
+  text-shadow: 0 2px 5px #000, 0 0 12px rgba(240, 154, 98, 0.24);
+  white-space: nowrap;
+}
+
+.artifex-topbar h1:first-child,
+.editor-topbar h1:first-child {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--fb-copper-bright);
+  letter-spacing: 0.13em;
+  text-shadow: 0 2px 5px #000, 0 0 12px rgba(240, 154, 98, 0.24);
+}
+
+.artifex-brand::before,
+.artifex-topbar h1:first-child::before,
+.editor-topbar h1:first-child::before {
+  content: "";
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(240, 154, 98, 0.68);
+  background-image:
+    url("../assets/branding/ARTIFEXlogo.png"),
+    radial-gradient(circle at 35% 24%, rgba(168, 92, 255, 0.95), rgba(53, 18, 80, 0.92) 48%, rgba(21, 10, 8, 0.96));
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain, cover;
+  box-shadow:
+    inset 0 0 8px rgba(0, 0, 0, 0.48),
+    0 0 12px rgba(168, 92, 255, 0.42);
+}
+
+.fb-button,
+.editor-pill,
+.editor-icon-button,
+.editor-toggle,
+.mode-current,
+.mode-toggle,
+.control-button,
+.folder-chip,
+.window-button,
+button {
+  color: var(--fb-text);
+  border-color: var(--fb-copper-soft);
+  background:
+    linear-gradient(180deg, rgba(102, 52, 155, 0.82), rgba(52, 20, 78, 0.92) 44%, rgba(26, 13, 11, 0.96));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 244, 210, 0.12),
+    inset 0 -10px 18px rgba(0, 0, 0, 0.28),
+    0 5px 14px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 1px 3px #000;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    transform 80ms ease,
+    color 120ms ease;
+}
+
+.fb-button:hover,
+.editor-pill:hover,
+.editor-icon-button:hover,
+.editor-toggle:hover,
+.mode-current:hover,
+.mode-toggle:hover,
+.control-button:hover,
+.folder-chip:hover,
+.window-button:hover,
+button:hover {
+  color: var(--fb-text-bright);
+  border-color: rgba(240, 154, 98, 0.92);
+  background:
+    linear-gradient(180deg, rgba(126, 64, 190, 0.94), rgba(70, 28, 108, 0.98) 48%, rgba(32, 15, 13, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 244, 210, 0.18),
+    inset 0 -10px 18px rgba(0, 0, 0, 0.26),
+    0 0 18px var(--fb-purple-glow),
+    0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+.fb-button:active,
+.editor-pill:active,
+.editor-icon-button:active,
+.editor-toggle:active,
+.mode-current:active,
+.mode-toggle:active,
+.control-button:active,
+.control-button.is-pressed,
+.folder-chip:active,
+.window-button:active,
+button:active {
+  transform: translateY(1px);
+  background:
+    linear-gradient(180deg, rgba(62, 24, 96, 0.98), rgba(96, 42, 145, 0.98));
+  border-color: rgba(168, 92, 255, 0.96);
+}
+
+.editor-pill.is-active,
+.editor-icon-button.is-active,
+.editor-toggle.is-active,
+.mode-current.is-active,
+.mode-toggle.is-active,
+.folder-chip.is-active,
+button.is-active,
+button[aria-pressed="true"] {
+  background:
+    radial-gradient(circle at 24% 20%, rgba(255, 244, 210, 0.16), transparent 28%),
+    linear-gradient(180deg, rgba(130, 65, 202, 0.98), rgba(77, 29, 125, 0.98) 52%, rgba(45, 17, 71, 0.98));
+  border-color: rgba(190, 111, 255, 0.98);
+  color: #fff7dc;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 244, 210, 0.18),
+    0 0 20px rgba(168, 92, 255, 0.72),
+    0 7px 18px rgba(0, 0, 0, 0.44);
+}
+
+button:disabled,
+.editor-pill:disabled,
+.editor-icon-button:disabled,
+.mode-toggle:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  filter: grayscale(35%);
+  box-shadow: none;
+}
+
+.mode-menu,
+.mode-dropdown,
+.screen-mode-menu {
+  position: relative;
+  z-index: 9500;
+}
+
+.mode-options,
+.mode-dropdown-options,
+.screen-mode-options {
+  z-index: 9999 !important;
+  background:
+    linear-gradient(180deg, rgba(40, 16, 64, 0.99), rgba(18, 10, 8, 0.99));
+  border-color: rgba(240, 154, 98, 0.78);
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.72),
+    0 0 18px rgba(168, 92, 255, 0.34);
+}
+
+.editor-panel,
+.left-panel,
+.right-panel,
+.sidebar,
+.artifex-sidebar {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(75, 28, 120, 0.16), transparent 34%),
+    linear-gradient(180deg, rgba(20, 10, 8, 0.98), rgba(9, 5, 6, 0.98));
+  border-color: rgba(240, 154, 98, 0.34);
+}
+
+.editor-section,
+.hud-panel,
+.notice-toast,
+.help-window,
+.tutorial-window,
+.settings-window,
+.screen-flow-window,
+.modal-window,
+.popup-window {
+  background:
+    linear-gradient(180deg, rgba(38, 22, 16, 0.76), rgba(20, 10, 8, 0.90));
+  border-color: rgba(240, 154, 98, 0.48);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 244, 210, 0.06),
+    0 8px 24px rgba(0, 0, 0, 0.34);
+}
+
+.editor-section[open],
+.editor-section.is-open {
+  border-color: rgba(240, 154, 98, 0.66);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 244, 210, 0.07),
+    0 0 18px rgba(168, 92, 255, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.36);
+}
+
+.editor-section summary {
+  cursor: pointer;
+  color: var(--fb-text);
+}
+
+.editor-section h2,
+.editor-section h3,
+.window-body h2,
+.window-body h3,
+.status-title,
+.active-item-label,
+.field-group label {
+  color: var(--fb-copper-bright);
+  text-shadow: 0 1px 3px #000;
+}
+
+.field-group input,
+.field-group select,
+.field-group textarea,
+.file-name-pill,
+.json-preview,
+input,
+select,
+textarea {
+  color: var(--fb-text);
+  background:
+    linear-gradient(180deg, rgba(41, 23, 18, 0.88), rgba(17, 8, 8, 0.96));
+  border-color: rgba(240, 154, 98, 0.46);
+  box-shadow: inset 0 1px 7px rgba(0, 0, 0, 0.42);
+}
+
+.field-group input:focus,
+.field-group select:focus,
+.field-group textarea:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: rgba(168, 92, 255, 0.94);
+  box-shadow:
+    inset 0 1px 7px rgba(0, 0, 0, 0.42),
+    0 0 14px rgba(168, 92, 255, 0.44);
+}
+
+::placeholder {
+  color: rgba(212, 181, 140, 0.62);
+}
+
+.editor-stage,
+.stage-frame,
+.preview-stage {
+  background: #10080a;
+  border-color: rgba(240, 154, 98, 0.66);
+  box-shadow:
+    0 0 42px rgba(0, 0, 0, 0.82),
+    0 0 26px rgba(104, 45, 155, 0.22);
+}
+
+.editor-element.selected,
+.editor-element.is-selected,
+.tutorial-highlight,
+.selected-element {
+  box-shadow:
+    0 0 0 2px rgba(240, 154, 98, 0.98),
+    0 0 24px rgba(168, 92, 255, 0.82) !important;
+}
+
+.editor-grid-label,
+.grid-label,
+.layer-label {
+  color: var(--fb-text-bright);
+  text-shadow:
+    0 1px 3px #000,
+    0 0 7px rgba(168, 92, 255, 0.58);
+}
+
+.window-titlebar,
+.help-titlebar,
+.tutorial-titlebar,
+.settings-titlebar {
+  background:
+    linear-gradient(90deg, rgba(65, 25, 105, 0.98), rgba(33, 13, 52, 0.98));
+  border-bottom-color: rgba(240, 154, 98, 0.54);
+  color: var(--fb-text-bright);
+}
+
+.help-window,
+.tutorial-window,
+.settings-window,
+.screen-flow-window {
+  resize: both;
+  overflow: auto;
+  z-index: 9000;
+}
+
+.folder-chip {
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+
+.folder-chip:hover {
+  transform: translateY(-1px);
+}
+
+.title-screen {
+  background:
+    radial-gradient(circle at center, rgba(83, 34, 132, 0.50), transparent 46%),
+    linear-gradient(135deg, #160718, #030205 66%, #21100b);
+}
+
+.title-footer,
+.small-text,
+.audio-status,
+.file-name-pill {
+  color: var(--fb-muted);
+}
+
+* {
+  scrollbar-color: rgba(240, 154, 98, 0.65) rgba(10, 5, 6, 0.85);
+}
+
+*::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(10, 5, 6, 0.85);
+}
+
+*::-webkit-scrollbar-thumb {
+  background:
+    linear-gradient(180deg, rgba(168, 92, 255, 0.62), rgba(182, 106, 60, 0.70));
+  border: 2px solid rgba(10, 5, 6, 0.85);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background:
+    linear-gradient(180deg, rgba(190, 111, 255, 0.82), rgba(240, 154, 98, 0.86));
+}
