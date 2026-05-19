@@ -14,8 +14,14 @@
            1. MASTER CSS VARIABLES & ENVIRONMENT
            ========================================================== */
         :root {
+            /* Dial Colors (Untouched) */
             --neon-purple: #c300ff;
             --neon-purple-dim: rgba(195, 0, 255, 0.4);
+            
+            /* Top UI Colors (New bluish-purple) */
+            --blue-purple: #5d00ff;
+            --blue-purple-dim: rgba(93, 0, 255, 0.4);
+            
             --bg-dark: #070707;
         }
 
@@ -33,7 +39,7 @@
         .ambient-background {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background-image: url('menu/menubackground.jpg'); /* The only JPG */
+            background-image: url('menu/menubackground.jpg');
             background-size: cover;
             background-position: center bottom;
             z-index: 1;
@@ -48,7 +54,7 @@
         }
 
         /* ==========================================================
-           2. TOP UI OVERLAYS (SCALED UP 25%)
+           2. TOP UI OVERLAYS
            ========================================================== */
         .top-ui-layer {
             position: absolute;
@@ -69,17 +75,20 @@
         }
 
         .brand-crest {
-            width: 70px; /* SCALED UP 25% */
-            height: 70px; /* SCALED UP 25% */
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
-            border: 2px solid #896b49;
-            box-shadow: 0 0 18px rgba(0,0,0,0.8);
+            border: none;
+            /* Added deep blue-purple shadow */
+            box-shadow: 0 0 20px var(--blue-purple);
             object-fit: cover;
         }
 
         .brand-title {
-            height: 40px; /* SCALED UP 25% */
+            height: 40px;
             object-fit: contain;
+            /* Drop-shadow wraps the edges of the transparent PNG text */
+            filter: drop-shadow(0 0 15px var(--blue-purple));
         }
 
         .audio-toggle-btn {
@@ -95,18 +104,21 @@
             cursor: pointer;
             pointer-events: auto;
             transition: all 0.3s;
-            box-shadow: 0 0 20px var(--neon-purple-dim);
+            /* Updated to blue-purple */
+            box-shadow: 0 0 20px var(--blue-purple-dim);
             animation: breatheAudio 3s infinite alternate;
         }
 
         .audio-toggle-btn:hover {
-            box-shadow: 0 0 30px var(--neon-purple);
+            /* Updated to blue-purple */
+            box-shadow: 0 0 30px var(--blue-purple);
             transform: scale(1.1);
         }
 
         @keyframes breatheAudio {
-            0% { box-shadow: 0 0 10px var(--neon-purple-dim); }
-            100% { box-shadow: 0 0 25px var(--neon-purple); }
+            /* Updated to blue-purple */
+            0% { box-shadow: 0 0 10px var(--blue-purple-dim); }
+            100% { box-shadow: 0 0 25px var(--blue-purple); }
         }
 
         /* ==========================================================
@@ -140,7 +152,6 @@
             transition: opacity 0.3s;
         }
 
-        /* ICONS RENDER AT 100% NORMAL BRIGHTNESS/BLEND MODE */
         .icon-carved {
             opacity: 1; 
             transition: opacity 0.3s;
