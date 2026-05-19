@@ -17,7 +17,6 @@
             --neon-purple: #c300ff;
             --neon-purple-dim: rgba(195, 0, 255, 0.4);
             --bg-dark: #070707;
-            --font-headers: 'Cinzel', Georgia, serif;
         }
 
         body, html {
@@ -61,7 +60,7 @@
             justify-content: space-between;
             align-items: flex-start;
             z-index: 100;
-            pointer-events: none; /* Only children are clickable */
+            pointer-events: none;
         }
 
         .brand-container {
@@ -113,14 +112,14 @@
         }
 
         /* ==========================================================
-           3. RADIAL MENU MECHANISM (THE SANDWICH)
+           3. RADIAL MENU MECHANISM
            ========================================================== */
         .dial-container {
             position: absolute;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             width: 100%;
-            max-width: 850px; /* Scales dynamically on smaller screens */
+            max-width: 600px;
             aspect-ratio: 1/1;
             z-index: 10;
             filter: drop-shadow(0 20px 40px rgba(0,0,0,0.9));
@@ -131,13 +130,11 @@
             overflow: visible;
         }
 
-        /* Wedge Math Vectors */
         .wedge-group {
             cursor: pointer;
             transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
-        /* Invisible glow path sitting behind the copper */
         .wedge-glow {
             fill: var(--neon-purple);
             opacity: 0;
@@ -145,19 +142,18 @@
             transition: opacity 0.3s;
         }
 
-        /* Icon blend layers */
         .icon-carved {
             mix-blend-mode: multiply;
             opacity: 0.85;
             transition: opacity 0.3s;
         }
+        
         .icon-glow {
             mix-blend-mode: screen;
             opacity: 0;
             transition: opacity 0.3s;
         }
 
-        /* HOVER STATES */
         .wedge-group:hover .wedge-glow {
             opacity: 0.85;
             animation: pulseWedge 1s infinite alternate;
@@ -165,7 +161,6 @@
         .wedge-group:hover .icon-carved { opacity: 0; }
         .wedge-group:hover .icon-glow { opacity: 1; }
 
-        /* Directional Bloat Shifting (Lifts outward away from center) */
         .wedge-group:hover#w1 { transform: translate(0px, -18px); }
         .wedge-group:hover#w2 { transform: translate(16px, -9px); }
         .wedge-group:hover#w3 { transform: translate(16px, 9px); }
@@ -178,7 +173,6 @@
             100% { filter: drop-shadow(0 0 35px var(--neon-purple)); opacity: 1; }
         }
 
-        /* CENTER HUB OVERLAYS */
         .center-cap-base {
             filter: drop-shadow(0 10px 20px rgba(0,0,0,0.9));
         }
@@ -205,54 +199,53 @@
         <svg viewBox="0 0 1000 1000">
             <defs>
                 <pattern id="copper-plate" width="1000" height="1000" patternUnits="userSpaceOnUse">
-                    <image href="menu/menudial.jpg" width="1000" height="1000" />
+                    <image href="menu/menudial.png" width="1000" height="1000" />
                 </pattern>
-                
                 <pattern id="center-patina" width="300" height="300" patternUnits="userSpaceOnUse" x="350" y="350">
-                    <image href="menu/artifexlogo.jpg" width="300" height="300" preserveAspectRatio="xMidYMid slice" />
+                    <image href="menu/centerhub.png" width="300" height="300" preserveAspectRatio="xMidYMid slice" />
                 </pattern>
             </defs>
 
             <g class="wedge-group" id="w1">
                 <path class="wedge-glow" d="M 500 500 L 250 67 A 500 500 0 0 1 750 67 Z" />
                 <path class="wedge-plate" d="M 500 500 L 250 67 A 500 500 0 0 1 750 67 Z" fill="url(#copper-plate)" />
-                <image class="icon-carved" href="menu/about.png" x="400" y="90" width="200" height="200" />
-                <image class="icon-glow" href="menu/about1.png" x="400" y="90" width="200" height="200" />
+                <image class="icon-carved" href="menu/about.png" x="387.5" y="77.5" width="225" height="225" />
+                <image class="icon-glow" href="menu/about1.png" x="387.5" y="77.5" width="225" height="225" />
             </g>
 
             <g class="wedge-group" id="w2">
                 <path class="wedge-glow" d="M 500 500 L 750 67 A 500 500 0 0 1 1000 500 Z" />
                 <path class="wedge-plate" d="M 500 500 L 750 67 A 500 500 0 0 1 1000 500 Z" fill="url(#copper-plate)" />
-                <image class="icon-carved" href="menu/help.png" x="680" y="250" width="200" height="200" />
-                <image class="icon-glow" href="menu/help1.png" x="680" y="250" width="200" height="200" />
+                <image class="icon-carved" href="menu/help.png" x="667.5" y="237.5" width="225" height="225" />
+                <image class="icon-glow" href="menu/help1.png" x="667.5" y="237.5" width="225" height="225" />
             </g>
 
             <g class="wedge-group" id="w3">
                 <path class="wedge-glow" d="M 500 500 L 1000 500 A 500 500 0 0 1 750 933 Z" />
                 <path class="wedge-plate" d="M 500 500 L 1000 500 A 500 500 0 0 1 750 933 Z" fill="url(#copper-plate)" />
-                <image class="icon-carved" href="menu/cinaedvs.png" x="680" y="550" width="200" height="200" />
-                <image class="icon-glow" href="menu/cinaedvs1.png" x="680" y="550" width="200" height="200" />
+                <image class="icon-carved" href="menu/cinaedvs.png" x="667.5" y="537.5" width="225" height="225" />
+                <image class="icon-glow" href="menu/cinaedvs1.png" x="667.5" y="537.5" width="225" height="225" />
             </g>
 
             <g class="wedge-group" id="w4">
                 <path class="wedge-glow" d="M 500 500 L 750 933 A 500 500 0 0 1 250 933 Z" />
                 <path class="wedge-plate" d="M 500 500 L 750 933 A 500 500 0 0 1 250 933 Z" fill="url(#copper-plate)" />
-                <image class="icon-carved" href="menu/settings.png" x="400" y="710" width="200" height="200" />
-                <image class="icon-glow" href="menu/settings1.png" x="400" y="710" width="200" height="200" />
+                <image class="icon-carved" href="menu/settings.png" x="387.5" y="697.5" width="225" height="225" />
+                <image class="icon-glow" href="menu/settings1.png" x="387.5" y="697.5" width="225" height="225" />
             </g>
 
             <g class="wedge-group" id="w5">
                 <path class="wedge-glow" d="M 500 500 L 250 933 A 500 500 0 0 1 0 500 Z" />
                 <path class="wedge-plate" d="M 500 500 L 250 933 A 500 500 0 0 1 0 500 Z" fill="url(#copper-plate)" />
-                <image class="icon-carved" href="menu/font.png" x="120" y="550" width="200" height="200" />
-                <image class="icon-glow" href="menu/font1.png" x="120" y="550" width="200" height="200" />
+                <image class="icon-carved" href="menu/font.png" x="107.5" y="537.5" width="225" height="225" />
+                <image class="icon-glow" href="menu/font1.png" x="107.5" y="537.5" width="225" height="225" />
             </g>
 
             <g class="wedge-group" id="w6">
                 <path class="wedge-glow" d="M 500 500 L 0 500 A 500 500 0 0 1 250 67 Z" />
                 <path class="wedge-plate" d="M 500 500 L 0 500 A 500 500 0 0 1 250 67 Z" fill="url(#copper-plate)" />
-                <image class="icon-carved" href="menu/scene.png" x="120" y="250" width="200" height="200" />
-                <image class="icon-glow" href="menu/scene1.png" x="120" y="250" width="200" height="200" />
+                <image class="icon-carved" href="menu/scene.png" x="107.5" y="237.5" width="225" height="225" />
+                <image class="icon-glow" href="menu/scene1.png" x="107.5" y="237.5" width="225" height="225" />
             </g>
 
             <g id="center-hub">
@@ -264,8 +257,8 @@
 
     <div class="top-ui-layer">
         <div class="brand-container">
-            <img class="brand-crest" src="menu/artifexlogo.jpg" alt="Logo">
-            <img class="brand-title" src="menu/artifextitle.jpg" alt="Artifex">
+            <img class="brand-crest" src="artifexlogo.png" alt="Logo">
+            <img class="brand-title" src="artifextitle.png" alt="Artifex">
         </div>
         
         <div class="audio-toggle-btn" id="audio-btn" onclick="toggleAudio()" title="Mute Tactical Audio">
@@ -335,7 +328,6 @@
             });
             
             wedge.addEventListener('mouseleave', () => {
-                // If cursor moves off, clear center pulse (unless another is hovered instantly)
                 setTimeout(() => {
                     if(!document.querySelector('.wedge-group:hover')) {
                         centerLightning.classList.remove('ignite');
@@ -350,7 +342,7 @@
         });
 
         /* ----------------------------------------------------
-           2. OVERHAULED PARTICLE ENGINE (Faster Mist, Bottom Embers)
+           2. MATH PARTICLES (Mist & Embers)
            ---------------------------------------------------- */
         const canvas = document.getElementById('fx-canvas');
         const ctx = canvas.getContext('2d');
@@ -378,19 +370,17 @@
                     this.x = initial ? Math.random() * width : -150;
                     this.y = (height * 0.4) + (Math.random() * height * 0.6); 
                     this.size = Math.random() * 150 + 100;
-                    // MIST IS NOW 3x FASTER
                     this.speedX = Math.random() * 1.5 + 0.8; 
                     this.speedY = (Math.random() - 0.5) * 0.1;
                     this.opacity = Math.random() * 0.15 + 0.05;
                 } else if (this.type === 'fire') {
-                    // EMBERS NOW SPAWN AT THE ABSOLUTE BOTTOM AND ARE SMALLER
                     this.x = Math.random() * width;
                     this.y = height + (Math.random() * 50); 
-                    this.size = Math.random() * 2.5 + 0.5; // Much smaller sparks
+                    this.size = Math.random() * 2.5 + 0.5; 
                     this.speedX = (Math.random() - 0.5) * 1.5;
-                    this.speedY = Math.random() * -2.5 - 1; // Rise steadily upwards
+                    this.speedY = Math.random() * -2.5 - 1;
                     this.life = 0;
-                    this.maxLife = Math.random() * 150 + 100; // Live a bit longer
+                    this.maxLife = Math.random() * 150 + 100;
                 }
             }
 
@@ -442,7 +432,6 @@
         function animate() {
             ctx.clearRect(0, 0, width, height);
             
-            // Soft ambient glow along the bottom floor
             ctx.globalCompositeOperation = 'screen';
             const floorGrad = ctx.createLinearGradient(0, height, 0, height - 300);
             floorGrad.addColorStop(0, 'rgba(255, 100, 20, 0.08)');
