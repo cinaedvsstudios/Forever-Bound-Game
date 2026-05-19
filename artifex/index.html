@@ -30,7 +30,6 @@
             user-select: none;
         }
 
-        /* Ambient Background Image */
         .ambient-background {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -40,7 +39,6 @@
             z-index: 1;
         }
 
-        /* FX Canvas for Math Fire & Mist */
         #fx-canvas {
             position: absolute;
             top: 0; left: 0;
@@ -50,7 +48,7 @@
         }
 
         /* ==========================================================
-           2. TOP UI OVERLAYS (BRANDING & AUDIO)
+           2. TOP UI OVERLAYS
            ========================================================== */
         .top-ui-layer {
             position: absolute;
@@ -143,8 +141,7 @@
         }
 
         .icon-carved {
-            mix-blend-mode: multiply;
-            opacity: 0.85;
+            opacity: 1;
             transition: opacity 0.3s;
         }
         
@@ -192,65 +189,64 @@
 <body>
 
     <div class="ambient-background"></div>
-
     <canvas id="fx-canvas"></canvas>
 
     <div class="dial-container">
-        <svg viewBox="0 0 1000 1000">
+        <svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
             <defs>
                 <pattern id="copper-plate" width="1000" height="1000" patternUnits="userSpaceOnUse">
-                    <image href="menu/menudial.png" width="1000" height="1000" />
+                    <image href="menu/menudial.png" xlink:href="menu/menudial.png" width="1000" height="1000" />
                 </pattern>
                 <pattern id="center-patina" width="300" height="300" patternUnits="userSpaceOnUse" x="350" y="350">
-                    <image href="menu/centerhub.png" width="300" height="300" preserveAspectRatio="xMidYMid slice" />
+                    <image href="menu/centerhub.png" xlink:href="menu/centerhub.png" width="300" height="300" preserveAspectRatio="xMidYMid slice" />
                 </pattern>
             </defs>
 
             <g class="wedge-group" id="w1">
                 <path class="wedge-glow" d="M 500 500 L 250 67 A 500 500 0 0 1 750 67 Z" />
                 <path class="wedge-plate" d="M 500 500 L 250 67 A 500 500 0 0 1 750 67 Z" fill="url(#copper-plate)" />
-                <image class="icon-carved" href="menu/about.png" x="387.5" y="77.5" width="225" height="225" />
-                <image class="icon-glow" href="menu/about1.png" x="387.5" y="77.5" width="225" height="225" />
+                <image class="icon-carved" href="menu/about0.png" xlink:href="menu/about0.png" x="387.5" y="77.5" width="225" height="225" />
+                <image class="icon-glow" href="menu/about1.png" xlink:href="menu/about1.png" x="387.5" y="77.5" width="225" height="225" />
             </g>
 
             <g class="wedge-group" id="w2">
                 <path class="wedge-glow" d="M 500 500 L 750 67 A 500 500 0 0 1 1000 500 Z" />
                 <path class="wedge-plate" d="M 500 500 L 750 67 A 500 500 0 0 1 1000 500 Z" fill="url(#copper-plate)" />
-                <image class="icon-carved" href="menu/help.png" x="667.5" y="237.5" width="225" height="225" />
-                <image class="icon-glow" href="menu/help1.png" x="667.5" y="237.5" width="225" height="225" />
+                <image class="icon-carved" href="menu/help.png" xlink:href="menu/help.png" x="667.5" y="237.5" width="225" height="225" />
+                <image class="icon-glow" href="menu/help1.png" xlink:href="menu/help1.png" x="667.5" y="237.5" width="225" height="225" />
             </g>
 
             <g class="wedge-group" id="w3">
                 <path class="wedge-glow" d="M 500 500 L 1000 500 A 500 500 0 0 1 750 933 Z" />
                 <path class="wedge-plate" d="M 500 500 L 1000 500 A 500 500 0 0 1 750 933 Z" fill="url(#copper-plate)" />
-                <image class="icon-carved" href="menu/cinaedvs.png" x="667.5" y="537.5" width="225" height="225" />
-                <image class="icon-glow" href="menu/cinaedvs1.png" x="667.5" y="537.5" width="225" height="225" />
+                <image class="icon-carved" href="menu/cinaedvs.png" xlink:href="menu/cinaedvs.png" x="667.5" y="537.5" width="225" height="225" />
+                <image class="icon-glow" href="menu/cinaedvs1.png" xlink:href="menu/cinaedvs1.png" x="667.5" y="537.5" width="225" height="225" />
             </g>
 
             <g class="wedge-group" id="w4">
                 <path class="wedge-glow" d="M 500 500 L 750 933 A 500 500 0 0 1 250 933 Z" />
                 <path class="wedge-plate" d="M 500 500 L 750 933 A 500 500 0 0 1 250 933 Z" fill="url(#copper-plate)" />
-                <image class="icon-carved" href="menu/settings.png" x="387.5" y="697.5" width="225" height="225" />
-                <image class="icon-glow" href="menu/settings1.png" x="387.5" y="697.5" width="225" height="225" />
+                <image class="icon-carved" href="menu/settings.png" xlink:href="menu/settings.png" x="387.5" y="697.5" width="225" height="225" />
+                <image class="icon-glow" href="menu/settings1.png" xlink:href="menu/settings1.png" x="387.5" y="697.5" width="225" height="225" />
             </g>
 
             <g class="wedge-group" id="w5">
                 <path class="wedge-glow" d="M 500 500 L 250 933 A 500 500 0 0 1 0 500 Z" />
                 <path class="wedge-plate" d="M 500 500 L 250 933 A 500 500 0 0 1 0 500 Z" fill="url(#copper-plate)" />
-                <image class="icon-carved" href="menu/font.png" x="107.5" y="537.5" width="225" height="225" />
-                <image class="icon-glow" href="menu/font1.png" x="107.5" y="537.5" width="225" height="225" />
+                <image class="icon-carved" href="menu/font.png" xlink:href="menu/font.png" x="107.5" y="537.5" width="225" height="225" />
+                <image class="icon-glow" href="menu/font1.png" xlink:href="menu/font1.png" x="107.5" y="537.5" width="225" height="225" />
             </g>
 
             <g class="wedge-group" id="w6">
                 <path class="wedge-glow" d="M 500 500 L 0 500 A 500 500 0 0 1 250 67 Z" />
                 <path class="wedge-plate" d="M 500 500 L 0 500 A 500 500 0 0 1 250 67 Z" fill="url(#copper-plate)" />
-                <image class="icon-carved" href="menu/scene.png" x="107.5" y="237.5" width="225" height="225" />
-                <image class="icon-glow" href="menu/scene1.png" x="107.5" y="237.5" width="225" height="225" />
+                <image class="icon-carved" href="menu/scene.png" xlink:href="menu/scene.png" x="107.5" y="237.5" width="225" height="225" />
+                <image class="icon-glow" href="menu/scene1.png" xlink:href="menu/scene1.png" x="107.5" y="237.5" width="225" height="225" />
             </g>
 
             <g id="center-hub">
                 <circle cx="500" cy="500" r="145" class="center-cap-base" fill="url(#center-patina)" stroke="#896b49" stroke-width="3" />
-                <image id="master-core-lightning" class="center-glow-overlay" href="menu/menudialglow.png" x="350" y="350" width="300" height="300" />
+                <image id="master-core-lightning" class="center-glow-overlay" href="menu/menudialglow.png" xlink:href="menu/menudialglow.png" x="350" y="350" width="300" height="300" />
             </g>
         </svg>
     </div>
@@ -267,9 +263,6 @@
     </div>
 
     <script>
-        /* ----------------------------------------------------
-           1. USER INTERACTION & AUDIO ENGINE
-           ---------------------------------------------------- */
         let audioEnabled = true;
         let audioCtx = null;
 
@@ -341,12 +334,8 @@
             });
         });
 
-        /* ----------------------------------------------------
-           2. MATH PARTICLES (Mist & Embers)
-           ---------------------------------------------------- */
         const canvas = document.getElementById('fx-canvas');
         const ctx = canvas.getContext('2d');
-        
         let width, height;
         let particles = [];
         
