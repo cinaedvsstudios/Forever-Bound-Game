@@ -18,12 +18,11 @@
             --neon-purple: #c300ff;
             --neon-purple-dim: rgba(195, 0, 255, 0.4);
             
-            /* Top UI and soft glow (new diffuse color) */
+            /* Top UI and soft glow */
             --blue-purple: #5d00ff;
             --blue-purple-dim: rgba(93, 0, 255, 0.4);
             
             --bg-dark: #070707;
-            --font-headers: 'Cinzel', Georgia, serif;
         }
 
         body, html {
@@ -140,7 +139,6 @@
             transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
-        /* Fixed the glow class matching the SVG */
         .wedge-glow {
             fill: var(--neon-purple);
             opacity: 0;
@@ -148,13 +146,11 @@
             transition: opacity 0.3s;
         }
 
-        /* 10% transparent normal base icon */
         .icon-carved {
-            opacity: 0.85;
+            opacity: 0.9;
             transition: opacity 0.3s;
         }
         
-        /* Bright screen blend mode for hover glow */
         .icon-glow {
             mix-blend-mode: screen;
             opacity: 0;
@@ -187,10 +183,8 @@
             filter: drop-shadow(0 10px 20px rgba(0,0,0,0.9));
         }
 
-        /* CSS Blur replaces the ugly SVG radial gradient */
+        /* Native SVG Glow Styling (Blur is now handled by SVG defs) */
         .soft-glow-circle {
-            fill: var(--neon-purple);
-            filter: blur(50px);
             opacity: 0;
             transition: opacity 0.3s ease-out;
             pointer-events: none;
@@ -200,7 +194,7 @@
             animation: pulseWedge 1s infinite alternate;
         }
 
-        /* Lightning surge layer (on top of cap) */
+        /* Lightning surge layer */
         .center-glow-overlay {
             mix-blend-mode: screen;
             opacity: 0;
@@ -222,10 +216,20 @@
     <div class="dial-container">
         <svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
             <defs>
-                <!-- Only the main copper plate pattern is needed here now -->
+                <!-- Master Copper Pattern -->
                 <pattern id="copper-plate" width="1000" height="1000" patternUnits="userSpaceOnUse">
                     <image href="menu/menudial.png" xlink:href="menu/menudial.png" width="1000" height="1000" />
                 </pattern>
+                
+                <!-- Center Cap Circular Masking Pattern -->
+                <pattern id="center-patina" width="300" height="300" patternUnits="userSpaceOnUse" x="350" y="350">
+                    <image href="menu/centerhub.png" xlink:href="menu/centerhub.png" width="300" height="300" preserveAspectRatio="xMidYMid slice" />
+                </pattern>
+
+                <!-- Flawless SVG Native Blur (Expanded boundaries stop it from clipping into a box) -->
+                <filter id="wide-glow" x="-100%" y="-100%" width="300%" height="300%">
+                    <feGaussianBlur stdDeviation="40" result="blur" />
+                </filter>
             </defs>
 
             <!-- WEDGE 1: ABOUT (Top) -->
@@ -276,13 +280,13 @@
                 <image class="icon-glow" href="menu/scene1.png" xlink:href="menu/scene1.png" x="107.5" y="237.5" width="225" height="225" />
             </g>
 
-            <!-- CENTER HUB CORE (Fixed Layering without patterns) -->
+            <!-- CENTER HUB CORE -->
             <g id="center-hub">
-                <!-- 1. Flawless wide CSS blur ambient glow (behind cap) -->
-                <circle cx="500" cy="500" r="160" class="soft-glow-circle" id="master-diffuse-glow" />
+                <!-- 1. Ambient wide soft glow (Using native SVG blur filter) -->
+                <circle cx="500" cy="500" r="160" fill="var(--neon-purple)" filter="url(#wide-glow)" class="soft-glow-circle" id="master-diffuse-glow" />
                 
-                <!-- 2. The solid bronze verdigris dome cap loaded directly as an image -->
-                <image class="center-cap-base" href="menu/centerhub.png" xlink:href="menu/centerhub.png" x="350" y="350" width="300" height="300" />
+                <!-- 2. The solid bronze verdigris dome cap, perfectly masked to be a round circle -->
+                <circle cx="500" cy="500" r="145" class="center-cap-base" fill="url(#center-patina)" stroke="#896b49" stroke-width="3" />
                 
                 <!-- 3. The purple electrical lightning pulse (on top of the cap, screen blend) -->
                 <image id="master-core-lightning" class="center-glow-overlay" href="menu/menudialglow.png" xlink:href="menu/menudialglow.png" x="350" y="350" width="300" height="300" />
@@ -306,10 +310,9 @@
     <script>
         let audioEnabled = true;
         let audioCtx = null;
-        let audioUnlocked = false; // Tracks if the browser has permitted sound yet
+        let audioUnlocked = false; 
 
-        // Modern browsers block sound until the user clicks somewhere on the page.
-        // This listener unlocks the audio context on their first click anywhere.
+        // Unlocks web audio instantly on the first physical click anywhere on the page
         document.body.addEventListener('click', () => {
             if (!audioUnlocked && audioEnabled) {
                 initAudio();
@@ -327,7 +330,6 @@
             btn.style.boxShadow = audioEnabled ? "" : "none";
             btn.style.animation = audioEnabled ? "breatheAudio 3s infinite alternate" : "none";
             
-            // If turning audio on, ensure context is initialized and resumed
             if (audioEnabled) {
                 initAudio();
                 if (audioCtx && audioCtx.state === 'suspended') {
@@ -381,7 +383,6 @@
                 const standardGlow = wedge.querySelector('.wedge-glow');
                 if (standardGlow) standardGlow.style.opacity = '0.85';
                 
-                // Ignite both the ambient blur under the cap and the lightning on top
                 centralDiffuseGlow.classList.add('ignite');
                 centerLightning.classList.add('ignite');
                 
