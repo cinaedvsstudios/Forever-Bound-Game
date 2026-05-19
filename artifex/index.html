@@ -218,7 +218,7 @@
             <defs>
                 <!-- Master Copper Pattern -->
                 <pattern id="copper-plate" width="1000" height="1000" patternUnits="userSpaceOnUse">
-                    <image href="menu/menudial.png" xlink:href="menu/menudial.png" width="1000" height="1000" />
+                    <image href="menu/artifexlogo.png" xlink:href="menu/artifexlogo.png" width="1000" height="1000" />
                 </pattern>
                 
                 <!-- Center Cap Circular Masking Pattern -->
@@ -381,7 +381,7 @@
         wedges.forEach(wedge => {
             wedge.addEventListener('mouseenter', () => {
                 const standardGlow = wedge.querySelector('.wedge-glow');
-                if (standardGlow) standardGlow.style.opacity = '0.85';
+                if (standardGlow) standardGlow.style.opacity = '0.75';
                 
                 centralDiffuseGlow.classList.add('ignite');
                 centerLightning.classList.add('ignite');
