@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artifex Engine Workspace</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* ==========================================================
+           1. MASTER CSS VARIABLES & ENVIRONMENT
+           ========================================================== */
+        :root {
+            --neon-purple: #c300ff;
+            --neon-purple-dim: rgba(195, 0, 255, 0.4);
+            --bg-dark: #070707;
+            --font-headers: 'Cinzel', Georgia, serif;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: var(--bg-dark);
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+
+        /* Ambient Background Image */
+        .ambient-background {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: url('menu/menubackground.jpg');
+            background-size: cover;
+            background-position: center bottom;
+            z-index: 1;
+        }
+
+        /* FX Canvas for Math Fire & Mist */
+        #fx-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 2;
+            pointer-events: none; /* Let clicks pass through */
+        }
+
+        /* ==========================================================
+           2. TOP UI OVERLAYS (BRANDING & AUDIO)
+           ========================================================== */
+        .top-ui-layer {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            padding: 30px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 100;
+            pointer-events: none; /* Only children are clickable */
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            pointer-events: auto;
+        }
+
+        .brand-crest {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: 2px solid #896b49;
+            box-shadow: 0 0 15px rgba(0,0,0,0.8);
+            background-image: url('menu/artifexlogo.jpg');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .brand-title {
+            height: 28px;
+        }
+
+        .audio-toggle-btn {
+            background: rgba(10, 11, 10, 0.85);
+            border: 1px solid #896b49;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: all 0.3s;
+            box-shadow: 0 0 20px var(--neon-purple-dim);
+            animation: breatheAudio 3s infinite alternate;
+        }
+
+        .audio-toggle-btn:hover {
+            box-shadow: 0 0 30px var(--neon-purple);
+            transform: scale(1.1);
+        }
+
+        @keyframes breatheAudio {
+            0% { box-shadow: 0 0 10px var(--neon-purple-dim); }
+            100% { box-shadow: 0 0 25px var(--neon-purple); }
+        }
+
+        /* ==========================================================
+           3. RADIAL MENU MECHANISM (THE SANDWICH)
+           ========================================================== */
+        .dial-container {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            max-width: 850px; /* Scales dynamically on smaller screens */
+            aspect-ratio: 1/1;
+            z-index: 10;
+            filter: drop-shadow(0 20px 40px rgba(0,0,0,0.9));
+        }
+
+        svg {
+            width: 100%; height: 100%;
+            overflow: visible;
+        }
+
+        /* Wedge Math Vectors */
+        .wedge-group {
+            cursor: pointer;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Invisible glow path sitting behind the copper */
+        .wedge-glow {
+            fill: var(--neon-purple);
+            opacity: 0;
+            filter: drop-shadow(0 0 20px var(--neon-purple));
+            transition: opacity 0.3s;
+        }
+
+        /* Icon blend layers */
+        .icon-carved {
+            mix-blend-mode: multiply;
+            opacity: 1;
+            transition: opacity 0.3s;
+        }
+        .icon-glow {
+            mix-blend-mode: screen;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        /* HOVER STATES */
+        .wedge-group.active .wedge-glow {
+            opacity: 0.85;
+            animation: pulseWedge 1s infinite alternate;
+        }
+        .wedge-group.active .icon-carved { opacity: 0; }
+        .wedge-group.active .icon-glow { opacity: 1; }
+
+        /* Directional Bloat Shifting */
+        .wedge-group.active#w1 { transform: translate(0px, -18px); }
+        .wedge-group.active#w2 { transform: translate(16px, -9px); }
+        .wedge-group.active#w3 { transform: translate(16px, 9px); }
+        .wedge-group.active#w4 { transform: translate(0px, 18px); }
+        .wedge-group.active#w5 { transform: translate(-16px, 9px); }
+        .wedge-group.active#w6 { transform: translate(-16px, -9px); }
+
+        @keyframes pulseWedge {
+            0% { filter: drop-shadow(0 0 15px var(--neon-purple)); opacity: 0.7; }
+            100% { filter: drop-shadow(0 0 35px var(--neon-purple)); opacity: 1; }
+        }
+
+        /* CENTER HUB OVERLAYS */
+        .center-cap-base {
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.9));
+        }
+        .center-glow-overlay {
+            mix-blend-mode: screen;
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+            pointer-events: none;
+        }
+        .center-glow-overlay.ignite {
+            opacity: 1;
+            animation: pulseWedge 1s infinite alternate;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="ambient-background"></div>
+
+    <canvas id="fx-canvas"></canvas>
+
+    <div class="dial-container">
+        <svg viewBox="0 0 1000 1000">
+            <defs>
+                <pattern id="copper-plate" width="1000" height="1000" patternUnits="userSpaceOnUse">
+                    <image href="menu/menudial.jpg" width="1000" height="1000" />
+                </pattern>
+                
+                <pattern id="center-patina" width="300" height="300" patternUnits="userSpaceOnUse" x="350" y="350">
+                    <image href="menu/artifexlogo.jpg" width="300" height="300" preserveAspectRatio="xMidYMid slice" />
+                </pattern>
+            </defs>
+
+            <g class="wedge-group" id="w1">
+                <path class="wedge-glow" d="M 500 500 L 250 67 A 500 500 0 0 1 750 67 Z" />
+                <path class="wedge-plate" d="M 500 500 L 250 67 A 500 500 0 0 1 750 67 Z" fill="url(#copper-plate)" />
+                <image class="icon-carved" href="menu/about.png" x="0" y="0" width="1000" height="1000" />
+                <image class="icon-glow" href="menu/about1.png" x="0" y="0" width="1000" height="1000" />
+            </g>
+
+            <g class="wedge-group" id="w2">
+                <path class="wedge-glow" d="M 500 500 L 750 67 A 500 500 0 0 1 1000 500 Z" />
+                <path class="wedge-plate" d="M 500 500 L 750 67 A 500 500 0 0 1 1000 500 Z" fill="url(#copper-plate)" />
+                <image class="icon-carved" href="menu/help.png" x="0" y="0" width="1000" height="1000" />
+                <image class="icon-glow" href="menu/help1.png" x="0" y="0" width="1000" height="1000" />
+            </g>
+
+            <g class="wedge-group" id="w3">
+                <path class="wedge-glow" d="M 500 500 L 1000 500 A 500 500 0 0 1 750 933 Z" />
+                <path class="wedge-plate" d="M 500 500 L 1000 500 A 500 500 0 0 1 750 933 Z" fill="url(#copper-plate)" />
+                <image class="icon-carved" href="menu/cinaedvs.png" x="0" y="0" width="1000" height="1000" />
+                <image class="icon-glow" href="menu/cinaedvs1.png" x="0" y="0" width="1000" height="1000" />
+            </g>
+
+            <g class="wedge-group" id="w4">
+                <path class="wedge-glow" d="M 500 500 L 750 933 A 500 500 0 0 1 250 933 Z" />
+                <path class="wedge-plate" d="M 500 500 L 750 933 A 500 500 0 0 1 250 933 Z" fill="url(#copper-plate)" />
+                <image class="icon-carved" href="menu/settings.png" x="0" y="0" width="1000" height="1000" />
+                <image class="icon-glow" href="menu/settings1.png" x="0" y="0" width="1000" height="1000" />
+            </g>
+
+            <g class="wedge-group" id="w5">
+                <path class="wedge-glow" d="M 500 500 L 250 933 A 500 500 0 0 1 0 500 Z" />
+                <path class="wedge-plate" d="M 500 500 L 250 933 A 500 500 0 0 1 0 500 Z" fill="url(#copper-plate)" />
+                <image class="icon-carved" href="menu/font.png" x="0" y="0" width="1000" height="1000" />
+                <image class="icon-glow" href="menu/font1.png" x="0" y="0" width="1000" height="1000" />
+            </g>
+
+            <g class="wedge-group" id="w6">
+                <path class="wedge-glow" d="M 500 500 L 0 500 A 500 500 0 0 1 250 67 Z" />
+                <path class="wedge-plate" d="M 500 500 L 0 500 A 500 500 0 0 1 250 67 Z" fill="url(#copper-plate)" />
+                <image class="icon-carved" href="menu/scene.png" x="0" y="0" width="1000" height="1000" />
+                <image class="icon-glow" href="menu/scene1.png" x="0" y="0" width="1000" height="1000" />
+            </g>
+
+            <g id="center-hub">
+                <circle cx="500" cy="500" r="145" class="center-cap-base" fill="url(#center-patina)" stroke="#896b49" stroke-width="3" />
+                <image id="master-core-lightning" class="center-glow-overlay" href="menu/menudialglow.png" x="350" y="350" width="300" height="300" />
+            </g>
+        </svg>
+    </div>
+
+    <div class="top-ui-layer">
+        <div class="brand-container">
+            <div class="brand-crest"></div>
+            <img class="brand-title" src="menu/artifextitle.jpg" alt="Artifex" onerror="this.style.display='none'">
+        </div>
+        
+        <div class="audio-toggle-btn" id="audio-btn" onclick="toggleAudio()" title="Mute Tactical Audio">
+            🔊
+        </div>
+    </div>
+
+    <script>
+        /* ----------------------------------------------------
+           1. USER INTERACTION & AUDIO ENGINE
+           ---------------------------------------------------- */
+        let audioEnabled = true;
+        let audioCtx = null;
+
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            const btn = document.getElementById('audio-btn');
+            btn.innerHTML = audioEnabled ? "🔊" : "🔇";
+            btn.style.boxShadow = audioEnabled ? "" : "none";
+            btn.style.animation = audioEnabled ? "breatheAudio 3s infinite alternate" : "none";
+            if(audioEnabled) playTone('surge');
+        }
+
+        function initAudio() {
+            if (!audioCtx && audioEnabled) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        // Procedural Synth Sound Effects
+        function playTone(type) {
+            if (!audioEnabled) return;
+            initAudio();
+            if(!audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'hover') {
+                // Low, throbbing magical lock click
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(60, now + 0.1);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now); osc.stop(now + 0.2);
+            } else if (type === 'surge') {
+                // Electric bright ignite sound
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.2);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now); osc.stop(now + 0.3);
+            }
+        }
+
+        // Wire Hover Events
+        const wedges = document.querySelectorAll('.wedge-group');
+        const centerLightning = document.getElementById('master-core-lightning');
+
+        wedges.forEach(wedge => {
+            wedge.addEventListener('mouseenter', () => {
+                wedge.classList.add('active');
+                centerLightning.classList.add('ignite'); // Ignites the purple screen layer
+                playTone('hover');
+            });
+            
+            wedge.addEventListener('mouseleave', () => {
+                wedge.classList.remove('active');
+                // Check if any wedges are still active before turning off center
+                if(!document.querySelector('.wedge-group.active')) {
+                    centerLightning.classList.remove('ignite');
+                }
+            });
+
+            wedge.addEventListener('click', () => {
+                playTone('surge');
+                console.log(`Action Executed: ${wedge.id} Module`);
+                // Add your window.location redirects or iframe loads here
+            });
+        });
+
+        /* ----------------------------------------------------
+           2. MATHEMATICAL MIST & FIRE PARTICLE ENGINE
+           ---------------------------------------------------- */
+        const canvas = document.getElementById('fx-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let particles = [];
+        
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor(type) {
+                this.type = type; // 'mist' or 'fire'
+                this.reset(true);
+            }
+
+            reset(initial = false) {
+                if (this.type === 'mist') {
+                    // Start mist anywhere on screen initially, otherwise spawn off-screen left
+                    this.x = initial ? Math.random() * width : -100;
+                    this.y = (height * 0.5) + (Math.random() * height * 0.5); // Stays lower to the ground
+                    this.size = Math.random() * 150 + 100;
+                    this.speedX = Math.random() * 0.5 + 0.2;
+                    this.speedY = (Math.random() - 0.5) * 0.1;
+                    this.life = Math.random();
+                    this.maxLife = 1;
+                    this.opacity = Math.random() * 0.15 + 0.05;
+                } else if (this.type === 'fire') {
+                    // Embers spawn in lower quarters (simulating wall torches)
+                    const side = Math.random() > 0.5 ? (width * 0.15) : (width * 0.85);
+                    this.x = side + (Math.random() * 150 - 75);
+                    this.y = height * 0.8 + (Math.random() * 100);
+                    this.size = Math.random() * 4 + 1;
+                    this.speedX = (Math.random() - 0.5) * 1.5;
+                    this.speedY = Math.random() * -3 - 1;
+                    this.life = 0;
+                    this.maxLife = Math.random() * 100 + 50;
+                }
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (this.type === 'mist') {
+                    if (this.x > width + 200) this.reset();
+                } else if (this.type === 'fire') {
+                    this.x += Math.sin(this.life * 0.1) * 1.5; // Wobble rising heat
+                    this.life++;
+                    if (this.life > this.maxLife || this.y < 0) this.reset();
+                }
+            }
+
+            draw() {
+                if (this.type === 'mist') {
+                    ctx.globalCompositeOperation = 'screen';
+                    const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+                    gradient.addColorStop(0, `rgba(200, 210, 230, ${this.opacity})`);
+                    gradient.addColorStop(1, 'rgba(200, 210, 230, 0)');
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (this.type === 'fire') {
+                    ctx.globalCompositeOperation = 'lighter';
+                    const progress = this.life / this.maxLife;
+                    
+                    // Colors shift from bright yellow to deep red as it rises
+                    let r = 255;
+                    let g = 255 - (progress * 255);
+                    let b = 50 - (progress * 50);
+                    let a = 1 - progress;
+
+                    const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 2);
+                    gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${a})`);
+                    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size * 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // Initialize particle arrays
+        for (let i = 0; i < 40; i++) particles.push(new Particle('mist'));
+        for (let i = 0; i < 60; i++) particles.push(new Particle('fire'));
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            
+            // Draw localized ambient torch glow flickers over background
+            ctx.globalCompositeOperation = 'screen';
+            const flicker = Math.sin(Date.now() * 0.005) * 0.05 + 0.15;
+            
+            const drawAmbientTorch = (xPos) => {
+                const grad = ctx.createRadialGradient(xPos, height*0.7, 0, xPos, height*0.7, 400);
+                grad.addColorStop(0, `rgba(255, 120, 20, ${flicker})`);
+                grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+            };
+            drawAmbientTorch(width * 0.15);
+            drawAmbientTorch(width * 0.85);
+
+            // Animate moving math entities
+            particles.forEach(p => { p.update(); p.draw(); });
+            
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+</body>
+</html>
