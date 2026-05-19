@@ -33,7 +33,7 @@
         .ambient-background {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background-image: url('menu/menubackground.jpg');
+            background-image: url('menu/menubackground.jpg'); /* The only JPG */
             background-size: cover;
             background-position: center bottom;
             z-index: 1;
@@ -48,7 +48,7 @@
         }
 
         /* ==========================================================
-           2. TOP UI OVERLAYS
+           2. TOP UI OVERLAYS (SCALED UP 25%)
            ========================================================== */
         .top-ui-layer {
             position: absolute;
@@ -64,21 +64,21 @@
         .brand-container {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 18px;
             pointer-events: auto;
         }
 
         .brand-crest {
-            width: 56px;
-            height: 56px;
+            width: 70px; /* SCALED UP 25% */
+            height: 70px; /* SCALED UP 25% */
             border-radius: 50%;
             border: 2px solid #896b49;
-            box-shadow: 0 0 15px rgba(0,0,0,0.8);
+            box-shadow: 0 0 18px rgba(0,0,0,0.8);
             object-fit: cover;
         }
 
         .brand-title {
-            height: 32px;
+            height: 40px; /* SCALED UP 25% */
             object-fit: contain;
         }
 
@@ -140,8 +140,9 @@
             transition: opacity 0.3s;
         }
 
+        /* ICONS RENDER AT 100% NORMAL BRIGHTNESS/BLEND MODE */
         .icon-carved {
-            opacity: 1;
+            opacity: 1; 
             transition: opacity 0.3s;
         }
         
@@ -197,8 +198,9 @@
                 <pattern id="copper-plate" width="1000" height="1000" patternUnits="userSpaceOnUse">
                     <image href="menu/menudial.png" xlink:href="menu/menudial.png" width="1000" height="1000" />
                 </pattern>
+                
                 <pattern id="center-patina" width="300" height="300" patternUnits="userSpaceOnUse" x="350" y="350">
-                    <image href="menu/centerhub.png" xlink:href="menu/centerhub.png" width="300" height="300" preserveAspectRatio="xMidYMid slice" />
+                    <image href="menu/artifexlogo.png" xlink:href="menu/artifexlogo.png" width="300" height="300" />
                 </pattern>
             </defs>
 
