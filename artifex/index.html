@@ -18,12 +18,11 @@
             --neon-purple: #c300ff;
             --neon-purple-dim: rgba(195, 0, 255, 0.4);
             
-            /* Top UI and soft glow (new diffuse color) */
+            /* Top UI and soft glow */
             --blue-purple: #5d00ff;
             --blue-purple-dim: rgba(93, 0, 255, 0.4);
             
             --bg-dark: #070707;
-            --font-headers: 'Cinzel', Georgia, serif;
         }
 
         body, html {
@@ -37,7 +36,6 @@
             user-select: none;
         }
 
-        /* Ambient Background (Wallpaper from JPG, from memory) */
         .ambient-background {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -47,13 +45,12 @@
             z-index: 1;
         }
 
-        /* FX Canvas for Math Fire & Mist (from previous turn) */
         #fx-canvas {
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
             z-index: 2;
-            pointer-events: none; /* Let clicks pass through */
+            pointer-events: none;
         }
 
         /* ==========================================================
@@ -67,7 +64,7 @@
             justify-content: space-between;
             align-items: flex-start;
             z-index: 100;
-            pointer-events: none; /* Only children are clickable */
+            pointer-events: none;
         }
 
         .brand-container {
@@ -78,19 +75,17 @@
         }
 
         .brand-crest {
-            width: 70px; /* SCALED UP 25% */
-            height: 70px; /* SCALED UP 25% */
-            border-radius: 50%;
-            border: none; /* BORDER REMOVED */
-            /* Blue-purple shadow/glow */
-            box-shadow: 0 0 20px var(--blue-purple);
-            object-fit: cover;
+            width: 70px;
+            height: auto; /* Allows natural scaling of your PNG */
+            /* Removed circular masking completely */
+            /* Drop shadow hugs the actual shape of your PNG pixels instead of making a box */
+            filter: drop-shadow(0 0 15px var(--blue-purple));
+            object-fit: contain;
         }
 
         .brand-title {
-            height: 40px; /* SCALED UP 25% */
+            height: 40px;
             object-fit: contain;
-            /* Blue-purple drop-shadow for transparent PNG text */
             filter: drop-shadow(0 0 15px var(--blue-purple));
         }
 
@@ -107,19 +102,16 @@
             cursor: pointer;
             pointer-events: auto;
             transition: all 0.3s;
-            /* Initial glow (blue-purple dim) */
             box-shadow: 0 0 20px var(--blue-purple-dim);
             animation: breatheAudio 3s infinite alternate;
         }
 
         .audio-toggle-btn:hover {
-            /* Intense glow on hover (blue-purple) */
             box-shadow: 0 0 30px var(--blue-purple);
             transform: scale(1.1);
         }
 
         @keyframes breatheAudio {
-            /* Updated to blue-purple */
             0% { box-shadow: 0 0 10px var(--blue-purple-dim); }
             100% { box-shadow: 0 0 25px var(--blue-purple); }
         }
@@ -132,7 +124,7 @@
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             width: 100%;
-            max-width: 600px; /* SCALED DOWN 30% from original 850px */
+            max-width: 600px;
             aspect-ratio: 1/1;
             z-index: 10;
             filter: drop-shadow(0 20px 40px rgba(0,0,0,0.9));
@@ -143,48 +135,41 @@
             overflow: visible;
         }
 
-        /* Wedge Math Vectors & Hover Handling */
         .wedge-group {
             cursor: pointer;
             transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
-        /* Standard directional electric discharge pattern (under the central cap) */
         .electrical-wedges {
             fill: var(--neon-purple);
-            opacity: 0.15; /* Subtly integrated */
+            opacity: 0.15;
         }
 
-        /* Standard directional bands of light (like menudialglow.png) */
         .wedge-lighting {
-            fill: url(#menudialglow); /* Standard lighting band pattern */
+            fill: url(#menudialglow);
             opacity: 0;
             transition: opacity 0.3s;
         }
 
-        /* Carved Icon base (multiply blend mode) */
+        /* ICONS FIXED: Multiply is gone. Set back to 10% transparent (0.9) */
         .icon-carved {
-            mix-blend-mode: multiply;
-            opacity: 1; /* Standard visibility */
+            opacity: 0.9;
             transition: opacity 0.3s;
         }
         
-        /* Neon Icon overlay (screen blend mode) */
         .icon-glow {
             mix-blend-mode: screen;
             opacity: 0;
             transition: opacity 0.3s;
         }
 
-        /* HOVER STATES */
         .wedge-group:hover .wedge-lighting {
-            opacity: 0.85; /* Activate directional band of light */
+            opacity: 0.85; 
             animation: pulseWedge 1s infinite alternate;
         }
-        .wedge-group:hover .icon-carved { opacity: 0.8; }
+        .wedge-group:hover .icon-carved { opacity: 0; }
         .wedge-group:hover .icon-glow { opacity: 1; }
 
-        /* Directional Bloat Shifting (scaled down for smaller max-width) */
         .wedge-group:hover#w1 { transform: translate(0px, -18px); }
         .wedge-group:hover#w2 { transform: translate(16px, -9px); }
         .wedge-group:hover#w3 { transform: translate(16px, 9px); }
@@ -197,21 +182,18 @@
             100% { filter: drop-shadow(0 0 35px var(--neon-purple)); opacity: 1; }
         }
 
-        /* CENTER HUB GROUPING OVERLAYS */
         .center-cap-base {
             filter: drop-shadow(0 10px 20px rgba(0,0,0,0.9));
         }
 
-        /* Diffuse Radial Glow Circle (Soft and Spread Wide, over button) */
         .soft-glow-circle {
             opacity: 0;
             transition: opacity 0.3s ease-out;
             pointer-events: none;
-            /* Diffuse glow wraps wide around the central hub */
             fill: url(#soft-glow-gradient);
         }
         .soft-glow-circle.ignite {
-            opacity: 0.85; /* Activate diffuse glow on hover */
+            opacity: 0.85;
             animation: pulseWedge 1s infinite alternate;
         }
 
@@ -220,7 +202,6 @@
 <body>
 
     <div class="ambient-background"></div>
-
     <canvas id="fx-canvas"></canvas>
 
     <div class="dial-container">
@@ -233,11 +214,11 @@
                 <image id="menudialglow" href="menu/menudialglow.png" xlink:href="menu/menudialglow.png" x="0" y="0" width="300" height="300" />
 
                 <radialGradient id="soft-glow-gradient" cx="500" cy="500" r="300" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" style="stop-color:white; stop-opacity:1;" />
-                    <stop offset="10%" style="stop-color:white; stop-opacity:0.5;" />
-                    <stop offset="30%" style="stop-color:white; stop-opacity:0.2;" />
-                    <stop offset="70%" style="stop-color:white; stop-opacity:0.1;" />
-                    <stop offset="100%" style="stop-color:white; stop-opacity:0;" />
+                    <stop offset="0%" style="stop-color:var(--neon-purple); stop-opacity:1;" />
+                    <stop offset="10%" style="stop-color:var(--neon-purple); stop-opacity:0.5;" />
+                    <stop offset="30%" style="stop-color:var(--neon-purple); stop-opacity:0.2;" />
+                    <stop offset="70%" style="stop-color:var(--neon-purple); stop-opacity:0.1;" />
+                    <stop offset="100%" style="stop-color:var(--neon-purple); stop-opacity:0;" />
                 </radialGradient>
 
                 <pattern id="pattern1" width="300" height="300" patternUnits="userSpaceOnUse" x="350" y="350">
@@ -245,7 +226,7 @@
                 </pattern>
 
                 <pattern id="t-symbol-cap" width="300" height="300" patternUnits="userSpaceOnUse" x="350" y="350">
-                    <image href="menu/radial-cap.png" xlink:href="menu/radial-cap.png" width="300" height="300" />
+                    <image href="menu/centerhub.png" xlink:href="menu/centerhub.png" width="300" height="300" />
                 </pattern>
             </defs>
 
@@ -293,11 +274,8 @@
 
             <g id="center-hub">
                 <circle cx="500" cy="500" r="145" class="center-cap-base" fill="#896b49" stroke="#896b49" stroke-width="3" />
-                
                 <rect x="350" y="350" width="300" height="300" fill="url(#pattern1)" class="electrical-wedges" />
-                
                 <circle cx="500" cy="500" r="300" class="soft-glow-circle" id="master-diffuse-glow" />
-                
                 <rect x="350" y="350" width="300" height="300" fill="url(#t-symbol-cap)" stroke="#896b49" stroke-width="3" />
             </g>
         </svg>
@@ -315,9 +293,6 @@
     </div>
 
     <script>
-        /* ----------------------------------------------------
-           1. USER INTERACTION & AUDIO ENGINE (from previous turn)
-           ---------------------------------------------------- */
         let audioEnabled = true;
         let audioCtx = null;
 
@@ -350,7 +325,6 @@
             const now = audioCtx.currentTime;
 
             if (type === 'hover') {
-                // Low, throbbing magical lock click
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(150, now);
                 osc.frequency.exponentialRampToValueAtTime(60, now + 0.1);
@@ -358,7 +332,6 @@
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
                 osc.start(now); osc.stop(now + 0.2);
             } else if (type === 'surge') {
-                // Electric bright ignite sound
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(800, now);
                 osc.frequency.exponentialRampToValueAtTime(1200, now + 0.2);
@@ -373,10 +346,8 @@
 
         wedges.forEach(wedge => {
             wedge.addEventListener('mouseenter', () => {
-                // Activate both the standard wedge glow...
                 const standardGlow = wedge.querySelector('.wedge-glow-path');
                 if (standardGlow) standardGlow.setAttribute('opacity', '0.85');
-                // ...and the diffuse central glow.
                 centralDiffuseGlow.classList.add('ignite');
                 playTone('hover');
             });
@@ -384,7 +355,6 @@
             wedge.addEventListener('mouseleave', () => {
                 const standardGlow = wedge.querySelector('.wedge-glow-path');
                 if (standardGlow) standardGlow.setAttribute('opacity', '0');
-                // If any wedges are still active before turning off center
                 if(!document.querySelector('.wedge-group:hover')) {
                     centralDiffuseGlow.classList.remove('ignite');
                 }
@@ -396,12 +366,8 @@
             });
         });
 
-        /* ----------------------------------------------------
-           2. MATHEMATICAL PARTICLE ENGINES (Mist & Embers) (from previous turn)
-           ---------------------------------------------------- */
         const canvas = document.getElementById('fx-canvas');
         const ctx = canvas.getContext('2d');
-        
         let width, height;
         let particles = [];
         
@@ -416,33 +382,27 @@
 
         class Particle {
             constructor(type) {
-                this.type = type; // 'mist' or 'fire'
+                this.type = type; 
                 this.reset(true);
             }
 
             reset(initial = false) {
                 if (this.type === 'mist') {
-                    // Start mist anywhere on screen initially, otherwise spawn off-screen left
                     this.x = initial ? Math.random() * width : -150;
-                    this.y = (height * 0.4) + (Math.random() * height * 0.6); // Lower quarters
+                    this.y = (height * 0.4) + (Math.random() * height * 0.6); 
                     this.size = Math.random() * 150 + 100;
-                    // MIST IS NOW 3x FASTER (based on Turn 18 feedback)
                     this.speedX = Math.random() * 1.5 + 0.8; 
                     this.speedY = (Math.random() - 0.5) * 0.1;
-                    this.life = Math.random();
-                    this.maxLife = 1;
                     this.opacity = Math.random() * 0.15 + 0.05;
                 } else if (this.type === 'fire') {
-                    // Embers spawn in lower quarters (simulating wall torches)
                     const side = Math.random() > 0.5 ? (width * 0.15) : (width * 0.85);
                     this.x = side + (Math.random() * 150 - 75);
-                    // EMBERS SPAWN AT THE ABSOLUTE BOTTOM (based on Turn 18 feedback)
                     this.y = height + (Math.random() * 50); 
-                    this.size = Math.random() * 2.5 + 0.5; // SMALLER sparks
+                    this.size = Math.random() * 2.5 + 0.5; 
                     this.speedX = (Math.random() - 0.5) * 1.5;
-                    this.speedY = Math.random() * -2.5 - 1; // Rise steadily upwards
+                    this.speedY = Math.random() * -2.5 - 1; 
                     this.life = 0;
-                    this.maxLife = Math.random() * 150 + 100; // Live a bit longer
+                    this.maxLife = Math.random() * 150 + 100; 
                 }
             }
 
@@ -453,7 +413,7 @@
                 if (this.type === 'mist') {
                     if (this.x > width + 200) this.reset();
                 } else if (this.type === 'fire') {
-                    this.x += Math.sin(this.life * 0.05) * 1.0; // Wobble rising heat currents
+                    this.x += Math.sin(this.life * 0.05) * 1.0; 
                     this.life++;
                     if (this.life > this.maxLife || this.y < -50) this.reset();
                 }
@@ -473,7 +433,6 @@
                     ctx.globalCompositeOperation = 'lighter';
                     const progress = this.life / this.maxLife;
                     
-                    // Colors shift from bright yellow to deep red as it rises
                     let r = 255;
                     let g = 255 - (progress * 255);
                     let b = 50 - (progress * 50);
@@ -490,15 +449,12 @@
             }
         }
 
-        // Initialize particle arrays
         for (let i = 0; i < 40; i++) particles.push(new Particle('mist'));
-        for (let i = 0; i < 100; i++) particles.push(new Particle('fire')); // 100 sparks
+        for (let i = 0; i < 100; i++) particles.push(new Particle('fire')); 
 
         function animate() {
             ctx.clearRect(0, 0, width, height);
             
-            // Draw localized ambient torch glow flickers over background
-            // Ambient glow along bottom floor (replaces simple linear gradient)
             ctx.globalCompositeOperation = 'screen';
             const flicker = Math.sin(Date.now() * 0.005) * 0.05 + 0.15;
             
@@ -508,7 +464,6 @@
             ctx.fillStyle = floorGrad;
             ctx.fillRect(0, 0, width, height);
 
-            // Animate moving math entities
             particles.forEach(p => { p.update(); p.draw(); });
             
             requestAnimationFrame(animate);
