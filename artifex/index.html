@@ -13,12 +13,17 @@
         /* ==========================================================
            1. MASTER CSS VARIABLES & ENVIRONMENT
            ========================================================== */
+
+ 
+ /* ================== glow  =================== */
+
+
         :root {
-            /* Dial Colors (Untouched) */
+            /* Dial Colors */
             --neon-purple: #c300ff;
             --neon-purple-dim: rgba(195, 0, 255, 0.4);
             
-            /* Top UI Colors (New bluish-purple) */
+            /* Top UI Colors */
             --blue-purple: #5d00ff;
             --blue-purple-dim: rgba(93, 0, 255, 0.4);
             
@@ -79,7 +84,6 @@
             height: 70px;
             border-radius: 50%;
             border: none;
-            /* Added deep blue-purple shadow */
             box-shadow: 0 0 20px var(--blue-purple);
             object-fit: cover;
         }
@@ -87,7 +91,6 @@
         .brand-title {
             height: 40px;
             object-fit: contain;
-            /* Drop-shadow wraps the edges of the transparent PNG text */
             filter: drop-shadow(0 0 15px var(--blue-purple));
         }
 
@@ -104,19 +107,16 @@
             cursor: pointer;
             pointer-events: auto;
             transition: all 0.3s;
-            /* Updated to blue-purple */
             box-shadow: 0 0 20px var(--blue-purple-dim);
             animation: breatheAudio 3s infinite alternate;
         }
 
         .audio-toggle-btn:hover {
-            /* Updated to blue-purple */
             box-shadow: 0 0 30px var(--blue-purple);
             transform: scale(1.1);
         }
 
         @keyframes breatheAudio {
-            /* Updated to blue-purple */
             0% { box-shadow: 0 0 10px var(--blue-purple-dim); }
             100% { box-shadow: 0 0 25px var(--blue-purple); }
         }
@@ -145,6 +145,10 @@
             transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
+
+ /* ===============  ICONS OPACITY   ======================  */
+
+
         .wedge-glow {
             fill: var(--neon-purple);
             opacity: 0;
@@ -152,8 +156,9 @@
             transition: opacity 0.3s;
         }
 
+        /* Set to 10% transparent (0.9 opacity) */
         .icon-carved {
-            opacity: 1; 
+            opacity: 0.9; 
             transition: opacity 0.3s;
         }
         
