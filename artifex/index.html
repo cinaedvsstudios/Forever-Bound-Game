@@ -10,9 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 
     <style>
-        /* ==========================================================
-           1. MASTER CSS VARIABLES & ENVIRONMENT
-           ========================================================== */
         :root {
             --neon-purple: #c300ff;
             --neon-purple-dim: rgba(195, 0, 255, 0.4);
@@ -49,9 +46,6 @@
             pointer-events: none;
         }
 
-        /* ==========================================================
-           2. TOP UI OVERLAYS (BRANDING & AUDIO)
-           ========================================================== */
         .top-ui-layer {
             position: absolute;
             top: 0; left: 0; right: 0;
@@ -111,9 +105,6 @@
             100% { box-shadow: 0 0 25px var(--blue-purple); }
         }
 
-        /* ==========================================================
-           3. RADIAL MENU MECHANISM
-           ========================================================== */
         .dial-container {
             position: absolute;
             top: 50%; left: 50%;
@@ -172,9 +163,6 @@
             100% { filter: drop-shadow(0 0 35px var(--neon-purple)); opacity: 1; }
         }
 
-        /* ==========================================================
-           4. CENTER HUB STYLES
-           ========================================================== */
         .center-cap-base {
             filter: drop-shadow(0 10px 20px rgba(0,0,0,0.9));
         }
@@ -200,9 +188,6 @@
             animation: pulseWedge 1s infinite alternate;
         }
 
-        /* ==========================================================
-           5. PORTAL ACTION PANELS
-           ========================================================== */
         .portal-panel-backdrop {
             position: fixed;
             inset: 0;
@@ -222,13 +207,10 @@
         .portal-panel {
             width: min(560px, calc(100vw - 48px));
             color: #f7dfbd;
-            background:
-                linear-gradient(180deg, rgba(46, 22, 12, 0.96), rgba(9, 5, 8, 0.96));
+            background: linear-gradient(180deg, rgba(46, 22, 12, 0.96), rgba(9, 5, 8, 0.96));
             border: 1px solid #a86c36;
             border-radius: 22px;
-            box-shadow:
-                0 0 30px rgba(195, 0, 255, 0.32),
-                inset 0 0 18px rgba(255, 180, 91, 0.08);
+            box-shadow: 0 0 30px rgba(195, 0, 255, 0.32), inset 0 0 18px rgba(255, 180, 91, 0.08);
             padding: 26px;
             position: relative;
             text-align: left;
@@ -300,23 +282,10 @@
         }
 
         @media (max-width: 760px) {
-            .top-ui-layer {
-                padding: 18px;
-            }
-
-            .brand-crest {
-                width: 48px;
-            }
-
-            .brand-title {
-                height: 28px;
-            }
-
-            .audio-toggle-btn {
-                width: 44px;
-                height: 44px;
-                font-size: 20px;
-            }
+            .top-ui-layer { padding: 18px; }
+            .brand-crest { width: 48px; }
+            .brand-title { height: 28px; }
+            .audio-toggle-btn { width: 44px; height: 44px; font-size: 20px; }
         }
     </style>
 </head>
@@ -328,23 +297,19 @@
     <div class="dial-container">
         <svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
             <defs>
-                <!-- Master Copper Pattern -->
                 <pattern id="copper-plate" width="1000" height="1000" patternUnits="userSpaceOnUse">
                     <image href="menu/menudial.png" xlink:href="menu/menudial.png" width="1000" height="1000" />
                 </pattern>
                 
-                <!-- Center Cap Circular Masking Pattern -->
                 <pattern id="center-patina" width="300" height="300" patternUnits="userSpaceOnUse" x="350" y="350">
                     <image href="menu/artifexlogo.png" xlink:href="menu/artifexlogo.png" width="300" height="300" preserveAspectRatio="xMidYMid slice" />
                 </pattern>
 
-                <!-- Flawless SVG Native Blur (Expanded boundaries stop it from clipping into a box) -->
                 <filter id="wide-glow" x="-100%" y="-100%" width="300%" height="300%">
                     <feGaussianBlur stdDeviation="40" result="blur" />
                 </filter>
             </defs>
 
-            <!-- WEDGE 1: ABOUT (Top) -->
             <g class="wedge-group" id="w1" data-module="about" tabindex="0" role="button" aria-label="About Artifex">
                 <path class="wedge-glow" d="M 500 500 L 250 67 A 500 500 0 0 1 750 67 Z" />
                 <path class="wedge-plate" d="M 500 500 L 250 67 A 500 500 0 0 1 750 67 Z" fill="url(#copper-plate)" />
@@ -352,7 +317,6 @@
                 <image class="icon-glow" href="menu/about1.png" xlink:href="menu/about1.png" x="387.5" y="77.5" width="225" height="225" />
             </g>
 
-            <!-- WEDGE 2: HELP (Top-Right) -->
             <g class="wedge-group" id="w2" data-module="help" tabindex="0" role="button" aria-label="Help and guides">
                 <path class="wedge-glow" d="M 500 500 L 750 67 A 500 500 0 0 1 1000 500 Z" />
                 <path class="wedge-plate" d="M 500 500 L 750 67 A 500 500 0 0 1 1000 500 Z" fill="url(#copper-plate)" />
@@ -360,7 +324,6 @@
                 <image class="icon-glow" href="menu/help1.png" xlink:href="menu/help1.png" x="667.5" y="237.5" width="225" height="225" />
             </g>
 
-            <!-- WEDGE 3: CINAEDVS (Bottom-Right) -->
             <g class="wedge-group" id="w3" data-module="cinaedvs" tabindex="0" role="button" aria-label="Cinaedvs Studios">
                 <path class="wedge-glow" d="M 500 500 L 1000 500 A 500 500 0 0 1 750 933 Z" />
                 <path class="wedge-plate" d="M 500 500 L 1000 500 A 500 500 0 0 1 750 933 Z" fill="url(#copper-plate)" />
@@ -368,7 +331,6 @@
                 <image class="icon-glow" href="menu/cinaedvs1.png" xlink:href="menu/cinaedvs1.png" x="667.5" y="537.5" width="225" height="225" />
             </g>
 
-            <!-- WEDGE 4: SETTINGS (Bottom) -->
             <g class="wedge-group" id="w4" data-module="settings" tabindex="0" role="button" aria-label="Artifex settings">
                 <path class="wedge-glow" d="M 500 500 L 750 933 A 500 500 0 0 1 250 933 Z" />
                 <path class="wedge-plate" d="M 500 500 L 750 933 A 500 500 0 0 1 250 933 Z" fill="url(#copper-plate)" />
@@ -376,7 +338,6 @@
                 <image class="icon-glow" href="menu/settings1.png" xlink:href="menu/settings1.png" x="387.5" y="697.5" width="225" height="225" />
             </g>
 
-            <!-- WEDGE 5: FONT (Bottom-Left) -->
             <g class="wedge-group" id="w5" data-module="font" tabindex="0" role="button" aria-label="Font Packer">
                 <path class="wedge-glow" d="M 500 500 L 250 933 A 500 500 0 0 1 0 500 Z" />
                 <path class="wedge-plate" d="M 500 500 L 250 933 A 500 500 0 0 1 0 500 Z" fill="url(#copper-plate)" />
@@ -384,7 +345,6 @@
                 <image class="icon-glow" href="menu/font1.png" xlink:href="menu/font1.png" x="107.5" y="537.5" width="225" height="225" />
             </g>
 
-            <!-- WEDGE 6: SCENE (Top-Left) -->
             <g class="wedge-group" id="w6" data-module="scene" tabindex="0" role="button" aria-label="Scene Editor">
                 <path class="wedge-glow" d="M 500 500 L 0 500 A 500 500 0 0 1 250 67 Z" />
                 <path class="wedge-plate" d="M 500 500 L 0 500 A 500 500 0 0 1 250 67 Z" fill="url(#copper-plate)" />
@@ -392,7 +352,6 @@
                 <image class="icon-glow" href="menu/scene1.png" xlink:href="menu/scene1.png" x="107.5" y="237.5" width="225" height="225" />
             </g>
 
-            <!-- CENTER HUB CORE -->
             <g id="center-hub">
                 <circle cx="500" cy="500" r="160" fill="var(--neon-purple)" filter="url(#wide-glow)" class="soft-glow-circle" id="master-diffuse-glow" />
                 <circle cx="500" cy="500" r="145" class="center-cap-base" fill="url(#center-patina)" stroke="#896b49" stroke-width="3" />
@@ -401,16 +360,13 @@
         </svg>
     </div>
 
-    <!-- LAYER 4: Top UI -->
     <div class="top-ui-layer">
         <div class="brand-container">
             <img class="brand-crest" src="artifexlogo.png" alt="Logo">
             <img class="brand-title" src="artifextitle.png" alt="Artifex">
         </div>
         
-        <div class="audio-toggle-btn" id="audio-btn" onclick="toggleAudio()" title="Mute Tactical Audio">
-            🔊
-        </div>
+        <div class="audio-toggle-btn" id="audio-btn" onclick="toggleAudio()" title="Mute Tactical Audio">🔊</div>
     </div>
 
     <div class="portal-panel-backdrop" id="portal-panel-backdrop" aria-hidden="true">
@@ -423,7 +379,6 @@
         </section>
     </div>
 
-    <!-- SCRIPTS -->
     <script>
         let audioEnabled = true;
         let audioCtx = null;
@@ -434,59 +389,47 @@
                 title: 'About Artifex',
                 status: 'Portal Module',
                 copy: 'Artifex is the creator hub for Forever Bound: a standalone workspace for scene editing, asset preparation, JSON tools, and future mini-apps.',
-                actions: [
-                    { label: 'Return to Portal', type: 'close' }
-                ]
+                actions: [{ label: 'Return to Portal', type: 'close' }]
             },
             help: {
                 title: 'Help / Guides',
                 status: 'Placeholder',
                 copy: 'Guides will live here once the Scene Editor, templates, and export workflow are wired into the new Artifex hub.',
-                actions: [
-                    { label: 'Return to Portal', type: 'close' }
-                ]
+                actions: [{ label: 'Return to Portal', type: 'close' }]
             },
             cinaedvs: {
                 title: 'Cinaedvs Studios',
-                status: 'Placeholder',
-                copy: 'Studio information, project links, credits, or repository shortcuts can be connected here later.',
-                actions: [
-                    { label: 'Return to Portal', type: 'close' }
-                ]
+                status: 'External Link',
+                copy: 'Opening the Cinaedvs Studios site in a new tab.',
+                directUrl: 'https://cinaedvsstudios.github.io/cinaedvs/',
+                target: '_blank',
+                actions: [{ label: 'Open Cinaedvs Studios', href: 'https://cinaedvsstudios.github.io/cinaedvs/', target: '_blank' }]
             },
             settings: {
                 title: 'Artifex Settings',
                 status: 'Placeholder',
                 copy: 'Settings will eventually control Artifex appearance, paths, default folders, audio preferences, and editor behaviour.',
-                actions: [
-                    { label: 'Return to Portal', type: 'close' }
-                ]
+                actions: [{ label: 'Return to Portal', type: 'close' }]
             },
             font: {
                 title: 'Font Packer',
                 status: 'Future Tool',
                 copy: 'This will become the bitmap font / atlas tool. For now it is wired as a placeholder so the portal has a complete action map.',
-                actions: [
-                    { label: 'Return to Portal', type: 'close' }
-                ]
+                actions: [{ label: 'Return to Portal', type: 'close' }]
             },
             scene: {
                 title: 'Scene Editor',
-                status: 'Next Build Step',
-                copy: 'The Scene Editor will move into artifex/apps/scene-editor/. Batch 2 will create the folder and connect this button to the working editor entry point.',
-                actions: [
-                    { label: 'Return to Portal', type: 'close' }
-                ]
+                status: 'Available',
+                copy: 'Opening the standalone Artifex Scene Editor.',
+                directUrl: 'apps/scene-editor/',
+                actions: [{ label: 'Open Scene Editor', href: 'apps/scene-editor/' }]
             }
         };
 
-        // Unlocks web audio instantly on the first physical click anywhere on the page
         document.body.addEventListener('click', () => {
             if (!audioUnlocked && audioEnabled) {
                 initAudio();
-                if (audioCtx && audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
+                if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
                 audioUnlocked = true;
             }
         });
@@ -494,37 +437,28 @@
         function toggleAudio() {
             audioEnabled = !audioEnabled;
             const btn = document.getElementById('audio-btn');
-            btn.innerHTML = audioEnabled ? "🔊" : "🔇";
-            btn.style.boxShadow = audioEnabled ? "" : "none";
-            btn.style.animation = audioEnabled ? "breatheAudio 3s infinite alternate" : "none";
-            
+            btn.innerHTML = audioEnabled ? '🔊' : '🔇';
+            btn.style.boxShadow = audioEnabled ? '' : 'none';
+            btn.style.animation = audioEnabled ? 'breatheAudio 3s infinite alternate' : 'none';
             if (audioEnabled) {
                 initAudio();
-                if (audioCtx && audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
+                if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
                 audioUnlocked = true;
                 playTone('surge');
             }
         }
 
         function initAudio() {
-            if (!audioCtx && audioEnabled) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
+            if (!audioCtx && audioEnabled) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
 
         function playTone(type) {
             if (!audioEnabled || !audioUnlocked || !audioCtx) return;
-
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-
             const now = audioCtx.currentTime;
-
             if (type === 'hover') {
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(150, now);
@@ -545,33 +479,29 @@
         function openPortalPanel(moduleId) {
             const module = portalModules[moduleId];
             if (!module) return;
-
             const backdrop = document.getElementById('portal-panel-backdrop');
             const status = document.getElementById('portal-panel-status');
             const title = document.getElementById('portal-panel-title');
             const copy = document.getElementById('portal-panel-copy');
             const actions = document.getElementById('portal-panel-actions');
-
             status.textContent = module.status;
             title.textContent = module.title;
             copy.textContent = module.copy;
             actions.innerHTML = '';
-
             (module.actions || []).forEach(action => {
                 const control = action.href ? document.createElement('a') : document.createElement('button');
                 control.className = 'portal-panel-action';
                 control.textContent = action.label;
-
                 if (action.href) {
                     control.href = action.href;
+                    if (action.target) control.target = action.target;
+                    if (action.target === '_blank') control.rel = 'noopener noreferrer';
                 } else {
                     control.type = 'button';
                     control.addEventListener('click', closePortalPanel);
                 }
-
                 actions.appendChild(control);
             });
-
             backdrop.classList.add('is-open');
             backdrop.setAttribute('aria-hidden', 'false');
             document.getElementById('portal-panel-close').focus();
@@ -581,6 +511,20 @@
             const backdrop = document.getElementById('portal-panel-backdrop');
             backdrop.classList.remove('is-open');
             backdrop.setAttribute('aria-hidden', 'true');
+        }
+
+        function activateModule(moduleId) {
+            const module = portalModules[moduleId];
+            if (!module) return;
+            if (module.directUrl) {
+                if (module.target === '_blank') {
+                    window.open(module.directUrl, '_blank', 'noopener,noreferrer');
+                } else {
+                    window.location.href = module.directUrl;
+                }
+                return;
+            }
+            openPortalPanel(moduleId);
         }
 
         document.getElementById('portal-panel-close').addEventListener('click', closePortalPanel);
@@ -599,17 +543,13 @@
             wedge.addEventListener('mouseenter', () => {
                 const standardGlow = wedge.querySelector('.wedge-glow');
                 if (standardGlow) standardGlow.style.opacity = '0.75';
-                
                 centralDiffuseGlow.classList.add('ignite');
                 centerLightning.classList.add('ignite');
-                
                 playTone('hover');
             });
-            
             wedge.addEventListener('mouseleave', () => {
                 const standardGlow = wedge.querySelector('.wedge-glow');
                 if (standardGlow) standardGlow.style.opacity = '0';
-                
                 setTimeout(() => {
                     if(!document.querySelector('.wedge-group:hover')) {
                         centralDiffuseGlow.classList.remove('ignite');
@@ -617,17 +557,15 @@
                     }
                 }, 50);
             });
-
             wedge.addEventListener('click', () => {
                 playTone('surge');
-                openPortalPanel(wedge.dataset.module);
+                activateModule(wedge.dataset.module);
             });
-
             wedge.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
                     playTone('surge');
-                    openPortalPanel(wedge.dataset.module);
+                    activateModule(wedge.dataset.module);
                 }
             });
         });
@@ -675,7 +613,6 @@
             update() {
                 this.x += this.speedX;
                 this.y += this.speedY;
-
                 if (this.type === 'mist') {
                     if (this.x > width + 200) this.reset();
                 } else if (this.type === 'fire') {
@@ -698,12 +635,10 @@
                 } else if (this.type === 'fire') {
                     ctx.globalCompositeOperation = 'lighter';
                     const progress = this.life / this.maxLife;
-                    
-                    let r = 255;
-                    let g = 255 - (progress * 255);
-                    let b = 50 - (progress * 50);
-                    let a = 1 - progress;
-
+                    const r = 255;
+                    const g = 255 - (progress * 255);
+                    const b = 50 - (progress * 50);
+                    const a = 1 - progress;
                     const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 2);
                     gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${a})`);
                     gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
@@ -720,18 +655,14 @@
 
         function animate() {
             ctx.clearRect(0, 0, width, height);
-            
             ctx.globalCompositeOperation = 'screen';
             const flicker = Math.sin(Date.now() * 0.005) * 0.05 + 0.15;
-            
             const floorGrad = ctx.createLinearGradient(0, height, 0, height - 300);
             floorGrad.addColorStop(0, `rgba(255, 100, 20, ${flicker + 0.08})`);
             floorGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
             ctx.fillStyle = floorGrad;
             ctx.fillRect(0, 0, width, height);
-
             particles.forEach(p => { p.update(); p.draw(); });
-            
             requestAnimationFrame(animate);
         }
         animate();
