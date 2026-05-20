@@ -1,0 +1,105 @@
+{
+  "id": "template_dialogue_scene",
+  "name": "Template Dialogue Scene",
+  "mode": "dialogue",
+  "screenType": "dialogue",
+  "templateNotes": "Uses SVG placeholder assets from artifex/templates/assets/. These are only test images; replace image paths with PNG, JPG, GIF, SVG, or WebP project assets as needed.",
+  "background": "artifex/templates/assets/template_grid_sky_ground.svg",
+  "backgroundScroll": false,
+  "grid": {
+    "columns": 16,
+    "rows": 9,
+    "snap": false,
+    "show": true
+  },
+  "layers": [],
+  "elements": [
+    {
+      "id": "speaker_mel_placeholder",
+      "type": "speaker",
+      "name": "Speaker A / Blue Person",
+      "image": "artifex/templates/assets/template_blue_person.svg",
+      "x": 24,
+      "y": 66,
+      "width": 10,
+      "height": 34,
+      "layer": 10,
+      "visible": true
+    },
+    {
+      "id": "speaker_npc_placeholder",
+      "type": "speaker",
+      "name": "Speaker B / NPC Placeholder",
+      "image": "artifex/templates/assets/template_blue_person.svg",
+      "x": 70,
+      "y": 66,
+      "width": 10,
+      "height": 34,
+      "layer": 10,
+      "visible": true
+    },
+    {
+      "id": "dialogue_prop_red_ball",
+      "type": "prop",
+      "name": "Dialogue Prop / Red Ball",
+      "image": "artifex/templates/assets/template_red_ball.svg",
+      "x": 47,
+      "y": 76,
+      "width": 8,
+      "height": 14,
+      "layer": 11,
+      "visible": true
+    },
+    {
+      "id": "dialogue_box_placeholder",
+      "type": "ui_panel",
+      "name": "Dialogue Box Placeholder",
+      "image": "artifex/templates/assets/template_green_box.svg",
+      "text": "Dialogue text box goes here.",
+      "x": 20,
+      "y": 84,
+      "width": 60,
+      "height": 11,
+      "layer": 100,
+      "visible": true
+    }
+  ],
+  "dialogue": {
+    "id": "template_dialogue",
+    "currentLine": 0,
+    "lines": [
+      {
+        "speaker": "speaker_mel_placeholder",
+        "speakerName": "Speaker A",
+        "text": "This is a placeholder dialogue line.",
+        "voice": "",
+        "portrait": ""
+      },
+      {
+        "speaker": "speaker_npc_placeholder",
+        "speakerName": "Speaker B",
+        "text": "Replace this with real dialogue later.",
+        "voice": "",
+        "portrait": ""
+      }
+    ],
+    "choices": [
+      {
+        "id": "choice_continue",
+        "label": "Continue",
+        "nextScene": "template_scene_mode"
+      }
+    ]
+  },
+  "ui": [],
+  "audio": {
+    "music": "",
+    "ambience": "",
+    "buttonPressSound": "",
+    "musicVolume": 0.45,
+    "ambienceVolume": 0.45,
+    "sfxVolume": 0.75,
+    "loopMusic": true,
+    "loopAmbience": true
+  }
+}
