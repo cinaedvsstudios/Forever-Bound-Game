@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="120" viewBox="0 0 420 120" role="img" aria-label="Template water strip placeholder">
+  <rect width="420" height="120" rx="14" fill="#039be5" stroke="#01579b" stroke-width="8"/>
+  <path d="M24 42C58 18 86 66 121 42S187 18 222 42s66 24 101 0 57-24 81 0" fill="none" stroke="#b3e5fc" stroke-width="10" stroke-linecap="round" opacity="0.85"/>
+  <path d="M24 82C58 58 86 106 121 82s66-24 101 0 66 24 101 0 57-24 81 0" fill="none" stroke="#e1f5fe" stroke-width="8" stroke-linecap="round" opacity="0.7"/>
+  <text x="210" y="68" text-anchor="middle" font-family="Arial" font-size="24" font-weight="700" fill="#fff">WATER</text>
+</svg>
