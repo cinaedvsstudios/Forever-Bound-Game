@@ -1,0 +1,88 @@
+{
+  "id": "template_travel_scene",
+  "name": "Template Travel Scene",
+  "mode": "travel",
+  "screenType": "travel",
+  "templateNotes": "Uses SVG placeholder assets from artifex/templates/assets/. These are only test images; replace image paths with PNG, JPG, GIF, SVG, or WebP project assets as needed.",
+  "background": "artifex/templates/assets/template_grid_sky_ground.svg",
+  "backgroundScroll": true,
+  "playerStart": { "x": 12, "y": 72 },
+  "grid": { "columns": 16, "rows": 9, "snap": false, "show": true },
+  "layers": [
+    {
+      "id": "water_layer",
+      "type": "overlay",
+      "name": "Water strip / hazard example",
+      "image": "artifex/templates/assets/template_water_strip.svg",
+      "x": 42,
+      "y": 73,
+      "width": 32,
+      "height": 14,
+      "layer": 4,
+      "visible": true
+    }
+  ],
+  "elements": [
+    {
+      "id": "player_start",
+      "type": "player_start",
+      "name": "Blue Person / Player Placeholder",
+      "image": "artifex/templates/assets/template_blue_person.svg",
+      "x": 14,
+      "y": 74,
+      "width": 10,
+      "height": 34,
+      "layer": 10,
+      "visible": true,
+      "shadow": { "enabled": true, "opacity": 0.42, "blur": 12, "offsetX": 0, "offsetY": 2, "scaleX": 1.15, "scaleY": 0.18 }
+    },
+    {
+      "id": "red_ball_pickup",
+      "type": "pickup",
+      "name": "Red Ball / Pickup Object",
+      "image": "artifex/templates/assets/template_red_ball.svg",
+      "x": 34,
+      "y": 75,
+      "width": 8,
+      "height": 14,
+      "layer": 11,
+      "visible": true
+    },
+    {
+      "id": "green_box_cache",
+      "type": "searchable",
+      "name": "Green Box / Searchable Cache",
+      "image": "artifex/templates/assets/template_green_box.svg",
+      "x": 58,
+      "y": 78,
+      "width": 14,
+      "height": 12,
+      "layer": 12,
+      "visible": true
+    },
+    {
+      "id": "exit_door",
+      "type": "exit",
+      "name": "Exit Door",
+      "image": "artifex/templates/assets/template_door.svg",
+      "x": 86,
+      "y": 68,
+      "width": 9,
+      "height": 26,
+      "layer": 13,
+      "visible": true,
+      "destinationScene": "next_scene_id"
+    }
+  ],
+  "ui": [],
+  "audio": {
+    "music": "",
+    "ambience": "",
+    "buttonPressSound": "",
+    "musicVolume": 0.45,
+    "ambienceVolume": 0.5,
+    "sfxVolume": 0.75,
+    "loopMusic": true,
+    "loopAmbience": true
+  }
+}
