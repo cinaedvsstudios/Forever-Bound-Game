@@ -1,0 +1,105 @@
+{
+  "id": "template_codice_screen",
+  "name": "Template Codice Screen",
+  "mode": "codice",
+  "screenType": "codice",
+  "templateNotes": "Uses SVG placeholder assets from artifex/templates/assets/. These are only test images; replace image paths with PNG, JPG, GIF, SVG, or WebP project assets as needed.",
+  "background": "artifex/templates/assets/template_grid_sky_ground.svg",
+  "backgroundScroll": false,
+  "grid": {
+    "columns": 16,
+    "rows": 9,
+    "snap": false,
+    "show": true
+  },
+  "layers": [],
+  "elements": [
+    {
+      "id": "codice_header",
+      "type": "ui_panel",
+      "name": "Codice Header",
+      "image": "artifex/templates/assets/template_green_box.svg",
+      "text": "THE CODEX OF FOREVER BOUND",
+      "x": 18,
+      "y": 6,
+      "width": 60,
+      "height": 10,
+      "layer": 100,
+      "visible": true
+    },
+    {
+      "id": "codice_entry_icon",
+      "type": "entry_icon",
+      "name": "Entry Icon Placeholder",
+      "image": "artifex/templates/assets/template_marker.svg",
+      "x": 20,
+      "y": 28,
+      "width": 8,
+      "height": 18,
+      "layer": 101,
+      "visible": true
+    },
+    {
+      "id": "codice_entry_text",
+      "type": "text_block",
+      "name": "Entry Text Placeholder",
+      "image": "artifex/templates/assets/template_green_box.svg",
+      "text": "Placeholder lore entry. Replace with real Codice content.",
+      "x": 34,
+      "y": 28,
+      "width": 44,
+      "height": 16,
+      "layer": 102,
+      "visible": true
+    },
+    {
+      "id": "codice_navigation_prev",
+      "type": "button",
+      "name": "Previous Page",
+      "image": "artifex/templates/assets/template_red_ball.svg",
+      "text": "PREV",
+      "x": 18,
+      "y": 84,
+      "width": 8,
+      "height": 10,
+      "layer": 110,
+      "visible": true
+    },
+    {
+      "id": "codice_navigation_next",
+      "type": "button",
+      "name": "Next Page",
+      "image": "artifex/templates/assets/template_red_ball.svg",
+      "text": "NEXT",
+      "x": 74,
+      "y": 84,
+      "width": 8,
+      "height": 10,
+      "layer": 110,
+      "visible": true
+    }
+  ],
+  "codice": {
+    "entries": [
+      {
+        "id": "entry_placeholder_01",
+        "title": "Placeholder Entry",
+        "category": "Lore",
+        "body": "Replace this text with real Codice data later.",
+        "unlocked": true
+      }
+    ],
+    "currentEntry": "entry_placeholder_01"
+  },
+  "ui": [],
+  "audio": {
+    "music": "",
+    "ambience": "",
+    "buttonPressSound": "",
+    "musicVolume": 0.45,
+    "ambienceVolume": 0.45,
+    "sfxVolume": 0.75,
+    "loopMusic": true,
+    "loopAmbience": true
+  }
+}
