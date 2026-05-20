@@ -1,0 +1,64 @@
+{
+  "id": "artifex_template_manifest",
+  "version": "0.1.0",
+  "notes": "Starter templates use simple SVG placeholder images in artifex/templates/assets/. These are only test assets. The editor image fields should accept normal image paths later, including PNG, JPG, JPEG, GIF, SVG, and WebP if the browser can display them.",
+  "assetFormatNote": "The included placeholder art is SVG so the files are tiny and easy to inspect. Replace any image path with a real project asset when building a real scene.",
+  "templates": [
+    {
+      "id": "title_screen",
+      "label": "Title Screen Template",
+      "type": "static",
+      "file": "title_screen_template.json",
+      "defaultSaveFolder": "data/screens/"
+    },
+    {
+      "id": "travel_scene",
+      "label": "Travel Mode Scene Template",
+      "type": "travel",
+      "file": "travel_scene_template.json",
+      "defaultSaveFolder": "data/scenes/"
+    },
+    {
+      "id": "scene_mode",
+      "label": "Scene Mode Template",
+      "type": "scene",
+      "file": "scene_mode_template.json",
+      "defaultSaveFolder": "data/scenes/"
+    },
+    {
+      "id": "battle_scene",
+      "label": "Battle Mode Template",
+      "type": "battle",
+      "file": "battle_scene_template.json",
+      "defaultSaveFolder": "data/scenes/"
+    },
+    {
+      "id": "map_screen",
+      "label": "Map Screen Template",
+      "type": "map",
+      "file": "map_screen_template.json",
+      "defaultSaveFolder": "data/map/"
+    },
+    {
+      "id": "ui_layout",
+      "label": "UI Layout Template",
+      "type": "ui",
+      "file": "ui_layout_template.json",
+      "defaultSaveFolder": "data/ui/"
+    },
+    {
+      "id": "dialogue_scene",
+      "label": "Dialogue Scene Template",
+      "type": "dialogue",
+      "file": "dialogue_scene_template.json",
+      "defaultSaveFolder": "data/dialogue/"
+    },
+    {
+      "id": "codice_screen",
+      "label": "Codice Screen Template",
+      "type": "codice",
+      "file": "codice_screen_template.json",
+      "defaultSaveFolder": "data/codice/"
+    }
+  ]
+}
