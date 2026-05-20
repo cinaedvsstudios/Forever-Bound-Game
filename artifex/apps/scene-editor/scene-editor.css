@@ -112,8 +112,10 @@ button {
 }
 
 .btn.primary,
-.import-button {
+.import-button,
+.btn.active-soft {
   background: linear-gradient(180deg, rgba(80, 30, 103, 0.98), rgba(37, 15, 48, 0.98));
+  border-color: rgba(195, 0, 255, 0.78);
 }
 
 .import-dropdown {
@@ -165,6 +167,10 @@ button {
 }
 
 .panel-card h2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   margin: -14px -14px 14px;
   padding: 12px 14px;
   font-family: Cinzel, serif;
@@ -174,6 +180,45 @@ button {
   background: linear-gradient(180deg, #282b2e, #1b1d1f);
   border-bottom: 1px solid rgba(184, 119, 63, 0.35);
   border-radius: 18px 18px 0 0;
+}
+
+.panel-card.card-basics h2 {
+  background: linear-gradient(180deg, #3a2a1f, #1d1915);
+}
+
+.panel-card.card-elements h2 {
+  background: linear-gradient(180deg, #352047, #1c1424);
+}
+
+.panel-card.card-selected h2 {
+  background: linear-gradient(180deg, #202a4a, #121722);
+}
+
+.panel-card.card-json h2 {
+  background: linear-gradient(180deg, #1f3a32, #111d19);
+}
+
+.panel-card.is-collapsed h2 {
+  margin-bottom: -14px;
+  border-radius: 18px;
+}
+
+.card-toggle {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(255, 214, 160, 0.45);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #ffd6a0;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.card-toggle:hover {
+  border-color: var(--purple);
+  box-shadow: 0 0 12px var(--purple-soft);
 }
 
 .field {
@@ -218,6 +263,54 @@ button {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+}
+
+.path-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 38px;
+  gap: 7px;
+  align-items: center;
+}
+
+.path-menu {
+  position: relative;
+}
+
+.path-menu-toggle {
+  width: 38px;
+  height: 34px;
+  border: 1px solid rgba(184, 119, 63, 0.55);
+  border-radius: 10px;
+  background: rgba(24, 16, 15, 0.95);
+  cursor: pointer;
+}
+
+.path-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  display: none;
+  min-width: 120px;
+  padding: 6px;
+  border: 1px solid var(--copper-soft);
+  border-radius: 12px;
+  background: rgba(12, 13, 14, 0.98);
+  box-shadow: 0 14px 30px rgba(0,0,0,.52);
+  z-index: 50;
+}
+
+.path-menu.is-open .path-dropdown {
+  display: grid;
+  gap: 5px;
+}
+
+.path-dropdown button {
+  min-height: 30px;
+  border: 1px solid rgba(184, 119, 63, 0.4);
+  border-radius: 9px;
+  background: rgba(63, 39, 28, 0.95);
+  cursor: pointer;
+  text-align: left;
 }
 
 .check-row {
@@ -269,10 +362,11 @@ button {
 
 .item-row.is-selected {
   border-color: var(--purple);
-  box-shadow: 0 0 12px var(--purple-soft);
+  box-shadow: 0 0 18px rgba(195, 0, 255, 0.48);
 }
 
 .stage-wrap {
+  position: relative;
   min-width: 0;
   min-height: 0;
   display: grid;
@@ -280,6 +374,40 @@ button {
   padding: 28px;
   overflow: auto;
   background: radial-gradient(circle at center, rgba(195, 0, 255, 0.08), transparent 46%), #08090a;
+}
+
+.stage-scale {
+  transform-origin: center center;
+}
+
+.work-zoom-controls {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  z-index: 30;
+  display: inline-flex;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--copper-soft);
+  border-radius: 999px;
+  background: rgba(9, 10, 11, 0.78);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+}
+
+.zoom-control {
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(184, 119, 63, 0.55);
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(63, 39, 28, 0.95), rgba(24, 16, 15, 0.95));
+  cursor: pointer;
+  color: var(--paper);
+  font-weight: 700;
+}
+
+.zoom-control:hover {
+  border-color: var(--purple);
+  box-shadow: 0 0 12px var(--purple-soft);
 }
 
 .stage {
@@ -350,9 +478,17 @@ button {
   cursor: grabbing;
 }
 
-.scene-item.is-selected {
-  outline: 2px solid var(--purple);
-  box-shadow: 0 0 18px var(--purple-soft);
+.stage.highlight-on .scene-item.is-selected {
+  outline: 4px solid rgba(255, 82, 255, 0.96);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.44), 0 0 28px rgba(195, 0, 255, 0.96), 0 0 54px rgba(93, 0, 255, 0.75);
+}
+
+.stage.highlight-off .scene-item,
+.stage.highlight-off .scene-item.is-selected {
+  outline: none;
+  box-shadow: none;
+  border-color: transparent;
+  background: transparent;
 }
 
 .scene-item img {
