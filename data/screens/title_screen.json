@@ -42,12 +42,6 @@
       "action": "showNotice",
       "notice": "Credits will be added later.",
       "sound": "assets/audio/sfx/sfx_ui_click_01.mp3"
-    },
-    {
-      "id": "editor",
-      "label": "Artifex Editor",
-      "action": "openEditor",
-      "sound": "assets/audio/sfx/sfx_ui_click_01.mp3"
     }
   ],
   "footer": {
