@@ -1,0 +1,82 @@
+{
+  "id": "template_battle_scene",
+  "name": "Template Battle Arena",
+  "mode": "battle",
+  "screenType": "battle",
+  "templateNotes": "Uses SVG placeholder assets from artifex/templates/assets/. These are only test images; replace image paths with PNG, JPG, GIF, SVG, or WebP project assets as needed.",
+  "background": "artifex/templates/assets/template_grid_sky_ground.svg",
+  "backgroundScroll": false,
+  "playerStart": { "x": 20, "y": 73 },
+  "grid": { "columns": 16, "rows": 9, "snap": false, "show": true },
+  "layers": [],
+  "elements": [
+    {
+      "id": "player_start",
+      "type": "player_start",
+      "name": "Blue Person / Player Placeholder",
+      "image": "artifex/templates/assets/template_blue_person.svg",
+      "x": 20,
+      "y": 73,
+      "width": 10,
+      "height": 34,
+      "layer": 10,
+      "visible": true,
+      "shadow": { "enabled": true, "opacity": 0.42, "blur": 12, "offsetX": 0, "offsetY": 2, "scaleX": 1.15, "scaleY": 0.18 }
+    },
+    {
+      "id": "boss_red_ball",
+      "type": "boss",
+      "name": "Red Ball / Boss Placeholder",
+      "image": "artifex/templates/assets/template_red_ball.svg",
+      "x": 65,
+      "y": 61,
+      "width": 16,
+      "height": 28,
+      "layer": 12,
+      "visible": true,
+      "hearts": 20,
+      "threatRank": 5
+    },
+    {
+      "id": "arena_box_obstacle",
+      "type": "obstacle",
+      "name": "Green Box / Arena Obstacle",
+      "image": "artifex/templates/assets/template_green_box.svg",
+      "x": 45,
+      "y": 78,
+      "width": 14,
+      "height": 12,
+      "layer": 11,
+      "visible": true
+    },
+    {
+      "id": "arena_exit",
+      "type": "locked_exit",
+      "name": "Exit Door / Unlock After Battle",
+      "image": "artifex/templates/assets/template_door.svg",
+      "x": 87,
+      "y": 67,
+      "width": 9,
+      "height": 26,
+      "layer": 13,
+      "visible": true,
+      "lockedUntil": "boss_red_ball_defeated"
+    }
+  ],
+  "battle": {
+    "arenaLocked": true,
+    "completionCondition": "boss_red_ball_defeated",
+    "onCompleteUnlock": "arena_exit"
+  },
+  "ui": [],
+  "audio": {
+    "music": "",
+    "ambience": "",
+    "buttonPressSound": "",
+    "musicVolume": 0.55,
+    "ambienceVolume": 0.35,
+    "sfxVolume": 0.75,
+    "loopMusic": true,
+    "loopAmbience": true
+  }
+}
