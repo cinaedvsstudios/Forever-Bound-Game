@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="160" viewBox="0 0 220 160" role="img" aria-label="Template green box placeholder">
+  <rect x="24" y="36" width="172" height="92" rx="12" fill="#43a047" stroke="#1b5e20" stroke-width="8"/>
+  <path d="M24 36L54 14H196L196 36" fill="#66bb6a" stroke="#1b5e20" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M196 36L210 62V138L196 128" fill="#2e7d32" stroke="#1b5e20" stroke-width="8" stroke-linejoin="round"/>
+  <text x="110" y="94" text-anchor="middle" font-family="Arial" font-size="24" font-weight="700" fill="#fff">BOX</text>
+</svg>
