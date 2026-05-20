@@ -1,0 +1,62 @@
+{
+  "id": "template_map_screen",
+  "name": "Template Map Screen",
+  "mode": "map",
+  "screenType": "map",
+  "templateNotes": "Uses SVG placeholder assets from artifex/templates/assets/. These are only test images; replace image paths with PNG, JPG, GIF, SVG, or WebP project assets as needed.",
+  "background": "artifex/templates/assets/template_grid_sky_ground.svg",
+  "backgroundScroll": false,
+  "grid": { "columns": 16, "rows": 9, "snap": false, "show": true },
+  "layers": [],
+  "elements": [
+    {
+      "id": "map_marker_town",
+      "type": "map_node",
+      "name": "Town Marker",
+      "image": "artifex/templates/assets/template_marker.svg",
+      "x": 22,
+      "y": 60,
+      "width": 8,
+      "height": 20,
+      "layer": 10,
+      "visible": true,
+      "destinationScene": "template_scene_mode"
+    },
+    {
+      "id": "map_marker_forest",
+      "type": "map_node",
+      "name": "Forest Marker",
+      "image": "artifex/templates/assets/template_marker.svg",
+      "x": 56,
+      "y": 44,
+      "width": 8,
+      "height": 20,
+      "layer": 10,
+      "visible": true,
+      "destinationScene": "template_travel_scene"
+    },
+    {
+      "id": "map_marker_battle",
+      "type": "map_node",
+      "name": "Battle Marker",
+      "image": "artifex/templates/assets/template_red_ball.svg",
+      "x": 78,
+      "y": 64,
+      "width": 8,
+      "height": 14,
+      "layer": 10,
+      "visible": true,
+      "destinationScene": "template_battle_scene"
+    }
+  ],
+  "map": {
+    "startNode": "map_marker_town",
+    "nodes": ["map_marker_town", "map_marker_forest", "map_marker_battle"],
+    "routes": [
+      { "from": "map_marker_town", "to": "map_marker_forest", "unlocked": true },
+      { "from": "map_marker_forest", "to": "map_marker_battle", "unlocked": false, "unlockFlag": "forest_complete" }
+    ]
+  },
+  "ui": [],
+  "audio": { "music": "", "ambience": "", "buttonPressSound": "", "musicVolume": 0.45, "ambienceVolume": 0.45, "sfxVolume": 0.75 }
+}
