@@ -1,0 +1,80 @@
+{
+  "id": "template_ui_layout",
+  "name": "Template UI Layout",
+  "mode": "ui",
+  "screenType": "ui",
+  "templateNotes": "Uses SVG placeholder assets from artifex/templates/assets/. These are only test images; replace image paths with PNG, JPG, GIF, SVG, or WebP project assets as needed.",
+  "background": "artifex/templates/assets/template_grid_sky_ground.svg",
+  "backgroundScroll": false,
+  "grid": { "columns": 16, "rows": 9, "snap": false, "show": true },
+  "layers": [],
+  "elements": [
+    {
+      "id": "hud_status_box",
+      "type": "ui_panel",
+      "name": "Status Box",
+      "image": "artifex/templates/assets/template_green_box.svg",
+      "text": "Location / Quest / Calling",
+      "x": 28,
+      "y": 8,
+      "width": 38,
+      "height": 10,
+      "layer": 100,
+      "visible": true
+    },
+    {
+      "id": "hud_active_item",
+      "type": "ui_panel",
+      "name": "Active Item Box",
+      "image": "artifex/templates/assets/template_red_ball.svg",
+      "text": "Active Item",
+      "x": 78,
+      "y": 8,
+      "width": 10,
+      "height": 12,
+      "layer": 101,
+      "visible": true
+    },
+    {
+      "id": "touch_dpad_placeholder",
+      "type": "ui_control",
+      "name": "D-Pad Placeholder",
+      "image": "artifex/templates/assets/template_marker.svg",
+      "text": "D-PAD",
+      "x": 12,
+      "y": 80,
+      "width": 12,
+      "height": 18,
+      "layer": 102,
+      "visible": true
+    },
+    {
+      "id": "touch_button_a_placeholder",
+      "type": "ui_control",
+      "name": "A Button Placeholder",
+      "image": "artifex/templates/assets/template_red_ball.svg",
+      "text": "A",
+      "x": 84,
+      "y": 80,
+      "width": 8,
+      "height": 10,
+      "layer": 103,
+      "visible": true
+    },
+    {
+      "id": "touch_button_b_placeholder",
+      "type": "ui_control",
+      "name": "B Button Placeholder",
+      "image": "artifex/templates/assets/template_blue_person.svg",
+      "text": "B",
+      "x": 74,
+      "y": 82,
+      "width": 7,
+      "height": 10,
+      "layer": 103,
+      "visible": true
+    }
+  ],
+  "ui": [],
+  "audio": { "music": "", "ambience": "", "buttonPressSound": "", "musicVolume": 0.45, "ambienceVolume": 0.45, "sfxVolume": 0.75 }
+}
