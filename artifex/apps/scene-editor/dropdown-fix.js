@@ -8,6 +8,8 @@
 
     if (importToggle) {
       event.preventDefault();
+      event.stopPropagation();
+      if (event.stopImmediatePropagation) event.stopImmediatePropagation();
       importMenu.classList.toggle('is-open');
       return;
     }
