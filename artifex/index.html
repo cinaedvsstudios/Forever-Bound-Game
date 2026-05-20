@@ -14,14 +14,10 @@
            1. MASTER CSS VARIABLES & ENVIRONMENT
            ========================================================== */
         :root {
-            /* Dial and standard electric discharge color */
             --neon-purple: #c300ff;
             --neon-purple-dim: rgba(195, 0, 255, 0.4);
-            
-            /* Top UI and soft glow */
             --blue-purple: #5d00ff;
             --blue-purple-dim: rgba(93, 0, 255, 0.4);
-            
             --bg-dark: #070707;
         }
 
@@ -183,7 +179,6 @@
             filter: drop-shadow(0 10px 20px rgba(0,0,0,0.9));
         }
 
-        /* Native SVG Glow Styling (Blur is now handled by SVG defs) */
         .soft-glow-circle {
             opacity: 0;
             transition: opacity 0.3s ease-out;
@@ -194,7 +189,6 @@
             animation: pulseWedge 1s infinite alternate;
         }
 
-        /* Lightning surge layer */
         .center-glow-overlay {
             mix-blend-mode: screen;
             opacity: 0;
@@ -206,6 +200,124 @@
             animation: pulseWedge 1s infinite alternate;
         }
 
+        /* ==========================================================
+           5. PORTAL ACTION PANELS
+           ========================================================== */
+        .portal-panel-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            background: radial-gradient(circle at center, rgba(93, 0, 255, 0.18), rgba(0, 0, 0, 0.68));
+            backdrop-filter: blur(4px);
+        }
+
+        .portal-panel-backdrop.is-open {
+            display: flex;
+        }
+
+        .portal-panel {
+            width: min(560px, calc(100vw - 48px));
+            color: #f7dfbd;
+            background:
+                linear-gradient(180deg, rgba(46, 22, 12, 0.96), rgba(9, 5, 8, 0.96));
+            border: 1px solid #a86c36;
+            border-radius: 22px;
+            box-shadow:
+                0 0 30px rgba(195, 0, 255, 0.32),
+                inset 0 0 18px rgba(255, 180, 91, 0.08);
+            padding: 26px;
+            position: relative;
+            text-align: left;
+        }
+
+        .portal-panel h2 {
+            margin: 0 48px 12px 0;
+            font-family: 'Cinzel', serif;
+            letter-spacing: 0.08em;
+            color: #ffd39b;
+            text-shadow: 0 0 12px rgba(195, 0, 255, 0.5);
+        }
+
+        .portal-panel p {
+            margin: 0 0 12px;
+            line-height: 1.55;
+            color: #f4dfc4;
+        }
+
+        .portal-panel .portal-status {
+            display: inline-flex;
+            margin-bottom: 14px;
+            padding: 5px 10px;
+            border: 1px solid rgba(195, 0, 255, 0.55);
+            border-radius: 999px;
+            color: #f0c7ff;
+            background: rgba(195, 0, 255, 0.12);
+            font-size: 12px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .portal-panel-close {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid #a86c36;
+            background: rgba(12, 5, 8, 0.84);
+            color: #ffd39b;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .portal-panel-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .portal-panel-action {
+            border: 1px solid #a86c36;
+            border-radius: 999px;
+            padding: 9px 14px;
+            background: linear-gradient(180deg, rgba(70, 22, 100, 0.95), rgba(29, 9, 43, 0.95));
+            color: #fff2cf;
+            cursor: pointer;
+            text-decoration: none;
+            font: inherit;
+        }
+
+        .portal-panel-action:hover,
+        .portal-panel-close:hover {
+            border-color: var(--neon-purple);
+            box-shadow: 0 0 16px var(--neon-purple-dim);
+        }
+
+        @media (max-width: 760px) {
+            .top-ui-layer {
+                padding: 18px;
+            }
+
+            .brand-crest {
+                width: 48px;
+            }
+
+            .brand-title {
+                height: 28px;
+            }
+
+            .audio-toggle-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -233,7 +345,7 @@
             </defs>
 
             <!-- WEDGE 1: ABOUT (Top) -->
-            <g class="wedge-group" id="w1">
+            <g class="wedge-group" id="w1" data-module="about" tabindex="0" role="button" aria-label="About Artifex">
                 <path class="wedge-glow" d="M 500 500 L 250 67 A 500 500 0 0 1 750 67 Z" />
                 <path class="wedge-plate" d="M 500 500 L 250 67 A 500 500 0 0 1 750 67 Z" fill="url(#copper-plate)" />
                 <image class="icon-carved" href="menu/about0.png" xlink:href="menu/about0.png" x="387.5" y="77.5" width="225" height="225" />
@@ -241,7 +353,7 @@
             </g>
 
             <!-- WEDGE 2: HELP (Top-Right) -->
-            <g class="wedge-group" id="w2">
+            <g class="wedge-group" id="w2" data-module="help" tabindex="0" role="button" aria-label="Help and guides">
                 <path class="wedge-glow" d="M 500 500 L 750 67 A 500 500 0 0 1 1000 500 Z" />
                 <path class="wedge-plate" d="M 500 500 L 750 67 A 500 500 0 0 1 1000 500 Z" fill="url(#copper-plate)" />
                 <image class="icon-carved" href="menu/help.png" xlink:href="menu/help.png" x="667.5" y="237.5" width="225" height="225" />
@@ -249,7 +361,7 @@
             </g>
 
             <!-- WEDGE 3: CINAEDVS (Bottom-Right) -->
-            <g class="wedge-group" id="w3">
+            <g class="wedge-group" id="w3" data-module="cinaedvs" tabindex="0" role="button" aria-label="Cinaedvs Studios">
                 <path class="wedge-glow" d="M 500 500 L 1000 500 A 500 500 0 0 1 750 933 Z" />
                 <path class="wedge-plate" d="M 500 500 L 1000 500 A 500 500 0 0 1 750 933 Z" fill="url(#copper-plate)" />
                 <image class="icon-carved" href="menu/cinaedvs.png" xlink:href="menu/cinaedvs.png" x="667.5" y="537.5" width="225" height="225" />
@@ -257,7 +369,7 @@
             </g>
 
             <!-- WEDGE 4: SETTINGS (Bottom) -->
-            <g class="wedge-group" id="w4">
+            <g class="wedge-group" id="w4" data-module="settings" tabindex="0" role="button" aria-label="Artifex settings">
                 <path class="wedge-glow" d="M 500 500 L 750 933 A 500 500 0 0 1 250 933 Z" />
                 <path class="wedge-plate" d="M 500 500 L 750 933 A 500 500 0 0 1 250 933 Z" fill="url(#copper-plate)" />
                 <image class="icon-carved" href="menu/settings.png" xlink:href="menu/settings.png" x="387.5" y="697.5" width="225" height="225" />
@@ -265,7 +377,7 @@
             </g>
 
             <!-- WEDGE 5: FONT (Bottom-Left) -->
-            <g class="wedge-group" id="w5">
+            <g class="wedge-group" id="w5" data-module="font" tabindex="0" role="button" aria-label="Font Packer">
                 <path class="wedge-glow" d="M 500 500 L 250 933 A 500 500 0 0 1 0 500 Z" />
                 <path class="wedge-plate" d="M 500 500 L 250 933 A 500 500 0 0 1 0 500 Z" fill="url(#copper-plate)" />
                 <image class="icon-carved" href="menu/font.png" xlink:href="menu/font.png" x="107.5" y="537.5" width="225" height="225" />
@@ -273,7 +385,7 @@
             </g>
 
             <!-- WEDGE 6: SCENE (Top-Left) -->
-            <g class="wedge-group" id="w6">
+            <g class="wedge-group" id="w6" data-module="scene" tabindex="0" role="button" aria-label="Scene Editor">
                 <path class="wedge-glow" d="M 500 500 L 0 500 A 500 500 0 0 1 250 67 Z" />
                 <path class="wedge-plate" d="M 500 500 L 0 500 A 500 500 0 0 1 250 67 Z" fill="url(#copper-plate)" />
                 <image class="icon-carved" href="menu/scene.png" xlink:href="menu/scene.png" x="107.5" y="237.5" width="225" height="225" />
@@ -282,13 +394,8 @@
 
             <!-- CENTER HUB CORE -->
             <g id="center-hub">
-                <!-- 1. Ambient wide soft glow (Using native SVG blur filter) -->
                 <circle cx="500" cy="500" r="160" fill="var(--neon-purple)" filter="url(#wide-glow)" class="soft-glow-circle" id="master-diffuse-glow" />
-                
-                <!-- 2. The solid bronze verdigris dome cap, perfectly masked to be a round circle -->
                 <circle cx="500" cy="500" r="145" class="center-cap-base" fill="url(#center-patina)" stroke="#896b49" stroke-width="3" />
-                
-                <!-- 3. The purple electrical lightning pulse (on top of the cap, screen blend) -->
                 <image id="master-core-lightning" class="center-glow-overlay" href="menu/menudialglow.png" xlink:href="menu/menudialglow.png" x="350" y="350" width="300" height="300" />
             </g>
         </svg>
@@ -306,11 +413,72 @@
         </div>
     </div>
 
+    <div class="portal-panel-backdrop" id="portal-panel-backdrop" aria-hidden="true">
+        <section class="portal-panel" role="dialog" aria-modal="true" aria-labelledby="portal-panel-title">
+            <button class="portal-panel-close" id="portal-panel-close" type="button" aria-label="Close panel">×</button>
+            <span class="portal-status" id="portal-panel-status">Module</span>
+            <h2 id="portal-panel-title">Artifex</h2>
+            <p id="portal-panel-copy">Select a tool from the radial menu.</p>
+            <div class="portal-panel-actions" id="portal-panel-actions"></div>
+        </section>
+    </div>
+
     <!-- SCRIPTS -->
     <script>
         let audioEnabled = true;
         let audioCtx = null;
         let audioUnlocked = false; 
+
+        const portalModules = {
+            about: {
+                title: 'About Artifex',
+                status: 'Portal Module',
+                copy: 'Artifex is the creator hub for Forever Bound: a standalone workspace for scene editing, asset preparation, JSON tools, and future mini-apps.',
+                actions: [
+                    { label: 'Return to Portal', type: 'close' }
+                ]
+            },
+            help: {
+                title: 'Help / Guides',
+                status: 'Placeholder',
+                copy: 'Guides will live here once the Scene Editor, templates, and export workflow are wired into the new Artifex hub.',
+                actions: [
+                    { label: 'Return to Portal', type: 'close' }
+                ]
+            },
+            cinaedvs: {
+                title: 'Cinaedvs Studios',
+                status: 'Placeholder',
+                copy: 'Studio information, project links, credits, or repository shortcuts can be connected here later.',
+                actions: [
+                    { label: 'Return to Portal', type: 'close' }
+                ]
+            },
+            settings: {
+                title: 'Artifex Settings',
+                status: 'Placeholder',
+                copy: 'Settings will eventually control Artifex appearance, paths, default folders, audio preferences, and editor behaviour.',
+                actions: [
+                    { label: 'Return to Portal', type: 'close' }
+                ]
+            },
+            font: {
+                title: 'Font Packer',
+                status: 'Future Tool',
+                copy: 'This will become the bitmap font / atlas tool. For now it is wired as a placeholder so the portal has a complete action map.',
+                actions: [
+                    { label: 'Return to Portal', type: 'close' }
+                ]
+            },
+            scene: {
+                title: 'Scene Editor',
+                status: 'Next Build Step',
+                copy: 'The Scene Editor will move into artifex/apps/scene-editor/. Batch 2 will create the folder and connect this button to the working editor entry point.',
+                actions: [
+                    { label: 'Return to Portal', type: 'close' }
+                ]
+            }
+        };
 
         // Unlocks web audio instantly on the first physical click anywhere on the page
         document.body.addEventListener('click', () => {
@@ -374,6 +542,55 @@
             }
         }
 
+        function openPortalPanel(moduleId) {
+            const module = portalModules[moduleId];
+            if (!module) return;
+
+            const backdrop = document.getElementById('portal-panel-backdrop');
+            const status = document.getElementById('portal-panel-status');
+            const title = document.getElementById('portal-panel-title');
+            const copy = document.getElementById('portal-panel-copy');
+            const actions = document.getElementById('portal-panel-actions');
+
+            status.textContent = module.status;
+            title.textContent = module.title;
+            copy.textContent = module.copy;
+            actions.innerHTML = '';
+
+            (module.actions || []).forEach(action => {
+                const control = action.href ? document.createElement('a') : document.createElement('button');
+                control.className = 'portal-panel-action';
+                control.textContent = action.label;
+
+                if (action.href) {
+                    control.href = action.href;
+                } else {
+                    control.type = 'button';
+                    control.addEventListener('click', closePortalPanel);
+                }
+
+                actions.appendChild(control);
+            });
+
+            backdrop.classList.add('is-open');
+            backdrop.setAttribute('aria-hidden', 'false');
+            document.getElementById('portal-panel-close').focus();
+        }
+
+        function closePortalPanel() {
+            const backdrop = document.getElementById('portal-panel-backdrop');
+            backdrop.classList.remove('is-open');
+            backdrop.setAttribute('aria-hidden', 'true');
+        }
+
+        document.getElementById('portal-panel-close').addEventListener('click', closePortalPanel);
+        document.getElementById('portal-panel-backdrop').addEventListener('click', (event) => {
+            if (event.target.id === 'portal-panel-backdrop') closePortalPanel();
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') closePortalPanel();
+        });
+
         const wedges = document.querySelectorAll('.wedge-group');
         const centralDiffuseGlow = document.getElementById('master-diffuse-glow');
         const centerLightning = document.getElementById('master-core-lightning');
@@ -403,7 +620,15 @@
 
             wedge.addEventListener('click', () => {
                 playTone('surge');
-                console.log(`Action Executed: ${wedge.id} Module`);
+                openPortalPanel(wedge.dataset.module);
+            });
+
+            wedge.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    playTone('surge');
+                    openPortalPanel(wedge.dataset.module);
+                }
             });
         });
 
