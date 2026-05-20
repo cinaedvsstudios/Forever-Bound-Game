@@ -1,0 +1,73 @@
+{
+  "id": "template_title_screen",
+  "screenType": "static",
+  "mode": "static",
+  "name": "Template Title Screen",
+  "templateNotes": "Uses SVG placeholder assets from artifex/templates/assets/. These are only test images; replace image paths with PNG, JPG, GIF, SVG, or WebP project assets as needed.",
+  "theme": {
+    "backgroundMode": "image",
+    "backgroundImage": "artifex/templates/assets/template_grid_sky_ground.svg",
+    "backgroundGradient": "linear-gradient(135deg, #170818, #030205 65%, #1c0e08)"
+  },
+  "branding": {
+    "studioName": "CINAEDVS Studios",
+    "studioUrl": "https://cinaedvsstudios.github.io/cinaedvs/",
+    "studioIcon": "artifex/templates/assets/template_marker.svg",
+    "mainLogo": "artifex/templates/assets/template_blue_person.svg",
+    "fallbackTitle": "Template Game Title",
+    "logoScale": 1.1,
+    "tagline": "Template title screen with placeholder SVG art."
+  },
+  "buttons": [
+    { "id": "start", "label": "Start Game", "action": "startGame", "sound": "" },
+    { "id": "continue", "label": "Continue", "action": "showNotice", "notice": "Continue is not connected yet.", "sound": "" },
+    { "id": "options", "label": "Options", "action": "showNotice", "notice": "Options will be added later.", "sound": "" },
+    { "id": "credits", "label": "Credits", "action": "showNotice", "notice": "Credits will be added later.", "sound": "" }
+  ],
+  "footer": {
+    "text": "Template footer",
+    "foreverBoundText": "Project website",
+    "foreverBoundUrl": "https://sites.google.com/view/foreverbound"
+  },
+  "audio": {
+    "music": "",
+    "ambience": "",
+    "buttonPressSound": "",
+    "startSound": "",
+    "musicVolume": 0.55,
+    "ambienceVolume": 0.45,
+    "sfxVolume": 0.75,
+    "loopMusic": true,
+    "loopAmbience": true
+  },
+  "grid": { "columns": 16, "rows": 9, "snap": false, "show": true },
+  "layers": [],
+  "elements": [
+    {
+      "id": "title_red_ball_icon",
+      "type": "image",
+      "name": "Red Ball Logo Accent",
+      "image": "artifex/templates/assets/template_red_ball.svg",
+      "x": 18,
+      "y": 25,
+      "width": 10,
+      "height": 16,
+      "layer": 10,
+      "visible": true
+    },
+    {
+      "id": "title_green_box_button_sample",
+      "type": "button",
+      "name": "Green Box Button Sample",
+      "image": "artifex/templates/assets/template_green_box.svg",
+      "text": "BUTTON SAMPLE",
+      "x": 42,
+      "y": 70,
+      "width": 18,
+      "height": 10,
+      "layer": 11,
+      "visible": true
+    }
+  ],
+  "ui": []
+}
