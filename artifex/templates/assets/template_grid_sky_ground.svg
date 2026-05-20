@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-label="Template sky and ground grid background">
+  <rect width="1280" height="720" fill="#7ec8ff"/>
+  <rect y="470" width="1280" height="250" fill="#4caf50"/>
+  <rect y="442" width="1280" height="28" fill="#d8b46a"/>
+  <g stroke="#ffffff" stroke-opacity="0.45" stroke-width="1">
+    <path d="M0 80H1280M0 160H1280M0 240H1280M0 320H1280M0 400H1280M0 480H1280M0 560H1280M0 640H1280"/>
+    <path d="M80 0V720M160 0V720M240 0V720M320 0V720M400 0V720M480 0V720M560 0V720M640 0V720M720 0V720M800 0V720M880 0V720M960 0V720M1040 0V720M1120 0V720M1200 0V720"/>
+  </g>
+  <g font-family="Inter, Arial, sans-serif" fill="#123" opacity="0.75">
+    <text x="28" y="48" font-size="28" font-weight="700">TEMPLATE BACKGROUND</text>
+    <text x="28" y="86" font-size="20">Sky, ground, and grid lines for quick editor testing</text>
+    <text x="28" y="455" font-size="18">Ground line</text>
+  </g>
+</svg>
