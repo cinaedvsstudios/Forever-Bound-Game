@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v0.06';
+  const VERSION = 'v0.07';
   let panning = null;
 
   function toast(message) {
@@ -18,7 +18,7 @@
 
   function enhanceElementsHeader() {
     const elementsCard = document.querySelector('[data-card-id="elements"]');
-    if (!elementsCard || elementsCard.dataset.v06Enhanced === 'true') return;
+    if (!elementsCard || elementsCard.dataset.v07Enhanced === 'true') return;
     const heading = elementsCard.querySelector('h2');
     if (!heading) return;
 
@@ -31,7 +31,6 @@
       <button class="header-icon-btn" type="button" data-proxy="addElement" title="Add Element">➕</button>
       <button class="header-icon-btn" type="button" data-proxy="addLayer" title="Add Layer">🧱</button>
       <button class="header-icon-btn" type="button" data-proxy="highlightBtn" title="Toggle Highlight">🖍️</button>
-      <label class="layer-pill" title="Selected layer">Layer <input id="headerLayerPill" type="number" value="0"></label>
     `;
 
     const toggle = heading.querySelector('.card-toggle');
@@ -46,43 +45,33 @@
       });
     });
 
-    actions.querySelector('#headerLayerPill')?.addEventListener('change', (event) => {
-      const bodyLayer = document.getElementById('layerPill');
-      if (!bodyLayer) return;
-      bodyLayer.value = event.target.value;
-      bodyLayer.dispatchEvent(new Event('change', { bubbles: true }));
-    });
-
-    elementsCard.dataset.v06Enhanced = 'true';
+    elementsCard.dataset.v07Enhanced = 'true';
   }
 
-  function syncHeaderLayerPill() {
-    const headerLayer = document.getElementById('headerLayerPill');
-    const bodyLayer = document.getElementById('layerPill');
-    if (headerLayer && bodyLayer && headerLayer.value !== bodyLayer.value) headerLayer.value = bodyLayer.value;
-  }
-
-  function hideBodyElementActionButtons() {
+  function revealLayerRowAndHideOldActionButtons() {
     const elementsCard = document.querySelector('[data-card-id="elements"]');
     if (!elementsCard) return;
     const bodyActions = elementsCard.querySelector('.card-body .compact-actions');
-    if (bodyActions) bodyActions.style.display = 'none';
+    if (!bodyActions) return;
+    bodyActions.style.display = 'flex';
+    bodyActions.querySelectorAll('.icon-btn').forEach((button) => button.style.display = 'none');
+    bodyActions.classList.add('layer-only-row');
   }
 
   function enhanceBlankVersion() {
     const blank = document.querySelector('.blank-message');
-    if (!blank || blank.querySelector('.artifex-version-marker-v06')) return;
+    if (!blank || blank.querySelector('.artifex-version-marker-v07')) return;
     const marker = document.createElement('div');
-    marker.className = 'artifex-version-marker-v06';
-    marker.textContent = `${VERSION} UI polish build`;
+    marker.className = 'artifex-version-marker-v07';
+    marker.textContent = `${VERSION} input-stability build`;
     marker.style.cssText = 'margin-top:12px;color:#bfa990;font-size:12px;letter-spacing:.04em;';
     blank.appendChild(marker);
   }
 
   function wireMiddleMousePanning() {
     const wrap = document.querySelector('.stage-wrap');
-    if (!wrap || wrap.dataset.v06Panning === 'true') return;
-    wrap.dataset.v06Panning = 'true';
+    if (!wrap || wrap.dataset.v07Panning === 'true') return;
+    wrap.dataset.v07Panning = 'true';
 
     wrap.addEventListener('pointerdown', (event) => {
       if (event.button !== 1) return;
@@ -120,8 +109,7 @@
 
   function patch() {
     enhanceElementsHeader();
-    syncHeaderLayerPill();
-    hideBodyElementActionButtons();
+    revealLayerRowAndHideOldActionButtons();
     enhanceBlankVersion();
     wireMiddleMousePanning();
   }
@@ -138,7 +126,7 @@
   observer.observe(document.documentElement, { childList: true, subtree: true });
   window.addEventListener('load', () => {
     patch();
-    toast('Scene Editor UI polish loaded');
+    toast('Scene Editor input-stability loaded');
   });
   patch();
 })();
