@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" role="img" aria-label="Template red ball placeholder">
+  <defs>
+    <radialGradient id="g" cx="35%" cy="30%" r="70%">
+      <stop offset="0" stop-color="#ffb3b3"/>
+      <stop offset="0.4" stop-color="#e53935"/>
+      <stop offset="1" stop-color="#8e0000"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="82" cy="140" rx="52" ry="10" fill="#000" opacity="0.25"/>
+  <circle cx="80" cy="76" r="56" fill="url(#g)" stroke="#650000" stroke-width="8"/>
+  <text x="80" y="84" text-anchor="middle" font-family="Arial" font-size="22" font-weight="700" fill="#fff">BALL</text>
+</svg>
