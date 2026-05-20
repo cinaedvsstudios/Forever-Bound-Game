@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="260" viewBox="0 0 180 260" role="img" aria-label="Template door placeholder">
+  <rect x="24" y="18" width="132" height="224" rx="10" fill="#8d6e63" stroke="#3e2723" stroke-width="10"/>
+  <rect x="42" y="40" width="96" height="180" rx="8" fill="#a1887f" stroke="#5d4037" stroke-width="6"/>
+  <circle cx="120" cy="134" r="9" fill="#ffd54f" stroke="#5d4037" stroke-width="4"/>
+  <text x="90" y="92" text-anchor="middle" font-family="Arial" font-size="22" font-weight="700" fill="#fff">EXIT</text>
+</svg>
