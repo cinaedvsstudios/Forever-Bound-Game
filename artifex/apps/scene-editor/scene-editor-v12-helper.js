@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v0.12c';
+  const VERSION = 'v0.12d';
   const BORDER_KEY = 'artifex.sceneEditor.borderHidden.v1';
   let queued = false;
 
@@ -79,8 +79,8 @@
       button.textContent = '📐';
       button.title = 'Wrap image to aspect ratio';
     }
-    if (button.getAttribute('data-v12c') !== 'true') {
-      button.setAttribute('data-v12c', 'true');
+    if (button.getAttribute('data-v12d') !== 'true') {
+      button.setAttribute('data-v12d', 'true');
       button.addEventListener('click', function (event) {
         event.preventDefault();
         event.stopPropagation();
@@ -95,6 +95,16 @@
       if (!row || !row.classList || !row.classList.contains('field-row')) return;
       if (!row.querySelector('.field') && !row.querySelector('.wrap-image-btn')) row.remove();
     });
+  }
+
+  function ensureMetricsDivider(grid) {
+    if (!grid) return;
+    let divider = document.querySelector('.selected-metrics-divider');
+    if (!divider) {
+      divider = document.createElement('div');
+      divider.className = 'selected-metrics-divider';
+    }
+    if (divider.previousElementSibling !== grid) grid.after(divider);
   }
 
   function buildMetricsGrid() {
@@ -138,6 +148,7 @@
     grid.appendChild(layer);
 
     removeEmptyRows(Array.from(new Set(rows)));
+    ensureMetricsDivider(grid);
   }
 
   function buildBorderToggle() {
@@ -180,8 +191,8 @@
     const id = selectedId();
     const state = readState();
     checkbox.checked = !state[id];
-    if (checkbox.getAttribute('data-v12c') === 'true') return;
-    checkbox.setAttribute('data-v12c', 'true');
+    if (checkbox.getAttribute('data-v12d') === 'true') return;
+    checkbox.setAttribute('data-v12d', 'true');
     checkbox.addEventListener('change', function () {
       const current = selectedId();
       const next = readState();
