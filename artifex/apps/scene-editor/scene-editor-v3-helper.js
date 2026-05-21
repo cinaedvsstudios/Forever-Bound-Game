@@ -1,7 +1,8 @@
 (() => {
-  const VERSION = 'v0.08';
+  const VERSION = 'v0.09';
   const LOCK_KEY = 'artifex.sceneEditor.lockedElements.v1';
   let panning = null;
+  let popupDrag = null;
   let downloadBypass = false;
 
   function readLocks() {
@@ -30,7 +31,7 @@
 
   function enhanceElementsHeader() {
     const elementsCard = document.querySelector('[data-card-id="elements"]');
-    if (!elementsCard || elementsCard.dataset.v08Enhanced === 'true') return;
+    if (!elementsCard || elementsCard.dataset.v09Enhanced === 'true') return;
     const heading = elementsCard.querySelector('h2');
     if (!heading) return;
 
@@ -57,7 +58,7 @@
       });
     });
 
-    elementsCard.dataset.v08Enhanced = 'true';
+    elementsCard.dataset.v09Enhanced = 'true';
   }
 
   function revealLayerRowAndHideOldActionButtons() {
@@ -78,7 +79,7 @@
 
   function enhanceFilePill() {
     const pill = document.querySelector('.file-pill');
-    if (!pill || pill.dataset.v08FileTools === 'true') return;
+    if (!pill || pill.dataset.v09FileTools === 'true') return;
     const label = pill.textContent.trim();
     pill.textContent = '';
     const text = document.createElement('span');
@@ -96,14 +97,16 @@
       event.stopPropagation();
       document.getElementById('downloadJson')?.click();
     });
-    pill.dataset.v08FileTools = 'true';
+    pill.dataset.v09FileTools = 'true';
   }
 
   function enhanceElementRows() {
     const locks = readLocks();
     document.querySelectorAll('.item-row[data-select-id]').forEach((row) => {
       const id = row.dataset.selectId;
-      if (!id || row.dataset.v08Lock === 'true') return;
+      if (!id) return;
+      const old = row.querySelector('.element-lock-toggle');
+      if (old) old.remove();
       const lock = document.createElement('span');
       lock.className = 'element-lock-toggle';
       lock.textContent = locks[id] ? '🔒' : '🔓';
@@ -117,9 +120,9 @@
         toast(next[id] ? `Locked ${id}` : `Unlocked ${id}`);
         patch();
       });
-      row.prepend(lock);
+      row.append(lock);
       row.classList.toggle('is-locked', !!locks[id]);
-      row.dataset.v08Lock = 'true';
+      row.dataset.v09Lock = 'true';
     });
   }
 
@@ -128,7 +131,7 @@
       const id = item.dataset.stageId;
       const locks = readLocks();
       item.classList.toggle('is-locked', !!locks[id]);
-      if (item.dataset.v08LockBlock === 'true') return;
+      if (item.dataset.v09LockBlock === 'true') return;
       item.addEventListener('pointerdown', (event) => {
         const currentLocks = readLocks();
         if (!currentLocks[item.dataset.stageId]) return;
@@ -136,13 +139,13 @@
         event.stopImmediatePropagation();
         toast(`Locked: ${item.dataset.stageId}`);
       }, true);
-      item.dataset.v08LockBlock = 'true';
+      item.dataset.v09LockBlock = 'true';
     });
   }
 
   function enhanceTagsField() {
     const field = document.getElementById('itemTags')?.closest('.field');
-    if (!field || field.dataset.v08Tags === 'true') return;
+    if (!field || field.dataset.v09Tags === 'true') return;
     const label = field.querySelector('label');
     if (!label) return;
     const eye = document.createElement('button');
@@ -156,7 +159,7 @@
       showTagPopup();
     });
     label.appendChild(eye);
-    field.dataset.v08Tags = 'true';
+    field.dataset.v09Tags = 'true';
   }
 
   function currentTags() {
@@ -208,6 +211,7 @@
     };
     popup.querySelector('[data-close]')?.addEventListener('click', () => popup.remove());
     document.body.appendChild(popup);
+    wirePopupDrag(popup);
     renderTags();
   }
 
@@ -240,16 +244,87 @@
     if (row) row.click();
   }
 
-  function downloadRiskyAssets(assets) {
-    assets.forEach((asset, index) => {
+  function safeFilename(value) {
+    return String(value || 'asset').trim().replace(/[^a-z0-9_\-.]+/gi, '_').replace(/^_+|_+$/g, '') || 'asset';
+  }
+
+  function extensionFromMime(type) {
+    const map = {
+      'image/png': '.png',
+      'image/jpeg': '.jpg',
+      'image/webp': '.webp',
+      'image/gif': '.gif',
+      'image/svg+xml': '.svg',
+      'image/avif': '.avif'
+    };
+    return map[String(type || '').toLowerCase()] || '';
+  }
+
+  function extensionFromUrl(url) {
+    try {
+      const path = new URL(url, location.href).pathname;
+      const match = path.match(/\.([a-z0-9]{2,5})$/i);
+      return match ? `.${match[1].toLowerCase()}` : '';
+    } catch {
+      const match = String(url || '').match(/\.([a-z0-9]{2,5})(?:[?#].*)?$/i);
+      return match ? `.${match[1].toLowerCase()}` : '';
+    }
+  }
+
+  async function downloadOneRiskyAsset(asset, index) {
+    const base = safeFilename(asset.id || `asset_${index + 1}`);
+    try {
+      const response = await fetch(asset.src);
+      if (!response.ok) throw new Error(String(response.status));
+      const blob = await response.blob();
+      const ext = extensionFromMime(blob.type) || extensionFromUrl(asset.src) || '.png';
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = asset.src;
-      a.download = `${asset.id || 'asset'}_${index + 1}`.replace(/[^a-z0-9_\-.]+/gi, '_');
+      a.href = url;
+      a.download = `${base}${ext}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } catch {
+      const a = document.createElement('a');
+      a.href = asset.src;
+      a.download = `${base}${extensionFromUrl(asset.src) || '.png'}`;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+  }
+
+  async function downloadRiskyAssets(assets) {
+    for (let index = 0; index < assets.length; index += 1) {
+      await downloadOneRiskyAsset(assets[index], index);
+    }
+    toast(`Download started for ${assets.length} asset(s), named by element ID`);
+  }
+
+  function wirePopupDrag(popup) {
+    const handle = popup.querySelector('.floating-side-popup-head');
+    if (!handle || popup.dataset.v09Drag === 'true') return;
+    popup.dataset.v09Drag = 'true';
+    handle.addEventListener('pointerdown', (event) => {
+      if (event.target.closest('button')) return;
+      const rect = popup.getBoundingClientRect();
+      popupDrag = {
+        popup,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        left: rect.left,
+        top: rect.top
+      };
+      popup.classList.add('is-dragging');
+      popup.style.left = `${rect.left}px`;
+      popup.style.top = `${rect.top}px`;
+      popup.style.right = 'auto';
+      handle.setPointerCapture?.(event.pointerId);
     });
-    toast(`Download started for ${assets.length} asset(s)`);
   }
 
   function showAssetWarning(assets) {
@@ -277,12 +352,13 @@
     });
     popup.querySelectorAll('[data-asset-id]').forEach((button) => button.addEventListener('click', () => selectAsset(button.dataset.assetId)));
     document.body.appendChild(popup);
+    wirePopupDrag(popup);
   }
 
   function wireDownloadWarning() {
     const button = document.getElementById('downloadJson');
-    if (!button || button.dataset.v08DownloadWarning === 'true') return;
-    button.dataset.v08DownloadWarning = 'true';
+    if (!button || button.dataset.v09DownloadWarning === 'true') return;
+    button.dataset.v09DownloadWarning = 'true';
     button.addEventListener('click', (event) => {
       if (downloadBypass) return;
       const assets = findRiskyImages();
@@ -296,18 +372,18 @@
 
   function enhanceBlankVersion() {
     const blank = document.querySelector('.blank-message');
-    if (!blank || blank.querySelector('.artifex-version-marker-v08')) return;
+    if (!blank || blank.querySelector('.artifex-version-marker-v09')) return;
     const marker = document.createElement('div');
-    marker.className = 'artifex-version-marker-v08';
-    marker.textContent = `${VERSION} asset-warning build`;
+    marker.className = 'artifex-version-marker-v09';
+    marker.textContent = `${VERSION} asset-download naming build`;
     marker.style.cssText = 'margin-top:12px;color:#bfa990;font-size:12px;letter-spacing:.04em;';
     blank.appendChild(marker);
   }
 
   function wireMiddleMousePanning() {
     const wrap = document.querySelector('.stage-wrap');
-    if (!wrap || wrap.dataset.v08Panning === 'true') return;
-    wrap.dataset.v08Panning = 'true';
+    if (!wrap || wrap.dataset.v09Panning === 'true') return;
+    wrap.dataset.v09Panning = 'true';
 
     wrap.addEventListener('pointerdown', (event) => {
       if (event.button !== 1) return;
@@ -343,6 +419,12 @@
     panning = null;
   }
 
+  function stopPopupDrag() {
+    if (!popupDrag) return;
+    popupDrag.popup?.classList.remove('is-dragging');
+    popupDrag = null;
+  }
+
   function patch() {
     enhanceElementsHeader();
     revealLayerRowAndHideOldActionButtons();
@@ -354,10 +436,18 @@
     enhanceBlankVersion();
     wireMiddleMousePanning();
     wireDownloadWarning();
+    document.querySelectorAll('.floating-side-popup').forEach(wirePopupDrag);
   }
 
-  document.addEventListener('pointerup', stopPanning);
-  document.addEventListener('pointercancel', stopPanning);
+  document.addEventListener('pointermove', (event) => {
+    if (!popupDrag) return;
+    const left = popupDrag.left + (event.clientX - popupDrag.startX);
+    const top = popupDrag.top + (event.clientY - popupDrag.startY);
+    popupDrag.popup.style.left = `${Math.max(8, Math.min(window.innerWidth - 80, left))}px`;
+    popupDrag.popup.style.top = `${Math.max(8, Math.min(window.innerHeight - 60, top))}px`;
+  });
+  document.addEventListener('pointerup', () => { stopPanning(); stopPopupDrag(); });
+  document.addEventListener('pointercancel', () => { stopPanning(); stopPopupDrag(); });
   document.addEventListener('mouseenter', (event) => {
     const tipNode = event.target.closest?.('[data-tip], [title]');
     if (!tipNode) return;
@@ -368,7 +458,7 @@
   observer.observe(document.documentElement, { childList: true, subtree: true });
   window.addEventListener('load', () => {
     patch();
-    toast('Scene Editor asset-warning loaded');
+    toast('Scene Editor asset-download naming loaded');
   });
   patch();
 })();
