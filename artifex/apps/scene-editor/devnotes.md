@@ -4,7 +4,7 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 
 ## Current active test URL
 
-`https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/?v=v13b`
+`https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/?v=v14`
 
 ## Patch log
 
@@ -21,22 +21,19 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 
 - Added templates folder support so test JSON files can be loaded from templates.
 - Added starter template JSON files for basic editor testing.
-- Added simple placeholder SVG assets for testing: grid/background style assets, coloured placeholder objects, simple prop/person/object shapes.
-- Noted that early template files point to SVGs, not JPEG/GIF assets.
+- Added simple placeholder SVG assets for testing.
 - Added Import from templates modal/list behavior.
 
 ### Import menu pass — hard drive, URL, and templates
 
 - Changed the old choose/change JSON button into an Import button.
 - Import menu supports: From hard drive, From URL, and From templates.
-- Added template popup/modal for choosing starter files.
 - Changed startup behavior so the editor starts blank rather than auto-loading an existing JSON.
 - Added basic load/open toasts.
 
 ### Branding and title bar pass
 
 - Replaced the text-only editor title with Artifex logo/title images.
-- Adjusted Title Bar button sizing and spacing.
 - Added vertical divider after the Artifex title area.
 - Added hover/status text area in the Title Bar.
 - Moved filename out of the Title Bar and into a file pill at the top of the Control Panel.
@@ -47,46 +44,39 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 - Added collapsible cards with ↕ controls.
 - Added different card-header colour treatments for Scene Basics, Elements, Selected Item, and JSON Preview.
 - Set JSON Preview collapsed by default.
-- Reduced some Control Panel text sizing to make the editor less cramped.
 
 ### Work Area grid and zoom pass
 
 - Added Work Area zoom controls: +, o, and -.
 - Added right-click Set default zoom behavior on the zoom reset button.
 - Saved zoom/default zoom settings to localStorage.
-- Added more detailed grid styling, including denser gridlines, stronger major lines, axis labels, and coordinate labels.
-- Added status/toast feedback for zoom/default zoom changes.
+- Added detailed grid styling, major gridlines, axis labels, and coordinate labels.
 
 ### Object selection and context menu pass
 
 - Made selected object glow/highlight more visible.
 - Added highlight toggle behavior.
-- Added right-click object context menu with object name/type and actions such as Zoom to object, Properties, Duplicate, and Delete.
-- Fixed duplicate behavior after early attempts where the toast appeared but the object did not actually duplicate.
-- Fixed right-click menu handling after earlier context menu events were not being captured reliably.
+- Added right-click object context menu with Zoom to object, Properties, Duplicate, and Delete.
+- Fixed duplicate and context-menu reliability issues from early versions.
 
 ### Layer and Elements list pass
 
 - Added element numbering in the Elements card.
-- Adjusted Elements list so the top item represents the frontmost layer and the bottom item represents the backmost layer conceptually.
 - Added a layer value pill/control tied to the selected item.
-- Began cleanup work around messy layer numbers, with later need for a real Clean Layers pass still outstanding.
-- Changed several Elements card controls toward compact emoji/icon controls.
+- Began cleanup work around messy layer numbers.
 
 ### Selected Item fields and effects planning pass
 
 - Changed Selected Item card title to use the selected object's name.
-- Added/kept fields for ID, Name, Type, Image Path, Text, X/Y, Width/Height, Layer, Z/Depth, Tags, and Visible.
+- Added fields for ID, Name, Type, Image Path, Text, X/Y, Width/Height, Layer, Z/Depth, Tags, and Visible.
 - Type field moved toward dropdown behavior.
-- Added Tags field for later Asset Library searching.
-- Added planning notes for future effects: tint, brightness, contrast, saturation, blend mode, opacity, lock, multi-select, show/hide name, and show/hide border.
+- Added planning notes for visual/effect options.
 
 ### Image path and file-source pass
 
 - Added folder button beside image/path fields.
 - Path menu supports Online and HDD options.
 - Added warning concept for local blob/HDD images that cannot survive a reload unless converted into stable project assets.
-- Added unsaved-image warning planning for save/download flows.
 - Added Download All Images behavior for URL-based images and later adjusted naming toward element IDs.
 
 ### Asset library folder foundation
@@ -94,7 +84,7 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 - Added `artifex/assets-library/` folder structure.
 - Split asset folders by kind: static images, animated assets, animation frames, and videos.
 - Confirmed MP4 loops are acceptable for reusable visual effects such as fire/sparks when used with blend/overlay modes.
-- Added first asset-library manifest indexing the uploaded assets by ID, path, category, format, recommended use, and tags.
+- Added first asset-library manifest indexing uploaded assets by ID, path, category, format, recommended use, and tags.
 
 ### v0.10 series — texture, recent imports, and loading polish
 
@@ -119,99 +109,125 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 
 - Rebuilt the selected-item metrics area into a more deliberate grid.
 - Layout target: X / Y / Z on the left, scale/wrap controls in the middle, Height / Width / Layer on the right.
-- The helper now creates the Wrap Image button if it is missing.
-- Old empty field rows are removed after fields are moved into the grid.
+- The helper creates the Wrap Image button if it is missing.
 
 ### v0.12d — divider and Border toggle restore
 
 - Restored the divider line under the metrics grid.
 - Re-added the Border checkbox beside Delete Selected and Visible.
 - Border toggle remains localStorage-based for now.
-- Later improvement: save border visibility into the scene JSON per object.
 
 ### v0.12e — border toggle override fix
 
 - Fixed Border toggle so it works on selected objects as well as unselected objects.
-- `border-hidden` now overrides selected highlight styles, outline, box-shadow, border, and purple editor background.
+- `border-hidden` overrides selected highlight styles, outline, box-shadow, border, and purple editor background.
 
 ### v0.12f — proportional scale controls and zoom-to-object repair
 
 - Added middle-column proportional scale controls: up arrow, wrap image, down arrow.
 - Up/down controls change Width and Height together by 2 points.
-- Kept Wrap Image as the center scale tool.
-- Added `scene-editor-v12f.css` for the scale-control stack styling.
-- Patched right-click `Zoom to object` so it zooms in and scrolls the selected object into view instead of only showing a toast.
+- Patched right-click `Zoom to object` so it zooms in and scrolls the selected object into view.
 
 ### v0.12g — object move handle and max zoom pass
 
-- Added a 💠 move handle in the centre of each object.
-- Object dragging should now require using the 💠 handle instead of dragging from anywhere on the object.
+- Added a centre move handle to each object.
+- Object dragging should require the centre handle instead of dragging from anywhere on the object.
 - Clicking an object body should select it without accidentally moving it.
-- Added visual feedback on the 💠 handle while hovering and dragging.
-- Patched Zoom to object toward maximum zoom and center-scroll behavior.
-- Needs checking: selection without movement, handle-only dragging, visual feedback, and max zoom centering.
 
 ### v0.12h — local working-copy resume and plain move handle
 
 - Added localStorage working-copy backup helper.
-- When the editor is blank and a local backup exists, the Blank Scene Editor area now shows a non-modal “Start where you left off?” panel.
-- Open local backup loads the cached JSON working copy rather than trying to reopen a hard-drive file.
-- File pill now shows local backup and last downloaded timestamps where available.
+- When the editor is blank and a local backup exists, the blank area shows a non-modal “Start where you left off?” panel.
+- Open local backup loads the cached JSON working copy.
+- File pill now shows local backup and last downloaded timestamps.
 - Download JSON records a last-downloaded timestamp.
-- Removed the 💠 emoji from the move handle and left the plain round centre drag circle.
-- Zoom to object now targets roughly 200% instead of a tiny one-step zoom.
+- Removed the move-handle emoji and left the plain round centre drag circle.
 
 ### v0.12i — core working-copy save and control-card layout foundation
 
-- Moved local working-copy save/resume into the core editor file so it saves from the live scene state instead of relying on JSON Preview.
+- Moved local working-copy save/resume into the core editor file so it saves from live scene state instead of JSON Preview.
 - Disabled the older preview-based resume helper so collapsed JSON Preview no longer blocks local backup.
-- Start where you left off should now restore directly from localStorage.
-- Zoom to object now doubles the current zoom toward the selected object, capped at the editor maximum.
-- Added `scene-editor-v12i.css` with reusable control-card layout classes: 1-column, 2-column, 3-column, mixed groups, spans, dividers, and notes.
-- Needs checking: local backup survives refresh, Open local backup restores the edited scene, and Zoom to object doubles current zoom.
+- Zoom to object now doubles current zoom toward the selected object, capped at editor maximum.
+- Added reusable control-card layout classes: 1-column, 2-column, 3-column, mixed groups, spans, dividers, and notes.
 
 ### v0.12j — file pill and resume panel polish
 
-- Added `scene-editor-v12j-helper.js` and `scene-editor-v12j.css` for file pill / resume panel polish.
-- File pill display changed toward: `📁 💾 filename.json` and second line `| LOCAL: dd-mm-yy hh:mm | HDD: dd-mm-yy hh:mm |`.
+- Added file pill / resume panel polish.
+- File pill display changed toward `📁 💾 filename.json` and second line `| LOCAL: dd-mm-yy hh:mm | HDD: dd-mm-yy hh:mm |`.
 - Resume panel polish: removed the extra Blank Scene Editor heading, made “Start where you left off?” purple, highlighted the file name, centered the buttons, and made Open local backup purple.
-- Needs checking: file pill should not overflow, resume panel buttons should be centered, and Open local backup should stay visually primary.
 
 ### v0.12k — file pill metadata sanitiser
 
 - Fixed duplicated file pill icons / duplicated LOCAL-HDD text caused by the visible pill text being read back as the file name.
 - Sanitises stored working-copy filename and downloaded filename in localStorage.
-- Strips `📁`, `💾`, `LOCAL`, `HDD`, `Local backup`, and `Last downloaded` pollution from displayed/saved file names.
 - Rebuilds the file pill from clean values only.
-- Needs checking: file pill should settle to one icon pair, one clean filename, and one LOCAL/HDD metadata line.
 
 ### v0.13 — control-card layout conversion
 
 - Loaded `scene-editor-v13.css` and `scene-editor-v13-helper.js`.
 - Converted the file pill into a fixed 3-row structure: project name, file title, then icons/date-time row.
 - File pill bottom row uses two columns: icons on the left and `LOCAL` / `HDD` timestamps on the right.
-- Added a project placeholder icon `🏗️` beside the folder and disk icons.
-- Converted Scene Basics into layout groups: 1-column identity/path group, 2-column grid group, and 1-column toggle group.
-- Converted Elements into layout groups: top controls/layer row and full-width item list.
-- Converted Selected Item into layout groups: 1-column identity/path group, metrics block, tags group, and tools group.
-- This is still helper-based, but it proves the card layout rules before moving them into the core editor render functions.
-- Needs checking: file pill should stay stable, cards should not lose controls, selected-item metrics/wrap/scale controls should still work.
+- Added project placeholder icon `🏗️` beside folder and disk icons.
+- Converted Scene Basics into layout groups.
+- Converted Elements into layout groups.
+- Converted Selected Item into layout groups.
 
 ### v0.13b — selected-item metrics rebuild
 
 - Rebuilt the Selected Item / asset details metrics block instead of reusing the old metrics grid.
-- Metrics now use an explicit 3-column layout: left value column, middle scale/wrap column, right value column.
-- Target layout is: Row 1 `X Axis | scale/wrap | Height`; Row 2 `Y Axis | spacer | Width`; Row 3 `Z / Depth | spacer | Layer`.
+- Metrics use an explicit 3-column layout: left value column, middle scale/wrap column, right value column.
 - Kept ID, Name, Type, Image Path, and Text in a 1-column identity group.
 - Kept Tags in a 1-column group and bottom tools in a separate tools group.
-- Styled the metric grid, scale stack, bottom tools, and input widths in `scene-editor-v13.css`.
-- Needs checking: selected card should now visibly change; X/Y/Z, Height/Width/Layer, Wrap Image, scale up/down, Tags, Delete, Visible, and Border should still work.
+
+### v0.13c — explicit metric table and visual-treatment placeholders
+
+- Disabled the old v0.12 metrics-grid builder so it no longer fights the v0.13 selected-card layout.
+- Rebuilt the selected-item metrics area as an explicit label/value table.
+- Target layout: X Axis / Scale / Height; X value / scale controls / Height value; Y Axis / blank / Width; Y value / wrap / Width value; Z / Depth / blank / Layer; Z slider / blank / Layer value.
+- Added disabled Visual Treatment placeholders for blend mode, opacity, transparent colour, brightness, contrast, and saturation.
+
+### v0.13d — selected metric icon correction
+
+- Kept the Scale label in the middle column.
+- Moved up/down scale controls onto the X/Height value row.
+- Moved Wrap Image triangle onto the Y/Width value row.
+- Left the Z/Layer middle cell blank.
+- Removed the bubble/button look around arrow and triangle controls while keeping them clickable.
+
+### v0.13e — transform placeholders, asset-browser category filter, and centre dragging
+
+- Fixed centre-drag behavior so the cursor stays attached to the centre handle rather than snapping to the top-left object corner.
+- Added Transform heading and Rotate / Rotation Origin placeholders.
+- Added Visual Adjustments, Animation, and Audio placeholder sections under the selected item.
+- Added fuller disabled visual placeholders: blend mode, opacity, brightness, contrast, saturation, hue, tint, vibrance, monochrome, transparent colour, threshold, threshold alpha, exposure, highlights/shadows, levels, curves, drop shadow, outer glow, and vignette.
+- Asset Browser buttons changed toward compact emoji controls: clear, reload, close.
+- Added game-category dropdown to Asset Browser: all categories, characters + animals, objects, environment, doors/exits, effects, pickups/relics, backgrounds, and UI.
+
+### v0.13f — selected object card split and drag redraw cleanup
+
+- Reduced Control Panel redraw while dragging the centre handle: during drag it updates the selected object position visually, then dispatches field updates on pointer release.
+- Split selected object editing into separate cards: Object Details, Transform, Visual Adjustments, Animation, and Audio.
+- Object Details keeps ID, Name, Type, Image Path, and Text.
+- Transform now contains the metric table, rotate placeholders, Tags, Delete Selected, Visible, and Border controls.
+- Animation card includes a disabled animation-file picker placeholder.
+- Audio card includes a disabled audio-file picker placeholder.
+
+### v0.14 — layer stack cleanup helper
+
+- Added `scene-editor-v14-helper.js`.
+- Elements card now turns the item list into a layer stack table.
+- Left column shows fixed slot numbers: 1, 2, 3, etc.
+- Middle column shows the element pill.
+- Right column shows layer lock icon: 🔓 / 🔒.
+- Added Clean Layers button as backup/debug action.
+- Dragging element rows in the Elements stack reorders them visually and then recalculates clean layer numbers on drop.
+- Locked layer slots stay fixed during drag-reorder attempts.
+- Needs checking: drag reorder, lock behavior, layer recalculation, selected object preservation, and whether top row visually behaves as frontmost object.
 
 ### Recovered older proposed version roadmap
 
 - Added `recovered-proposed-feature-list.md` to preserve the older screenshot roadmap for v0.13 to v0.16.
 - It records the exact older plan for layer cleanup, asset-library object creation, hitbox/visual-box separation, and project/settings foundation.
-- The items were already broadly represented in the Future Feature Phases below, but the recovered list keeps the old version-number wording intact.
 
 ## Known rough edges / next checks
 
@@ -219,32 +235,30 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 - Border toggle currently persists locally only, not inside exported scene JSON.
 - Recent local hard-drive imports cannot be reopened automatically because browsers do not allow silent local file access.
 - Asset Library should later support adding a new element directly from an asset, not only replacing the selected object's image path.
-- Layer numbering still needs a cleanup/reorder pass.
+- Layer stack is currently helper-based and needs testing after v0.14.
 - Unsaved/local blob image handling still needs a cleaner workflow once the Asset Manager exists.
 - The editor now has several helper files layered over the original editor. This works for patching, but a later cleanup should consolidate stable behavior into the core editor file.
 - Move handle behavior should eventually be moved into core stage item rendering rather than helper injection.
-- Control-card grid classes and v0.13 conversions exist, but once tested they should be moved into the core render functions rather than being applied after render.
+- Control-card grid classes and v0.13+ conversions exist, but once tested they should be moved into the core render functions rather than being applied after render.
 
 ## Future feature phases
 
 ### Phase 1 — stabilise the current Scene Editor
 
-- Move the selected-item layout directly into `selectedForm()` in `scene-editor-v2.js` instead of rebuilding it through helper scripts.
-- Consolidate stable helper behavior into the core editor file once the layout is proven.
+- Move stable helper behavior into `scene-editor-v2.js` once proven.
 - Clean up duplicate/temporary patch files where safe.
 - Make Border, Name, Visible, Locked, and Fixed Ratio proper per-object JSON properties.
 - Make object editing stable without the Control Panel jumping back to the top.
-- Make Zoom to object, duplicate, delete, and context menu actions reliable.
+- Make Zoom to object, duplicate, delete, drag, and context menu actions reliable.
 - Keep `devnotes.md` updated after every patch.
 
 ### Phase 2 — layer system cleanup
 
-- Add a Clean Layers action.
+- Test v0.14 layer stack drag-reorder thoroughly.
+- Move layer stack logic into core once stable.
 - Recalculate all layer values sequentially.
-- Make the top Elements row the frontmost object and the bottom row the backmost object.
-- Add drag-to-reorder inside the Elements list.
-- Make the layer value pill update from selected object and move the object when edited.
-- Add move forward/backward controls.
+- Make top Elements row the frontmost object and bottom row the backmost object.
+- Add move forward/backward controls if needed after drag works.
 - Keep layer changes reflected immediately in the Work Area and exported JSON.
 
 ### Phase 3 — object box, resize, rotate, and hitbox tools
@@ -270,7 +284,7 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 
 ### Phase 5 — effects and visual treatment
 
-- Add Effects card under Selected Item.
+- Convert Visual Adjustments placeholders into real controls.
 - Add tint, brightness, contrast, saturation, opacity, and blend mode controls.
 - Blend mode options should include normal, lighter, darker, multiply, screen, dodge, and burn where browser support allows.
 - Add MP4/effect overlay support for fire, sparks, twinkles, explosions, smoke, portals, and magic.
@@ -295,7 +309,6 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 - Add CG Effects Library as its own tool/module.
 - Add Project Manager, Tasks, and Project Overview.
 - Consider later UI Layout Editor, Dialogue/Codice Editor, Map Editor, and Item/Quest Data Editor.
-- Use the central Artifex hub button/project selector to switch active project and load the last-used project state.
 
 ### Phase 8 — game/runtime integration
 
