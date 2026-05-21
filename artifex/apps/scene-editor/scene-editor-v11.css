@@ -1,4 +1,4 @@
-/* Scene Editor v0.11d asset picker + wrap image polish */
+/* Scene Editor v0.11e asset picker + wrap image polish */
 
 .asset-picker-popup {
   width: min(760px, calc(100vw - 70px));
@@ -157,6 +157,12 @@
   letter-spacing: .08em;
   text-transform: uppercase;
   pointer-events: none;
+}
+
+.blank-message span,
+.blank-message .artifex-version-marker,
+.blank-message [class^="artifex-version-marker-"] {
+  display: none !important;
 }
 
 .unsaved-import-warning {
