@@ -6,6 +6,22 @@ The Quest Builder is the overarching story/progression module.
 
 It manages quests, side quests, branches, flags, conditions, rewards, unlocks, and progression logic.
 
+## Module Boundary
+
+The Quest Builder is its own app/module.
+
+It is not inside the Project Editor.
+
+The Project Editor can reference quests, branches, flags, and conditions when connecting the Flatplan, but the actual authoring of quest/progression logic belongs here.
+
+Example:
+
+- Quest Builder defines `q01_find_key`.
+- Quest Builder defines the flag `key_collected`.
+- Project Editor uses `quest_complete:q01_find_key` or `flag_true:key_collected` as a Route condition.
+
+The quest/progression logic is authored here, then reused by Project Editor, Playtest, and Build Game.
+
 ## What It Includes
 
 The Quest Builder should include what might otherwise be called:
@@ -105,13 +121,15 @@ Rewards may include:
 
 An Unlock is a change that makes a new Route, Station, item, Quest, Branch, or screen available.
 
-## Relationship To Flatplan
+## Relationship To Flatplan / Project Editor
 
 The Quest Builder connects to the Flatplan because quest progress can unlock or block Flatplan connections.
 
 A Quest can use selected Stations and Routes from the Flatplan.
 
 A Branch can be visualized as an optional offshoot from a Quest path.
+
+The Project Editor should reference quest IDs, branch IDs, flags, and conditions, but not replace the Quest Builder.
 
 ## Relationship To Object Library
 
