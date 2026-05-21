@@ -117,60 +117,100 @@
   margin: 0 0 10px;
 }
 
-.selected-metrics-grid-v13 {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) 58px minmax(0, 1fr) !important;
-  gap: 10px 12px !important;
-  align-items: end;
+.selected-metric-table-v13c {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 54px minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 5px;
+  align-items: center;
   width: 100%;
 }
 
-.selected-metrics-grid-v13 .card-layout-cell,
-.selected-metrics-grid-v13 .field {
-  min-width: 0;
-}
-
-.selected-metrics-grid-v13 .field label {
-  white-space: normal;
+.selected-metric-table-v13c .metric-label-cell {
+  color: #f1dcc2;
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
   line-height: 1.05;
+  min-height: 14px;
 }
 
-.selected-metrics-grid-v13 .field input,
-.selected-metrics-grid-v13 .field select,
-.selected-metrics-grid-v13 .field input[type="range"] {
-  width: 100%;
+.selected-metric-table-v13c .metric-label-center {
+  text-align: center;
+  color: #bfa990;
+}
+
+.selected-metric-table-v13c .metric-value-cell {
   min-width: 0;
 }
 
-.selected-metrics-grid-v13 .metric-scale-cell {
+.selected-metric-table-v13c .field {
+  margin: 0 !important;
+  min-width: 0;
+}
+
+.selected-metric-table-v13c .metric-internal-label-hidden {
+  display: none !important;
+}
+
+.selected-metric-table-v13c input,
+.selected-metric-table-v13c select,
+.selected-metric-table-v13c input[type="range"] {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.selected-metric-table-v13c .metric-scale-value {
   align-self: center;
   justify-self: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
-.selected-metrics-grid-v13 .scale-control-stack {
+.selected-metric-table-v13c .scale-control-stack {
   display: grid !important;
-  grid-template-rows: auto auto auto;
-  gap: 5px;
+  grid-template-rows: 22px 30px 22px;
   align-items: center;
   justify-items: center;
+  gap: 4px;
   min-width: 42px;
 }
 
-.selected-metrics-grid-v13 .scale-step-btn,
-.selected-metrics-grid-v13 .wrap-image-btn {
-  width: 34px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border-radius: 12px;
+.selected-metric-table-v13c .scale-step-btn,
+.selected-metric-table-v13c .wrap-image-btn {
+  width: 34px !important;
+  height: 26px !important;
+  min-width: 34px !important;
+  min-height: 26px !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+  border-radius: 12px !important;
+  line-height: 1 !important;
 }
 
-.selected-metrics-grid-v13 .metric-scale-ghost {
+.selected-metric-table-v13c .wrap-image-btn {
+  height: 30px !important;
+}
+
+.selected-metric-table-v13c .metric-blank-value {
   min-height: 1px;
+}
+
+.visual-effects-placeholder-group {
+  margin-top: 12px;
+  opacity: .72;
+}
+
+.visual-effects-note {
+  width: 100%;
+  color: #bfa990;
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.visual-placeholder-field input,
+.visual-placeholder-field select {
+  opacity: .68;
+  cursor: not-allowed;
 }
 
 .selected-bottom-tools {
@@ -196,5 +236,10 @@
 
   .file-pill-time {
     white-space: normal;
+  }
+
+  .selected-metric-table-v13c {
+    grid-template-columns: minmax(0, 1fr) 48px minmax(0, 1fr);
+    column-gap: 8px;
   }
 }
