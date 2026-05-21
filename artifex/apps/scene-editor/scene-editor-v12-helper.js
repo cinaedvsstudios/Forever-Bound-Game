@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v0.12';
+  const VERSION = 'v0.12a';
   const BORDER_KEY = 'artifex.sceneEditor.borderHidden.v1';
   let patchQueued = false;
 
@@ -30,7 +30,15 @@
     return document.getElementById(id)?.closest('.field') || null;
   }
 
+  function removeEmptyFieldRows(rows) {
+    rows.forEach((row) => {
+      if (!row || !row.classList || !row.classList.contains('field-row')) return;
+      if (!row.querySelector('.field') && !row.querySelector('.wrap-image-btn')) row.remove();
+    });
+  }
+
   function makeMetricsGrid() {
+    const selectedCardBody = document.querySelector('[data-card-id="selected"] .card-body');
     const x = closestField('itemX');
     const y = closestField('itemY');
     const z = document.getElementById('itemZ')?.closest('.field') || null;
@@ -38,9 +46,20 @@
     const height = closestField('itemH');
     const layer = closestField('itemLayer');
     const wrap = document.querySelector('.wrap-image-btn');
-    if (!x || !y || !z || !width || !height || !layer || !wrap) return;
-    if (document.querySelector('.selected-metrics-grid')) return;
+    if (!selectedCardBody || !x || !y || !z || !width || !height || !layer || !wrap) return;
+    if (selectedCardBody.querySelector('.selected-metrics-grid')) return;
 
+    const originalRows = [
+      x.closest('.field-row'),
+      y.closest('.field-row'),
+      width.closest('.field-row'),
+      height.closest('.field-row'),
+      z.closest('.field-row'),
+      layer.closest('.field-row'),
+      wrap.closest('.field-row')
+    ].filter(Boolean);
+
+    const firstRow = originalRows[0] || x;
     const grid = document.createElement('div');
     grid.className = 'selected-metrics-grid';
 
@@ -51,8 +70,9 @@
     width.classList.add('metric-width');
     layer.classList.add('metric-layer');
 
-    x.parentElement.insertBefore(grid, x);
+    selectedCardBody.insertBefore(grid, firstRow);
     grid.append(x, wrap, height, y, width, z, layer);
+    removeEmptyFieldRows(Array.from(new Set(originalRows)));
   }
 
   function makeBottomTools() {
