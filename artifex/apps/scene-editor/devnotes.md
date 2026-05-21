@@ -4,7 +4,7 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 
 ## Current active test URL
 
-`https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/?v=v012k`
+`https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/?v=v13`
 
 ## Patch log
 
@@ -185,6 +185,18 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 - Rebuilds the file pill from clean values only.
 - Needs checking: file pill should settle to one icon pair, one clean filename, and one LOCAL/HDD metadata line.
 
+### v0.13 — control-card layout conversion
+
+- Loaded `scene-editor-v13.css` and `scene-editor-v13-helper.js`.
+- Converted the file pill into a fixed 3-row structure: project name, file title, then icons/date-time row.
+- File pill bottom row uses two columns: icons on the left and `LOCAL` / `HDD` timestamps on the right.
+- Added a project placeholder icon `🏗️` beside the folder and disk icons.
+- Converted Scene Basics into layout groups: 1-column identity/path group, 2-column grid group, and 1-column toggle group.
+- Converted Elements into layout groups: top controls/layer row and full-width item list.
+- Converted Selected Item into layout groups: 1-column identity/path group, metrics block, tags group, and tools group.
+- This is still helper-based, but it proves the card layout rules before moving them into the core editor render functions.
+- Needs checking: file pill should stay stable, cards should not lose controls, selected-item metrics/wrap/scale controls should still work.
+
 ### Recovered older proposed version roadmap
 
 - Added `recovered-proposed-feature-list.md` to preserve the older screenshot roadmap for v0.13 to v0.16.
@@ -201,7 +213,7 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 - Unsaved/local blob image handling still needs a cleaner workflow once the Asset Manager exists.
 - The editor now has several helper files layered over the original editor. This works for patching, but a later cleanup should consolidate stable behavior into the core editor file.
 - Move handle behavior should eventually be moved into core stage item rendering rather than helper injection.
-- Control-card grid classes now exist, but the actual cards still need to be rebuilt to use 1-column / 2-column / 3-column layout groups.
+- Control-card grid classes and v0.13 conversions exist, but once tested they should be moved into the core render functions rather than being applied after render.
 
 ## Future feature phases
 
