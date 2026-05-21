@@ -4,7 +4,7 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 
 ## Current active test URL
 
-`https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/?v=v012h`
+`https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/?v=v012k`
 
 ## Patch log
 
@@ -160,7 +160,30 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 - Download JSON records a last-downloaded timestamp.
 - Removed the 💠 emoji from the move handle and left the plain round centre drag circle.
 - Zoom to object now targets roughly 200% instead of a tiny one-step zoom.
-- Needs checking: local resume appears after reload, Open local backup works, file pill dates update, plain move handle still drags, and Zoom to object reaches about 200%.
+
+### v0.12i — core working-copy save and control-card layout foundation
+
+- Moved local working-copy save/resume into the core editor file so it saves from the live scene state instead of relying on JSON Preview.
+- Disabled the older preview-based resume helper so collapsed JSON Preview no longer blocks local backup.
+- Start where you left off should now restore directly from localStorage.
+- Zoom to object now doubles the current zoom toward the selected object, capped at the editor maximum.
+- Added `scene-editor-v12i.css` with reusable control-card layout classes: 1-column, 2-column, 3-column, mixed groups, spans, dividers, and notes.
+- Needs checking: local backup survives refresh, Open local backup restores the edited scene, and Zoom to object doubles current zoom.
+
+### v0.12j — file pill and resume panel polish
+
+- Added `scene-editor-v12j-helper.js` and `scene-editor-v12j.css` for file pill / resume panel polish.
+- File pill display changed toward: `📁 💾 filename.json` and second line `| LOCAL: dd-mm-yy hh:mm | HDD: dd-mm-yy hh:mm |`.
+- Resume panel polish: removed the extra Blank Scene Editor heading, made “Start where you left off?” purple, highlighted the file name, centered the buttons, and made Open local backup purple.
+- Needs checking: file pill should not overflow, resume panel buttons should be centered, and Open local backup should stay visually primary.
+
+### v0.12k — file pill metadata sanitiser
+
+- Fixed duplicated file pill icons / duplicated LOCAL-HDD text caused by the visible pill text being read back as the file name.
+- Sanitises stored working-copy filename and downloaded filename in localStorage.
+- Strips `📁`, `💾`, `LOCAL`, `HDD`, `Local backup`, and `Last downloaded` pollution from displayed/saved file names.
+- Rebuilds the file pill from clean values only.
+- Needs checking: file pill should settle to one icon pair, one clean filename, and one LOCAL/HDD metadata line.
 
 ### Recovered older proposed version roadmap
 
@@ -178,7 +201,7 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 - Unsaved/local blob image handling still needs a cleaner workflow once the Asset Manager exists.
 - The editor now has several helper files layered over the original editor. This works for patching, but a later cleanup should consolidate stable behavior into the core editor file.
 - Move handle behavior should eventually be moved into core stage item rendering rather than helper injection.
-- Local working-copy restore currently depends on JSON Preview being available/rendered at least periodically; a core integration would be cleaner later.
+- Control-card grid classes now exist, but the actual cards still need to be rebuilt to use 1-column / 2-column / 3-column layout groups.
 
 ## Future feature phases
 
