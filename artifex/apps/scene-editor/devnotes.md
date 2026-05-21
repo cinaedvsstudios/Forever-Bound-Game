@@ -152,3 +152,84 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 - Layer numbering still needs a cleanup/reorder pass.
 - Unsaved/local blob image handling still needs a cleaner workflow once the Asset Manager exists.
 - The editor now has several helper files layered over the original editor. This works for patching, but a later cleanup should consolidate stable behavior into the core editor file.
+
+## Future feature phases
+
+### Phase 1 — stabilise the current Scene Editor
+
+- Move the selected-item layout directly into `selectedForm()` in `scene-editor-v2.js` instead of rebuilding it through helper scripts.
+- Consolidate stable helper behavior into the core editor file once the layout is proven.
+- Clean up duplicate/temporary patch files where safe.
+- Make Border, Name, Visible, Locked, and Fixed Ratio proper per-object JSON properties.
+- Make object editing stable without the Control Panel jumping back to the top.
+- Make Zoom to object, duplicate, delete, and context menu actions reliable.
+- Keep `devnotes.md` updated after every patch.
+
+### Phase 2 — layer system cleanup
+
+- Add a Clean Layers action.
+- Recalculate all layer values sequentially.
+- Make the top Elements row the frontmost object and the bottom row the backmost object.
+- Add drag-to-reorder inside the Elements list.
+- Make the layer value pill update from selected object and move the object when edited.
+- Add move forward/backward controls.
+- Keep layer changes reflected immediately in the Work Area and exported JSON.
+
+### Phase 3 — object box, resize, rotate, and hitbox tools
+
+- Add resize handles to the selected object box.
+- Add rotate handle at the top center of the selection box.
+- Add aspect-ratio lock and unlock behavior.
+- Add proportional scaling controls as stable native controls.
+- Add separate Visual Box and Hitbox concepts.
+- Add show/hide hitbox toggle.
+- Add copy visual box to hitbox.
+- Add label-anchor controls for object names.
+
+### Phase 4 — Asset Library integration
+
+- Add Add from Assets button in the Elements card.
+- Choosing an asset should be able to create a new scene object, not only replace the selected object's image.
+- Copy asset tags into the new object's Tags field.
+- Use asset name as the default object name.
+- Support static images, GIF/WebP animated assets, MP4 loops, and later animation-frame sequences.
+- Add last-used asset category/filter/search memory.
+- Improve unstable URL/blob image warnings and Download All asset handling.
+
+### Phase 5 — effects and visual treatment
+
+- Add Effects card under Selected Item.
+- Add tint, brightness, contrast, saturation, opacity, and blend mode controls.
+- Blend mode options should include normal, lighter, darker, multiply, screen, dodge, and burn where browser support allows.
+- Add MP4/effect overlay support for fire, sparks, twinkles, explosions, smoke, portals, and magic.
+- Begin CG Effects Library integration through scene JSON references.
+- Store effect configuration in JSON rather than hardcoding it into scenes.
+
+### Phase 6 — project settings and persistence
+
+- Add Project Settings panel.
+- Store project name, project JSON URL/path, asset folder path, template folder path, and preferred save/download locations.
+- Auto-load last active project from localStorage where safe.
+- Add Recent Imports behavior for templates and URL imports.
+- Keep local hard-drive files as name-only recents unless a File System Access workflow is added.
+- Add export/import settings JSON.
+- Add settings backup workflow.
+
+### Phase 7 — Artifex hub expansion
+
+- Keep Scene Editor as one mini-app inside Artifex.
+- Add Sprite Wizard for sprite sheets and animation metadata.
+- Add Font Packer for bitmap font atlas PNG + JSON map creation.
+- Add CG Effects Library as its own tool/module.
+- Add Project Manager, Tasks, and Project Overview.
+- Consider later UI Layout Editor, Dialogue/Codice Editor, Map Editor, and Item/Quest Data Editor.
+- Use the central Artifex hub button/project selector to switch active project and load the last-used project state.
+
+### Phase 8 — game/runtime integration
+
+- Make sure exported scene JSON remains compatible with the Forever Bound runtime.
+- Add a preview/test mode for scene behavior.
+- Add support for click hotspots, doors/exits, pickups, blockers, walk areas, search zones, and triggers.
+- Add validation before download/export.
+- Add warnings for missing assets, invalid paths, duplicate IDs, broken layers, and unsupported formats.
+- Eventually connect scene JSON, asset manifest, effects library, and project settings into one consistent build workflow.
