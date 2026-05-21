@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v0.13';
+  const VERSION = 'v0.13b';
   const WORKING_COPY_KEY = 'artifex.sceneEditor.workingCopy.v1';
   const DOWNLOAD_KEY = 'artifex.sceneEditor.lastDownload.v1';
   let queued = false;
@@ -150,9 +150,72 @@
     body.dataset.v13Layout = 'true';
   }
 
+  function getScaleStack() {
+    let stack = document.querySelector('.scale-control-stack');
+    if (stack) return stack;
+
+    const wrap = document.querySelector('.wrap-image-btn');
+    if (wrap) {
+      stack = document.createElement('div');
+      stack.className = 'scale-control-stack selected-scale-stack-v13';
+      stack.appendChild(wrap);
+      return stack;
+    }
+
+    stack = document.createElement('div');
+    stack.className = 'scale-control-stack selected-scale-stack-v13';
+    const up = document.createElement('button');
+    up.type = 'button';
+    up.className = 'scale-step-btn scale-up-btn';
+    up.textContent = '⬆️';
+    up.title = 'Scale width and height up by 2';
+    const wrapBtn = document.createElement('button');
+    wrapBtn.type = 'button';
+    wrapBtn.className = 'wrap-image-btn';
+    wrapBtn.textContent = '📐';
+    wrapBtn.title = 'Wrap image to aspect ratio';
+    const down = document.createElement('button');
+    down.type = 'button';
+    down.className = 'scale-step-btn scale-down-btn';
+    down.textContent = '⬇️';
+    down.title = 'Scale width and height down by 2';
+    stack.append(up, wrapBtn, down);
+    return stack;
+  }
+
+  function rebuildMetricsGrid() {
+    const x = field('itemX');
+    const y = field('itemY');
+    const z = field('itemZ');
+    const height = field('itemH');
+    const width = field('itemW');
+    const layer = field('itemLayer');
+    if (!x || !y || !z || !height || !width || !layer) return null;
+
+    const stack = getScaleStack();
+    const metrics = group(3, 'selected-metrics-grid selected-metrics-grid-v13');
+    metrics.dataset.v13Built = 'true';
+
+    metrics.appendChild(cell(x, 'metric-cell metric-left metric-x-cell'));
+    metrics.appendChild(cell(stack, 'metric-cell metric-scale-cell'));
+    metrics.appendChild(cell(height, 'metric-cell metric-right metric-height-cell'));
+
+    metrics.appendChild(cell(y, 'metric-cell metric-left metric-y-cell'));
+    metrics.appendChild(cell(null, 'metric-cell metric-scale-ghost'));
+    metrics.appendChild(cell(width, 'metric-cell metric-right metric-width-cell'));
+
+    metrics.appendChild(cell(z, 'metric-cell metric-left metric-z-cell'));
+    metrics.appendChild(cell(null, 'metric-cell metric-scale-ghost'));
+    metrics.appendChild(cell(layer, 'metric-cell metric-right metric-layer-cell'));
+
+    return metrics;
+  }
+
   function convertSelected() {
     const body = document.querySelector('[data-card-id="selected"] .card-body');
-    if (!body || body.dataset.v13Layout === 'true') return;
+    if (!body) return;
+    if (body.dataset.v13Layout === 'true' && body.querySelector('.selected-metrics-grid-v13')) return;
+
     const id = field('itemId');
     const name = field('itemName');
     const type = field('itemType');
@@ -163,25 +226,27 @@
     const identity = group(1, 'selected-identity-group');
     moveAll(identity, [id, name, type, image, text]);
 
-    const metrics = body.querySelector('.selected-metrics-grid');
+    const metrics = rebuildMetricsGrid();
     const tags = field('itemTags');
-    const tools = body.querySelector('.selected-bottom-tools');
-    const fallbackMetrics = group(3, 'selected-metrics-fallback-group');
-
-    if (!metrics) {
-      moveAll(fallbackMetrics, [field('itemX'), field('itemY'), field('itemZ'), field('itemH'), field('itemW'), field('itemLayer')]);
-    }
-
     const tagGroup = group(1, 'selected-tags-group');
     if (tags) tagGroup.appendChild(cell(tags));
 
+    const tools = body.querySelector('.selected-bottom-tools');
     const toolsGroup = group(1, 'selected-tools-layout-group');
     if (tools) toolsGroup.appendChild(cell(tools, 'cell-inline'));
+    else {
+      const deleteBtn = document.getElementById('deleteItem')?.closest('.button-row') || document.getElementById('deleteItem');
+      const visible = document.getElementById('itemVisible')?.closest('.check-row');
+      const border = document.getElementById('itemBorderVisible')?.closest('label') || body.querySelector('.border-toggle-row');
+      const row = document.createElement('div');
+      row.className = 'selected-bottom-tools';
+      [deleteBtn, visible, border].filter(Boolean).forEach((node) => row.appendChild(node));
+      if (row.children.length) toolsGroup.appendChild(cell(row, 'cell-inline'));
+    }
 
     body.innerHTML = '';
     body.append(identity, divider());
     if (metrics) body.append(metrics);
-    else body.append(fallbackMetrics);
     body.append(divider(), tagGroup, toolsGroup);
     cleanEmptyRows(body);
     body.dataset.v13Layout = 'true';
@@ -206,6 +271,6 @@
   document.addEventListener('input', queue, true);
   document.addEventListener('change', queue, true);
   document.addEventListener('pointerup', queue, true);
-  setInterval(queue, 900);
+  setInterval(queue, 450);
   queue();
 })();
