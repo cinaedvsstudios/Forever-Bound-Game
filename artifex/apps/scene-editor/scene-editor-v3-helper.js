@@ -1,10 +1,13 @@
 (() => {
-  const VERSION = 'v0.09b';
+  const VERSION = 'v0.10';
   const LOCK_KEY = 'artifex.sceneEditor.lockedElements.v1';
+  const RECENT_KEY = 'artifex.sceneEditor.recentProjects.v1';
   let panning = null;
   let popupDrag = null;
   let downloadBypass = false;
+  let blankBypass = false;
   let patchQueued = false;
+  let dirty = false;
 
   function readLocks() {
     try { return JSON.parse(localStorage.getItem(LOCK_KEY) || '{}'); }
@@ -14,6 +17,23 @@
   function writeLocks(locks) {
     try { localStorage.setItem(LOCK_KEY, JSON.stringify(locks)); }
     catch {}
+  }
+
+  function readRecent() {
+    try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); }
+    catch { return []; }
+  }
+
+  function writeRecent(items) {
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(items.slice(0, 12))); }
+    catch {}
+  }
+
+  function addRecent(item) {
+    if (!item || !item.label) return;
+    const current = readRecent().filter((entry) => !(entry.label === item.label && entry.type === item.type && entry.value === item.value));
+    current.unshift({ ...item, at: new Date().toISOString() });
+    writeRecent(current);
   }
 
   function toast(message) {
@@ -28,6 +48,16 @@
   function setTip(message) {
     const status = document.getElementById('hoverStatus');
     if (status) status.textContent = `${VERSION}: ${message}`;
+  }
+
+  function markDirty(reason = 'changed') {
+    dirty = true;
+    setTip(`Unsaved changes: ${reason}.`);
+  }
+
+  function markClean(reason = 'saved') {
+    dirty = false;
+    setTip(`Scene ${reason}.`);
   }
 
   function safeFilename(value) {
@@ -57,6 +87,17 @@
     }
   }
 
+  function closeImportDropdownSoon() {
+    setTimeout(() => {
+      document.getElementById('importMenu')?.classList.remove('is-open');
+      queuePatch();
+    }, 80);
+    setTimeout(() => {
+      document.getElementById('importMenu')?.classList.remove('is-open');
+      queuePatch();
+    }, 450);
+  }
+
   function enhanceElementsHeader() {
     const elementsCard = document.querySelector('[data-card-id="elements"]');
     if (!elementsCard) return;
@@ -74,7 +115,7 @@
       heading.insertBefore(actions, toggle || null);
     }
 
-    if (actions.dataset.v09b !== 'true') {
+    if (actions.dataset.v10 !== 'true') {
       actions.innerHTML = `
         <button class="header-icon-btn" type="button" data-proxy="addElement" title="Add Element">➕</button>
         <button class="header-icon-btn" type="button" data-proxy="addLayer" title="Add Layer">🖼️</button>
@@ -86,10 +127,11 @@
           event.preventDefault();
           event.stopPropagation();
           document.getElementById(button.dataset.proxy)?.click();
+          if (button.dataset.proxy !== 'highlightBtn') markDirty(button.title);
           queuePatch();
         });
       });
-      actions.dataset.v09b = 'true';
+      actions.dataset.v10 = 'true';
     }
   }
 
@@ -100,9 +142,7 @@
     if (!bodyActions) return;
     bodyActions.style.display = 'flex';
     bodyActions.classList.add('layer-only-row');
-    bodyActions.querySelectorAll('.icon-btn').forEach((button) => {
-      button.style.display = 'none';
-    });
+    bodyActions.querySelectorAll('.icon-btn').forEach((button) => { button.style.display = 'none'; });
   }
 
   function normalizeCollapseIcons() {
@@ -114,7 +154,7 @@
   function enhanceFilePill() {
     const pill = document.querySelector('.file-pill');
     if (!pill) return;
-    if (pill.dataset.v09bFileTools === 'true') return;
+    if (pill.dataset.v10FileTools === 'true') return;
     const label = pill.textContent.trim();
     pill.textContent = '';
     const text = document.createElement('span');
@@ -133,7 +173,7 @@
       event.stopPropagation();
       document.getElementById('downloadJson')?.click();
     });
-    pill.dataset.v09bFileTools = 'true';
+    pill.dataset.v10FileTools = 'true';
   }
 
   function enhanceElementRows() {
@@ -167,7 +207,7 @@
     document.querySelectorAll('.scene-item[data-stage-id]').forEach((item) => {
       const id = item.dataset.stageId;
       item.classList.toggle('is-locked', !!locks[id]);
-      if (item.dataset.v09bLockBlock === 'true') return;
+      if (item.dataset.v10LockBlock === 'true') return;
       item.addEventListener('pointerdown', (event) => {
         const currentLocks = readLocks();
         if (!currentLocks[item.dataset.stageId]) return;
@@ -175,13 +215,13 @@
         event.stopImmediatePropagation();
         toast(`Locked: ${item.dataset.stageId}`);
       }, true);
-      item.dataset.v09bLockBlock = 'true';
+      item.dataset.v10LockBlock = 'true';
     });
   }
 
   function enhanceTagsField() {
     const field = document.getElementById('itemTags')?.closest('.field');
-    if (!field || field.dataset.v09bTags === 'true') return;
+    if (!field || field.dataset.v10Tags === 'true') return;
     const label = field.querySelector('label');
     if (!label) return;
     const eye = document.createElement('button');
@@ -195,7 +235,7 @@
       showTagPopup();
     });
     label.appendChild(eye);
-    field.dataset.v09bTags = 'true';
+    field.dataset.v10Tags = 'true';
   }
 
   function currentTags() {
@@ -226,6 +266,7 @@
           next.add(pill.dataset.tag);
           input.value = [...next].join(', ');
           input.dispatchEvent(new Event('input', { bubbles: true }));
+          markDirty('tags changed');
           renderTags();
         });
       });
@@ -235,6 +276,7 @@
           const next = currentTags().filter((tag) => tag !== button.dataset.remove);
           input.value = next.join(', ');
           input.dispatchEvent(new Event('input', { bubbles: true }));
+          markDirty('tags changed');
           renderTags();
         });
       });
@@ -303,16 +345,14 @@
   }
 
   async function downloadRiskyAssets(assets) {
-    for (let index = 0; index < assets.length; index += 1) {
-      await downloadOneRiskyAsset(assets[index], index);
-    }
+    for (let index = 0; index < assets.length; index += 1) await downloadOneRiskyAsset(assets[index], index);
     toast(`Download started for ${assets.length} asset(s), named by element ID`);
   }
 
   function wirePopupDrag(popup) {
     const handle = popup.querySelector('.floating-side-popup-head');
-    if (!handle || popup.dataset.v09bDrag === 'true') return;
-    popup.dataset.v09bDrag = 'true';
+    if (!handle || popup.dataset.v10Drag === 'true') return;
+    popup.dataset.v10Drag = 'true';
     handle.addEventListener('pointerdown', (event) => {
       if (event.target.closest('button')) return;
       const rect = popup.getBoundingClientRect();
@@ -345,6 +385,7 @@
       popup.remove();
       downloadBypass = true;
       document.getElementById('downloadJson')?.click();
+      markClean('downloaded');
       setTimeout(() => { downloadBypass = false; }, 0);
     });
     popup.querySelectorAll('[data-asset-id]').forEach((button) => button.addEventListener('click', () => selectAsset(button.dataset.assetId)));
@@ -352,14 +393,44 @@
     wirePopupDrag(popup);
   }
 
+  function showBlankWarning() {
+    document.querySelector('.unsaved-blank-warning')?.remove();
+    const popup = document.createElement('div');
+    popup.className = 'unsaved-blank-warning floating-side-popup';
+    popup.innerHTML = `
+      <div class="floating-side-popup-head"><strong>Unsaved changes</strong><button type="button" data-close>×</button></div>
+      <p>Blank Screen will clear the current scene from the editor. Download JSON first if you want to keep it.</p>
+      <div class="asset-warning-actions">
+        <button type="button" data-continue>Continue</button>
+        <button type="button" data-cancel>Cancel</button>
+        <button type="button" data-download>Download JSON</button>
+      </div>
+    `;
+    popup.querySelector('[data-close]')?.addEventListener('click', () => popup.remove());
+    popup.querySelector('[data-cancel]')?.addEventListener('click', () => popup.remove());
+    popup.querySelector('[data-download]')?.addEventListener('click', () => document.getElementById('downloadJson')?.click());
+    popup.querySelector('[data-continue]')?.addEventListener('click', () => {
+      popup.remove();
+      blankBypass = true;
+      dirty = false;
+      document.getElementById('blankBtn')?.click();
+      setTimeout(() => { blankBypass = false; }, 0);
+    });
+    document.body.appendChild(popup);
+    wirePopupDrag(popup);
+  }
+
   function wireDownloadWarning() {
     const button = document.getElementById('downloadJson');
-    if (!button || button.dataset.v09bDownloadWarning === 'true') return;
-    button.dataset.v09bDownloadWarning = 'true';
+    if (!button || button.dataset.v10DownloadWarning === 'true') return;
+    button.dataset.v10DownloadWarning = 'true';
     button.addEventListener('click', (event) => {
-      if (downloadBypass) return;
+      if (downloadBypass) { markClean('downloaded'); return; }
       const assets = findRiskyImages();
-      if (!assets.length) return;
+      if (!assets.length) {
+        setTimeout(() => markClean('downloaded'), 50);
+        return;
+      }
       event.preventDefault();
       event.stopImmediatePropagation();
       showAssetWarning(assets);
@@ -367,20 +438,91 @@
     }, true);
   }
 
+  function wireBlankWarning() {
+    const button = document.getElementById('blankBtn');
+    if (!button || button.dataset.v10BlankWarning === 'true') return;
+    button.dataset.v10BlankWarning = 'true';
+    button.addEventListener('click', (event) => {
+      if (blankBypass || !dirty) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      showBlankWarning();
+      toast('Unsaved changes warning');
+    }, true);
+  }
+
+  function wireImportTracking() {
+    const jsonFile = document.getElementById('jsonFile');
+    if (jsonFile && jsonFile.dataset.v10Track !== 'true') {
+      jsonFile.dataset.v10Track = 'true';
+      jsonFile.addEventListener('change', (event) => {
+        const file = event.target.files?.[0];
+        if (file) addRecent({ type: 'local', label: file.name, value: file.name });
+        markClean('loaded');
+        closeImportDropdownSoon();
+      });
+    }
+
+    document.querySelectorAll('[data-template-file]').forEach((button) => {
+      if (button.dataset.v10Track === 'true') return;
+      button.dataset.v10Track = 'true';
+      button.addEventListener('click', () => {
+        addRecent({ type: 'template', label: button.dataset.templateFile, value: button.dataset.templateFile });
+        markClean('loaded');
+        closeImportDropdownSoon();
+      });
+    });
+  }
+
+  function enhanceImportRecent() {
+    const dropdown = document.querySelector('#importMenu .import-dropdown');
+    if (!dropdown || dropdown.dataset.v10Recent === 'true') return;
+    const recent = document.createElement('button');
+    recent.className = 'btn';
+    recent.type = 'button';
+    recent.textContent = 'Recent Projects';
+    recent.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      showRecentProjects();
+    });
+    dropdown.appendChild(recent);
+    dropdown.dataset.v10Recent = 'true';
+  }
+
+  function showRecentProjects() {
+    document.querySelector('.recent-projects-popup')?.remove();
+    const items = readRecent();
+    const popup = document.createElement('div');
+    popup.className = 'recent-projects-popup floating-side-popup';
+    popup.innerHTML = `<div class="floating-side-popup-head"><strong>Recent Projects</strong><button type="button" data-close>×</button></div><div class="recent-projects-list">${items.length ? items.map((item) => `<button type="button" data-type="${item.type}" data-value="${item.value}"><strong>${item.label}</strong><small>${item.type === 'local' ? 'Local files must be re-imported from hard drive.' : item.type}</small></button>`).join('') : '<p>No recent projects yet.</p>'}</div>`;
+    popup.querySelector('[data-close]')?.addEventListener('click', () => popup.remove());
+    popup.querySelectorAll('[data-type="template"]').forEach((button) => {
+      button.addEventListener('click', () => {
+        popup.remove();
+        const templateButton = document.querySelector(`[data-template-file="${CSS.escape(button.dataset.value)}"]`);
+        if (templateButton) templateButton.click();
+        else toast('Open Import > From templates first to load the template list.');
+      });
+    });
+    document.body.appendChild(popup);
+    wirePopupDrag(popup);
+  }
+
   function enhanceBlankVersion() {
     const blank = document.querySelector('.blank-message');
-    if (!blank || blank.querySelector('.artifex-version-marker-v09b')) return;
+    if (!blank || blank.querySelector('.artifex-version-marker-v10')) return;
     const marker = document.createElement('div');
-    marker.className = 'artifex-version-marker-v09b';
-    marker.textContent = `${VERSION} stable helper build`;
+    marker.className = 'artifex-version-marker-v10';
+    marker.textContent = `${VERSION} warning + texture build`;
     marker.style.cssText = 'margin-top:12px;color:#bfa990;font-size:12px;letter-spacing:.04em;';
     blank.appendChild(marker);
   }
 
   function wireMiddleMousePanning() {
     const wrap = document.querySelector('.stage-wrap');
-    if (!wrap || wrap.dataset.v09bPanning === 'true') return;
-    wrap.dataset.v09bPanning = 'true';
+    if (!wrap || wrap.dataset.v10Panning === 'true') return;
+    wrap.dataset.v10Panning = 'true';
     wrap.addEventListener('pointerdown', (event) => {
       if (event.button !== 1) return;
       event.preventDefault();
@@ -421,6 +563,9 @@
     enhanceBlankVersion();
     wireMiddleMousePanning();
     wireDownloadWarning();
+    wireBlankWarning();
+    wireImportTracking();
+    enhanceImportRecent();
     document.querySelectorAll('.floating-side-popup').forEach(wirePopupDrag);
   }
 
@@ -439,9 +584,18 @@
   });
   document.addEventListener('pointerup', () => { stopPanning(); stopPopupDrag(); queuePatch(); });
   document.addEventListener('pointercancel', () => { stopPanning(); stopPopupDrag(); queuePatch(); });
-  document.addEventListener('click', queuePatch, true);
-  document.addEventListener('change', queuePatch, true);
+  document.addEventListener('click', (event) => {
+    const target = event.target;
+    if (target?.closest?.('#addElement, #addLayer, #deleteItem, [data-action="duplicate"], [data-action="remove"]')) markDirty('object list changed');
+    queuePatch();
+  }, true);
+  document.addEventListener('change', (event) => {
+    if (event.target?.matches?.('#jsonFile')) return;
+    if (event.target?.closest?.('#editor-app')) markDirty('field changed');
+    queuePatch();
+  }, true);
   document.addEventListener('input', (event) => {
+    if (event.target?.closest?.('#editor-app')) markDirty('field edited');
     if (event.target?.matches?.('input[type="text"], textarea')) return;
     queuePatch();
   }, true);
@@ -453,7 +607,7 @@
 
   window.addEventListener('load', () => {
     patch();
-    toast('Scene Editor stable helper loaded');
+    toast('Scene Editor warning + texture helper loaded');
   });
 
   patch();
