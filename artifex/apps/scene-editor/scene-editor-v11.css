@@ -1,4 +1,4 @@
-/* Scene Editor v0.11e asset picker + wrap image polish */
+/* Scene Editor v0.11f asset picker + wrap image polish */
 
 .asset-picker-popup {
   width: min(760px, calc(100vw - 70px));
@@ -25,7 +25,6 @@
 }
 
 .asset-picker-toolbar button,
-.wrap-image-btn,
 .unsaved-import-warning button {
   border: 1px solid rgba(184, 119, 63, 0.48);
   border-radius: 999px;
@@ -37,7 +36,6 @@
 }
 
 .asset-picker-toolbar button:hover,
-.wrap-image-btn:hover,
 .unsaved-import-warning button:hover {
   border-color: rgba(195, 0, 255, 0.84);
   box-shadow: 0 0 14px rgba(195, 0, 255, 0.25);
@@ -143,7 +141,20 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 22px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #f1dcc2;
+  cursor: pointer;
+  padding: 0 !important;
+  text-shadow: 0 0 10px rgba(195, 0, 255, 0.62);
+}
+
+.wrap-image-btn:hover {
+  transform: scale(1.12);
+  filter: drop-shadow(0 0 7px rgba(195, 0, 255, 0.7));
 }
 
 .wrap-image-btn::before {
@@ -157,6 +168,7 @@
   letter-spacing: .08em;
   text-transform: uppercase;
   pointer-events: none;
+  text-shadow: none;
 }
 
 .blank-message span,
