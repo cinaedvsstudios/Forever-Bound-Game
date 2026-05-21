@@ -1,0 +1,68 @@
+/* Scene Editor v0.12j file pill + resume polish */
+
+.file-pill-main {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.file-pill-icons {
+  white-space: nowrap;
+  filter: drop-shadow(0 0 5px rgba(195, 0, 255, 0.45));
+}
+
+.file-pill-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #ffe18f;
+}
+
+.file-pill-meta-line {
+  display: block;
+  color: #bfa990;
+  font-size: 10px;
+  line-height: 1.18;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+.blank-message > div {
+  min-width: min(440px, 80%);
+}
+
+.resume-card-inline.resume-polished {
+  text-align: center;
+  border-color: rgba(195, 0, 255, 0.55);
+  box-shadow: 0 0 26px rgba(195, 0, 255, 0.25);
+}
+
+.resume-card-inline.resume-polished h3 {
+  color: #c300ff;
+  text-shadow: 0 0 12px rgba(195, 0, 255, 0.52);
+}
+
+.resume-card-inline .resume-file-name {
+  display: inline-block;
+  color: #ffe18f;
+  margin: 2px 0 8px;
+  text-shadow: 0 0 8px rgba(255, 225, 143, 0.28);
+}
+
+.resume-card-inline .resume-actions {
+  justify-content: center;
+}
+
+.resume-card-inline .resume-open-primary {
+  border-color: rgba(195, 0, 255, 0.82) !important;
+  background: rgba(195, 0, 255, 0.36) !important;
+  color: #fff1d2 !important;
+  box-shadow: 0 0 16px rgba(195, 0, 255, 0.42) !important;
+}
+
+.resume-card-inline .resume-open-primary:hover {
+  background: rgba(195, 0, 255, 0.52) !important;
+  box-shadow: 0 0 22px rgba(195, 0, 255, 0.64) !important;
+}
