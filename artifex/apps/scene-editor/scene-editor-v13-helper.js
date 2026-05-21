@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v0.13b';
+  const VERSION = 'v0.13c';
   const WORKING_COPY_KEY = 'artifex.sceneEditor.workingCopy.v1';
   const DOWNLOAD_KEY = 'artifex.sceneEditor.lastDownload.v1';
   let queued = false;
@@ -77,6 +77,27 @@
     return node;
   }
 
+  function labelCell(text, extra = '') {
+    const node = document.createElement('div');
+    node.className = `metric-label-cell ${extra}`.trim();
+    node.textContent = text || '';
+    return node;
+  }
+
+  function valueCell(node, extra = '') {
+    const wrapper = document.createElement('div');
+    wrapper.className = `metric-value-cell ${extra}`.trim();
+    if (node) wrapper.appendChild(node);
+    return wrapper;
+  }
+
+  function stripFieldLabel(node) {
+    if (!node) return node;
+    const label = node.querySelector(':scope > label');
+    if (label) label.classList.add('metric-internal-label-hidden');
+    return node;
+  }
+
   function cleanEmptyRows(scope) {
     scope.querySelectorAll('.field-row').forEach((row) => {
       if (!row.querySelector('.field, .wrap-image-btn, .scale-control-stack, .check-row, .button-row')) row.remove();
@@ -150,71 +171,149 @@
     body.dataset.v13Layout = 'true';
   }
 
-  function getScaleStack() {
-    let stack = document.querySelector('.scale-control-stack');
-    if (stack) return stack;
+  function wireScaleButton(button, delta) {
+    if (!button || button.dataset.v13Scale === 'true') return;
+    button.dataset.v13Scale = 'true';
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const w = document.getElementById('itemW');
+      const h = document.getElementById('itemH');
+      if (!w || !h) return;
+      w.value = Math.max(1, Number(w.value || 0) + delta);
+      h.value = Math.max(1, Number(h.value || 0) + delta);
+      w.dispatchEvent(new Event('input', { bubbles: true }));
+      h.dispatchEvent(new Event('input', { bubbles: true }));
+      w.dispatchEvent(new Event('change', { bubbles: true }));
+      h.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }
 
-    const wrap = document.querySelector('.wrap-image-btn');
-    if (wrap) {
+  function wireWrapButton(button) {
+    if (!button || button.dataset.v13Wrap === 'true') return;
+    button.dataset.v13Wrap = 'true';
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const w = document.getElementById('itemW');
+      const h = document.getElementById('itemH');
+      const imgPath = document.getElementById('itemImage')?.value || document.querySelector('.scene-item.is-selected img')?.src || '';
+      if (!w || !h || !imgPath) return;
+      const img = new Image();
+      img.onload = () => {
+        const ratio = img.naturalWidth / img.naturalHeight;
+        if (!ratio || !Number.isFinite(ratio)) return;
+        if (ratio >= 1) h.value = Math.max(1, +(Number(w.value || 1) / ratio).toFixed(3));
+        else w.value = Math.max(1, +(Number(h.value || 1) * ratio).toFixed(3));
+        w.dispatchEvent(new Event('input', { bubbles: true }));
+        h.dispatchEvent(new Event('input', { bubbles: true }));
+        w.dispatchEvent(new Event('change', { bubbles: true }));
+        h.dispatchEvent(new Event('change', { bubbles: true }));
+      };
+      img.src = imgPath;
+    });
+  }
+
+  function makeScaleControls() {
+    let stack = document.querySelector('.scale-control-stack');
+    if (!stack) {
       stack = document.createElement('div');
       stack.className = 'scale-control-stack selected-scale-stack-v13';
-      stack.appendChild(wrap);
-      return stack;
     }
 
-    stack = document.createElement('div');
-    stack.className = 'scale-control-stack selected-scale-stack-v13';
-    const up = document.createElement('button');
-    up.type = 'button';
-    up.className = 'scale-step-btn scale-up-btn';
-    up.textContent = '⬆️';
-    up.title = 'Scale width and height up by 2';
-    const wrapBtn = document.createElement('button');
-    wrapBtn.type = 'button';
-    wrapBtn.className = 'wrap-image-btn';
-    wrapBtn.textContent = '📐';
-    wrapBtn.title = 'Wrap image to aspect ratio';
-    const down = document.createElement('button');
-    down.type = 'button';
-    down.className = 'scale-step-btn scale-down-btn';
-    down.textContent = '⬇️';
-    down.title = 'Scale width and height down by 2';
-    stack.append(up, wrapBtn, down);
+    let up = stack.querySelector('.scale-up-btn');
+    let wrap = stack.querySelector('.wrap-image-btn');
+    let down = stack.querySelector('.scale-down-btn');
+
+    if (!up) {
+      up = document.createElement('button');
+      up.type = 'button';
+      up.className = 'scale-step-btn scale-up-btn';
+      up.textContent = '⬆️';
+      up.title = 'Scale width and height up by 2';
+    }
+    if (!wrap) {
+      wrap = document.createElement('button');
+      wrap.type = 'button';
+      wrap.className = 'wrap-image-btn';
+      wrap.textContent = '📐';
+      wrap.title = 'Wrap image to aspect ratio';
+    }
+    if (!down) {
+      down = document.createElement('button');
+      down.type = 'button';
+      down.className = 'scale-step-btn scale-down-btn';
+      down.textContent = '⬇️';
+      down.title = 'Scale width and height down by 2';
+    }
+
+    stack.innerHTML = '';
+    stack.append(up, wrap, down);
+    wireScaleButton(up, 2);
+    wireWrapButton(wrap);
+    wireScaleButton(down, -2);
     return stack;
   }
 
   function rebuildMetricsGrid() {
-    const x = field('itemX');
-    const y = field('itemY');
-    const z = field('itemZ');
-    const height = field('itemH');
-    const width = field('itemW');
-    const layer = field('itemLayer');
+    const x = stripFieldLabel(field('itemX'));
+    const y = stripFieldLabel(field('itemY'));
+    const z = stripFieldLabel(field('itemZ'));
+    const height = stripFieldLabel(field('itemH'));
+    const width = stripFieldLabel(field('itemW'));
+    const layer = stripFieldLabel(field('itemLayer'));
     if (!x || !y || !z || !height || !width || !layer) return null;
 
-    const stack = getScaleStack();
-    const metrics = group(3, 'selected-metrics-grid selected-metrics-grid-v13');
+    const stack = makeScaleControls();
+    const metrics = document.createElement('div');
+    metrics.className = 'selected-metric-table-v13c';
     metrics.dataset.v13Built = 'true';
 
-    metrics.appendChild(cell(x, 'metric-cell metric-left metric-x-cell'));
-    metrics.appendChild(cell(stack, 'metric-cell metric-scale-cell'));
-    metrics.appendChild(cell(height, 'metric-cell metric-right metric-height-cell'));
-
-    metrics.appendChild(cell(y, 'metric-cell metric-left metric-y-cell'));
-    metrics.appendChild(cell(null, 'metric-cell metric-scale-ghost'));
-    metrics.appendChild(cell(width, 'metric-cell metric-right metric-width-cell'));
-
-    metrics.appendChild(cell(z, 'metric-cell metric-left metric-z-cell'));
-    metrics.appendChild(cell(null, 'metric-cell metric-scale-ghost'));
-    metrics.appendChild(cell(layer, 'metric-cell metric-right metric-layer-cell'));
+    metrics.append(labelCell('X Axis'), labelCell('Scale', 'metric-label-center'), labelCell('Height'));
+    metrics.append(valueCell(x), valueCell(stack, 'metric-scale-value'), valueCell(height));
+    metrics.append(labelCell('Y Axis'), labelCell('', 'metric-label-center'), labelCell('Width'));
+    metrics.append(valueCell(y), valueCell(null, 'metric-blank-value'), valueCell(width));
+    metrics.append(labelCell('Z / Depth'), labelCell('', 'metric-label-center'), labelCell('Layer'));
+    metrics.append(valueCell(z), valueCell(null, 'metric-blank-value'), valueCell(layer));
 
     return metrics;
+  }
+
+  function placeholderSelect(label, options) {
+    const field = document.createElement('div');
+    field.className = 'field visual-placeholder-field';
+    field.innerHTML = `<label>${escapeHtml(label)}</label><select disabled>${options.map((option) => `<option>${escapeHtml(option)}</option>`).join('')}</select>`;
+    return field;
+  }
+
+  function placeholderInput(label, value = '') {
+    const field = document.createElement('div');
+    field.className = 'field visual-placeholder-field';
+    field.innerHTML = `<label>${escapeHtml(label)}</label><input disabled value="${escapeHtml(value)}">`;
+    return field;
+  }
+
+  function buildVisualPlaceholder() {
+    const wrap = group(2, 'visual-effects-placeholder-group');
+    const note = document.createElement('div');
+    note.className = 'card-layout-note cell-span-2 visual-effects-note';
+    note.textContent = 'Visual treatment placeholders for later: blend mode, opacity, transparent colour key, brightness, contrast, and saturation.';
+    wrap.appendChild(cell(note, 'cell-span-2'));
+    moveAll(wrap, [
+      placeholderSelect('Blend Mode', ['normal', 'screen', 'multiply', 'lighter', 'darken']),
+      placeholderInput('Opacity', '100%'),
+      placeholderInput('Transparent Colour', '#000000'),
+      placeholderInput('Brightness', '100%'),
+      placeholderInput('Contrast', '100%'),
+      placeholderInput('Saturation', '100%')
+    ]);
+    return wrap;
   }
 
   function convertSelected() {
     const body = document.querySelector('[data-card-id="selected"] .card-body');
     if (!body) return;
-    if (body.dataset.v13Layout === 'true' && body.querySelector('.selected-metrics-grid-v13')) return;
+    if (body.dataset.v13Layout === 'true' && body.querySelector('.selected-metric-table-v13c')) return;
 
     const id = field('itemId');
     const name = field('itemName');
@@ -247,7 +346,7 @@
     body.innerHTML = '';
     body.append(identity, divider());
     if (metrics) body.append(metrics);
-    body.append(divider(), tagGroup, toolsGroup);
+    body.append(divider(), tagGroup, buildVisualPlaceholder(), toolsGroup);
     cleanEmptyRows(body);
     body.dataset.v13Layout = 'true';
   }
