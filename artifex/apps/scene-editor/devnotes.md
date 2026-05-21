@@ -143,6 +143,12 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 - Patched right-click `Zoom to object` so it zooms in and scrolls the selected object into view instead of only showing a toast.
 - Needs checking: scale up/down updates the object immediately; Zoom to object centers the object reliably.
 
+### Recovered older proposed version roadmap
+
+- Added `recovered-proposed-feature-list.md` to preserve the older screenshot roadmap for v0.13 to v0.16.
+- It records the exact older plan for layer cleanup, asset-library object creation, hitbox/visual-box separation, and project/settings foundation.
+- The items were already broadly represented in the Future Feature Phases below, but the recovered list keeps the old version-number wording intact.
+
 ## Known rough edges / next checks
 
 - Selected-item layout is still partly managed by helper scripts, not directly generated in `scene-editor-v2.js`. Long-term fix should move this layout directly into `selectedForm()`.
