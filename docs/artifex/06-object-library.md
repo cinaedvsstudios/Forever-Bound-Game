@@ -25,6 +25,22 @@ The Scene Editor’s Asset Library is for choosing and placing files.
 
 The Advanced Object Library is for defining what a thing is, how it behaves, and how it can be reused.
 
+## Module Boundary
+
+The Advanced Object Library is its own app/module.
+
+It is not inside the Project Editor.
+
+The Project Editor can reference Object Library definitions when building structure and route logic, but the reusable definitions themselves belong here.
+
+Example:
+
+- Object Library defines `bronze_key` as an Item Archetype.
+- Quest Builder can use `bronze_key` as a quest objective or condition.
+- Project Editor can use `bronze_key` as a requirement on a locked Route.
+
+The key is defined once here, then reused elsewhere.
+
 ## What It Manages
 
 The Advanced Object Library should manage:
@@ -108,6 +124,19 @@ For example:
 - talk to character: Merchant NPC
 - unlock object: Locked Door
 - activate marker: Save Marker
+
+## Relationship To Project Editor
+
+The Project Editor should be able to reference Object Library archetypes when assigning route logic, station logic, conditions, or gates.
+
+Examples:
+
+- Route requires item: Bronze Key.
+- Station contains required character: Merchant NPC.
+- Route opens after enemy defeated: Forest Wolf.
+- Waypoint activates object: Save Marker.
+
+The Project Editor should not fully author these objects. It should only reference them and use them in structure logic.
 
 ## Object Categories
 
