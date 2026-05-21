@@ -93,9 +93,30 @@
 }
 
 .elements-controls-group .layer-control-row {
-  justify-content: flex-start;
-  gap: 8px;
+  justify-content: center !important;
+  gap: 10px !important;
   flex-wrap: wrap;
+  text-align: center;
+}
+
+.elements-controls-group .layer-control-row label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.elements-controls-group .layer-control-row input,
+.elements-controls-group .layer-control-row #layerPill {
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  min-width: 32px !important;
+  width: 42px !important;
+  text-align: center !important;
+  padding: 0 !important;
+  color: #ffe18f !important;
+  font-weight: 700;
 }
 
 .elements-list-group .item-list {
@@ -323,7 +344,7 @@
 
 .layer-stack-row {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) 30px;
+  grid-template-columns: 34px minmax(0, 1fr) 30px;
   align-items: center;
   gap: 6px;
 }
@@ -331,10 +352,13 @@
 .layer-slot-number {
   display: grid;
   place-items: center;
-  height: 28px;
-  color: #bfa990;
-  font-size: 12px;
-  border-right: 1px solid rgba(255, 225, 143, .22);
+  height: 100%;
+  min-height: 36px;
+  color: #f1dcc2;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  border: 0 !important;
 }
 
 .layer-stack-pill {
@@ -361,7 +385,8 @@
   filter: drop-shadow(0 0 6px rgba(195, 0, 255, .45));
 }
 
-.clean-layers-btn {
+.clean-layers-btn,
+.recalculate-layers-btn {
   padding-inline: 10px !important;
   min-height: 30px !important;
   font-size: 11px !important;
