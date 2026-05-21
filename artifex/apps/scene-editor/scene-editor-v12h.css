@@ -1,0 +1,67 @@
+/* Scene Editor v0.12h local resume + plain move handle */
+
+.scene-item .move-handle {
+  color: transparent !important;
+  font-size: 0 !important;
+}
+
+.scene-item .move-handle::before {
+  content: "";
+  display: block;
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+  background: rgba(241, 220, 194, 0.88);
+  box-shadow: inset 0 0 0 2px rgba(195, 0, 255, 0.42), 0 0 10px rgba(195, 0, 255, 0.6);
+}
+
+.scene-item .move-handle:hover::before,
+.scene-item .move-handle.is-dragging::before,
+.scene-item.is-handle-moving .move-handle::before {
+  background: rgba(255, 225, 143, 0.96);
+  box-shadow: inset 0 0 0 2px rgba(195, 0, 255, 0.78), 0 0 16px rgba(195, 0, 255, 0.95), 0 0 8px rgba(255, 225, 143, 0.8);
+}
+
+.resume-card-inline {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid rgba(184, 119, 63, 0.48);
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.48);
+  box-shadow: 0 0 24px rgba(195, 0, 255, 0.18);
+  max-width: 420px;
+}
+
+.resume-card-inline h3 {
+  margin: 0 0 8px;
+  color: #ffe18f;
+  font-size: 16px;
+}
+
+.resume-card-inline p {
+  margin: 5px 0;
+  color: #d7bd94;
+  font-size: 12px;
+}
+
+.resume-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.file-pill {
+  display: grid;
+  gap: 2px;
+}
+
+.file-pill-name {
+  font-weight: 700;
+}
+
+.file-pill-meta {
+  color: #bfa990;
+  font-size: 10px;
+  line-height: 1.15;
+}
