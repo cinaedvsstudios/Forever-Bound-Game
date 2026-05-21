@@ -1,4 +1,4 @@
-/* Scene Editor v0.08 UI polish overrides */
+/* Scene Editor v0.09 UI polish overrides */
 
 .title-divider {
   width: 1px;
@@ -125,6 +125,15 @@
   filter: drop-shadow(0 0 6px rgba(195, 0, 255, 0.75));
 }
 
+.card-toggle {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Inter, system-ui, sans-serif !important;
+  font-size: 18px !important;
+  padding: 0 !important;
+}
+
 .layer-only-row {
   justify-content: flex-start;
   padding: 6px 0 9px;
@@ -156,9 +165,17 @@
   font-size: 11px;
 }
 
+.item-row {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
+}
+
 .element-lock-toggle {
   display: inline-flex;
-  margin-right: 5px;
+  margin-left: auto;
+  padding-left: 8px;
   font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Inter, system-ui, sans-serif;
 }
 
@@ -251,6 +268,11 @@
   display: none !important;
 }
 
+@keyframes artifexWarningPulse {
+  0%, 100% { box-shadow: 0 20px 52px rgba(0,0,0,.62), 0 0 18px rgba(195,0,255,.24); border-color: rgba(195,0,255,.68); }
+  50% { box-shadow: 0 20px 52px rgba(0,0,0,.62), 0 0 34px rgba(195,0,255,.62); border-color: rgba(236,126,255,.98); }
+}
+
 .floating-side-popup {
   position: fixed;
   right: 24px;
@@ -268,12 +290,26 @@
   pointer-events: auto;
 }
 
+.asset-warning-popup {
+  animation: artifexWarningPulse 1.85s ease-in-out infinite;
+}
+
+.floating-side-popup.is-dragging {
+  opacity: 0.94;
+  user-select: none;
+}
+
 .floating-side-popup-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 10px;
+  cursor: grab;
+}
+
+.floating-side-popup.is-dragging .floating-side-popup-head {
+  cursor: grabbing;
 }
 
 .floating-side-popup-head button,
