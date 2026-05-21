@@ -4,7 +4,7 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 
 ## Current active test URL
 
-`https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/?v=v012g`
+`https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/?v=v012h`
 
 ## Patch log
 
@@ -151,6 +151,17 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 - Patched Zoom to object toward maximum zoom and center-scroll behavior.
 - Needs checking: selection without movement, handle-only dragging, visual feedback, and max zoom centering.
 
+### v0.12h — local working-copy resume and plain move handle
+
+- Added localStorage working-copy backup helper.
+- When the editor is blank and a local backup exists, the Blank Scene Editor area now shows a non-modal “Start where you left off?” panel.
+- Open local backup loads the cached JSON working copy rather than trying to reopen a hard-drive file.
+- File pill now shows local backup and last downloaded timestamps where available.
+- Download JSON records a last-downloaded timestamp.
+- Removed the 💠 emoji from the move handle and left the plain round centre drag circle.
+- Zoom to object now targets roughly 200% instead of a tiny one-step zoom.
+- Needs checking: local resume appears after reload, Open local backup works, file pill dates update, plain move handle still drags, and Zoom to object reaches about 200%.
+
 ### Recovered older proposed version roadmap
 
 - Added `recovered-proposed-feature-list.md` to preserve the older screenshot roadmap for v0.13 to v0.16.
@@ -167,6 +178,7 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 - Unsaved/local blob image handling still needs a cleaner workflow once the Asset Manager exists.
 - The editor now has several helper files layered over the original editor. This works for patching, but a later cleanup should consolidate stable behavior into the core editor file.
 - Move handle behavior should eventually be moved into core stage item rendering rather than helper injection.
+- Local working-copy restore currently depends on JSON Preview being available/rendered at least periodically; a core integration would be cleaner later.
 
 ## Future feature phases
 
