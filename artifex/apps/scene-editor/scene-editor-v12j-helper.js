@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v0.12k';
+  const VERSION = 'v0.13';
   const WORKING_COPY_KEY = 'artifex.sceneEditor.workingCopy.v1';
   const DOWNLOAD_KEY = 'artifex.sceneEditor.lastDownload.v1';
   let queued = false;
@@ -32,7 +32,8 @@
 
   function cleanFileName(value) {
     let text = String(value || '').trim();
-    text = text.replace(/[📁💾]/g, '').trim();
+    text = text.replace(/[📁💾🏗️]/g, '').trim();
+    text = text.replace(/Project\s*:[\s\S]*?$/i, '').trim();
     text = text.replace(/\|\s*LOCAL\s*:[\s\S]*$/i, '').trim();
     text = text.replace(/LOCAL\s*:[\s\S]*$/i, '').trim();
     text = text.replace(/HDD\s*:[\s\S]*$/i, '').trim();
@@ -90,6 +91,10 @@
     return 'Untitled JSON';
   }
 
+  function projectName() {
+    return 'FOREVER BOUND GAME';
+  }
+
   function polishFilePill() {
     const pill = document.querySelector('.file-pill');
     if (!pill || pill.textContent.trim() === 'No file loaded') return;
@@ -100,9 +105,13 @@
     pill.dataset.cleanFileName = currentName;
     const localStamp = formatStamp(working?.savedAt);
     const hddStamp = formatStamp(downloaded?.downloadedAt);
-    const html = `<span class="file-pill-main"><span class="file-pill-icons" aria-hidden="true">📁 💾</span><span class="file-pill-name">${escapeHtml(currentName)}</span></span><span class="file-pill-meta-line">| LOCAL: ${escapeHtml(localStamp)} | HDD: ${escapeHtml(hddStamp)} |</span>`;
-    if (pill.dataset.v12jHtml === html) return;
-    pill.dataset.v12jHtml = html;
+    const html = `
+      <span class="file-pill-project">Project: ${escapeHtml(projectName())}</span>
+      <span class="file-pill-title"><span class="file-pill-name">${escapeHtml(currentName)}</span></span>
+      <span class="file-pill-status-row"><span class="file-pill-icons" aria-hidden="true">📁 💾 🏗️</span><span class="file-pill-meta-line">| LOCAL: ${escapeHtml(localStamp)} | HDD: ${escapeHtml(hddStamp)} |</span></span>
+    `;
+    if (pill.dataset.v13Html === html) return;
+    pill.dataset.v13Html = html;
     pill.innerHTML = html;
   }
 
