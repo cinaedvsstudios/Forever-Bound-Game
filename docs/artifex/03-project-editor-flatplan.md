@@ -17,8 +17,76 @@ The Project Editor should contain:
 - start screen assignment
 - player map projection if needed
 - project-level import/export for structure data
+- structure-level Build Prep
 
 The Scene Editor creates visual scenes and screens. The Project Editor connects those completed pieces into the wider game structure.
+
+## Module Boundary
+
+The Project Editor is the central wiring board, but it is not the whole game builder by itself.
+
+It should reference content created in other modules:
+
+- Screens and Scenes from the Scene Editor.
+- Archetypes from the Object Library.
+- Quests, Branches, Flags, and Conditions from the Quest Builder.
+- Milestone/checklist status from the Creation Guide.
+
+It should not fully own or replace those modules.
+
+## Suggested Project Editor Workspaces
+
+The Project Editor should use a workspace switcher rather than a simple binary toggle.
+
+Suggested workspaces:
+
+```text
+Manifest | Flatplan | Stitcher | Build Prep
+```
+
+### Manifest Workspace
+
+The setup/index workspace.
+
+It handles project metadata, file references, start screen, enabled modules, project indexes, and structure file references.
+
+### Flatplan Workspace
+
+The visual canvas workspace.
+
+It handles the train-map-style canvas, Flatplan Catalog, Stations/Nodes, Depots, Junctions, Waypoints, Routes, Map Projection overlay, and contextual playtest buttons.
+
+### Stitcher Workspace
+
+The route/logic workspace.
+
+It handles route logic, triggers, conditions, unlocks, item gates, quest gates, button actions, entry rules, and exit rules.
+
+### Build Prep Workspace
+
+The structure-review workspace.
+
+It handles Project Editor-level validation and structure export/import before final Build Game packaging.
+
+This is not the same as the Creation Guide and not the same as the final Build Game app.
+
+Build Prep asks: is the Flatplan/project structure coherent enough to hand to the runtime/build process?
+
+## Diagnosis / Validation Split
+
+Avoid using one vague “Diagnosis” workspace for everything.
+
+Use this split instead:
+
+- **Creation Guide health summary** = what still needs doing, what milestones are incomplete, what setup is missing.
+- **Project Editor Build Prep** = whether the Flatplan/project structure is coherent enough to hand to the runtime/build process.
+- **Build Game validation** = whether the final playable package can be generated safely.
+
+Examples:
+
+- Creation Guide: title screen not reviewed, first scene not complete, milestone missing.
+- Project Editor: route points nowhere, no start node, station has no linked scene, impossible progression.
+- Build Game: missing files, invalid JSON, unresolved assets, export package not ready.
 
 ## Core Principle
 
@@ -187,6 +255,58 @@ Map Projection is the subset of the Flatplan that becomes visible on the Player 
 
 Hidden Stations, secret Branches, and logic-only nodes may be excluded until unlocked.
 
+Map Projection should live inside the Flatplan Workspace as a layer/toggle rather than becoming a separate module.
+
+## Playtest Entry Points
+
+The Project Editor should expose contextual playtest entry points without owning the whole Playtest module.
+
+Examples:
+
+- Play from selected Station/Node.
+- Test selected Route.
+- Play from Depot.
+- Play from Junction.
+- Test route from A to B.
+- Play with selected fake flags/items enabled.
+
+The shared Playtest module should perform the actual testing.
+
+## Relationship To Object Library
+
+The Project Editor references Object Library archetypes when it needs reusable things in structure logic.
+
+Example:
+
+- Object Library defines `bronze_key` as an Item Archetype.
+- Project Editor uses `bronze_key` as a requirement on a locked Route.
+
+The Project Editor should not be where the Bronze Key is fully authored. That belongs in Object Library.
+
+## Relationship To Quest Builder
+
+The Project Editor references Quest Builder data when it needs quest/progression logic.
+
+Example:
+
+- Quest Builder defines `q01_find_key` and the flag `key_collected`.
+- Project Editor uses `quest_complete:q01_find_key` or `flag_true:key_collected` as a Route condition.
+
+The Project Editor should not be where the full Quest is authored. That belongs in Quest Builder.
+
+## Relationship To Creation Guide
+
+The Project Editor can report status to the Creation Guide and receive task/milestone context from it.
+
+Example:
+
+- Creation Guide says “connect first route” is incomplete.
+- User opens Project Editor.
+- User connects the first two Stations.
+- Creation Guide can mark that Milestone as complete.
+
+The Creation Guide guides and tracks work. The Project Editor edits structure.
+
 ## Data Architecture
 
 The Project Editor should separate logic from layout so the visual Flatplan is stable and AI/tools can edit game logic without scrambling the canvas.
@@ -332,6 +452,7 @@ The Project Editor should visually match the rest of Artifex.
 Suggested layout:
 
 - top bar for project metadata, import/download, view switching, and global actions
+- workspace switcher for Manifest / Flatplan / Stitcher / Build Prep
 - left sidebar for Flatplan Catalog, selected item inspector, and JSON preview
 - main canvas for the Flatplan graph
 - floating zoom controls on the canvas
@@ -351,6 +472,7 @@ The sidebar should not be called Asset Manager. It should be called Flatplan Cat
 
 - build Project Editor folder/app shell
 - add top bar
+- add workspace switcher
 - add Flatplan Catalog sidebar
 - add selected item inspector
 - add JSON preview
