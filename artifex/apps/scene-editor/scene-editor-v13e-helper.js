@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v0.13e';
+  const VERSION = 'v0.13f';
   const ASSET_MANIFEST = '../../assets-library/asset-library.json';
   let queued = false;
   let dragHandleActive = false;
@@ -28,8 +28,8 @@
     return `<div class="field visual-placeholder-field"><label>${esc(label)}</label>${control}</div>`;
   }
 
-  function sectionHeading(text, subtext = '') {
-    return `<div class="v13e-section-heading"><h3>${esc(text)}</h3>${subtext ? `<p>${esc(subtext)}</p>` : ''}</div>`;
+  function pathPlaceholder(label) {
+    return `<div class="field visual-placeholder-field path-field"><label>${esc(label)}</label><div class="path-row"><input disabled value="none"><button type="button" class="path-menu-toggle v13f-disabled-picker" disabled title="Future file picker">📁</button></div></div>`;
   }
 
   function dispatchInput(input) {
@@ -41,7 +41,7 @@
     return Math.max(min, Math.min(max, value));
   }
 
-  function syncDragToCentre(event) {
+  function syncDragToCentre(event, notify = false) {
     if (!dragHandleActive) return;
     const stage = document.getElementById('stage');
     const x = document.getElementById('itemX');
@@ -56,15 +56,26 @@
     const pointerY = ((event.clientY - rect.top) / rect.height) * 100;
     const width = Number(w.value || 0);
     const height = Number(h.value || 0);
-    x.value = clamp(pointerX - width / 2, 0, 100);
-    y.value = clamp(pointerY - height / 2, 0, 100);
-    dispatchInput(x);
-    dispatchInput(y);
+    const nextX = clamp(pointerX - width / 2, 0, 100);
+    const nextY = clamp(pointerY - height / 2, 0, 100);
+    x.value = nextX;
+    y.value = nextY;
+
+    const selected = document.querySelector('.scene-item.is-selected');
+    if (selected) {
+      selected.style.left = `${nextX}%`;
+      selected.style.top = `${nextY}%`;
+    }
+
+    if (notify) {
+      dispatchInput(x);
+      dispatchInput(y);
+    }
   }
 
   function wireCentreHandleDrag() {
-    if (document.body.dataset.v13eCentreDrag === 'true') return;
-    document.body.dataset.v13eCentreDrag = 'true';
+    if (document.body.dataset.v13fCentreDrag === 'true') return;
+    document.body.dataset.v13fCentreDrag = 'true';
 
     document.addEventListener('pointerdown', (event) => {
       const handle = event.target.closest?.('.move-handle');
@@ -75,43 +86,33 @@
 
     document.addEventListener('pointermove', (event) => {
       if (!dragHandleActive) return;
-      syncDragToCentre(event);
+      syncDragToCentre(event, false);
       event.preventDefault();
       event.stopImmediatePropagation();
     }, true);
 
-    document.addEventListener('pointerup', () => {
+    document.addEventListener('pointerup', (event) => {
       if (!dragHandleActive) return;
+      syncDragToCentre(event, true);
       dragHandleActive = false;
       document.body.classList.remove('v13e-centre-dragging');
       queue();
     }, true);
   }
 
-  function addTransformHeadingAndRotate() {
-    const table = document.querySelector('[data-card-id="selected"] .selected-metric-table-v13c');
-    if (!table) return;
-
-    if (!table.previousElementSibling?.classList?.contains('transform-heading-v13e')) {
-      const heading = document.createElement('div');
-      heading.className = 'v13e-section-heading transform-heading-v13e';
-      heading.innerHTML = '<h3>Transform</h3><p>Position, scale, depth, layer, and future rotation controls.</p>';
-      table.before(heading);
-    }
-
-    if (!table.nextElementSibling?.classList?.contains('rotate-placeholder-v13e')) {
-      const rotate = document.createElement('div');
-      rotate.className = 'card-layout-group card-layout-2 rotate-placeholder-v13e';
-      rotate.innerHTML = `${fieldMarkup('Rotate', '0°')}${fieldMarkup('Rotation Origin', 'centre')}`;
-      table.after(rotate);
-    }
+  function buildCard(id, title) {
+    const section = document.createElement('section');
+    section.className = 'panel-card card-selected v13f-synthetic-card';
+    section.dataset.cardId = id;
+    section.innerHTML = `<h2><span>${esc(title)}</span><button class="card-toggle" type="button">↕</button></h2><div class="card-body"></div>`;
+    section.querySelector('.card-toggle')?.addEventListener('click', () => section.classList.toggle('is-collapsed'));
+    return section;
   }
 
-  function makeVisualAdjustments() {
-    const section = document.createElement('div');
-    section.className = 'v13e-placeholder-section visual-adjustments-v13e';
-    section.innerHTML = `
-      ${sectionHeading('Visual Adjustments', 'Image adjustment, colour adjustment, blend, transparency, glow, shadow, and future filter controls.')}
+  function makeVisualBody() {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `
+      <p class="card-layout-note">Image adjustment, colour adjustment, blend, transparency, glow, shadow, and future filter controls.</p>
       <div class="card-layout-group card-layout-2 visual-effects-placeholder-group v13e-adjustment-grid">
         ${fieldMarkup('Blend Mode', '', 'select', ['normal', 'screen', 'multiply', 'lighter', 'darken', 'overlay', 'color-dodge', 'color-burn'])}
         ${fieldMarkup('Opacity', '100%')}
@@ -135,76 +136,97 @@
         ${fieldMarkup('Glow Strength', '0')}
         ${fieldMarkup('Vignette', 'off')}
         ${fieldMarkup('Vignette Strength', '0')}
-      </div>
-    `;
-    return section;
+      </div>`;
+    return wrap;
   }
 
-  function makeAnimationSection() {
-    const section = document.createElement('div');
-    section.className = 'v13e-placeholder-section animation-placeholder-v13e';
-    section.innerHTML = `
-      ${sectionHeading('Animation', 'Future object-linked animation controls and frame-browser entry point.')}
+  function makeAnimationBody() {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `
+      <p class="card-layout-note">Future object-linked animation controls and frame-browser entry point.</p>
       <div class="card-layout-group card-layout-2 v13e-adjustment-grid">
+        ${pathPlaceholder('Animation File')}
         ${fieldMarkup('Animation Set', 'none')}
         ${fieldMarkup('Frame Source', 'none')}
         ${fieldMarkup('FPS', '12')}
         ${fieldMarkup('Loop Mode', '', 'select', ['loop', 'once', 'ping-pong', 'hold last'])}
         ${fieldMarkup('Start Frame', '0')}
         ${fieldMarkup('Frame Count', '0')}
-      </div>
-    `;
-    return section;
+      </div>`;
+    return wrap;
   }
 
-  function makeAudioSection() {
-    const section = document.createElement('div');
-    section.className = 'v13e-placeholder-section audio-placeholder-v13e';
-    section.innerHTML = `
-      ${sectionHeading('Audio', 'Future object-linked dialogue, movement, interaction, and sound-effect controls.')}
+  function makeAudioBody() {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `
+      <p class="card-layout-note">Future object-linked dialogue, movement, interaction, and sound-effect controls.</p>
       <div class="card-layout-group card-layout-2 v13e-adjustment-grid">
+        ${pathPlaceholder('Audio File')}
         ${fieldMarkup('Dialogue Sound', 'none')}
         ${fieldMarkup('Interact Sound', 'none')}
         ${fieldMarkup('Movement Sound', 'none')}
         ${fieldMarkup('Jump Sound', 'none')}
         ${fieldMarkup('Ambient Loop', 'none')}
         ${fieldMarkup('Volume', '100%')}
-      </div>
-    `;
-    return section;
+      </div>`;
+    return wrap;
   }
 
-  function rebuildSelectedPlaceholders() {
-    const body = document.querySelector('[data-card-id="selected"] .card-body');
-    if (!body) return;
-    addTransformHeadingAndRotate();
+  function ensureRotatePlaceholder() {
+    let rotate = document.querySelector('.rotate-placeholder-v13e');
+    if (rotate) return rotate;
+    rotate = document.createElement('div');
+    rotate.className = 'card-layout-group card-layout-2 rotate-placeholder-v13e';
+    rotate.innerHTML = `${fieldMarkup('Rotate', '0°')}${fieldMarkup('Rotation Origin', 'centre')}`;
+    return rotate;
+  }
 
-    const tagGroup = body.querySelector('.selected-tags-group') || document.getElementById('itemTags')?.closest('.card-layout-group');
-    const toolsGroup = body.querySelector('.selected-tools-layout-group');
-    if (!tagGroup || !toolsGroup) return;
+  function splitSelectedCards() {
+    const selected = document.querySelector('[data-card-id="selected"]');
+    const body = selected?.querySelector('.card-body');
+    if (!selected || !body) return;
+    const objectId = document.getElementById('itemId')?.value || '';
+    if (selected.dataset.v13fSplit === objectId && document.querySelector('[data-card-id="transform-v13f"]')) return;
 
-    body.querySelectorAll('.visual-effects-placeholder-group, .visual-adjustments-v13e, .animation-placeholder-v13e, .audio-placeholder-v13e, .v13e-after-tags-divider').forEach((node) => node.remove());
+    document.querySelectorAll('.v13f-synthetic-card').forEach((node) => node.remove());
 
-    const divider = document.createElement('div');
-    divider.className = 'card-layout-divider v13e-after-tags-divider';
-    const visual = makeVisualAdjustments();
-    const animation = makeAnimationSection();
-    const audio = makeAudioSection();
-    toolsGroup.before(divider, visual, animation, audio);
+    const title = selected.querySelector('h2 span');
+    if (title) title.textContent = 'Object Details';
+
+    const identity = body.querySelector('.selected-identity-group');
+    const table = body.querySelector('.selected-metric-table-v13c');
+    const tags = body.querySelector('.selected-tags-group');
+    const tools = body.querySelector('.selected-tools-layout-group');
+    if (!identity || !table) return;
+
+    const transform = buildCard('transform-v13f', 'Transform');
+    const transformBody = transform.querySelector('.card-body');
+    transformBody.appendChild(table);
+    transformBody.appendChild(ensureRotatePlaceholder());
+    if (tags) transformBody.appendChild(tags);
+    if (tools) transformBody.appendChild(tools);
+
+    const visual = buildCard('visual-v13f', 'Visual Adjustments');
+    visual.querySelector('.card-body').appendChild(makeVisualBody());
+
+    const animation = buildCard('animation-v13f', 'Animation');
+    animation.querySelector('.card-body').appendChild(makeAnimationBody());
+
+    const audio = buildCard('audio-v13f', 'Audio');
+    audio.querySelector('.card-body').appendChild(makeAudioBody());
+
+    body.innerHTML = '';
+    body.appendChild(identity);
+    selected.after(transform, visual, animation, audio);
+    selected.dataset.v13fSplit = objectId;
   }
 
   async function loadAssetManifest() {
     if (assetManifest) return assetManifest;
     if (!assetManifestLoading) {
       assetManifestLoading = fetch(`${ASSET_MANIFEST}?v=${Date.now()}`, { cache: 'no-store' })
-        .then((response) => {
-          if (!response.ok) throw new Error(`Asset manifest ${response.status}`);
-          return response.json();
-        })
-        .then((json) => {
-          assetManifest = json;
-          return json;
-        })
+        .then((response) => response.ok ? response.json() : null)
+        .then((json) => { assetManifest = json; return json; })
         .catch(() => null)
         .finally(() => { assetManifestLoading = null; });
     }
@@ -233,15 +255,13 @@
     const wanted = select.value || 'all';
     popup.querySelectorAll('.asset-card-btn[data-asset-id]').forEach((card) => {
       const asset = (manifest.assets || []).find((item) => item.id === card.dataset.assetId);
-      const visible = wanted === 'all' || classifyAsset(asset).has(wanted);
-      card.classList.toggle('asset-game-filter-hidden', !visible);
+      card.classList.toggle('asset-game-filter-hidden', !(wanted === 'all' || classifyAsset(asset).has(wanted)));
     });
   }
 
   function patchAssetBrowser() {
     const popup = document.querySelector('.asset-picker-popup');
     if (!popup) return;
-
     const close = popup.querySelector('[data-close]');
     if (close) { close.textContent = '✖'; close.title = 'Close'; close.classList.add('asset-icon-button'); }
     const clear = popup.querySelector('#assetClear');
@@ -254,17 +274,7 @@
       const select = document.createElement('select');
       select.id = 'assetGameCategory';
       select.title = 'Game category';
-      select.innerHTML = `
-        <option value="all">all categories</option>
-        <option value="characters">characters + animals</option>
-        <option value="objects">objects</option>
-        <option value="environment">environment</option>
-        <option value="doors-exits">doors / exits</option>
-        <option value="effects">effects</option>
-        <option value="pickups">pickups / relics</option>
-        <option value="backgrounds">backgrounds</option>
-        <option value="ui">ui</option>
-      `;
+      select.innerHTML = '<option value="all">all categories</option><option value="characters">characters + animals</option><option value="objects">objects</option><option value="environment">environment</option><option value="doors-exits">doors / exits</option><option value="effects">effects</option><option value="pickups">pickups / relics</option><option value="backgrounds">backgrounds</option><option value="ui">ui</option>';
       search.after(select);
       select.addEventListener('input', () => applyGameCategoryFilter(popup));
       select.addEventListener('change', () => applyGameCategoryFilter(popup));
@@ -275,41 +285,31 @@
       popup.addEventListener('input', () => setTimeout(() => applyGameCategoryFilter(popup), 0), true);
       popup.addEventListener('change', () => setTimeout(() => applyGameCategoryFilter(popup), 0), true);
       popup.addEventListener('click', (event) => {
-        if (event.target.closest('#assetClear')) {
-          setTimeout(() => {
-            const select = popup.querySelector('#assetGameCategory');
-            if (select) select.value = 'all';
-            applyGameCategoryFilter(popup);
-          }, 0);
-        }
+        if (event.target.closest('#assetClear')) setTimeout(() => { const select = popup.querySelector('#assetGameCategory'); if (select) select.value = 'all'; applyGameCategoryFilter(popup); }, 0);
         if (event.target.closest('#assetReload')) setTimeout(() => loadAssetManifest().then(() => applyGameCategoryFilter(popup)), 150);
       }, true);
     }
-
     loadAssetManifest().then(() => applyGameCategoryFilter(popup));
   }
 
   function patch() {
     queued = false;
     wireCentreHandleDrag();
-    rebuildSelectedPlaceholders();
+    splitSelectedCards();
     patchAssetBrowser();
   }
 
   function queue() {
-    if (queued) return;
+    if (queued || dragHandleActive) return;
     queued = true;
     requestAnimationFrame(() => requestAnimationFrame(patch));
   }
 
-  window.addEventListener('load', () => {
-    patch();
-    toast('Transform, visual, animation, audio, and asset browser polish loaded');
-  });
+  window.addEventListener('load', () => { patch(); toast('Selected object cards and centre-drag cleanup loaded'); });
   document.addEventListener('click', queue, true);
   document.addEventListener('input', queue, true);
   document.addEventListener('change', queue, true);
   document.addEventListener('pointerup', queue, true);
-  setInterval(queue, 700);
+  setInterval(queue, 900);
   patch();
 })();
