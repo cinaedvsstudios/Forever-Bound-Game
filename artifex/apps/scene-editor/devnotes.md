@@ -4,7 +4,7 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 
 ## Current active test URL
 
-`https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/?v=v13`
+`https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/?v=v13b`
 
 ## Patch log
 
@@ -196,6 +196,16 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 - Converted Selected Item into layout groups: 1-column identity/path group, metrics block, tags group, and tools group.
 - This is still helper-based, but it proves the card layout rules before moving them into the core editor render functions.
 - Needs checking: file pill should stay stable, cards should not lose controls, selected-item metrics/wrap/scale controls should still work.
+
+### v0.13b — selected-item metrics rebuild
+
+- Rebuilt the Selected Item / asset details metrics block instead of reusing the old metrics grid.
+- Metrics now use an explicit 3-column layout: left value column, middle scale/wrap column, right value column.
+- Target layout is: Row 1 `X Axis | scale/wrap | Height`; Row 2 `Y Axis | spacer | Width`; Row 3 `Z / Depth | spacer | Layer`.
+- Kept ID, Name, Type, Image Path, and Text in a 1-column identity group.
+- Kept Tags in a 1-column group and bottom tools in a separate tools group.
+- Styled the metric grid, scale stack, bottom tools, and input widths in `scene-editor-v13.css`.
+- Needs checking: selected card should now visibly change; X/Y/Z, Height/Width/Layer, Wrap Image, scale up/down, Tags, Delete, Visible, and Border should still work.
 
 ### Recovered older proposed version roadmap
 
