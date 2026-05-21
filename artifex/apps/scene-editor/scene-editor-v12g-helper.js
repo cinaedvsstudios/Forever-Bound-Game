@@ -1,6 +1,6 @@
 (() => {
-  const VERSION = 'v0.12g';
-  const MAX_ZOOM = 2.2;
+  const VERSION = 'v0.12h';
+  const TARGET_ZOOM = 2.0;
   let queued = false;
   let handleDragActive = false;
 
@@ -30,13 +30,13 @@
     return document.querySelector('.scene-item.is-selected');
   }
 
-  function zoomToSelectedObjectMax() {
+  function zoomToSelectedObjectTarget() {
     const selected = findSelectedItem();
     if (!selected) return toast('No selected object to zoom to');
     let current = parseZoom();
     let safety = 0;
     const zoomIn = document.getElementById('zoomIn');
-    while (zoomIn && current < MAX_ZOOM - 0.02 && safety < 26) {
+    while (zoomIn && current < TARGET_ZOOM - 0.02 && safety < 16) {
       zoomIn.click();
       current += 0.1;
       safety += 1;
@@ -45,20 +45,22 @@
       const target = findSelectedItem() || selected;
       target?.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
       document.querySelectorAll('.context-menu').forEach((menu) => menu.remove());
-      toast('Zoomed to maximum object view');
+      toast('Zoomed to object at 200%');
     }, 180);
   }
 
   function addMoveHandles() {
     document.querySelectorAll('.scene-item[data-stage-id]').forEach((item) => {
-      if (item.querySelector(':scope > .move-handle')) return;
-      const handle = document.createElement('button');
-      handle.type = 'button';
-      handle.className = 'move-handle';
-      handle.textContent = '💠';
-      handle.title = 'Drag here to move this object';
-      handle.setAttribute('aria-label', 'Move object');
-      item.appendChild(handle);
+      let handle = item.querySelector(':scope > .move-handle');
+      if (!handle) {
+        handle = document.createElement('button');
+        handle.type = 'button';
+        handle.className = 'move-handle';
+        handle.title = 'Drag here to move this object';
+        handle.setAttribute('aria-label', 'Move object');
+        item.appendChild(handle);
+      }
+      handle.textContent = '';
     });
   }
 
@@ -72,8 +74,8 @@
   }
 
   function bindPointerRules() {
-    if (document.body.getAttribute('data-v12g-move-handles') === 'true') return;
-    document.body.setAttribute('data-v12g-move-handles', 'true');
+    if (document.body.getAttribute('data-v12h-move-handles') === 'true') return;
+    document.body.setAttribute('data-v12h-move-handles', 'true');
 
     document.addEventListener('pointerdown', (event) => {
       const handle = event.target.closest ? event.target.closest('.move-handle') : null;
@@ -93,9 +95,7 @@
 
     document.addEventListener('pointermove', (event) => {
       const stage = event.target.closest ? event.target.closest('#stage') : null;
-      if (stage && !handleDragActive) {
-        event.stopImmediatePropagation();
-      }
+      if (stage && !handleDragActive) event.stopImmediatePropagation();
     }, true);
 
     document.addEventListener('pointerup', () => {
@@ -110,7 +110,7 @@
       if (!zoomButton) return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      zoomToSelectedObjectMax();
+      zoomToSelectedObjectTarget();
     }, true);
   }
 
