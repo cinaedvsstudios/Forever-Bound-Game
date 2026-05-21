@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v0.11';
+  const VERSION = 'v0.11d';
   const ASSET_MANIFEST = '../../assets-library/asset-library.json';
   let assetManifest = null;
   let pickerTarget = 'item';
@@ -189,7 +189,8 @@
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'wrap-image-btn';
-    button.textContent = '📐 Wrap Image';
+    button.textContent = '📐';
+    button.setAttribute('aria-label', 'Wrap image');
     button.title = 'Match this object box to the selected image aspect ratio.';
     button.addEventListener('click', wrapSelectedImage);
     row.appendChild(button);
