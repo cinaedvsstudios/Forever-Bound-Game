@@ -1,9 +1,10 @@
 (() => {
-  const VERSION = 'v0.09';
+  const VERSION = 'v0.09b';
   const LOCK_KEY = 'artifex.sceneEditor.lockedElements.v1';
   let panning = null;
   let popupDrag = null;
   let downloadBypass = false;
+  let patchQueued = false;
 
   function readLocks() {
     try { return JSON.parse(localStorage.getItem(LOCK_KEY) || '{}'); }
@@ -29,36 +30,67 @@
     if (status) status.textContent = `${VERSION}: ${message}`;
   }
 
+  function safeFilename(value) {
+    return String(value || 'asset').trim().replace(/[^a-z0-9_\-.]+/gi, '_').replace(/^_+|_+$/g, '') || 'asset';
+  }
+
+  function extensionFromMime(type) {
+    const map = {
+      'image/png': '.png',
+      'image/jpeg': '.jpg',
+      'image/webp': '.webp',
+      'image/gif': '.gif',
+      'image/svg+xml': '.svg',
+      'image/avif': '.avif'
+    };
+    return map[String(type || '').toLowerCase()] || '';
+  }
+
+  function extensionFromUrl(url) {
+    try {
+      const path = new URL(url, location.href).pathname;
+      const match = path.match(/\.([a-z0-9]{2,5})$/i);
+      return match ? `.${match[1].toLowerCase()}` : '';
+    } catch {
+      const match = String(url || '').match(/\.([a-z0-9]{2,5})(?:[?#].*)?$/i);
+      return match ? `.${match[1].toLowerCase()}` : '';
+    }
+  }
+
   function enhanceElementsHeader() {
     const elementsCard = document.querySelector('[data-card-id="elements"]');
-    if (!elementsCard || elementsCard.dataset.v09Enhanced === 'true') return;
+    if (!elementsCard) return;
     const heading = elementsCard.querySelector('h2');
     if (!heading) return;
 
     const title = heading.querySelector('span');
-    if (title && !title.classList.contains('card-title-main')) title.classList.add('card-title-main');
+    if (title) title.classList.add('card-title-main');
 
-    const actions = document.createElement('span');
-    actions.className = 'card-header-actions';
-    actions.innerHTML = `
-      <button class="header-icon-btn" type="button" data-proxy="addElement" title="Add Element">➕</button>
-      <button class="header-icon-btn" type="button" data-proxy="addLayer" title="Add Layer">🖼️</button>
-      <button class="header-icon-btn" type="button" data-proxy="highlightBtn" title="Toggle Highlight">🖍️</button>
-    `;
+    let actions = heading.querySelector('.card-header-actions');
+    if (!actions) {
+      actions = document.createElement('span');
+      actions.className = 'card-header-actions';
+      const toggle = heading.querySelector('.card-toggle');
+      heading.insertBefore(actions, toggle || null);
+    }
 
-    const toggle = heading.querySelector('.card-toggle');
-    heading.insertBefore(actions, toggle || null);
-
-    actions.querySelectorAll('[data-proxy]').forEach((button) => {
-      button.addEventListener('mouseenter', () => setTip(button.title));
-      button.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        document.getElementById(button.dataset.proxy)?.click();
+    if (actions.dataset.v09b !== 'true') {
+      actions.innerHTML = `
+        <button class="header-icon-btn" type="button" data-proxy="addElement" title="Add Element">➕</button>
+        <button class="header-icon-btn" type="button" data-proxy="addLayer" title="Add Layer">🖼️</button>
+        <button class="header-icon-btn" type="button" data-proxy="highlightBtn" title="Toggle Highlight">🖍️</button>
+      `;
+      actions.querySelectorAll('[data-proxy]').forEach((button) => {
+        button.addEventListener('mouseenter', () => setTip(button.title));
+        button.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          document.getElementById(button.dataset.proxy)?.click();
+          queuePatch();
+        });
       });
-    });
-
-    elementsCard.dataset.v09Enhanced = 'true';
+      actions.dataset.v09b = 'true';
+    }
   }
 
   function revealLayerRowAndHideOldActionButtons() {
@@ -67,8 +99,10 @@
     const bodyActions = elementsCard.querySelector('.card-body .compact-actions');
     if (!bodyActions) return;
     bodyActions.style.display = 'flex';
-    bodyActions.querySelectorAll('.icon-btn').forEach((button) => button.style.display = 'none');
     bodyActions.classList.add('layer-only-row');
+    bodyActions.querySelectorAll('.icon-btn').forEach((button) => {
+      button.style.display = 'none';
+    });
   }
 
   function normalizeCollapseIcons() {
@@ -79,7 +113,8 @@
 
   function enhanceFilePill() {
     const pill = document.querySelector('.file-pill');
-    if (!pill || pill.dataset.v09FileTools === 'true') return;
+    if (!pill) return;
+    if (pill.dataset.v09bFileTools === 'true') return;
     const label = pill.textContent.trim();
     pill.textContent = '';
     const text = document.createElement('span');
@@ -92,12 +127,13 @@
     tools.querySelector('[title="Open / Import"]')?.addEventListener('click', (event) => {
       event.stopPropagation();
       document.getElementById('importBtn')?.click();
+      queuePatch();
     });
     tools.querySelector('[title="Save / Download"]')?.addEventListener('click', (event) => {
       event.stopPropagation();
       document.getElementById('downloadJson')?.click();
     });
-    pill.dataset.v09FileTools = 'true';
+    pill.dataset.v09bFileTools = 'true';
   }
 
   function enhanceElementRows() {
@@ -105,33 +141,33 @@
     document.querySelectorAll('.item-row[data-select-id]').forEach((row) => {
       const id = row.dataset.selectId;
       if (!id) return;
-      const old = row.querySelector('.element-lock-toggle');
-      if (old) old.remove();
-      const lock = document.createElement('span');
-      lock.className = 'element-lock-toggle';
+      let lock = row.querySelector('.element-lock-toggle');
+      if (!lock) {
+        lock = document.createElement('span');
+        lock.className = 'element-lock-toggle';
+        lock.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const next = readLocks();
+          next[id] = !next[id];
+          writeLocks(next);
+          toast(next[id] ? `Locked ${id}` : `Unlocked ${id}`);
+          queuePatch();
+        });
+        row.append(lock);
+      }
       lock.textContent = locks[id] ? '🔒' : '🔓';
       lock.title = locks[id] ? 'Unlock element' : 'Lock element';
-      lock.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const next = readLocks();
-        next[id] = !next[id];
-        writeLocks(next);
-        toast(next[id] ? `Locked ${id}` : `Unlocked ${id}`);
-        patch();
-      });
-      row.append(lock);
       row.classList.toggle('is-locked', !!locks[id]);
-      row.dataset.v09Lock = 'true';
     });
   }
 
   function blockLockedDragging() {
+    const locks = readLocks();
     document.querySelectorAll('.scene-item[data-stage-id]').forEach((item) => {
       const id = item.dataset.stageId;
-      const locks = readLocks();
       item.classList.toggle('is-locked', !!locks[id]);
-      if (item.dataset.v09LockBlock === 'true') return;
+      if (item.dataset.v09bLockBlock === 'true') return;
       item.addEventListener('pointerdown', (event) => {
         const currentLocks = readLocks();
         if (!currentLocks[item.dataset.stageId]) return;
@@ -139,13 +175,13 @@
         event.stopImmediatePropagation();
         toast(`Locked: ${item.dataset.stageId}`);
       }, true);
-      item.dataset.v09LockBlock = 'true';
+      item.dataset.v09bLockBlock = 'true';
     });
   }
 
   function enhanceTagsField() {
     const field = document.getElementById('itemTags')?.closest('.field');
-    if (!field || field.dataset.v09Tags === 'true') return;
+    if (!field || field.dataset.v09bTags === 'true') return;
     const label = field.querySelector('label');
     if (!label) return;
     const eye = document.createElement('button');
@@ -159,7 +195,7 @@
       showTagPopup();
     });
     label.appendChild(eye);
-    field.dataset.v09Tags = 'true';
+    field.dataset.v09bTags = 'true';
   }
 
   function currentTags() {
@@ -168,12 +204,6 @@
 
   function collectTags() {
     const tags = new Set(['character', 'prop', 'pickup', 'exit', 'door', 'background', 'foreground', 'overlay', 'fx', 'vfx', 'fire', 'fog', 'magic', 'water', 'npc', 'foe', 'searchable', 'locked', 'temporary', 'blob']);
-    document.querySelectorAll('.item-row').forEach((row) => {
-      String(row.textContent || '').split(/[·\s,]+/).forEach((part) => {
-        const cleaned = part.trim().toLowerCase();
-        if (cleaned && cleaned.length > 2 && !/^z\d+$/i.test(cleaned)) tags.add(cleaned);
-      });
-    });
     currentTags().forEach((tag) => tags.add(tag));
     return [...tags].sort();
   }
@@ -238,37 +268,12 @@
     if (stageItem) {
       stageItem.click();
       stageItem.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
+      queuePatch();
       return;
     }
     const row = document.querySelector(`.item-row[data-select-id="${CSS.escape(id)}"]`);
     if (row) row.click();
-  }
-
-  function safeFilename(value) {
-    return String(value || 'asset').trim().replace(/[^a-z0-9_\-.]+/gi, '_').replace(/^_+|_+$/g, '') || 'asset';
-  }
-
-  function extensionFromMime(type) {
-    const map = {
-      'image/png': '.png',
-      'image/jpeg': '.jpg',
-      'image/webp': '.webp',
-      'image/gif': '.gif',
-      'image/svg+xml': '.svg',
-      'image/avif': '.avif'
-    };
-    return map[String(type || '').toLowerCase()] || '';
-  }
-
-  function extensionFromUrl(url) {
-    try {
-      const path = new URL(url, location.href).pathname;
-      const match = path.match(/\.([a-z0-9]{2,5})$/i);
-      return match ? `.${match[1].toLowerCase()}` : '';
-    } catch {
-      const match = String(url || '').match(/\.([a-z0-9]{2,5})(?:[?#].*)?$/i);
-      return match ? `.${match[1].toLowerCase()}` : '';
-    }
+    queuePatch();
   }
 
   async function downloadOneRiskyAsset(asset, index) {
@@ -306,24 +311,16 @@
 
   function wirePopupDrag(popup) {
     const handle = popup.querySelector('.floating-side-popup-head');
-    if (!handle || popup.dataset.v09Drag === 'true') return;
-    popup.dataset.v09Drag = 'true';
+    if (!handle || popup.dataset.v09bDrag === 'true') return;
+    popup.dataset.v09bDrag = 'true';
     handle.addEventListener('pointerdown', (event) => {
       if (event.target.closest('button')) return;
       const rect = popup.getBoundingClientRect();
-      popupDrag = {
-        popup,
-        pointerId: event.pointerId,
-        startX: event.clientX,
-        startY: event.clientY,
-        left: rect.left,
-        top: rect.top
-      };
+      popupDrag = { popup, startX: event.clientX, startY: event.clientY, left: rect.left, top: rect.top };
       popup.classList.add('is-dragging');
       popup.style.left = `${rect.left}px`;
       popup.style.top = `${rect.top}px`;
       popup.style.right = 'auto';
-      handle.setPointerCapture?.(event.pointerId);
     });
   }
 
@@ -357,8 +354,8 @@
 
   function wireDownloadWarning() {
     const button = document.getElementById('downloadJson');
-    if (!button || button.dataset.v09DownloadWarning === 'true') return;
-    button.dataset.v09DownloadWarning = 'true';
+    if (!button || button.dataset.v09bDownloadWarning === 'true') return;
+    button.dataset.v09bDownloadWarning = 'true';
     button.addEventListener('click', (event) => {
       if (downloadBypass) return;
       const assets = findRiskyImages();
@@ -372,45 +369,32 @@
 
   function enhanceBlankVersion() {
     const blank = document.querySelector('.blank-message');
-    if (!blank || blank.querySelector('.artifex-version-marker-v09')) return;
+    if (!blank || blank.querySelector('.artifex-version-marker-v09b')) return;
     const marker = document.createElement('div');
-    marker.className = 'artifex-version-marker-v09';
-    marker.textContent = `${VERSION} asset-download naming build`;
+    marker.className = 'artifex-version-marker-v09b';
+    marker.textContent = `${VERSION} stable helper build`;
     marker.style.cssText = 'margin-top:12px;color:#bfa990;font-size:12px;letter-spacing:.04em;';
     blank.appendChild(marker);
   }
 
   function wireMiddleMousePanning() {
     const wrap = document.querySelector('.stage-wrap');
-    if (!wrap || wrap.dataset.v09Panning === 'true') return;
-    wrap.dataset.v09Panning = 'true';
-
+    if (!wrap || wrap.dataset.v09bPanning === 'true') return;
+    wrap.dataset.v09bPanning = 'true';
     wrap.addEventListener('pointerdown', (event) => {
       if (event.button !== 1) return;
       event.preventDefault();
-      panning = {
-        pointerId: event.pointerId,
-        startX: event.clientX,
-        startY: event.clientY,
-        left: wrap.scrollLeft,
-        top: wrap.scrollTop,
-        wrap
-      };
+      panning = { startX: event.clientX, startY: event.clientY, left: wrap.scrollLeft, top: wrap.scrollTop, wrap };
       wrap.classList.add('is-panning');
-      wrap.setPointerCapture?.(event.pointerId);
       setTip('Middle mouse drag: panning Work Area view.');
     });
-
     wrap.addEventListener('pointermove', (event) => {
       if (!panning || panning.wrap !== wrap) return;
       event.preventDefault();
       wrap.scrollLeft = panning.left - (event.clientX - panning.startX);
       wrap.scrollTop = panning.top - (event.clientY - panning.startY);
     });
-
-    wrap.addEventListener('auxclick', (event) => {
-      if (event.button === 1) event.preventDefault();
-    });
+    wrap.addEventListener('auxclick', (event) => { if (event.button === 1) event.preventDefault(); });
   }
 
   function stopPanning() {
@@ -426,6 +410,7 @@
   }
 
   function patch() {
+    patchQueued = false;
     enhanceElementsHeader();
     revealLayerRowAndHideOldActionButtons();
     normalizeCollapseIcons();
@@ -439,6 +424,12 @@
     document.querySelectorAll('.floating-side-popup').forEach(wirePopupDrag);
   }
 
+  function queuePatch() {
+    if (patchQueued) return;
+    patchQueued = true;
+    requestAnimationFrame(() => requestAnimationFrame(patch));
+  }
+
   document.addEventListener('pointermove', (event) => {
     if (!popupDrag) return;
     const left = popupDrag.left + (event.clientX - popupDrag.startX);
@@ -446,19 +437,25 @@
     popupDrag.popup.style.left = `${Math.max(8, Math.min(window.innerWidth - 80, left))}px`;
     popupDrag.popup.style.top = `${Math.max(8, Math.min(window.innerHeight - 60, top))}px`;
   });
-  document.addEventListener('pointerup', () => { stopPanning(); stopPopupDrag(); });
-  document.addEventListener('pointercancel', () => { stopPanning(); stopPopupDrag(); });
+  document.addEventListener('pointerup', () => { stopPanning(); stopPopupDrag(); queuePatch(); });
+  document.addEventListener('pointercancel', () => { stopPanning(); stopPopupDrag(); queuePatch(); });
+  document.addEventListener('click', queuePatch, true);
+  document.addEventListener('change', queuePatch, true);
+  document.addEventListener('input', (event) => {
+    if (event.target?.matches?.('input[type="text"], textarea')) return;
+    queuePatch();
+  }, true);
   document.addEventListener('mouseenter', (event) => {
     const tipNode = event.target.closest?.('[data-tip], [title]');
     if (!tipNode) return;
     setTip(tipNode.dataset.tip || tipNode.title || 'Ready.');
   }, true);
 
-  const observer = new MutationObserver(patch);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
   window.addEventListener('load', () => {
     patch();
-    toast('Scene Editor asset-download naming loaded');
+    toast('Scene Editor stable helper loaded');
   });
+
   patch();
+  setInterval(queuePatch, 1200);
 })();
