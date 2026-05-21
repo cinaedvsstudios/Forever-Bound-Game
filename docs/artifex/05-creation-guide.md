@@ -8,6 +8,16 @@ It helps the user make a new project from the Artifex Adventures template withou
 
 It also acts as the production dashboard for tracking what still needs to be built.
 
+## Naming Decision
+
+Use **Creation Guide** for the wizard/checklist/dashboard/milestone system.
+
+Do not use **Project Manager** as a main module name going forward.
+
+Use **Project Editor** for the structural game editor that owns the Manifest, Flatplan, Flatplan Catalog, Stitcher, Routes, and Map Projection.
+
+The Creation Guide can include a dashboard and task view, but it should not be confused with the Project Editor.
+
 ## What It Includes
 
 The Creation Guide includes:
@@ -109,9 +119,11 @@ Example checks:
 - required asset paths are valid
 - Flatplan has a playable route from start to at least one endpoint
 
-## Production Dashboard / Project Manager Ideas
+## Production Dashboard / Task View
 
-Earlier notes used the name Project Manager for this planning dashboard. In the current architecture, this belongs mostly inside the Creation Guide, with links out to the Project Editor, Scene Editor, Quest Builder, and Object Library.
+Earlier notes used the name Project Manager for this planning dashboard. That name is now retired.
+
+In the current architecture, this belongs mostly inside the Creation Guide, with links out to the Project Editor, Scene Editor, Quest Builder, and Object Library.
 
 Purpose:
 
@@ -179,6 +191,7 @@ Priority
 Completion percentage
 Last edited date
 Open in Scene Editor
+Open in Project Editor
 ```
 
 Example status values:
@@ -205,7 +218,7 @@ Test JSON import
 Test in game
 ```
 
-The dashboard should eventually connect directly to the Scene Editor, so clicking a scene/task can open the relevant JSON file or template.
+The dashboard should eventually connect directly to the Scene Editor and Project Editor, so clicking a scene/task can open the relevant JSON file, template, or Flatplan item.
 
 ## Project Health Check
 
@@ -238,4 +251,5 @@ Intended workflow:
 5. Add backgrounds, characters, props, UI, and CG effects from libraries.
 6. Save/export the scene JSON.
 7. Mark checklist items complete in Creation Guide.
-8. Test in the game.
+8. Open Project Editor to place completed screens/scenes onto the Flatplan.
+9. Test in the game.
