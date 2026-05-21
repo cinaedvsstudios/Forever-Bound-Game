@@ -1,4 +1,4 @@
-/* Scene Editor v0.12d selected item layout */
+/* Scene Editor v0.12e selected item layout */
 
 .selected-metrics-grid {
   display: grid;
@@ -96,15 +96,19 @@
   min-height: 22px;
 }
 
-.scene-item.border-hidden:not(.is-selected) {
+.scene-item.border-hidden,
+.stage.highlight-on .scene-item.border-hidden,
+.stage.highlight-on .scene-item.border-hidden.is-selected,
+.stage.highlight-off .scene-item.border-hidden,
+.stage.highlight-off .scene-item.border-hidden.is-selected {
   outline: none !important;
   box-shadow: none !important;
   border-color: transparent !important;
   background: transparent !important;
 }
 
-.scene-item.border-hidden:not(.is-selected)::before,
-.scene-item.border-hidden:not(.is-selected)::after {
+.scene-item.border-hidden::before,
+.scene-item.border-hidden::after {
   display: none !important;
 }
 
