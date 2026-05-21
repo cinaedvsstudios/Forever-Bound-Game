@@ -1,0 +1,345 @@
+{
+  "schemaVersion": "0.1",
+  "libraryId": "artifex-assets-library",
+  "name": "Artifex Assets Library",
+  "description": "Reusable Artifex and Forever Bound assets indexed for the Scene Editor and future Asset Library.",
+  "basePath": "artifex/assets-library/",
+  "notes": [
+    "animation-frames is currently empty.",
+    "animated contains GIF/WebP decorative animated assets.",
+    "videos contains MP4 overlay loops intended for screen/lighten/additive style effects.",
+    "static-images contains still props, cave assets, character placeholders, and environment objects."
+  ],
+  "categories": [
+    {
+      "id": "animated",
+      "name": "Animated",
+      "path": "animated/",
+      "description": "Small animated GIF/WebP overlay, pickup, magic, jewel, and decorative assets."
+    },
+    {
+      "id": "animation-frames",
+      "name": "Animation Frames",
+      "path": "animation-frames/",
+      "description": "Frame-by-frame animation sequences. Currently empty."
+    },
+    {
+      "id": "static-images",
+      "name": "Static Images",
+      "path": "static-images/",
+      "description": "Single still images such as props, cave pieces, characters, and environment objects."
+    },
+    {
+      "id": "videos",
+      "name": "Videos",
+      "path": "videos/",
+      "description": "MP4 visual effect loops. Best used as overlays or blended screen/lighten effects."
+    }
+  ],
+  "assets": [
+    {
+      "id": "bat1",
+      "name": "Bat silhouette loop",
+      "category": "animated",
+      "type": "animated_gif",
+      "path": "animated/bat1.gif",
+      "format": "gif",
+      "recommendedUse": "creature_overlay_or_background_life",
+      "tags": ["bat", "creature", "flying", "silhouette", "black", "gothic", "animated", "gif", "overlay"]
+    },
+    {
+      "id": "crystal1",
+      "name": "Purple crystal loop",
+      "category": "animated",
+      "type": "animated_gif",
+      "path": "animated/crystal1.gif",
+      "format": "gif",
+      "recommendedUse": "pickup_or_magic_item",
+      "tags": ["crystal", "gem", "purple", "pickup", "magic", "aether", "animated", "gif", "item"]
+    },
+    {
+      "id": "diamond",
+      "name": "Blue diamond shimmer",
+      "category": "animated",
+      "type": "animated_webp",
+      "path": "animated/diamond.webp",
+      "format": "webp",
+      "recommendedUse": "pickup_or_treasure",
+      "tags": ["diamond", "gem", "blue", "white", "treasure", "pickup", "sparkle", "animated", "webp"]
+    },
+    {
+      "id": "diamond2",
+      "name": "Iridescent diamond loop",
+      "category": "animated",
+      "type": "animated_gif",
+      "path": "animated/diamond2.gif",
+      "format": "gif",
+      "recommendedUse": "pickup_or_quest_item",
+      "tags": ["diamond", "gem", "crystal", "iridescent", "rainbow", "pickup", "magic", "animated", "gif"]
+    },
+    {
+      "id": "diamond3",
+      "name": "Round crystal orb loop",
+      "category": "animated",
+      "type": "animated_gif",
+      "path": "animated/diamond3.gif",
+      "format": "gif",
+      "recommendedUse": "pickup_or_magical_orb",
+      "tags": ["orb", "gem", "crystal", "round", "iridescent", "pickup", "magic", "animated", "gif"]
+    },
+    {
+      "id": "effect1",
+      "name": "Blue burst effect",
+      "category": "animated",
+      "type": "animated_gif",
+      "path": "animated/effect1.gif",
+      "format": "gif",
+      "recommendedUse": "magic_burst_or_portal_effect",
+      "tags": ["effect", "burst", "blue", "white", "magic", "portal", "energy", "animated", "gif", "vfx"]
+    },
+    {
+      "id": "glittering",
+      "name": "Glittering ring particles",
+      "category": "animated",
+      "type": "animated_gif",
+      "path": "animated/glittering.gif",
+      "format": "gif",
+      "recommendedUse": "sparkle_overlay_or_pickup_highlight",
+      "tags": ["glitter", "sparkle", "particles", "ring", "white", "pickup", "overlay", "animated", "gif", "vfx"]
+    },
+    {
+      "id": "greenfire",
+      "name": "Green fire loop",
+      "category": "animated",
+      "type": "animated_gif",
+      "path": "animated/greenfire.gif",
+      "format": "gif",
+      "recommendedUse": "cursed_fire_or_magic_overlay",
+      "tags": ["fire", "green", "magic", "cursed", "flame", "overlay", "animated", "gif", "vfx"]
+    },
+    {
+      "id": "heart1",
+      "name": "Pink heart gem loop",
+      "category": "animated",
+      "type": "animated_gif",
+      "path": "animated/heart1.gif",
+      "format": "gif",
+      "recommendedUse": "love_item_or_ui_pickup",
+      "tags": ["heart", "pink", "gem", "love", "romance", "pickup", "animated", "gif", "item"]
+    },
+    {
+      "id": "heart2",
+      "name": "Iridescent heart gem loop",
+      "category": "animated",
+      "type": "animated_gif",
+      "path": "animated/heart2.gif",
+      "format": "gif",
+      "recommendedUse": "love_item_or_ui_pickup",
+      "tags": ["heart", "gem", "iridescent", "rainbow", "love", "romance", "pickup", "animated", "gif"]
+    },
+    {
+      "id": "heart3",
+      "name": "Red heart gem loop",
+      "category": "animated",
+      "type": "animated_gif",
+      "path": "animated/heart3.gif",
+      "format": "gif",
+      "recommendedUse": "love_item_or_ui_pickup",
+      "tags": ["heart", "red", "gem", "love", "romance", "pickup", "animated", "gif", "item"]
+    },
+    {
+      "id": "heart4",
+      "name": "Rose heart gem loop",
+      "category": "animated",
+      "type": "animated_gif",
+      "path": "animated/heart4.gif",
+      "format": "gif",
+      "recommendedUse": "love_item_or_ui_pickup",
+      "tags": ["heart", "rose", "pink", "gem", "love", "romance", "pickup", "animated", "gif"]
+    },
+    {
+      "id": "magic1",
+      "name": "Purple magic flame",
+      "category": "animated",
+      "type": "animated_gif",
+      "path": "animated/magic1.gif",
+      "format": "gif",
+      "recommendedUse": "spell_effect_or_magic_overlay",
+      "tags": ["magic", "purple", "flame", "fire", "spell", "aether", "overlay", "animated", "gif", "vfx"]
+    },
+    {
+      "id": "magic2",
+      "name": "Blue white magic portal",
+      "category": "animated",
+      "type": "animated_gif",
+      "path": "animated/magic2.gif",
+      "format": "gif",
+      "recommendedUse": "portal_or_spell_effect",
+      "tags": ["magic", "blue", "white", "portal", "spell", "energy", "overlay", "animated", "gif", "vfx"]
+    },
+    {
+      "id": "magic3",
+      "name": "Cyan magic splash",
+      "category": "animated",
+      "type": "animated_gif",
+      "path": "animated/magic3.gif",
+      "format": "gif",
+      "recommendedUse": "spell_cast_or_water_magic_effect",
+      "tags": ["magic", "cyan", "blue", "water", "spell", "splash", "overlay", "animated", "gif", "vfx"]
+    },
+    {
+      "id": "magic4",
+      "name": "Blue magic ring",
+      "category": "animated",
+      "type": "animated_gif",
+      "path": "animated/magic4.gif",
+      "format": "gif",
+      "recommendedUse": "portal_or_spell_ring",
+      "tags": ["magic", "blue", "ring", "portal", "spell", "circle", "energy", "overlay", "animated", "gif", "vfx"]
+    },
+    {
+      "id": "prism1",
+      "name": "Pink prism crystal",
+      "category": "animated",
+      "type": "animated_gif",
+      "path": "animated/prism1.gif",
+      "format": "gif",
+      "recommendedUse": "pickup_or_magic_focus",
+      "tags": ["prism", "crystal", "pink", "gem", "magic", "pickup", "animated", "gif", "item"]
+    },
+    {
+      "id": "prism2",
+      "name": "Tall dark prism crystal",
+      "category": "animated",
+      "type": "animated_gif",
+      "path": "animated/prism2.gif",
+      "format": "gif",
+      "recommendedUse": "pickup_or_dark_magic_focus",
+      "tags": ["prism", "crystal", "dark", "blue", "purple", "gem", "magic", "pickup", "animated", "gif"]
+    },
+    {
+      "id": "purplefire",
+      "name": "Purple fire loop",
+      "category": "animated",
+      "type": "animated_gif",
+      "path": "animated/purplefire.gif",
+      "format": "gif",
+      "recommendedUse": "magic_fire_or_cursed_flame",
+      "tags": ["fire", "purple", "blue", "magic", "flame", "cursed", "overlay", "animated", "gif", "vfx"]
+    },
+    {
+      "id": "smoke1",
+      "name": "White smoke plume",
+      "category": "animated",
+      "type": "animated_gif",
+      "path": "animated/smoke1.gif",
+      "format": "gif",
+      "recommendedUse": "smoke_or_fog_overlay",
+      "tags": ["smoke", "fog", "white", "mist", "overlay", "animated", "gif", "vfx"]
+    },
+    {
+      "id": "smoke2",
+      "name": "Dark smoke plume",
+      "category": "animated",
+      "type": "animated_gif",
+      "path": "animated/smoke2.gif",
+      "format": "gif",
+      "recommendedUse": "smoke_or_shadow_overlay",
+      "tags": ["smoke", "fog", "dark", "mist", "shadow", "overlay", "animated", "gif", "vfx"]
+    },
+    {
+      "id": "cave1",
+      "name": "Stone cave entrance front",
+      "category": "static-images",
+      "type": "static_image",
+      "path": "static-images/cave1.webp",
+      "format": "webp",
+      "recommendedUse": "door_exit_or_location_entrance",
+      "tags": ["cave", "stone", "rocks", "entrance", "door", "exit", "environment", "static", "webp"]
+    },
+    {
+      "id": "cave2",
+      "name": "Stone cave entrance alternate",
+      "category": "static-images",
+      "type": "static_image",
+      "path": "static-images/cave2.webp",
+      "format": "webp",
+      "recommendedUse": "door_exit_or_location_entrance",
+      "tags": ["cave", "stone", "rocks", "entrance", "door", "exit", "environment", "static", "webp"]
+    },
+    {
+      "id": "cave3",
+      "name": "Mossy cave entrance",
+      "category": "static-images",
+      "type": "static_image",
+      "path": "static-images/cave3.png",
+      "format": "png",
+      "recommendedUse": "door_exit_or_forest_location_entrance",
+      "tags": ["cave", "stone", "rocks", "moss", "green", "entrance", "door", "exit", "forest", "environment", "static", "png"]
+    },
+    {
+      "id": "guy",
+      "name": "Male character placeholder",
+      "category": "static-images",
+      "type": "static_image",
+      "path": "static-images/guy.png",
+      "format": "png",
+      "recommendedUse": "character_or_npc_placeholder",
+      "tags": ["character", "male", "npc", "player", "human", "medieval", "staff", "placeholder", "static", "png"]
+    },
+    {
+      "id": "log",
+      "name": "Fallen log prop",
+      "category": "static-images",
+      "type": "static_image",
+      "path": "static-images/log.png",
+      "format": "png",
+      "recommendedUse": "prop_or_walk_blocker",
+      "tags": ["log", "wood", "tree", "prop", "blocker", "forest", "environment", "static", "png"]
+    },
+    {
+      "id": "explosion",
+      "name": "Explosion MP4 loop",
+      "category": "videos",
+      "type": "video_loop",
+      "path": "videos/explosion.mp4",
+      "format": "mp4",
+      "blendModeSuggestion": "screen_or_lighten",
+      "recommendedUse": "impact_or_spell_overlay",
+      "tags": ["explosion", "fire", "impact", "spell", "burst", "overlay", "mp4", "video", "loop", "vfx"]
+    },
+    {
+      "id": "fire",
+      "name": "Fire MP4 loop",
+      "category": "videos",
+      "type": "video_loop",
+      "path": "videos/fire.mp4",
+      "format": "mp4",
+      "blendModeSuggestion": "screen_or_lighten",
+      "recommendedUse": "fire_overlay_or_torch_effect",
+      "tags": ["fire", "flame", "torch", "magic", "overlay", "mp4", "video", "loop", "vfx"]
+    },
+    {
+      "id": "sparks",
+      "name": "Sparks MP4 loop",
+      "category": "videos",
+      "type": "video_loop",
+      "path": "videos/sparks.mp4",
+      "format": "mp4",
+      "blendModeSuggestion": "screen_or_lighten",
+      "recommendedUse": "embers_or_magic_sparks_overlay",
+      "tags": ["sparks", "embers", "fire", "particles", "magic", "overlay", "mp4", "video", "loop", "vfx"]
+    },
+    {
+      "id": "twinkle",
+      "name": "Twinkle star field MP4 loop",
+      "category": "videos",
+      "type": "video_loop",
+      "path": "videos/twinkle.mp4",
+      "format": "mp4",
+      "blendModeSuggestion": "screen_or_lighten",
+      "recommendedUse": "star_magic_or_atmosphere_overlay",
+      "tags": ["twinkle", "stars", "sparkle", "particles", "magic", "atmosphere", "overlay", "mp4", "video", "loop", "vfx"]
+    }
+  ]
+}
