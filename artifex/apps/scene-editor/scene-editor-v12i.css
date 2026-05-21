@@ -1,0 +1,63 @@
+/* Scene Editor v0.12i control card layout foundation */
+
+.card-layout-group {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  margin: 8px 0;
+}
+
+.card-layout-1 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.card-layout-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.card-layout-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.card-layout-cell {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-layout-cell.cell-inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-layout-cell.cell-span-2 {
+  grid-column: span 2;
+}
+
+.card-layout-cell.cell-span-3 {
+  grid-column: span 3;
+}
+
+.card-layout-divider {
+  height: 1px;
+  margin: 10px 0;
+  background: linear-gradient(90deg, transparent, rgba(184, 119, 63, 0.45), rgba(195, 0, 255, 0.22), transparent);
+}
+
+.card-layout-note {
+  color: #bfa990;
+  font-size: 10px;
+  line-height: 1.25;
+}
+
+@media (max-width: 900px) {
+  .card-layout-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .card-layout-cell.cell-span-3 {
+    grid-column: 1 / -1;
+  }
+}
