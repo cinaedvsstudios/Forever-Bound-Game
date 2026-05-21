@@ -1,4 +1,4 @@
-/* Scene Editor v0.11 asset picker + wrap image polish */
+/* Scene Editor v0.11b asset picker + wrap image polish */
 
 .asset-picker-popup {
   width: min(760px, calc(100vw - 70px));
@@ -119,19 +119,26 @@
 }
 
 .fit-tools-row {
-  display: flex;
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
   align-items: end;
   gap: 8px;
 }
 
 .fit-tools-row .field {
-  flex: 1 1 0;
+  min-width: 0;
 }
 
 .wrap-image-btn {
-  min-height: 32px;
-  margin-bottom: 0;
+  order: -1;
+  min-height: 38px;
+  height: 38px;
+  margin: 0 0 1px 0;
   white-space: nowrap;
+  align-self: end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .unsaved-import-warning {
@@ -149,5 +156,14 @@
 
   .asset-picker-grid {
     grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+
+  .fit-tools-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .wrap-image-btn {
+    grid-column: 1 / -1;
+    order: 3;
   }
 }
