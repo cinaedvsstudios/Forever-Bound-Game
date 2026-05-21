@@ -6,7 +6,7 @@ The Artifex Portal is the front door of the Artifex toolkit.
 
 It should open before individual tools such as Scene Editor, Project Editor, Utilities, Settings, and Help.
 
-The portal/hub is the front screen. Each wedge opens either a tool, a project-management area, or a utility module.
+The portal/hub is the front screen. Each wedge opens either a tool, a structure editor, or a utility module.
 
 ## Current Portal Status
 
@@ -93,11 +93,11 @@ Planned long-term wedge layout:
 
 ```text
 SCENE EDITOR
+PROJECT EDITOR
+CREATION GUIDE
 UTILITIES
-PROJECT MANAGER / PROJECT EDITOR
 SETTINGS
 ABOUT / CINAEDVS
-future major module
 ```
 
 The Help function should move out of the main wheel and become a smaller corner button, probably in the bottom corner of the screen.
@@ -105,6 +105,14 @@ The Help function should move out of the main wheel and become a smaller corner 
 Reason:
 
 Help is useful, but it should not take one of the main radial wedges. The main wedges should be reserved for major production tools.
+
+## Naming Decision
+
+Use **Project Editor** for the structural game editor.
+
+Do not use **Project Manager** as a main portal wedge name going forward.
+
+Use **Creation Guide** for the wizard, milestones, checklist, production dashboard, and project health system.
 
 ## Centre Hub / Active Project Selector
 
@@ -174,15 +182,15 @@ Do not build this immediately until the Scene Editor route is tested.
 
 ## Proposed Wedge Destinations
 
-Earlier proposed temporary destinations:
+Updated planned destinations:
 
 ```text
-SCENE     → Scene Editor
-FONT      → Font Packer placeholder/app
-SETTINGS  → Artifex Settings placeholder/panel
-HELP      → Help / usage guide placeholder/panel
-ABOUT     → About Artifex placeholder/panel
-CINAEDVS  → Studio/about/repo link or placeholder/panel
+SCENE EDITOR    → Scene Editor
+PROJECT EDITOR  → Project Editor / Flatplan
+CREATION GUIDE  → Wizard, Milestones, Checklist, Dashboard
+UTILITIES       → utility sub-wheel / mini-apps
+SETTINGS        → Artifex Settings / Project Settings
+ABOUT / CINAEDVS → Studio/about/repo link or placeholder/panel
 ```
 
 The centre dial/core should stay decorative for now unless a clear function is needed later.
@@ -217,4 +225,5 @@ Pause/test after this batch.
 4. Keep the current portal visuals unless something is broken.
 5. Plan the centre hub active project selector.
 6. Plan the future Utilities wedge.
-7. Plan the future Project Manager / Project Editor wedge.
+7. Plan the future Project Editor wedge.
+8. Plan the future Creation Guide wedge.
