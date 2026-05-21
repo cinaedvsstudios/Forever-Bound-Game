@@ -1,4 +1,4 @@
-/* Scene Editor v0.11c asset picker + wrap image polish */
+/* Scene Editor v0.11d asset picker + wrap image polish */
 
 .asset-picker-popup {
   width: min(760px, calc(100vw - 70px));
@@ -143,10 +143,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  font-size: 18px;
 }
 
 .wrap-image-btn::before {
-  content: "FIT";
+  content: "WRAP IMG";
   position: absolute;
   left: 4px;
   top: -18px;
