@@ -94,6 +94,8 @@
 
 .elements-controls-group .layer-control-row {
   justify-content: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .elements-list-group .item-list {
@@ -267,6 +269,11 @@
   cursor: not-allowed;
 }
 
+.v13f-disabled-picker {
+  opacity: .62;
+  cursor: not-allowed !important;
+}
+
 .selected-bottom-tools {
   display: flex;
   flex-wrap: wrap;
@@ -307,6 +314,57 @@
 .v13e-centre-dragging .move-handle.is-dragging,
 .v13e-centre-dragging .move-handle {
   cursor: grabbing !important;
+}
+
+.layer-stack-table-v14 {
+  display: grid;
+  gap: 7px;
+}
+
+.layer-stack-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 30px;
+  align-items: center;
+  gap: 6px;
+}
+
+.layer-slot-number {
+  display: grid;
+  place-items: center;
+  height: 28px;
+  color: #bfa990;
+  font-size: 12px;
+  border-right: 1px solid rgba(255, 225, 143, .22);
+}
+
+.layer-stack-pill {
+  width: 100%;
+  text-align: left;
+  cursor: grab;
+}
+
+.layer-stack-row.is-dragging .layer-stack-pill {
+  opacity: .55;
+  cursor: grabbing;
+}
+
+.layer-lock-btn {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  filter: drop-shadow(0 0 6px rgba(195, 0, 255, .45));
+}
+
+.clean-layers-btn {
+  padding-inline: 10px !important;
+  min-height: 30px !important;
+  font-size: 11px !important;
 }
 
 @media (max-width: 900px) {
