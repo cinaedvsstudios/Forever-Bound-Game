@@ -1,11 +1,13 @@
 /* Scene Editor v0.13 control card conversion */
 
+.file-pill-v13,
 .file-pill {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto auto auto;
   gap: 3px;
   align-items: start;
+  overflow: hidden;
 }
 
 .file-pill-project {
@@ -15,14 +17,24 @@
   letter-spacing: .08em;
   text-transform: uppercase;
   line-height: 1.15;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .file-pill-title {
   display: block;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #ffe18f;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
-.file-pill-status-row {
+.file-pill-bottom {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
@@ -30,22 +42,37 @@
   min-width: 0;
 }
 
-.file-pill-status-row .file-pill-icons {
+.file-pill-action-icons {
   white-space: nowrap;
   line-height: 1;
+  filter: drop-shadow(0 0 5px rgba(195, 0, 255, 0.48));
 }
 
-.file-pill-status-row .file-pill-meta-line {
+.file-pill-time {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: #bfa990;
+  font-size: 10px;
+  line-height: 1.15;
+  letter-spacing: .03em;
 }
 
 .card-layout-group .field,
 .card-layout-group .check-row,
-.card-layout-group .button-row {
+.card-layout-group .button-row,
+.card-layout-group .selected-bottom-tools {
   margin: 0 !important;
+}
+
+.card-layout-cell > .field,
+.card-layout-cell > .path-field,
+.card-layout-cell > .item-list,
+.card-layout-cell > .selected-bottom-tools,
+.card-layout-cell > .button-row,
+.card-layout-cell > .check-row {
+  width: 100%;
 }
 
 .basics-identity-group,
@@ -90,13 +117,19 @@
   margin: 0 0 10px;
 }
 
+.selected-metrics-fallback-group .field input,
+.selected-metrics-fallback-group .field select,
+.selected-metrics-fallback-group .field input[type="range"] {
+  width: 100%;
+}
+
 @media (max-width: 900px) {
-  .file-pill-status-row {
+  .file-pill-bottom {
     grid-template-columns: 1fr;
     gap: 3px;
   }
 
-  .file-pill-status-row .file-pill-meta-line {
+  .file-pill-time {
     white-space: normal;
   }
 }
