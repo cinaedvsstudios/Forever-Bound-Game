@@ -1,6 +1,8 @@
 (() => {
-  const VERSION = 'v0.07';
+  const VERSION = 'v0.12i-core';
   const SETTINGS_KEY = 'artifex.sceneEditor.settings.v1';
+  const WORKING_COPY_KEY = 'artifex.sceneEditor.workingCopy.v1';
+  const DOWNLOAD_KEY = 'artifex.sceneEditor.lastDownload.v1';
   const app = document.getElementById('editor-app');
   const repoPrefix = location.pathname.includes('/Forever-Bound-Game/') ? '/Forever-Bound-Game/' : '/';
   const brandLogo = '../../artifexlogo.png';
@@ -14,6 +16,11 @@
     } catch {
       return {};
     }
+  }
+
+  function safeParse(text, fallback = null) {
+    try { return JSON.parse(text); }
+    catch { return fallback; }
   }
 
   const settings = loadSettings();
@@ -32,6 +39,8 @@
   let showHighlight = settings.showHighlight !== false;
   let panelScroll = 0;
   let drag = null;
+  let saveTimer = null;
+  let lastWorkingCopySnapshot = '';
   const collapsed = { json: true, ...(settings.collapsedCards || {}) };
 
   function saveSettings() {
@@ -92,6 +101,69 @@
     if (scene.theme && scene.screenType === 'static') scene.theme.backgroundImage = v;
     else scene.background = v;
   }
+  function dateText(iso) {
+    if (!iso) return 'Not recorded';
+    try { return new Date(iso).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }); }
+    catch { return String(iso); }
+  }
+  function readWorkingCopy() {
+    return safeParse(localStorage.getItem(WORKING_COPY_KEY), null);
+  }
+  function readDownloadStamp() {
+    return safeParse(localStorage.getItem(DOWNLOAD_KEY), null);
+  }
+  function saveWorkingCopy(reason = 'autosave') {
+    if (!scene) return;
+    const payload = {
+      fileName: fileName || scene.id || scene.name || 'Untitled JSON',
+      scene: structuredClone(scene),
+      selectedKind,
+      selectedId,
+      savedAt: new Date().toISOString(),
+      reason
+    };
+    const snapshot = JSON.stringify({ ...payload, savedAt: '' });
+    if (snapshot === lastWorkingCopySnapshot && reason !== 'download') return;
+    lastWorkingCopySnapshot = snapshot;
+    try { localStorage.setItem(WORKING_COPY_KEY, JSON.stringify(payload)); }
+    catch { /* localStorage can fail; editor still works without resume. */ }
+  }
+  function saveWorkingCopySoon(reason = 'edit') {
+    if (!scene) return;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => saveWorkingCopy(reason), 80);
+  }
+  function markDownloaded() {
+    if (!scene) return;
+    const payload = {
+      fileName: fileName || scene.id || scene.name || 'Untitled JSON',
+      downloadedAt: new Date().toISOString()
+    };
+    try { localStorage.setItem(DOWNLOAD_KEY, JSON.stringify(payload)); }
+    catch { /* ignore */ }
+    saveWorkingCopy('download');
+  }
+  function filePill() {
+    const working = readWorkingCopy();
+    const downloaded = readDownloadStamp();
+    return `<div class="file-pill"><span class="file-pill-name">${esc(fileName || 'Untitled JSON')}</span><span class="file-pill-meta">Local backup: ${esc(dateText(working?.savedAt))}</span><span class="file-pill-meta">Last downloaded: ${esc(dateText(downloaded?.downloadedAt))}</span></div>`;
+  }
+  function resumeMarkup() {
+    const working = readWorkingCopy();
+    if (!working?.scene) return `<span>Import a JSON from hard drive, URL, or templates to begin.</span><div class="artifex-version-marker">${VERSION} input-stability build</div>`;
+    const downloaded = readDownloadStamp();
+    return `<div class="resume-card-inline"><h3>Start where you left off?</h3><p>You were last working on:</p><strong>${esc(working.fileName || working.scene.id || 'Untitled JSON')}</strong><p>Last local backup: ${esc(dateText(working.savedAt))}</p><p>Last downloaded: ${esc(dateText(downloaded?.downloadedAt))}</p><div class="resume-actions"><button class="btn" id="openLocalBackup" type="button">Open local backup</button><button class="btn" id="ignoreLocalBackup" type="button">Ignore</button></div></div>`;
+  }
+  function openLocalBackup() {
+    const working = readWorkingCopy();
+    if (!working?.scene) { toast('No local backup found'); return; }
+    normalize(working.scene, working.fileName || working.scene.id || 'Local backup');
+    selectedKind = working.selectedKind || selectedKind;
+    selectedId = working.selectedId || selectedId;
+    status = `${fileName} restored from local backup.`;
+    toast(status);
+    render(false);
+  }
   function normalize(raw, label) {
     scene = structuredClone(raw || blankScene());
     scene.id ||= uid('scene');
@@ -111,6 +183,7 @@
     selectedId = first?.id || '';
     status = `${fileName} loaded.`;
     toast(status);
+    saveWorkingCopy('loaded');
   }
   function saveScroll() { const p = document.querySelector('.side-panel'); if (p) panelScroll = p.scrollTop; }
   function restoreScroll() { requestAnimationFrame(() => { const p = document.querySelector('.side-panel'); if (p) p.scrollTop = panelScroll; }); }
@@ -119,6 +192,7 @@
     app.innerHTML = `<div class="editor-shell">${titleBar()}<main class="main-layout">${controlPanel()}${workArea()}</main></div>${templateModal()}${contextMenu()}<input class="hidden-file" id="imageFile" type="file" accept="image/*,.svg,.webp,.gif,.png,.jpg,.jpeg">`;
     bind();
     if (keepScroll) restoreScroll();
+    saveWorkingCopySoon('render');
   }
   function renderWorkAreaOnly() {
     const wrap = document.querySelector('.stage-wrap');
@@ -126,6 +200,7 @@
     wrap.outerHTML = workArea();
     bindStage();
     bindZoomControls();
+    saveWorkingCopySoon('work-area');
   }
   function titleBar() {
     return `<header class="top-bar"><div class="brand" data-tip="Artifex Scene Editor"><img class="brand-logo" src="${brandLogo}" alt="Artifex logo"><img class="brand-title" src="${brandTitle}" alt="Artifex"></div><span class="title-divider"></span><div class="import-menu ${importOpen ? 'is-open' : ''}" id="importMenu"><button class="import-button" id="importBtn" type="button" data-tip="Import JSON from hard drive, URL, or template.">Import ▾</button><div class="import-dropdown"><label class="file-button">From hard drive<input class="hidden-file" id="jsonFile" type="file" accept=".json,application/json"></label><button class="btn" id="importUrl" type="button">From URL</button><button class="btn" id="importTemplate" type="button">From templates</button></div></div><button class="btn" id="downloadJson" type="button" data-tip="Download the current JSON.">Download JSON</button><button class="btn" id="blankBtn" type="button" data-tip="Clear to blank editor.">Blank Screen</button><span class="tooltip-status" id="hoverStatus">${esc(tip)}</span><span class="status ok">${esc(status)}</span><span class="top-spacer"></span><a class="btn" href="../../">Portal</a></header>`;
@@ -137,7 +212,7 @@
   function controlPanel() {
     if (!scene) return `<aside class="side-panel"><div class="file-pill">No file loaded</div>${card('blank','No Scene Loaded',`<p class="small">Use Import to load a JSON from hard drive, URL, or templates.</p>`, 'basics')}</aside>`;
     const item = real();
-    return `<aside class="side-panel"><div class="file-pill">${esc(fileName || 'Untitled JSON')}</div>${card('basics','Scene Basics', basics(), 'basics')}${card('elements','Elements', elements(), 'elements')}${card('selected', item ? (item.name || item.id || 'Selected Item') : 'Selected Item', item ? selectedForm(item) : '<p class="small">Select an object.</p>', 'selected')}${card('json','JSON Preview',`<pre class="json-preview">${esc(JSON.stringify(scene,null,2))}</pre>`, 'json')}</aside>`;
+    return `<aside class="side-panel">${filePill()}${card('basics','Scene Basics', basics(), 'basics')}${card('elements','Elements', elements(), 'elements')}${card('selected', item ? (item.name || item.id || 'Selected Item') : 'Selected Item', item ? selectedForm(item) : '<p class="small">Select an object.</p>', 'selected')}${card('json','JSON Preview',`<pre class="json-preview">${esc(JSON.stringify(scene,null,2))}</pre>`, 'json')}</aside>`;
   }
   function input(label, id, value, type = 'text') { return `<div class="field"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(value)}"></div>`; }
   function typeSelect(value) {
@@ -162,7 +237,7 @@
     const gridStyle = `--fine-x:${100/(cols*2)}%;--fine-y:${100/(rows*2)}%;--major-x:${500/cols}%;--major-y:${500/rows}%;`;
     return `<section class="stage-wrap"><div class="work-zoom-controls"><button class="zoom-control" id="zoomIn" type="button">+</button><button class="zoom-control" id="zoomReset" type="button">o</button><button class="zoom-control" id="zoomOut" type="button">-</button></div><div class="stage-scale" style="transform:scale(${zoom})"><div class="stage ${showHighlight ? 'highlight-on' : 'highlight-off'}" id="stage">${bg ? `<div class="stage-bg" style="background-image:url('${esc(assetPath(bg))}')"></div>` : ''}${scene?.grid?.show !== false ? `<div class="stage-grid" style="${gridStyle}"></div>${gridLabels(cols, rows)}` : ''}${scene ? allItems().sort((a,b)=>Number(a.layer||0)-Number(b.layer||0)).map(stageItem).join('') : blankMessage()}</div></div></section>`;
   }
-  function blankMessage() { return `<div class="blank-message"><div><strong>Blank Scene Editor</strong><span>Import a JSON from hard drive, URL, or templates to begin.</span><div class="artifex-version-marker">${VERSION} input-stability build</div></div></div>`; }
+  function blankMessage() { return `<div class="blank-message"><div><strong>Blank Scene Editor</strong>${resumeMarkup()}</div></div>`; }
   function letters(i) { let n=i+1, s=''; while(n>0){ const r=(n-1)%26; s=String.fromCharCode(65+r)+s; n=Math.floor((n-1)/26);} return s; }
   function gridLabels(cols, rows) { return `<div class="grid-labels">${Array.from({length:cols},(_,i)=>`<span class="grid-col-label" style="left:${((i+.5)/cols)*100}%">${i+1}</span>`).join('')}${Array.from({length:rows},(_,i)=>`<span class="grid-row-label" style="top:${((i+.5)/rows)*100}%">${letters(i)}</span>`).join('')}<span class="axis-label axis-x">X</span><span class="axis-label axis-z">Z</span></div>`; }
   function stageItem(item) {
@@ -181,6 +256,8 @@
   }
   function bind() {
     document.querySelectorAll('[data-tip]').forEach(n=>n.addEventListener('mouseenter',()=>{tip=n.dataset.tip; document.getElementById('hoverStatus').textContent=tip;}));
+    document.getElementById('openLocalBackup')?.addEventListener('click', openLocalBackup);
+    document.getElementById('ignoreLocalBackup')?.addEventListener('click', e=>{ e.currentTarget.closest('.resume-card-inline')?.remove(); toast('Local backup ignored'); });
     document.getElementById('importBtn')?.addEventListener('click', e=>{ e.stopPropagation(); importOpen=!importOpen; render(); });
     document.getElementById('jsonFile')?.addEventListener('change', importFile);
     document.getElementById('importUrl')?.addEventListener('click', importUrl);
@@ -207,11 +284,11 @@
   function bindSceneFields() {
     if (!scene) return;
     const map = [['sceneId','id'],['sceneName','name'],['sceneType','screenType']];
-    map.forEach(([id,k])=>document.getElementById(id)?.addEventListener('input',e=>{scene[k]=e.target.value; if(k==='screenType') scene.mode=e.target.value;}));
-    document.getElementById('sceneBg')?.addEventListener('change', e=>{setBgPath(e.target.value); render();});
-    document.getElementById('gridCols')?.addEventListener('change', e=>{scene.grid.columns=Number(e.target.value)||16; render();});
-    document.getElementById('gridRows')?.addEventListener('change', e=>{scene.grid.rows=Number(e.target.value)||9; render();});
-    document.getElementById('gridShow')?.addEventListener('change', e=>{scene.grid.show=e.target.checked; render();});
+    map.forEach(([id,k])=>document.getElementById(id)?.addEventListener('input',e=>{scene[k]=e.target.value; if(k==='screenType') scene.mode=e.target.value; saveWorkingCopySoon('scene field');}));
+    document.getElementById('sceneBg')?.addEventListener('change', e=>{setBgPath(e.target.value); saveWorkingCopySoon('background'); render();});
+    document.getElementById('gridCols')?.addEventListener('change', e=>{scene.grid.columns=Number(e.target.value)||16; saveWorkingCopySoon('grid'); render();});
+    document.getElementById('gridRows')?.addEventListener('change', e=>{scene.grid.rows=Number(e.target.value)||9; saveWorkingCopySoon('grid'); render();});
+    document.getElementById('gridShow')?.addEventListener('change', e=>{scene.grid.show=e.target.checked; saveWorkingCopySoon('grid'); render();});
     const it = real(); if (!it) return;
 
     [['itemId','id','s'],['itemName','name','s'],['itemImage','image','s'],['itemText','text','s']].forEach(([id,k])=>{
@@ -223,11 +300,12 @@
           const label = document.querySelector(`.scene-item.is-selected .item-label`);
           if (label) label.textContent = e.target.value || it.id;
         }
+        saveWorkingCopySoon('item field');
       });
       inputNode?.addEventListener('blur',()=>render());
     });
 
-    document.getElementById('itemType')?.addEventListener('change', e=>{it.type=e.target.value; render();});
+    document.getElementById('itemType')?.addEventListener('change', e=>{it.type=e.target.value; saveWorkingCopySoon('type'); render();});
 
     [['itemX','x'],['itemY','y'],['itemW','width'],['itemH','height'],['itemZ','zDepth']].forEach(([id,k])=>{
       document.getElementById(id)?.addEventListener('input',e=>{
@@ -240,9 +318,9 @@
       });
     });
 
-    document.getElementById('itemLayer')?.addEventListener('change', e=>{it.layer=Number(e.target.value)||0; render();});
-    document.getElementById('itemVisible')?.addEventListener('change', e=>{it.visible=e.target.checked; render();});
-    document.getElementById('itemTags')?.addEventListener('input', e=>{it.tags=e.target.value.split(',').map(t=>t.trim()).filter(Boolean);});
+    document.getElementById('itemLayer')?.addEventListener('change', e=>{it.layer=Number(e.target.value)||0; saveWorkingCopySoon('layer'); render();});
+    document.getElementById('itemVisible')?.addEventListener('change', e=>{it.visible=e.target.checked; saveWorkingCopySoon('visibility'); render();});
+    document.getElementById('itemTags')?.addEventListener('input', e=>{it.tags=e.target.value.split(',').map(t=>t.trim()).filter(Boolean); saveWorkingCopySoon('tags');});
   }
   function bindPathButtons() {
     document.querySelectorAll('[data-path-menu]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation(); b.closest('.path-menu').classList.toggle('is-open');}));
@@ -259,26 +337,39 @@
     document.getElementById('zoomReset')?.addEventListener('contextmenu', e=>{ e.preventDefault(); e.stopPropagation(); context={type:'zoom', x:e.clientX, y:e.clientY}; render(); });
     document.getElementById('stage')?.addEventListener('pointermove', e=>{ if(!drag)return; const r=e.currentTarget.getBoundingClientRect(); drag.x=clamp(((e.clientX-r.left)/r.width)*100,0,100); drag.y=clamp(((e.clientY-r.top)/r.height)*100,0,100); renderWorkAreaOnly(); });
   }
+  function zoomSelectedObject() {
+    const id = selectedId;
+    const nextZoom = clamp(zoom * 2, .4, 2.2);
+    context = null;
+    setZoom(nextZoom);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const node = Array.from(document.querySelectorAll('.scene-item[data-stage-id]')).find(n => n.dataset.stageId === id);
+      node?.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
+      toast(`Zoomed to object: ${Math.round(nextZoom * 100)}%`);
+    }));
+  }
   function action(a) {
     if (a === 'setZoomDefault') { defaultZoom = zoom; context=null; saveSettings(); toast(`Default zoom saved: ${Math.round(defaultZoom*100)}%`); render(); return; }
-    if (a === 'zoomObject') { context=null; setZoom(Math.max(zoom, 1.35)); toast('Zoomed to object'); return; }
+    if (a === 'zoomObject') { zoomSelectedObject(); return; }
     if (a === 'props') { collapsed.selected=false; context=null; saveSettings(); render(); requestAnimationFrame(()=>document.querySelector('[data-card-id="selected"]')?.scrollIntoView({block:'start'})); return; }
     if (a === 'duplicate') duplicateSelected();
     if (a === 'remove') removeSelected();
   }
-  function applyPath(target, value) { if(target==='background'){setBgPath(value);} else {const i=real(); if(i)i.image=value;} render(); }
+  function applyPath(target, value) { if(target==='background'){setBgPath(value);} else {const i=real(); if(i)i.image=value;} saveWorkingCopySoon('path'); render(); }
   function setZoom(v) { zoom=clamp(Number(v)||1,.4,2.2); tip=`Zoom ${Math.round(zoom*100)}%`; saveSettings(); render(); }
   async function importFile(e) { const f=e.target.files?.[0]; if(!f)return; toast(`Loading local JSON file: ${f.name}...`); try{normalize(JSON.parse(await f.text()), f.name); render(false);}catch(err){status=`Import failed: ${err.message}`; toast(status); render();} }
   async function importUrl() { const url=prompt('Paste JSON URL:'); if(!url)return; toast('Loading URL JSON...'); try{const r=await fetch(url,{cache:'no-store'}); if(!r.ok)throw new Error(r.status); normalize(await r.json(), url.split('/').pop()||'URL JSON'); render(false);}catch(err){status=`URL import failed: ${err.message}`; toast(status); render();} }
   async function openTemplates() { try{toast('Loading template list...'); const r=await fetch(templateManifest,{cache:'no-store'}); if(!r.ok)throw new Error(r.status); templates=(await r.json()).templates||[]; templateOpen=true; importOpen=false; render();}catch(err){status=`Template list failed: ${err.message}`; toast(status); render();} }
   async function loadTemplate(file) { try{toast(`Loading template: ${file}...`); const r=await fetch(`../../templates/${file}`,{cache:'no-store'}); if(!r.ok)throw new Error(r.status); normalize(await r.json(), file); templateOpen=false; render(false);}catch(err){status=`Template import failed: ${err.message}`; toast(status); render();} }
-  function download() { if(!scene){toast('Nothing to download'); return;} const blob=new Blob([JSON.stringify(scene,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`${scene.id||'artifex_scene'}.json`; a.click(); URL.revokeObjectURL(url); toast('JSON downloaded'); }
-  function addElement() { if(!scene) normalize(blankScene(),'New blank scene'); const i={id:uid('element'),type:'prop',name:'New Element',image:'../../templates/assets/template_red_ball.svg',x:40,y:55,width:10,height:14,layer:10,zDepth:0,visible:true,tags:[]}; scene.elements.push(i); selectedKind='element'; selectedId=i.id; toast('Element added'); render(); }
-  function addLayer() { if(!scene) normalize(blankScene(),'New blank scene'); const i={id:uid('layer'),type:'overlay',name:'New Layer',image:'../../templates/assets/template_water_strip.svg',x:20,y:70,width:40,height:14,layer:5,zDepth:0,visible:true,tags:[]}; scene.layers.push(i); selectedKind='layer'; selectedId=i.id; toast('Layer added'); render(); }
-  function duplicateSelected() { const i=real(); if(!i)return; const c=structuredClone(i); c.id=`${i.id||'item'}_copy_${Math.random().toString(36).slice(2,5)}`; c.name=`${i.name||i.id||'Item'} Copy`; c.x=clamp(Number(i.x||0)+3,0,100); c.y=clamp(Number(i.y||0)+3,0,100); c.layer=Number(i.layer||0)+1; scene[key(selectedKind)].push(c); selectedId=c.id; context=null; toast('Object duplicated'); render(); }
-  function removeSelected() { if(!selectedId)return; scene[key(selectedKind)]=(scene[key(selectedKind)]||[]).filter(i=>i.id!==selectedId); const first=allItems()[0]; selectedKind=first?.kind||'element'; selectedId=first?.id||''; context=null; toast('Object deleted'); render(); }
-  document.addEventListener('pointerup',()=>{ if(drag){drag=null; render();} });
-  document.addEventListener('click',e=>{ if(importOpen && !e.target.closest('#importMenu')){importOpen=false; render();} if(context && !e.target.closest('.context-menu') && !e.target.closest('.scene-item') && !e.target.closest('#zoomReset')){context=null; render();} });
+  function download() { if(!scene){toast('Nothing to download'); return;} const blob=new Blob([JSON.stringify(scene,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`${scene.id||'artifex_scene'}.json`; a.click(); URL.revokeObjectURL(url); markDownloaded(); toast('JSON downloaded'); render(); }
+  function addElement() { if(!scene) normalize(blankScene(),'New blank scene'); const i={id:uid('element'),type:'prop',name:'New Element',image:'../../templates/assets/template_red_ball.svg',x:40,y:55,width:10,height:14,layer:10,zDepth:0,visible:true,tags:[]}; scene.elements.push(i); selectedKind='element'; selectedId=i.id; toast('Element added'); saveWorkingCopySoon('add element'); render(); }
+  function addLayer() { if(!scene) normalize(blankScene(),'New blank scene'); const i={id:uid('layer'),type:'overlay',name:'New Layer',image:'../../templates/assets/template_water_strip.svg',x:20,y:70,width:40,height:14,layer:5,zDepth:0,visible:true,tags:[]}; scene.layers.push(i); selectedKind='layer'; selectedId=i.id; toast('Layer added'); saveWorkingCopySoon('add layer'); render(); }
+  function duplicateSelected() { const i=real(); if(!i)return; const c=structuredClone(i); c.id=`${i.id||'item'}_copy_${Math.random().toString(36).slice(2,5)}`; c.name=`${i.name||i.id||'Item'} Copy`; c.x=clamp(Number(i.x||0)+3,0,100); c.y=clamp(Number(i.y||0)+3,0,100); c.layer=Number(i.layer||0)+1; scene[key(selectedKind)].push(c); selectedId=c.id; context=null; toast('Object duplicated'); saveWorkingCopySoon('duplicate'); render(); }
+  function removeSelected() { if(!selectedId)return; scene[key(selectedKind)]=(scene[key(selectedKind)]||[]).filter(i=>i.id!==selectedId); const first=allItems()[0]; selectedKind=first?.kind||'element'; selectedId=first?.id||''; context=null; toast('Object deleted'); saveWorkingCopySoon('delete'); render(); }
+  document.addEventListener('pointerup',()=>{ if(drag){drag=null; saveWorkingCopySoon('drag'); render();} });
+  document.addEventListener('input', () => saveWorkingCopySoon('input'), true);
+  document.addEventListener('change', () => saveWorkingCopySoon('change'), true);
+  document.addEventListener('click',e=>{ if(importOpen && !e.target.closest('#importMenu')){importOpen=false; render();} if(context && !e.target.closest('.context-menu') && !e.target.closest('.scene-item') && !e.target.closest('#zoomReset')){context=null; render();} saveWorkingCopySoon('click'); });
   window.addEventListener('load',()=>toast('Scene Editor loaded'));
   render(false);
 })();
