@@ -4,7 +4,7 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 
 ## Current active test URL
 
-`https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/?v=v012f`
+`https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/?v=v012g`
 
 ## Patch log
 
@@ -141,7 +141,15 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 - Kept Wrap Image as the center scale tool.
 - Added `scene-editor-v12f.css` for the scale-control stack styling.
 - Patched right-click `Zoom to object` so it zooms in and scrolls the selected object into view instead of only showing a toast.
-- Needs checking: scale up/down updates the object immediately; Zoom to object centers the object reliably.
+
+### v0.12g — object move handle and max zoom pass
+
+- Added a 💠 move handle in the centre of each object.
+- Object dragging should now require using the 💠 handle instead of dragging from anywhere on the object.
+- Clicking an object body should select it without accidentally moving it.
+- Added visual feedback on the 💠 handle while hovering and dragging.
+- Patched Zoom to object toward maximum zoom and center-scroll behavior.
+- Needs checking: selection without movement, handle-only dragging, visual feedback, and max zoom centering.
 
 ### Recovered older proposed version roadmap
 
@@ -158,6 +166,7 @@ Short running patch log for the Scene Editor. Keep this file practical: what cha
 - Layer numbering still needs a cleanup/reorder pass.
 - Unsaved/local blob image handling still needs a cleaner workflow once the Asset Manager exists.
 - The editor now has several helper files layered over the original editor. This works for patching, but a later cleanup should consolidate stable behavior into the core editor file.
+- Move handle behavior should eventually be moved into core stage item rendering rather than helper injection.
 
 ## Future feature phases
 
