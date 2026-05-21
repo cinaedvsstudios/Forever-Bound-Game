@@ -142,7 +142,7 @@ The current metaphor is:
 - The Stitcher/Route Builder defines how those connections work.
 
 
-Artifex Project Editor & Flatplan Architecture
+# Artifex Project Editor & Flatplan Architecture
 
 System Architecture and Functional Specification Document
 
