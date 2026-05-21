@@ -1,11 +1,12 @@
 {
   "id": "artifex_editor_settings",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "defaultScreenType": "static",
   "defaultGridSize": 40,
   "snapToGrid": false,
   "showGuidesByDefault": true,
   "showJsonPreviewByDefault": true,
+  "showRightPanelByDefault": false,
   "defaultVolumes": {
     "music": 0.55,
     "ambience": 0.45,
