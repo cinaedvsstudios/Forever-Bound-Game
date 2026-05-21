@@ -39,7 +39,7 @@ Active project name appears subtly somewhere on the portal
   "defaultExportFolder": "data/scenes/",
   "assetLibraries": [],
   "effectsLibraries": [],
-  "projectManager": {
+  "creationGuide": {
     "chronicles": [],
     "tasks": []
   }
@@ -89,7 +89,7 @@ which files Artifex opens by default
 where exports are intended to go
 which assets appear in the Asset Library
 which CG effects are available
-which tasks appear in Project Manager / Creation Guide
+which tasks appear in Creation Guide
 which template set is used
 which repo/upload URLs are shown
 ```
