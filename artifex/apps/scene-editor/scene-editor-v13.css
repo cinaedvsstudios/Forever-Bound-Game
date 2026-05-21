@@ -1,0 +1,102 @@
+/* Scene Editor v0.13 control card conversion */
+
+.file-pill {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  gap: 3px;
+  align-items: start;
+}
+
+.file-pill-project {
+  display: block;
+  color: #bfa990;
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  line-height: 1.15;
+}
+
+.file-pill-title {
+  display: block;
+  min-width: 0;
+}
+
+.file-pill-status-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.file-pill-status-row .file-pill-icons {
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.file-pill-status-row .file-pill-meta-line {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-layout-group .field,
+.card-layout-group .check-row,
+.card-layout-group .button-row {
+  margin: 0 !important;
+}
+
+.basics-identity-group,
+.selected-identity-group,
+.selected-tags-group,
+.selected-tools-layout-group,
+.elements-controls-group,
+.elements-list-group {
+  padding: 0;
+}
+
+.basics-grid-group {
+  margin-top: 10px;
+}
+
+.basics-toggle-group {
+  margin-top: 4px;
+}
+
+.elements-controls-group .layer-control-row {
+  justify-content: flex-start;
+}
+
+.elements-list-group .item-list {
+  width: 100%;
+}
+
+.selected-identity-group {
+  margin-bottom: 10px;
+}
+
+.selected-tags-group {
+  margin-top: 10px;
+}
+
+.selected-tools-layout-group {
+  margin-top: 8px;
+}
+
+.selected-tools-layout-group .selected-card-divider {
+  width: 100%;
+  margin: 0 0 10px;
+}
+
+@media (max-width: 900px) {
+  .file-pill-status-row {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+
+  .file-pill-status-row .file-pill-meta-line {
+    white-space: normal;
+  }
+}
