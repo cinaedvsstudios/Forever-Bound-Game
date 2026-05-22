@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v0.12i-core';
+  const VERSION = 'v0.15a-core-drag';
   const SETTINGS_KEY = 'artifex.sceneEditor.settings.v1';
   const WORKING_COPY_KEY = 'artifex.sceneEditor.workingCopy.v1';
   const DOWNLOAD_KEY = 'artifex.sceneEditor.lastDownload.v1';
@@ -42,6 +42,7 @@
   let saveTimer = null;
   let lastWorkingCopySnapshot = '';
   const collapsed = { json: true, ...(settings.collapsedCards || {}) };
+  document.body.dataset.artifexCoreMoveDrag = 'true';
 
   function saveSettings() {
     try {
@@ -187,6 +188,87 @@
   }
   function saveScroll() { const p = document.querySelector('.side-panel'); if (p) panelScroll = p.scrollTop; }
   function restoreScroll() { requestAnimationFrame(() => { const p = document.querySelector('.side-panel'); if (p) p.scrollTop = panelScroll; }); }
+  function stageNodeFor(id) {
+    return Array.from(document.querySelectorAll('.scene-item[data-stage-id]')).find(node => node.dataset.stageId === id) || null;
+  }
+  function syncSelectedInputs(item) {
+    const x = document.getElementById('itemX');
+    const y = document.getElementById('itemY');
+    if (x) x.value = item.x ?? 0;
+    if (y) y.value = item.y ?? 0;
+  }
+  function startCoreMoveDrag(event, node) {
+    if (event.button === 2) return;
+    selectedKind = node.dataset.stageKind || 'element';
+    selectedId = node.dataset.stageId || '';
+    const item = real();
+    if (!item) return;
+    context = null;
+    drag = { item, id: selectedId, kind: selectedKind, pointerId: event.pointerId };
+    document.body.classList.add('is-handle-moving', 'v13e-centre-dragging');
+    document.querySelectorAll('.scene-item.is-selected').forEach(selected => selected.classList.remove('is-selected'));
+    document.querySelectorAll('.move-handle.is-dragging, .scene-item.is-handle-moving').forEach(active => active.classList.remove('is-dragging', 'is-handle-moving'));
+    node.classList.add('is-selected', 'is-handle-moving');
+    event.target.closest?.('.move-handle')?.classList.add('is-dragging');
+    try { node.setPointerCapture?.(event.pointerId); } catch {}
+    updateCoreMoveDrag(event);
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+  }
+  function updateCoreMoveDrag(event) {
+    if (!drag?.item) return;
+    const stage = document.getElementById('stage');
+    if (!stage) return;
+    const rect = stage.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const width = Number(drag.item.width || 0);
+    const height = Number(drag.item.height || 0);
+    const nextX = clamp(((event.clientX - rect.left) / rect.width) * 100 - width / 2, 0, 100);
+    const nextY = clamp(((event.clientY - rect.top) / rect.height) * 100 - height / 2, 0, 100);
+    drag.item.x = Number(nextX.toFixed(3));
+    drag.item.y = Number(nextY.toFixed(3));
+    const node = stageNodeFor(drag.id);
+    if (node) {
+      node.style.left = `${drag.item.x}%`;
+      node.style.top = `${drag.item.y}%`;
+    }
+    syncSelectedInputs(drag.item);
+    saveWorkingCopySoon('drag');
+  }
+  function endCoreMoveDrag(event, shouldRender = true) {
+    if (!drag) return;
+    const active = drag;
+    const node = stageNodeFor(active.id);
+    try { node?.releasePointerCapture?.(active.pointerId); } catch {}
+    drag = null;
+    document.body.classList.remove('is-handle-moving', 'v13e-centre-dragging');
+    document.querySelectorAll('.move-handle.is-dragging, .scene-item.is-handle-moving').forEach(activeNode => activeNode.classList.remove('is-dragging', 'is-handle-moving'));
+    saveWorkingCopySoon('drag');
+    if (shouldRender) render();
+  }
+  function wireCoreMoveDrag() {
+    if (document.body.dataset.artifexCoreMoveEvents === 'true') return;
+    document.body.dataset.artifexCoreMoveEvents = 'true';
+    document.addEventListener('pointerdown', event => {
+      const handle = event.target.closest?.('.move-handle');
+      const node = handle?.closest?.('.scene-item[data-stage-id]');
+      if (handle && node) startCoreMoveDrag(event, node);
+    }, true);
+    document.addEventListener('pointermove', event => {
+      if (!drag) return;
+      updateCoreMoveDrag(event);
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+    }, true);
+    document.addEventListener('pointerup', event => endCoreMoveDrag(event), true);
+    document.addEventListener('pointercancel', event => endCoreMoveDrag(event), true);
+    document.addEventListener('mouseleave', event => {
+      if (event.target === document || event.target === document.documentElement) endCoreMoveDrag(event);
+    }, true);
+    window.addEventListener('blur', () => endCoreMoveDrag(null));
+  }
   function render(keepScroll = true) {
     if (keepScroll) saveScroll();
     app.innerHTML = `<div class="editor-shell">${titleBar()}<main class="main-layout">${controlPanel()}${workArea()}</main></div>${templateModal()}${contextMenu()}<input class="hidden-file" id="imageFile" type="file" accept="image/*,.svg,.webp,.gif,.png,.jpg,.jpeg">`;
@@ -244,7 +326,7 @@
     if (item.visible === false) return '';
     const zd = Number(item.zDepth || 0), scale = clamp(1 + zd * .035, .45, 2.15);
     const img = item.image ? `<img src="${esc(assetPath(item.image))}" alt="${esc(item.name || item.id)}">` : `<span class="small">${esc(item.text || item.type || item.id)}</span>`;
-    return `<div class="scene-item ${item.id===selectedId?'is-selected':''}" data-stage-id="${esc(item.id)}" data-stage-kind="${item.kind}" style="left:${item.x ?? 10}%;top:${item.y ?? 10}%;width:${item.width ?? 10}%;height:${item.height ?? 10}%;z-index:${item.layer ?? item.z ?? 1};transform:scale(${scale});">${img}<span class="item-label">${esc(item.name || item.id)}</span></div>`;
+    return `<div class="scene-item ${item.id===selectedId?'is-selected':''}" data-stage-id="${esc(item.id)}" data-stage-kind="${item.kind}" style="left:${item.x ?? 10}%;top:${item.y ?? 10}%;width:${item.width ?? 10}%;height:${item.height ?? 10}%;z-index:${item.layer ?? item.z ?? 1};transform:scale(${scale});">${img}<button class="move-handle" type="button" title="Drag here to move this object" aria-label="Move object"></button><span class="item-label">${esc(item.name || item.id)}</span></div>`;
   }
   function templateModal() { return `<div class="modal-backdrop ${templateOpen ? 'is-open' : ''}" id="templateModal"><div class="modal"><div class="modal-head"><h2>Import From Templates</h2><button class="btn" id="closeTemplates" type="button">Close</button></div><div class="template-list">${templates.map(t=>`<button class="template-card" data-template-file="${esc(t.file)}" type="button"><strong>${esc(t.label || t.id)}</strong><span>${esc(t.type || '')} · ${esc(t.file || '')}</span><span>${esc(t.defaultSaveFolder || '')}</span></button>`).join('') || '<p class="small">Template manifest has not loaded.</p>'}</div></div></div>`; }
   function contextMenu() {
@@ -331,11 +413,17 @@
   function bindContextActions() { document.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click',()=>action(b.dataset.action))); }
   function bindStage() {
     document.querySelectorAll('[data-stage-id]').forEach(n=>{
-      n.addEventListener('pointerdown', e=>{ if(e.button===2)return; selectedKind=n.dataset.stageKind; selectedId=n.dataset.stageId; drag=real(); render(); });
+      n.addEventListener('pointerdown', e=>{
+        if(e.button===2)return;
+        if(e.target.closest?.('.move-handle')) return;
+        endCoreMoveDrag(e, false);
+        selectedKind=n.dataset.stageKind;
+        selectedId=n.dataset.stageId;
+        render();
+      });
       n.addEventListener('contextmenu', e=>{ e.preventDefault(); e.stopPropagation(); selectedKind=n.dataset.stageKind; selectedId=n.dataset.stageId; context={type:'object', kind:selectedKind, id:selectedId, x:e.clientX, y:e.clientY}; render(); });
     });
     document.getElementById('zoomReset')?.addEventListener('contextmenu', e=>{ e.preventDefault(); e.stopPropagation(); context={type:'zoom', x:e.clientX, y:e.clientY}; render(); });
-    document.getElementById('stage')?.addEventListener('pointermove', e=>{ if(!drag)return; const r=e.currentTarget.getBoundingClientRect(); drag.x=clamp(((e.clientX-r.left)/r.width)*100,0,100); drag.y=clamp(((e.clientY-r.top)/r.height)*100,0,100); renderWorkAreaOnly(); });
   }
   function zoomSelectedObject() {
     const id = selectedId;
@@ -366,7 +454,8 @@
   function addLayer() { if(!scene) normalize(blankScene(),'New blank scene'); const i={id:uid('layer'),type:'overlay',name:'New Layer',image:'../../templates/assets/template_water_strip.svg',x:20,y:70,width:40,height:14,layer:5,zDepth:0,visible:true,tags:[]}; scene.layers.push(i); selectedKind='layer'; selectedId=i.id; toast('Layer added'); saveWorkingCopySoon('add layer'); render(); }
   function duplicateSelected() { const i=real(); if(!i)return; const c=structuredClone(i); c.id=`${i.id||'item'}_copy_${Math.random().toString(36).slice(2,5)}`; c.name=`${i.name||i.id||'Item'} Copy`; c.x=clamp(Number(i.x||0)+3,0,100); c.y=clamp(Number(i.y||0)+3,0,100); c.layer=Number(i.layer||0)+1; scene[key(selectedKind)].push(c); selectedId=c.id; context=null; toast('Object duplicated'); saveWorkingCopySoon('duplicate'); render(); }
   function removeSelected() { if(!selectedId)return; scene[key(selectedKind)]=(scene[key(selectedKind)]||[]).filter(i=>i.id!==selectedId); const first=allItems()[0]; selectedKind=first?.kind||'element'; selectedId=first?.id||''; context=null; toast('Object deleted'); saveWorkingCopySoon('delete'); render(); }
-  document.addEventListener('pointerup',()=>{ if(drag){drag=null; saveWorkingCopySoon('drag'); render();} });
+  wireCoreMoveDrag();
+  document.addEventListener('pointerup',e=>endCoreMoveDrag(e));
   document.addEventListener('input', () => saveWorkingCopySoon('input'), true);
   document.addEventListener('change', () => saveWorkingCopySoon('change'), true);
   document.addEventListener('click',e=>{ if(importOpen && !e.target.closest('#importMenu')){importOpen=false; render();} if(context && !e.target.closest('.context-menu') && !e.target.closest('.scene-item') && !e.target.closest('#zoomReset')){context=null; render();} saveWorkingCopySoon('click'); });
