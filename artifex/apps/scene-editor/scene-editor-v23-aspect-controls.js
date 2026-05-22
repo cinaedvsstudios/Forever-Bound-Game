@@ -5,10 +5,11 @@
   const RATIO_KEY = 'artifex.sceneEditor.aspectControls.v23';
   const MIN_SIZE = 1;
   const MAX_SIZE = 200;
+  const MIN_POS = -100;
+  const MAX_POS = 200;
   let activeResize = null;
 
   function api() { return window.ArtifexSceneEditorCore || null; }
-
   function toast(message) {
     document.querySelector('.artifex-toast')?.remove();
     const node = document.createElement('div');
@@ -17,7 +18,6 @@
     document.body.appendChild(node);
     setTimeout(() => node.remove(), 2200);
   }
-
   function safeRead() { try { return JSON.parse(localStorage.getItem(RATIO_KEY) || '{}'); } catch { return {}; } }
   function safeWrite(value) { try { localStorage.setItem(RATIO_KEY, JSON.stringify(value)); } catch {} }
 
@@ -40,24 +40,33 @@
     const field = document.getElementById(id);
     if (!field) return;
     field.value = value;
-    const slider = field.closest('.value-slider-field-v18')?.querySelector('.value-slider-range-v18');
-    const readout = field.closest('.value-slider-field-v18')?.querySelector('.value-slider-readout-v18');
+    const wrap = field.closest('.value-slider-field-v18');
+    const slider = wrap?.querySelector('.value-slider-range-v18');
+    const readout = wrap?.querySelector('.value-slider-readout-v18');
+    const track = wrap?.querySelector('.value-slider-track-v18');
+    const fill = wrap?.querySelector('.value-slider-fill-v18');
+    const thumb = wrap?.querySelector('.value-slider-thumb-v18');
     if (slider) slider.value = value;
     if (readout) readout.textContent = String(value);
+    if (track && fill && thumb) {
+      const min = Number(field.min || 0);
+      const max = Number(field.max || 100);
+      const pct = max === min ? 0 : ((Number(value) - min) / (max - min)) * 100;
+      fill.style.height = `${clamp(pct, 0, 100)}%`;
+      thumb.style.bottom = `${clamp(pct, 0, 100)}%`;
+      track.setAttribute('aria-valuenow', String(value));
+    }
   }
-
   function syncBodyClasses() {
     document.body.classList.toggle('aspect-lock-enabled-v23', settings.aspectLock);
     document.body.classList.toggle('wrap-box-enabled-v23', settings.wrapBoundingBox);
   }
-
   function applyImageFit() {
     syncBodyClasses();
     const fit = (settings.aspectLock || settings.wrapBoundingBox) ? 'contain' : 'fill';
     document.querySelectorAll('.scene-item img').forEach((img) => { img.style.objectFit = fit; });
   }
-
-  function applyItemSize(item) {
+  function applyItemBox(item) {
     const node = selectedNode();
     if (!item || !node) return;
     node.style.left = `${item.x ?? 0}%`;
@@ -70,13 +79,12 @@
     setField('itemH', item.height ?? 10);
     applyImageFit();
   }
-
   function saveSettings() { safeWrite(settings); }
   function setButtonState() {
     syncBodyClasses();
     document.querySelectorAll('.wrap-image-btn').forEach((button) => {
-      button.title = 'Wrap Bounding Box to Aspect Ratio';
-      button.setAttribute('aria-label', 'Wrap Bounding Box to Aspect Ratio');
+      button.title = 'Wrap Bounding Box to Image';
+      button.setAttribute('aria-label', 'Wrap Bounding Box to Image');
       button.classList.toggle('is-enabled-v23', settings.wrapBoundingBox);
     });
     document.querySelectorAll('.aspect-lock-btn-v23').forEach((button) => {
@@ -86,7 +94,6 @@
     });
     applyImageFit();
   }
-
   function naturalRatio(callback) {
     const path = document.getElementById('itemImage')?.value || document.querySelector('.scene-item.is-selected img')?.src || '';
     if (!path) return;
@@ -97,8 +104,7 @@
     };
     img.src = path;
   }
-
-  function wrapBoundingBoxToAspectRatio() {
+  function wrapBoundingBoxToImage() {
     const w = document.getElementById('itemW');
     const h = document.getElementById('itemH');
     const item = selectedItem();
@@ -117,38 +123,31 @@
       setField('itemH', item.height);
       dispatchInput(w);
       dispatchInput(h);
-      applyItemSize(item);
-      api()?.saveWorkingCopySoon?.('wrap bounding box aspect ratio');
+      applyItemBox(item);
+      api()?.saveWorkingCopySoon?.('wrap bounding box to image');
     });
   }
-
   function toggleWrap(event) {
     const button = event.target.closest?.('.wrap-image-btn');
     if (!button) return false;
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
+    event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation();
     settings.wrapBoundingBox = !settings.wrapBoundingBox;
     saveSettings();
     setButtonState();
-    toast(`Wrap Bounding Box to Aspect Ratio ${settings.wrapBoundingBox ? 'enabled' : 'disabled'}`);
-    if (settings.wrapBoundingBox) wrapBoundingBoxToAspectRatio();
+    toast(`Wrap Bounding Box to Image ${settings.wrapBoundingBox ? 'enabled' : 'disabled'}`);
+    if (settings.wrapBoundingBox) wrapBoundingBoxToImage();
     return true;
   }
-
   function toggleAspectLock(event) {
     const button = event.target.closest?.('.aspect-lock-btn-v23');
     if (!button) return false;
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
+    event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation();
     settings.aspectLock = !settings.aspectLock;
     saveSettings();
     setButtonState();
     toast(`Aspect Ratio Lock ${settings.aspectLock ? 'enabled' : 'disabled'}`);
     return true;
   }
-
   function addAspectButton() {
     const table = document.querySelector('.selected-metric-table-v15');
     if (!table || table.dataset.v23AspectButton === 'true') return;
@@ -167,11 +166,9 @@
     table.append(label, value);
     setButtonState();
   }
-
   function interceptButtonClicks(event) { if (toggleWrap(event)) return; toggleAspectLock(event); }
 
-  function beginLockedResize(event) {
-    if (!settings.aspectLock) return;
+  function beginResize(event) {
     const handle = event.target.closest?.('.resize-handle');
     if (!handle || event.button === 2) return;
     const item = selectedItem();
@@ -190,13 +187,10 @@
       ratio: Math.max(MIN_SIZE, Number(item.width || 10)) / Math.max(MIN_SIZE, Number(item.height || 10))
     };
     document.body.classList.add('is-resizing-object');
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
+    event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation();
   }
-
-  function moveLockedResize(event) {
-    if (!activeResize || !settings.aspectLock) return;
+  function moveResize(event) {
+    if (!activeResize) return;
     const rect = document.getElementById('stage')?.getBoundingClientRect();
     if (!rect?.width || !rect?.height) return;
     const dx = ((event.clientX - rect.left) / rect.width) * 100 - activeResize.startX;
@@ -208,51 +202,46 @@
     if (dir.includes('w')) w = activeResize.w - dx;
     if (dir.includes('s')) h = activeResize.h + dy;
     if (dir.includes('n')) h = activeResize.h - dy;
-    if (dir === 'n' || dir === 's') w = h * ratio;
-    else if (dir === 'e' || dir === 'w') h = w / ratio;
-    else {
-      const fromW = Math.abs(w - activeResize.w);
-      const fromH = Math.abs(h - activeResize.h);
-      if (fromW >= fromH) h = w / ratio;
-      else w = h * ratio;
+    if (settings.aspectLock) {
+      if (dir === 'n' || dir === 's') w = h * ratio;
+      else if (dir === 'e' || dir === 'w') h = w / ratio;
+      else {
+        const fromW = Math.abs(w - activeResize.w);
+        const fromH = Math.abs(h - activeResize.h);
+        if (fromW >= fromH) h = w / ratio;
+        else w = h * ratio;
+      }
     }
     w = clamp(w, MIN_SIZE, MAX_SIZE);
     h = clamp(h, MIN_SIZE, MAX_SIZE);
     if (dir.includes('w')) x = activeResize.x + (activeResize.w - w);
     if (dir.includes('n')) y = activeResize.y + (activeResize.h - h);
-    activeResize.item.x = Number(x.toFixed(3));
-    activeResize.item.y = Number(y.toFixed(3));
+    activeResize.item.x = Number(clamp(x, MIN_POS, MAX_POS).toFixed(3));
+    activeResize.item.y = Number(clamp(y, MIN_POS, MAX_POS).toFixed(3));
     activeResize.item.width = Number(w.toFixed(3));
     activeResize.item.height = Number(h.toFixed(3));
-    applyItemSize(activeResize.item);
-    api()?.saveWorkingCopySoon?.('aspect ratio resize');
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
+    applyItemBox(activeResize.item);
+    api()?.saveWorkingCopySoon?.('resize');
+    event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation();
   }
-
-  function endLockedResize(event) {
+  function endResize(event) {
     if (!activeResize) return;
     activeResize = null;
     document.body.classList.remove('is-resizing-object');
-    api()?.saveWorkingCopySoon?.('aspect ratio resize');
-    event?.preventDefault?.();
-    event?.stopPropagation?.();
-    event?.stopImmediatePropagation?.();
+    api()?.saveWorkingCopySoon?.('resize');
+    event?.preventDefault?.(); event?.stopPropagation?.(); event?.stopImmediatePropagation?.();
   }
-
   function enforceWrapAfterSizeInput(event) {
     if (!settings.wrapBoundingBox) return;
     const input = event.target.closest?.('#itemW, #itemH');
     if (!input || document.body.classList.contains('is-resizing-object')) return;
     window.clearTimeout(enforceWrapAfterSizeInput.timer);
-    enforceWrapAfterSizeInput.timer = window.setTimeout(wrapBoundingBoxToAspectRatio, 120);
+    enforceWrapAfterSizeInput.timer = window.setTimeout(wrapBoundingBoxToImage, 120);
   }
-
   function install() {
     document.querySelectorAll('.wrap-image-btn').forEach((button) => {
-      button.title = 'Wrap Bounding Box to Aspect Ratio';
-      button.setAttribute('aria-label', 'Wrap Bounding Box to Aspect Ratio');
+      button.title = 'Wrap Bounding Box to Image';
+      button.setAttribute('aria-label', 'Wrap Bounding Box to Image');
     });
     addAspectButton();
     setButtonState();
@@ -260,14 +249,14 @@
   }
 
   document.addEventListener('click', interceptButtonClicks, true);
-  document.addEventListener('pointerdown', beginLockedResize, true);
-  document.addEventListener('pointermove', moveLockedResize, true);
-  document.addEventListener('pointerup', endLockedResize, true);
-  document.addEventListener('pointercancel', endLockedResize, true);
+  document.addEventListener('pointerdown', beginResize, true);
+  document.addEventListener('pointermove', moveResize, true);
+  document.addEventListener('pointerup', endResize, true);
+  document.addEventListener('pointercancel', endResize, true);
   document.addEventListener('input', enforceWrapAfterSizeInput, true);
   document.addEventListener('change', enforceWrapAfterSizeInput, true);
   window.addEventListener('load', install);
-  window.addEventListener('blur', endLockedResize);
+  window.addEventListener('blur', endResize);
   setInterval(install, 800);
   install();
 })();
