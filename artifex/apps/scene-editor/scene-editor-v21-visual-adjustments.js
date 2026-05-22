@@ -16,6 +16,8 @@
   };
 
   let applying = false;
+  let lastInstalledObjectId = '';
+  let lastVisualCardBody = null;
 
   function api() {
     return window.ArtifexSceneEditorCore || null;
@@ -45,7 +47,7 @@
   }
 
   function selectMarkup(id, label, value, options) {
-    return `<div class="field visual-live-field-v21"><label for="${id}">${esc(label)}</label><select id="${id}" data-visual-key="${id.replace('visual', '').replace('V21', '')}">${options.map((option) => `<option value="${esc(option)}" ${option === value ? 'selected' : ''}>${esc(option)}</option>`).join('')}</select></div>`;
+    return `<div class="field visual-live-field-v21"><label for="${id}">${esc(label)}</label><select id="${id}">${options.map((option) => `<option value="${esc(option)}" ${option === value ? 'selected' : ''}>${esc(option)}</option>`).join('')}</select></div>`;
   }
 
   function numberMarkup(id, label, value, min, max, step = 1) {
@@ -91,12 +93,7 @@
     const opacity = clamp(visual.opacity, 0, 100) / 100;
     const shadow = clamp(visual.shadowStrength, 0, 100);
     const glow = clamp(visual.glowStrength, 0, 100);
-    const filters = [
-      `brightness(${brightness}%)`,
-      `contrast(${contrast}%)`,
-      `saturate(${saturation}%)`,
-      `hue-rotate(${hue}deg)`
-    ];
+    const filters = [`brightness(${brightness}%)`, `contrast(${contrast}%)`, `saturate(${saturation}%)`, `hue-rotate(${hue}deg)`];
 
     if (shadow > 0) {
       const blur = Math.round(2 + shadow * 0.18);
@@ -170,7 +167,7 @@
     body.addEventListener('change', () => api()?.saveWorkingCopySoon?.('visual adjustment'), true);
   }
 
-  function installVisualControls() {
+  function installVisualControls(force = false) {
     if (applying) return;
     applying = true;
     try {
@@ -179,11 +176,18 @@
       const body = card?.querySelector('.card-body');
       if (!item || !card || !body) return;
       const visual = ensureVisual(item);
-      if (!body.querySelector('.visual-live-controls-v21') || body.dataset.v21Object !== item.id) {
+      const objectChanged = lastInstalledObjectId !== item.id;
+      const bodyChanged = lastVisualCardBody !== body;
+      const missingControls = !body.querySelector('.visual-live-controls-v21');
+
+      if (force || objectChanged || bodyChanged || missingControls) {
         body.innerHTML = cardMarkup(visual);
         body.dataset.v21Object = item.id || '';
         body.dataset.v21VisualBound = '';
+        lastInstalledObjectId = item.id || '';
+        lastVisualCardBody = body;
       }
+
       bindVisualControls(body);
       syncControls(item);
       applyVisuals();
@@ -192,20 +196,35 @@
     }
   }
 
-  function schedule() {
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      installVisualControls();
-      applyVisuals();
-    }));
+  function scheduleInstall() {
+    requestAnimationFrame(() => requestAnimationFrame(() => installVisualControls(false)));
   }
 
-  window.addEventListener('load', schedule);
-  document.addEventListener('click', schedule, true);
-  document.addEventListener('change', schedule, true);
-  document.addEventListener('input', (event) => {
-    if (!event.target.closest?.('.visual-live-controls-v21')) schedule();
+  function schedulePaint() {
+    requestAnimationFrame(applyVisuals);
+  }
+
+  window.addEventListener('load', () => installVisualControls(true));
+  document.addEventListener('click', (event) => {
+    if (event.target.closest?.('.card-toggle')) {
+      schedulePaint();
+      return;
+    }
+    scheduleInstall();
   }, true);
-  document.addEventListener('pointerup', schedule, true);
-  setInterval(schedule, 900);
-  schedule();
+  document.addEventListener('change', (event) => {
+    if (!event.target.closest?.('.visual-live-controls-v21')) scheduleInstall();
+  }, true);
+  document.addEventListener('input', (event) => {
+    if (!event.target.closest?.('.visual-live-controls-v21')) scheduleInstall();
+  }, true);
+  document.addEventListener('pointerup', schedulePaint, true);
+  setInterval(() => {
+    const item = selectedItem();
+    const body = document.querySelector('[data-card-id="visual-v15"] .card-body');
+    if (!item || !body) return;
+    if (lastInstalledObjectId !== item.id || lastVisualCardBody !== body || !body.querySelector('.visual-live-controls-v21')) installVisualControls(false);
+    else applyVisuals();
+  }, 1200);
+  scheduleInstall();
 })();
