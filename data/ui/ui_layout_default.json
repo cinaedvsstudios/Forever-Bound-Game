@@ -1,0 +1,87 @@
+{
+  "id": "ui_layout_default",
+  "screenType": "ui",
+  "name": "Default UI Layout",
+  "elements": [
+    {
+      "id": "hud_hearts",
+      "type": "ui",
+      "label": "Heart Panel",
+      "x": 24,
+      "y": 18,
+      "width": 130,
+      "height": 48,
+      "z": 10,
+      "text": "♥ ♥ ♥ ♥ ♥",
+      "visible": true
+    },
+    {
+      "id": "hud_status",
+      "type": "ui",
+      "label": "Status Box",
+      "x": 170,
+      "y": 18,
+      "width": 600,
+      "height": 52,
+      "z": 10,
+      "text": "Location / Quest / Calling",
+      "visible": true
+    },
+    {
+      "id": "hud_active_item",
+      "type": "ui",
+      "label": "Active Item Box",
+      "x": 790,
+      "y": 18,
+      "width": 145,
+      "height": 52,
+      "z": 10,
+      "text": "Empty Hands",
+      "visible": true
+    },
+    {
+      "id": "dpad",
+      "type": "ui",
+      "label": "D-pad",
+      "x": 48,
+      "y": 378,
+      "width": 140,
+      "height": 140,
+      "z": 20,
+      "text": "▲ ◀ ▶ ▼",
+      "visible": true
+    },
+    {
+      "id": "buttons_abxy",
+      "type": "ui",
+      "label": "A/B/X/Y Buttons",
+      "x": 765,
+      "y": 370,
+      "width": 160,
+      "height": 145,
+      "z": 20,
+      "text": "X Y B A",
+      "visible": true
+    },
+    {
+      "id": "select_start",
+      "type": "ui",
+      "label": "Select / Start Buttons",
+      "x": 405,
+      "y": 455,
+      "width": 150,
+      "height": 48,
+      "z": 20,
+      "text": "Select   Start",
+      "visible": true
+    }
+  ],
+  "audio": {},
+  "editor": {
+    "grid": {
+      "columns": 20,
+      "rows": 10
+    },
+    "notes": "Default UI layout for Artifex UI Screen mode."
+  }
+}
