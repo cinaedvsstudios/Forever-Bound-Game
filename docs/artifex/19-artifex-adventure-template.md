@@ -1,0 +1,1 @@
+19-artifex-adventure-template.md
