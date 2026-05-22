@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v0.15a-core-drag';
+  const VERSION = 'v0.16-transform-core';
   const SETTINGS_KEY = 'artifex.sceneEditor.settings.v1';
   const WORKING_COPY_KEY = 'artifex.sceneEditor.workingCopy.v1';
   const DOWNLOAD_KEY = 'artifex.sceneEditor.lastDownload.v1';
@@ -450,10 +450,24 @@
   async function openTemplates() { try{toast('Loading template list...'); const r=await fetch(templateManifest,{cache:'no-store'}); if(!r.ok)throw new Error(r.status); templates=(await r.json()).templates||[]; templateOpen=true; importOpen=false; render();}catch(err){status=`Template list failed: ${err.message}`; toast(status); render();} }
   async function loadTemplate(file) { try{toast(`Loading template: ${file}...`); const r=await fetch(`../../templates/${file}`,{cache:'no-store'}); if(!r.ok)throw new Error(r.status); normalize(await r.json(), file); templateOpen=false; render(false);}catch(err){status=`Template import failed: ${err.message}`; toast(status); render();} }
   function download() { if(!scene){toast('Nothing to download'); return;} const blob=new Blob([JSON.stringify(scene,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`${scene.id||'artifex_scene'}.json`; a.click(); URL.revokeObjectURL(url); markDownloaded(); toast('JSON downloaded'); render(); }
-  function addElement() { if(!scene) normalize(blankScene(),'New blank scene'); const i={id:uid('element'),type:'prop',name:'New Element',image:'../../templates/assets/template_red_ball.svg',x:40,y:55,width:10,height:14,layer:10,zDepth:0,visible:true,tags:[]}; scene.elements.push(i); selectedKind='element'; selectedId=i.id; toast('Element added'); saveWorkingCopySoon('add element'); render(); }
-  function addLayer() { if(!scene) normalize(blankScene(),'New blank scene'); const i={id:uid('layer'),type:'overlay',name:'New Layer',image:'../../templates/assets/template_water_strip.svg',x:20,y:70,width:40,height:14,layer:5,zDepth:0,visible:true,tags:[]}; scene.layers.push(i); selectedKind='layer'; selectedId=i.id; toast('Layer added'); saveWorkingCopySoon('add layer'); render(); }
+  function addElement() { if(!scene) normalize(blankScene(),'New blank scene'); const i={id:uid('element'),type:'prop',name:'New Element',image:'../../templates/assets/template_red_ball.svg',x:40,y:55,width:10,height:14,layer:10,zDepth:0,visible:true,tags:[],rotation:0,rotationOrigin:'centre'}; scene.elements.push(i); selectedKind='element'; selectedId=i.id; toast('Element added'); saveWorkingCopySoon('add element'); render(); }
+  function addLayer() { if(!scene) normalize(blankScene(),'New blank scene'); const i={id:uid('layer'),type:'overlay',name:'New Layer',image:'../../templates/assets/template_water_strip.svg',x:20,y:70,width:40,height:14,layer:5,zDepth:0,visible:true,tags:[],rotation:0,rotationOrigin:'centre'}; scene.layers.push(i); selectedKind='layer'; selectedId=i.id; toast('Layer added'); saveWorkingCopySoon('add layer'); render(); }
   function duplicateSelected() { const i=real(); if(!i)return; const c=structuredClone(i); c.id=`${i.id||'item'}_copy_${Math.random().toString(36).slice(2,5)}`; c.name=`${i.name||i.id||'Item'} Copy`; c.x=clamp(Number(i.x||0)+3,0,100); c.y=clamp(Number(i.y||0)+3,0,100); c.layer=Number(i.layer||0)+1; scene[key(selectedKind)].push(c); selectedId=c.id; context=null; toast('Object duplicated'); saveWorkingCopySoon('duplicate'); render(); }
   function removeSelected() { if(!selectedId)return; scene[key(selectedKind)]=(scene[key(selectedKind)]||[]).filter(i=>i.id!==selectedId); const first=allItems()[0]; selectedKind=first?.kind||'element'; selectedId=first?.id||''; context=null; toast('Object deleted'); saveWorkingCopySoon('delete'); render(); }
+  window.ArtifexSceneEditorCore = {
+    getScene: () => scene,
+    getSelectedId: () => selectedId,
+    getSelectedKind: () => selectedKind,
+    getSelectedItem: () => real(),
+    getAllItems: () => allItems(),
+    select: (kind, id) => { selectedKind = kind || 'element'; selectedId = id || ''; render(); },
+    render,
+    renderWorkAreaOnly,
+    saveWorkingCopy,
+    saveWorkingCopySoon,
+    clamp,
+    toast
+  };
   wireCoreMoveDrag();
   document.addEventListener('pointerup',e=>endCoreMoveDrag(e));
   document.addEventListener('input', () => saveWorkingCopySoon('input'), true);
