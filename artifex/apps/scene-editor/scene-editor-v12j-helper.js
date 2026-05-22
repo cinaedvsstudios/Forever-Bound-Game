@@ -33,7 +33,8 @@
   function cleanFileName(value) {
     let text = String(value || '').trim();
     text = text.replace(/[📁💾🏗️]/g, '').trim();
-    text = text.replace(/Project\s*:[\s\S]*?$/i, '').trim();
+    text = text.replace(/^\s*Project\s*:\s*.*$/gim, '').trim();
+    text = text.replace(/^\s*File\s*:\s*/i, '').trim();
     text = text.replace(/\|\s*LOCAL\s*:[\s\S]*$/i, '').trim();
     text = text.replace(/LOCAL\s*:[\s\S]*$/i, '').trim();
     text = text.replace(/HDD\s*:[\s\S]*$/i, '').trim();
@@ -106,8 +107,8 @@
     const localStamp = formatStamp(working?.savedAt);
     const hddStamp = formatStamp(downloaded?.downloadedAt);
     const html = `
-      <span class="file-pill-project">Project: ${escapeHtml(projectName())}</span>
-      <span class="file-pill-title"><span class="file-pill-name">${escapeHtml(currentName)}</span></span>
+      <span class="file-pill-project"><span class="file-pill-label">Project:</span> ${escapeHtml(projectName())}</span>
+      <span class="file-pill-title"><span class="file-pill-label">File:</span> <span class="file-pill-name">${escapeHtml(currentName)}</span></span>
       <span class="file-pill-status-row"><span class="file-pill-icons" aria-hidden="true">📁 💾 🏗️</span><span class="file-pill-meta-line">| LOCAL: ${escapeHtml(localStamp)} | HDD: ${escapeHtml(hddStamp)} |</span></span>
     `;
     if (pill.dataset.v13Html === html) return;

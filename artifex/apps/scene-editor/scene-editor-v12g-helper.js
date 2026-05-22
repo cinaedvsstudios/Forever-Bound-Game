@@ -1,7 +1,6 @@
 (() => {
   const VERSION = 'v0.12i';
   let queued = false;
-  let handleDragActive = false;
 
   function toast(message) {
     document.querySelector('.artifex-toast')?.remove();
@@ -13,6 +12,7 @@
   }
 
   function addMoveHandles() {
+    if (document.body.dataset.artifexCoreMoveDrag === 'true') return;
     document.querySelectorAll('.scene-item[data-stage-id]').forEach((item) => {
       let handle = item.querySelector(':scope > .move-handle');
       if (!handle) {
@@ -37,9 +37,11 @@
   }
 
   function bindPointerRules() {
+    if (document.body.dataset.artifexCoreMoveDrag === 'true') return;
     if (document.body.getAttribute('data-v12i-move-handles') === 'true') return;
     document.body.setAttribute('data-v12i-move-handles', 'true');
 
+    let handleDragActive = false;
     document.addEventListener('pointerdown', (event) => {
       const handle = event.target.closest ? event.target.closest('.move-handle') : null;
       const item = event.target.closest ? event.target.closest('.scene-item') : null;
@@ -72,7 +74,7 @@
   window.addEventListener('load', () => {
     bindPointerRules();
     queue();
-    toast('Move handles loaded');
+    if (document.body.dataset.artifexCoreMoveDrag !== 'true') toast('Move handles loaded');
   });
   document.addEventListener('click', queue, true);
   document.addEventListener('pointerup', queue, true);

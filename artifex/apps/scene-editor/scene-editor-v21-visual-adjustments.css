@@ -1,0 +1,29 @@
+/* v0.21 live visual adjustment controls */
+
+.visual-live-controls-v21 .visual-note-v21 {
+  margin-bottom: 10px;
+}
+
+.visual-effects-live-group-v21 {
+  margin-top: 8px;
+}
+
+.visual-live-field-v21 select,
+.visual-live-field-v21 input {
+  background: #090a0b !important;
+  opacity: 1 !important;
+  cursor: text !important;
+}
+
+.visual-live-field-v21 select {
+  cursor: pointer !important;
+}
+
+.visual-live-controls-v21 .value-slider-dot-v18 {
+  background: #e73838;
+}
+
+.scene-item img,
+.scene-item .small {
+  transition: filter 90ms linear, opacity 90ms linear;
+}

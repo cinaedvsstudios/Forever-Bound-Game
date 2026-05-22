@@ -203,6 +203,10 @@ button {
   border-radius: 18px;
 }
 
+.panel-card.is-collapsed .card-body {
+  display: none !important;
+}
+
 .card-toggle {
   width: 28px;
   height: 28px;
@@ -598,6 +602,31 @@ button {
 
 .hidden-file {
   display: none;
+}
+
+.resize-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  border: 1px solid rgba(255, 240, 190, .95);
+  border-radius: 3px;
+  background: #66c7ff;
+  box-shadow: 0 0 8px rgba(102, 199, 255, .72), 0 0 13px rgba(195, 0, 255, .42);
+  z-index: 8;
+}
+
+.resize-nw { left: -6px; top: -6px; cursor: nwse-resize; }
+.resize-n { left: calc(50% - 5px); top: -6px; cursor: ns-resize; }
+.resize-ne { right: -6px; top: -6px; cursor: nesw-resize; }
+.resize-e { right: -6px; top: calc(50% - 5px); cursor: ew-resize; }
+.resize-se { right: -6px; bottom: -6px; cursor: nwse-resize; }
+.resize-s { left: calc(50% - 5px); bottom: -6px; cursor: ns-resize; }
+.resize-sw { left: -6px; bottom: -6px; cursor: nesw-resize; }
+.resize-w { left: -6px; top: calc(50% - 5px); cursor: ew-resize; }
+
+.real-rotation-controls-v16 {
+  margin-top: 8px;
 }
 
 @media (max-width: 900px) {
