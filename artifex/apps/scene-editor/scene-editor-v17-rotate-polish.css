@@ -1,0 +1,33 @@
+/* v0.17 rotate handle visual polish
+   Keeps resize handles blue while making rotation/origin controls smaller and red. */
+
+.stage .scene-item .origin-marker-v17 {
+  width: 12px !important;
+  height: 12px !important;
+  border: 2px solid rgba(255, 238, 238, 0.96) !important;
+  background: #e73838 !important;
+  box-shadow: 0 0 9px rgba(231, 56, 56, 0.88), 0 0 13px rgba(195, 0, 255, 0.35) !important;
+}
+
+.stage .scene-item .rotate-arm-v17 {
+  top: -25px !important;
+  height: 20px !important;
+  width: 2px !important;
+  background: rgba(255, 210, 210, 0.86) !important;
+  box-shadow: 0 0 7px rgba(231, 56, 56, 0.58) !important;
+}
+
+.stage .scene-item .rotate-knob-v17 {
+  top: -36px !important;
+  width: 12px !important;
+  height: 12px !important;
+  border: 2px solid rgba(255, 238, 238, 0.96) !important;
+  background: #e73838 !important;
+  box-shadow: 0 0 9px rgba(231, 56, 56, 0.88), 0 0 13px rgba(195, 0, 255, 0.35) !important;
+}
+
+.stage .scene-item .rotate-knob-v17:hover,
+.stage .scene-item .origin-marker-v17:hover {
+  background: #ff4a4a !important;
+  box-shadow: 0 0 12px rgba(255, 74, 74, 0.95), 0 0 16px rgba(195, 0, 255, 0.42) !important;
+}
