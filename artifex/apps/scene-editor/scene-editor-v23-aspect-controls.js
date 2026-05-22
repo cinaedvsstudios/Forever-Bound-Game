@@ -7,9 +7,7 @@
   const MAX_SIZE = 200;
   let activeResize = null;
 
-  function api() {
-    return window.ArtifexSceneEditorCore || null;
-  }
+  function api() { return window.ArtifexSceneEditorCore || null; }
 
   function toast(message) {
     document.querySelector('.artifex-toast')?.remove();
@@ -20,39 +18,24 @@
     setTimeout(() => node.remove(), 2200);
   }
 
-  function safeRead() {
-    try { return JSON.parse(localStorage.getItem(RATIO_KEY) || '{}'); }
-    catch { return {}; }
-  }
-
-  function safeWrite(value) {
-    try { localStorage.setItem(RATIO_KEY, JSON.stringify(value)); }
-    catch {}
-  }
+  function safeRead() { try { return JSON.parse(localStorage.getItem(RATIO_KEY) || '{}'); } catch { return {}; } }
+  function safeWrite(value) { try { localStorage.setItem(RATIO_KEY, JSON.stringify(value)); } catch {} }
 
   const settings = safeRead();
   settings.wrapBoundingBox = !!settings.wrapBoundingBox;
   settings.aspectLock = !!settings.aspectLock;
 
-  function selectedItem() {
-    return api()?.getSelectedItem?.() || null;
-  }
-
+  function selectedItem() { return api()?.getSelectedItem?.() || null; }
   function selectedNode() {
     const id = api()?.getSelectedId?.();
     if (!id) return null;
     return Array.from(document.querySelectorAll('.scene-item[data-stage-id]')).find((node) => node.dataset.stageId === id) || null;
   }
-
-  function clamp(value, min, max) {
-    return Math.max(min, Math.min(max, Number(value || 0)));
-  }
-
+  function clamp(value, min, max) { return Math.max(min, Math.min(max, Number(value || 0))); }
   function dispatchInput(input) {
     input?.dispatchEvent(new Event('input', { bubbles: true }));
     input?.dispatchEvent(new Event('change', { bubbles: true }));
   }
-
   function setField(id, value) {
     const field = document.getElementById(id);
     if (!field) return;
@@ -61,6 +44,17 @@
     const readout = field.closest('.value-slider-field-v18')?.querySelector('.value-slider-readout-v18');
     if (slider) slider.value = value;
     if (readout) readout.textContent = String(value);
+  }
+
+  function syncBodyClasses() {
+    document.body.classList.toggle('aspect-lock-enabled-v23', settings.aspectLock);
+    document.body.classList.toggle('wrap-box-enabled-v23', settings.wrapBoundingBox);
+  }
+
+  function applyImageFit() {
+    syncBodyClasses();
+    const fit = (settings.aspectLock || settings.wrapBoundingBox) ? 'contain' : 'fill';
+    document.querySelectorAll('.scene-item img').forEach((img) => { img.style.objectFit = fit; });
   }
 
   function applyItemSize(item) {
@@ -74,13 +68,12 @@
     setField('itemY', item.y ?? 0);
     setField('itemW', item.width ?? 10);
     setField('itemH', item.height ?? 10);
+    applyImageFit();
   }
 
-  function saveSettings() {
-    safeWrite(settings);
-  }
-
+  function saveSettings() { safeWrite(settings); }
   function setButtonState() {
+    syncBodyClasses();
     document.querySelectorAll('.wrap-image-btn').forEach((button) => {
       button.title = 'Wrap Bounding Box to Aspect Ratio';
       button.setAttribute('aria-label', 'Wrap Bounding Box to Aspect Ratio');
@@ -91,6 +84,7 @@
       button.title = 'Aspect Ratio Lock';
       button.setAttribute('aria-label', 'Aspect Ratio Lock');
     });
+    applyImageFit();
   }
 
   function naturalRatio(callback) {
@@ -159,29 +153,22 @@
     const table = document.querySelector('.selected-metric-table-v15');
     if (!table || table.dataset.v23AspectButton === 'true') return;
     table.dataset.v23AspectButton = 'true';
-
     const label = document.createElement('div');
     label.className = 'metric-label-cell metric-label-center aspect-lock-label-v23';
     label.textContent = 'Aspect';
-
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'aspect-lock-btn-v23 metric-icon-button';
     button.textContent = '⛓';
     button.title = 'Aspect Ratio Lock';
-
     const value = document.createElement('div');
     value.className = 'metric-value-cell metric-icon-value aspect-lock-cell-v23';
     value.appendChild(button);
-
     table.append(label, value);
     setButtonState();
   }
 
-  function interceptButtonClicks(event) {
-    if (toggleWrap(event)) return;
-    toggleAspectLock(event);
-  }
+  function interceptButtonClicks(event) { if (toggleWrap(event)) return; toggleAspectLock(event); }
 
   function beginLockedResize(event) {
     if (!settings.aspectLock) return;
@@ -216,16 +203,11 @@
     const dy = ((event.clientY - rect.top) / rect.height) * 100 - activeResize.startY;
     const dir = activeResize.dir;
     const ratio = activeResize.ratio || 1;
-    let x = activeResize.x;
-    let y = activeResize.y;
-    let w = activeResize.w;
-    let h = activeResize.h;
-
+    let x = activeResize.x, y = activeResize.y, w = activeResize.w, h = activeResize.h;
     if (dir.includes('e')) w = activeResize.w + dx;
     if (dir.includes('w')) w = activeResize.w - dx;
     if (dir.includes('s')) h = activeResize.h + dy;
     if (dir.includes('n')) h = activeResize.h - dy;
-
     if (dir === 'n' || dir === 's') w = h * ratio;
     else if (dir === 'e' || dir === 'w') h = w / ratio;
     else {
@@ -234,13 +216,10 @@
       if (fromW >= fromH) h = w / ratio;
       else w = h * ratio;
     }
-
     w = clamp(w, MIN_SIZE, MAX_SIZE);
     h = clamp(h, MIN_SIZE, MAX_SIZE);
-
     if (dir.includes('w')) x = activeResize.x + (activeResize.w - w);
     if (dir.includes('n')) y = activeResize.y + (activeResize.h - h);
-
     activeResize.item.x = Number(x.toFixed(3));
     activeResize.item.y = Number(y.toFixed(3));
     activeResize.item.width = Number(w.toFixed(3));
@@ -277,6 +256,7 @@
     });
     addAspectButton();
     setButtonState();
+    applyImageFit();
   }
 
   document.addEventListener('click', interceptButtonClicks, true);
