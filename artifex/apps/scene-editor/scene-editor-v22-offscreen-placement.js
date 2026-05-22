@@ -3,7 +3,7 @@
 
   const MIN_POS = -100;
   const MAX_POS = 200;
-  let activeOffscreenDrag = false;
+  let activeOffscreenDrag = null;
 
   function api() {
     return window.ArtifexSceneEditorCore || null;
@@ -36,10 +36,13 @@
       field.min = String(MIN_POS);
       field.max = String(MAX_POS);
       const slider = field.closest('.value-slider-field-v18')?.querySelector('.value-slider-range-v18');
+      const readout = field.closest('.value-slider-field-v18')?.querySelector('.value-slider-readout-v18');
       if (slider) {
         slider.min = String(MIN_POS);
         slider.max = String(MAX_POS);
+        slider.value = field.value || 0;
       }
+      if (readout) readout.textContent = field.value || '0';
     });
   }
 
@@ -50,50 +53,73 @@
     node.style.top = `${item.y ?? 0}%`;
     setField('itemX', item.x ?? 0);
     setField('itemY', item.y ?? 0);
-    const xSlider = document.getElementById('itemX')?.closest('.value-slider-field-v18')?.querySelector('.value-slider-range-v18');
-    const ySlider = document.getElementById('itemY')?.closest('.value-slider-field-v18')?.querySelector('.value-slider-range-v18');
-    if (xSlider) xSlider.value = item.x ?? 0;
-    if (ySlider) ySlider.value = item.y ?? 0;
+    updateNumberBounds();
   }
 
-  function moveSelectedToPointer(event) {
-    if (!activeOffscreenDrag && !document.body.classList.contains('v13e-centre-dragging')) return;
+  function ensureDragStart(item) {
+    if (!activeOffscreenDrag || !item) return false;
+    if (activeOffscreenDrag.startItemX === null || activeOffscreenDrag.startItemY === null) {
+      activeOffscreenDrag.startItemX = Number(item.x || 0);
+      activeOffscreenDrag.startItemY = Number(item.y || 0);
+    }
+    return true;
+  }
+
+  function moveSelectedByDelta(event) {
+    if (!activeOffscreenDrag) return;
     const item = selectedItem();
     const stage = document.getElementById('stage');
-    if (!item || !stage) return;
+    if (!item || !stage || !ensureDragStart(item)) return;
     const rect = stage.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
-    const width = Number(item.width || 0);
-    const height = Number(item.height || 0);
-    const nextX = ((event.clientX - rect.left) / rect.width) * 100 - width / 2;
-    const nextY = ((event.clientY - rect.top) / rect.height) * 100 - height / 2;
-    item.x = Number(clamp(nextX, MIN_POS, MAX_POS).toFixed(3));
-    item.y = Number(clamp(nextY, MIN_POS, MAX_POS).toFixed(3));
+
+    const dx = ((event.clientX - activeOffscreenDrag.startClientX) / rect.width) * 100;
+    const dy = ((event.clientY - activeOffscreenDrag.startClientY) / rect.height) * 100;
+    item.x = Number(clamp(activeOffscreenDrag.startItemX + dx, MIN_POS, MAX_POS).toFixed(3));
+    item.y = Number(clamp(activeOffscreenDrag.startItemY + dy, MIN_POS, MAX_POS).toFixed(3));
     applyItemPosition(item);
     api()?.saveWorkingCopySoon?.('offscreen drag');
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
   }
 
   function begin(event) {
-    if (!event.target.closest?.('.move-handle')) return;
-    activeOffscreenDrag = true;
+    const handle = event.target.closest?.('.move-handle');
+    if (!handle || event.button === 2) return;
+    const node = handle.closest?.('.scene-item[data-stage-id]');
+    if (!node) return;
+    activeOffscreenDrag = {
+      id: node.dataset.stageId || '',
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startItemX: null,
+      startItemY: null
+    };
     updateNumberBounds();
-    requestAnimationFrame(() => moveSelectedToPointer(event));
+    requestAnimationFrame(() => {
+      const item = selectedItem();
+      if (item && activeOffscreenDrag) ensureDragStart(item);
+    });
   }
 
   function end() {
     if (!activeOffscreenDrag) return;
-    activeOffscreenDrag = false;
+    activeOffscreenDrag = null;
     api()?.saveWorkingCopySoon?.('offscreen drag');
+    updateNumberBounds();
   }
 
   function install() {
     updateNumberBounds();
   }
 
-  document.addEventListener('pointerdown', begin, true);
-  document.addEventListener('pointermove', moveSelectedToPointer, false);
-  document.addEventListener('pointerup', () => { end(); install(); }, false);
-  document.addEventListener('pointercancel', end, false);
+  window.addEventListener('pointerdown', begin, true);
+  window.addEventListener('pointermove', moveSelectedByDelta, true);
+  window.addEventListener('pointerup', () => { end(); install(); }, true);
+  window.addEventListener('pointercancel', end, true);
   document.addEventListener('input', install, true);
   document.addEventListener('change', install, true);
   window.addEventListener('blur', end);
