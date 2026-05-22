@@ -26,7 +26,7 @@
 
   function setField(id, value) {
     const field = document.getElementById(id);
-    if (field) field.value = value;
+    if (field && document.activeElement !== field) field.value = value;
   }
 
   function paintItems() {
@@ -84,7 +84,13 @@
         paintItems();
         editor.saveWorkingCopySoon?.('rotation');
       });
-      rotation.addEventListener('change', () => editor.renderWorkAreaOnly?.());
+      rotation.addEventListener('change', () => {
+        const current = selectedItem();
+        if (!current) return;
+        current.rotation = Number(rotation.value || 0);
+        paintItems();
+        editor.saveWorkingCopySoon?.('rotation');
+      });
     }
     if (origin && origin.dataset.v16Bound !== 'true') {
       origin.dataset.v16Bound = 'true';
@@ -99,6 +105,12 @@
     syncFields(item);
     paintItems();
     addSizeHandles();
+  }
+
+  function safeRunTransformShell(event) {
+    const target = event?.target;
+    if (target?.closest?.('#itemRotation, #itemRotationOrigin, .real-rotation-controls-v16')) return;
+    runTransformShell();
   }
 
   function addSizeHandles() {
@@ -183,9 +195,9 @@
   }
 
   window.addEventListener('load', runTransformShell);
-  document.addEventListener('click', runTransformShell, true);
-  document.addEventListener('input', runTransformShell, true);
-  document.addEventListener('change', runTransformShell, true);
+  document.addEventListener('click', safeRunTransformShell, true);
+  document.addEventListener('input', safeRunTransformShell, true);
+  document.addEventListener('change', safeRunTransformShell, true);
   document.addEventListener('pointerup', runTransformShell, true);
   setInterval(runTransformShell, 1000);
   runTransformShell();
