@@ -66,3 +66,15 @@
   letter-spacing: .04em;
   text-transform: uppercase;
 }
+
+body:not(.aspect-lock-enabled-v23):not(.wrap-box-enabled-v23) .scene-item img,
+body:not(.aspect-lock-enabled-v23):not(.wrap-box-enabled-v23) .scene-item .small {
+  object-fit: fill !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+body.aspect-lock-enabled-v23 .scene-item img,
+body.wrap-box-enabled-v23 .scene-item img {
+  object-fit: contain !important;
+}
