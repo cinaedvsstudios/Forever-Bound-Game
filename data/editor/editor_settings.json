@@ -1,12 +1,22 @@
 {
   "id": "artifex_editor_settings",
-  "version": "0.2.1",
+  "version": "0.4.1",
   "defaultScreenType": "static",
   "defaultGridSize": 40,
+  "defaultGrid": {
+    "columns": 20,
+    "rows": 10
+  },
   "snapToGrid": false,
   "showGuidesByDefault": true,
   "showJsonPreviewByDefault": true,
   "showRightPanelByDefault": false,
+  "workspaceZoom": 1,
+  "defaultFiles": {
+    "static": "data/screens/title_screen.json",
+    "travel": "data/scenes/ch00_q00_forest_route.json",
+    "ui": "data/ui/ui_layout_default.json"
+  },
   "defaultVolumes": {
     "music": 0.55,
     "ambience": 0.45,
@@ -56,6 +66,10 @@
     {
       "label": "Map Data",
       "path": "data/map/"
+    },
+    {
+      "label": "UI Data",
+      "path": "data/ui/"
     }
   ],
   "help": {
