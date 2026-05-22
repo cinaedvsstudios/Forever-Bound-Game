@@ -112,8 +112,23 @@
     updateNumberBounds();
   }
 
+  function loadAspectControls() {
+    if (!document.querySelector('link[href="./scene-editor-v23-aspect-controls.css"]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = './scene-editor-v23-aspect-controls.css';
+      document.head.appendChild(link);
+    }
+    if (!document.querySelector('script[src="./scene-editor-v23-aspect-controls.js"]')) {
+      const script = document.createElement('script');
+      script.src = './scene-editor-v23-aspect-controls.js';
+      document.body.appendChild(script);
+    }
+  }
+
   function install() {
     updateNumberBounds();
+    loadAspectControls();
   }
 
   window.addEventListener('pointerdown', begin, true);
