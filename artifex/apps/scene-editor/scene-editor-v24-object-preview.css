@@ -73,6 +73,20 @@
   flex: 0 0 auto;
 }
 
+.object-preview-zoom-v24 {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 132px;
+  color: #f1dcc2;
+  font-size: 11px;
+}
+
+.object-preview-zoom-v24 input {
+  width: 92px;
+  accent-color: #7d2a91;
+}
+
 .object-preview-bg-v24,
 .object-preview-close-v24 {
   width: 26px;
@@ -106,20 +120,33 @@
   place-items: center;
   overflow: hidden;
   background: #000;
+  cursor: default;
+}
+
+.object-preview-stage-v24.is-panning-v24 {
+  cursor: grabbing;
 }
 
 .object-preview-stage-v24[data-bg="black"] { background: #000; }
 .object-preview-stage-v24[data-bg="white"] { background: #fff; }
 .object-preview-stage-v24[data-bg="green"] { background: #00a85a; }
 
+.object-preview-pan-layer-v24 {
+  position: relative;
+  display: grid;
+  place-items: center;
+  transform-origin: center center;
+  will-change: transform;
+}
+
 .object-preview-object-v24 {
   position: relative;
   display: grid;
   place-items: center;
-  max-width: 88%;
-  max-height: 84%;
-  min-width: 34px;
-  min-height: 34px;
+  max-width: none;
+  max-height: none;
+  min-width: 12px;
+  min-height: 12px;
   transform-origin: center center;
   pointer-events: none;
 }
