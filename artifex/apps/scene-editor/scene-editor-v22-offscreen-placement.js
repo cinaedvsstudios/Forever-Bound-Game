@@ -112,47 +112,14 @@
     updateNumberBounds();
   }
 
-  function loadHelper(cssHref, scriptSrc) {
-    if (cssHref && !document.querySelector(`link[href="${cssHref}"]`)) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = cssHref;
-      document.head.appendChild(link);
-    }
-    if (scriptSrc && !document.querySelector(`script[src="${scriptSrc}"]`)) {
-      const script = document.createElement('script');
-      script.src = scriptSrc;
-      document.body.appendChild(script);
-    }
-  }
-
-  function loadAspectControls() {
-    loadHelper('./scene-editor-v23-aspect-controls.css', './scene-editor-v23-aspect-controls.js');
-  }
-
-  function loadPreviewControls() {
-    loadHelper('./scene-editor-v24-object-preview.css', './scene-editor-v24-object-preview.js');
-  }
-
-  function loadMenuPolish() {
-    loadHelper('./scene-editor-v25-menu-polish.css', './scene-editor-v25-menu-polish.js');
-  }
-
-  function install() {
-    updateNumberBounds();
-    loadAspectControls();
-    loadPreviewControls();
-    loadMenuPolish();
-  }
-
   window.addEventListener('pointerdown', begin, true);
   window.addEventListener('pointermove', moveSelectedByDelta, true);
-  window.addEventListener('pointerup', () => { end(); install(); }, true);
+  window.addEventListener('pointerup', end, true);
   window.addEventListener('pointercancel', end, true);
-  document.addEventListener('input', install, true);
-  document.addEventListener('change', install, true);
+  document.addEventListener('input', updateNumberBounds, true);
+  document.addEventListener('change', updateNumberBounds, true);
   window.addEventListener('blur', end);
-  window.addEventListener('load', install);
-  setInterval(install, 900);
-  install();
+  window.addEventListener('load', updateNumberBounds);
+  setInterval(updateNumberBounds, 1200);
+  updateNumberBounds();
 })();
