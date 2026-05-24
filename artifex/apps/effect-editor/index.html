@@ -255,6 +255,22 @@
                             <span class="text-artifex-goldMuted">Last Saved:</span>
                             <span id="comp-last-saved" class="text-gray-400 font-mono">Never Saved</span>
                         </div>
+                        <div id="comp-thumbnail-panel" class="border border-artifex-border/60 bg-artifex-dark/70 rounded-xl p-2.5 space-y-2" title="Capture a square preview image for this reusable FX asset.">
+                            <div class="flex items-center justify-between">
+                                <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Library Thumbnail</span>
+                                <span id="comp-thumbnail-status" class="text-[9px] text-gray-500 font-mono">Not captured</span>
+                            </div>
+                            <div class="relative aspect-square rounded-lg overflow-hidden border border-artifex-border bg-[#0f0c0b] flex items-center justify-center shadow-inner">
+                                <img id="comp-thumbnail-img" alt="FX thumbnail preview" class="hidden w-full h-full object-contain">
+                                <div id="comp-thumbnail-empty" class="text-[10px] text-artifex-goldMuted text-center px-3 leading-relaxed">
+                                    Pause on a good frame, then click Camera.
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="captureThumbnail()" title="Capture a square thumbnail from the current live effect preview." class="py-1.5 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold transition rounded-lg text-[10px] font-semibold border border-artifex-border focus:outline-none">📸 Capture</button>
+                                <button onclick="clearThumbnail()" title="Remove the saved thumbnail from this composition." class="py-1.5 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-goldMuted hover:text-white transition rounded-lg text-[10px] font-semibold border border-artifex-border focus:outline-none">Clear</button>
+                            </div>
+                        </div>
                         <button onclick="openVariationModal()" title="Pack and save these layers as a new custom composition." class="w-full py-2 bg-gradient-to-r from-artifex-purple to-[#4a0d4c] hover:opacity-90 text-white transition rounded-xl text-xs font-semibold shadow-[0_4px_10px_rgba(158,1,206,0.4)] focus:outline-none">
                             Save New Version
                         </button>
@@ -579,6 +595,10 @@ engine.start();</pre>
                 <div class="absolute top-4 left-4 z-20 bg-artifex-panel/95 border border-artifex-border backdrop-blur-md px-3 py-1.5 rounded-xl flex items-center gap-2 shadow-[0_4px_12px_rgba(0,0,0,0.7)] select-none">
                     <button onclick="togglePause()" id="btn-pause" title="Play / Pause Simulation" class="text-artifex-gold hover:text-white transition focus:outline-none flex items-center gap-1.5">
                         <span id="icon-pause" class="text-[14px]">⏸️</span> <span class="text-[9px] font-bold font-mono tracking-wider pt-0.5">PAUSE</span>
+                    </button>
+                    <span class="w-px h-4 bg-artifex-border"></span>
+                    <button onclick="captureThumbnail()" id="btn-thumbnail-camera" title="Capture a square FX library thumbnail from the current frame." class="text-artifex-gold hover:text-white transition focus:outline-none flex items-center gap-1.5">
+                        <span class="text-[14px]">📸</span> <span class="text-[9px] font-bold font-mono tracking-wider pt-0.5">CAMERA</span>
                     </button>
                 </div>
 
@@ -1078,6 +1098,7 @@ engine.start();</pre>
         let activeLayerIndex = -1;
         let layerClipboard = null; 
         let lastSavedTime = null;
+        let currentThumbnail = null;
         let isPaused = false;
         
         let emitterPos = { x: 0, y: 0 };
@@ -2322,8 +2343,10 @@ engine.start();</pre>
                 id: generateHashID(),
                 name: "",
                 tags: "",
+                thumbnail: null,
                 layers: []
             };
+            currentThumbnail = null;
             activeLayerIndex = -1;
             
             syncUIFromConfig();
@@ -2554,6 +2577,8 @@ engine.start();</pre>
 
             const lastSavedNode = document.getElementById('comp-last-saved');
             if (lastSavedNode) lastSavedNode.innerText = lastSavedTime || "Never Saved";
+            currentThumbnail = composition.thumbnail || currentThumbnail || null;
+            updateThumbnailPreview();
 
             populateCompLoaderDropdown();
 
@@ -3162,6 +3187,8 @@ engine.start();</pre>
 
         function loadComposition(comp) {
             composition = JSON.parse(JSON.stringify(comp));
+            if (!composition.thumbnail) composition.thumbnail = null;
+            currentThumbnail = composition.thumbnail || null;
             composition.layers.forEach(layer => {
                 layer._particles = [];
                 if (layer.isVisible === undefined) layer.isVisible = true;
@@ -3240,6 +3267,104 @@ engine.start();</pre>
             });
         }
 
+        function updateThumbnailPreview() {
+            const thumb = currentThumbnail || composition?.thumbnail || null;
+            const img = document.getElementById('comp-thumbnail-img');
+            const empty = document.getElementById('comp-thumbnail-empty');
+            const status = document.getElementById('comp-thumbnail-status');
+            if (!img || !empty || !status) return;
+
+            if (thumb && thumb.dataUrl) {
+                img.src = thumb.dataUrl;
+                img.classList.remove('hidden');
+                empty.classList.add('hidden');
+                status.innerText = 'Captured';
+                status.className = 'text-[9px] text-emerald-400 font-mono';
+            } else {
+                img.removeAttribute('src');
+                img.classList.add('hidden');
+                empty.classList.remove('hidden');
+                status.innerText = 'Not captured';
+                status.className = 'text-[9px] text-gray-500 font-mono';
+            }
+        }
+
+        function captureThumbnail() {
+            if (!composition) {
+                showToast('No composition is loaded to capture.', 'error');
+                return;
+            }
+
+            try {
+                const thumb = renderEffectOnlyThumbnail(512);
+                currentThumbnail = thumb;
+                composition.thumbnail = thumb;
+                updateThumbnailPreview();
+                syncJSONOutput();
+                showToast('FX library thumbnail captured.', 'success');
+            } catch (err) {
+                console.error('Thumbnail capture failed', err);
+                showToast('Thumbnail capture failed. Check the console for details.', 'error');
+            }
+        }
+
+        function clearThumbnail() {
+            currentThumbnail = null;
+            if (composition) composition.thumbnail = null;
+            updateThumbnailPreview();
+            syncJSONOutput();
+            showToast('FX thumbnail cleared.', 'info');
+        }
+
+        function renderEffectOnlyThumbnail(size = 512) {
+            const output = document.createElement('canvas');
+            output.width = size;
+            output.height = size;
+            const thumbCtx = output.getContext('2d');
+
+            const bg = thumbCtx.createRadialGradient(size / 2, size / 2, size * 0.1, size / 2, size / 2, size * 0.72);
+            bg.addColorStop(0, '#1e1714');
+            bg.addColorStop(1, '#0f0c0b');
+            thumbCtx.fillStyle = bg;
+            thumbCtx.fillRect(0, 0, size, size);
+
+            if (composition && composition.layers && gridBounds.width > 0 && gridBounds.height > 0) {
+                const padding = 42;
+                const sourceSize = Math.max(gridBounds.width, gridBounds.height);
+                const scale = (size - padding * 2) / sourceSize;
+                const drawW = gridBounds.width * scale;
+                const drawH = gridBounds.height * scale;
+                const offsetX = (size - drawW) / 2 - gridBounds.left * scale;
+                const offsetY = (size - drawH) / 2 - gridBounds.top * scale;
+
+                thumbCtx.save();
+                thumbCtx.translate(offsetX, offsetY);
+                thumbCtx.scale(scale, scale);
+
+                composition.layers.forEach(layer => {
+                    if (!layer || layer.isVisible === false || !Array.isArray(layer._particles)) return;
+                    thumbCtx.globalCompositeOperation = layer.visual?.composite || 'source-over';
+                    layer._particles.forEach(particle => {
+                        if (particle && typeof particle.draw === 'function') {
+                            particle.draw(thumbCtx);
+                        }
+                    });
+                });
+
+                thumbCtx.restore();
+            }
+
+            const dataUrl = output.toDataURL('image/jpeg', 0.86);
+            return {
+                type: 'image/jpeg',
+                width: size,
+                height: size,
+                background: '#0f0c0b',
+                capturedAt: new Date().toISOString(),
+                dataUrl
+            };
+        }
+
         function openVariationModal() {
             const varNameNode = document.getElementById('modal-variation-name');
             const varTagsNode = document.getElementById('modal-variation-tags');
@@ -3287,6 +3412,7 @@ engine.start();</pre>
             clonedObj.name = name;
             clonedObj.tags = tags;
             clonedObj.id = generateHashID();
+            clonedObj.thumbnail = currentThumbnail || composition.thumbnail || null;
 
             customPresets.unshift(clonedObj);
             localStorage.setItem('artifex_custom_comps_v2', JSON.stringify(customPresets));
