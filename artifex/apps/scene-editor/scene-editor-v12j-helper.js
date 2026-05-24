@@ -9,16 +9,13 @@
 
   function removeHddFromPill() {
     document.querySelectorAll('.file-pill-save').forEach((row) => {
-      const nodes = Array.from(row.childNodes);
-      let remove = false;
-      nodes.forEach((node) => {
-        const text = node.textContent?.trim().toLowerCase() || '';
-        if (node.classList?.contains('file-pill-sep') || text === '|' || text === 'hdd:' || text.startsWith('hdd:')) remove = true;
-        if (remove && node.classList?.contains('file-pill-value') && !node.previousElementSibling?.textContent?.trim().toLowerCase().startsWith('local')) {
-          node.remove();
-          return;
-        }
-        if (remove) node.remove();
+      const children = Array.from(row.children);
+      const icon = children.find((node) => node.classList.contains('file-pill-icon'));
+      const localLabel = children.find((node) => node.classList.contains('file-pill-label') && node.textContent.trim().toLowerCase().startsWith('local'));
+      const localValue = children.find((node) => node.classList.contains('file-pill-value'));
+
+      children.forEach((node) => {
+        if (node !== icon && node !== localLabel && node !== localValue) node.remove();
       });
     });
   }
