@@ -145,6 +145,13 @@
                     <button onclick="setWorkspaceMode('overlay')" class="w-full text-left px-4 py-1.5 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center justify-between" title="Adds dashed camera bounding lines.">
                         <span>Video Overlay</span> <span id="ws-mode-overlay-check" class="text-[10px] text-emerald-400 hidden">✓</span>
                     </button>
+                    <label class="w-full text-left px-4 py-1.5 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center justify-between cursor-pointer" title="Choose an image or video plate to use behind the effect while previewing. Export remains effect-only.">
+                        <span>Choose Reference Image / Video</span> <span class="text-[10px] text-artifex-goldMuted">LOAD</span>
+                        <input type="file" id="reference-media-input" accept="image/*,video/*" class="hidden" onchange="handleReferenceMediaSelect(event)" />
+                    </label>
+                    <button onclick="clearReferenceMedia()" class="w-full text-left px-4 py-1.5 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-400 flex items-center justify-between" title="Remove the current reference plate.">
+                        <span>Clear Reference Plate</span> <span id="reference-media-status" class="text-[9px] text-slate-500">NONE</span>
+                    </button>
                     <div class="border-t border-artifex-border my-1"></div>
                     <button onclick="toggleViewCheckbox('show-emitter-hud')" class="w-full text-left px-4 py-1.5 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center justify-between" title="Toggle the emitter guide and direction preview.">
                         <span>Show Emitter Guide</span> <span id="view-hud-status" class="text-[9px] text-green-500">ON</span>
@@ -302,6 +309,7 @@
                     </div>
                     <div id="card-body-quick-edit" class="p-4 space-y-3">
                         <div class="text-[10px] leading-relaxed text-artifex-goldMuted">Quick edits change the selected layer only. They are meant as fast starting points, not final presets.</div>
+                        <button onclick="resetActiveLayerDefaults()" class="w-full py-1.5 px-2 bg-artifex-darkGray hover:bg-artifex-gray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold" title="Reset the selected layer to the default clean particle settings while keeping its layer name.">Reset Layer to Default</button>
                         <section class="border border-artifex-border/50 bg-artifex-dark/35 rounded-xl p-3 space-y-2">
                             <div class="flex items-center justify-between border-b border-artifex-border/40 pb-2">
                                 <div class="flex items-center gap-2">
@@ -315,6 +323,24 @@
                                 <button onclick="applyQuickEditPreset('sharp-sparks')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Sharp Sparks</button>
                                 <button onclick="applyQuickEditPreset('magic-fade')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Fade In/Out</button>
                                 <button onclick="applyQuickEditPreset('high-additive')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Bright Add</button>
+                            </div>
+                        </section>
+                        <section class="border border-artifex-border/50 bg-artifex-dark/35 rounded-xl p-3 space-y-2">
+                            <div class="flex items-center justify-between border-b border-artifex-border/40 pb-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-artifex-purpleAccent shadow-[0_0_8px_#9e01ce]"></span>
+                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Colour Helpers</span>
+                                </div>
+                                <span class="text-[11px] opacity-70 cursor-help" title="Applies a consistent colour palette and alpha curve to the selected layer without changing its motion.">ℹ️</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="applyColorHelper('fire')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Fire</button>
+                                <button onclick="applyColorHelper('ice')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Ice</button>
+                                <button onclick="applyColorHelper('water')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Water</button>
+                                <button onclick="applyColorHelper('dark-magic')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Dark Magic</button>
+                                <button onclick="applyColorHelper('good-magic')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Good Magic</button>
+                                <button onclick="applyColorHelper('evil')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Evil</button>
+                                <button onclick="applyColorHelper('smoke')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold col-span-2">Smoke</button>
                             </div>
                         </section>
                         <section class="border border-artifex-border/50 bg-artifex-dark/35 rounded-xl p-3 space-y-2">
@@ -739,6 +765,16 @@ engine.start();</pre>
                     <button onclick="captureThumbnail()" id="btn-thumbnail-camera" title="Capture a square FX library thumbnail from the current frame." class="text-artifex-gold hover:text-white transition focus:outline-none flex items-center gap-1.5">
                         <span class="text-[14px]">📸</span> <span class="text-[9px] font-bold font-mono tracking-wider pt-0.5">CAMERA</span>
                     </button>
+                    <span class="w-px h-4 bg-artifex-border"></span>
+                    <button onclick="cycleWorkspaceView()" id="btn-view-cycle" title="Cycle workspace background: dark, white, reference image/video." class="text-artifex-gold hover:text-white transition focus:outline-none flex items-center gap-1.5">
+                        <span class="text-[14px]">👁️</span> <span class="text-[9px] font-bold font-mono tracking-wider pt-0.5" id="view-cycle-label">DARK</span>
+                    </button>
+                </div>
+                <div id="video-reference-controls" class="hidden absolute top-16 left-4 z-20 bg-artifex-panel/95 border border-artifex-border backdrop-blur-md px-3 py-1.5 rounded-xl items-center gap-2 shadow-[0_4px_12px_rgba(0,0,0,0.7)] select-none">
+                    <button onclick="toggleReferenceVideoPlayback()" id="btn-reference-video-play" title="Play or pause the reference video plate." class="text-artifex-gold hover:text-white transition focus:outline-none text-[10px] font-bold font-mono">▶︎/Ⅱ</button>
+                    <span class="w-px h-4 bg-artifex-border"></span>
+                    <button onclick="stepReferenceVideoFrame(-1)" title="Step reference video backward one frame." class="text-artifex-gold hover:text-white transition focus:outline-none text-[10px] font-bold font-mono">◀ FRAME</button>
+                    <button onclick="stepReferenceVideoFrame(1)" title="Step reference video forward one frame." class="text-artifex-gold hover:text-white transition focus:outline-none text-[10px] font-bold font-mono">FRAME ▶</button>
                 </div>
 
                 <div class="absolute top-4 right-4 z-20 bg-artifex-panel/95 border border-artifex-border backdrop-blur-md px-3 py-1.5 rounded-xl flex items-center gap-2 shadow-[0_4px_12px_rgba(0,0,0,0.7)] select-none" title="Zoom Viewport relative to selected emitter">
@@ -941,6 +977,8 @@ engine.start();</pre>
         let panStartY = 0;
 
         let workspaceMode = 'default';
+        let workspaceViewMode = 'dark';
+        let referenceMedia = null;
         let performanceMode = 'full';
         let isResizingH = false;
         let isResizingV = false;
@@ -977,6 +1015,86 @@ engine.start();</pre>
             interpolateColorAlpha,
             interpolateColorsMulti
         } = window.ArtifexFxRuntime;
+
+        const BUILT_IN_BRUSHES = {
+            auroraRing: { file: 'AuroraRing.png', path: './brushes/AuroraRing.png', label: 'Aurora Ring' },
+            burst: { file: 'Burst01.png', path: './brushes/Burst01.png', label: 'Burst' },
+            fog1: { file: 'Fog001.png', path: './brushes/Fog001.png', label: 'Soft Fog' },
+            fog2: { file: 'Fog2001.png', path: './brushes/Fog2001.png', label: 'Dense Fog' },
+            fog3: { file: 'Fog3001.png', path: './brushes/Fog3001.png', label: 'Granular Fog' },
+            fireBlur: { file: 'Fire_Blur.png', path: './brushes/Fire_Blur.png', label: 'Fire Blur' },
+            fireSingle: { file: 'Fire_Single.png', path: './brushes/Fire_Single.png', label: 'Fire Wisp' },
+            halo: { file: 'Halo.png', path: './brushes/Halo.png', label: 'Halo' },
+            line1: { file: 'Line01.png', path: './brushes/Line01.png', label: 'Soft Line' },
+            line2: { file: 'Line02.png', path: './brushes/Line02.png', label: 'Wavy Line' },
+            particle1: { file: 'Particle01.png', path: './brushes/Particle01.png', label: 'Bright Orb' },
+            particle2: { file: 'Particle02.png', path: './brushes/Particle02.png', label: 'Soft Orb' },
+            shockwave: { file: 'Shockwave.png', path: './brushes/Shockwave.png', label: 'Shockwave' },
+            spark: { file: 'Spark002.png', path: './brushes/Spark002.png', label: 'Spark' },
+            star: { file: 'Star.png', path: './brushes/Star.png', label: 'Star Glint' },
+            thunder: { file: 'Thunder10.png', path: './brushes/Thunder10.png', label: 'Lightning' },
+            thunderBold: { file: 'Thunder_Bold.png', path: './brushes/Thunder_Bold.png', label: 'Lightning Spear' },
+            wind: { file: 'Wind.png', path: './brushes/Wind.png', label: 'Wind Curl' },
+            crystal: { file: 'Crystal001.png', path: './brushes/Crystal001.png', label: 'Crystal' },
+            kirakira: { file: 'kirakira.png', path: './brushes/kirakira.png', label: 'Kirakira' }
+        };
+
+        function applyBrushToLayer(layer, brushKey, options = {}) {
+            if (!layer || !layer.visual) return;
+            const brush = BUILT_IN_BRUSHES[brushKey];
+            if (!brush) return;
+            Object.assign(layer.visual, {
+                shapeMode: 'textureSprite',
+                sourceType: 'brush',
+                brush: brushKey,
+                shape: 'texture',
+                texture: brush.path,
+                textureName: brush.file,
+                textureDataUrl: null,
+                textureType: 'image/png',
+                useTextureAlpha: true,
+                fitMode: options.fitMode || layer.visual.fitMode || 'contain',
+                tintMode: options.tintMode || layer.visual.tintMode || 'source-atop',
+                blur: 0,
+                edgeBlur: 0
+            });
+        }
+
+        function drawWorkspaceBackground(ctx) {
+            if (gridBounds.width <= 0 || gridBounds.height <= 0) return;
+            ctx.save();
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(gridBounds.left, gridBounds.top, gridBounds.width, gridBounds.height, 12);
+            else ctx.rect(gridBounds.left, gridBounds.top, gridBounds.width, gridBounds.height);
+            ctx.clip();
+
+            if (workspaceViewMode === 'white') {
+                ctx.fillStyle = '#f4efe4';
+                ctx.fillRect(gridBounds.left, gridBounds.top, gridBounds.width, gridBounds.height);
+            } else {
+                ctx.fillStyle = '#090706';
+                ctx.fillRect(gridBounds.left, gridBounds.top, gridBounds.width, gridBounds.height);
+            }
+
+            if (workspaceViewMode === 'reference' && referenceMedia) {
+                const source = referenceMedia.type === 'video' ? referenceMedia.video : referenceMedia.image;
+                const ready = referenceMedia.type === 'video' ? source && source.readyState >= 2 : source && source.complete;
+                if (ready) {
+                    const srcW = source.videoWidth || source.naturalWidth || source.width || 1;
+                    const srcH = source.videoHeight || source.naturalHeight || source.height || 1;
+                    const scale = Math.min(gridBounds.width / srcW, gridBounds.height / srcH);
+                    const drawW = srcW * scale;
+                    const drawH = srcH * scale;
+                    const dx = gridBounds.left + (gridBounds.width - drawW) / 2;
+                    const dy = gridBounds.top + (gridBounds.height - drawH) / 2;
+                    ctx.drawImage(source, dx, dy, drawW, drawH);
+                    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+                    ctx.fillRect(gridBounds.left, gridBounds.top, gridBounds.width, gridBounds.height);
+                }
+            }
+            ctx.restore();
+        }
 
         function drawGrid(ctx) {
             const leftOffset = gridBounds.left;
@@ -1143,6 +1261,7 @@ engine.start();</pre>
 
             ctx.save();
             ctx.globalCompositeOperation = "source-over";
+            drawWorkspaceBackground(ctx);
             drawGrid(ctx);
             if (workspaceMode === 'overlay') drawVideoOverlayHUD(ctx);
             ctx.restore();
@@ -1601,6 +1720,86 @@ engine.start();</pre>
             } else {
                 btn.className = "w-full text-left px-2.5 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-goldMuted border border-artifex-border rounded-md transition font-semibold focus:outline-none shadow-[0_2px_5px_rgba(0,0,0,0.6)]";
             }
+        }
+
+        function updateWorkspaceViewUI() {
+            const label = document.getElementById('view-cycle-label');
+            if (label) label.innerText = workspaceViewMode === 'dark' ? 'DARK' : workspaceViewMode === 'white' ? 'WHITE' : 'REF';
+            const status = document.getElementById('reference-media-status');
+            if (status) {
+                status.innerText = referenceMedia ? referenceMedia.fileName || referenceMedia.type.toUpperCase() : 'NONE';
+                status.className = referenceMedia ? 'text-[9px] text-emerald-400 truncate max-w-[72px]' : 'text-[9px] text-slate-500';
+            }
+            const videoControls = document.getElementById('video-reference-controls');
+            if (videoControls) {
+                const showVideo = workspaceViewMode === 'reference' && referenceMedia && referenceMedia.type === 'video';
+                videoControls.classList.toggle('hidden', !showVideo);
+                videoControls.classList.toggle('flex', showVideo);
+            }
+        }
+
+        function cycleWorkspaceView() {
+            if (workspaceViewMode === 'dark') workspaceViewMode = 'white';
+            else if (workspaceViewMode === 'white') workspaceViewMode = 'reference';
+            else workspaceViewMode = 'dark';
+
+            if (workspaceViewMode === 'reference' && !referenceMedia) {
+                showToast('Reference view selected. Choose an image/video from View when ready.', 'info');
+            }
+            updateWorkspaceViewUI();
+        }
+
+        function handleReferenceMediaSelect(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            const previousUrl = referenceMedia && referenceMedia.url;
+            if (previousUrl) URL.revokeObjectURL(previousUrl);
+            const url = URL.createObjectURL(file);
+            referenceMedia = { type: file.type.startsWith('video/') ? 'video' : 'image', url, fileName: file.name };
+
+            if (referenceMedia.type === 'video') {
+                const video = document.createElement('video');
+                video.src = url;
+                video.muted = true;
+                video.loop = true;
+                video.playsInline = true;
+                video.preload = 'auto';
+                referenceMedia.video = video;
+            } else {
+                const img = new Image();
+                img.onload = () => updateWorkspaceViewUI();
+                img.src = url;
+                referenceMedia.image = img;
+            }
+            workspaceViewMode = 'reference';
+            closeAllDropdowns();
+            updateWorkspaceViewUI();
+            showToast(`Reference ${referenceMedia.type} loaded for preview. Export remains effect-only.`, 'success');
+            event.target.value = '';
+        }
+
+        function clearReferenceMedia() {
+            if (referenceMedia && referenceMedia.url) URL.revokeObjectURL(referenceMedia.url);
+            referenceMedia = null;
+            if (workspaceViewMode === 'reference') workspaceViewMode = 'dark';
+            closeAllDropdowns();
+            updateWorkspaceViewUI();
+            showToast('Reference plate cleared.', 'info');
+        }
+
+        function toggleReferenceVideoPlayback() {
+            if (!referenceMedia || referenceMedia.type !== 'video' || !referenceMedia.video) return;
+            if (referenceMedia.video.paused) referenceMedia.video.play().catch(() => showToast('Browser blocked video playback. Click again or use frame controls.', 'info'));
+            else referenceMedia.video.pause();
+        }
+
+        function stepReferenceVideoFrame(direction) {
+            if (!referenceMedia || referenceMedia.type !== 'video' || !referenceMedia.video) return;
+            const video = referenceMedia.video;
+            video.pause();
+            const frameStep = 1 / 30;
+            const next = Math.max(0, Math.min(video.duration || 0, video.currentTime + direction * frameStep));
+            if (Number.isFinite(next)) video.currentTime = next;
         }
 
         function setWorkspaceMode(mode) {
@@ -2823,10 +3022,10 @@ engine.start();</pre>
         }
 
 
-        function applyQuickEditPreset(presetId) {
-            if (activeLayerIndex === -1 || !composition || !composition.layers[activeLayerIndex]) {
+        function getSelectedLayerOrToast() {
+            if (activeLayerIndex === -1 || !composition || !composition.layers || !composition.layers[activeLayerIndex]) {
                 showToast('Select or insert an effect layer first.', 'info');
-                return;
+                return null;
             }
             const layer = composition.layers[activeLayerIndex];
             if (!layer.visual) layer.visual = {};
@@ -2835,6 +3034,63 @@ engine.start();</pre>
             if (!layer.life) layer.life = {};
             normalizeLayerVisualShapeConfig(layer);
             ensureLayerAlphaStops(layer);
+            return layer;
+        }
+
+        function finaliseLayerPresetChange(layer, message = 'Layer updated.') {
+            if (!layer) return;
+            if (layer.visual && layer.visual.colors) {
+                const len = layer.visual.colors.length;
+                if (!layer.visual.alphaStarts || layer.visual.alphaStarts.length !== len) layer.visual.alphaStarts = Array.from({ length: len }, (_, i) => i === 0 ? 0 : 1);
+                if (!layer.visual.alphaEnds || layer.visual.alphaEnds.length !== len) layer.visual.alphaEnds = Array.from({ length: len }, (_, i) => i === len - 1 ? 0 : 1);
+                layer.visual.alphas = layer.visual.colors.map((_, i) => Math.max(Number(layer.visual.alphaStarts[i] ?? 1), Number(layer.visual.alphaEnds[i] ?? 1)));
+            }
+            syncUIFromConfig();
+            renderLayerList();
+            showToast(message, 'success');
+        }
+
+        function resetActiveLayerDefaults() {
+            const layer = getSelectedLayerOrToast();
+            if (!layer) return;
+            const keepName = layer.layerName || layer.name || 'Effect Layer';
+            layer.layerName = keepName;
+            layer.isVisible = layer.isVisible !== false;
+            layer.effectType = 'particles';
+            layer.subType = 'default-particle-layer';
+            layer.emitter = { rate: 6, width: 12, widthUnit: 'PX' };
+            layer.physics = { speedMin: 2, speedMax: 6, angle: 270, spread: 45, gravityY: 0.04, friction: 0.985, orbitalForce: 0 };
+            layer.visual = {
+                shapeMode: 'builtInShape',
+                sourceType: 'shape',
+                shape: 'spark',
+                previousBuiltInShape: 'spark',
+                sizeStart: 7,
+                sizeEnd: 1,
+                rotation: 0,
+                colors: ['#ffffff', '#00a1d7'],
+                alphaStarts: [0.0, 0.8],
+                alphaEnds: [0.9, 0.0],
+                alphas: [0.9, 0.8],
+                blur: 0,
+                edgeBlur: 0,
+                glow: 18,
+                composite: 'lighter',
+                tintMode: 'none',
+                fitMode: 'contain',
+                useTextureAlpha: true,
+                texture: null,
+                textureDataUrl: null,
+                textureName: ''
+            };
+            layer.life = { durationMin: 30, durationMax: 70 };
+            layer._particles = [];
+            finaliseLayerPresetChange(layer, 'Layer reset to clean default settings.');
+        }
+
+        function applyQuickEditPreset(presetId) {
+            const layer = getSelectedLayerOrToast();
+            if (!layer) return;
 
             const setVisual = values => Object.assign(layer.visual, values);
             const setPhysics = values => Object.assign(layer.physics, values);
@@ -2843,56 +3099,80 @@ engine.start();</pre>
 
             const presets = {
                 'soft-glow': () => {
-                    setVisual({ glow: 24, blur: 1.5, edgeBlur: 0, composite: 'screen', alphaStarts: [0, 0.55, 0], alphaEnds: [0.25, 0.75, 0] });
-                    if (!layer.visual.colors || layer.visual.colors.length < 3) layer.visual.colors = ['#ffffff', '#00a1d7', '#0f0c0b'];
+                    applyBrushToLayer(layer, 'particle2', { tintMode: 'source-atop', fitMode: 'contain' });
+                    setVisual({ glow: 24, blur: 0, edgeBlur: 0, composite: 'screen', sizeStart: 26, sizeEnd: 54, alphaStarts: [0, 0.55, 0], alphaEnds: [0.2, 0.72, 0] });
+                    if (!layer.visual.colors || layer.visual.colors.length < 3) layer.visual.colors = ['#ffffff', '#8adfff', '#0f0c0b'];
                 },
                 'sharp-sparks': () => {
-                    setVisual({ shapeMode: 'builtInShape', shape: 'spark', previousBuiltInShape: 'spark', sizeStart: 7, sizeEnd: 0.5, glow: 18, blur: 0, edgeBlur: 0, composite: 'lighter', rotation: 0 });
+                    applyBrushToLayer(layer, 'spark', { tintMode: 'source-atop', fitMode: 'contain' });
+                    setVisual({ sizeStart: 8, sizeEnd: 1, glow: 18, blur: 0, edgeBlur: 0, composite: 'lighter', rotation: 0, alphaStarts: [0.05, 0.85, 0], alphaEnds: [0.95, 0.5, 0] });
+                    if (!layer.visual.colors || layer.visual.colors.length < 3) layer.visual.colors = ['#ffffff', '#ffd23f', '#ee4266'];
                     setPhysics({ spread: 65, speedMin: 4, speedMax: 12, gravityY: 0.12, friction: 0.98 });
                 },
                 'magic-fade': () => {
-                    setVisual({ alphaStarts: [0, 0.85, 0], alphaEnds: [0.35, 1, 0], glow: Math.max(18, Number(layer.visual.glow || 0)), composite: layer.visual.composite || 'screen' });
+                    applyBrushToLayer(layer, 'particle2', { tintMode: 'source-atop', fitMode: 'contain' });
+                    setVisual({ alphaStarts: [0, 0.85, 0], alphaEnds: [0.25, 1, 0], glow: Math.max(18, Number(layer.visual.glow || 0)), blur: 0, edgeBlur: 0, composite: layer.visual.composite || 'screen' });
                     if (!layer.visual.colors || layer.visual.colors.length < 3) layer.visual.colors = ['#ffffff', '#9e01ce', '#0f0c0b'];
                 },
                 'high-additive': () => {
-                    setVisual({ glow: 35, blur: 0, edgeBlur: 0, composite: 'lighter', alphaStarts: [0.15, 1, 0], alphaEnds: [0.85, 1, 0] });
+                    applyBrushToLayer(layer, 'burst', { tintMode: 'source-atop', fitMode: 'contain' });
+                    setVisual({ glow: 34, blur: 0, edgeBlur: 0, composite: 'lighter', sizeStart: 18, sizeEnd: 36, alphaStarts: [0.15, 1, 0], alphaEnds: [0.85, 1, 0] });
                     if (!layer.visual.colors || layer.visual.colors.length < 3) layer.visual.colors = ['#ffffff', '#ffd23f', '#9e01ce'];
                 },
                 'slow-drift': () => {
-                    setEmitter({ rate: Math.min(5, Number(layer.emitter.rate || 3) || 3) });
-                    setPhysics({ speedMin: 0.2, speedMax: 1.1, spread: 45, gravityY: -0.02, friction: 0.99, orbitalForce: 0.05 });
+                    applyBrushToLayer(layer, 'fog1', { tintMode: 'source-atop', fitMode: 'contain' });
+                    layer.effectType = 'gas';
+                    setVisual({ blur: 0, edgeBlur: 0, glow: 8, composite: 'screen', sizeStart: 34, sizeEnd: 80, alphaStarts: [0, 0.35, 0], alphaEnds: [0.08, 0.5, 0] });
+                    setEmitter({ rate: Math.min(4, Number(layer.emitter.rate || 3) || 3), width: Math.max(30, Number(layer.emitter.width || 30)), widthUnit: layer.emitter.widthUnit || 'PX' });
+                    setPhysics({ speedMin: 0.2, speedMax: 1.0, spread: 55, gravityY: -0.02, friction: 0.992, orbitalForce: 0.04 });
                     setLife({ durationMin: 90, durationMax: 160 });
                 },
                 'burst-out': () => {
+                    applyBrushToLayer(layer, 'burst', { tintMode: 'source-atop', fitMode: 'contain' });
                     setEmitter({ rate: Math.max(10, Number(layer.emitter.rate || 10) || 10), width: 1, widthUnit: 'PX' });
                     setPhysics({ speedMin: 6, speedMax: 16, angle: 0, spread: 360, gravityY: 0.05, friction: 0.96, orbitalForce: 0 });
+                    setVisual({ sizeStart: 18, sizeEnd: 3, glow: 28, blur: 0, edgeBlur: 0, composite: 'lighter', alphaStarts: [0.2, 1, 0], alphaEnds: [0.85, 0.6, 0] });
                     setLife({ durationMin: 18, durationMax: 42 });
                 },
                 'rise-up': () => {
-                    setEmitter({ rate: Math.max(4, Number(layer.emitter.rate || 4) || 4) });
+                    applyBrushToLayer(layer, 'line1', { tintMode: 'source-atop', fitMode: 'contain' });
+                    setEmitter({ rate: Math.max(4, Number(layer.emitter.rate || 4) || 4), width: Math.max(20, Number(layer.emitter.width || 20)), widthUnit: layer.emitter.widthUnit || 'PX' });
                     setPhysics({ speedMin: 1, speedMax: 4, angle: 270, spread: 25, gravityY: -0.08, friction: 0.985, orbitalForce: 0.05 });
+                    setVisual({ sizeStart: 18, sizeEnd: 3, rotation: 0, glow: 18, blur: 0, edgeBlur: 0, composite: 'lighter', alphaStarts: [0, 0.8, 0], alphaEnds: [0.4, 0.9, 0] });
                     setLife({ durationMin: 55, durationMax: 105 });
                 },
                 'tight-trail': () => {
                     layer.effectType = 'ribbon';
+                    applyBrushToLayer(layer, 'line2', { tintMode: 'source-atop', fitMode: 'contain' });
                     setEmitter({ rate: 12, width: 1, widthUnit: 'PX' });
-                    setPhysics({ speedMin: 0.2, speedMax: 0.9, angle: 0, spread: 5, gravityY: 0, friction: 1, orbitalForce: 1.8 });
-                    setVisual({ sizeStart: 10, sizeEnd: 0.2, glow: 24, blur: 0, edgeBlur: 0, composite: 'lighter' });
-                    setLife({ durationMin: 16, durationMax: 28 });
+                    setPhysics({ speedMin: 0.2, speedMax: 0.9, angle: 0, spread: 7, gravityY: 0, friction: 1, orbitalForce: 1.6 });
+                    setVisual({ sizeStart: 11, sizeEnd: 0.2, glow: 24, blur: 0, edgeBlur: 0, composite: 'lighter', alphaStarts: [0.0, 0.95, 0.0], alphaEnds: [0.25, 0.65, 0.0], colors: layer.visual.colors && layer.visual.colors.length >= 3 ? layer.visual.colors : ['#ffffff', '#9e01ce', '#00a1d7'] });
+                    setLife({ durationMin: 28, durationMax: 52 });
                 }
             };
 
             if (!presets[presetId]) return;
             presets[presetId]();
-            if (layer.visual.colors) {
-                const len = layer.visual.colors.length;
-                if (!layer.visual.alphaStarts || layer.visual.alphaStarts.length !== len) layer.visual.alphaStarts = Array.from({ length: len }, (_, i) => i === 0 ? 0 : 1);
-                if (!layer.visual.alphaEnds || layer.visual.alphaEnds.length !== len) layer.visual.alphaEnds = Array.from({ length: len }, (_, i) => i === len - 1 ? 0 : 1);
-                layer.visual.alphas = layer.visual.colors.map((_, i) => Math.max(Number(layer.visual.alphaStarts[i] ?? 1), Number(layer.visual.alphaEnds[i] ?? 1)));
-            }
-            syncUIFromConfig();
-            renderLayerList();
-            showToast('Quick edit applied to selected layer.', 'success');
+            layer._particles = [];
+            finaliseLayerPresetChange(layer, 'Quick edit applied to selected layer.');
+        }
+
+        function applyColorHelper(helperId) {
+            const layer = getSelectedLayerOrToast();
+            if (!layer) return;
+            const palettes = {
+                fire: { colors: ['#ffffff', '#ffd23f', '#f97316', '#7f1d1d'], alphaStarts: [0.05, 0.8, 0.65, 0], alphaEnds: [0.7, 1, 0.45, 0], glow: 24, composite: 'lighter' },
+                ice: { colors: ['#ffffff', '#bff7ff', '#38bdf8', '#0f2f52'], alphaStarts: [0, 0.8, 0.55, 0], alphaEnds: [0.45, 0.95, 0.35, 0], glow: 22, composite: 'screen' },
+                water: { colors: ['#e0f2fe', '#60a5fa', '#0284c7', '#082f49'], alphaStarts: [0, 0.75, 0.5, 0], alphaEnds: [0.35, 0.85, 0.35, 0], glow: 12, composite: 'screen' },
+                'dark-magic': { colors: ['#d9f99d', '#22c55e', '#14532d', '#020617'], alphaStarts: [0, 0.85, 0.65, 0], alphaEnds: [0.35, 0.9, 0.45, 0], glow: 20, composite: 'screen' },
+                'good-magic': { colors: ['#ffffff', '#c4b5fd', '#9e01ce', '#00a1d7'], alphaStarts: [0.05, 0.8, 0.75, 0], alphaEnds: [0.55, 0.9, 0.55, 0], glow: 24, composite: 'lighter' },
+                evil: { colors: ['#2a0505', '#7f1d1d', '#ef4444', '#000000'], alphaStarts: [0.2, 0.85, 0.45, 0], alphaEnds: [0.5, 0.8, 0.2, 0], glow: 18, composite: 'source-over' },
+                smoke: { colors: ['#f8fafc', '#94a3b8', '#475569', '#0f0c0b'], alphaStarts: [0, 0.38, 0.32, 0], alphaEnds: [0.1, 0.48, 0.25, 0], glow: 4, composite: 'screen' }
+            };
+            const palette = palettes[helperId];
+            if (!palette) return;
+            Object.assign(layer.visual, palette, { blur: 0, edgeBlur: 0 });
+            finaliseLayerPresetChange(layer, 'Colour helper applied.');
         }
 
         function decorateInfoIcons() {
@@ -3787,6 +4067,7 @@ engine.start();</pre>
             initPresetLists();
             syncViewportUI();
             syncPerformanceModeUI();
+            updateWorkspaceViewUI();
             bindEditableSliderValues();
             decorateInfoIcons();
             tick();

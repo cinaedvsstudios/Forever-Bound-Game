@@ -461,19 +461,22 @@
         const visual = layer.visual || {};
         const physics = layer.physics || {};
         const colors = visual.colors || ['#ffffff', '#00a1d7'];
+        const alphaStarts = visual.alphaStarts || visual.alphas || [0, 0.95, 0];
+        const alphaEnds = visual.alphaEnds || visual.alphas || [0.25, 0.65, 0];
         const now = state.time || performance.now();
         const cx = state.emitterPos.x;
         const cy = state.emitterPos.y;
         const strands = Math.max(1, Math.min(5, Math.round((layer.emitter?.rate || 10) / 5)));
-        const length = Math.max(60, (physics.speedMax || 5) * 24 + (visual.sizeStart || 8) * 8);
-        const amp = Math.max(8, Math.abs(physics.orbitalForce || 1.4) * 8 + (physics.spread || 25) * 0.18);
+        const length = Math.max(70, (physics.speedMax || 5) * 28 + (visual.sizeStart || 8) * 9);
+        const amp = Math.max(6, Math.abs(physics.orbitalForce || 1.4) * 7 + (physics.spread || 25) * 0.16);
         const baseAngle = ((physics.angle ?? 270) * Math.PI) / 180;
+        const segmentCount = 28;
 
         ctx.save();
         ctx.globalCompositeOperation = visual.composite || 'lighter';
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.shadowBlur = Math.min(40, visual.glow || 22);
+        ctx.shadowBlur = Math.min(34, visual.glow || 22);
 
         for (let s = 0; s < strands; s++) {
             const offset = (s - (strands - 1) / 2) * 7;
@@ -481,21 +484,29 @@
             const colour = colors[s % colors.length] || colors[0];
             ctx.strokeStyle = colour;
             ctx.shadowColor = colour;
-            ctx.globalAlpha = 0.48 / strands + 0.24;
-            ctx.lineWidth = Math.max(2, (visual.sizeStart || 8) * (0.55 - s * 0.035));
 
-            ctx.beginPath();
-            for (let i = 0; i <= 22; i++) {
-                const t = i / 22;
-                const taper = 1 - t;
+            let lastPoint = null;
+            for (let i = 0; i <= segmentCount; i++) {
+                const t = i / segmentCount;
+                const taper = Math.pow(1 - t, 1.35);
                 const along = t * length;
                 const wave = Math.sin(phase + t * Math.PI * 3.2) * amp * taper;
                 const px = cx + Math.cos(baseAngle) * along + Math.cos(baseAngle + Math.PI / 2) * (wave + offset * taper);
                 const py = cy + Math.sin(baseAngle) * along + Math.sin(baseAngle + Math.PI / 2) * (wave + offset * taper);
-                if (i === 0) ctx.moveTo(px, py);
-                else ctx.lineTo(px, py);
+
+                if (lastPoint) {
+                    const colourSample = interpolateColorsMulti(colors, alphaStarts.map((a, idx) => Math.max(Number(a || 0), Number(alphaEnds[idx] || 0))), t);
+                    ctx.strokeStyle = colourSample.color || colour;
+                    ctx.shadowColor = colourSample.color || colour;
+                    ctx.globalAlpha = Math.max(0, (1 - t) * (0.74 / strands + 0.22));
+                    ctx.lineWidth = Math.max(0.35, (visual.sizeStart || 8) * (0.65 - s * 0.04) * taper);
+                    ctx.beginPath();
+                    ctx.moveTo(lastPoint.x, lastPoint.y);
+                    ctx.lineTo(px, py);
+                    ctx.stroke();
+                }
+                lastPoint = { x: px, y: py };
             }
-            ctx.stroke();
         }
         ctx.restore();
         return true;
