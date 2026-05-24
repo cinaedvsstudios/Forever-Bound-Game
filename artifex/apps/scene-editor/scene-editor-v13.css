@@ -91,12 +91,13 @@
 }
 
 .file-pill-save .file-pill-sep,
-.file-pill-save .file-pill-label:last-of-type,
-.file-pill-save .file-pill-value:not(:first-of-type) {
+.file-pill-save .file-pill-sep ~ .file-pill-label,
+.file-pill-save .file-pill-sep ~ .file-pill-value {
   display: none !important;
 }
 
-.file-pill-save .file-pill-value:first-of-type {
+.file-pill-save .file-pill-label:first-of-type + .file-pill-value,
+.file-pill-save .file-pill-icon + .file-pill-label + .file-pill-value {
   display: inline-block !important;
 }
 
