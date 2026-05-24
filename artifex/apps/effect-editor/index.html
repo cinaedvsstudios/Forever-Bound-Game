@@ -450,9 +450,16 @@
                             </div>
                         </div>
                         <div id="card-body-visuals" class="p-4 space-y-4">
-                            <div title="Select the built-in visual particle shape used for this layer.">
+                            <div title="Choose whether this layer uses a procedural built-in shape or a custom PNG particle texture.">
+                                <label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Shape Mode</label>
+                                <select id="param-visual-shapeMode" onchange="changeShapeMode(this.value)" class="w-full bg-artifex-dark border border-artifex-border text-artifex-gold text-xs rounded-xl p-2.5 focus:ring-1 focus:ring-artifex-purpleAccent focus:outline-none cursor-pointer shadow-inner">
+                                    <option value="builtInShape">Built-In Shape</option>
+                                    <option value="textureSprite">Custom PNG Texture Sprite</option>
+                                </select>
+                            </div>
+                            <div id="built-in-shape-panel" title="Select the built-in visual particle shape used for this layer.">
                                 <label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Particle Shape</label>
-                                
+
                                 <!-- Custom Shape Grid Dropdown -->
                                 <div class="relative dropdown-parent" id="shape-dropdown-wrapper">
                                     <button onclick="toggleShapePicker(event)" class="w-full bg-artifex-dark border border-artifex-border hover:border-artifex-purpleAccent transition text-artifex-gold text-xs rounded-xl p-2.5 flex justify-between items-center focus:outline-none shadow-inner" title="Click to open the visual shape grid picker.">
@@ -462,13 +469,54 @@
                                         </span>
                                         <span class="text-[9px]">▼</span>
                                     </button>
-                                    <div id="shape-picker-grid" class="hidden absolute top-full left-0 mt-2 w-full bg-artifex-panel border border-artifex-purpleAccent rounded-xl p-3 z-[100] grid grid-cols-3 gap-2 shadow-[0_15px_30px_rgba(0,0,0,0.95)]">
+                                    <div id="shape-picker-grid" class="hidden absolute top-full left-0 mt-2 w-full bg-artifex-panel border border-artifex-purpleAccent rounded-xl p-3 z-[100] grid grid-cols-3 gap-2 shadow-[0_15px_30px_rgba(0,0,0,0.95)] max-h-72 overflow-y-auto">
                                         <!-- Buttons injected dynamically -->
                                     </div>
                                     <input type="hidden" id="param-visual-shape" value="circle">
                                 </div>
                             </div>
-                            <div title="Particle radius/scale at birth and at death.">
+                            <div id="texture-sprite-panel" class="hidden border border-artifex-border/50 rounded-xl bg-artifex-dark/45 p-3 space-y-3" title="Use a custom transparent PNG as the particle shape.">
+                                <div>
+                                    <label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Custom PNG Texture</label>
+                                    <label class="w-full bg-artifex-dark border border-artifex-border hover:border-artifex-purpleAccent transition text-artifex-gold text-xs rounded-xl p-2.5 flex justify-between items-center cursor-pointer shadow-inner">
+                                        <span id="texture-file-label" class="truncate">Choose PNG...</span>
+                                        <span class="text-[10px] text-artifex-goldMuted">UPLOAD</span>
+                                        <input type="file" id="param-visual-texture-file" accept="image/png,image/webp,image/jpeg" class="hidden" onchange="handleTextureFileInput(event)">
+                                    </label>
+                                </div>
+                                <div id="texture-preview-box" class="hidden items-center gap-3">
+                                    <div class="w-14 h-14 rounded-lg border border-artifex-border bg-black/45 flex items-center justify-center overflow-hidden">
+                                        <img id="texture-preview-img" alt="Texture preview" class="max-w-full max-h-full object-contain">
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div id="texture-preview-name" class="text-[10px] text-artifex-gold font-bold truncate">No texture</div>
+                                        <button onclick="clearLayerTexture()" class="mt-1 text-[9px] text-rose-400 hover:text-rose-300">Clear texture</button>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-artifex-goldMuted uppercase font-bold text-[8px] tracking-wider mb-1">Tint Mode</label>
+                                        <select id="param-visual-tintMode" onchange="updateTextureOption('tintMode', this.value)" class="w-full bg-artifex-dark border border-artifex-border text-artifex-gold text-[10px] rounded-lg p-1.5 focus:outline-none">
+                                            <option value="none">Original PNG</option>
+                                            <option value="source-atop">Tint to Colour</option>
+                                            <option value="multiply">Multiply Tint</option>
+                                            <option value="lighter">Additive Tint</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-artifex-goldMuted uppercase font-bold text-[8px] tracking-wider mb-1">Fit Mode</label>
+                                        <select id="param-visual-fitMode" onchange="updateTextureOption('fitMode', this.value)" class="w-full bg-artifex-dark border border-artifex-border text-artifex-gold text-[10px] rounded-lg p-1.5 focus:outline-none">
+                                            <option value="contain">Contain</option>
+                                            <option value="cover">Cover</option>
+                                            <option value="stretch">Stretch</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <label class="flex items-center gap-2 text-[10px] text-artifex-goldMuted">
+                                    <input type="checkbox" id="param-visual-useTextureAlpha" checked onchange="updateTextureOption('useTextureAlpha', this.checked)" class="accent-artifex-purpleAccent">
+                                    Use texture alpha
+                                </label>
+                            </div>                            <div title="Particle radius/scale at birth and at death.">
                                 <div class="flex justify-between text-xs mb-1">
                                     <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Growth Size</span>
                                     <span class="text-artifex-gold font-mono text-[11px]"><span id="val-visual-sizeStart">5</span>px ➜ <span id="val-visual-sizeEnd">1</span>px</span>
@@ -505,6 +553,13 @@
                                     <span class="text-artifex-gold font-mono text-[11px]" id="val-visual-blur">0</span>
                                 </div>
                                 <input type="range" id="param-visual-blur" min="0" max="20" step="0.5" value="0" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]">
+                            </div>
+                            <div title="Softens the particle edge. Useful for SVG-style built-in shapes and custom PNG particles.">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Edge Softness</span>
+                                    <span class="text-artifex-gold font-mono text-[11px]" id="val-visual-edgeBlur">0</span>
+                                </div>
+                                <input type="range" id="param-visual-edgeBlur" min="0" max="12" step="0.5" value="0" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]">
                             </div>
                             <div title="How colors blend when overlapping. 'Lighter' creates intense additive neon magic.">
                                 <label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Composite Blend</label>
@@ -1154,19 +1209,372 @@ engine.start();</pre>
         // Define Custom Shapes SVGs for picker
         const SHAPE_DEFS = [
             { id: 'circle', name: 'Circle', svg: '<circle cx="12" cy="12" r="8" fill="currentColor"/>' },
-            { id: 'spark', name: 'Spark', svg: '<path d="M12 4 L12 20 M4 12 L20 12" stroke="currentColor" stroke-width="2"/>' },
-            { id: 'square', name: 'Square', svg: '<rect x="6" y="6" width="12" height="12" fill="currentColor"/>' },
-            { id: 'triangle', name: 'Triangle', svg: '<polygon points="12,4 4,20 20,20" fill="currentColor"/>' },
-            { id: 'star', name: 'Star', svg: '<polygon points="12,2 15,9 22,9 16,14 18,21 12,17 6,21 8,14 2,9 9,9" fill="currentColor"/>' },
-            { id: 'cross-star', name: 'Cross-Star', svg: '<path d="M12 2 Q12 12 22 12 Q12 12 12 22 Q12 12 2 12 Q12 12 12 2" fill="currentColor"/>' },
-            { id: 'capsule', name: 'Capsule', svg: '<rect x="10" y="4" width="4" height="16" rx="2" fill="currentColor"/>' },
-            { id: 'spear', name: 'Spear', svg: '<polygon points="12,22 8,4 16,4" fill="currentColor"/>' },
-            { id: 'shard', name: 'Shard', svg: '<polygon points="12,2 20,10 16,22 6,18" fill="currentColor"/>' },
             { id: 'ring', name: 'Ring', svg: '<circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/>' },
+            { id: 'spark', name: 'Spark', svg: '<path d="M12 4 L12 20 M4 12 L20 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' },
+            { id: 'square', name: 'Square', svg: '<rect x="6" y="6" width="12" height="12" fill="currentColor"/>' },
+            { id: 'rounded-square', name: 'Rounded Square', svg: '<rect x="5" y="5" width="14" height="14" rx="4" fill="currentColor"/>' },
+            { id: 'triangle', name: 'Triangle', svg: '<polygon points="12,4 4,20 20,20" fill="currentColor"/>' },
+            { id: 'right-triangle', name: 'Right Triangle', svg: '<polygon points="5,5 5,19 19,19" fill="currentColor"/>' },
+            { id: 'pentagon', name: 'Pentagon', svg: '<polygon points="12,3 21,10 18,21 6,21 3,10" fill="currentColor"/>' },
             { id: 'hexagon', name: 'Hexagon', svg: '<polygon points="12,3 20,7 20,17 12,21 4,17 4,7" fill="currentColor"/>' },
-            { id: 'diamond', name: 'Diamond', svg: '<polygon points="12,3 21,12 12,21 3,12" fill="currentColor"/>' }
+            { id: 'flat-hexagon', name: 'Flat Hex', svg: '<polygon points="5,6 19,6 23,12 19,18 5,18 1,12" fill="currentColor"/>' },
+            { id: 'octagon', name: 'Octagon', svg: '<polygon points="8,3 16,3 21,8 21,16 16,21 8,21 3,16 3,8" fill="currentColor"/>' },
+            { id: 'diamond', name: 'Diamond', svg: '<polygon points="12,3 21,12 12,21 3,12" fill="currentColor"/>' },
+            { id: 'thin-diamond', name: 'Thin Diamond', svg: '<polygon points="12,2 17,12 12,22 7,12" fill="currentColor"/>' },
+            { id: 'flat-gem', name: 'Flat Gem', svg: '<polygon points="7,4 17,4 22,10 12,21 2,10" fill="currentColor"/>' },
+            { id: 'trapezoid', name: 'Trapezoid', svg: '<polygon points="7,6 17,6 21,19 3,19" fill="currentColor"/>' },
+            { id: 'parallelogram', name: 'Parallelogram', svg: '<polygon points="8,5 22,5 16,19 2,19" fill="currentColor"/>' },
+            { id: 'star', name: 'Star', svg: '<polygon points="12,2 15,9 22,9 16,14 18,21 12,17 6,21 8,14 2,9 9,9" fill="currentColor"/>' },
+            { id: 'soft-star', name: 'Soft Star', svg: '<path d="M12 2 C14 8 16 10 22 12 C16 14 14 16 12 22 C10 16 8 14 2 12 C8 10 10 8 12 2Z" fill="currentColor"/>' },
+            { id: 'cross-star', name: 'Cross-Star', svg: '<path d="M12 2 Q12 12 22 12 Q12 12 12 22 Q12 12 2 12 Q12 12 12 2" fill="currentColor"/>' },
+            { id: 'four-point-glint', name: 'Glint', svg: '<polygon points="12,1 15,9 23,12 15,15 12,23 9,15 1,12 9,9" fill="currentColor"/>' },
+            { id: 'jagged-burst', name: 'Jagged Burst', svg: '<polygon points="12,1 14,8 21,4 17,11 23,14 16,15 18,23 12,18 6,23 8,15 1,14 7,11 3,4 10,8" fill="currentColor"/>' },
+            { id: 'scalloped-circle', name: 'Scallop', svg: '<path d="M12 3 C14 5 17 4 18 7 C21 8 20 12 21 14 C19 16 20 20 17 20 C15 23 12 20 10 21 C8 19 4 20 4 17 C1 15 4 12 3 10 C5 8 4 4 7 5 C9 2 11 5 12 3Z" fill="currentColor"/>' },
+            { id: 'rough-blob', name: 'Rough Blob', svg: '<path d="M12 3 C17 2 21 6 20 11 C23 15 18 21 13 20 C8 23 2 18 4 12 C1 7 7 2 12 3Z" fill="currentColor"/>' },
+            { id: 'cloth-ragged-square', name: 'Ragged Square', svg: '<polygon points="5,4 19,5 20,10 18,20 12,18 5,20 4,13 6,9" fill="currentColor"/>' },
+            { id: 'flame', name: 'Flame', svg: '<path d="M12 22 C7 19 5 15 7 11 C8 8 11 7 10 2 C15 6 20 10 17 16 C16 19 14 21 12 22Z" fill="currentColor"/>' },
+            { id: 'teardrop', name: 'Teardrop', svg: '<path d="M12 2 C18 9 20 13 18 17 C16 21 8 21 6 17 C4 13 6 9 12 2Z" fill="currentColor"/>' },
+            { id: 'water-drop', name: 'Water Drop', svg: '<path d="M12 2 C17 8 20 12 18 17 C16 22 8 22 6 17 C4 12 7 8 12 2Z" fill="currentColor"/>' },
+            { id: 'map-pin-drop', name: 'Pin Drop', svg: '<path d="M12 22 C12 22 5 14 5 9 C5 5 8 2 12 2 C16 2 19 5 19 9 C19 14 12 22 12 22Z" fill="currentColor"/><circle cx="12" cy="9" r="3" fill="#0f0c0b"/>' },
+            { id: 'cloud-blob', name: 'Cloud Blob', svg: '<path d="M6 18 C3 18 2 15 4 13 C4 10 7 9 9 10 C10 7 14 6 16 9 C19 9 22 11 21 15 C21 17 19 18 17 18Z" fill="currentColor"/>' },
+            { id: 'heart', name: 'Heart', svg: '<path d="M12 21 C5 15 3 11 5 7 C7 3 11 5 12 8 C13 5 17 3 19 7 C21 11 19 15 12 21Z" fill="currentColor"/>' },
+            { id: 'gear', name: 'Gear', svg: '<path d="M10 2 H14 L15 5 L18 4 L20 8 L18 10 L22 12 L18 14 L20 16 L18 20 L15 19 L14 22 H10 L9 19 L6 20 L4 16 L6 14 L2 12 L6 10 L4 8 L6 4 L9 5Z" fill="currentColor"/><circle cx="12" cy="12" r="4" fill="#0f0c0b"/>' },
+            { id: 'lightning-bolt', name: 'Lightning', svg: '<polygon points="13,1 4,13 11,13 9,23 20,9 13,9" fill="currentColor"/>' },
+            { id: 'scribble-stroke', name: 'Scribble', svg: '<path d="M4 14 C7 4 10 22 13 9 C15 1 18 18 21 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>' },
+            { id: 'energy-scribble', name: 'Energy Scribble', svg: '<path d="M3 12 C6 6 8 18 11 12 C14 6 16 18 21 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' },
+            { id: 'swirl', name: 'Swirl', svg: '<path d="M19 12 C19 7 15 4 11 5 C6 6 4 11 7 15 C10 19 17 18 18 12 C19 8 14 7 12 10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>' },
+            { id: 'capsule', name: 'Capsule', svg: '<rect x="10" y="4" width="4" height="16" rx="2" fill="currentColor"/>' },
+            { id: 'cone', name: 'Cone', svg: '<path d="M12 3 L21 21 H3Z" fill="currentColor"/>' },
+            { id: 'spear', name: 'Spear', svg: '<polygon points="12,22 8,4 16,4" fill="currentColor"/>' },
+            { id: 'three-point-shard', name: 'Three Shard', svg: '<polygon points="12,2 15,13 22,20 12,17 2,20 9,13" fill="currentColor"/>' },
+            { id: 'shard', name: 'Shard', svg: '<polygon points="12,2 20,10 16,22 6,18" fill="currentColor"/>' }
         ];
 
+        const TEXTURE_CACHE = new Map();
+        const TEXTURE_FALLBACK_SHAPE = 'circle';
+
+
+
+        function getCachedTexture(src) {
+            if (!src) return null;
+            if (TEXTURE_CACHE.has(src)) return TEXTURE_CACHE.get(src);
+            const img = new Image();
+            const record = { image: img, loaded: false, failed: false, src };
+            img.onload = () => { record.loaded = true; };
+            img.onerror = () => { record.failed = true; };
+            img.src = src;
+            TEXTURE_CACHE.set(src, record);
+            return record;
+        }
+
+        function drawRegularPolygon(ctx, x, y, radius, sides, rotation = -Math.PI / 2) {
+            const safeRadius = Math.max(0.1, radius);
+            ctx.moveTo(x + Math.cos(rotation) * safeRadius, y + Math.sin(rotation) * safeRadius);
+            for (let i = 1; i < sides; i++) {
+                const angle = rotation + (i * Math.PI * 2) / sides;
+                ctx.lineTo(x + Math.cos(angle) * safeRadius, y + Math.sin(angle) * safeRadius);
+            }
+            ctx.closePath();
+        }
+
+        function drawStarPolygon(ctx, x, y, outerRadius, innerRadius, points = 5) {
+            let rot = Math.PI / 2 * 3;
+            const step = Math.PI / points;
+            ctx.moveTo(x, y - outerRadius);
+            for (let i = 0; i < points; i++) {
+                ctx.lineTo(x + Math.cos(rot) * outerRadius, y + Math.sin(rot) * outerRadius);
+                rot += step;
+                ctx.lineTo(x + Math.cos(rot) * innerRadius, y + Math.sin(rot) * innerRadius);
+                rot += step;
+            }
+            ctx.closePath();
+        }
+
+        function drawPathShape(ctx, particle, shape) {
+            const x = particle.x;
+            const y = particle.y;
+            const size = Math.max(0.1, particle.size);
+
+            switch (shape) {
+                case 'circle':
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+                case 'ring':
+                    ctx.lineWidth = Math.max(1, size / 5);
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.stroke();
+                    break;
+                case 'spark':
+                    ctx.lineWidth = Math.max(1, size / 2);
+                    ctx.lineCap = 'round';
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x - particle.vx * 1.5, y - particle.vy * 1.5);
+                    ctx.stroke();
+                    break;
+                case 'square':
+                    ctx.rect(x - size / 2, y - size / 2, size, size);
+                    ctx.fill();
+                    break;
+                case 'rounded-square':
+                    if (ctx.roundRect) {
+                        ctx.roundRect(x - size / 2, y - size / 2, size, size, Math.max(2, size * 0.18));
+                        ctx.fill();
+                    } else {
+                        ctx.rect(x - size / 2, y - size / 2, size, size);
+                        ctx.fill();
+                    }
+                    break;
+                case 'triangle':
+                case 'cone':
+                    ctx.moveTo(x, y - size);
+                    ctx.lineTo(x + size, y + size);
+                    ctx.lineTo(x - size, y + size);
+                    ctx.closePath();
+                    ctx.fill();
+                    break;
+                case 'right-triangle':
+                    ctx.moveTo(x - size, y - size);
+                    ctx.lineTo(x - size, y + size);
+                    ctx.lineTo(x + size, y + size);
+                    ctx.closePath();
+                    ctx.fill();
+                    break;
+                case 'pentagon':
+                    drawRegularPolygon(ctx, x, y, size, 5);
+                    ctx.fill();
+                    break;
+                case 'hexagon':
+                    drawRegularPolygon(ctx, x, y, size, 6, 0);
+                    ctx.fill();
+                    break;
+                case 'flat-hexagon':
+                    drawRegularPolygon(ctx, x, y, size, 6, Math.PI / 6);
+                    ctx.fill();
+                    break;
+                case 'octagon':
+                    drawRegularPolygon(ctx, x, y, size, 8, Math.PI / 8);
+                    ctx.fill();
+                    break;
+                case 'diamond':
+                    ctx.moveTo(x, y - size);
+                    ctx.lineTo(x + size * 0.7, y);
+                    ctx.lineTo(x, y + size);
+                    ctx.lineTo(x - size * 0.7, y);
+                    ctx.closePath();
+                    ctx.fill();
+                    break;
+                case 'thin-diamond':
+                    ctx.moveTo(x, y - size * 1.25);
+                    ctx.lineTo(x + size * 0.38, y);
+                    ctx.lineTo(x, y + size * 1.25);
+                    ctx.lineTo(x - size * 0.38, y);
+                    ctx.closePath();
+                    ctx.fill();
+                    break;
+                case 'flat-gem':
+                    ctx.moveTo(x - size * 0.6, y - size * 0.75);
+                    ctx.lineTo(x + size * 0.6, y - size * 0.75);
+                    ctx.lineTo(x + size, y - size * 0.15);
+                    ctx.lineTo(x, y + size);
+                    ctx.lineTo(x - size, y - size * 0.15);
+                    ctx.closePath();
+                    ctx.fill();
+                    break;
+                case 'trapezoid':
+                    ctx.moveTo(x - size * 0.45, y - size);
+                    ctx.lineTo(x + size * 0.45, y - size);
+                    ctx.lineTo(x + size, y + size);
+                    ctx.lineTo(x - size, y + size);
+                    ctx.closePath();
+                    ctx.fill();
+                    break;
+                case 'parallelogram':
+                    ctx.moveTo(x - size * 0.35, y - size);
+                    ctx.lineTo(x + size, y - size);
+                    ctx.lineTo(x + size * 0.35, y + size);
+                    ctx.lineTo(x - size, y + size);
+                    ctx.closePath();
+                    ctx.fill();
+                    break;
+                case 'star':
+                    drawStarPolygon(ctx, x, y, size, size * 0.4, 5);
+                    ctx.fill();
+                    break;
+                case 'soft-star':
+                case 'cross-star':
+                    ctx.moveTo(x, y - size * 1.25);
+                    ctx.quadraticCurveTo(x, y, x + size * 1.25, y);
+                    ctx.quadraticCurveTo(x, y, x, y + size * 1.25);
+                    ctx.quadraticCurveTo(x, y, x - size * 1.25, y);
+                    ctx.quadraticCurveTo(x, y, x, y - size * 1.25);
+                    ctx.fill();
+                    break;
+                case 'four-point-glint':
+                    drawStarPolygon(ctx, x, y, size * 1.35, size * 0.2, 4);
+                    ctx.fill();
+                    break;
+                case 'jagged-burst':
+                    drawStarPolygon(ctx, x, y, size * 1.25, size * 0.55, 8);
+                    ctx.fill();
+                    break;
+                case 'scalloped-circle':
+                case 'rough-blob':
+                case 'cloud-blob':
+                    for (let i = 0; i < 7; i++) {
+                        const angle = (Math.PI * 2 * i) / 7;
+                        const wobble = shape === 'cloud-blob' ? 0.65 + (i % 3) * 0.18 : 0.82 + (i % 2) * 0.22;
+                        const px = x + Math.cos(angle) * size * 0.35;
+                        const py = y + Math.sin(angle) * size * 0.25;
+                        ctx.moveTo(px + size * wobble, py);
+                        ctx.arc(px, py, size * wobble, 0, Math.PI * 2);
+                    }
+                    ctx.fill();
+                    break;
+                case 'cloth-ragged-square':
+                    ctx.moveTo(x - size, y - size * 0.9);
+                    ctx.lineTo(x + size * 0.9, y - size * 0.8);
+                    ctx.lineTo(x + size * 0.75, y - size * 0.2);
+                    ctx.lineTo(x + size, y + size);
+                    ctx.lineTo(x + size * 0.2, y + size * 0.75);
+                    ctx.lineTo(x - size * 0.8, y + size);
+                    ctx.lineTo(x - size, y + size * 0.1);
+                    ctx.lineTo(x - size * 0.7, y - size * 0.35);
+                    ctx.closePath();
+                    ctx.fill();
+                    break;
+                case 'flame':
+                    ctx.moveTo(x, y + size);
+                    ctx.bezierCurveTo(x - size, y + size * 0.2, x - size * 0.45, y - size * 0.45, x - size * 0.1, y - size);
+                    ctx.bezierCurveTo(x + size * 0.65, y - size * 0.25, x + size * 0.9, y + size * 0.3, x, y + size);
+                    ctx.fill();
+                    break;
+                case 'teardrop':
+                case 'water-drop':
+                case 'map-pin-drop':
+                    ctx.moveTo(x, y - size * 1.25);
+                    ctx.bezierCurveTo(x + size, y - size * 0.2, x + size, y + size, x, y + size);
+                    ctx.bezierCurveTo(x - size, y + size, x - size, y - size * 0.2, x, y - size * 1.25);
+                    ctx.fill();
+                    break;
+                case 'heart':
+                    ctx.moveTo(x, y + size);
+                    ctx.bezierCurveTo(x - size * 1.5, y, x - size, y - size, x, y - size * 0.35);
+                    ctx.bezierCurveTo(x + size, y - size, x + size * 1.5, y, x, y + size);
+                    ctx.fill();
+                    break;
+                case 'gear':
+                    drawStarPolygon(ctx, x, y, size, size * 0.72, 10);
+                    ctx.fill();
+                    ctx.save();
+                    ctx.globalCompositeOperation = 'destination-out';
+                    ctx.beginPath();
+                    ctx.arc(x, y, size * 0.35, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                    break;
+                case 'lightning-bolt':
+                    ctx.moveTo(x + size * 0.2, y - size * 1.2);
+                    ctx.lineTo(x - size * 0.8, y + size * 0.1);
+                    ctx.lineTo(x - size * 0.05, y + size * 0.1);
+                    ctx.lineTo(x - size * 0.3, y + size * 1.2);
+                    ctx.lineTo(x + size * 0.85, y - size * 0.2);
+                    ctx.lineTo(x + size * 0.1, y - size * 0.2);
+                    ctx.closePath();
+                    ctx.fill();
+                    break;
+                case 'scribble-stroke':
+                case 'energy-scribble':
+                case 'swirl':
+                    ctx.lineWidth = Math.max(1, size / 4);
+                    ctx.lineCap = 'round';
+                    if (shape === 'swirl') {
+                        for (let a = 0; a < Math.PI * 2.2; a += 0.35) {
+                            const r = (a / (Math.PI * 2.2)) * size;
+                            const px = x + Math.cos(a + particle.age * 0.08) * r;
+                            const py = y + Math.sin(a + particle.age * 0.08) * r;
+                            if (a === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+                        }
+                    } else {
+                        ctx.moveTo(x - size, y);
+                        ctx.bezierCurveTo(x - size * 0.5, y - size, x, y + size, x + size * 0.45, y);
+                        ctx.bezierCurveTo(x + size * 0.65, y - size * 0.6, x + size, y - size * 0.2, x + size * 1.25, y - size * 0.55);
+                    }
+                    ctx.stroke();
+                    break;
+                case 'capsule':
+                    ctx.lineWidth = Math.max(2, size / 2);
+                    ctx.lineCap = 'round';
+                    ctx.moveTo(x, y - size);
+                    ctx.lineTo(x, y + size);
+                    ctx.stroke();
+                    break;
+                case 'spear':
+                    ctx.moveTo(x, y + size * 1.4);
+                    ctx.lineTo(x - size * 0.45, y - size * 1.2);
+                    ctx.lineTo(x + size * 0.45, y - size * 1.2);
+                    ctx.closePath();
+                    ctx.fill();
+                    break;
+                case 'three-point-shard':
+                    ctx.moveTo(x, y - size * 1.25);
+                    ctx.lineTo(x + size * 0.35, y + size * 0.25);
+                    ctx.lineTo(x + size, y + size);
+                    ctx.lineTo(x, y + size * 0.55);
+                    ctx.lineTo(x - size, y + size);
+                    ctx.lineTo(x - size * 0.35, y + size * 0.25);
+                    ctx.closePath();
+                    ctx.fill();
+                    break;
+                case 'shard':
+                    ctx.moveTo(x, y - size);
+                    ctx.lineTo(x + size * 0.8, y + size * 0.2);
+                    ctx.lineTo(x - size * 0.4, y + size);
+                    ctx.closePath();
+                    ctx.fill();
+                    break;
+                default:
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fill();
+            }
+        }
+
+        function drawTextureSprite(ctx, particle, color) {
+            const record = getCachedTexture(particle.textureSrc);
+            if (!record || !record.loaded || !record.image || record.failed) {
+                ctx.beginPath();
+                drawPathShape(ctx, particle, TEXTURE_FALLBACK_SHAPE);
+                return;
+            }
+
+            const size = Math.max(0.1, particle.size * 2);
+            const img = record.image;
+            let drawW = size;
+            let drawH = size;
+
+            if (particle.fitMode === 'contain') {
+                const ratio = img.width && img.height ? img.width / img.height : 1;
+                if (ratio > 1) drawH = size / ratio;
+                else drawW = size * ratio;
+            } else if (particle.fitMode === 'cover') {
+                const ratio = img.width && img.height ? img.width / img.height : 1;
+                if (ratio > 1) drawW = size * ratio;
+                else drawH = size / ratio;
+            }
+
+            const dx = particle.x - drawW / 2;
+            const dy = particle.y - drawH / 2;
+
+            ctx.drawImage(img, dx, dy, drawW, drawH);
+
+            if (particle.tintMode && particle.tintMode !== 'none') {
+                const previousComposite = ctx.globalCompositeOperation;
+                ctx.globalCompositeOperation = particle.tintMode;
+                ctx.fillStyle = color;
+                ctx.fillRect(dx, dy, drawW, drawH);
+                ctx.globalCompositeOperation = previousComposite;
+            }
+        }
         class Particle {
             constructor(x, y, config, initialBurstAngle = null) {
                 this.x = x;
@@ -1204,8 +1612,16 @@ engine.start();</pre>
                 
                 this.glow = v.glow || 0;
                 this.blur = v.blur || 0;
+                this.edgeBlur = v.edgeBlur || 0;
+                this.shapeMode = v.shapeMode || 'builtInShape';
                 this.shape = v.shape || 'circle';
-                
+                this.textureSrc = v.textureDataUrl || v.texture || null;
+                this.textureName = v.textureName || '';
+                this.useTextureAlpha = v.useTextureAlpha !== false;
+                this.tintMode = v.tintMode || 'none';
+                this.fitMode = v.fitMode || 'contain';
+                if (this.shapeMode === 'textureSprite' && this.textureSrc) getCachedTexture(this.textureSrc);
+
                 this.orbitalForce = p.orbitalForce || 0;
                 this.emitterOriginX = x;
                 this.emitterOriginY = y;
@@ -1277,112 +1693,16 @@ engine.start();</pre>
                     ctx.filter = `blur(${this.blur}px)`;
                 }
 
+                if (this.edgeBlur > 0) {
+                    ctx.filter = ctx.filter && ctx.filter !== 'none' ? ctx.filter + ` blur(${this.edgeBlur}px)` : `blur(${this.edgeBlur}px)`;
+                }
+
                 ctx.beginPath();
-                
-                switch (this.shape) {
-                    case 'circle':
-                        ctx.arc(this.x, this.y, Math.max(0.1, this.size), 0, Math.PI * 2);
-                        ctx.fill();
-                        break;
-                    case 'spark':
-                        ctx.lineWidth = Math.max(1, this.size / 2);
-                        ctx.moveTo(this.x, this.y);
-                        ctx.lineTo(this.x - this.vx * 1.5, this.y - this.vy * 1.5);
-                        ctx.stroke();
-                        break;
-                    case 'square':
-                        const side = Math.max(0.1, this.size);
-                        ctx.rect(this.x - side/2, this.y - side/2, side, side);
-                        ctx.fill();
-                        break;
-                    case 'triangle':
-                        const size = Math.max(0.1, this.size);
-                        ctx.moveTo(this.x, this.y - size);
-                        ctx.lineTo(this.x + size, this.y + size);
-                        ctx.lineTo(this.x - size, this.y + size);
-                        ctx.closePath();
-                        ctx.fill();
-                        break;
-                    case 'star':
-                        const rOuter = Math.max(0.1, this.size);
-                        const rInner = rOuter * 0.4;
-                        let rot = Math.PI / 2 * 3;
-                        let x = this.x, y = this.y;
-                        let step = Math.PI / 5;
 
-                        ctx.moveTo(this.x, this.y - rOuter);
-                        for (let i = 0; i < 5; i++) {
-                            x = this.x + Math.cos(rot) * rOuter;
-                            y = this.y + Math.sin(rot) * rOuter;
-                            ctx.lineTo(x, y);
-                            rot += step;
-
-                            x = this.x + Math.cos(rot) * rInner;
-                            y = this.y + Math.sin(rot) * rInner;
-                            ctx.lineTo(x, y);
-                            rot += step;
-                        }
-                        ctx.closePath();
-                        ctx.fill();
-                        break;
-                    case 'cross-star':
-                        ctx.lineWidth = Math.max(1, this.size / 3);
-                        ctx.moveTo(this.x - this.size, this.y);
-                        ctx.lineTo(this.x + this.size, this.y);
-                        ctx.moveTo(this.x, this.y - this.size);
-                        ctx.lineTo(this.x, this.y + this.size);
-                        ctx.stroke();
-                        break;
-                    case 'capsule':
-                        ctx.lineWidth = Math.max(2, this.size / 2);
-                        ctx.lineCap = 'round';
-                        ctx.moveTo(this.x, this.y - this.size);
-                        ctx.lineTo(this.x, this.y + this.size);
-                        ctx.stroke();
-                        break;
-                    case 'spear':
-                        const w = Math.max(1, this.size / 2);
-                        const h = Math.max(2, this.size * 1.5);
-                        ctx.moveTo(this.x, this.y + h);
-                        ctx.lineTo(this.x - w, this.y - h);
-                        ctx.lineTo(this.x + w, this.y - h);
-                        ctx.closePath();
-                        ctx.fill();
-                        break;
-                    case 'shard':
-                        const s = Math.max(1, this.size);
-                        ctx.moveTo(this.x, this.y - s);
-                        ctx.lineTo(this.x + s*0.8, this.y + s*0.2);
-                        ctx.lineTo(this.x - s*0.4, this.y + s);
-                        ctx.closePath();
-                        ctx.fill();
-                        break;
-                    case 'ring':
-                        ctx.lineWidth = Math.max(1, this.size / 5);
-                        ctx.arc(this.x, this.y, Math.max(0.1, this.size), 0, Math.PI * 2);
-                        ctx.stroke();
-                        break;
-                    case 'hexagon':
-                        const hexSize = Math.max(0.1, this.size);
-                        for (let i = 0; i < 6; i++) {
-                            const angle = (i * 60) * Math.PI / 180;
-                            const hx = this.x + Math.cos(angle) * hexSize;
-                            const hy = this.y + Math.sin(angle) * hexSize;
-                            if (i === 0) ctx.moveTo(hx, hy);
-                            else ctx.lineTo(hx, hy);
-                        }
-                        ctx.closePath();
-                        ctx.fill();
-                        break;
-                    case 'diamond':
-                        const dSize = Math.max(0.1, this.size);
-                        ctx.moveTo(this.x, this.y - dSize);
-                        ctx.lineTo(this.x + dSize * 0.7, this.y);
-                        ctx.lineTo(this.x, this.y + dSize);
-                        ctx.lineTo(this.x - dSize * 0.7, this.y);
-                        ctx.closePath();
-                        ctx.fill();
-                        break;
+                if (this.shapeMode === 'textureSprite' && this.textureSrc) {
+                    drawTextureSprite(ctx, this, color);
+                } else {
+                    drawPathShape(ctx, this, this.shape);
                 }
 
                 ctx.restore();
@@ -2385,6 +2705,7 @@ engine.start();</pre>
             'param-visual-sizeEnd': 'visual.sizeEnd',
             'param-visual-glow': 'visual.glow',
             'param-visual-blur': 'visual.blur',
+            'param-visual-edgeBlur': 'visual.edgeBlur',
             'param-visual-composite': 'visual.composite',
             'param-life-durationMin': 'life.durationMin',
             'param-life-durationMax': 'life.durationMax'
@@ -2410,7 +2731,12 @@ engine.start();</pre>
             if (shapeNode) {
                 shapeNode.addEventListener('input', (e) => {
                     if (activeLayerIndex === -1 || !composition || !composition.layers) return;
-                    setConfigValue(composition.layers[activeLayerIndex], 'visual.shape', e.target.value);
+                    const layer = composition.layers[activeLayerIndex];
+                    normalizeLayerVisualShapeConfig(layer);
+                    layer.visual.shapeMode = 'builtInShape';
+                    layer.visual.shape = e.target.value;
+                    layer.visual.previousBuiltInShape = e.target.value;
+                    syncShapeModeUI(layer);
                     syncJSONOutput();
                 });
             }
@@ -2631,8 +2957,9 @@ engine.start();</pre>
                 }
             });
 
-            // Update Shape Picker Label
-            if (activeLayer.visual && activeLayer.visual.shape) {
+            normalizeLayerVisualShapeConfig(activeLayer);
+            syncShapeModeUI(activeLayer);
+            if (activeLayer.visual && activeLayer.visual.shape && activeLayer.visual.shape !== 'texture') {
                 updateShapeLabel(activeLayer.visual.shape);
             }
 
@@ -2657,6 +2984,133 @@ engine.start();</pre>
 
             renderColorControls();
             syncJSONOutput();
+        }
+
+
+        function normalizeLayerVisualShapeConfig(layer) {
+            if (!layer) return;
+            if (!layer.visual) layer.visual = {};
+            const visual = layer.visual;
+            if (!visual.shapeMode) visual.shapeMode = visual.textureDataUrl || visual.texture ? 'textureSprite' : 'builtInShape';
+            if (!visual.shape) visual.shape = visual.shapeMode === 'textureSprite' ? 'texture' : 'circle';
+            if (visual.useTextureAlpha === undefined) visual.useTextureAlpha = true;
+            if (!visual.tintMode) visual.tintMode = 'none';
+            if (!visual.fitMode) visual.fitMode = 'contain';
+            if (visual.edgeBlur === undefined) visual.edgeBlur = 0;
+        }
+
+        function getActiveLayerForShapeEdit() {
+            if (activeLayerIndex === -1 || !composition || !composition.layers) return null;
+            const layer = composition.layers[activeLayerIndex];
+            normalizeLayerVisualShapeConfig(layer);
+            return layer;
+        }
+
+        function changeShapeMode(mode) {
+            const layer = getActiveLayerForShapeEdit();
+            if (!layer) return;
+
+            layer.visual.shapeMode = mode === 'textureSprite' ? 'textureSprite' : 'builtInShape';
+            if (layer.visual.shapeMode === 'textureSprite') {
+                layer.visual.shape = 'texture';
+            } else {
+                layer.visual.shape = layer.visual.previousBuiltInShape || (layer.visual.shape && layer.visual.shape !== 'texture' ? layer.visual.shape : 'circle');
+            }
+
+            syncShapeModeUI(layer);
+            syncJSONOutput();
+        }
+
+        function updateTextureOption(key, value) {
+            const layer = getActiveLayerForShapeEdit();
+            if (!layer) return;
+            layer.visual[key] = value;
+            syncShapeModeUI(layer);
+            syncJSONOutput();
+        }
+
+        function handleTextureFileInput(event) {
+            const layer = getActiveLayerForShapeEdit();
+            if (!layer || !event.target.files || !event.target.files[0]) return;
+
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(loadEvent) {
+                layer.visual.shapeMode = 'textureSprite';
+                layer.visual.previousBuiltInShape = layer.visual.previousBuiltInShape || (layer.visual.shape !== 'texture' ? layer.visual.shape : 'circle');
+                layer.visual.shape = 'texture';
+                layer.visual.textureDataUrl = loadEvent.target.result;
+                layer.visual.texture = file.name;
+                layer.visual.textureName = file.name;
+                layer.visual.textureType = file.type || 'image/png';
+                layer.visual.useTextureAlpha = layer.visual.useTextureAlpha !== false;
+                layer.visual.tintMode = layer.visual.tintMode || 'none';
+                layer.visual.fitMode = layer.visual.fitMode || 'contain';
+                getCachedTexture(layer.visual.textureDataUrl);
+                syncShapeModeUI(layer);
+                syncJSONOutput();
+                showToast(`Texture sprite loaded: ${file.name}`, 'success');
+            };
+            reader.onerror = function() {
+                showToast('Could not read texture file.', 'error');
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        }
+
+        function clearLayerTexture() {
+            const layer = getActiveLayerForShapeEdit();
+            if (!layer) return;
+            delete layer.visual.textureDataUrl;
+            delete layer.visual.texture;
+            delete layer.visual.textureName;
+            delete layer.visual.textureType;
+            layer.visual.shapeMode = 'builtInShape';
+            layer.visual.shape = layer.visual.previousBuiltInShape || 'circle';
+            syncShapeModeUI(layer);
+            updateShapeLabel(layer.visual.shape);
+            syncJSONOutput();
+            showToast('Texture sprite cleared.', 'info');
+        }
+
+        function syncShapeModeUI(layer) {
+            if (!layer) return;
+            normalizeLayerVisualShapeConfig(layer);
+            const visual = layer.visual;
+
+            const shapeModeSelect = document.getElementById('param-visual-shapeMode');
+            const builtInPanel = document.getElementById('built-in-shape-panel');
+            const texturePanel = document.getElementById('texture-sprite-panel');
+            const textureLabel = document.getElementById('texture-file-label');
+            const previewBox = document.getElementById('texture-preview-box');
+            const previewImg = document.getElementById('texture-preview-img');
+            const previewName = document.getElementById('texture-preview-name');
+            const tintMode = document.getElementById('param-visual-tintMode');
+            const fitMode = document.getElementById('param-visual-fitMode');
+            const useAlpha = document.getElementById('param-visual-useTextureAlpha');
+
+            if (shapeModeSelect) shapeModeSelect.value = visual.shapeMode;
+            if (builtInPanel) builtInPanel.classList.toggle('hidden', visual.shapeMode === 'textureSprite');
+            if (texturePanel) texturePanel.classList.toggle('hidden', visual.shapeMode !== 'textureSprite');
+
+            if (tintMode) tintMode.value = visual.tintMode || 'none';
+            if (fitMode) fitMode.value = visual.fitMode || 'contain';
+            if (useAlpha) useAlpha.checked = visual.useTextureAlpha !== false;
+
+            const hasTexture = Boolean(visual.textureDataUrl || visual.texture);
+            if (textureLabel) textureLabel.innerText = visual.textureName || visual.texture || 'Choose PNG...';
+            if (previewBox) {
+                previewBox.classList.toggle('hidden', !hasTexture);
+                previewBox.classList.toggle('flex', hasTexture);
+            }
+            if (previewImg && hasTexture) {
+                previewImg.src = visual.textureDataUrl || visual.texture;
+            }
+            if (previewName) previewName.innerText = visual.textureName || visual.texture || 'Texture loaded';
+
+            if (visual.shapeMode !== 'textureSprite') {
+                updateShapeLabel(visual.shape || 'circle');
+            }
         }
 
         // Shape Picker Logic
