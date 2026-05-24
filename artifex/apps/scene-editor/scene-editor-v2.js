@@ -124,7 +124,7 @@
       reason
     };
     const snapshot = JSON.stringify({ ...payload, savedAt: '' });
-    if (snapshot === lastWorkingCopySnapshot && reason !== 'download') return;
+    if (snapshot === lastWorkingCopySnapshot && reason !== 'download' && reason !== 'manual save') return;
     lastWorkingCopySnapshot = snapshot;
     try { localStorage.setItem(WORKING_COPY_KEY, JSON.stringify(payload)); }
     catch { /* localStorage can fail; editor still works without resume. */ }
@@ -133,6 +133,14 @@
     if (!scene) return;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => saveWorkingCopy(reason), 80);
+  }
+  function manualSaveLocal() {
+    if (!scene) { toast('Nothing to save locally'); return; }
+    clearTimeout(saveTimer);
+    saveWorkingCopy('manual save');
+    status = 'Saved to local backup.';
+    toast(status);
+    render(false);
   }
   function markDownloaded() {
     if (!scene) return;
@@ -147,7 +155,7 @@
   function filePill() {
     const working = readWorkingCopy();
     const downloaded = readDownloadStamp();
-    return `<div class="file-pill"><span class="file-pill-name">${esc(fileName || 'Untitled JSON')}</span><span class="file-pill-meta">Local backup: ${esc(dateText(working?.savedAt))}</span><span class="file-pill-meta">Last downloaded: ${esc(dateText(downloaded?.downloadedAt))}</span></div>`;
+    return `<div class="file-pill"><span class="file-pill-line file-pill-project"><span class="file-pill-icon">🏗️</span><span class="file-pill-label">Project:</span> <span class="file-pill-value">Forever Bound Game</span></span><span class="file-pill-line file-pill-file"><span class="file-pill-icon">📁</span><span class="file-pill-label">File:</span> <span class="file-pill-value file-pill-name">${esc(fileName || 'Untitled JSON')}</span></span><span class="file-pill-line file-pill-save"><span class="file-pill-icon">💾</span><span class="file-pill-label">Local:</span> <span class="file-pill-value">${esc(dateText(working?.savedAt))}</span> <span class="file-pill-sep">|</span> <span class="file-pill-label">HDD:</span> <span class="file-pill-value">${esc(dateText(downloaded?.downloadedAt))}</span></span></div>`;
   }
   function resumeMarkup() {
     const working = readWorkingCopy();
@@ -285,7 +293,7 @@
     saveWorkingCopySoon('work-area');
   }
   function titleBar() {
-    return `<header class="top-bar"><div class="brand" data-tip="Artifex Scene Editor"><img class="brand-logo" src="${brandLogo}" alt="Artifex logo"><img class="brand-title" src="${brandTitle}" alt="Artifex"></div><span class="title-divider"></span><div class="import-menu ${importOpen ? 'is-open' : ''}" id="importMenu"><button class="import-button" id="importBtn" type="button" data-tip="Import JSON from hard drive, URL, or template.">Import ▾</button><div class="import-dropdown"><label class="file-button">From hard drive<input class="hidden-file" id="jsonFile" type="file" accept=".json,application/json"></label><button class="btn" id="importUrl" type="button">From URL</button><button class="btn" id="importTemplate" type="button">From templates</button></div></div><button class="btn" id="downloadJson" type="button" data-tip="Download the current JSON.">Download JSON</button><button class="btn" id="blankBtn" type="button" data-tip="Clear to blank editor.">Blank Screen</button><span class="tooltip-status" id="hoverStatus">${esc(tip)}</span><span class="status ok">${esc(status)}</span><span class="top-spacer"></span><a class="btn" href="../../">Portal</a></header>`;
+    return `<header class="top-bar"><div class="brand" data-tip="Artifex Scene Editor"><img class="brand-logo" src="${brandLogo}" alt="Artifex logo"><img class="brand-title" src="${brandTitle}" alt="Artifex"></div><button class="btn manual-local-save" id="manualLocalSave" type="button" data-tip="Force save to local browser backup.">💾</button><span class="title-divider"></span><div class="import-menu ${importOpen ? 'is-open' : ''}" id="importMenu"><button class="import-button" id="importBtn" type="button" data-tip="Import JSON from hard drive, URL, or template.">Import ▾</button><div class="import-dropdown"><label class="file-button">From hard drive<input class="hidden-file" id="jsonFile" type="file" accept=".json,application/json"></label><button class="btn" id="importUrl" type="button">From URL</button><button class="btn" id="importTemplate" type="button">From templates</button></div></div><button class="btn" id="downloadJson" type="button" data-tip="Download the current JSON.">Download JSON</button><button class="btn" id="blankBtn" type="button" data-tip="Clear to blank editor.">Blank Screen</button><span class="tooltip-status" id="hoverStatus">${esc(tip)}</span><span class="status ok">${esc(status)}</span><span class="top-spacer"></span><a class="btn" href="../../">Portal</a></header>`;
   }
   function card(id, title, body, tone = '') {
     const isCollapsed = collapsed[id];
@@ -294,7 +302,7 @@
   function controlPanel() {
     if (!scene) return `<aside class="side-panel"><div class="file-pill">No file loaded</div>${card('blank','No Scene Loaded',`<p class="small">Use Import to load a JSON from hard drive, URL, or templates.</p>`, 'basics')}</aside>`;
     const item = real();
-    return `<aside class="side-panel">${filePill()}${card('basics','Scene Basics', basics(), 'basics')}${card('elements','Elements', elements(), 'elements')}${card('selected', item ? (item.name || item.id || 'Selected Item') : 'Selected Item', item ? selectedForm(item) : '<p class="small">Select an object.</p>', 'selected')}${card('json','JSON Preview',`<pre class="json-preview">${esc(JSON.stringify(scene,null,2))}</pre>`, 'json')}</aside>`;
+    return `<aside class="side-panel">${filePill()}${card('basics','Scene', basics(), 'basics')}${card('background','Background', background(), 'basics')}${card('elements','Object Layers', elements(), 'elements')}${card('selected','Selected Details', item ? selectedForm(item) : '<p class="small">Select an object.</p>', 'selected')}${card('json','JSON Preview',`<pre class="json-preview">${esc(JSON.stringify(scene,null,2))}</pre>`, 'json')}</aside>`;
   }
   function input(label, id, value, type = 'text') { return `<div class="field"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(value)}"></div>`; }
   function typeSelect(value) {
@@ -303,7 +311,8 @@
     return `<div class="field"><label for="itemType">Type</label><select id="itemType">${options.map(type => `<option value="${esc(type)}" ${type === normalized ? 'selected' : ''}>${esc(type)}</option>`).join('')}</select></div>`;
   }
   function pathInput(label, id, value, target) { return `<div class="field path-field"><label for="${id}">${label}</label><div class="path-row"><input id="${id}" type="text" value="${esc(value)}"><div class="path-menu"><button class="path-menu-toggle" data-path-menu="${target}" type="button">📁</button><div class="path-dropdown"><button type="button" data-online="${target}">Online</button><button type="button" data-hdd="${target}">HDD</button></div></div></div></div>`; }
-  function basics() { return `${input('Scene ID','sceneId',scene.id)}${input('Scene Name','sceneName',scene.name)}${input('Screen Type','sceneType',scene.screenType || scene.mode)}${pathInput('Background Image Path','sceneBg',bgPath(),'background')}<div class="field-row">${input('Grid Columns','gridCols',scene.grid.columns,'number')}${input('Grid Rows','gridRows',scene.grid.rows,'number')}</div><label class="check-row"><input id="gridShow" type="checkbox" ${scene.grid.show !== false ? 'checked' : ''}> Show grid</label>`; }
+  function basics() { return `${input('Scene ID','sceneId',scene.id)}${input('Scene Name','sceneName',scene.name)}${input('Screen Type','sceneType',scene.screenType || scene.mode)}<div class="field-row">${input('Grid Columns','gridCols',scene.grid.columns,'number')}${input('Grid Rows','gridRows',scene.grid.rows,'number')}</div><label class="check-row"><input id="gridShow" type="checkbox" ${scene.grid.show !== false ? 'checked' : ''}> Show grid</label>`; }
+  function background() { return `${pathInput('Background Image Path','sceneBg',bgPath(),'background')}`; }
   function elements() {
     const item = real();
     return `<div class="button-row compact-actions layer-control-row"><label class="layer-pill">Layer <input id="layerPill" type="number" value="${esc(item?.layer ?? item?.z ?? 0)}"></label></div><div class="item-list">${allItems().sort((a,b)=>Number(b.layer||0)-Number(a.layer||0)).map((it,idx)=>`<button class="btn item-row ${it.id===selectedId?'is-selected':''}" data-select-kind="${it.kind}" data-select-id="${esc(it.id)}" type="button">${idx+1}. z${it.layer ?? it.z ?? 0} · ${esc(it.name || it.id)} · ${esc(it.type || it.kind)}</button>`).join('') || '<p class="small">No elements.</p>'}</div>`;
@@ -340,6 +349,7 @@
     document.querySelectorAll('[data-tip]').forEach(n=>n.addEventListener('mouseenter',()=>{tip=n.dataset.tip; document.getElementById('hoverStatus').textContent=tip;}));
     document.getElementById('openLocalBackup')?.addEventListener('click', openLocalBackup);
     document.getElementById('ignoreLocalBackup')?.addEventListener('click', e=>{ e.currentTarget.closest('.resume-card-inline')?.remove(); toast('Local backup ignored'); });
+    document.getElementById('manualLocalSave')?.addEventListener('click', manualSaveLocal);
     document.getElementById('importBtn')?.addEventListener('click', e=>{ e.stopPropagation(); importOpen=!importOpen; render(); });
     document.getElementById('jsonFile')?.addEventListener('change', importFile);
     document.getElementById('importUrl')?.addEventListener('click', importUrl);

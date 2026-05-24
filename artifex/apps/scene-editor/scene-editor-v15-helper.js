@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v0.15';
+  const VERSION = 'v0.28-consolidation';
   const LAYER_LOCK_KEY = 'artifex.sceneEditor.layerLocks.v1';
   const BORDER_KEY = 'artifex.sceneEditor.borderHidden.v1';
   const ASSET_MANIFEST = '../../assets-library/asset-library.json';

@@ -3,6 +3,31 @@
 
   const NUMERIC_SELECTORS = '.side-panel input[type="number"]';
   const ignoredIds = new Set([]);
+  const baselineValues = new Map();
+  let resetMenu = null;
+
+  function core() {
+    return window.ArtifexSceneEditorCore || null;
+  }
+
+  function selectedNode() {
+    const id = core()?.getSelectedId?.();
+    if (!id) return document.querySelector('.scene-item.is-selected');
+    return Array.from(document.querySelectorAll('.scene-item[data-stage-id]')).find((node) => node.dataset.stageId === id) || document.querySelector('.scene-item.is-selected');
+  }
+
+  function baselineKeyFor(input) {
+    const id = input.id || '';
+    const editor = core();
+    const selected = editor?.getSelectedItem?.();
+    if (id.startsWith('item') || id === 'layerPill') return `${selected?.id || 'selected'}:${id}`;
+    return `global:${id}`;
+  }
+
+  function rememberBaseline(input) {
+    const key = baselineKeyFor(input);
+    if (!baselineValues.has(key)) baselineValues.set(key, input.value || '0');
+  }
 
   function configFor(input) {
     const id = input.id || '';
@@ -10,13 +35,19 @@
     const name = `${id} ${label}`.toLowerCase();
     const current = Number(input.value || 0);
 
-    if (id === 'itemRotation' || name.includes('rotate')) return { min: -180, max: 180, step: 1 };
-    if (id === 'itemSkewX' || id === 'itemSkewY' || name.includes('skew')) return { min: -60, max: 60, step: 1 };
-    if (id === 'itemZ' || name.includes('depth')) return { min: -20, max: 20, step: 1 };
-    if (id === 'itemLayer' || id === 'layerPill' || name.includes('layer')) return { min: 0, max: 100, step: 1 };
-    if (id === 'gridCols' || id === 'gridRows' || name.includes('grid')) return { min: 1, max: 64, step: 1 };
-    if (id === 'itemW' || id === 'itemH' || name.includes('width') || name.includes('height')) return { min: 1, max: 200, step: 0.25 };
-    if (id === 'itemX' || id === 'itemY' || name.includes('axis')) return { min: -100, max: 200, step: 0.25 };
+    if (id === 'itemRotation' || name.includes('rotate')) return { min: -180, max: 180, step: 1, reset: 0 };
+    if (id === 'itemSkewX' || id === 'itemSkewY' || name.includes('skew')) return { min: -60, max: 60, step: 1, reset: 0 };
+    if (id === 'itemZ' || name.includes('depth')) return { min: -20, max: 20, step: 1, reset: 0 };
+    if (id === 'itemLayer' || id === 'layerPill' || name.includes('layer')) return { min: 0, max: 100, step: 1, reset: 10 };
+    if (id === 'gridCols' || name.includes('grid columns')) return { min: 1, max: 64, step: 1, reset: 16 };
+    if (id === 'gridRows' || name.includes('grid rows')) return { min: 1, max: 64, step: 1, reset: 9 };
+    if (id === 'itemW' || name.includes('width')) return { min: 1, max: 200, step: 0.25, reset: null, baselineReset: true };
+    if (id === 'itemH' || name.includes('height')) return { min: 1, max: 200, step: 0.25, reset: null, baselineReset: true };
+    if (id === 'itemX' || name.includes('x axis')) return { min: -100, max: 200, step: 0.25, reset: 0 };
+    if (id === 'itemY' || name.includes('y axis')) return { min: -100, max: 200, step: 0.25, reset: 0 };
+    if (id.includes('Opacity')) return { min: 0, max: 100, step: 1, reset: 100 };
+    if (id.includes('Brightness') || id.includes('Contrast') || id.includes('Saturation')) return { min: 0, max: 250, step: 1, reset: 100 };
+    if (id.includes('Hue') || id.includes('Vibrance') || id.includes('Exposure') || id.includes('ShadowStrength') || id.includes('GlowStrength')) return { min: id.includes('Hue') ? -180 : id.includes('Vibrance') || id.includes('Exposure') ? -100 : 0, max: id.includes('Hue') ? 180 : 100, step: 1, reset: 0 };
 
     const explicitMin = input.getAttribute('min');
     const explicitMax = input.getAttribute('max');
@@ -24,8 +55,18 @@
     return {
       min: explicitMin !== null ? Number(explicitMin) : Math.min(0, current - 50),
       max: explicitMax !== null ? Number(explicitMax) : Math.max(100, current + 50),
-      step: explicitStep !== null && explicitStep !== 'any' ? Number(explicitStep) : 1
+      step: explicitStep !== null && explicitStep !== 'any' ? Number(explicitStep) : 1,
+      reset: explicitMin !== null && explicitMax !== null ? clamp(0, Number(explicitMin), Number(explicitMax)) : 0
     };
+  }
+
+  function resetValueFor(input) {
+    const cfg = configFor(input);
+    if (cfg.baselineReset) {
+      const stored = baselineValues.get(baselineKeyFor(input));
+      return stored !== undefined ? stored : input.value || 0;
+    }
+    return cfg.reset;
   }
 
   function clamp(value, min, max) {
@@ -48,6 +89,11 @@
     return clamp(Number(formatValue(snapped, step)), cfg.min, cfg.max);
   }
 
+  function closeResetMenu() {
+    resetMenu?.remove();
+    resetMenu = null;
+  }
+
   function closeOtherSliders(except) {
     document.querySelectorAll('.value-slider-popover-v18.is-open').forEach((node) => {
       if (node !== except) node.classList.remove('is-open');
@@ -57,10 +103,67 @@
     });
   }
 
+  function applyTransformDirect(input, value) {
+    const id = input.id || '';
+    if (!['itemX', 'itemY', 'itemW', 'itemH', 'itemLayer', 'layerPill', 'itemZ', 'itemRotation', 'itemSkewX', 'itemSkewY'].includes(id)) return;
+    const editor = core();
+    const item = editor?.getSelectedItem?.();
+    if (!item) return;
+    const node = selectedNode();
+    const numeric = Number(value || 0);
+
+    if (id === 'itemX') {
+      item.x = numeric;
+      if (node) node.style.left = `${numeric}%`;
+    } else if (id === 'itemY') {
+      item.y = numeric;
+      if (node) node.style.top = `${numeric}%`;
+    } else if (id === 'itemW') {
+      item.width = numeric;
+      if (node) node.style.width = `${numeric}%`;
+    } else if (id === 'itemH') {
+      item.height = numeric;
+      if (node) node.style.height = `${numeric}%`;
+    } else if (id === 'itemLayer' || id === 'layerPill') {
+      item.layer = numeric;
+      item.z = numeric;
+      if (node) node.style.zIndex = String(numeric);
+      const layer = document.getElementById(id === 'itemLayer' ? 'layerPill' : 'itemLayer');
+      if (layer && layer.value !== String(value)) layer.value = value;
+    } else if (id === 'itemZ') {
+      item.zDepth = numeric;
+      const zVal = document.getElementById('zVal');
+      if (zVal) zVal.textContent = String(value);
+      if (node && !/rotate|skew/i.test(node.style.transform || '')) {
+        const scale = clamp(1 + numeric * 0.035, 0.45, 2.15);
+        node.style.transform = `scale(${scale})`;
+      }
+    } else if (id === 'itemRotation') {
+      item.rotation = numeric;
+    } else if (id === 'itemSkewX') {
+      item.skewX = numeric;
+    } else if (id === 'itemSkewY') {
+      item.skewY = numeric;
+    }
+
+    editor?.saveWorkingCopySoon?.('transform slider');
+  }
+
   function setInputValue(input, value) {
     input.value = value;
+    applyTransformDirect(input, value);
     input.dispatchEvent(new Event('input', { bubbles: true }));
     input.dispatchEvent(new Event('change', { bubbles: true }));
+    applyTransformDirect(input, value);
+  }
+
+  function resetInput(input) {
+    const cfg = configFor(input);
+    const raw = resetValueFor(input);
+    const value = formatValue(clamp(raw, cfg.min, cfg.max), cfg.step);
+    setInputValue(input, value);
+    syncSlider(input);
+    closeResetMenu();
   }
 
   function syncSlider(input) {
@@ -89,6 +192,7 @@
   }
 
   function startCustomDrag(event, input, track) {
+    if (event.button === 2) return;
     const cfg = configFor(input);
     const apply = (clientY) => {
       const value = valueFromPointer(track, clientY, cfg);
@@ -100,6 +204,7 @@
       apply(moveEvent.clientY);
       moveEvent.preventDefault();
       moveEvent.stopPropagation();
+      moveEvent.stopImmediatePropagation?.();
     };
     const end = () => {
       window.removeEventListener('pointermove', move, true);
@@ -111,12 +216,27 @@
     window.addEventListener('pointercancel', end, true);
     event.preventDefault();
     event.stopPropagation();
+    event.stopImmediatePropagation?.();
+  }
+
+  function showResetMenu(event, input) {
+    closeResetMenu();
+    resetMenu = document.createElement('div');
+    resetMenu.className = 'value-slider-reset-menu-v18';
+    resetMenu.style.left = `${event.clientX}px`;
+    resetMenu.style.top = `${event.clientY}px`;
+    resetMenu.innerHTML = '<button type="button">Reset</button>';
+    resetMenu.querySelector('button')?.addEventListener('click', () => resetInput(input));
+    document.body.appendChild(resetMenu);
+    event.preventDefault();
+    event.stopPropagation();
   }
 
   function decorate(input) {
     if (!input || ignoredIds.has(input.id) || input.dataset.v18ValueSlider === 'true') return;
     const field = input.closest('.field');
     if (!field) return;
+    rememberBaseline(input);
     input.dataset.v18ValueSlider = 'true';
     field.classList.add('value-slider-field-v18');
 
@@ -124,6 +244,13 @@
     input.setAttribute('step', String(cfg.step));
     input.setAttribute('min', String(cfg.min));
     input.setAttribute('max', String(cfg.max));
+
+    const reset = document.createElement('button');
+    reset.type = 'button';
+    reset.className = 'value-slider-reset-v18';
+    reset.title = 'Reset value';
+    reset.setAttribute('aria-label', 'Reset value');
+    reset.textContent = '↩️';
 
     const dot = document.createElement('button');
     dot.type = 'button';
@@ -137,20 +264,29 @@
 
     const track = popover.querySelector('.value-slider-track-v18');
 
+    reset.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      resetInput(input);
+    });
+
     dot.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
+      closeResetMenu();
       const willOpen = !popover.classList.contains('is-open');
       closeOtherSliders(popover);
       popover.classList.toggle('is-open', willOpen);
       dot.classList.toggle('is-open', willOpen);
       syncSlider(input);
     });
+    dot.addEventListener('contextmenu', (event) => showResetMenu(event, input));
 
     popover.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
     }, true);
+    popover.addEventListener('pointerdown', (event) => startCustomDrag(event, input, track), true);
 
     track.addEventListener('pointerdown', (event) => startCustomDrag(event, input, track), true);
     track.addEventListener('keydown', (event) => {
@@ -171,6 +307,7 @@
     input.addEventListener('input', () => syncSlider(input));
     input.addEventListener('change', () => syncSlider(input));
 
+    field.appendChild(reset);
     field.appendChild(dot);
     field.appendChild(popover);
     syncSlider(input);
@@ -179,16 +316,23 @@
   function decorateAll() {
     document.querySelectorAll(NUMERIC_SELECTORS).forEach((input) => {
       decorate(input);
-      if (input?.dataset.v18ValueSlider === 'true') syncSlider(input);
+      if (input?.dataset.v18ValueSlider === 'true') {
+        rememberBaseline(input);
+        syncSlider(input);
+      }
     });
   }
 
   document.addEventListener('click', (event) => {
     if (!event.target.closest?.('.value-slider-field-v18')) closeOtherSliders(null);
+    if (!event.target.closest?.('.value-slider-reset-menu-v18')) closeResetMenu();
   }, true);
 
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') closeOtherSliders(null);
+    if (event.key === 'Escape') {
+      closeOtherSliders(null);
+      closeResetMenu();
+    }
   }, true);
 
   window.addEventListener('load', decorateAll);

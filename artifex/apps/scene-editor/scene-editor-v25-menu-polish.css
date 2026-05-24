@@ -1,0 +1,163 @@
+/* v0.25 menu and card header polish */
+
+:root {
+  --artifex-brown-fade-v25: linear-gradient(180deg, rgba(59, 31, 13, 0.98), rgba(19, 10, 7, 0.98));
+  --artifex-purple-fade-v25: linear-gradient(180deg, rgba(112, 30, 128, 0.98), rgba(65, 13, 76, 0.98));
+  --artifex-copper-v25: rgba(184, 119, 63, 0.78);
+  --artifex-cream-v25: #f1dcc2;
+  --artifex-purple-glow-v25: rgba(195, 0, 255, 0.36);
+}
+
+.panel-card > h2,
+.editor-section > summary {
+  background: var(--artifex-purple-fade-v25) !important;
+  border: 1px solid var(--artifex-copper-v25) !important;
+  border-radius: 16px 16px 10px 10px !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 230, 190, 0.08), 0 0 16px rgba(195, 0, 255, 0.14) !important;
+  color: var(--artifex-cream-v25) !important;
+}
+
+.panel-card.is-collapsed > h2 {
+  background: var(--artifex-brown-fade-v25) !important;
+  border-radius: 16px !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 230, 190, 0.05), 0 0 12px rgba(0, 0, 0, 0.24) !important;
+}
+
+.panel-card > h2 span,
+.editor-section > summary h3 {
+  color: var(--artifex-cream-v25) !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.72);
+}
+
+.card-toggle {
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #d8ecff !important;
+  box-shadow: none !important;
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Inter, system-ui, sans-serif !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+}
+
+.card-toggle:hover {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  filter: drop-shadow(0 0 7px rgba(231, 56, 56, 0.75)) !important;
+}
+
+.top-bar.has-menubar-v25 {
+  gap: 8px;
+  position: relative;
+  z-index: 14000;
+}
+
+.top-bar.has-menubar-v25 .import-menu,
+.top-bar.has-menubar-v25 #downloadJson,
+.top-bar.has-menubar-v25 #blankBtn {
+  display: none !important;
+}
+
+.editor-menubar-v25 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 14010;
+}
+
+.editor-menu-v25 {
+  position: relative;
+  display: inline-flex;
+}
+
+.editor-menu-button-v25 {
+  min-width: 58px;
+  padding: 7px 13px;
+  border: 1px solid var(--artifex-copper-v25);
+  border-radius: 999px;
+  background: var(--artifex-brown-fade-v25);
+  color: var(--artifex-cream-v25);
+  box-shadow: inset 0 0 0 1px rgba(255, 230, 190, 0.05), 0 6px 16px rgba(0, 0, 0, 0.28);
+  letter-spacing: .02em;
+  font-size: 14px;
+  line-height: 1.1;
+  outline: none !important;
+}
+
+.editor-menu-button-v25:focus,
+.editor-menu-button-v25:focus-visible {
+  outline: none !important;
+  border-color: rgba(195, 0, 255, 0.95) !important;
+  box-shadow: 0 0 0 2px rgba(195, 0, 255, 0.52), 0 0 16px var(--artifex-purple-glow-v25) !important;
+}
+
+.editor-menu-button-v25:hover,
+.editor-menu-v25.is-open-v25 .editor-menu-button-v25 {
+  border-color: rgba(231, 56, 56, 0.86);
+  background: var(--artifex-purple-fade-v25);
+  box-shadow: 0 0 14px var(--artifex-purple-glow-v25), inset 0 0 0 1px rgba(255, 230, 190, 0.08);
+}
+
+.editor-menu-dropdown-v25 {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  z-index: 15000;
+  display: none;
+  min-width: 176px;
+  padding: 8px;
+  border: 1px solid var(--artifex-copper-v25);
+  border-radius: 14px;
+  background: rgba(9, 10, 11, 0.99);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.78), 0 0 18px rgba(195, 0, 255, 0.24);
+}
+
+.editor-menu-v25.is-open-v25 .editor-menu-dropdown-v25 {
+  display: grid;
+  gap: 6px;
+}
+
+.editor-menu-item-v25 {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid rgba(184, 119, 63, 0.46);
+  border-radius: 10px;
+  background: var(--artifex-brown-fade-v25);
+  color: var(--artifex-cream-v25);
+  text-align: left;
+  font-size: 13px;
+  outline: none !important;
+}
+
+.editor-menu-item-v25:hover:not(:disabled),
+.editor-menu-item-v25:focus-visible:not(:disabled) {
+  border-color: rgba(195, 0, 255, 0.92);
+  background: var(--artifex-purple-fade-v25);
+  box-shadow: 0 0 10px rgba(195, 0, 255, 0.28);
+}
+
+.editor-menu-item-v25:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.top-bar.has-menubar-v25 .btn,
+.top-bar.has-menubar-v25 .import-button {
+  background: var(--artifex-brown-fade-v25) !important;
+  border-color: var(--artifex-copper-v25) !important;
+  color: var(--artifex-cream-v25) !important;
+}
+
+.top-bar.has-menubar-v25 .btn:hover,
+.top-bar.has-menubar-v25 .import-button:hover {
+  background: var(--artifex-purple-fade-v25) !important;
+  border-color: rgba(231, 56, 56, 0.86) !important;
+}
