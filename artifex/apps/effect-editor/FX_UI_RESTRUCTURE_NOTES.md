@@ -37,3 +37,16 @@ This pass does not yet add the built-in brush picker. The next pass should add:
 - Particle Source: Shape / Brush / Custom PNG
 - built-in brush registry pointing at the brushes folder
 - repaired presets using brush PNGs instead of hard shapes
+
+
+## Menu label correction
+
+The first UI restructure renamed the main menu buttons too aggressively. The top menu has been restored to the expected application language:
+
+- File
+- Edit
+- View
+- Insert
+- Help
+
+The menu remains left-aligned after the Artifex logo/title divider. The internal dropdown wording can still use Artifex terminology such as Effect Archetype and Effect Layer, but the visible top-level menu labels should remain conventional so users do not lose File/Edit muscle memory.
