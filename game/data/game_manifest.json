@@ -1,0 +1,8 @@
+{
+  "id": "forever_bound_game_manifest",
+  "version": "0.1.0",
+  "title": "Forever Bound",
+  "startupScreen": "game/data/screens/startup_screen.json",
+  "firstScene": "game/data/scenes/ch00_q00_first_scene.json",
+  "notes": "Root game manifest. Forever Bound runtime loads this file first, then loads the startup screen and first playable scene. Artifex editor files remain separate under /artifex/."
+}
