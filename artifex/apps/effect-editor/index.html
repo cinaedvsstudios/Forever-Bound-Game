@@ -143,7 +143,7 @@
                         <span>Low Performance Mode</span> <span id="view-performance-status" class="text-[9px] text-slate-500">OFF</span>
                     </button>
                     <div class="border-t border-artifex-border my-1"></div>
-                    <button onclick="resetEmitterPosition(); showToast('Emitter repositioned to center.', 'success')" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center gap-2" title="Recenter the emitter to the exact middle of the screen.">
+                    <button onclick="centerEmitterFromToolbar()" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center gap-2" title="Recenter the emitter to the exact middle of the screen.">
                         <span>📍</span> Reset Emitter Location
                     </button>
                 </div>
@@ -647,7 +647,7 @@ engine.start();</pre>
                             <button onclick="clearParticles()" class="w-full px-3 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray hover:text-white text-artifex-gold transition rounded-md border border-artifex-border text-[11px] font-semibold text-center focus:outline-none shadow-[0_2px_5px_rgba(0,0,0,0.6)]" title="Instantly clear all drawing arrays.">
                                 Clear Particles
                             </button>
-                            <button onclick="resetEmitterPosition()" class="w-full px-3 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray hover:text-white text-artifex-gold transition rounded-md border border-artifex-border text-[11px] font-semibold text-center focus:outline-none shadow-[0_2px_5px_rgba(0,0,0,0.6)]" title="Center the anchor point for all layers.">
+                            <button onclick="centerEmitterFromToolbar()" class="w-full px-3 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray hover:text-white text-artifex-gold transition rounded-md border border-artifex-border text-[11px] font-semibold text-center focus:outline-none shadow-[0_2px_5px_rgba(0,0,0,0.6)]" title="Center the emitter anchor and clear preview pan offset.">
                                 Center Emitter
                             </button>
                             <button onclick="newConfiguration()" class="w-full px-3 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray hover:text-white text-artifex-gold transition rounded-md border border-artifex-border text-[11px] font-semibold text-center focus:outline-none shadow-[0_2px_5px_rgba(0,0,0,0.6)]" title="Wipe canvas back to an empty slate.">
@@ -2054,12 +2054,18 @@ engine.start();</pre>
             if (!gridBounds || gridBounds.width <= 0 || gridBounds.height <= 0) {
                 updateGridBounds();
             }
-            emitterRatio.x = 0.5;
-            emitterRatio.y = 0.5;
+            // Clear pan so the visual emitter guide and the grid centre line up again.
+            panOffset = { x: 0, y: 0 };
+            emitterRatio = { x: 0.5, y: 0.5 };
             updateEmitterFromRatio();
             clampEmitterPosition();
             updateRatioFromEmitter();
             syncCoordinatesControls();
+        }
+
+        function centerEmitterFromToolbar() {
+            resetEmitterPosition();
+            showToast('Emitter centered on preview grid.', 'success');
         }
 
         function resetZoomAndPan() {
