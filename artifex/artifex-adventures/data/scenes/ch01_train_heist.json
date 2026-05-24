@@ -1,0 +1,18 @@
+{
+  "id": "ch01_train_heist",
+  "screenType": "travel",
+  "name": "Night Train Corridor",
+  "quest": "The Case of the Missing Book",
+  "calling": "Find the missing ledger before the train reaches the next station.",
+  "background": { "image": "", "width": 3000, "height": 1080, "fit": "cover", "scrollEnabled": true, "loopBackground": false },
+  "player": { "id": "scout_hero", "sprite": "", "image": "", "startX": 240, "startY": 790, "widthPercent": 11.5, "shadow": { "opacity": 0.55, "width": 110, "height": 22, "blur": 9 } },
+  "travel": { "groundY": 790, "cameraFollow": true, "cameraMinX": 0, "cameraMaxX": 1920, "endpointX": 2820, "destinationScene": "" },
+  "elements": [
+    { "id": "train_window_glow", "type": "text", "label": "Window Glow", "x": 8, "y": 10, "width": 24, "height": 30, "z": 1, "visible": true, "text": "WINDOW", "visual": { "opacity": 55, "brightness": 140, "contrast": 95, "saturation": 75, "glowStrength": 25 } },
+    { "id": "luggage_stack", "type": "text", "label": "Luggage Stack", "x": 62, "y": 62, "width": 18, "height": 16, "z": 4, "visible": true, "text": "LUGGAGE", "visual": { "opacity": 100, "brightness": 100, "contrast": 100, "saturation": 100 } },
+    { "id": "book_page_clue", "type": "text", "label": "Book Page Clue", "x": 42, "y": 74, "width": 11, "height": 8, "z": 6, "visible": true, "text": "PAGE", "visual": { "opacity": 100, "brightness": 120, "contrast": 105, "saturation": 85, "glowStrength": 8 } }
+  ],
+  "objects": [],
+  "audio": { "music": "", "ambience": "", "transitionSound": "", "buttonPressSound": "", "musicVolume": 0.45, "ambienceVolume": 0.5, "sfxVolume": 0.75, "loopMusic": true, "loopAmbience": true },
+  "editor": { "grid": { "columns": 20, "rows": 10 }, "notes": "First Artifex Adventures template scene. Replace placeholders with train, scout, clue, and chase assets." }
+}
