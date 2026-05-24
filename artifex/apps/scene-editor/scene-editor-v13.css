@@ -1,5 +1,50 @@
 /* Scene Editor v0.13 control card conversion */
 
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(195, 0, 255, 0.82) #121313;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #121313;
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid #121313;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(195, 0, 255, 0.95), rgba(93, 0, 255, 0.78));
+  box-shadow: inset 0 0 0 1px rgba(255, 230, 190, 0.15), 0 0 8px rgba(195, 0, 255, 0.35);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(230, 90, 255, 1), rgba(195, 0, 255, 0.95));
+}
+
+.panel-card,
+.panel-card > .card-body {
+  background: #121313 !important;
+}
+
+.panel-card > h2 {
+  font-size: 12px !important;
+  line-height: 1.15 !important;
+  letter-spacing: 0.055em !important;
+  padding: 10px 13px !important;
+}
+
+.panel-card > h2 span {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
 .file-pill-v13,
 .file-pill {
   display: grid !important;
