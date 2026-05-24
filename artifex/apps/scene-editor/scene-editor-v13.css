@@ -3,9 +3,9 @@
 .file-pill-v13,
 .file-pill {
   display: grid !important;
-  grid-template-columns: minmax(92px, 1fr) minmax(120px, 1.25fr) minmax(96px, 1fr) !important;
-  grid-template-rows: auto !important;
-  gap: 8px !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto auto auto !important;
+  gap: 4px !important;
   align-items: center !important;
   overflow: hidden !important;
   width: 100% !important;
@@ -63,23 +63,31 @@
 .file-pill-value,
 .file-pill-name,
 .file-pill-title .file-pill-name {
+  flex: 1 1 auto !important;
   min-width: 0 !important;
+  max-width: 100% !important;
+  display: inline-block !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   color: #ffd86b !important;
   font-weight: 800 !important;
   text-shadow: 0 0 7px rgba(255, 225, 143, .35) !important;
+  white-space: nowrap !important;
 }
 
-.file-pill-value:hover,
-.file-pill-name:hover {
-  animation: filePillValueMarquee 5.5s linear infinite alternate;
+.file-pill-file:hover .file-pill-name,
+.file-pill-file:focus-within .file-pill-name {
+  flex: 0 0 auto !important;
+  min-width: max-content !important;
+  max-width: none !important;
   overflow: visible !important;
+  text-overflow: clip !important;
+  animation: filePillFilenameMarquee 7s linear infinite alternate;
 }
 
-@keyframes filePillValueMarquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-34%); }
+@keyframes filePillFilenameMarquee {
+  0%, 10% { transform: translateX(0); }
+  90%, 100% { transform: translateX(-45%); }
 }
 
 .file-pill-save .file-pill-sep,
