@@ -57,7 +57,7 @@
   function cardMarkup(visual) {
     return `
       <div class="v15-card-content visual-card-content-v15 visual-live-controls-v21">
-        <p class="card-layout-note visual-note-v21">Live visual controls. Vibrance is approximated through extra saturation because CSS has no native vibrance filter; Exposure is applied as an extra brightness offset.</p>
+        <p class="card-layout-note visual-note-v21">Live visual controls. Vibrance is boosted through stronger saturation/contrast because CSS has no native vibrance filter; Exposure is applied as extra brightness.</p>
         <div class="card-layout-group card-layout-2 visual-effects-live-group-v21">
           ${selectMarkup('visualBlendModeV21', 'Blend Mode', visual.blendMode, BLEND_MODES)}
           ${numberMarkup('visualOpacityV21', 'Opacity', visual.opacity, 0, 100, 1)}
@@ -83,30 +83,38 @@
     return visual;
   }
 
-  function applyVisualToNode(node, item) {
-    const visual = visualForRead(item);
-    const target = targetForNode(node);
-    const brightness = clamp(Number(visual.brightness) + Number(visual.exposure || 0), 0, 300);
-    const contrast = clamp(visual.contrast, 0, 300);
-    const saturation = clamp(Number(visual.saturation) + Number(visual.vibrance || 0) * 0.35, 0, 300);
+  function buildVisualFilter(visual) {
+    const vibrance = clamp(visual.vibrance, -100, 100);
+    const brightness = clamp(Number(visual.brightness) + Number(visual.exposure || 0), 0, 340);
+    const contrast = clamp(Number(visual.contrast) + Math.max(0, vibrance) * 0.38, 0, 340);
+    const saturation = clamp(Number(visual.saturation) + vibrance * 1.2, 0, 360);
     const hue = clamp(visual.hue, -360, 360);
-    const opacity = clamp(visual.opacity, 0, 100) / 100;
     const shadow = clamp(visual.shadowStrength, 0, 100);
     const glow = clamp(visual.glowStrength, 0, 100);
     const filters = [`brightness(${brightness}%)`, `contrast(${contrast}%)`, `saturate(${saturation}%)`, `hue-rotate(${hue}deg)`];
 
     if (shadow > 0) {
-      const blur = Math.round(2 + shadow * 0.18);
-      const alpha = clamp(0.18 + shadow / 140, 0, 0.92);
-      filters.push(`drop-shadow(${Math.round(shadow * 0.04)}px ${Math.round(2 + shadow * 0.05)}px ${blur}px rgba(0,0,0,${alpha}))`);
+      const offset = Math.round(2 + shadow * 0.11);
+      const blur = Math.round(5 + shadow * 0.42);
+      const alpha = clamp(0.26 + shadow / 70, 0, 1);
+      filters.push(`drop-shadow(${Math.round(shadow * 0.08)}px ${offset}px ${blur}px rgba(0,0,0,${alpha}))`);
+      if (shadow > 45) filters.push(`drop-shadow(0 ${Math.round(offset * 0.5)}px ${Math.round(blur * 0.55)}px rgba(0,0,0,${clamp(alpha * 0.75, 0, 0.95)}))`);
     }
     if (glow > 0) {
-      const blur = Math.round(3 + glow * 0.24);
-      const alpha = clamp(0.2 + glow / 130, 0, 0.95);
-      filters.push(`drop-shadow(0 0 ${blur}px rgba(195,0,255,${alpha}))`);
+      const blur1 = Math.round(5 + glow * 0.42);
+      const blur2 = Math.round(9 + glow * 0.72);
+      const alpha = clamp(0.34 + glow / 70, 0, 1);
+      filters.push(`drop-shadow(0 0 ${blur1}px rgba(195,0,255,${alpha}))`);
+      if (glow > 35) filters.push(`drop-shadow(0 0 ${blur2}px rgba(255,135,255,${clamp(alpha * 0.72, 0, 0.9)}))`);
     }
+    return filters.join(' ');
+  }
 
-    target.style.filter = filters.join(' ');
+  function applyVisualToNode(node, item) {
+    const visual = visualForRead(item);
+    const target = targetForNode(node);
+    const opacity = clamp(visual.opacity, 0, 100) / 100;
+    target.style.filter = buildVisualFilter(visual);
     target.style.opacity = String(opacity);
     node.style.mixBlendMode = visual.blendMode || 'normal';
   }
