@@ -91,9 +91,14 @@
 }
 
 .file-pill-save .file-pill-sep,
-.file-pill-save .file-pill-label:last-of-type,
-.file-pill-save .file-pill-value:last-of-type {
+.file-pill-save .file-pill-label:last-of-type {
   display: none !important;
+}
+
+.file-pill-save .file-pill-label + .file-pill-value,
+.file-pill-save .file-pill-value:first-of-type,
+.file-pill-save .file-pill-value:last-of-type {
+  display: inline-block !important;
 }
 
 .file-pill-sep,
