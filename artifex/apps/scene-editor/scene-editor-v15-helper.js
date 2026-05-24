@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v0.15';
+  const VERSION = 'v0.28-consolidation';
   const LAYER_LOCK_KEY = 'artifex.sceneEditor.layerLocks.v1';
   const BORDER_KEY = 'artifex.sceneEditor.borderHidden.v1';
   const ASSET_MANIFEST = '../../assets-library/asset-library.json';
@@ -692,7 +692,7 @@
     if (!select || !assetManifest) return;
     const wanted = select.value || 'all';
     popup.querySelectorAll('.asset-card-btn[data-asset-id]').forEach((card) => {
-      const asset = (assetManifest.assets || []).find((item) => item.id === card.dataset.assetId);
+      const asset = (assetManifest.assets || []).find((item) => item.id === card.datasetAssetId);
       card.classList.toggle('asset-game-filter-hidden', !(wanted === 'all' || classifyAsset(asset).has(wanted)));
     });
   }
