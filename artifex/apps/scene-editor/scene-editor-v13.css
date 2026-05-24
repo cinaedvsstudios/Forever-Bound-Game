@@ -3,14 +3,14 @@
 .file-pill-v13,
 .file-pill {
   display: grid !important;
-  grid-template-columns: minmax(0, 1fr) !important;
-  grid-template-rows: auto auto auto !important;
-  gap: 3px !important;
-  align-items: start !important;
+  grid-template-columns: minmax(92px, 1fr) minmax(120px, 1.25fr) minmax(96px, 1fr) !important;
+  grid-template-rows: auto !important;
+  gap: 8px !important;
+  align-items: center !important;
   overflow: hidden !important;
   width: 100% !important;
   margin: 0 0 14px !important;
-  padding: 10px 18px !important;
+  padding: 10px 16px !important;
   border: 1px solid rgba(184, 119, 63, 0.78) !important;
   border-radius: 18px !important;
   background: linear-gradient(180deg, rgba(112, 30, 128, 0.96), rgba(65, 13, 76, 0.98)) !important;
@@ -22,10 +22,9 @@
 .file-pill-project,
 .file-pill-title,
 .file-pill-status-row {
-  display: grid !important;
-  grid-template-columns: 20px minmax(0, 1fr) !important;
+  display: flex !important;
   align-items: center !important;
-  gap: 6px !important;
+  gap: 5px !important;
   min-width: 0 !important;
   overflow: hidden !important;
   color: #f1dcc2 !important;
@@ -34,7 +33,6 @@
   letter-spacing: .03em !important;
   line-height: 1.2 !important;
   text-transform: none !important;
-  text-overflow: ellipsis !important;
   white-space: nowrap !important;
   text-shadow: none !important;
 }
@@ -42,28 +40,19 @@
 .file-pill-icon,
 .file-pill-icons,
 .file-pill-action-icons {
-  grid-column: 1 !important;
+  flex: 0 0 auto !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 20px !important;
+  width: 17px !important;
   margin: 0 !important;
   white-space: nowrap !important;
   line-height: 1 !important;
   filter: drop-shadow(0 0 5px rgba(195, 0, 255, 0.48)) !important;
 }
 
-.file-pill-line > .file-pill-label,
-.file-pill-line > .file-pill-value,
-.file-pill-line > .file-pill-meta-line,
-.file-pill-project > :not(.file-pill-icon),
-.file-pill-title > :not(.file-pill-icon),
-.file-pill-status-row > :not(.file-pill-icon):not(.file-pill-icons) {
-  grid-column: 2 !important;
-  min-width: 0 !important;
-}
-
 .file-pill-label {
+  flex: 0 0 auto !important;
   color: #66c7ff !important;
   font-weight: 900 !important;
   letter-spacing: .045em !important;
@@ -74,9 +63,29 @@
 .file-pill-value,
 .file-pill-name,
 .file-pill-title .file-pill-name {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
   color: #ffd86b !important;
   font-weight: 800 !important;
   text-shadow: 0 0 7px rgba(255, 225, 143, .35) !important;
+}
+
+.file-pill-value:hover,
+.file-pill-name:hover {
+  animation: filePillValueMarquee 5.5s linear infinite alternate;
+  overflow: visible !important;
+}
+
+@keyframes filePillValueMarquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-34%); }
+}
+
+.file-pill-save .file-pill-sep,
+.file-pill-save .file-pill-label:last-of-type,
+.file-pill-save .file-pill-value:last-of-type {
+  display: none !important;
 }
 
 .file-pill-sep,
@@ -105,6 +114,81 @@
   width: 100%;
 }
 
+.selected-metric-table-v13c,
+.selected-metric-table-v15 {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 58px minmax(0, 1fr) !important;
+  gap: 5px 8px !important;
+  align-items: end !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.metric-label-cell {
+  min-width: 0 !important;
+  color: #f1dcc2 !important;
+  font-size: 10px !important;
+  line-height: 1.1 !important;
+  letter-spacing: .045em !important;
+  text-transform: uppercase !important;
+  opacity: .9 !important;
+}
+
+.metric-label-center {
+  text-align: center !important;
+}
+
+.metric-value-cell {
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.metric-value-cell > .field {
+  width: 100% !important;
+}
+
+.metric-icon-value {
+  justify-content: center !important;
+  align-self: center !important;
+}
+
+.metric-icon-row {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+}
+
+.metric-icon-button,
+.scale-step-btn,
+.wrap-image-btn,
+.aspect-lock-btn-v23 {
+  width: 25px !important;
+  height: 25px !important;
+  min-width: 25px !important;
+  min-height: 25px !important;
+  padding: 0 !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  border: 1px solid rgba(184,119,63,.58) !important;
+  border-radius: 8px !important;
+  background: linear-gradient(180deg, rgba(59, 31, 13, 0.98), rgba(19, 10, 7, 0.98)) !important;
+  color: #f1dcc2 !important;
+  box-shadow: none !important;
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Inter, system-ui, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+}
+
+.metric-internal-label-hidden {
+  display: none !important;
+}
+
+.rotate-placeholder-v13e {
+  margin-top: 12px !important;
+}
+
 .basics-identity-group,
 .selected-identity-group,
 .selected-tags-group,
@@ -122,14 +206,16 @@
   margin-top: 4px;
 }
 
-.elements-controls-group .layer-control-row {
+.elements-controls-group .layer-control-row,
+.layer-control-row {
   justify-content: center !important;
   gap: 10px !important;
   flex-wrap: wrap;
   text-align: center;
 }
 
-.elements-controls-group .layer-control-row label {
+.elements-controls-group .layer-control-row label,
+.layer-control-row label {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -137,7 +223,9 @@
 }
 
 .elements-controls-group .layer-control-row input,
-.elements-controls-group .layer-control-row #layerPill {
+.elements-controls-group .layer-control-row #layerPill,
+.layer-control-row input,
+.layer-control-row #layerPill {
   border: 0 !important;
   box-shadow: none !important;
   background: transparent !important;
@@ -151,6 +239,54 @@
 
 .elements-list-group .item-list {
   width: 100%;
+}
+
+.layer-stack-table-v14 {
+  display: grid !important;
+  gap: 8px !important;
+}
+
+.layer-stack-row {
+  display: grid !important;
+  grid-template-columns: 20px minmax(0, 1fr) 30px !important;
+  gap: 7px !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.layer-slot-number {
+  grid-column: 1 !important;
+  color: #f1dcc2 !important;
+  font-size: 11px !important;
+  text-align: center !important;
+}
+
+.layer-stack-row .item-row,
+.layer-stack-pill {
+  grid-column: 2 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  justify-content: flex-start !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.layer-lock-btn {
+  grid-column: 3 !important;
+  width: 25px !important;
+  height: 25px !important;
+  min-width: 25px !important;
+  padding: 0 !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Inter, system-ui, sans-serif !important;
+  font-size: 15px !important;
+  line-height: 1 !important;
 }
 
 .selected-identity-group {
@@ -168,4 +304,10 @@
 .selected-tools-layout-group .selected-card-divider {
   width: 100%;
   margin: 0 0 10px;
+}
+
+@media (max-width: 430px) {
+  .file-pill {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
 }
