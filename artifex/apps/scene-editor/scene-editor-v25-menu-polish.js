@@ -29,8 +29,8 @@
     return `<button type="button" class="editor-menu-item-v25" data-menu-action-v25="${action}" ${disabled ? 'disabled' : ''}>${label}</button>`;
   }
 
-  function menu(label, action, body, primary = false) {
-    return `<div class="editor-menu-v25 ${primary ? 'is-primary' : ''}" data-menu-v25="${action}"><button type="button" class="editor-menu-button-v25" data-open-menu-v25="${action}">${label} ▾</button><div class="editor-menu-dropdown-v25">${body}</div></div>`;
+  function menu(label, action, body) {
+    return `<div class="editor-menu-v25" data-menu-v25="${action}"><button type="button" class="editor-menu-button-v25" data-open-menu-v25="${action}">${label}</button><div class="editor-menu-dropdown-v25">${body}</div></div>`;
   }
 
   function markup() {
@@ -38,7 +38,7 @@
       ${menu('File', 'file', `${item('New Blank Scene', 'newBlank')}${item('New from Template', 'newTemplate')}${item('Download JSON', 'download')}${item('Settings', 'settings')}`)}
       ${menu('Edit', 'edit', `${item('Undo', 'placeholder', true)}${item('Redo', 'placeholder', true)}${item('Duplicate Selected', 'duplicate')}`)}
       ${menu('View', 'view', `${item('Toggle Guides', 'toggleGuides')}${item('Reset Zoom', 'resetZoom')}${item('Preview Selected', 'preview')}`)}
-      ${menu('Effects', 'effects', `${item('Visual Adjustments', 'placeholder', true)}${item('Glow Colour', 'placeholder', true)}`, true)}
+      ${menu('Effects', 'effects', `${item('Visual Adjustments', 'placeholder', true)}${item('Glow Colour', 'placeholder', true)}`)}
       ${menu('Help', 'help', `${item('Help', 'help')}${item('Shortcuts', 'placeholder', true)}`)}
     </nav>`;
   }
