@@ -112,23 +112,32 @@
     updateNumberBounds();
   }
 
-  function loadAspectControls() {
-    if (!document.querySelector('link[href="./scene-editor-v23-aspect-controls.css"]')) {
+  function loadHelper(cssHref, scriptSrc) {
+    if (cssHref && !document.querySelector(`link[href="${cssHref}"]`)) {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
-      link.href = './scene-editor-v23-aspect-controls.css';
+      link.href = cssHref;
       document.head.appendChild(link);
     }
-    if (!document.querySelector('script[src="./scene-editor-v23-aspect-controls.js"]')) {
+    if (scriptSrc && !document.querySelector(`script[src="${scriptSrc}"]`)) {
       const script = document.createElement('script');
-      script.src = './scene-editor-v23-aspect-controls.js';
+      script.src = scriptSrc;
       document.body.appendChild(script);
     }
+  }
+
+  function loadAspectControls() {
+    loadHelper('./scene-editor-v23-aspect-controls.css', './scene-editor-v23-aspect-controls.js');
+  }
+
+  function loadPreviewControls() {
+    loadHelper('./scene-editor-v24-object-preview.css', './scene-editor-v24-object-preview.js');
   }
 
   function install() {
     updateNumberBounds();
     loadAspectControls();
+    loadPreviewControls();
   }
 
   window.addEventListener('pointerdown', begin, true);
