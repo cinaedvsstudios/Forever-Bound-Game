@@ -1,0 +1,28 @@
+{
+  "id": "artifex_adventures_startup",
+  "screenType": "static",
+  "name": "Artifex Adventures Startup Screen",
+  "theme": {
+    "backgroundMode": "gradient",
+    "backgroundImage": "",
+    "backgroundGradient": "linear-gradient(135deg, #1b1208, #321d0f 42%, #061513)"
+  },
+  "branding": {
+    "studioName": "ARTIFEX Template Game",
+    "studioIcon": "",
+    "mainLogo": "",
+    "fallbackTitle": "Artifex Adventures",
+    "logoScale": 1.25,
+    "tagline": "1912. A missing book. A night train. A clever junior explorer with a timetable and a mystery to solve."
+  },
+  "buttons": [
+    { "id": "start", "label": "Start Adventure", "action": "startGame", "targetScene": "data/scenes/ch01_train_heist.json" },
+    { "id": "continue", "label": "Continue", "action": "showNotice", "notice": "No saved expedition yet." },
+    { "id": "field_notes", "label": "Field Notes", "action": "showNotice", "notice": "Field Notes will later open clues, badges, maps, and case files." },
+    { "id": "credits", "label": "Credits", "action": "showNotice", "notice": "Built as the Artifex sample adventure." }
+  ],
+  "footer": { "text": "Artifex Adventures Template Game" },
+  "audio": {},
+  "elements": [],
+  "editor": { "grid": { "columns": 20, "rows": 10 } }
+}
