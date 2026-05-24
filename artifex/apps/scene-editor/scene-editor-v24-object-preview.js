@@ -11,6 +11,12 @@
     return api()?.getSelectedItem?.() || null;
   }
 
+  function selectedNode() {
+    const id = api()?.getSelectedId?.();
+    if (!id) return document.querySelector('.scene-item.is-selected');
+    return Array.from(document.querySelectorAll('.scene-item[data-stage-id]')).find((node) => node.dataset.stageId === id) || document.querySelector('.scene-item.is-selected');
+  }
+
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, Number(value || 0)));
   }
@@ -59,6 +65,14 @@
     const w = Math.max(34, Math.min(480, Number(item?.width || 12) * 5.2));
     const h = Math.max(34, Math.min(390, Number(item?.height || 12) * 5.2));
     return { w, h };
+  }
+
+  function imageSourceFor(item) {
+    const candidates = [item?.image, item?.sprite, item?.src, item?.path, item?.asset, item?.assetPath, item?.imagePath].filter(Boolean);
+    const stageImg = selectedNode()?.querySelector('img');
+    if (stageImg?.currentSrc) candidates.unshift(stageImg.currentSrc);
+    if (stageImg?.src) candidates.unshift(stageImg.src);
+    return candidates.find(Boolean) || '';
   }
 
   function setBackground(bg) {
@@ -125,13 +139,13 @@
       return;
     }
 
-    if (title) title.textContent = item.label || item.id || 'Selected Object Preview';
+    if (title) title.textContent = item.name || item.label || item.id || 'Selected Object Preview';
     const { w, h } = objectSize(item);
     const visual = visualFor(item);
-    const image = item.image || item.sprite || '';
+    const image = imageSourceFor(item);
     const content = image
-      ? `<img src="${esc(image)}" alt="${esc(item.label || item.id || '')}">`
-      : `<div class="object-preview-text-v24">${esc(item.text || item.label || item.id || 'Object')}</div>`;
+      ? `<img src="${esc(image)}" alt="${esc(item.name || item.label || item.id || '')}" data-preview-img-v24="true">`
+      : `<div class="object-preview-text-v24">${esc(item.text || item.name || item.label || item.id || 'Object')}</div>`;
 
     stage.innerHTML = `<div class="object-preview-object-v24">${content}</div>`;
     const node = stage.querySelector('.object-preview-object-v24');
@@ -142,10 +156,16 @@
     node.style.filter = filterFor(item);
     node.style.transform = transformFor(item);
     node.style.mixBlendMode = visual.blendMode || 'normal';
+    const previewImg = node.querySelector('[data-preview-img-v24]');
+    if (previewImg) {
+      previewImg.onerror = () => {
+        stage.innerHTML = `<div class="object-preview-error-v24">Preview image path did not load.<br>${esc(image)}</div>`;
+      };
+    }
   }
 
   function installButton() {
-    const wrap = document.getElementById('stageWrap') || document.querySelector('.stage-wrap, .editor-stage-wrap, .work-panel');
+    const wrap = document.querySelector('.stage-wrap') || document.getElementById('stageWrap') || document.querySelector('.editor-stage-wrap, .work-panel');
     if (!wrap) return;
     if (!STATE.button || !document.body.contains(STATE.button)) {
       const button = document.createElement('button');
