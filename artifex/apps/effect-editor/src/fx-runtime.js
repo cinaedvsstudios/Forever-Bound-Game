@@ -59,12 +59,63 @@
         if (!src) return null;
         if (TEXTURE_CACHE.has(src)) return TEXTURE_CACHE.get(src);
         const img = new Image();
-        const record = { image: img, loaded: false, failed: false, src };
+        const record = { image: img, loaded: false, failed: false, src, processed: new Map() };
         img.onload = () => { record.loaded = true; };
         img.onerror = () => { record.failed = true; };
         img.src = src;
         TEXTURE_CACHE.set(src, record);
         return record;
+    }
+
+    function clampUnit(value) {
+        return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
+    }
+
+    function getProcessedTexture(record, mode = 'native', contrast = 1.4, threshold = 0.035) {
+        if (!record || !record.loaded || !record.image || record.failed) return null;
+        if (!mode || mode === 'native') return record.image;
+
+        const safeContrast = Math.max(0.35, Math.min(3, Number(contrast || 1.4)));
+        const safeThreshold = Math.max(0, Math.min(0.7, Number(threshold || 0.035)));
+        const key = `${mode}|${safeContrast.toFixed(2)}|${safeThreshold.toFixed(3)}`;
+        if (!record.processed) record.processed = new Map();
+        if (record.processed.has(key)) return record.processed.get(key);
+
+        const img = record.image;
+        const width = Math.max(1, img.naturalWidth || img.width || 1);
+        const height = Math.max(1, img.naturalHeight || img.height || 1);
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const cctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!cctx) return img;
+
+        try {
+            cctx.drawImage(img, 0, 0, width, height);
+            const imageData = cctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                const sourceAlpha = data[i + 3] / 255;
+                const luma = Math.max(r, g, b) / 255;
+                let alpha = (luma - safeThreshold) / Math.max(0.001, 1 - safeThreshold);
+                alpha = clampUnit(alpha * safeContrast);
+                // Keep soft falloff from smoke/fog brushes, but make spark and line brushes punchier as contrast rises.
+                alpha = Math.pow(alpha, safeContrast > 1 ? 1 / Math.min(2.2, safeContrast) : 1.15);
+                data[i] = 255;
+                data[i + 1] = 255;
+                data[i + 2] = 255;
+                data[i + 3] = Math.round(255 * alpha * sourceAlpha);
+            }
+            cctx.putImageData(imageData, 0, 0);
+            record.processed.set(key, canvas);
+            return canvas;
+        } catch (err) {
+            record.processed.set(key, img);
+            return img;
+        }
     }
 
     function drawRegularPolygon(ctx, x, y, radius, sides, rotation = -Math.PI / 2) {
@@ -348,7 +399,7 @@
         }
 
         const size = Math.max(0.1, particle.size * 2);
-        const img = record.image;
+        const img = getProcessedTexture(record, particle.brushAlphaMode, particle.textureContrast, particle.textureThreshold) || record.image;
         let drawW = size;
         let drawH = size;
 
@@ -466,21 +517,21 @@
         const now = state.time || performance.now();
         const cx = state.emitterPos.x;
         const cy = state.emitterPos.y;
-        const strands = Math.max(1, Math.min(5, Math.round((layer.emitter?.rate || 10) / 5)));
-        const length = Math.max(70, (physics.speedMax || 5) * 28 + (visual.sizeStart || 8) * 9);
-        const amp = Math.max(6, Math.abs(physics.orbitalForce || 1.4) * 7 + (physics.spread || 25) * 0.16);
-        const baseAngle = ((physics.angle ?? 270) * Math.PI) / 180;
-        const segmentCount = 28;
+        const strands = Math.max(2, Math.min(6, Math.round((layer.emitter?.rate || 12) / 4)));
+        const length = Math.max(95, (physics.speedMax || 5) * 34 + (visual.sizeStart || 8) * 10);
+        const amp = Math.max(2, Math.abs(physics.orbitalForce || 0.8) * 5 + (physics.spread || 10) * 0.10);
+        const baseAngle = ((physics.angle ?? 0) * Math.PI) / 180;
+        const segmentCount = 42;
 
         ctx.save();
         ctx.globalCompositeOperation = visual.composite || 'lighter';
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.shadowBlur = Math.min(34, visual.glow || 22);
+        ctx.shadowBlur = Math.min(36, visual.glow || 24);
 
         for (let s = 0; s < strands; s++) {
-            const offset = (s - (strands - 1) / 2) * 7;
-            const phase = now * 0.006 + s * 1.7;
+            const offset = (s - (strands - 1) / 2) * 3.6;
+            const phase = now * 0.004 + s * 1.35;
             const colour = colors[s % colors.length] || colors[0];
             ctx.strokeStyle = colour;
             ctx.shadowColor = colour;
@@ -488,9 +539,10 @@
             let lastPoint = null;
             for (let i = 0; i <= segmentCount; i++) {
                 const t = i / segmentCount;
-                const taper = Math.pow(1 - t, 1.35);
+                const fade = Math.pow(1 - t, 1.8);
+                const taper = Math.pow(1 - t, 1.15);
                 const along = t * length;
-                const wave = Math.sin(phase + t * Math.PI * 3.2) * amp * taper;
+                const wave = Math.sin(phase + t * Math.PI * 2.1) * amp * taper;
                 const px = cx + Math.cos(baseAngle) * along + Math.cos(baseAngle + Math.PI / 2) * (wave + offset * taper);
                 const py = cy + Math.sin(baseAngle) * along + Math.sin(baseAngle + Math.PI / 2) * (wave + offset * taper);
 
@@ -498,8 +550,8 @@
                     const colourSample = interpolateColorsMulti(colors, alphaStarts.map((a, idx) => Math.max(Number(a || 0), Number(alphaEnds[idx] || 0))), t);
                     ctx.strokeStyle = colourSample.color || colour;
                     ctx.shadowColor = colourSample.color || colour;
-                    ctx.globalAlpha = Math.max(0, (1 - t) * (0.74 / strands + 0.22));
-                    ctx.lineWidth = Math.max(0.35, (visual.sizeStart || 8) * (0.65 - s * 0.04) * taper);
+                    ctx.globalAlpha = Math.max(0, fade * (0.92 / strands + 0.22));
+                    ctx.lineWidth = Math.max(0.7, (visual.sizeStart || 8) * (0.72 - s * 0.035) * taper);
                     ctx.beginPath();
                     ctx.moveTo(lastPoint.x, lastPoint.y);
                     ctx.lineTo(px, py);
@@ -508,6 +560,25 @@
                 lastPoint = { x: px, y: py };
             }
         }
+
+        const headSize = Math.max(5, (visual.sizeStart || 10) * 0.72);
+        const headGradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, headSize * 1.8);
+        headGradient.addColorStop(0, colors[0] || '#ffffff');
+        headGradient.addColorStop(0.45, colors[1] || colors[0] || '#9e01ce');
+        headGradient.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.globalAlpha = 0.92;
+        ctx.shadowBlur = Math.min(40, (visual.glow || 24) + 8);
+        ctx.shadowColor = colors[0] || '#ffffff';
+        ctx.fillStyle = headGradient;
+        ctx.beginPath();
+        ctx.arc(cx, cy, headSize * 1.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = colors[0] || '#ffffff';
+        ctx.beginPath();
+        ctx.arc(cx, cy, headSize * 0.52, 0, Math.PI * 2);
+        ctx.fill();
+
         ctx.restore();
         return true;
     }
@@ -632,11 +703,15 @@
             this.blur = Math.max(0, Math.min(5, Number(v.blur || 0)));
             this.edgeBlur = 0;
             this.rotation = Number(v.rotation || 0);
+            this.sourceType = v.sourceType || (v.brush ? 'brush' : 'shape');
             this.shapeMode = v.shapeMode || 'builtInShape';
             this.shape = v.shape || 'circle';
             this.textureSrc = v.textureDataUrl || v.texture || null;
             this.textureName = v.textureName || '';
             this.useTextureAlpha = v.useTextureAlpha !== false;
+            this.brushAlphaMode = v.brushAlphaMode || (this.sourceType === 'brush' ? 'lumaAlpha' : 'native');
+            this.textureContrast = Math.max(0.35, Math.min(3, Number(v.textureContrast || 1.4)));
+            this.textureThreshold = Math.max(0, Math.min(0.7, Number(v.textureThreshold || 0.035)));
             this.tintMode = v.tintMode || 'none';
             this.fitMode = v.fitMode || 'contain';
             if (this.shapeMode === 'textureSprite' && this.textureSrc) getCachedTexture(this.textureSrc);

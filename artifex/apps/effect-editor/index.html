@@ -66,7 +66,7 @@
 <body class="text-slate-100 h-screen overflow-hidden flex flex-col bg-artifex-dark selection:bg-artifex-purpleAccent selection:text-white">
 
     <!-- Header Interface -->
-    <header class="h-[68px] shrink-0 border-b border-artifex-border bg-artifex-panel/95 backdrop-blur-md px-6 py-3 flex flex-col md:flex-row md:items-center justify-start gap-4 sticky top-0 z-50 select-none shadow-[0_6px_15px_rgba(0,0,0,0.85)] relative">
+    <header class="h-[68px] shrink-0 border-b border-artifex-border bg-artifex-panel/95 backdrop-blur-md px-6 py-3 flex flex-col md:flex-row md:items-center justify-start gap-4 sticky top-0 z-50 select-none shadow-[0_6px_15px_rgba(0,0,0,0.85)] relative" style="background-image: linear-gradient(rgba(15,12,11,0.88), rgba(15,12,11,0.94)), url('./charcolbg.jpg'); background-size: cover; background-position: center;">
         <div class="flex items-center gap-3 min-w-[250px]">
             <img src="../../artifexlogo.png" alt="Artifex logo" class="h-11 w-11 object-contain drop-shadow-[0_0_10px_rgba(158,1,206,0.55)] shrink-0">
             <div class="flex flex-col justify-center min-w-0">
@@ -235,7 +235,7 @@
     <main class="h-[calc(100vh-68px)] flex flex-row overflow-hidden w-full relative bg-artifex-dark">
         
         <!-- LEFT PANEL -->
-        <aside id="sidebar-panel" style="width: 320px; min-width: 320px;" class="border-r border-artifex-border bg-artifex-panel/75 flex flex-col h-full overflow-hidden shrink-0 relative z-30 shadow-[0_4px_25px_rgba(0,0,0,0.9)]">
+        <aside id="sidebar-panel" style="width: 320px; min-width: 320px; background-image: linear-gradient(rgba(15,12,11,0.82), rgba(15,12,11,0.92)), url('./charcolbg.jpg'); background-size: cover; background-position: center top;" class="border-r border-artifex-border bg-artifex-panel/75 flex flex-col h-full overflow-hidden shrink-0 relative z-30 shadow-[0_4px_25px_rgba(0,0,0,0.9)]">
             
             <div class="flex border-b border-artifex-border bg-artifex-panel shrink-0 select-none shadow-[0_4px_10px_rgba(0,0,0,0.6)] z-10">
                 <button onclick="switchTab('params')" id="tab-btn-params" title="Workspace Parameters" class="flex-1 py-3 text-lg font-bold text-artifex-gold border-b-2 border-artifex-gold bg-artifex-dark/40 transition focus:outline-none">
@@ -323,6 +323,8 @@
                                 <button onclick="applyQuickEditPreset('sharp-sparks')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Sharp Sparks</button>
                                 <button onclick="applyQuickEditPreset('magic-fade')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Fade In/Out</button>
                                 <button onclick="applyQuickEditPreset('high-additive')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Bright Add</button>
+                                <button onclick="applyQuickEditPreset('white-fog')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">White Fog</button>
+                                <button onclick="applyQuickEditPreset('sooty-smoke')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Sooty Smoke</button>
                             </div>
                         </section>
                         <section class="border border-artifex-border/50 bg-artifex-dark/35 rounded-xl p-3 space-y-2">
@@ -331,7 +333,7 @@
                                     <span class="w-1.5 h-1.5 rounded-full bg-artifex-purpleAccent shadow-[0_0_8px_#9e01ce]"></span>
                                     <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Colour Helpers</span>
                                 </div>
-                                <span class="text-[11px] opacity-70 cursor-help" title="Applies a consistent colour palette and alpha curve to the selected layer without changing its motion.">ℹ️</span>
+                                <span class="text-[11px] opacity-70 cursor-help" title="Applies colour palettes only. It does not change speed, emitter behaviour, or texture/brush choice.">ℹ️</span>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
                                 <button onclick="applyColorHelper('fire')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Fire</button>
@@ -340,7 +342,6 @@
                                 <button onclick="applyColorHelper('dark-magic')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Dark Magic</button>
                                 <button onclick="applyColorHelper('good-magic')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Good Magic</button>
                                 <button onclick="applyColorHelper('evil')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Evil</button>
-                                <button onclick="applyColorHelper('smoke')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold col-span-2">Smoke</button>
                             </div>
                         </section>
                         <section class="border border-artifex-border/50 bg-artifex-dark/35 rounded-xl p-3 space-y-2">
@@ -474,6 +475,13 @@
 <option value="stretch">Stretch</option>
 </select>
 </div>
+</div>
+<div title="For brush PNGs with black backgrounds, this converts brightness into transparency and controls how hard/soft the texture alpha is. Higher values make the sprite punchier; lower values make it softer.">
+<div class="flex justify-between text-xs mb-1">
+<span class="text-artifex-goldMuted uppercase font-bold text-[8px] tracking-wider">Texture Contrast</span>
+<span class="text-artifex-gold font-mono text-[10px]" id="val-visual-textureContrast">1.4</span>
+</div>
+<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-visual-textureContrast" max="3" min="0.4" step="0.1" type="range" value="1.4" oninput="updateTextureOption('textureContrast', parseFloat(this.value)); const label=document.getElementById('val-visual-textureContrast'); if(label) label.innerText=parseFloat(this.value).toFixed(1);"/>
 </div>
 <label class="flex items-center gap-2 text-[10px] text-artifex-goldMuted">
 <input checked="" class="accent-artifex-purpleAccent" id="param-visual-useTextureAlpha" onchange="updateTextureOption('useTextureAlpha', this.checked)" type="checkbox"/>
@@ -1055,6 +1063,9 @@ engine.start();</pre>
                 useTextureAlpha: true,
                 fitMode: options.fitMode || layer.visual.fitMode || 'contain',
                 tintMode: options.tintMode || layer.visual.tintMode || 'source-atop',
+                brushAlphaMode: options.brushAlphaMode || 'lumaAlpha',
+                textureContrast: options.textureContrast !== undefined ? options.textureContrast : (layer.visual.textureContrast || 1.45),
+                textureThreshold: options.textureThreshold !== undefined ? options.textureThreshold : (layer.visual.textureThreshold || 0.035),
                 blur: 0,
                 edgeBlur: 0
             });
@@ -2490,6 +2501,9 @@ engine.start();</pre>
                 layer.visual.textureName = file.name;
                 layer.visual.textureType = file.type || 'image/png';
                 layer.visual.useTextureAlpha = layer.visual.useTextureAlpha !== false;
+                layer.visual.brushAlphaMode = 'native';
+                layer.visual.textureContrast = layer.visual.textureContrast || 1.4;
+                layer.visual.textureThreshold = layer.visual.textureThreshold || 0.035;
                 layer.visual.tintMode = layer.visual.tintMode || 'none';
                 layer.visual.fitMode = layer.visual.fitMode || 'contain';
                 getCachedTexture(layer.visual.textureDataUrl);
@@ -2534,6 +2548,8 @@ engine.start();</pre>
             const tintMode = document.getElementById('param-visual-tintMode');
             const fitMode = document.getElementById('param-visual-fitMode');
             const useAlpha = document.getElementById('param-visual-useTextureAlpha');
+            const textureContrast = document.getElementById('param-visual-textureContrast');
+            const textureContrastLabel = document.getElementById('val-visual-textureContrast');
 
             if (shapeModeSelect) shapeModeSelect.value = visual.shapeMode;
             if (builtInPanel) builtInPanel.classList.toggle('hidden', visual.shapeMode === 'textureSprite');
@@ -2542,6 +2558,8 @@ engine.start();</pre>
             if (tintMode) tintMode.value = visual.tintMode || 'none';
             if (fitMode) fitMode.value = visual.fitMode || 'contain';
             if (useAlpha) useAlpha.checked = visual.useTextureAlpha !== false;
+            if (textureContrast) textureContrast.value = Number(visual.textureContrast || 1.4);
+            if (textureContrastLabel) textureContrastLabel.innerText = Number(visual.textureContrast || 1.4).toFixed(1);
 
             const hasTexture = Boolean(visual.textureDataUrl || visual.texture);
             if (textureLabel) textureLabel.innerText = visual.textureName || visual.texture || 'Choose PNG...';
@@ -3079,6 +3097,9 @@ engine.start();</pre>
                 tintMode: 'none',
                 fitMode: 'contain',
                 useTextureAlpha: true,
+                brushAlphaMode: 'native',
+                textureContrast: 1.4,
+                textureThreshold: 0.035,
                 texture: null,
                 textureDataUrl: null,
                 textureName: ''
@@ -3096,58 +3117,88 @@ engine.start();</pre>
             const setPhysics = values => Object.assign(layer.physics, values);
             const setEmitter = values => Object.assign(layer.emitter, values);
             const setLife = values => Object.assign(layer.life, values);
+            const brushOptions = (extra = {}) => Object.assign({ tintMode: 'source-atop', fitMode: 'contain', brushAlphaMode: 'lumaAlpha', textureContrast: 1.45, textureThreshold: 0.035 }, extra);
 
             const presets = {
                 'soft-glow': () => {
-                    applyBrushToLayer(layer, 'particle2', { tintMode: 'source-atop', fitMode: 'contain' });
-                    setVisual({ glow: 24, blur: 0, edgeBlur: 0, composite: 'screen', sizeStart: 26, sizeEnd: 54, alphaStarts: [0, 0.55, 0], alphaEnds: [0.2, 0.72, 0] });
-                    if (!layer.visual.colors || layer.visual.colors.length < 3) layer.visual.colors = ['#ffffff', '#8adfff', '#0f0c0b'];
+                    layer.effectType = 'particles';
+                    applyBrushToLayer(layer, 'particle2', brushOptions({ textureContrast: 1.15 }));
+                    setVisual({ colors: ['#ffffff', '#8adfff', '#101820'], glow: 18, blur: 0, edgeBlur: 0, composite: 'screen', sizeStart: 18, sizeEnd: 38, alphaStarts: [0, 0.42, 0], alphaEnds: [0.12, 0.48, 0], textureContrast: 1.15 });
+                    setEmitter({ rate: 3, width: 20, widthUnit: 'PX' });
+                    setPhysics({ speedMin: 0.4, speedMax: 1.4, spread: 70, gravityY: -0.01, friction: 0.992, orbitalForce: 0.02 });
+                    setLife({ durationMin: 70, durationMax: 130 });
                 },
                 'sharp-sparks': () => {
-                    applyBrushToLayer(layer, 'spark', { tintMode: 'source-atop', fitMode: 'contain' });
-                    setVisual({ sizeStart: 8, sizeEnd: 1, glow: 18, blur: 0, edgeBlur: 0, composite: 'lighter', rotation: 0, alphaStarts: [0.05, 0.85, 0], alphaEnds: [0.95, 0.5, 0] });
-                    if (!layer.visual.colors || layer.visual.colors.length < 3) layer.visual.colors = ['#ffffff', '#ffd23f', '#ee4266'];
-                    setPhysics({ spread: 65, speedMin: 4, speedMax: 12, gravityY: 0.12, friction: 0.98 });
+                    layer.effectType = 'particles';
+                    applyBrushToLayer(layer, 'spark', brushOptions({ textureContrast: 1.8 }));
+                    setVisual({ colors: ['#ffffff', '#ffd23f', '#ee4266'], sizeStart: 7, sizeEnd: 0.8, glow: 16, blur: 0, edgeBlur: 0, composite: 'lighter', rotation: 0, alphaStarts: [0.05, 0.75, 0], alphaEnds: [0.8, 0.45, 0], textureContrast: 1.8 });
+                    setEmitter({ rate: 8, width: 2, widthUnit: 'PX' });
+                    setPhysics({ spread: 70, speedMin: 4, speedMax: 11, gravityY: 0.12, friction: 0.98, orbitalForce: 0 });
+                    setLife({ durationMin: 22, durationMax: 46 });
                 },
                 'magic-fade': () => {
-                    applyBrushToLayer(layer, 'particle2', { tintMode: 'source-atop', fitMode: 'contain' });
-                    setVisual({ alphaStarts: [0, 0.85, 0], alphaEnds: [0.25, 1, 0], glow: Math.max(18, Number(layer.visual.glow || 0)), blur: 0, edgeBlur: 0, composite: layer.visual.composite || 'screen' });
-                    if (!layer.visual.colors || layer.visual.colors.length < 3) layer.visual.colors = ['#ffffff', '#9e01ce', '#0f0c0b'];
+                    layer.effectType = 'particles';
+                    applyBrushToLayer(layer, 'particle2', brushOptions({ textureContrast: 1.2 }));
+                    setVisual({ colors: ['#ffffff', '#9e01ce', '#0f0c0b'], alphaStarts: [0, 0.55, 0], alphaEnds: [0.18, 0.65, 0], glow: 18, blur: 0, edgeBlur: 0, composite: 'screen', sizeStart: 13, sizeEnd: 24, textureContrast: 1.2 });
+                    setEmitter({ rate: 5, width: 16, widthUnit: 'PX' });
+                    setPhysics({ speedMin: 1, speedMax: 3.2, spread: 45, gravityY: -0.03, friction: 0.986, orbitalForce: 0.04 });
+                    setLife({ durationMin: 45, durationMax: 82 });
                 },
                 'high-additive': () => {
-                    applyBrushToLayer(layer, 'burst', { tintMode: 'source-atop', fitMode: 'contain' });
-                    setVisual({ glow: 34, blur: 0, edgeBlur: 0, composite: 'lighter', sizeStart: 18, sizeEnd: 36, alphaStarts: [0.15, 1, 0], alphaEnds: [0.85, 1, 0] });
-                    if (!layer.visual.colors || layer.visual.colors.length < 3) layer.visual.colors = ['#ffffff', '#ffd23f', '#9e01ce'];
+                    layer.effectType = 'particles';
+                    applyBrushToLayer(layer, 'burst', brushOptions({ textureContrast: 1.65 }));
+                    setVisual({ colors: ['#ffffff', '#ffd23f', '#9e01ce'], glow: 28, blur: 0, edgeBlur: 0, composite: 'lighter', sizeStart: 12, sizeEnd: 26, alphaStarts: [0.08, 0.8, 0], alphaEnds: [0.55, 0.75, 0], textureContrast: 1.65 });
+                    setEmitter({ rate: 6, width: 5, widthUnit: 'PX' });
+                    setPhysics({ speedMin: 2, speedMax: 6, spread: 80, gravityY: -0.02, friction: 0.982, orbitalForce: 0.08 });
+                    setLife({ durationMin: 35, durationMax: 66 });
+                },
+                'white-fog': () => {
+                    layer.effectType = 'gas';
+                    applyBrushToLayer(layer, 'fog1', brushOptions({ textureContrast: 0.95 }));
+                    setVisual({ colors: ['#ffffff', '#cbd5e1', '#64748b'], glow: 3, blur: 0, edgeBlur: 0, composite: 'screen', sizeStart: 24, sizeEnd: 58, alphaStarts: [0, 0.24, 0], alphaEnds: [0.06, 0.28, 0], textureContrast: 0.95 });
+                    setEmitter({ rate: 2, width: 48, widthUnit: 'PX' });
+                    setPhysics({ speedMin: 0.15, speedMax: 0.65, spread: 65, gravityY: -0.015, friction: 0.994, orbitalForce: 0.025 });
+                    setLife({ durationMin: 95, durationMax: 170 });
+                },
+                'sooty-smoke': () => {
+                    layer.effectType = 'gas';
+                    applyBrushToLayer(layer, 'fog2', brushOptions({ textureContrast: 1.15 }));
+                    setVisual({ colors: ['#3b302b', '#171210', '#050505'], glow: 0, blur: 0, edgeBlur: 0, composite: 'source-over', sizeStart: 22, sizeEnd: 64, alphaStarts: [0, 0.32, 0], alphaEnds: [0.08, 0.42, 0], textureContrast: 1.15 });
+                    setEmitter({ rate: 2, width: 44, widthUnit: 'PX' });
+                    setPhysics({ speedMin: 0.12, speedMax: 0.55, spread: 58, gravityY: -0.02, friction: 0.994, orbitalForce: 0.035 });
+                    setLife({ durationMin: 105, durationMax: 185 });
                 },
                 'slow-drift': () => {
-                    applyBrushToLayer(layer, 'fog1', { tintMode: 'source-atop', fitMode: 'contain' });
                     layer.effectType = 'gas';
-                    setVisual({ blur: 0, edgeBlur: 0, glow: 8, composite: 'screen', sizeStart: 34, sizeEnd: 80, alphaStarts: [0, 0.35, 0], alphaEnds: [0.08, 0.5, 0] });
-                    setEmitter({ rate: Math.min(4, Number(layer.emitter.rate || 3) || 3), width: Math.max(30, Number(layer.emitter.width || 30)), widthUnit: layer.emitter.widthUnit || 'PX' });
-                    setPhysics({ speedMin: 0.2, speedMax: 1.0, spread: 55, gravityY: -0.02, friction: 0.992, orbitalForce: 0.04 });
-                    setLife({ durationMin: 90, durationMax: 160 });
+                    applyBrushToLayer(layer, 'fog1', brushOptions({ textureContrast: 0.9 }));
+                    setVisual({ colors: ['#ffffff', '#b7cbd4', '#1b2024'], blur: 0, edgeBlur: 0, glow: 2, composite: 'screen', sizeStart: 22, sizeEnd: 52, alphaStarts: [0, 0.22, 0], alphaEnds: [0.05, 0.28, 0], textureContrast: 0.9 });
+                    setEmitter({ rate: 2, width: Math.max(34, Number(layer.emitter.width || 34)), widthUnit: layer.emitter.widthUnit || 'PX' });
+                    setPhysics({ speedMin: 0.12, speedMax: 0.55, spread: 60, gravityY: -0.012, friction: 0.995, orbitalForce: 0.025 });
+                    setLife({ durationMin: 110, durationMax: 190 });
                 },
                 'burst-out': () => {
-                    applyBrushToLayer(layer, 'burst', { tintMode: 'source-atop', fitMode: 'contain' });
-                    setEmitter({ rate: Math.max(10, Number(layer.emitter.rate || 10) || 10), width: 1, widthUnit: 'PX' });
-                    setPhysics({ speedMin: 6, speedMax: 16, angle: 0, spread: 360, gravityY: 0.05, friction: 0.96, orbitalForce: 0 });
-                    setVisual({ sizeStart: 18, sizeEnd: 3, glow: 28, blur: 0, edgeBlur: 0, composite: 'lighter', alphaStarts: [0.2, 1, 0], alphaEnds: [0.85, 0.6, 0] });
-                    setLife({ durationMin: 18, durationMax: 42 });
+                    layer.effectType = 'particles';
+                    applyBrushToLayer(layer, 'burst', brushOptions({ textureContrast: 1.65 }));
+                    setEmitter({ rate: 9, width: 1, widthUnit: 'PX' });
+                    setPhysics({ speedMin: 5, speedMax: 13, angle: 0, spread: 360, gravityY: 0.03, friction: 0.962, orbitalForce: 0 });
+                    setVisual({ colors: ['#ffffff', '#ffd23f', '#ef4444'], sizeStart: 12, sizeEnd: 2.2, glow: 24, blur: 0, edgeBlur: 0, composite: 'lighter', alphaStarts: [0.15, 0.85, 0], alphaEnds: [0.75, 0.48, 0], textureContrast: 1.65 });
+                    setLife({ durationMin: 18, durationMax: 38 });
                 },
                 'rise-up': () => {
-                    applyBrushToLayer(layer, 'line1', { tintMode: 'source-atop', fitMode: 'contain' });
-                    setEmitter({ rate: Math.max(4, Number(layer.emitter.rate || 4) || 4), width: Math.max(20, Number(layer.emitter.width || 20)), widthUnit: layer.emitter.widthUnit || 'PX' });
-                    setPhysics({ speedMin: 1, speedMax: 4, angle: 270, spread: 25, gravityY: -0.08, friction: 0.985, orbitalForce: 0.05 });
-                    setVisual({ sizeStart: 18, sizeEnd: 3, rotation: 0, glow: 18, blur: 0, edgeBlur: 0, composite: 'lighter', alphaStarts: [0, 0.8, 0], alphaEnds: [0.4, 0.9, 0] });
-                    setLife({ durationMin: 55, durationMax: 105 });
+                    layer.effectType = 'particles';
+                    applyBrushToLayer(layer, 'line1', brushOptions({ textureContrast: 1.45 }));
+                    setEmitter({ rate: 4, width: Math.max(20, Number(layer.emitter.width || 20)), widthUnit: layer.emitter.widthUnit || 'PX' });
+                    setPhysics({ speedMin: 1.2, speedMax: 3.6, angle: 270, spread: 22, gravityY: -0.065, friction: 0.986, orbitalForce: 0.03 });
+                    setVisual({ colors: ['#ffffff', '#c4b5fd', '#00a1d7'], sizeStart: 12, sizeEnd: 2.4, rotation: 0, glow: 16, blur: 0, edgeBlur: 0, composite: 'lighter', alphaStarts: [0, 0.65, 0], alphaEnds: [0.25, 0.62, 0], textureContrast: 1.45 });
+                    setLife({ durationMin: 50, durationMax: 90 });
                 },
                 'tight-trail': () => {
                     layer.effectType = 'ribbon';
-                    applyBrushToLayer(layer, 'line2', { tintMode: 'source-atop', fitMode: 'contain' });
-                    setEmitter({ rate: 12, width: 1, widthUnit: 'PX' });
-                    setPhysics({ speedMin: 0.2, speedMax: 0.9, angle: 0, spread: 7, gravityY: 0, friction: 1, orbitalForce: 1.6 });
-                    setVisual({ sizeStart: 11, sizeEnd: 0.2, glow: 24, blur: 0, edgeBlur: 0, composite: 'lighter', alphaStarts: [0.0, 0.95, 0.0], alphaEnds: [0.25, 0.65, 0.0], colors: layer.visual.colors && layer.visual.colors.length >= 3 ? layer.visual.colors : ['#ffffff', '#9e01ce', '#00a1d7'] });
-                    setLife({ durationMin: 28, durationMax: 52 });
+                    applyBrushToLayer(layer, 'line2', brushOptions({ textureContrast: 1.35 }));
+                    setEmitter({ rate: 18, width: 1, widthUnit: 'PX' });
+                    setPhysics({ speedMin: 0.5, speedMax: 1.4, angle: 0, spread: 4, gravityY: 0, friction: 1, orbitalForce: 0.75 });
+                    setVisual({ sizeStart: 16, sizeEnd: 0.15, glow: 30, blur: 0, edgeBlur: 0, composite: 'lighter', alphaStarts: [0.0, 0.9, 0.0], alphaEnds: [0.28, 0.58, 0.0], colors: layer.visual.colors && layer.visual.colors.length >= 3 ? layer.visual.colors : ['#ffffff', '#9e01ce', '#00a1d7'], trailHead: true, textureContrast: 1.35 });
+                    setLife({ durationMin: 45, durationMax: 76 });
                 }
             };
 
@@ -3166,8 +3217,7 @@ engine.start();</pre>
                 water: { colors: ['#e0f2fe', '#60a5fa', '#0284c7', '#082f49'], alphaStarts: [0, 0.75, 0.5, 0], alphaEnds: [0.35, 0.85, 0.35, 0], glow: 12, composite: 'screen' },
                 'dark-magic': { colors: ['#d9f99d', '#22c55e', '#14532d', '#020617'], alphaStarts: [0, 0.85, 0.65, 0], alphaEnds: [0.35, 0.9, 0.45, 0], glow: 20, composite: 'screen' },
                 'good-magic': { colors: ['#ffffff', '#c4b5fd', '#9e01ce', '#00a1d7'], alphaStarts: [0.05, 0.8, 0.75, 0], alphaEnds: [0.55, 0.9, 0.55, 0], glow: 24, composite: 'lighter' },
-                evil: { colors: ['#2a0505', '#7f1d1d', '#ef4444', '#000000'], alphaStarts: [0.2, 0.85, 0.45, 0], alphaEnds: [0.5, 0.8, 0.2, 0], glow: 18, composite: 'source-over' },
-                smoke: { colors: ['#f8fafc', '#94a3b8', '#475569', '#0f0c0b'], alphaStarts: [0, 0.38, 0.32, 0], alphaEnds: [0.1, 0.48, 0.25, 0], glow: 4, composite: 'screen' }
+                evil: { colors: ['#050000', '#2a0505', '#7f1d1d', '#ef4444'], alphaStarts: [0, 0.65, 0.75, 0.15], alphaEnds: [0.25, 0.8, 0.35, 0], glow: 14, composite: 'source-over' }
             };
             const palette = palettes[helperId];
             if (!palette) return;
@@ -3177,10 +3227,10 @@ engine.start();</pre>
 
         function decorateInfoIcons() {
             const helpText = {
-                'Appearance Helpers': 'Fast one-click looks for the selected layer. These change finish, glow, alpha, and blend settings only.',
+                'Appearance Helpers': 'Fast one-click looks for the selected layer. Brush-based helpers use PNG softness instead of live blur wherever possible.',
                 'Dynamics Helpers': 'Fast one-click motion behaviours for the selected layer. These change emitter, speed, direction, spread, and duration.',
                 'Layer Identity': 'Names and classifies the selected effect layer so the stack and JSON stay readable.',
-                'Visual Source': 'Chooses the visible particle source: hard built-in shape, texture sprite, and later built-in brush PNGs.',
+                'Visual Source': 'Chooses the visible particle source: hard built-in shape or PNG texture/brush sprite.',
                 'Colour, Size & Finish': 'Controls particle size, rotation, colour fade, alpha fade, glow, softness, and blend mode.',
                 'Emitter': 'Controls where particles are born and how many appear.',
                 'Motion Dynamics': 'Controls direction, speed, spread, gravity, friction, and vortex/orbit movement.',
