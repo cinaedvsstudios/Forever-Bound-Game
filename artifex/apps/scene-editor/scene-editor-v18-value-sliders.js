@@ -5,6 +5,16 @@
   const ignoredIds = new Set([]);
   let resetMenu = null;
 
+  function core() {
+    return window.ArtifexSceneEditorCore || null;
+  }
+
+  function selectedNode() {
+    const id = core()?.getSelectedId?.();
+    if (!id) return document.querySelector('.scene-item.is-selected');
+    return Array.from(document.querySelectorAll('.scene-item[data-stage-id]')).find((node) => node.dataset.stageId === id) || document.querySelector('.scene-item.is-selected');
+  }
+
   function configFor(input) {
     const id = input.id || '';
     const label = input.closest('.field')?.querySelector('label')?.textContent || '';
@@ -70,10 +80,58 @@
     });
   }
 
+  function applyTransformDirect(input, value) {
+    const id = input.id || '';
+    if (!['itemX', 'itemY', 'itemW', 'itemH', 'itemLayer', 'layerPill', 'itemZ', 'itemRotation', 'itemSkewX', 'itemSkewY'].includes(id)) return;
+    const editor = core();
+    const item = editor?.getSelectedItem?.();
+    if (!item) return;
+    const node = selectedNode();
+    const numeric = Number(value || 0);
+
+    if (id === 'itemX') {
+      item.x = numeric;
+      if (node) node.style.left = `${numeric}%`;
+    } else if (id === 'itemY') {
+      item.y = numeric;
+      if (node) node.style.top = `${numeric}%`;
+    } else if (id === 'itemW') {
+      item.width = numeric;
+      if (node) node.style.width = `${numeric}%`;
+    } else if (id === 'itemH') {
+      item.height = numeric;
+      if (node) node.style.height = `${numeric}%`;
+    } else if (id === 'itemLayer' || id === 'layerPill') {
+      item.layer = numeric;
+      item.z = numeric;
+      if (node) node.style.zIndex = String(numeric);
+      const layer = document.getElementById(id === 'itemLayer' ? 'layerPill' : 'itemLayer');
+      if (layer && layer.value !== String(value)) layer.value = value;
+    } else if (id === 'itemZ') {
+      item.zDepth = numeric;
+      const zVal = document.getElementById('zVal');
+      if (zVal) zVal.textContent = String(value);
+      if (node && !/rotate|skew/i.test(node.style.transform || '')) {
+        const scale = clamp(1 + numeric * 0.035, 0.45, 2.15);
+        node.style.transform = `scale(${scale})`;
+      }
+    } else if (id === 'itemRotation') {
+      item.rotation = numeric;
+    } else if (id === 'itemSkewX') {
+      item.skewX = numeric;
+    } else if (id === 'itemSkewY') {
+      item.skewY = numeric;
+    }
+
+    editor?.saveWorkingCopySoon?.('transform slider');
+  }
+
   function setInputValue(input, value) {
     input.value = value;
+    applyTransformDirect(input, value);
     input.dispatchEvent(new Event('input', { bubbles: true }));
     input.dispatchEvent(new Event('change', { bubbles: true }));
+    applyTransformDirect(input, value);
   }
 
   function syncSlider(input) {
@@ -102,6 +160,7 @@
   }
 
   function startCustomDrag(event, input, track) {
+    if (event.button === 2) return;
     const cfg = configFor(input);
     const apply = (clientY) => {
       const value = valueFromPointer(track, clientY, cfg);
@@ -113,6 +172,7 @@
       apply(moveEvent.clientY);
       moveEvent.preventDefault();
       moveEvent.stopPropagation();
+      moveEvent.stopImmediatePropagation?.();
     };
     const end = () => {
       window.removeEventListener('pointermove', move, true);
@@ -124,6 +184,7 @@
     window.addEventListener('pointercancel', end, true);
     event.preventDefault();
     event.stopPropagation();
+    event.stopImmediatePropagation?.();
   }
 
   function showResetMenu(event, input) {
@@ -184,6 +245,7 @@
       event.preventDefault();
       event.stopPropagation();
     }, true);
+    popover.addEventListener('pointerdown', (event) => startCustomDrag(event, input, track), true);
 
     track.addEventListener('pointerdown', (event) => startCustomDrag(event, input, track), true);
     track.addEventListener('keydown', (event) => {
