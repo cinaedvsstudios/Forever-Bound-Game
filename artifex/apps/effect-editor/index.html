@@ -92,6 +92,10 @@
                         <span>📥</span> Import JSON
                         <input type="file" id="file-import" accept=".json" class="hidden" onchange="handleFileImport(event)" />
                     </label>
+                    <label class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center gap-2 cursor-pointer" title="Import an Effekseer .efkproj file as an editable Artifex FX draft.">
+                        <span>🌀</span> Import Effekseer Draft
+                        <input type="file" id="effekseer-import" accept=".efkproj,.efk,.xml,.txt" class="hidden" onchange="handleEffekseerImport(event)" />
+                    </label>
                     <div class="border-t border-artifex-border my-1"></div>
                     <div class="px-4 py-1 text-[10px] uppercase font-bold text-artifex-goldMuted tracking-wider">Export</div>
                     <button onclick="exportRawComposition()" class="w-full text-left px-4 py-1.5 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center gap-2" title="Download the current legacy/raw composition JSON.">
@@ -2854,23 +2858,44 @@ engine.start();</pre>
             custAcc.innerHTML = '';
             customPresets.forEach((preset, index) => {
                 const wrapper = document.createElement('div');
-                wrapper.className = "group relative px-2 py-1.5 rounded hover:bg-artifex-dark transition flex items-center justify-between gap-2 shadow-sm";
+                wrapper.className = "group relative grid grid-cols-[42px_minmax(0,1fr)_22px] items-center gap-2 px-2 py-2 rounded-xl hover:bg-artifex-dark transition border border-transparent hover:border-purple-900/50 shadow-sm";
+                wrapper.title = preset.name || 'Custom FX';
                 
+                const thumb = document.createElement('button');
+                thumb.className = "w-[42px] h-[42px] rounded-lg overflow-hidden border border-purple-900/50 bg-artifex-dark flex items-center justify-center shrink-0 focus:outline-none hover:border-artifex-purpleAccent";
+                thumb.onclick = () => {
+                    loadComposition(preset);
+                    closeAllDropdowns();
+                };
+
+                if (preset.thumbnail) {
+                    const img = document.createElement('img');
+                    img.src = preset.thumbnail;
+                    img.alt = preset.name || 'Custom FX thumbnail';
+                    img.className = 'w-full h-full object-cover';
+                    thumb.appendChild(img);
+                } else {
+                    thumb.innerHTML = '<span class="text-lg opacity-75">✨</span>';
+                }
+
                 const clickArea = document.createElement('button');
-                clickArea.className = "flex-1 text-left focus:outline-none";
+                clickArea.className = "min-w-0 text-left focus:outline-none";
                 clickArea.onclick = () => {
                     loadComposition(preset);
                     closeAllDropdowns();
                 };
                 
                 const numLayers = preset.layers ? preset.layers.length : 1;
+                const safeName = escapeHtml(preset.name || 'Custom FX');
+                const safeTags = escapeHtml(preset.tags || 'Custom FX');
 
                 clickArea.innerHTML = `
-                    <div class="font-bold text-[10px] text-purple-400 group-hover:text-purple-300 transition truncate max-w-[120px]">${preset.name}</div>
-                    <div class="flex justify-between items-center pr-2 mt-0.5">
-                        <span class="text-[8px] text-gray-500 line-clamp-1">${preset.tags || 'Custom FX'}</span>
-                        <span class="text-[8px] bg-purple-900/50 px-1 rounded text-purple-200">${numLayers} Layers</span>
+                    <div class="font-bold text-[10px] text-purple-300 group-hover:text-purple-100 transition truncate">${safeName}</div>
+                    <div class="flex items-center gap-1 mt-0.5 min-w-0">
+                        <span class="text-[8px] text-gray-500 line-clamp-1 truncate min-w-0">${safeTags}</span>
+                        <span class="text-[8px] bg-purple-900/50 px-1 rounded text-purple-200 shrink-0">${numLayers} Layers</span>
                     </div>
+                    <div class="text-[8px] text-artifex-goldMuted mt-0.5">${preset.thumbnail ? 'Thumbnail saved' : 'No thumbnail'}</div>
                 `;
 
                 const delBtn = document.createElement('button');
@@ -2884,6 +2909,7 @@ engine.start();</pre>
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 `;
 
+                wrapper.appendChild(thumb);
                 wrapper.appendChild(clickArea);
                 wrapper.appendChild(delBtn);
                 custAcc.appendChild(wrapper);
@@ -3058,6 +3084,12 @@ engine.start();</pre>
             showToast(`Deleted custom preset: "${name}"`, "info");
         }
 
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, function(match) {
+                return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[match];
+            });
+        }
+
         function stripRuntimeFields(value) {
             return JSON.parse(JSON.stringify(value, (key, nestedValue) => {
                 if (key === '_particles') return undefined;
@@ -3145,10 +3177,34 @@ engine.start();</pre>
             };
         }
 
+        function collectTextureDependencies(cleanComp) {
+            const textures = [];
+            const seen = new Set();
+            const layers = Array.isArray(cleanComp?.layers) ? cleanComp.layers : [];
+            layers.forEach((layer, index) => {
+                const visual = layer.visual || {};
+                if (visual.shapeMode !== 'textureSprite' && !visual.texture && !visual.textureName && !visual.textureDataUrl) return;
+                const name = visual.textureName || visual.texture || `embedded-texture-layer-${index + 1}.png`;
+                const key = name + '|' + Boolean(visual.textureDataUrl);
+                if (seen.has(key)) return;
+                seen.add(key);
+                textures.push({
+                    id: sanitizeFileName(name, `texture-${index + 1}`),
+                    name,
+                    source: visual.textureDataUrl ? 'embeddedDataUrl' : 'externalReference',
+                    mimeType: visual.textureType || 'image/png',
+                    embedded: Boolean(visual.textureDataUrl),
+                    note: visual.textureDataUrl ? 'Texture is embedded in the FX JSON as a data URL.' : 'Texture path/name is referenced and must exist beside the FX asset or be remapped by the runtime.'
+                });
+            });
+            return textures;
+        }
+
         function buildArtifexFxAssetPayload() {
             const cleanComp = getCleanCompositionForExport();
             if (!cleanComp) return null;
 
+            const textureDependencies = collectTextureDependencies(cleanComp);
             const fxId = createFxAssetId(cleanComp.name || cleanComp.id);
             return {
                 schema: ARTIFEX_FX_SCHEMA_VERSION,
@@ -3162,9 +3218,9 @@ engine.start();</pre>
                 tags: normalizeTags(cleanComp.tags),
                 thumbnail: cleanComp.thumbnail || null,
                 assets: {
-                    textures: [],
+                    textures: textureDependencies,
                     audio: [],
-                    notes: 'Texture dependency collection will be filled when custom PNG particles are added.'
+                    notes: textureDependencies.length ? 'Texture dependencies were detected from textureSprite layers.' : 'No texture dependencies detected.'
                 },
                 composition: {
                     id: cleanComp.id || fxId,
@@ -3181,7 +3237,7 @@ engine.start();</pre>
                     rotation: 0,
                     opacity: 1
                 },
-                conversionNotes: []
+                conversionNotes: textureDependencies.length ? ['Custom PNG texture dependencies are listed in assets.textures.'] : []
             };
         }
 
@@ -3284,6 +3340,111 @@ engine.start();</pre>
             }
 
             return importedObj;
+        }
+
+        function extractEffekseerTextureReferences(xmlText) {
+            const refs = new Set();
+            const patterns = [
+                /(?:Texture|TexturePath|Path|FileName)[^<]*>\s*([^<]+?\.(?:png|jpg|jpeg|webp|tga))/gi,
+                /([^\s"'<>]+\.(?:png|jpg|jpeg|webp|tga))/gi
+            ];
+            patterns.forEach((pattern) => {
+                let match;
+                while ((match = pattern.exec(xmlText))) {
+                    const ref = (match[1] || '').trim().replace(/\\/g, '/');
+                    if (ref && !ref.startsWith('http')) refs.add(ref);
+                }
+            });
+            return Array.from(refs);
+        }
+
+        function convertEffekseerProjectToComposition(xmlText, fileName) {
+            const textures = extractEffekseerTextureReferences(xmlText || '');
+            const baseName = String(fileName || 'Effekseer Import').replace(/\.[^.]+$/, '');
+            const firstTexture = textures[0] || null;
+            const importedAt = new Date().toISOString();
+
+            const comp = {
+                id: generateHashID(),
+                name: `${baseName} - Effekseer Draft`,
+                tags: 'effekseer, imported, draft',
+                thumbnail: null,
+                importedFrom: {
+                    format: 'effekseer.efkproj',
+                    fileName: fileName || 'effect.efkproj',
+                    importedAt,
+                    textureReferences: textures
+                },
+                conversionNotes: [
+                    'Generated as an editable Artifex approximation, not a perfect Effekseer runtime clone.',
+                    textures.length ? `Detected ${textures.length} texture reference(s). Add matching PNGs through Custom PNG Texture Sprite if needed.` : 'No texture references were detected; built-in shapes were used.'
+                ],
+                layers: [
+                    {
+                        layerName: 'Effekseer Import - Glow Core',
+                        isVisible: true,
+                        effectType: 'ring',
+                        emitter: { rate: 0, width: 1, widthUnit: 'PX' },
+                        physics: { speedMin: 1, speedMax: 3, angle: 0, spread: 360, gravityY: 0, friction: 0.96, orbitalForce: 0.45 },
+                        visual: { shapeMode: 'builtInShape', shape: 'ring', sizeStart: 8, sizeEnd: 42, colors: ['#ffffff', '#9e01ce', '#00a1d7'], alphas: [0.0, 0.85, 0.0], edgeBlur: 0, blur: 0, glow: 24, composite: 'screen' },
+                        life: { durationMin: 45, durationMax: 90 }
+                    },
+                    {
+                        layerName: textures.length ? 'Effekseer Import - Texture Sprite Draft' : 'Effekseer Import - Particle Draft',
+                        isVisible: true,
+                        effectType: 'particles',
+                        emitter: { rate: 7, width: 45, widthUnit: 'PX' },
+                        physics: { speedMin: 1.5, speedMax: 5, angle: 270, spread: 55, gravityY: -0.04, friction: 0.985, orbitalForce: 0.8 },
+                        visual: {
+                            shapeMode: textures.length ? 'textureSprite' : 'builtInShape',
+                            shape: textures.length ? 'texture' : 'soft-star',
+                            texture: firstTexture,
+                            textureName: firstTexture,
+                            textureDataUrl: null,
+                            textureType: 'image/png',
+                            useTextureAlpha: true,
+                            tintMode: 'additive',
+                            fitMode: 'contain',
+                            sizeStart: 18,
+                            sizeEnd: 4,
+                            colors: ['#ffffff', '#00a1d7', '#9e01ce'],
+                            alphas: [0.0, 1.0, 0.0],
+                            edgeBlur: 0,
+                            blur: 0,
+                            glow: 20,
+                            composite: 'lighter'
+                        },
+                        life: { durationMin: 35, durationMax: 85 }
+                    }
+                ]
+            };
+
+            return comp;
+        }
+
+        function handleEffekseerImport(e) {
+            closeAllDropdowns();
+            if (!e.target.files || e.target.files.length === 0) return;
+            const file = e.target.files[0];
+            const fileReader = new FileReader();
+            fileReader.onload = function(event) {
+                try {
+                    const comp = convertEffekseerProjectToComposition(event.target.result, file.name);
+                    loadComposition(comp);
+                    const textureCount = comp.importedFrom?.textureReferences?.length || 0;
+                    showToast(textureCount ? `Effekseer draft imported with ${textureCount} texture reference(s).` : 'Effekseer draft imported with built-in shapes.', 'success');
+                } catch (err) {
+                    console.error('Effekseer import failed', err);
+                    showToast('Failed to import Effekseer project.', 'error');
+                } finally {
+                    e.target.value = '';
+                }
+            };
+            fileReader.onerror = function() {
+                showToast('Could not read Effekseer file.', 'error');
+                e.target.value = '';
+            };
+            fileReader.readAsText(file);
         }
 
         function handleFileImport(e) {
