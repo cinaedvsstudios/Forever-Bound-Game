@@ -1,0 +1,9 @@
+{
+  "id": "artifex_adventures_manifest",
+  "version": "0.1.0",
+  "title": "Artifex Adventures",
+  "startupScreen": "data/screens/startup_screen.json",
+  "firstScene": "data/scenes/ch01_train_heist.json",
+  "templatePurpose": "Sample game/template bundled with Artifex. Demonstrates a JSON-driven startup screen and first playable scene separate from Forever Bound.",
+  "notes": "Theme: a boy scout on a train in 1912 searching for a stolen book while mobsters chase him. Young adventurer serial meets practical puzzle-solving." 
+}
