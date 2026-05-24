@@ -692,7 +692,7 @@
     if (!select || !assetManifest) return;
     const wanted = select.value || 'all';
     popup.querySelectorAll('.asset-card-btn[data-asset-id]').forEach((card) => {
-      const asset = (assetManifest.assets || []).find((item) => item.id === card.datasetAssetId);
+      const asset = (assetManifest.assets || []).find((item) => item.id === card.dataset.assetId);
       card.classList.toggle('asset-game-filter-hidden', !(wanted === 'all' || classifyAsset(asset).has(wanted)));
     });
   }
