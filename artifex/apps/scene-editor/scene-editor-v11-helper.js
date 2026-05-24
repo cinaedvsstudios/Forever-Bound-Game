@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v0.11d';
+  const VERSION = 'v0.28-consolidation';
   const ASSET_MANIFEST = '../../assets-library/asset-library.json';
   let assetManifest = null;
   let pickerTarget = 'item';
