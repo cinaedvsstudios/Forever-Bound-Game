@@ -2050,6 +2050,18 @@ engine.start();</pre>
             });
         }
 
+        function resetEmitterPosition() {
+            if (!gridBounds || gridBounds.width <= 0 || gridBounds.height <= 0) {
+                updateGridBounds();
+            }
+            emitterRatio.x = 0.5;
+            emitterRatio.y = 0.5;
+            updateEmitterFromRatio();
+            clampEmitterPosition();
+            updateRatioFromEmitter();
+            syncCoordinatesControls();
+        }
+
         function resetZoomAndPan() {
             zoomLevel = 1.0;
             panOffset = { x: 0, y: 0 };
