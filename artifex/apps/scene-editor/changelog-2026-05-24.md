@@ -30,6 +30,10 @@ The Scene Editor patch strategy changed today. Temporary helpers were useful for
 - Added flip horizontal and flip vertical via context/menu work.
 - Added aspect-ratio lock/unlock controls.
 - Added Wrap Bounding Box to Image behaviour.
+- Fixed transform red-dot sliders so X, Y, Width, Height, Layer, Z/Depth, rotation, and skew update the selected object and stage node directly.
+- Fixed Aspect Ratio Lock off mode so Width and Height can visibly stretch or squash images instead of only resizing the bounding box.
+- Added visible ↩️ reset buttons beside the red-dot sliders.
+- Width and Height reset buttons now use the object baseline size instead of a generic default.
 
 ### Cards and panel behaviour
 
@@ -38,6 +42,13 @@ The Scene Editor patch strategy changed today. Temporary helpers were useful for
 - Added card styling passes for brown collapsed state and purple open state.
 - Planned stable label changes: Scene, Background, Object Layers, Selected Details, Transform Selected.
 - Attempted label/background-card changes through v26, but that helper caused instability and has now been paused.
+- Merged safe core layout into `scene-editor-v2.js`: Scene, Background, Object Layers, Selected Details, and core file/status pill.
+- Paused the old v12j file-pill rewrite helper because it was fighting the core file/status pill and grouping icons incorrectly.
+- Tightened file/status pill styling so Project, File, and Local save info fit into one compact row.
+- Removed the HDD section from the visible file/status pill styling to save vertical space.
+- Restored row/column layout styling for the transform metric table.
+- Restored Object Layers row layout so row number, object pill, and lock emoji align on one row.
+- Removed the visible box around card collapse emojis in the menu/card polish CSS.
 
 ### Visual controls
 
@@ -47,6 +58,8 @@ The Scene Editor patch strategy changed today. Temporary helpers were useful for
 - Vibrance was boosted but still needs checking.
 - Added red-dot vertical sliders for numeric fields.
 - Added right-click Reset menu for red-dot sliders.
+- Added visible ↩️ reset buttons for visual adjustment fields.
+- Visual adjustment reset defaults: opacity/brightness/contrast/saturation return to 100; hue/vibrance/exposure/shadow/glow return to 0.
 
 ### Selected-object preview
 
@@ -66,6 +79,7 @@ The Scene Editor patch strategy changed today. Temporary helpers were useful for
 - Removed menu arrows.
 - Raised menu layer so dropdowns should sit above stage controls.
 - Standardised small utility button shape toward a shared brown/purple style.
+- Removed the dark bordered background around card collapse emojis.
 
 ### Save/local backup
 
@@ -73,15 +87,22 @@ The Scene Editor patch strategy changed today. Temporary helpers were useful for
 - Attempted manual save-to-local disk button.
 - v26 polish helper interfered with the blank/resume screen and Open Local Backup, so v26 has been paused.
 - Local backup restore must be retested after the v26 pause.
+- Added manual 💾 local save into core editor top bar.
+- Manual local save now forces `saveWorkingCopy('manual save')`, shows a toast, and refreshes the file/status pill.
 
 ## Regression found
 
 Open Local Backup on the blank/front screen stopped responding after the v26/v27 label and polish helper chain. Cause is likely repeated DOM patching over the blank/resume screen. v26 has now been reduced to an inert status marker so the original core resume behaviour can run again.
 
+The v12j file-pill helper also caused a regression after the core file/status pill was merged. It rewrote the core pill after render, grouped the icons into one row, and restored old formatting. It has now been paused.
+
+A later CSS consolidation pass made Object Layers and Transform lose their intended table/grid layouts. The v13 stylesheet now restores compact file/status layout, layer row alignment, transform metric table layout, and plain collapse emojis.
+
 ## New files added today for process control
 
 - `future-updates-and-helper-consolidation.md` preserves the planned fixes and the helper rule.
 - `changelog-2026-05-24.md` records this working session.
+- `helper-inventory-2026-05-24.md` records the current helper/script/style stack before consolidation.
 
 ## New helper policy
 
@@ -97,3 +118,4 @@ No more helper-on-helper stacking for routine UI changes.
 4. Merge stable UI changes into the real core files instead of patching after render.
 5. Remove or pause risky helpers.
 6. Only then continue new upgrades such as Glow Colour, better shadow, and final preview matching.
+7. Update the visible version labels so old helper toasts no longer misleadingly show v0.15 as the current editor version.
