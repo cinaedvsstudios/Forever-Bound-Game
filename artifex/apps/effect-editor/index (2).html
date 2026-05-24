@@ -66,7 +66,7 @@
 <body class="text-slate-100 h-screen overflow-hidden flex flex-col bg-artifex-dark selection:bg-artifex-purpleAccent selection:text-white">
 
     <!-- Header Interface -->
-    <header class="h-[68px] shrink-0 border-b border-artifex-border bg-artifex-panel/95 backdrop-blur-md px-6 py-3 flex flex-col md:flex-row md:items-center justify-start gap-4 sticky top-0 z-50 select-none shadow-[0_6px_15px_rgba(0,0,0,0.85)] relative">
+    <header class="h-[68px] shrink-0 border-b border-artifex-border bg-artifex-panel/95 backdrop-blur-md px-6 py-3 flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-0 z-50 select-none shadow-[0_6px_15px_rgba(0,0,0,0.85)] relative">
         <div class="flex items-center gap-3 min-w-[250px]">
             <img src="../../artifexlogo.png" alt="Artifex logo" class="h-11 w-11 object-contain drop-shadow-[0_0_10px_rgba(158,1,206,0.55)] shrink-0">
             <div class="flex flex-col justify-center min-w-0">
@@ -78,20 +78,18 @@
             </div>
         </div>
 
-        <div class="hidden md:block h-10 w-px bg-gradient-to-b from-transparent via-artifex-border to-transparent opacity-90 shrink-0" title="Artifex tool navigation divider"></div>
-
         <nav class="flex flex-wrap items-center gap-1 select-none">
             
             <div class="relative dropdown-parent">
-                <button title="Effect Archetype files, imports, and exports" class="px-4 py-1.5 hover:bg-artifex-gray text-xs font-semibold text-artifex-gold rounded-full transition border border-transparent hover:border-artifex-border flex items-center gap-1.5 focus:outline-none shadow-[0_4px_10px_rgba(0,0,0,0.8)]">
-                    Archetype <span class="text-[8px] opacity-70">▼</span>
+                <button title="File Management & Saves" class="px-4 py-1.5 hover:bg-artifex-gray text-xs font-semibold text-artifex-gold rounded-full transition border border-transparent hover:border-artifex-border flex items-center gap-1.5 focus:outline-none shadow-[0_4px_10px_rgba(0,0,0,0.8)]">
+                    File <span class="text-[8px] opacity-70">▼</span>
                 </button>
                 <div class="dropdown-menu absolute hidden left-0 mt-2 w-48 bg-artifex-panel border border-artifex-border rounded-xl shadow-[0_15px_30px_rgba(0,0,0,0.95)] py-1 z-[100]">
                     <button onclick="newConfiguration()" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center gap-2" title="Wipe canvas and start a fresh composition.">
-                        <span class="text-artifex-gold font-bold">📂</span> New Effect Archetype
+                        <span class="text-artifex-gold font-bold">📂</span> New Empty Composition
                     </button>
                     <label class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center gap-2 cursor-pointer" title="Load an existing JSON file from your computer.">
-                        <span>📥</span> Import FX JSON
+                        <span>📥</span> Import JSON
                         <input type="file" id="file-import" accept=".json" class="hidden" onchange="handleFileImport(event)" />
                     </label>
                     <label class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center gap-2 cursor-pointer" title="Import an Effekseer .efkproj file as an editable Artifex FX draft.">
@@ -99,15 +97,15 @@
                         <input type="file" id="effekseer-import" accept=".efkproj,.efk,.xml,.txt" class="hidden" onchange="handleEffekseerImport(event)" />
                     </label>
                     <div class="border-t border-artifex-border my-1"></div>
-                    <div class="px-4 py-1 text-[10px] uppercase font-bold text-artifex-goldMuted tracking-wider">Export Archetype</div>
+                    <div class="px-4 py-1 text-[10px] uppercase font-bold text-artifex-goldMuted tracking-wider">Export</div>
                     <button onclick="exportRawComposition()" class="w-full text-left px-4 py-1.5 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center gap-2" title="Download the current legacy/raw composition JSON.">
-                        <span>📤</span> Raw Layer Composition
+                        <span>📤</span> Raw Composition JSON
                     </button>
                     <button onclick="exportEditorProject()" class="w-full text-left px-4 py-1.5 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center gap-2" title="Download an editable Artifex FX Editor project wrapper.">
-                        <span>🧰</span> Editor Project
+                        <span>🧰</span> Editor Project JSON
                     </button>
-                    <button onclick="exportArtifexFxAsset()" class="w-full text-left px-4 py-1.5 text-xs hover:bg-artifex-gray hover:text-white transition text-emerald-300 flex items-center gap-2" title="Download a runtime-facing Effect Archetype Asset for Scene Editor placement.">
-                        <span>✨</span> Effect Archetype Asset
+                    <button onclick="exportArtifexFxAsset()" class="w-full text-left px-4 py-1.5 text-xs hover:bg-artifex-gray hover:text-white transition text-emerald-300 flex items-center gap-2" title="Download a runtime-facing Artifex FX Asset for Scene Editor placement.">
+                        <span>✨</span> Artifex FX Asset
                     </button>
                     <button onclick="exportSceneFxInstance()" class="w-full text-left px-4 py-1.5 text-xs hover:bg-artifex-gray hover:text-white transition text-purple-300 flex items-center gap-2" title="Download a small scene instance JSON that references the exported FX asset.">
                         <span>📌</span> Scene FX Instance
@@ -120,8 +118,8 @@
             </div>
 
             <div class="relative dropdown-parent">
-                <button title="Edit the selected effect layer" class="px-4 py-1.5 hover:bg-artifex-gray text-xs font-semibold text-artifex-gold rounded-full transition border border-transparent hover:border-artifex-border flex items-center gap-1.5 focus:outline-none shadow-[0_4px_10px_rgba(0,0,0,0.8)]">
-                    Layer <span class="text-[8px] opacity-70">▼</span>
+                <button title="Edit Layers & Particles" class="px-4 py-1.5 hover:bg-artifex-gray text-xs font-semibold text-artifex-gold rounded-full transition border border-transparent hover:border-artifex-border flex items-center gap-1.5 focus:outline-none shadow-[0_4px_10px_rgba(0,0,0,0.8)]">
+                    Edit <span class="text-[8px] opacity-70">▼</span>
                 </button>
                 <div class="dropdown-menu absolute hidden left-0 mt-2 w-48 bg-artifex-panel border border-artifex-border rounded-xl shadow-[0_15px_30px_rgba(0,0,0,0.95)] py-1 z-[100]">
                     <button onclick="clearParticles()" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center gap-2" title="Flushes active particles instantly.">
@@ -134,8 +132,8 @@
             </div>
 
             <div class="relative dropdown-parent">
-                <button title="Preview and workspace options" class="px-4 py-1.5 hover:bg-artifex-gray text-xs font-semibold text-artifex-gold rounded-full transition border border-transparent hover:border-artifex-border flex items-center gap-1.5 focus:outline-none shadow-[0_4px_10px_rgba(0,0,0,0.8)]">
-                    Preview <span class="text-[8px] opacity-70">▼</span>
+                <button title="Preview Options" class="px-4 py-1.5 hover:bg-artifex-gray text-xs font-semibold text-artifex-gold rounded-full transition border border-transparent hover:border-artifex-border flex items-center gap-1.5 focus:outline-none shadow-[0_4px_10px_rgba(0,0,0,0.8)]">
+                    View <span class="text-[8px] opacity-70">▼</span>
                 </button>
                 <div class="dropdown-menu absolute hidden left-0 mt-2 w-56 bg-artifex-panel border border-artifex-border rounded-xl shadow-[0_15px_30px_rgba(0,0,0,0.95)] py-1 z-[100]">
                     <div class="px-4 py-1 text-[10px] uppercase font-bold text-artifex-goldMuted tracking-wider">Workspace Profile</div>
@@ -168,15 +166,15 @@
 
             <!-- 4. INSERT MENU (Overhauled Accordion) -->
             <div class="relative dropdown-parent">
-                <button title="Add effect layers or reusable archetypes" class="px-5 py-1.5 bg-artifex-purple hover:bg-artifex-purpleAccent border border-artifex-purpleAccent rounded-full text-xs font-semibold text-white flex items-center gap-2 shadow-[0_4px_12px_rgba(0,0,0,0.8)] focus:outline-none transition">
-                    Add <span class="text-[8px] opacity-70">▼</span>
+                <button title="Inject new effect layers onto your canvas" class="px-5 py-1.5 bg-artifex-purple hover:bg-artifex-purpleAccent border border-artifex-purpleAccent rounded-full text-xs font-semibold text-white flex items-center gap-2 shadow-[0_4px_12px_rgba(0,0,0,0.8)] focus:outline-none transition">
+                    Insert <span class="text-[8px] opacity-70">▼</span>
                 </button>
                 <div class="dropdown-menu absolute hidden left-0 mt-2 w-72 bg-artifex-panel border border-artifex-border rounded-xl shadow-[0_15px_30px_rgba(0,0,0,0.95)] py-2 z-[100] max-h-[85vh] overflow-y-auto">
                     <div class="px-3 pb-1">
                         
                         <!-- Base Effects Accordion -->
                         <button onclick="toggleAccordion('acc-base')" title="Add a single primitive engine layer." class="w-full text-left px-3 py-2 text-[11px] font-bold text-artifex-gold bg-artifex-gray hover:bg-artifex-darkGray rounded-md border border-artifex-border/50 flex justify-between items-center mb-1 transition focus:outline-none shadow-sm">
-                            <span>Base Layer</span> <span id="icon-acc-base" class="text-[9px]">▼</span>
+                            <span>Base Effect Layer</span> <span id="icon-acc-base" class="text-[9px]">▼</span>
                         </button>
                         <div id="acc-base" class="space-y-0.5 mb-3 pl-2 border-l border-artifex-border/40 ml-2 pt-1 pb-1">
                             <!-- Injected dynamically -->
@@ -184,7 +182,7 @@
 
                         <!-- Composite Effects Accordion -->
                         <button onclick="toggleAccordion('acc-comp')" title="Load a pre-made multi-layered masterpiece." class="w-full text-left px-3 py-2 text-[11px] font-bold text-emerald-400 bg-artifex-gray hover:bg-artifex-darkGray rounded-md border border-emerald-900/50 flex justify-between items-center mb-1 transition focus:outline-none shadow-sm">
-                            <span>Preset Archetypes</span> <span id="icon-acc-comp" class="text-[9px]">▶</span>
+                            <span>Composite Effect</span> <span id="icon-acc-comp" class="text-[9px]">▶</span>
                         </button>
                         <div id="acc-comp" class="hidden space-y-0.5 mb-3 pl-2 border-l border-emerald-900/40 ml-2 pt-1 pb-1">
                             <!-- Injected dynamically -->
@@ -193,7 +191,7 @@
                         <!-- Custom Effects Accordion -->
                         <button onclick="toggleAccordion('acc-cust')" title="Load your locally saved custom compositions." class="w-full text-left px-3 py-2 text-[11px] font-bold text-purple-400 bg-artifex-gray hover:bg-artifex-darkGray rounded-md border border-purple-900/50 flex justify-between items-center mb-1 transition focus:outline-none shadow-sm">
                             <div class="flex items-center gap-2">
-                                <span>Custom Archetypes</span>
+                                <span>Custom Effect</span>
                                 <span class="text-[8px] bg-purple-900/50 text-purple-200 px-1.5 py-0.2 rounded" id="custom-count-menu">0</span>
                             </div>
                             <span id="icon-acc-cust" class="text-[9px]">▶</span>
@@ -211,12 +209,12 @@
                 <button title="Need Help?" class="px-4 py-1.5 hover:bg-artifex-gray text-xs font-semibold text-artifex-gold rounded-full transition border border-transparent hover:border-artifex-border flex items-center gap-1.5 focus:outline-none shadow-[0_4px_10px_rgba(0,0,0,0.8)]">
                     Help <span class="text-[8px] opacity-70">▼</span>
                 </button>
-                <div class="dropdown-menu absolute hidden left-0 mt-2 w-48 bg-artifex-panel border border-artifex-border rounded-xl shadow-[0_15px_30px_rgba(0,0,0,0.95)] py-1 z-[100]">
+                <div class="dropdown-menu absolute hidden right-0 mt-2 w-48 bg-artifex-panel border border-artifex-border rounded-xl shadow-[0_15px_30px_rgba(0,0,0,0.95)] py-1 z-[100]">
                     <button onclick="openTutorialModal()" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center gap-2">
                         <span>📖</span> Quick Start Guide
                     </button>
                     <button onclick="showToast('Particle Studio v2.3.0 ALPHA stable build.', 'info')" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-400 flex items-center gap-2">
-                        <span>ℹ️</span> About FX Editor
+                        <span>ℹ️</span> About Artifex Studio
                     </button>
                 </div>
             </div>
@@ -245,21 +243,21 @@
             <div id="tab-content-params" class="flex-1 overflow-y-auto p-4 space-y-5">
                 
                 <!-- COMPOSITION PROPERTIES -->
-                <div class="bg-artifex-panel border border-artifex-border rounded-xl overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.9)]" title="High-level settings for the reusable effect archetype.">
+                <div class="bg-artifex-panel border border-artifex-border rounded-xl overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.9)]" title="High level settings for the entire active composition group.">
                     <div class="bg-artifex-darkGray px-4 py-3 border-b border-artifex-border flex items-center justify-between select-none">
-                        <span class="serif-font font-bold text-artifex-gold text-xs tracking-wide">Preset Archetypes</span>
+                        <span class="serif-font font-bold text-artifex-gold text-xs tracking-wide">Composite Effect</span>
                         <div class="bg-artifex-blue text-white text-[10px] rounded-md font-semibold w-5 h-5 flex items-center justify-center shadow-[0_0_8px_#00a1d7] cursor-pointer hover:bg-[#33b8ef] transition" title="Toggle visibility" onclick="toggleCard('card-body-comp')">↕</div>
                     </div>
                     <div id="card-body-comp" class="p-4 space-y-4">
                         <div title="Select a saved template to load into the workspace, replacing current layers.">
-                            <label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Load Archetype</label>
+                            <label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Load Composition</label>
                             <select id="comp-loader-dropdown" onchange="loadCompositionById(this.value)" class="w-full bg-artifex-dark border border-artifex-border text-artifex-gold text-xs rounded-xl p-2.5 focus:outline-none focus:border-amber-500 shadow-inner cursor-pointer">
-                                <option value="">-- None (Blank Archetype) --</option>
+                                <option value="">-- None (Blank Canvas) --</option>
                                 <!-- Injected -->
                             </select>
                         </div>
                         <div title="The auto-generated, strictly unique hash identifier for this save data.">
-                            <label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Archetype ID</label>
+                            <label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Composition ID</label>
                             <input type="text" id="comp-prop-id" class="w-full bg-artifex-dark border border-artifex-border rounded-xl p-2.5 text-xs text-gray-500 font-mono shadow-inner cursor-not-allowed" readonly>
                         </div>
                         <div class="hidden" id="comp-prop-name-container">
@@ -274,7 +272,7 @@
                         </div>
                         <div id="comp-thumbnail-panel" class="border border-artifex-border/60 bg-artifex-dark/70 rounded-xl p-2.5 space-y-2" title="Capture a square preview image for this reusable FX asset.">
                             <div class="flex items-center justify-between">
-                                <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Archetype Thumbnail</span>
+                                <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Library Thumbnail</span>
                                 <span id="comp-thumbnail-status" class="text-[9px] text-gray-500 font-mono">Not captured</span>
                             </div>
                             <div class="relative aspect-square rounded-lg overflow-hidden border border-artifex-border bg-[#0f0c0b] flex items-center justify-center shadow-inner">
@@ -289,337 +287,322 @@
                             </div>
                         </div>
                         <button onclick="openVariationModal()" title="Pack and save these layers as a new custom composition." class="w-full py-2 bg-gradient-to-r from-artifex-purple to-[#4a0d4c] hover:opacity-90 text-white transition rounded-xl text-xs font-semibold shadow-[0_4px_10px_rgba(158,1,206,0.4)] focus:outline-none">
-                            Save Archetype Version
+                            Save New Version
                         </button>
                     </div>
                 </div>
+
                 <!-- LAYER PROPERTIES WRAPPER -->
                 <div id="layer-properties-wrapper" class="space-y-5 transition-opacity duration-300">
-
-                    <!-- EFFECT LAYER APPEARANCE -->
-                    <div class="bg-artifex-panel border border-artifex-purpleAccent/50 rounded-xl overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.9)] relative" title="Visual identity and surface styling for the selected effect layer.">
+                    
+                    <!-- ACTIVE LAYER SETUP -->
+                    <div class="bg-artifex-panel border border-artifex-purpleAccent/50 rounded-xl overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.9)] relative" title="Configure identifiers and engine types for the specifically selected layer below.">
                         <div class="absolute top-0 left-0 w-1 h-full bg-artifex-purpleAccent"></div>
                         <div class="bg-[#1e131d] px-4 py-3 border-b border-artifex-purpleAccent/30 flex items-center justify-between select-none pl-6">
-                            <span class="serif-font font-bold text-white text-xs tracking-wide">Effect Layer Appearance</span>
+                            <span class="serif-font font-bold text-white text-xs tracking-wide">Active Layer Settings</span>
                             <div class="flex gap-2 items-center">
-                                <button onclick="addColorStop()" title="Add an extra colour/alpha stop to the selected layer." class="bg-artifex-blue/20 text-artifex-blue hover:bg-artifex-blue/45 transition border border-artifex-blue/50 text-xs font-extrabold w-6 h-6 flex items-center justify-center rounded-lg shadow-lg select-none focus:outline-none">+</button>
                                 <span class="text-[9px] bg-artifex-purpleAccent text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Layer</span>
                                 <div class="bg-artifex-blue text-white text-[10px] rounded-md font-semibold w-5 h-5 flex items-center justify-center shadow-[0_0_8px_#00a1d7] cursor-pointer hover:bg-[#33b8ef] transition" title="Toggle visibility" onclick="toggleCard('card-body-layer')">↕</div>
                             </div>
                         </div>
                         <div id="card-body-layer" class="p-4 space-y-4 pl-6">
-
-                            <section class="border border-artifex-border/50 bg-artifex-dark/35 rounded-xl p-3 space-y-3">
-                                <div class="flex items-center gap-2 border-b border-artifex-border/40 pb-2">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-artifex-purpleAccent shadow-[0_0_8px_#9e01ce]"></span>
-                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Layer Identity</span>
-                                </div>
-
-<div title="The readable name of this layer for your reference.">
-<label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Layer Name</label>
-<input class="w-full bg-artifex-dark border border-artifex-border rounded-xl p-2 text-xs text-gray-300 focus:outline-none focus:border-artifex-purpleAccent shadow-inner" id="layer-prop-name" oninput="updateLayerName(this.value)" type="text"/>
-</div>
-<div title="The base engine architecture. Dictates how particles emit globally.">
-<label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Effect Engine</label>
-<select class="w-full bg-artifex-dark border border-artifex-border text-artifex-gold text-xs rounded-xl p-2 focus:ring-1 focus:ring-artifex-purpleAccent focus:outline-none cursor-pointer" id="layer-prop-type" onchange="changeLayerType(this.value)">
-<option value="particles">Standard Particle Engine</option>
-<option value="ribbon">Slash / Ribbon Engine</option>
-<option value="ring">Ring / Shockwave Engine</option>
-<option value="lightning">Lightning / Beam Engine</option>
-<option value="projectile">Projectile / Trail Engine</option>
-<option value="gas">Gas / Smoke / Dust Engine</option>
-<option value="refraction">Refraction / Distortion Engine</option>
-<option value="lensflare">Lens Flare / Optical Engine</option>
-</select>
-</div>
-<div title="Overwrite this layer with a specific pre-built style configuration.">
-<label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Load Base Style (Overwrites Layer)</label>
-<select class="w-full bg-artifex-dark border border-artifex-border text-artifex-gold text-xs rounded-xl p-2 focus:ring-1 focus:ring-artifex-purpleAccent focus:outline-none cursor-pointer" id="layer-prop-subtype" onchange="changeLayerSubType(this.value)">
-<!-- Injected dynamically by JS -->
-</select>
-</div>
-
-                            </section>
-                            <section class="border border-artifex-border/50 bg-artifex-dark/35 rounded-xl p-3 space-y-3">
-                                <div class="flex items-center gap-2 border-b border-artifex-border/40 pb-2">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-artifex-purpleAccent shadow-[0_0_8px_#9e01ce]"></span>
-                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Visual Source</span>
-                                </div>
-
-<div title="Choose whether this layer uses a procedural built-in shape or a custom PNG particle texture.">
-<label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Shape Mode</label>
-<select class="w-full bg-artifex-dark border border-artifex-border text-artifex-gold text-xs rounded-xl p-2.5 focus:ring-1 focus:ring-artifex-purpleAccent focus:outline-none cursor-pointer shadow-inner" id="param-visual-shapeMode" onchange="changeShapeMode(this.value)">
-<option value="builtInShape">Built-In Shape</option>
-<option value="textureSprite">Custom PNG Texture Sprite</option>
-</select>
-</div>
-<div id="built-in-shape-panel" title="Select the built-in visual particle shape used for this layer.">
-<label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Particle Shape</label>
-<!-- Custom Shape Grid Dropdown -->
-<div class="relative dropdown-parent" id="shape-dropdown-wrapper">
-<button class="w-full bg-artifex-dark border border-artifex-border hover:border-artifex-purpleAccent transition text-artifex-gold text-xs rounded-xl p-2.5 flex justify-between items-center focus:outline-none shadow-inner" onclick="toggleShapePicker(event)" title="Click to open the visual shape grid picker.">
-<span class="flex items-center gap-2 font-bold tracking-wider" id="shape-picker-label">
-<!-- Dynamically filled -->
-<svg class="w-4 h-4 text-artifex-gold" viewbox="0 0 24 24"><circle cx="12" cy="12" fill="currentColor" r="8"></circle></svg> <span class="truncate">Circle</span>
-</span>
-<span class="text-[9px]">▼</span>
-</button>
-<div class="hidden absolute top-full left-0 mt-2 w-full bg-artifex-panel border border-artifex-purpleAccent rounded-xl p-3 z-[100] grid grid-cols-3 gap-2 shadow-[0_15px_30px_rgba(0,0,0,0.95)] max-h-72 overflow-y-auto" id="shape-picker-grid">
-<!-- Buttons injected dynamically -->
-</div>
-<input id="param-visual-shape" type="hidden" value="circle"/>
-</div>
-</div>
-<div class="hidden border border-artifex-border/50 rounded-xl bg-artifex-dark/45 p-3 space-y-3" id="texture-sprite-panel" title="Use a custom transparent PNG as the particle shape.">
-<div>
-<label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Custom PNG Texture</label>
-<label class="w-full bg-artifex-dark border border-artifex-border hover:border-artifex-purpleAccent transition text-artifex-gold text-xs rounded-xl p-2.5 flex justify-between items-center cursor-pointer shadow-inner">
-<span class="truncate" id="texture-file-label">Choose PNG...</span>
-<span class="text-[10px] text-artifex-goldMuted">UPLOAD</span>
-<input accept="image/png,image/webp,image/jpeg" class="hidden" id="param-visual-texture-file" onchange="handleTextureFileInput(event)" type="file"/>
-</label>
-</div>
-<div class="hidden items-center gap-3" id="texture-preview-box">
-<div class="w-14 h-14 rounded-lg border border-artifex-border bg-black/45 flex items-center justify-center overflow-hidden">
-<img alt="Texture preview" class="max-w-full max-h-full object-contain" id="texture-preview-img"/>
-</div>
-<div class="min-w-0 flex-1">
-<div class="text-[10px] text-artifex-gold font-bold truncate" id="texture-preview-name">No texture</div>
-<button class="mt-1 text-[9px] text-rose-400 hover:text-rose-300" onclick="clearLayerTexture()">Clear texture</button>
-</div>
-</div>
-<div class="grid grid-cols-2 gap-2">
-<div>
-<label class="block text-artifex-goldMuted uppercase font-bold text-[8px] tracking-wider mb-1">Tint Mode</label>
-<select class="w-full bg-artifex-dark border border-artifex-border text-artifex-gold text-[10px] rounded-lg p-1.5 focus:outline-none" id="param-visual-tintMode" onchange="updateTextureOption('tintMode', this.value)">
-<option value="none">Original PNG</option>
-<option value="source-atop">Tint to Colour</option>
-<option value="multiply">Multiply Tint</option>
-<option value="lighter">Additive Tint</option>
-</select>
-</div>
-<div>
-<label class="block text-artifex-goldMuted uppercase font-bold text-[8px] tracking-wider mb-1">Fit Mode</label>
-<select class="w-full bg-artifex-dark border border-artifex-border text-artifex-gold text-[10px] rounded-lg p-1.5 focus:outline-none" id="param-visual-fitMode" onchange="updateTextureOption('fitMode', this.value)">
-<option value="contain">Contain</option>
-<option value="cover">Cover</option>
-<option value="stretch">Stretch</option>
-</select>
-</div>
-</div>
-<label class="flex items-center gap-2 text-[10px] text-artifex-goldMuted">
-<input checked="" class="accent-artifex-purpleAccent" id="param-visual-useTextureAlpha" onchange="updateTextureOption('useTextureAlpha', this.checked)" type="checkbox"/>
-                                    Use texture alpha
-                                </label>
-</div> 
-                            </section>
-                            <section class="border border-artifex-border/50 bg-artifex-dark/35 rounded-xl p-3 space-y-3">
-                                <div class="flex items-center gap-2 border-b border-artifex-border/40 pb-2">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-artifex-purpleAccent shadow-[0_0_8px_#9e01ce]"></span>
-                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Colour, Size & Finish</span>
-                                </div>
-<div title="Particle radius/scale at birth and at death.">
-<div class="flex justify-between text-xs mb-1">
-<span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Growth Size</span>
-<span class="text-artifex-gold font-mono text-[11px]"><span id="val-visual-sizeStart">5</span>px ➜ <span id="val-visual-sizeEnd">1</span>px</span>
-</div>
-<div class="flex gap-2.5">
-<div class="flex-1">
-<span class="text-[8px] text-artifex-goldMuted block mb-0.5">START</span>
-<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-visual-sizeStart" max="100" min="0.05" step="0.05" type="range" value="5"/>
-</div>
-<div class="flex-1">
-<span class="text-[8px] text-artifex-goldMuted block mb-0.5">END</span>
-<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-visual-sizeEnd" max="100" min="0.05" step="0.05" type="range" value="1"/>
-</div>
-</div>
-</div>
-<div class="space-y-2" title="Drag and drop stops to reorder. Adjust Hex and Alpha (Transparency) for each stop.">
-<span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider block">Color &amp; Alpha Sequence</span>
-<div class="space-y-2 max-h-60 overflow-y-auto pr-1" id="color-transition-list">
-<!-- Generated Dynamically -->
-</div>
-</div>
-<div title="Glow adds an outer shadow. Can be subtle depending on blend mode.">
-<div class="flex justify-between text-xs mb-1">
-<span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Glow Radius</span>
-<span class="text-artifex-gold font-mono text-[11px]" id="val-visual-glow">15</span>
-</div>
-<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-visual-glow" max="60" min="0" step="1" type="range" value="15"/>
-</div>
-<div title="Hard image blur applied to the particle shape. Performance heavy, but highly visible for clouds.">
-<div class="flex justify-between text-xs mb-1">
-<span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Blur Filter Amount</span>
-<span class="text-artifex-gold font-mono text-[11px]" id="val-visual-blur">0</span>
-</div>
-<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-visual-blur" max="20" min="0" step="0.5" type="range" value="0"/>
-</div>
-<div title="Softens the particle edge. Useful for SVG-style built-in shapes and custom PNG particles.">
-<div class="flex justify-between text-xs mb-1">
-<span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Edge Softness</span>
-<span class="text-artifex-gold font-mono text-[11px]" id="val-visual-edgeBlur">0</span>
-</div>
-<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-visual-edgeBlur" max="12" min="0" step="0.5" type="range" value="0"/>
-</div>
-<div title="How colors blend when overlapping. 'Lighter' creates intense additive neon magic.">
-<label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Composite Blend</label>
-<select class="w-full bg-artifex-dark border border-artifex-border text-artifex-gold text-xs rounded-xl p-2 focus:ring-1 focus:ring-amber-500 focus:outline-none shadow-[0_2px_5px_rgba(0,0,0,0.8)] cursor-pointer" id="param-visual-composite">
-<option value="lighter">Lighter (Additive Glow)</option>
-<option value="source-over">Source Over (Standard Overlay)</option>
-<option value="screen">Screen (Softer Glow blending)</option>
-</select>
-</div>
-
-                            </section>
-
+                            <div title="The readable name of this layer for your reference.">
+                                <label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Layer Name</label>
+                                <input type="text" id="layer-prop-name" oninput="updateLayerName(this.value)" class="w-full bg-artifex-dark border border-artifex-border rounded-xl p-2 text-xs text-gray-300 focus:outline-none focus:border-artifex-purpleAccent shadow-inner">
+                            </div>
+                            <div title="The base engine architecture. Dictates how particles emit globally.">
+                                <label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Effect Engine</label>
+                                <select id="layer-prop-type" onchange="changeLayerType(this.value)" class="w-full bg-artifex-dark border border-artifex-border text-artifex-gold text-xs rounded-xl p-2 focus:ring-1 focus:ring-artifex-purpleAccent focus:outline-none cursor-pointer">
+                                    <option value="particles">Standard Particle Engine</option>
+                                    <option value="ribbon">Slash / Ribbon Engine</option>
+                                    <option value="ring">Ring / Shockwave Engine</option>
+                                    <option value="lightning">Lightning / Beam Engine</option>
+                                    <option value="projectile">Projectile / Trail Engine</option>
+                                    <option value="gas">Gas / Smoke / Dust Engine</option>
+                                    <option value="refraction">Refraction / Distortion Engine</option>
+                                    <option value="lensflare">Lens Flare / Optical Engine</option>
+                                </select>
+                            </div>
+                            <div title="Overwrite this layer with a specific pre-built style configuration.">
+                                <label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Load Base Style (Overwrites Layer)</label>
+                                <select id="layer-prop-subtype" onchange="changeLayerSubType(this.value)" class="w-full bg-artifex-dark border border-artifex-border text-artifex-gold text-xs rounded-xl p-2 focus:ring-1 focus:ring-artifex-purpleAccent focus:outline-none cursor-pointer">
+                                    <!-- Injected dynamically by JS -->
+                                </select>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- EFFECT LAYER DYNAMICS -->
-                    <div class="bg-artifex-panel border border-artifex-border rounded-xl overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.9)]" title="Emission, movement, forces, and lifespan for the selected effect layer.">
+                    <!-- EMITTER -->
+                    <div class="bg-artifex-panel border border-artifex-border rounded-xl overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.9)]" title="Control the specific anchor point, emission width, and exact spawn rate per frame.">
                         <div class="bg-artifex-darkGray px-4 py-3 border-b border-artifex-border flex items-center justify-between select-none">
-                            <span class="serif-font font-bold text-artifex-gold text-xs tracking-wide">Effect Layer Dynamics</span>
-                            <div class="bg-artifex-blue text-white text-[10px] rounded-md font-semibold w-5 h-5 flex items-center justify-center shadow-[0_0_8px_#00a1d7] cursor-pointer hover:bg-[#33b8ef] transition" title="Toggle visibility" onclick="toggleCard('card-body-dynamics')">↕</div>
+                            <span class="serif-font font-bold text-artifex-gold text-xs tracking-wide">Emitter Options</span>
+                            <div class="bg-artifex-blue text-white text-[10px] rounded-md font-semibold w-5 h-5 flex items-center justify-center shadow-[0_0_8px_#00a1d7] cursor-pointer hover:bg-[#33b8ef] transition" title="Toggle visibility" onclick="toggleCard('card-body-emitter')">↕</div>
                         </div>
-                        <div id="card-body-dynamics" class="p-4 space-y-4">
-
-                            <section class="border border-artifex-border/50 bg-artifex-dark/35 rounded-xl p-3 space-y-3">
-                                <div class="flex items-center gap-2 border-b border-artifex-border/40 pb-2">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-artifex-purpleAccent shadow-[0_0_8px_#9e01ce]"></span>
-                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Emitter</span>
+                        <div id="card-body-emitter" class="p-4 space-y-4">
+                            <div class="border border-artifex-border/40 p-2.5 rounded-lg bg-artifex-dark/50">
+                                <div class="flex justify-between text-xs mb-2">
+                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Global Anchor Coords</span>
+                                    <span class="text-[10px] text-artifex-gold font-mono font-bold" id="stats-emitter-coords-sidebar">0x, 0y</span>
                                 </div>
-
-<div class="border border-artifex-border/40 p-2.5 rounded-lg bg-artifex-dark/50">
-<div class="flex justify-between text-xs mb-2">
-<span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Global Anchor Coords</span>
-<span class="text-[10px] text-artifex-gold font-mono font-bold" id="stats-emitter-coords-sidebar">0x, 0y</span>
-</div>
-<div class="flex gap-2 mb-2.5">
-<div class="flex-1" title="The absolute canvas coordinate anchor point X.">
-<span class="text-[8px] text-artifex-goldMuted block mb-0.5 ml-1">X AXIS</span>
-<input class="w-full bg-artifex-dark border border-artifex-border rounded-lg text-center text-xs text-artifex-gold p-1.5 focus:outline-none focus:border-amber-500 shadow-inner font-mono" id="emitter-coord-x" type="number"/>
-</div>
-<div class="flex-1" title="The absolute canvas coordinate anchor point Y.">
-<span class="text-[8px] text-artifex-goldMuted block mb-0.5 ml-1">Y AXIS</span>
-<input class="w-full bg-artifex-dark border border-artifex-border rounded-lg text-center text-xs text-artifex-gold p-1.5 focus:outline-none focus:border-amber-500 shadow-inner font-mono" id="emitter-coord-y" type="number"/>
-</div>
-</div>
-<div class="flex gap-2">
-<button class="flex-1 px-2 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold transition rounded-md border border-artifex-border text-[9px] font-semibold" onclick="centerEmitterHorizontal()" title="Snap the emitter anchor perfectly to horizontal center.">Center H</button>
-<button class="flex-1 px-2 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold transition rounded-md border border-artifex-border text-[9px] font-semibold" onclick="centerEmitterVertical()" title="Snap the emitter anchor perfectly to vertical center.">Center V</button>
-</div>
-</div>
-<div title="How many particles spawn per frame (60 frames per second).">
-<div class="flex justify-between text-xs mb-1.5">
-<span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Layer Emission Rate</span>
-<div class="flex items-center gap-1">
-<span class="text-artifex-gold font-mono text-xs" id="val-emitter-rate">5</span>
-<span class="w-2 h-2 rounded-full border border-artifex-purpleAccent shadow-[0_0_5px_#9e01ce] bg-artifex-purpleAccent/30 inline-block"></span>
-</div>
-</div>
-<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-emitter-rate" max="30" min="0" step="1" type="range" value="5"/>
-</div>
-<div title="The span of the spawn area. 1px is a pinpoint, 100px is a wide line.">
-<div class="flex justify-between text-xs mb-1.5">
-<span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Layer Emit Width</span>
-<div class="flex items-center gap-1.5 select-none">
-<span class="text-artifex-gold font-mono text-xs" id="val-emitter-width">100</span>
-<span class="bg-artifex-purpleAccent/20 text-artifex-purpleAccent border border-artifex-purpleAccent hover:bg-artifex-purpleAccent/40 transition cursor-pointer text-[9px] px-1.5 py-0.5 rounded-full font-bold shadow-[0_0_8px_#9e01ce]" id="emitter-width-unit-badge" onclick="toggleWidthUnit()" title="Click to toggle between Grid Percentage (%) and absolute Pixels (PX).">%</span>
-</div>
-</div>
-<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-emitter-width" max="150" min="1" step="1" type="range" value="100"/>
-</div>
-
-                            </section>
-                            <section class="border border-artifex-border/50 bg-artifex-dark/35 rounded-xl p-3 space-y-3">
-                                <div class="flex items-center gap-2 border-b border-artifex-border/40 pb-2">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-artifex-purpleAccent shadow-[0_0_8px_#9e01ce]"></span>
-                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Motion</span>
+                                <div class="flex gap-2 mb-2.5">
+                                    <div class="flex-1" title="The absolute canvas coordinate anchor point X.">
+                                        <span class="text-[8px] text-artifex-goldMuted block mb-0.5 ml-1">X AXIS</span>
+                                        <input type="number" id="emitter-coord-x" class="w-full bg-artifex-dark border border-artifex-border rounded-lg text-center text-xs text-artifex-gold p-1.5 focus:outline-none focus:border-amber-500 shadow-inner font-mono">
+                                    </div>
+                                    <div class="flex-1" title="The absolute canvas coordinate anchor point Y.">
+                                        <span class="text-[8px] text-artifex-goldMuted block mb-0.5 ml-1">Y AXIS</span>
+                                        <input type="number" id="emitter-coord-y" class="w-full bg-artifex-dark border border-artifex-border rounded-lg text-center text-xs text-artifex-gold p-1.5 focus:outline-none focus:border-amber-500 shadow-inner font-mono">
+                                    </div>
                                 </div>
-
-<div title="Minimum and maximum starting velocity of particles.">
-<div class="flex justify-between text-xs mb-1">
-<span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Speed Limits</span>
-<span class="text-artifex-gold font-mono text-[11px]"><span id="val-physics-speedMin">2</span> - <span id="val-physics-speedMax">6</span></span>
-</div>
-<div class="flex gap-2.5">
-<div class="flex-1">
-<span class="text-[8px] text-artifex-goldMuted block mb-0.5">MIN</span>
-<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-physics-speedMin" max="25" min="0" step="0.5" type="range" value="2"/>
-</div>
-<div class="flex-1">
-<span class="text-[8px] text-artifex-goldMuted block mb-0.5">MAX</span>
-<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-physics-speedMax" max="35" min="0.5" step="0.5" type="range" value="6"/>
-</div>
-</div>
-</div>
-<div title="The core direction the emitter shoots in degrees (270 is straight up).">
-<div class="flex justify-between text-xs mb-1">
-<span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Direction</span>
-<span class="text-artifex-gold font-mono text-[11px]" id="val-physics-angle">270</span>
-</div>
-<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-physics-angle" max="360" min="0" step="5" type="range" value="270"/>
-</div>
-<div title="The random spray variance around the Direction (360 shoots in all directions).">
-<div class="flex justify-between text-xs mb-1">
-<span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Angle Spread</span>
-<span class="text-artifex-gold font-mono text-[11px]" id="val-physics-spread">45</span>
-</div>
-<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-physics-spread" max="360" min="0" step="5" type="range" value="45"/>
-</div>
-<div title="Constant vertical force. Positive pulls down, negative floats up.">
-<div class="flex justify-between text-xs mb-1">
-<span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Gravity (Y)</span>
-<span class="text-artifex-gold font-mono text-[11px]" id="val-physics-gravityY">0.15</span>
-</div>
-<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-physics-gravityY" max="1.5" min="-1" step="0.05" type="range" value="0.15"/>
-</div>
-<div title="Air resistance. 1.0 is no drag. 0.95 will aggressively slow particles to a stop.">
-<div class="flex justify-between text-xs mb-1">
-<span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Friction</span>
-<span class="text-artifex-gold font-mono text-[11px]" id="val-physics-friction">0.99</span>
-</div>
-<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-physics-friction" max="1.00" min="0.80" step="0.01" type="range" value="0.99"/>
-</div>
-<div title="Rotational pull causing particles to spin around the anchor point.">
-<div class="flex justify-between text-xs mb-1">
-<span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Vortex Orbit</span>
-<span class="text-artifex-gold font-mono text-[11px]" id="val-physics-orbitalForce">0</span>
-</div>
-<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-physics-orbitalForce" max="2" min="-2" step="0.05" type="range" value="0"/>
-</div>
-
-                            </section>
-                            <section class="border border-artifex-border/50 bg-artifex-dark/35 rounded-xl p-3 space-y-3">
-                                <div class="flex items-center gap-2 border-b border-artifex-border/40 pb-2">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-artifex-purpleAccent shadow-[0_0_8px_#9e01ce]"></span>
-                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Timing</span>
+                                <div class="flex gap-2">
+                                    <button onclick="centerEmitterHorizontal()" title="Snap the emitter anchor perfectly to horizontal center." class="flex-1 px-2 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold transition rounded-md border border-artifex-border text-[9px] font-semibold">Center H</button>
+                                    <button onclick="centerEmitterVertical()" title="Snap the emitter anchor perfectly to vertical center." class="flex-1 px-2 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold transition rounded-md border border-artifex-border text-[9px] font-semibold">Center V</button>
                                 </div>
+                            </div>
 
-<div>
-<div class="flex justify-between text-xs mb-1">
-<span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Lifespan Frames</span>
-<span class="text-artifex-gold font-mono text-[11px]"><span id="val-life-durationMin">30</span> - <span id="val-life-durationMax">60</span></span>
-</div>
-<div class="flex gap-2.5">
-<div class="flex-1">
-<span class="text-[8px] text-artifex-goldMuted block mb-0.5">MIN</span>
-<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-life-durationMin" max="150" min="5" step="5" type="range" value="30"/>
-</div>
-<div class="flex-1">
-<span class="text-[8px] text-artifex-goldMuted block mb-0.5">MAX</span>
-<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-life-durationMax" max="300" min="10" step="5" type="range" value="60"/>
-</div>
-</div>
-</div>
+                            <div title="How many particles spawn per frame (60 frames per second).">
+                                <div class="flex justify-between text-xs mb-1.5">
+                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Layer Emission Rate</span>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-artifex-gold font-mono text-xs" id="val-emitter-rate">5</span>
+                                        <span class="w-2 h-2 rounded-full border border-artifex-purpleAccent shadow-[0_0_5px_#9e01ce] bg-artifex-purpleAccent/30 inline-block"></span>
+                                    </div>
+                                </div>
+                                <input type="range" id="param-emitter-rate" min="0" max="30" step="1" value="5" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]">
+                            </div>
+                            <div title="The span of the spawn area. 1px is a pinpoint, 100px is a wide line.">
+                                <div class="flex justify-between text-xs mb-1.5">
+                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Layer Emit Width</span>
+                                    <div class="flex items-center gap-1.5 select-none">
+                                        <span class="text-artifex-gold font-mono text-xs" id="val-emitter-width">100</span>
+                                        <span onclick="toggleWidthUnit()" id="emitter-width-unit-badge" title="Click to toggle between Grid Percentage (%) and absolute Pixels (PX)." class="bg-artifex-purpleAccent/20 text-artifex-purpleAccent border border-artifex-purpleAccent hover:bg-artifex-purpleAccent/40 transition cursor-pointer text-[9px] px-1.5 py-0.5 rounded-full font-bold shadow-[0_0_8px_#9e01ce]">%</span>
+                                    </div>
+                                </div>
+                                <input type="range" id="param-emitter-width" min="1" max="150" step="1" value="100" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]">
+                            </div>
+                        </div>
+                    </div>
 
-                            </section>
+                    <!-- DYNAMICS -->
+                    <div class="bg-artifex-panel border border-artifex-border rounded-xl overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.9)]" title="Adjust speeds, directions, gravity, and friction resistance.">
+                        <div class="bg-artifex-darkGray px-4 py-3 border-b border-artifex-border flex items-center justify-between select-none">
+                            <span class="serif-font font-bold text-artifex-gold text-xs tracking-wide">Motion / Dynamics</span>
+                            <div class="bg-artifex-blue text-white text-[10px] rounded-md font-semibold w-5 h-5 flex items-center justify-center shadow-[0_0_8px_#00a1d7] cursor-pointer hover:bg-[#33b8ef] transition" title="Toggle visibility" onclick="toggleCard('card-body-physics')">↕</div>
+                        </div>
+                        <div id="card-body-physics" class="p-4 space-y-4">
+                            <div title="Minimum and maximum starting velocity of particles.">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Speed Limits</span>
+                                    <span class="text-artifex-gold font-mono text-[11px]"><span id="val-physics-speedMin">2</span> - <span id="val-physics-speedMax">6</span></span>
+                                </div>
+                                <div class="flex gap-2.5">
+                                    <div class="flex-1">
+                                        <span class="text-[8px] text-artifex-goldMuted block mb-0.5">MIN</span>
+                                        <input type="range" id="param-physics-speedMin" min="0" max="25" step="0.5" value="2" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]">
+                                    </div>
+                                    <div class="flex-1">
+                                        <span class="text-[8px] text-artifex-goldMuted block mb-0.5">MAX</span>
+                                        <input type="range" id="param-physics-speedMax" min="0.5" max="35" step="0.5" value="6" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]">
+                                    </div>
+                                </div>
+                            </div>
+                            <div title="The core direction the emitter shoots in degrees (270 is straight up).">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Direction</span>
+                                    <span class="text-artifex-gold font-mono text-[11px]" id="val-physics-angle">270</span>
+                                </div>
+                                <input type="range" id="param-physics-angle" min="0" max="360" step="5" value="270" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]">
+                            </div>
+                            <div title="The random spray variance around the Direction (360 shoots in all directions).">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Angle Spread</span>
+                                    <span class="text-artifex-gold font-mono text-[11px]" id="val-physics-spread">45</span>
+                                </div>
+                                <input type="range" id="param-physics-spread" min="0" max="360" step="5" value="45" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]">
+                            </div>
+                            <div title="Constant vertical force. Positive pulls down, negative floats up.">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Gravity (Y)</span>
+                                    <span class="text-artifex-gold font-mono text-[11px]" id="val-physics-gravityY">0.15</span>
+                                </div>
+                                <input type="range" id="param-physics-gravityY" min="-1" max="1.5" step="0.05" value="0.15" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]">
+                            </div>
+                            <div title="Air resistance. 1.0 is no drag. 0.95 will aggressively slow particles to a stop.">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Friction</span>
+                                    <span class="text-artifex-gold font-mono text-[11px]" id="val-physics-friction">0.99</span>
+                                </div>
+                                <input type="range" id="param-physics-friction" min="0.80" max="1.00" step="0.01" value="0.99" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]">
+                            </div>
+                            <div title="Rotational pull causing particles to spin around the anchor point.">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Vortex Orbit</span>
+                                    <span class="text-artifex-gold font-mono text-[11px]" id="val-physics-orbitalForce">0</span>
+                                </div>
+                                <input type="range" id="param-physics-orbitalForce" min="-2" max="2" step="0.05" value="0" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]">
+                            </div>
+                        </div>
+                    </div>
 
+                    <!-- VISUALS -->
+                    <div class="bg-artifex-panel border border-artifex-border rounded-xl overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.9)]" title="Control size scaling, color sequencing, opacities, and canvas blend filters.">
+                        <div class="bg-artifex-darkGray px-4 py-3 border-b border-artifex-border flex items-center justify-between select-none">
+                            <span class="serif-font font-bold text-artifex-gold text-xs tracking-wide">Visuals</span>
+                            <div class="flex gap-2 items-center">
+                                <button onclick="addColorStop()" title="Add an extra color stop waypoint into the transition sequence" class="bg-artifex-blue/20 text-artifex-blue hover:bg-artifex-blue/45 transition border border-artifex-blue/50 text-xs font-extrabold w-6 h-6 flex items-center justify-center rounded-lg shadow-lg select-none focus:outline-none">+</button>
+                                <div class="bg-artifex-blue text-white text-[10px] rounded-md font-semibold w-5 h-5 flex items-center justify-center shadow-[0_0_8px_#00a1d7] cursor-pointer hover:bg-[#33b8ef] transition" title="Toggle visibility" onclick="toggleCard('card-body-visuals')">↕</div>
+                            </div>
+                        </div>
+                        <div id="card-body-visuals" class="p-4 space-y-4">
+                            <div title="Choose whether this layer uses a procedural built-in shape or a custom PNG particle texture.">
+                                <label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Shape Mode</label>
+                                <select id="param-visual-shapeMode" onchange="changeShapeMode(this.value)" class="w-full bg-artifex-dark border border-artifex-border text-artifex-gold text-xs rounded-xl p-2.5 focus:ring-1 focus:ring-artifex-purpleAccent focus:outline-none cursor-pointer shadow-inner">
+                                    <option value="builtInShape">Built-In Shape</option>
+                                    <option value="textureSprite">Custom PNG Texture Sprite</option>
+                                </select>
+                            </div>
+                            <div id="built-in-shape-panel" title="Select the built-in visual particle shape used for this layer.">
+                                <label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Particle Shape</label>
+
+                                <!-- Custom Shape Grid Dropdown -->
+                                <div class="relative dropdown-parent" id="shape-dropdown-wrapper">
+                                    <button onclick="toggleShapePicker(event)" class="w-full bg-artifex-dark border border-artifex-border hover:border-artifex-purpleAccent transition text-artifex-gold text-xs rounded-xl p-2.5 flex justify-between items-center focus:outline-none shadow-inner" title="Click to open the visual shape grid picker.">
+                                        <span id="shape-picker-label" class="flex items-center gap-2 font-bold tracking-wider">
+                                            <!-- Dynamically filled -->
+                                            <svg class="w-4 h-4 text-artifex-gold" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="currentColor"/></svg> <span class="truncate">Circle</span>
+                                        </span>
+                                        <span class="text-[9px]">▼</span>
+                                    </button>
+                                    <div id="shape-picker-grid" class="hidden absolute top-full left-0 mt-2 w-full bg-artifex-panel border border-artifex-purpleAccent rounded-xl p-3 z-[100] grid grid-cols-3 gap-2 shadow-[0_15px_30px_rgba(0,0,0,0.95)] max-h-72 overflow-y-auto">
+                                        <!-- Buttons injected dynamically -->
+                                    </div>
+                                    <input type="hidden" id="param-visual-shape" value="circle">
+                                </div>
+                            </div>
+                            <div id="texture-sprite-panel" class="hidden border border-artifex-border/50 rounded-xl bg-artifex-dark/45 p-3 space-y-3" title="Use a custom transparent PNG as the particle shape.">
+                                <div>
+                                    <label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Custom PNG Texture</label>
+                                    <label class="w-full bg-artifex-dark border border-artifex-border hover:border-artifex-purpleAccent transition text-artifex-gold text-xs rounded-xl p-2.5 flex justify-between items-center cursor-pointer shadow-inner">
+                                        <span id="texture-file-label" class="truncate">Choose PNG...</span>
+                                        <span class="text-[10px] text-artifex-goldMuted">UPLOAD</span>
+                                        <input type="file" id="param-visual-texture-file" accept="image/png,image/webp,image/jpeg" class="hidden" onchange="handleTextureFileInput(event)">
+                                    </label>
+                                </div>
+                                <div id="texture-preview-box" class="hidden items-center gap-3">
+                                    <div class="w-14 h-14 rounded-lg border border-artifex-border bg-black/45 flex items-center justify-center overflow-hidden">
+                                        <img id="texture-preview-img" alt="Texture preview" class="max-w-full max-h-full object-contain">
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div id="texture-preview-name" class="text-[10px] text-artifex-gold font-bold truncate">No texture</div>
+                                        <button onclick="clearLayerTexture()" class="mt-1 text-[9px] text-rose-400 hover:text-rose-300">Clear texture</button>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block text-artifex-goldMuted uppercase font-bold text-[8px] tracking-wider mb-1">Tint Mode</label>
+                                        <select id="param-visual-tintMode" onchange="updateTextureOption('tintMode', this.value)" class="w-full bg-artifex-dark border border-artifex-border text-artifex-gold text-[10px] rounded-lg p-1.5 focus:outline-none">
+                                            <option value="none">Original PNG</option>
+                                            <option value="source-atop">Tint to Colour</option>
+                                            <option value="multiply">Multiply Tint</option>
+                                            <option value="lighter">Additive Tint</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-artifex-goldMuted uppercase font-bold text-[8px] tracking-wider mb-1">Fit Mode</label>
+                                        <select id="param-visual-fitMode" onchange="updateTextureOption('fitMode', this.value)" class="w-full bg-artifex-dark border border-artifex-border text-artifex-gold text-[10px] rounded-lg p-1.5 focus:outline-none">
+                                            <option value="contain">Contain</option>
+                                            <option value="cover">Cover</option>
+                                            <option value="stretch">Stretch</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <label class="flex items-center gap-2 text-[10px] text-artifex-goldMuted">
+                                    <input type="checkbox" id="param-visual-useTextureAlpha" checked onchange="updateTextureOption('useTextureAlpha', this.checked)" class="accent-artifex-purpleAccent">
+                                    Use texture alpha
+                                </label>
+                            </div>                            <div title="Particle radius/scale at birth and at death.">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Growth Size</span>
+                                    <span class="text-artifex-gold font-mono text-[11px]"><span id="val-visual-sizeStart">5</span>px ➜ <span id="val-visual-sizeEnd">1</span>px</span>
+                                </div>
+                                <div class="flex gap-2.5">
+                                    <div class="flex-1">
+                                        <span class="text-[8px] text-artifex-goldMuted block mb-0.5">START</span>
+                                        <input type="range" id="param-visual-sizeStart" min="0.05" max="100" step="0.05" value="5" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]">
+                                    </div>
+                                    <div class="flex-1">
+                                        <span class="text-[8px] text-artifex-goldMuted block mb-0.5">END</span>
+                                        <input type="range" id="param-visual-sizeEnd" min="0.05" max="100" step="0.05" value="1" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2" title="Drag and drop stops to reorder. Adjust Hex and Alpha (Transparency) for each stop.">
+                                <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider block">Color & Alpha Sequence</span>
+                                <div id="color-transition-list" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                                    <!-- Generated Dynamically -->
+                                </div>
+                            </div>
+
+                            <div title="Glow adds an outer shadow. Can be subtle depending on blend mode.">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Glow Radius</span>
+                                    <span class="text-artifex-gold font-mono text-[11px]" id="val-visual-glow">15</span>
+                                </div>
+                                <input type="range" id="param-visual-glow" min="0" max="60" step="1" value="15" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]">
+                            </div>
+                            <div title="Hard image blur applied to the particle shape. Performance heavy, but highly visible for clouds.">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Blur Filter Amount</span>
+                                    <span class="text-artifex-gold font-mono text-[11px]" id="val-visual-blur">0</span>
+                                </div>
+                                <input type="range" id="param-visual-blur" min="0" max="20" step="0.5" value="0" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]">
+                            </div>
+                            <div title="Softens the particle edge. Useful for SVG-style built-in shapes and custom PNG particles.">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Edge Softness</span>
+                                    <span class="text-artifex-gold font-mono text-[11px]" id="val-visual-edgeBlur">0</span>
+                                </div>
+                                <input type="range" id="param-visual-edgeBlur" min="0" max="12" step="0.5" value="0" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]">
+                            </div>
+                            <div title="How colors blend when overlapping. 'Lighter' creates intense additive neon magic.">
+                                <label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Composite Blend</label>
+                                <select id="param-visual-composite" class="w-full bg-artifex-dark border border-artifex-border text-artifex-gold text-xs rounded-xl p-2 focus:ring-1 focus:ring-amber-500 focus:outline-none shadow-[0_2px_5px_rgba(0,0,0,0.8)] cursor-pointer">
+                                    <option value="lighter">Lighter (Additive Glow)</option>
+                                    <option value="source-over">Source Over (Standard Overlay)</option>
+                                    <option value="screen">Screen (Softer Glow blending)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DURATION -->
+                    <div class="bg-artifex-panel border border-artifex-border rounded-xl overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.9)] pb-4" title="How many logic frames particles exist before fading out and disappearing.">
+                        <div class="bg-artifex-darkGray px-4 py-3 border-b border-artifex-border flex items-center justify-between select-none">
+                            <span class="serif-font text-xs font-bold tracking-wide text-artifex-gold">Timing</span>
+                            <div class="bg-artifex-blue text-white text-[10px] rounded-md font-semibold w-5 h-5 flex items-center justify-center shadow-[0_0_8px_#00a1d7] cursor-pointer hover:bg-[#33b8ef] transition" title="Toggle visibility" onclick="toggleCard('card-body-duration')">↕</div>
+                        </div>
+                        <div id="card-body-duration" class="p-4 space-y-4">
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Lifespan Frames</span>
+                                    <span class="text-artifex-gold font-mono text-[11px]"><span id="val-life-durationMin">30</span> - <span id="val-life-durationMax">60</span></span>
+                                </div>
+                                <div class="flex gap-2.5">
+                                    <div class="flex-1">
+                                        <span class="text-[8px] text-artifex-goldMuted block mb-0.5">MIN</span>
+                                        <input type="range" id="param-life-durationMin" min="5" max="150" step="5" value="30" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]">
+                                    </div>
+                                    <div class="flex-1">
+                                        <span class="text-[8px] text-artifex-goldMuted block mb-0.5">MAX</span>
+                                        <input type="range" id="param-life-durationMax" min="10" max="300" step="5" value="60" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-
-
+                
                 <!-- Fallback empty state wrapper -->
                 <div id="no-layer-selected-msg" class="hidden text-center p-8 bg-artifex-dark rounded-xl border border-dashed border-artifex-border/50">
                     <p class="text-artifex-goldMuted text-xs font-semibold">No Layer Selected</p>
@@ -799,7 +782,7 @@ engine.start();</pre>
     <div id="variation-modal" class="fixed inset-0 bg-artifex-dark/90 backdrop-blur-sm z-[150] hidden flex items-center justify-center p-4">
         <div class="bg-artifex-panel border border-artifex-border rounded-2xl w-full max-w-md p-6 shadow-[0_15px_30px_rgba(0,0,0,0.95)] relative select-none">
             <h3 class="serif-font text-lg font-bold text-artifex-gold mb-2 flex items-center gap-2">
-                Save Archetype Version
+                Save New Version
             </h3>
             <p class="text-xs text-artifex-goldMuted mb-5">
                 This compiles your multi-layered workspace into a standalone custom composition preset.
@@ -2057,7 +2040,7 @@ engine.start();</pre>
             const select = document.getElementById('comp-loader-dropdown');
             if (!select) return;
             
-            let html = `<option value="">-- None (Blank Archetype) --</option>`;
+            let html = `<option value="">-- None (Blank Canvas) --</option>`;
             
             html += `<optgroup label="Default Composites">`;
             COMPOSITES_REGISTRY.forEach(comp => {
@@ -3205,7 +3188,7 @@ engine.start();</pre>
                 editor: {
                     app: 'Artifex Visual Effects Editor',
                     format: 'editableProject',
-                    notes: 'This file preserves editor-facing composition data. Use Effect Archetype Asset export for Scene Editor/runtime placement.'
+                    notes: 'This file preserves editor-facing composition data. Use Artifex FX Asset export for Scene Editor/runtime placement.'
                 },
                 composition: cleanComp
             };
@@ -3332,7 +3315,7 @@ engine.start();</pre>
 
             const fileName = `${sanitizeFileName(payload.id, 'fx-asset')}.fx.json`;
             downloadJSONPayload(payload, fileName);
-            markExported('Effect Archetype Asset');
+            markExported('Artifex FX Asset');
         }
 
         function exportSceneFxInstance() {
@@ -3362,7 +3345,7 @@ engine.start();</pre>
             if (importedObj.schema === ARTIFEX_FX_SCHEMA_VERSION && importedObj.composition) {
                 const comp = stripRuntimeFields(importedObj.composition);
                 comp.id = comp.id || importedObj.id || generateHashID();
-                comp.name = comp.name || importedObj.label || 'Imported Effect Archetype Asset';
+                comp.name = comp.name || importedObj.label || 'Imported Artifex FX Asset';
                 comp.tags = comp.tags || normalizeTags(importedObj.tags).join(', ');
                 comp.thumbnail = comp.thumbnail || importedObj.thumbnail || null;
                 return comp;
