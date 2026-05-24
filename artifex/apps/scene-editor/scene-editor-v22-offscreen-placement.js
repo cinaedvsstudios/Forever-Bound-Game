@@ -138,16 +138,11 @@
     loadHelper('./scene-editor-v25-menu-polish.css', './scene-editor-v25-menu-polish.js');
   }
 
-  function loadLabelLayoutPolish() {
-    loadHelper('./scene-editor-v26-label-layout-polish.css', './scene-editor-v26-label-layout-polish.js');
-  }
-
   function install() {
     updateNumberBounds();
     loadAspectControls();
     loadPreviewControls();
     loadMenuPolish();
-    loadLabelLayoutPolish();
   }
 
   window.addEventListener('pointerdown', begin, true);
