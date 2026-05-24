@@ -362,9 +362,13 @@
             else drawH = size / ratio;
         }
 
-        const dx = particle.x - drawW / 2;
-        const dy = particle.y - drawH / 2;
+        const dx = -drawW / 2;
+        const dy = -drawH / 2;
+        const rotation = ((particle.rotation || 0) * Math.PI) / 180;
 
+        ctx.save();
+        ctx.translate(particle.x, particle.y);
+        if (rotation) ctx.rotate(rotation);
         ctx.drawImage(img, dx, dy, drawW, drawH);
 
         if (particle.tintMode && particle.tintMode !== 'none') {
@@ -374,6 +378,7 @@
             ctx.fillRect(dx, dy, drawW, drawH);
             ctx.globalCompositeOperation = previousComposite;
         }
+        ctx.restore();
     }
 
     const SOFT_SPRITE_CACHE = new Map();
@@ -607,12 +612,15 @@
             this.size = this.sizeStart;
 
             this.colors = v.colors || [v.colorStart || "#ffffff", v.colorEnd || "#ffffff"];
-            this.alphas = v.alphas || new Array(this.colors.length).fill(1.0);
-            this.useCustomAlphaCurve = this.alphas.some(a => a < 1.0);
+            this.alphaStarts = v.alphaStarts || v.alphas || new Array(this.colors.length).fill(1.0);
+            this.alphaEnds = v.alphaEnds || v.alphas || new Array(this.colors.length).fill(1.0);
+            this.alphas = v.alphas || this.alphaEnds;
+            this.useCustomAlphaCurve = this.alphaStarts.some(a => a < 1.0) || this.alphaEnds.some(a => a < 1.0) || this.alphas.some(a => a < 1.0);
         
             this.glow = v.glow || 0;
-            this.blur = v.blur || 0;
-            this.edgeBlur = v.edgeBlur || 0;
+            this.blur = Math.max(0, Math.min(5, Number(v.blur || 0)));
+            this.edgeBlur = 0;
+            this.rotation = Number(v.rotation || 0);
             this.shapeMode = v.shapeMode || 'builtInShape';
             this.shape = v.shape || 'circle';
             this.textureSrc = v.textureDataUrl || v.texture || null;
@@ -671,7 +679,7 @@
             if (!isFinite(this.x) || !isFinite(this.y) || !isFinite(this.size)) return;
         
             const ratio = this.age / this.duration;
-            const { color, alpha: colorAlpha } = interpolateColorsMulti(this.colors, this.alphas, ratio);
+            const { color, alpha: colorAlpha } = interpolateColorsMulti(this.colors, this.alphas, ratio, this.alphaStarts, this.alphaEnds);
         
             let finalAlpha = 1.0;
             if (this.useCustomAlphaCurve) {
@@ -691,12 +699,8 @@
             }
         
             const shouldUseSoftSprite = this.effectType === 'gas' || this.shape === 'soft-smoke' || this.shape === 'cloud-blob';
-            if (!shouldUseSoftSprite && this.blur > 0 && this.blur <= 3) {
+            if (!shouldUseSoftSprite && this.blur > 0 && this.blur <= 5) {
                 ctx.filter = `blur(${this.blur}px)`;
-            }
-
-            if (!shouldUseSoftSprite && this.edgeBlur > 0 && this.edgeBlur <= 2) {
-                ctx.filter = ctx.filter && ctx.filter !== 'none' ? ctx.filter + ` blur(${this.edgeBlur}px)` : `blur(${this.edgeBlur}px)`;
             }
 
             ctx.beginPath();
@@ -706,7 +710,15 @@
             } else if (this.shapeMode === 'textureSprite' && this.textureSrc) {
                 drawTextureSprite(ctx, this, color);
             } else {
-                drawPathShape(ctx, this, this.shape);
+                const rotation = ((this.rotation || 0) * Math.PI) / 180;
+                if (rotation) {
+                    ctx.translate(this.x, this.y);
+                    ctx.rotate(rotation);
+                    const localParticle = { ...this, x: 0, y: 0 };
+                    drawPathShape(ctx, localParticle, this.shape);
+                } else {
+                    drawPathShape(ctx, this, this.shape);
+                }
             }
 
             ctx.restore();
@@ -738,20 +750,26 @@
         return { color: `rgb(${r}, ${g}, ${b})`, alpha: Math.max(0, Math.min(1, a)) };
     }
 
-    function interpolateColorsMulti(colors, alphas, factor) {
+    function interpolateColorsMulti(colors, alphas, factor, alphaStarts = null, alphaEnds = null) {
         if (!colors || colors.length === 0) return { color: '#ffd23f', alpha: 1.0 };
     
-        const safeAlphas = colors.map((_, i) => alphas && alphas[i] !== undefined ? alphas[i] : 1.0);
+        const safeAlphas = colors.map((_, i) => alphas && alphas[i] !== undefined ? Number(alphas[i]) : 1.0);
+        const starts = colors.map((_, i) => alphaStarts && alphaStarts[i] !== undefined ? Number(alphaStarts[i]) : safeAlphas[i]);
+        const ends = colors.map((_, i) => alphaEnds && alphaEnds[i] !== undefined ? Number(alphaEnds[i]) : safeAlphas[i]);
 
-        if (colors.length === 1) return { color: colors[0], alpha: safeAlphas[0] };
-        if (colors.length === 2) return interpolateColorAlpha(colors[0], safeAlphas[0], colors[1], safeAlphas[1], factor);
+        if (colors.length === 1) {
+            const a = starts[0] + factor * (ends[0] - starts[0]);
+            return { color: colors[0], alpha: Math.max(0, Math.min(1, a)) };
+        }
 
         const segments = colors.length - 1;
         const scaledFactor = factor * segments;
         const index = Math.min(Math.floor(scaledFactor), segments - 1);
         const segmentFactor = scaledFactor - index;
+        const a1 = starts[index] !== undefined ? starts[index] : safeAlphas[index];
+        const a2 = ends[index] !== undefined ? ends[index] : (starts[index + 1] !== undefined ? starts[index + 1] : safeAlphas[index + 1]);
 
-        return interpolateColorAlpha(colors[index], safeAlphas[index], colors[index + 1], safeAlphas[index + 1], segmentFactor);
+        return interpolateColorAlpha(colors[index], a1, colors[index + 1], a2, segmentFactor);
     }
 
 

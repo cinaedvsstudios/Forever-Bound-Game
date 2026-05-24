@@ -80,7 +80,7 @@
 
         <div class="hidden md:block h-10 w-px bg-gradient-to-b from-transparent via-artifex-border to-transparent opacity-90 shrink-0" title="Artifex tool navigation divider"></div>
 
-        <nav class="flex flex-wrap items-center gap-1 select-none">
+        <nav class="flex flex-wrap items-center gap-1 select-none ml-10">
             
             <div class="relative dropdown-parent">
                 <button title="File management, imports, and exports" class="px-4 py-1.5 hover:bg-artifex-gray text-xs font-semibold text-artifex-gold rounded-full transition border border-transparent hover:border-artifex-border flex items-center gap-1.5 focus:outline-none shadow-[0_4px_10px_rgba(0,0,0,0.8)]">
@@ -293,6 +293,48 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- QUICK EDIT PRESETS -->
+                <div class="bg-artifex-panel border border-artifex-border rounded-xl overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.9)]" title="One-click helper presets for quickly shaping the selected effect layer without replacing the whole archetype.">
+                    <div class="bg-artifex-darkGray px-4 py-3 border-b border-artifex-border flex items-center justify-between select-none">
+                        <span class="serif-font font-bold text-artifex-gold text-xs tracking-wide">Quick Edit Presets</span>
+                        <div class="bg-artifex-blue text-white text-[10px] rounded-md font-semibold w-5 h-5 flex items-center justify-center shadow-[0_0_8px_#00a1d7] cursor-pointer hover:bg-[#33b8ef] transition" title="Toggle visibility" onclick="toggleCard('card-body-quick-edit')">↕</div>
+                    </div>
+                    <div id="card-body-quick-edit" class="p-4 space-y-3">
+                        <div class="text-[10px] leading-relaxed text-artifex-goldMuted">Quick edits change the selected layer only. They are meant as fast starting points, not final presets.</div>
+                        <section class="border border-artifex-border/50 bg-artifex-dark/35 rounded-xl p-3 space-y-2">
+                            <div class="flex items-center justify-between border-b border-artifex-border/40 pb-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-artifex-purpleAccent shadow-[0_0_8px_#9e01ce]"></span>
+                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Appearance Helpers</span>
+                                </div>
+                                <span class="text-[11px] opacity-70 cursor-help" title="Changes colour, glow, blend, softness, and shape/finish values without changing the layer identity.">ℹ️</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="applyQuickEditPreset('soft-glow')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Soft Glow</button>
+                                <button onclick="applyQuickEditPreset('sharp-sparks')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Sharp Sparks</button>
+                                <button onclick="applyQuickEditPreset('magic-fade')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Fade In/Out</button>
+                                <button onclick="applyQuickEditPreset('high-additive')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Bright Add</button>
+                            </div>
+                        </section>
+                        <section class="border border-artifex-border/50 bg-artifex-dark/35 rounded-xl p-3 space-y-2">
+                            <div class="flex items-center justify-between border-b border-artifex-border/40 pb-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-artifex-blue shadow-[0_0_8px_#00a1d7]"></span>
+                                    <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Dynamics Helpers</span>
+                                </div>
+                                <span class="text-[11px] opacity-70 cursor-help" title="Changes emission, speed, spread, gravity, friction, and lifespan values for the selected layer.">ℹ️</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="applyQuickEditPreset('slow-drift')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Slow Drift</button>
+                                <button onclick="applyQuickEditPreset('burst-out')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Burst Out</button>
+                                <button onclick="applyQuickEditPreset('rise-up')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Rise Up</button>
+                                <button onclick="applyQuickEditPreset('tight-trail')" class="py-1.5 px-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-lg border border-artifex-border text-[10px] font-semibold">Tight Trail</button>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
                 <!-- LAYER PROPERTIES WRAPPER -->
                 <div id="layer-properties-wrapper" class="space-y-5 transition-opacity duration-300">
 
@@ -434,7 +476,14 @@
 </div>
 </div>
 </div>
-<div class="space-y-2" title="Drag and drop stops to reorder. Adjust Hex and Alpha (Transparency) for each stop.">
+<div title="Rotates the built-in shape or PNG sprite for each particle. Use this for spears, capsules, shards, lines, and directional magic brushes.">
+<div class="flex justify-between text-xs mb-1">
+<span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Rotate Shape</span>
+<span class="text-artifex-gold font-mono text-[11px]" id="val-visual-rotation">0°</span>
+</div>
+<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-visual-rotation" max="360" min="-360" step="1" type="range" value="0"/>
+</div>
+<div class="space-y-2" title="Drag and drop stops to reorder. Each color has its own start and end alpha so particles can fade through the palette cleanly.">
 <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider block">Color &amp; Alpha Sequence</span>
 <div class="space-y-2 max-h-60 overflow-y-auto pr-1" id="color-transition-list">
 <!-- Generated Dynamically -->
@@ -447,26 +496,29 @@
 </div>
 <input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-visual-glow" max="60" min="0" step="1" type="range" value="15"/>
 </div>
-<div title="Hard image blur applied to the particle shape. Performance heavy, but highly visible for clouds.">
+<div title="Single softness/blur control for the particle. Capped at 5 because live canvas blur is expensive; polished effects should prefer brush PNGs with softness baked in.">
 <div class="flex justify-between text-xs mb-1">
-<span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Blur Filter Amount</span>
+<span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Particle Softness</span>
 <span class="text-artifex-gold font-mono text-[11px]" id="val-visual-blur">0</span>
 </div>
-<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-visual-blur" max="20" min="0" step="0.5" type="range" value="0"/>
-</div>
-<div title="Softens the particle edge. Useful for SVG-style built-in shapes and custom PNG particles.">
-<div class="flex justify-between text-xs mb-1">
-<span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Edge Softness</span>
-<span class="text-artifex-gold font-mono text-[11px]" id="val-visual-edgeBlur">0</span>
-</div>
-<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-visual-edgeBlur" max="12" min="0" step="0.5" type="range" value="0"/>
+<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-visual-blur" max="5" min="0" step="0.5" type="range" value="0"/>
 </div>
 <div title="How colors blend when overlapping. 'Lighter' creates intense additive neon magic.">
 <label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Composite Blend</label>
 <select class="w-full bg-artifex-dark border border-artifex-border text-artifex-gold text-xs rounded-xl p-2 focus:ring-1 focus:ring-amber-500 focus:outline-none shadow-[0_2px_5px_rgba(0,0,0,0.8)] cursor-pointer" id="param-visual-composite">
 <option value="lighter">Lighter (Additive Glow)</option>
+<option value="screen">Screen (Soft Light Glow)</option>
 <option value="source-over">Source Over (Standard Overlay)</option>
-<option value="screen">Screen (Softer Glow blending)</option>
+<option value="multiply">Multiply (Darkens / Smoke)</option>
+<option value="overlay">Overlay (Contrast Magic)</option>
+<option value="soft-light">Soft Light (Subtle Blend)</option>
+<option value="hard-light">Hard Light (Punchy Blend)</option>
+<option value="color-dodge">Color Dodge (Hot Glow)</option>
+<option value="color-burn">Color Burn (Dark Burn)</option>
+<option value="lighten">Lighten (Brighten Only)</option>
+<option value="darken">Darken (Shadow Only)</option>
+<option value="difference">Difference (Inversion FX)</option>
+<option value="exclusion">Exclusion (Soft Inversion)</option>
 </select>
 </div>
 
@@ -1897,7 +1949,7 @@ engine.start();</pre>
             'param-visual-sizeEnd': 'visual.sizeEnd',
             'param-visual-glow': 'visual.glow',
             'param-visual-blur': 'visual.blur',
-            'param-visual-edgeBlur': 'visual.edgeBlur',
+            'param-visual-rotation': 'visual.rotation',
             'param-visual-composite': 'visual.composite',
             'param-life-durationMin': 'life.durationMin',
             'param-life-durationMax': 'life.durationMax'
@@ -2188,7 +2240,10 @@ engine.start();</pre>
             if (visual.useTextureAlpha === undefined) visual.useTextureAlpha = true;
             if (!visual.tintMode) visual.tintMode = 'none';
             if (!visual.fitMode) visual.fitMode = 'contain';
-            if (visual.edgeBlur === undefined) visual.edgeBlur = 0;
+            if (visual.rotation === undefined) visual.rotation = 0;
+            if (visual.blur === undefined) visual.blur = 0;
+            visual.blur = Math.max(0, Math.min(5, Number(visual.blur) || 0));
+            visual.edgeBlur = 0;
         }
 
         function getActiveLayerForShapeEdit() {
@@ -2571,19 +2626,41 @@ engine.start();</pre>
             showToast(`Pasted properties into ${targetName}`, "success");
         }
 
-        function updateAlphaStop(index, value) {
-            if (activeLayerIndex === -1 || !composition || !composition.layers[activeLayerIndex]) return;
-            
-            let alphas = composition.layers[activeLayerIndex].visual.alphas;
-            if (!alphas) {
-                alphas = new Array(composition.layers[activeLayerIndex].visual.colors.length).fill(1.0);
+        function ensureLayerAlphaStops(layer) {
+            if (!layer || !layer.visual) return { alphaStarts: [], alphaEnds: [] };
+            const colors = layer.visual.colors || [];
+            const legacy = layer.visual.alphas || new Array(colors.length).fill(1.0);
+            if (!layer.visual.alphaStarts || layer.visual.alphaStarts.length !== colors.length) {
+                layer.visual.alphaStarts = colors.map((_, i) => legacy[i] !== undefined ? Number(legacy[i]) : 1.0);
             }
-            alphas[index] = parseFloat(value);
-            composition.layers[activeLayerIndex].visual.alphas = alphas;
-            
-            const label = document.getElementById(`alpha-label-${index}`);
-            if(label) label.innerText = `${Math.round(value * 100)}%`;
-            
+            if (!layer.visual.alphaEnds || layer.visual.alphaEnds.length !== colors.length) {
+                layer.visual.alphaEnds = colors.map((_, i) => legacy[i] !== undefined ? Number(legacy[i]) : 1.0);
+            }
+            layer.visual.alphas = colors.map((_, i) => Math.max(
+                Number(layer.visual.alphaStarts[i] ?? 1),
+                Number(layer.visual.alphaEnds[i] ?? 1)
+            ));
+            return { alphaStarts: layer.visual.alphaStarts, alphaEnds: layer.visual.alphaEnds };
+        }
+
+        function updateAlphaStop(index, value, side = 'end') {
+            if (activeLayerIndex === -1 || !composition || !composition.layers[activeLayerIndex]) return;
+            const layer = composition.layers[activeLayerIndex];
+            const stops = ensureLayerAlphaStops(layer);
+            const numberValue = Math.max(0, Math.min(1, parseFloat(value)));
+            if (side === 'start') {
+                stops.alphaStarts[index] = numberValue;
+            } else {
+                stops.alphaEnds[index] = numberValue;
+            }
+            layer.visual.alphaStarts = stops.alphaStarts;
+            layer.visual.alphaEnds = stops.alphaEnds;
+            layer.visual.alphas = layer.visual.colors.map((_, i) => Math.max(
+                Number(stops.alphaStarts[i] ?? 1),
+                Number(stops.alphaEnds[i] ?? 1)
+            ));
+            const label = document.getElementById(`alpha-${side}-label-${index}`);
+            if(label) label.innerText = `${Math.round(numberValue * 100)}%`;
             syncJSONOutput();
         }
 
@@ -2602,12 +2679,12 @@ engine.start();</pre>
             }
 
             const colors = activeLayer.visual.colors;
-            const alphas = activeLayer.visual.alphas || new Array(colors.length).fill(1.0);
+            const { alphaStarts, alphaEnds } = ensureLayerAlphaStops(activeLayer);
             container.innerHTML = '';
 
             colors.forEach((color, index) => {
                 const row = document.createElement('div');
-                row.className = "flex items-center gap-2 bg-artifex-dark p-2 rounded-lg border border-artifex-border hover:border-artifex-blue/50 transition cursor-grab active:cursor-grabbing select-none shadow-md";
+                row.className = "grid grid-cols-[16px_1fr_28px] gap-2 bg-artifex-dark p-2 rounded-lg border border-artifex-border hover:border-artifex-blue/50 transition cursor-grab active:cursor-grabbing select-none shadow-md";
                 row.draggable = true;
 
                 row.addEventListener('dragstart', (e) => handleColorDragStart(e, index));
@@ -2619,19 +2696,29 @@ engine.start();</pre>
                 else if (index === colors.length - 1) labelText += " (End)";
                 else labelText += " (Mid)";
 
-                let alpha = alphas[index] !== undefined ? alphas[index] : 1.0;
+                const alphaStart = alphaStarts[index] !== undefined ? alphaStarts[index] : 1.0;
+                const alphaEnd = alphaEnds[index] !== undefined ? alphaEnds[index] : 1.0;
 
                 row.innerHTML = `
-                    <div class="text-artifex-goldMuted font-mono text-xs select-none pl-1" title="Click and hold to drag and reorder colors order">☰</div>
-                    <div class="flex-1 text-[9px] text-artifex-goldMuted font-bold uppercase tracking-wider pl-1">${labelText}</div>
-                    <input type="color" value="${color}" onchange="updateColorStop(${index}, this.value)" title="Choose transition color" class="w-6 h-6 border-0 p-0 rounded cursor-pointer bg-transparent shadow-md shrink-0">
-                    <div class="flex items-center gap-1 shrink-0" title="Adjust Alpha (Transparency) for this color stop">
-                        <span class="text-[8px] text-artifex-goldMuted">A:</span>
-                        <input type="range" min="0" max="1" step="0.05" value="${alpha}" oninput="updateAlphaStop(${index}, this.value)" class="w-12 h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold">
-                        <span id="alpha-label-${index}" class="text-[8px] text-artifex-gold font-mono w-6 text-right">${Math.round(alpha*100)}%</span>
+                    <div class="text-artifex-goldMuted font-mono text-xs select-none pl-1 pt-1" title="Click and hold to drag and reorder colour stops">☰</div>
+                    <div class="min-w-0 space-y-1.5">
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1 text-[9px] text-artifex-goldMuted font-bold uppercase tracking-wider truncate">${labelText}</div>
+                            <input type="color" value="${color}" onchange="updateColorStop(${index}, this.value)" title="Choose transition colour" class="w-7 h-6 border-0 p-0 rounded cursor-pointer bg-transparent shadow-md shrink-0">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2" title="Each colour has a start alpha and end alpha. Use these to fade into or out of this colour stop without adding extra colour rows.">
+                            <label class="block">
+                                <span class="text-[8px] text-artifex-goldMuted block mb-0.5">START A <span id="alpha-start-label-${index}" class="text-artifex-gold font-mono">${Math.round(alphaStart*100)}%</span></span>
+                                <input type="range" min="0" max="1" step="0.05" value="${alphaStart}" oninput="updateAlphaStop(${index}, this.value, 'start')" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold">
+                            </label>
+                            <label class="block">
+                                <span class="text-[8px] text-artifex-goldMuted block mb-0.5">END A <span id="alpha-end-label-${index}" class="text-artifex-gold font-mono">${Math.round(alphaEnd*100)}%</span></span>
+                                <input type="range" min="0" max="1" step="0.05" value="${alphaEnd}" oninput="updateAlphaStop(${index}, this.value, 'end')" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold">
+                            </label>
+                        </div>
                     </div>
                     ${colors.length > 2 ? `
-                        <button onclick="deleteColorStop(${index})" title="Remove this color waypoint stop" class="text-rose-500 hover:text-rose-400 font-bold px-1 select-none text-xs focus:outline-none transition">✕</button>
+                        <button onclick="deleteColorStop(${index})" title="Remove this colour stop" class="text-rose-500 hover:text-rose-400 font-bold px-1 select-none text-xs focus:outline-none transition self-start">✕</button>
                     ` : '<div class="w-3"></div>'}
                 `;
 
@@ -2646,15 +2733,18 @@ engine.start();</pre>
             if (!activeLayer.visual.colors) {
                 activeLayer.visual.colors = ["#e11d48", "#fbbf24"];
                 activeLayer.visual.alphas = [1.0, 1.0];
+                activeLayer.visual.alphaStarts = [1.0, 1.0];
+                activeLayer.visual.alphaEnds = [1.0, 1.0];
             }
             
             const randomPastels = ["#00a1d7", "#9e01ce", "#22c55e", "#ffd23f", "#3b82f6", "#ec4899"];
             const chosen = randomPastels[Math.floor(Math.random() * randomPastels.length)];
             
             activeLayer.visual.colors.push(chosen);
-            if (activeLayer.visual.alphas) {
-                activeLayer.visual.alphas.push(1.0);
-            }
+            ensureLayerAlphaStops(activeLayer);
+            activeLayer.visual.alphas.push(1.0);
+            activeLayer.visual.alphaStarts.push(1.0);
+            activeLayer.visual.alphaEnds.push(1.0);
             renderColorControls();
             syncJSONOutput();
             showToast("Added new color waypoint stop", "success");
@@ -2670,9 +2760,10 @@ engine.start();</pre>
                 return;
             }
             colors.splice(index, 1);
-            if (activeLayer.visual.alphas) {
-                activeLayer.visual.alphas.splice(index, 1);
-            }
+            ensureLayerAlphaStops(activeLayer);
+            activeLayer.visual.alphas.splice(index, 1);
+            activeLayer.visual.alphaStarts.splice(index, 1);
+            activeLayer.visual.alphaEnds.splice(index, 1);
             renderColorControls();
             syncJSONOutput();
             showToast("Removed color waypoint stop", "info");
@@ -2697,12 +2788,17 @@ engine.start();</pre>
             e.preventDefault();
             if (activeLayerIndex === -1 || draggedIndex === null || draggedIndex === index) return;
 
-            const colors = composition.layers[activeLayerIndex].visual.colors;
-            let alphas = composition.layers[activeLayerIndex].visual.alphas;
-            if (!alphas) alphas = new Array(colors.length).fill(1.0);
+            const layer = composition.layers[activeLayerIndex];
+            const colors = layer.visual.colors;
+            ensureLayerAlphaStops(layer);
+            const alphas = layer.visual.alphas;
+            const alphaStarts = layer.visual.alphaStarts;
+            const alphaEnds = layer.visual.alphaEnds;
 
             const draggedColor = colors[draggedIndex];
             const draggedAlpha = alphas[draggedIndex];
+            const draggedAlphaStart = alphaStarts[draggedIndex];
+            const draggedAlphaEnd = alphaEnds[draggedIndex];
 
             colors.splice(draggedIndex, 1);
             colors.splice(index, 0, draggedColor);
@@ -2710,12 +2806,118 @@ engine.start();</pre>
             alphas.splice(draggedIndex, 1);
             alphas.splice(index, 0, draggedAlpha);
 
-            composition.layers[activeLayerIndex].visual.alphas = alphas;
+            alphaStarts.splice(draggedIndex, 1);
+            alphaStarts.splice(index, 0, draggedAlphaStart);
+
+            alphaEnds.splice(draggedIndex, 1);
+            alphaEnds.splice(index, 0, draggedAlphaEnd);
+
+            layer.visual.alphas = alphas;
+            layer.visual.alphaStarts = alphaStarts;
+            layer.visual.alphaEnds = alphaEnds;
 
             draggedIndex = null;
             renderColorControls();
             syncJSONOutput();
             showToast("Reordered color transition waypoints!", "success");
+        }
+
+
+        function applyQuickEditPreset(presetId) {
+            if (activeLayerIndex === -1 || !composition || !composition.layers[activeLayerIndex]) {
+                showToast('Select or insert an effect layer first.', 'info');
+                return;
+            }
+            const layer = composition.layers[activeLayerIndex];
+            if (!layer.visual) layer.visual = {};
+            if (!layer.physics) layer.physics = {};
+            if (!layer.emitter) layer.emitter = {};
+            if (!layer.life) layer.life = {};
+            normalizeLayerVisualShapeConfig(layer);
+            ensureLayerAlphaStops(layer);
+
+            const setVisual = values => Object.assign(layer.visual, values);
+            const setPhysics = values => Object.assign(layer.physics, values);
+            const setEmitter = values => Object.assign(layer.emitter, values);
+            const setLife = values => Object.assign(layer.life, values);
+
+            const presets = {
+                'soft-glow': () => {
+                    setVisual({ glow: 24, blur: 1.5, edgeBlur: 0, composite: 'screen', alphaStarts: [0, 0.55, 0], alphaEnds: [0.25, 0.75, 0] });
+                    if (!layer.visual.colors || layer.visual.colors.length < 3) layer.visual.colors = ['#ffffff', '#00a1d7', '#0f0c0b'];
+                },
+                'sharp-sparks': () => {
+                    setVisual({ shapeMode: 'builtInShape', shape: 'spark', previousBuiltInShape: 'spark', sizeStart: 7, sizeEnd: 0.5, glow: 18, blur: 0, edgeBlur: 0, composite: 'lighter', rotation: 0 });
+                    setPhysics({ spread: 65, speedMin: 4, speedMax: 12, gravityY: 0.12, friction: 0.98 });
+                },
+                'magic-fade': () => {
+                    setVisual({ alphaStarts: [0, 0.85, 0], alphaEnds: [0.35, 1, 0], glow: Math.max(18, Number(layer.visual.glow || 0)), composite: layer.visual.composite || 'screen' });
+                    if (!layer.visual.colors || layer.visual.colors.length < 3) layer.visual.colors = ['#ffffff', '#9e01ce', '#0f0c0b'];
+                },
+                'high-additive': () => {
+                    setVisual({ glow: 35, blur: 0, edgeBlur: 0, composite: 'lighter', alphaStarts: [0.15, 1, 0], alphaEnds: [0.85, 1, 0] });
+                    if (!layer.visual.colors || layer.visual.colors.length < 3) layer.visual.colors = ['#ffffff', '#ffd23f', '#9e01ce'];
+                },
+                'slow-drift': () => {
+                    setEmitter({ rate: Math.min(5, Number(layer.emitter.rate || 3) || 3) });
+                    setPhysics({ speedMin: 0.2, speedMax: 1.1, spread: 45, gravityY: -0.02, friction: 0.99, orbitalForce: 0.05 });
+                    setLife({ durationMin: 90, durationMax: 160 });
+                },
+                'burst-out': () => {
+                    setEmitter({ rate: Math.max(10, Number(layer.emitter.rate || 10) || 10), width: 1, widthUnit: 'PX' });
+                    setPhysics({ speedMin: 6, speedMax: 16, angle: 0, spread: 360, gravityY: 0.05, friction: 0.96, orbitalForce: 0 });
+                    setLife({ durationMin: 18, durationMax: 42 });
+                },
+                'rise-up': () => {
+                    setEmitter({ rate: Math.max(4, Number(layer.emitter.rate || 4) || 4) });
+                    setPhysics({ speedMin: 1, speedMax: 4, angle: 270, spread: 25, gravityY: -0.08, friction: 0.985, orbitalForce: 0.05 });
+                    setLife({ durationMin: 55, durationMax: 105 });
+                },
+                'tight-trail': () => {
+                    layer.effectType = 'ribbon';
+                    setEmitter({ rate: 12, width: 1, widthUnit: 'PX' });
+                    setPhysics({ speedMin: 0.2, speedMax: 0.9, angle: 0, spread: 5, gravityY: 0, friction: 1, orbitalForce: 1.8 });
+                    setVisual({ sizeStart: 10, sizeEnd: 0.2, glow: 24, blur: 0, edgeBlur: 0, composite: 'lighter' });
+                    setLife({ durationMin: 16, durationMax: 28 });
+                }
+            };
+
+            if (!presets[presetId]) return;
+            presets[presetId]();
+            if (layer.visual.colors) {
+                const len = layer.visual.colors.length;
+                if (!layer.visual.alphaStarts || layer.visual.alphaStarts.length !== len) layer.visual.alphaStarts = Array.from({ length: len }, (_, i) => i === 0 ? 0 : 1);
+                if (!layer.visual.alphaEnds || layer.visual.alphaEnds.length !== len) layer.visual.alphaEnds = Array.from({ length: len }, (_, i) => i === len - 1 ? 0 : 1);
+                layer.visual.alphas = layer.visual.colors.map((_, i) => Math.max(Number(layer.visual.alphaStarts[i] ?? 1), Number(layer.visual.alphaEnds[i] ?? 1)));
+            }
+            syncUIFromConfig();
+            renderLayerList();
+            showToast('Quick edit applied to selected layer.', 'success');
+        }
+
+        function decorateInfoIcons() {
+            const helpText = {
+                'Appearance Helpers': 'Fast one-click looks for the selected layer. These change finish, glow, alpha, and blend settings only.',
+                'Dynamics Helpers': 'Fast one-click motion behaviours for the selected layer. These change emitter, speed, direction, spread, and duration.',
+                'Layer Identity': 'Names and classifies the selected effect layer so the stack and JSON stay readable.',
+                'Visual Source': 'Chooses the visible particle source: hard built-in shape, texture sprite, and later built-in brush PNGs.',
+                'Colour, Size & Finish': 'Controls particle size, rotation, colour fade, alpha fade, glow, softness, and blend mode.',
+                'Emitter': 'Controls where particles are born and how many appear.',
+                'Motion Dynamics': 'Controls direction, speed, spread, gravity, friction, and vortex/orbit movement.',
+                'Timing': 'Controls how long particles live before fading out or being removed.'
+            };
+            document.querySelectorAll('#tab-content-params section > div:first-child').forEach(header => {
+                if (header.dataset.infoDecorated === 'true') return;
+                const label = Array.from(header.querySelectorAll('span')).map(n => n.textContent.trim()).find(t => helpText[t]);
+                if (!label) return;
+                header.dataset.infoDecorated = 'true';
+                header.classList.add('justify-between');
+                const icon = document.createElement('span');
+                icon.className = 'text-[11px] opacity-70 cursor-help ml-auto shrink-0';
+                icon.textContent = 'ℹ️';
+                icon.title = helpText[label];
+                header.appendChild(icon);
+            });
         }
 
         function syncJSONOutput() {
@@ -3586,6 +3788,7 @@ engine.start();</pre>
             syncViewportUI();
             syncPerformanceModeUI();
             bindEditableSliderValues();
+            decorateInfoIcons();
             tick();
             
             showToast("Artifex Particle Engine initialized successfully", "success");
