@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v0.11a';
+  const VERSION = 'v0.28-consolidation';
 
   function toast(message) {
     document.querySelector('.artifex-toast')?.remove();

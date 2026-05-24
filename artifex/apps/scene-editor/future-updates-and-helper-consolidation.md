@@ -16,6 +16,44 @@ A helper must not stay in place for more than two update cycles. After one or tw
 
 Do not add helpers that patch other helpers. Do not keep short-loop or mutation-based interface patches unless they are emergency fixes.
 
+### Hard prevention rule
+
+This situation must not happen again.
+
+Before adding any new helper file, first check whether the change can be made in one of these existing places:
+
+- `scene-editor-v2.js` for core editor state, scene render, card creation, file/status pill, save/load, stage render, and core object movement.
+- `scene-editor.css` or a current active stylesheet for permanent styling.
+- An already-loaded permanent module when the behaviour clearly belongs to that module.
+
+A new helper is allowed only when all of these are true:
+
+1. The change is experimental or emergency-only.
+2. The helper has a named owner/purpose in this file or the helper inventory.
+3. The helper has a merge/remove deadline before it is committed.
+4. The helper does not patch another helper.
+5. The helper does not use repeated DOM mutation loops unless there is no safer option.
+
+Any new helper must include a comment at the top with:
+
+- why it exists,
+- which real file/module it should eventually merge into,
+- what test confirms it can be removed,
+- and the maximum number of follow-up updates it may survive.
+
+If a change creates a helper, the next or following patch must either merge it, convert it into a permanent module, or delete it. Do not move on to unrelated features while helper debt from the last two updates is still unresolved.
+
+### Patch checklist before every Scene Editor change
+
+Before making a new Scene Editor patch:
+
+1. Check `index.html` to see which scripts and styles are currently loaded.
+2. Check whether the target behaviour is already handled by core or an existing helper.
+3. Avoid adding overlapping behaviour in a second place.
+4. If touching a visual area, identify the owning stylesheet before editing.
+5. After the patch, remove any newly obsolete helper/script/style from `index.html`.
+6. Update the changelog or this file when the change affects helper/module ownership.
+
 ## Current stabilisation plan
 
 1. Confirm the editor front screen loads.
@@ -156,3 +194,5 @@ Everything else should be merged into core or removed.
 ## Development rule
 
 Every future patch must update this file or devnotes. Temporary helpers need a clear merge/remove deadline. If a helper causes a regression, pause it rather than adding another helper on top.
+
+Do not stack new helpers on top of old helpers as a normal workflow. The default workflow is now: edit the owning real file, test, then delete obsolete patches. Helpers are a last resort, not the default build method.
