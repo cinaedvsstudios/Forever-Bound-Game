@@ -92,8 +92,19 @@
                         <span>📥</span> Import JSON
                         <input type="file" id="file-import" accept=".json" class="hidden" onchange="handleFileImport(event)" />
                     </label>
-                    <button onclick="exportJSON()" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center gap-2" title="Download the current effect config to your computer.">
-                        <span>📤</span> Export JSON (Save)
+                    <div class="border-t border-artifex-border my-1"></div>
+                    <div class="px-4 py-1 text-[10px] uppercase font-bold text-artifex-goldMuted tracking-wider">Export</div>
+                    <button onclick="exportRawComposition()" class="w-full text-left px-4 py-1.5 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center gap-2" title="Download the current legacy/raw composition JSON.">
+                        <span>📤</span> Raw Composition JSON
+                    </button>
+                    <button onclick="exportEditorProject()" class="w-full text-left px-4 py-1.5 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center gap-2" title="Download an editable Artifex FX Editor project wrapper.">
+                        <span>🧰</span> Editor Project JSON
+                    </button>
+                    <button onclick="exportArtifexFxAsset()" class="w-full text-left px-4 py-1.5 text-xs hover:bg-artifex-gray hover:text-white transition text-emerald-300 flex items-center gap-2" title="Download a runtime-facing Artifex FX Asset for Scene Editor placement.">
+                        <span>✨</span> Artifex FX Asset
+                    </button>
+                    <button onclick="exportSceneFxInstance()" class="w-full text-left px-4 py-1.5 text-xs hover:bg-artifex-gray hover:text-white transition text-purple-300 flex items-center gap-2" title="Download a small scene instance JSON that references the exported FX asset.">
+                        <span>📌</span> Scene FX Instance
                     </button>
                     <div class="border-t border-artifex-border my-1"></div>
                     <button onclick="showToast('Editor workspace preferences stub opened.', 'info')" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-400 flex items-center gap-2" title="Adjust application settings.">
@@ -1093,6 +1104,10 @@ engine.start();</pre>
         // 2. STATE CONTROLLERS (Phase 2 Multi-Layer Update)
         // -------------------------------------------------------------
         let composition = null;
+
+        const ARTIFEX_FX_SCHEMA_VERSION = 'artifex.fxArchetype.v1';
+        const ARTIFEX_EDITOR_PROJECT_SCHEMA_VERSION = 'artifex.fxEditorProject.v1';
+        const ARTIFEX_SCENE_FX_INSTANCE_SCHEMA_VERSION = 'artifex.sceneFxInstance.v1';
         
         let customPresets = [];
         let activeLayerIndex = -1;
@@ -3435,38 +3450,245 @@ engine.start();</pre>
             showToast(`Deleted custom preset: "${name}"`, "info");
         }
 
-        function exportJSON() {
-            closeAllDropdowns();
-            if(!composition) return;
-            
-            const cleanComp = JSON.parse(JSON.stringify(composition, (k,v) => k === '_particles' ? undefined : v));
-            
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cleanComp, null, 2));
+        function stripRuntimeFields(value) {
+            return JSON.parse(JSON.stringify(value, (key, nestedValue) => {
+                if (key === '_particles') return undefined;
+                return nestedValue;
+            }));
+        }
+
+        function normalizeTags(tags) {
+            if (Array.isArray(tags)) {
+                return tags.map(tag => String(tag).trim()).filter(Boolean);
+            }
+            if (typeof tags === 'string') {
+                return tags.split(',').map(tag => tag.trim()).filter(Boolean);
+            }
+            return [];
+        }
+
+        function sanitizeFileName(rawName, fallback = 'custom-fx') {
+            return String(rawName || fallback)
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '') || fallback;
+        }
+
+        function createFxAssetId(rawName) {
+            const base = sanitizeFileName(rawName || composition?.name || composition?.id || 'effect', 'effect')
+                .replace(/-/g, '_');
+            return base.startsWith('fx_') ? base : `fx_${base}`;
+        }
+
+        function downloadJSONPayload(payload, fileName) {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
             const dlAnchorElem = document.createElement('a');
-            
-            const rawName = composition.name || "custom-fx";
-            const sanitizedName = rawName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-            
             dlAnchorElem.setAttribute("href", dataStr);
-            dlAnchorElem.setAttribute("download", `${sanitizedName}-config.json`);
+            dlAnchorElem.setAttribute("download", fileName);
             dlAnchorElem.click();
-            
+        }
+
+        function markExported(label) {
             lastSavedTime = new Date().toLocaleTimeString();
             const lastSavedNode = document.getElementById('comp-last-saved');
             if (lastSavedNode) lastSavedNode.innerText = lastSavedTime;
+            showToast(`${label} downloaded.`, "success");
+        }
 
-            showToast("JSON Configuration compiled and downloaded to disk", "success");
+        function getCleanCompositionForExport() {
+            if (!composition) return null;
+            const cleanComp = stripRuntimeFields(composition);
+            cleanComp.id = cleanComp.id || generateHashID();
+            cleanComp.name = cleanComp.name || 'Untitled FX Composition';
+            cleanComp.tags = cleanComp.tags || '';
+            if (currentThumbnail && !cleanComp.thumbnail) cleanComp.thumbnail = currentThumbnail;
+            return cleanComp;
+        }
+
+        function validateFxAssetPayload(payload) {
+            const issues = [];
+            if (!payload || typeof payload !== 'object') {
+                issues.push('FX asset payload is not an object.');
+                return issues;
+            }
+            if (payload.schema !== ARTIFEX_FX_SCHEMA_VERSION) issues.push('FX asset schema is incorrect.');
+            if (!payload.id) issues.push('FX asset is missing id.');
+            if (!payload.label) issues.push('FX asset is missing label.');
+            if (!payload.engine) issues.push('FX asset is missing engine.');
+            if (!payload.composition || !Array.isArray(payload.composition.layers)) issues.push('FX asset composition.layers must be an array.');
+            return issues;
+        }
+
+        function buildEditorProjectPayload() {
+            const cleanComp = getCleanCompositionForExport();
+            if (!cleanComp) return null;
+
+            return {
+                schema: ARTIFEX_EDITOR_PROJECT_SCHEMA_VERSION,
+                engine: 'artifex-particle-studio',
+                engineVersion: '2.3.0-alpha',
+                savedAt: new Date().toISOString(),
+                editor: {
+                    app: 'Artifex Visual Effects Editor',
+                    format: 'editableProject',
+                    notes: 'This file preserves editor-facing composition data. Use Artifex FX Asset export for Scene Editor/runtime placement.'
+                },
+                composition: cleanComp
+            };
+        }
+
+        function buildArtifexFxAssetPayload() {
+            const cleanComp = getCleanCompositionForExport();
+            if (!cleanComp) return null;
+
+            const fxId = createFxAssetId(cleanComp.name || cleanComp.id);
+            return {
+                schema: ARTIFEX_FX_SCHEMA_VERSION,
+                id: fxId,
+                label: cleanComp.name || 'Untitled FX Asset',
+                type: 'compositeParticleEffect',
+                scope: 'project',
+                projectId: 'forever-bound',
+                engine: 'artifex-particle-studio',
+                engineVersion: '2.3.0-alpha',
+                tags: normalizeTags(cleanComp.tags),
+                thumbnail: cleanComp.thumbnail || null,
+                assets: {
+                    textures: [],
+                    audio: [],
+                    notes: 'Texture dependency collection will be filled when custom PNG particles are added.'
+                },
+                composition: {
+                    id: cleanComp.id || fxId,
+                    name: cleanComp.name || 'Untitled FX Composition',
+                    tags: cleanComp.tags || '',
+                    layers: Array.isArray(cleanComp.layers) ? cleanComp.layers : []
+                },
+                runtimeDefaults: {
+                    blendSafe: true,
+                    sceneLayer: 'frontOfCharacters',
+                    x: 0,
+                    y: 0,
+                    scale: 1,
+                    rotation: 0,
+                    opacity: 1
+                },
+                conversionNotes: []
+            };
+        }
+
+        function buildSceneFxInstancePayload() {
+            const fxAsset = buildArtifexFxAssetPayload();
+            if (!fxAsset) return null;
+
+            return {
+                schema: ARTIFEX_SCENE_FX_INSTANCE_SCHEMA_VERSION,
+                type: 'fxInstance',
+                id: `${fxAsset.id}_instance_preview`,
+                archetypeId: fxAsset.id,
+                asset: `data/fx/archetypes/${fxAsset.id}.json`,
+                enabled: true,
+                x: 0,
+                y: 0,
+                scale: 1,
+                rotation: 0,
+                opacity: 1,
+                layer: fxAsset.runtimeDefaults.sceneLayer,
+                attachTo: null,
+                trigger: null,
+                overrides: {},
+                notes: 'Scene Editor should store this lightweight instance reference, not duplicate the full FX asset JSON.'
+            };
+        }
+
+        function exportRawComposition() {
+            closeAllDropdowns();
+            const cleanComp = getCleanCompositionForExport();
+            if (!cleanComp) return;
+
+            const fileName = `${sanitizeFileName(cleanComp.name || cleanComp.id, 'custom-fx')}-composition.json`;
+            downloadJSONPayload(cleanComp, fileName);
+            markExported('Raw composition JSON');
+        }
+
+        function exportEditorProject() {
+            closeAllDropdowns();
+            const payload = buildEditorProjectPayload();
+            if (!payload) return;
+
+            const fileName = `${sanitizeFileName(payload.composition?.name || payload.composition?.id, 'custom-fx')}.fxproject.json`;
+            downloadJSONPayload(payload, fileName);
+            markExported('Editor project JSON');
+        }
+
+        function exportArtifexFxAsset() {
+            closeAllDropdowns();
+            const payload = buildArtifexFxAssetPayload();
+            if (!payload) return;
+
+            const issues = validateFxAssetPayload(payload);
+            if (issues.length) {
+                console.warn('FX asset validation warnings:', issues);
+                showToast(`FX asset exported with ${issues.length} validation warning(s).`, 'info');
+            }
+
+            const fileName = `${sanitizeFileName(payload.id, 'fx-asset')}.fx.json`;
+            downloadJSONPayload(payload, fileName);
+            markExported('Artifex FX Asset');
+        }
+
+        function exportSceneFxInstance() {
+            closeAllDropdowns();
+            const payload = buildSceneFxInstancePayload();
+            if (!payload) return;
+
+            const fileName = `${sanitizeFileName(payload.id, 'fx-instance')}.fxinstance.json`;
+            downloadJSONPayload(payload, fileName);
+            markExported('Scene FX Instance');
+        }
+
+        function exportJSON() {
+            exportRawComposition();
+        }
+
+
+        function unwrapImportedFxPayload(importedObj) {
+            if (!importedObj || typeof importedObj !== 'object') return null;
+
+            if (importedObj.schema === ARTIFEX_EDITOR_PROJECT_SCHEMA_VERSION && importedObj.composition) {
+                const comp = importedObj.composition;
+                comp.name = comp.name || 'Imported FX Editor Project';
+                return comp;
+            }
+
+            if (importedObj.schema === ARTIFEX_FX_SCHEMA_VERSION && importedObj.composition) {
+                const comp = stripRuntimeFields(importedObj.composition);
+                comp.id = comp.id || importedObj.id || generateHashID();
+                comp.name = comp.name || importedObj.label || 'Imported Artifex FX Asset';
+                comp.tags = comp.tags || normalizeTags(importedObj.tags).join(', ');
+                comp.thumbnail = comp.thumbnail || importedObj.thumbnail || null;
+                return comp;
+            }
+
+            if (importedObj.schema === ARTIFEX_SCENE_FX_INSTANCE_SCHEMA_VERSION || importedObj.type === 'fxInstance') {
+                showToast('Scene FX Instance JSON only references an asset. Import the matching .fx.json asset instead.', 'info');
+                return null;
+            }
+
+            return importedObj;
         }
 
         function handleFileImport(e) {
             closeAllDropdowns();
             if (!e.target.files || e.target.files.length === 0) return;
-            
+
             const fileReader = new FileReader();
             fileReader.onload = function(event) {
                 try {
                     let importedObj = JSON.parse(event.target.result);
-                    
+                    importedObj = unwrapImportedFxPayload(importedObj);
+                    if (!importedObj) return;
+
                     if (importedObj.emitter && importedObj.physics && !importedObj.layers) {
                          importedObj = {
                              id: generateHashID(),
@@ -3483,7 +3705,10 @@ engine.start();</pre>
                         showToast("Invalid JSON Schema! Could not map structure.", "error");
                     }
                 } catch(err) {
+                    console.error('Import failed', err);
                     showToast("Failed to parse JSON file structure", "error");
+                } finally {
+                    e.target.value = '';
                 }
             };
             fileReader.readAsText(e.target.files[0]);
