@@ -20,7 +20,7 @@ Do not remove words from the synonym lists, even if they are not chosen as the f
 
 **Artifex**
 *(game builder / editor / engine toolkit)*
-The full game-building system. Artifex includes the Runtime Engine, Scene Editor, Project Editor, Creation Guide, Advanced Object Library, Quest Builder, Playtest tools, and Build Game/export process.
+The full game-building system. Artifex includes the Runtime Engine, Scene Editor, Project Editor, Creation Guide, Advanced Object Library, Quest Builder, Playtest tools, Build Game/export process, and specialist utility tools such as the FX Editor.
 
 **Runtime Engine**
 *(game engine / playable engine / runtime)*
@@ -32,15 +32,15 @@ The default starter template game. It contains one simple example of every major
 
 **Project**
 *(game project / build project)*
-One complete game being built with Artifex. A project includes scenes, screens, objects, quests, assets, routes, settings, and export data.
+One complete game being built with Artifex. A project includes scenes, screens, objects, quests, assets, routes, settings, effects, and export data.
 
 **Project Manifest**
 *(manifest / flow graph / stitcher)*
-The central technical file that lists what belongs to the project. It defines project name, start screen, folders, scenes, quests, objects, assets, and build/export settings.
+The central technical file that lists what belongs to the project. It defines project name, start screen, folders, scenes, quests, objects, assets, effects, and build/export settings.
 
 **Scene Editor**
 *(editor / scene board / screen designer / visual editor)*
-The visual editor already being built. It edits scenes, screens, title screens, menu screens, UI layouts, backgrounds, layers, screen objects, coordinates, buttons, markers, and basic asset placement.
+The visual editor already being built. It edits scenes, screens, title screens, menu screens, UI layouts, backgrounds, layers, screen objects, coordinates, buttons, markers, effect placement, and basic asset placement.
 
 **Scene**
 *(visual scene / layout / screen layout)*
@@ -152,7 +152,7 @@ A temporary object used for testing. Placeholder is probably better for the UI b
 
 **Placeholder**
 *(dummy / mockup / temporary object)*
-A temporary asset, object, scene, or setting used until the creator replaces it with final content.
+A temporary asset, object, scene, effect, or setting used until the creator replaces it with final content.
 
 **Quest Builder**
 *(quest module / progression manager / objective builder)*
@@ -192,4 +192,102 @@ A smaller test mode inside the Scene Editor. It tests one scene visually/functio
 
 **Build Game**
 *(compile / export / publish / package)*
-The final action that gathers the Runtime Engine, project files, assets, scenes, quests, and settings into a playable browser game.
+The final action that gathers the Runtime Engine, project files, assets, scenes, quests, settings, effects, and export data into a playable browser game.
+
+## FX Editor / Effects Terms
+
+**FX Editor**
+*(effects editor / CG effects editor / visual effects editor / effects tool)*
+The Artifex utility for creating, previewing, configuring, saving, reusing, placing, timing, and exporting visual effects. The FX Editor creates effects; the Effects Library stores them; the Scene Editor places them; the Runtime Engine plays them.
+
+**Effects Library**
+*(FX library / CG effects library / effect preset library)*
+The reusable library of saved visual effects. It stores FX Archetypes, presets, textures, particle settings, sprite-sheet effect settings, screen overlays, transitions, and other effect definitions.
+
+**FX Archetype**
+*(effect archetype / effect blueprint / effect prefab / reusable effect definition / FX preset)*
+A reusable saved effect definition. Example: green corruption smoke, purple Songspell aura, blue Aetheris glow, portal shimmer, audio-reactive vignette, or firelight flicker.
+
+**FX Instance**
+*(effect instance / placed effect / scene effect / effect copy)*
+A specific use of an FX Archetype inside a scene, object, UI layer, transition, route, or plate project. The instance stores placement, layer, timing, trigger, attachment, and overrides without duplicating the whole archetype.
+
+**FX Runtime**
+*(effects runtime / effect renderer / runtime effects engine)*
+The part of the Runtime Engine that loads, updates, draws, starts, stops, loops, and destroys effects during gameplay or preview. It reads FX Archetypes and FX Instances from data.
+
+**FX Driver**
+*(driver / modifier / dynamic input / value source / animation driver)*
+A value source that changes an effect over time. Examples include elapsed time, keyframes, audio bass, audio mids, audio treble, beat pulse, music energy, corruption level, danger level, quest flag, world state, cooldown state, object state, player health, or attached entity movement.
+
+**Emitter**
+*(particle emitter / spawn point / spawn area / source)*
+The source that creates or positions particles or generated effects. Emitters may be points, lines, areas, paths, screen-space regions, UI elements, objects, characters, or manually tracked points.
+
+**Effect Layer**
+*(FX layer / draw layer / visual depth / overlay layer)*
+The visual layer where an effect is drawn. Examples include behind characters, in front of characters, foreground fog, screen overlay, UI overlay, transition overlay, and export-only plate layer.
+
+**Game FX Mode**
+*(runtime FX mode / scene FX mode / game effects workflow)*
+The FX Editor workflow for creating reusable effects that are saved as FX Archetypes and used by the Runtime Engine inside playable games.
+
+**Plate FX Mode**
+*(FX plate workflow / video reference workflow / production FX workflow / slated effect idea)*
+The FX Editor workflow for uploading a reference video, timing and animating library effects over that video, then exporting only the transparent effect layer for use in an external video editor. The earlier rough idea name was “slated effect,” but FX Plate / Plate FX is clearer.
+
+**FX Plate**
+*(plate / reference plate / timing plate / video plate)*
+A temporary reference-video workspace used for timing, positioning, tracking, and animating effects. The plate is a guide and should not be included in the normal effect-only export.
+
+**Reference Video**
+*(guide video / timing reference / temporary footage / plate footage)*
+The uploaded video used as a visual guide in Plate FX Mode. It lets the creator pause, scrub, step frame-by-frame, and align effects. It is not stored as part of the normal effect definition and is not included in the normal FX Pass export.
+
+**FX Plate Project**
+*(plate project / effect plate file / production FX project)*
+The saved editable project file for Plate FX Mode. It stores reference video metadata, timeline settings, export settings, used FX Archetypes, FX Instances, keyframes, drivers, and notes. It should not normally store the actual video file.
+
+**FX Pass**
+*(effect pass / transparent effect layer / overlay pass / production effect export)*
+The exported effect-only layer produced from Plate FX Mode. It can be imported into a video editor and composited over final footage.
+
+**Transparent FX Pass**
+*(alpha FX pass / transparent overlay / alpha effect export)*
+An FX Pass with transparency/alpha, usually exported as a PNG sequence, WebM with alpha, animated WebP, or another transparent-capable format.
+
+**Preview Export**
+*(burned preview / reference preview / review export)*
+A temporary export that includes the reference video and effects together so timing can be checked or shared. It is not the normal final compositing output.
+
+**Composite Target**
+*(final footage / target footage / edit footage)*
+The final high-quality footage in an external video editor where the FX Pass will be placed, blended, filtered, and composited.
+
+**Keyframe**
+*(animation point / timeline point / property key)*
+A saved value at a specific time in Plate FX Mode or animation editing. Keyframes can control position, scale, rotation, opacity, intensity, particle emission, colour, distortion, or other effect properties.
+
+**Audio-Reactive FX**
+*(audio-driven effect / EQ-driven effect / music-reactive effect / beat-reactive effect)*
+An effect whose properties respond to audio analysis values such as bass, mids, treble, beat pulse, or music energy. Example: a vignette that changes intensity based on the EQ of the music playing.
+
+**Screen Overlay FX**
+*(overlay effect / full-screen effect / camera effect)*
+An effect drawn across the whole screen or camera view, such as vignette, colour tint, blur, flash, darkness, dream-state overlay, corruption pulse, or cooldown grey overlay.
+
+**Particle FX**
+*(particle effect / generated particles / particle system)*
+An effect generated from many small particles, such as smoke, dust, sparks, embers, magical glitter, Aetheris motes, Sekhemra spores, floating pollen, rain, or snow.
+
+**Sprite Sheet FX**
+*(frame effect / animated effect / sprite effect)*
+A frame-based visual effect stored as a sprite sheet or image sequence, such as fireball, portal loop, candle flicker, impact burst, magic ring, lightning pulse, or explosion flash.
+
+**Glow / Aura FX**
+*(glow effect / aura effect / light pulse)*
+An effect used to make an object, character, relic, UI element, or environment appear magical, active, possessed, holy, dangerous, or charged.
+
+**Transition FX**
+*(transition effect / scene transition / route transition)*
+An effect used when moving between scenes, screens, routes, or states, such as directional blur, zoom blur, fade, magical dissolve, doorway transition, tunnel transition, or map transition.
