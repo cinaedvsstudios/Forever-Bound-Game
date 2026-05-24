@@ -1,5 +1,11 @@
 /* Artifex Effect Editor preset registries.
  * Extracted from index.html in Phase 7 so presets can be edited without touching the live app shell.
+ *
+ * Visual triage note:
+ * The old ribbon, shockwave, fog, toxic gas, and heat-shimmer base presets were removed from
+ * the visible base library because their current renderer behaviour does not match their names.
+ * They should be rebuilt after the runtime supports true trails, ring waves, soft sprite smoke,
+ * emitter masks, and real distortion/refraction.
  */
 (function () {
     'use strict';
@@ -10,20 +16,6 @@
                     id: "electric-sparks", effectType: "particles", subType: "electric-sparks",
                     name: "Base · Electric Sparks", description: "Fast additive spark particles with downward gravity and warm yellow-to-red glow.", tags: "base, particles, sparks, electric, warm, additive",
                     emitter: { rate: 6, width: 2, widthUnit: "PX" }, physics: { speedMin: 4, speedMax: 10, angle: 270, spread: 55, gravityY: 0.28, friction: 0.98, orbitalForce: 0 }, visual: { shape: "spark", sizeStart: 6, sizeEnd: 1, colors: ["#ffd23f", "#ee4266"], alphas: [1.0, 1.0], blur: 0, glow: 20, composite: "lighter" }, life: { durationMin: 25, durationMax: 50 }
-                }
-            ],
-            ribbon: [
-                {
-                    id: "sword-slash", effectType: "ribbon", subType: "sword-slash",
-                    name: "Base · Ribbon Trail", description: "Short glowing blue-white trail for slash, swipe, or fast motion effects.", tags: "base, ribbon, trail, slash, blue, additive",
-                    emitter: { rate: 12, width: 1, widthUnit: "PX" }, physics: { speedMin: 0.1, speedMax: 0.5, angle: 0, spread: 0, gravityY: 0, friction: 1.0, orbitalForce: 0 }, visual: { shape: "spark", sizeStart: 12, sizeEnd: 0.1, colors: ["#00a1d7", "#ffffff"], alphas: [1.0, 1.0], blur: 0, glow: 25, composite: "lighter" }, life: { durationMin: 15, durationMax: 20 }
-                }
-            ],
-            ring: [
-                {
-                    id: "shockwave", effectType: "ring", subType: "shockwave",
-                    name: "Base · Expanding Shockwave", description: "Circular ring burst that expands outward from the emitter.", tags: "base, ring, shockwave, burst, blue, additive",
-                    emitter: { rate: 0, width: 1, widthUnit: "PX" }, physics: { speedMin: 5, speedMax: 8, angle: 0, spread: 360, gravityY: 0, friction: 0.95, orbitalForce: 0 }, visual: { shape: "circle", sizeStart: 2, sizeEnd: 25, colors: ["#ffffff", "#00a1d7"], alphas: [1.0, 1.0], blur: 0, glow: 20, composite: "lighter" }, life: { durationMin: 30, durationMax: 50 }
                 }
             ],
             lightning: [
@@ -40,29 +32,10 @@
                     emitter: { rate: 8, width: 1, widthUnit: "PX" }, physics: { speedMin: 4, speedMax: 6, angle: 180, spread: 5, gravityY: -0.05, friction: 0.99, orbitalForce: 0 }, visual: { shape: "circle", sizeStart: 12, sizeEnd: 2, colors: ["#ef4444", "#ffd23f"], alphas: [1.0, 1.0], blur: 0, glow: 30, composite: "lighter" }, life: { durationMin: 20, durationMax: 40 }
                 }
             ],
-            gas: [
-                {
-                    id: "generic-fog", effectType: "gas", subType: "generic-fog",
-                    name: "Base · Wide Rolling Fog", description: "Large slow white-grey fog puffs spread across the canvas with screen blending.", tags: "base, gas, fog, mist, clouds, weather, screen",
-                    emitter: { rate: 3, width: 100, widthUnit: "%" }, physics: { speedMin: 0.1, speedMax: 0.5, angle: 0, spread: 360, gravityY: -0.01, friction: 0.98, orbitalForce: 0 }, visual: { shape: "circle", sizeStart: 40, sizeEnd: 90, colors: ["#f8fafc", "#94a3b8", "#334155"], alphas: [0.0, 0.6, 0.0], blur: 15, glow: 30, composite: "screen" }, life: { durationMin: 100, durationMax: 180 }
-                },
-                {
-                    id: "toxic-bubble-fog", effectType: "gas", subType: "toxic-bubble-fog",
-                    name: "Base · Toxic Gas Bubbles", description: "Green rising gas bubbles with slight orbital drift.", tags: "base, gas, toxic, bubbles, green, screen",
-                    emitter: { rate: 3, width: 10, widthUnit: "%" }, physics: { speedMin: 0.5, speedMax: 1.8, angle: 270, spread: 20, gravityY: -0.06, friction: 0.99, orbitalForce: 0.05 }, visual: { shape: "circle", sizeStart: 8, sizeEnd: 24, colors: ["#22c55e", "#0f0d0e"], alphas: [1.0, 1.0], blur: 0, glow: 15, composite: "screen" }, life: { durationMin: 50, durationMax: 110 }
-                }
-            ],
-            refraction: [
-                {
-                    id: "heat-shimmer", effectType: "refraction", subType: "heat-shimmer",
-                    name: "Base · Heat Shimmer", description: "Soft rising screen-blended distortion-style particles for heat/refraction previews.", tags: "base, refraction, heat, shimmer, screen",
-                    emitter: { rate: 3, width: 15, widthUnit: "%" }, physics: { speedMin: 0.8, speedMax: 2.2, angle: 270, spread: 15, gravityY: -0.04, friction: 0.99, orbitalForce: 0 }, visual: { shape: "circle", sizeStart: 12, sizeEnd: 32, colors: ["#00a1d7", "#ffffff"], alphas: [0.0, 0.8, 0.0], blur: 0, glow: 8, composite: "screen" }, life: { durationMin: 40, durationMax: 85 }
-                }
-            ],
             lensflare: [
                 {
                     id: "anamorphic-streak", effectType: "lensflare", subType: "anamorphic-streak",
-                    name: "Base · Anamorphic Lens Flare", description: "Expanding blue-white star glare particles for optical flare effects.", tags: "base, lensflare, flare, optical, blue, additive",
+                    name: "Base · Lens Flare Spark", description: "Blue-white optical spark/glare placeholder. Needs a future line/sprite flare renderer.", tags: "base, lensflare, flare, optical, blue, additive, needs-improvement",
                     emitter: { rate: 2, width: 1, widthUnit: "PX" }, physics: { speedMin: 0.1, speedMax: 0.5, angle: 0, spread: 360, gravityY: 0, friction: 0.95, orbitalForce: 0 }, visual: { shape: "star", sizeStart: 1, sizeEnd: 30, colors: ["#00a1d7", "#ffffff"], alphas: [1.0, 1.0], blur: 0, glow: 40, composite: "lighter" }, life: { durationMin: 20, durationMax: 45 }
                 }
             ]
