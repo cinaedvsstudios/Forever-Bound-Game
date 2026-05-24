@@ -30,14 +30,26 @@
 }
 
 .card-toggle {
-  border-color: rgba(102, 199, 255, 0.48) !important;
-  background: rgba(8, 12, 20, 0.78) !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
   color: #d8ecff !important;
+  box-shadow: none !important;
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Inter, system-ui, sans-serif !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
 }
 
 .card-toggle:hover {
-  border-color: rgba(231, 56, 56, 0.88) !important;
-  box-shadow: 0 0 10px rgba(231, 56, 56, 0.38) !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  filter: drop-shadow(0 0 7px rgba(231, 56, 56, 0.75)) !important;
 }
 
 .top-bar.has-menubar-v25 {
