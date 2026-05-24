@@ -3,6 +3,7 @@
 
   const NUMERIC_SELECTORS = '.side-panel input[type="number"]';
   const ignoredIds = new Set([]);
+  const baselineValues = new Map();
   let resetMenu = null;
 
   function core() {
@@ -13,6 +14,19 @@
     const id = core()?.getSelectedId?.();
     if (!id) return document.querySelector('.scene-item.is-selected');
     return Array.from(document.querySelectorAll('.scene-item[data-stage-id]')).find((node) => node.dataset.stageId === id) || document.querySelector('.scene-item.is-selected');
+  }
+
+  function baselineKeyFor(input) {
+    const id = input.id || '';
+    const editor = core();
+    const selected = editor?.getSelectedItem?.();
+    if (id.startsWith('item') || id === 'layerPill') return `${selected?.id || 'selected'}:${id}`;
+    return `global:${id}`;
+  }
+
+  function rememberBaseline(input) {
+    const key = baselineKeyFor(input);
+    if (!baselineValues.has(key)) baselineValues.set(key, input.value || '0');
   }
 
   function configFor(input) {
@@ -27,8 +41,8 @@
     if (id === 'itemLayer' || id === 'layerPill' || name.includes('layer')) return { min: 0, max: 100, step: 1, reset: 10 };
     if (id === 'gridCols' || name.includes('grid columns')) return { min: 1, max: 64, step: 1, reset: 16 };
     if (id === 'gridRows' || name.includes('grid rows')) return { min: 1, max: 64, step: 1, reset: 9 };
-    if (id === 'itemW' || name.includes('width')) return { min: 1, max: 200, step: 0.25, reset: 10 };
-    if (id === 'itemH' || name.includes('height')) return { min: 1, max: 200, step: 0.25, reset: 10 };
+    if (id === 'itemW' || name.includes('width')) return { min: 1, max: 200, step: 0.25, reset: null, baselineReset: true };
+    if (id === 'itemH' || name.includes('height')) return { min: 1, max: 200, step: 0.25, reset: null, baselineReset: true };
     if (id === 'itemX' || name.includes('x axis')) return { min: -100, max: 200, step: 0.25, reset: 0 };
     if (id === 'itemY' || name.includes('y axis')) return { min: -100, max: 200, step: 0.25, reset: 0 };
     if (id.includes('Opacity')) return { min: 0, max: 100, step: 1, reset: 100 };
@@ -44,6 +58,15 @@
       step: explicitStep !== null && explicitStep !== 'any' ? Number(explicitStep) : 1,
       reset: explicitMin !== null && explicitMax !== null ? clamp(0, Number(explicitMin), Number(explicitMax)) : 0
     };
+  }
+
+  function resetValueFor(input) {
+    const cfg = configFor(input);
+    if (cfg.baselineReset) {
+      const stored = baselineValues.get(baselineKeyFor(input));
+      return stored !== undefined ? stored : input.value || 0;
+    }
+    return cfg.reset;
   }
 
   function clamp(value, min, max) {
@@ -134,6 +157,15 @@
     applyTransformDirect(input, value);
   }
 
+  function resetInput(input) {
+    const cfg = configFor(input);
+    const raw = resetValueFor(input);
+    const value = formatValue(clamp(raw, cfg.min, cfg.max), cfg.step);
+    setInputValue(input, value);
+    syncSlider(input);
+    closeResetMenu();
+  }
+
   function syncSlider(input) {
     const field = input.closest('.value-slider-field-v18');
     const track = field?.querySelector('.value-slider-track-v18');
@@ -189,17 +221,12 @@
 
   function showResetMenu(event, input) {
     closeResetMenu();
-    const cfg = configFor(input);
     resetMenu = document.createElement('div');
     resetMenu.className = 'value-slider-reset-menu-v18';
     resetMenu.style.left = `${event.clientX}px`;
     resetMenu.style.top = `${event.clientY}px`;
     resetMenu.innerHTML = '<button type="button">Reset</button>';
-    resetMenu.querySelector('button')?.addEventListener('click', () => {
-      setInputValue(input, formatValue(clamp(cfg.reset, cfg.min, cfg.max), cfg.step));
-      syncSlider(input);
-      closeResetMenu();
-    });
+    resetMenu.querySelector('button')?.addEventListener('click', () => resetInput(input));
     document.body.appendChild(resetMenu);
     event.preventDefault();
     event.stopPropagation();
@@ -209,6 +236,7 @@
     if (!input || ignoredIds.has(input.id) || input.dataset.v18ValueSlider === 'true') return;
     const field = input.closest('.field');
     if (!field) return;
+    rememberBaseline(input);
     input.dataset.v18ValueSlider = 'true';
     field.classList.add('value-slider-field-v18');
 
@@ -216,6 +244,13 @@
     input.setAttribute('step', String(cfg.step));
     input.setAttribute('min', String(cfg.min));
     input.setAttribute('max', String(cfg.max));
+
+    const reset = document.createElement('button');
+    reset.type = 'button';
+    reset.className = 'value-slider-reset-v18';
+    reset.title = 'Reset value';
+    reset.setAttribute('aria-label', 'Reset value');
+    reset.textContent = '↩️';
 
     const dot = document.createElement('button');
     dot.type = 'button';
@@ -228,6 +263,12 @@
     popover.innerHTML = '<div class="value-slider-track-v18" role="slider" tabindex="0"><span class="value-slider-fill-v18"></span><span class="value-slider-thumb-v18"></span></div><span class="value-slider-readout-v18"></span>';
 
     const track = popover.querySelector('.value-slider-track-v18');
+
+    reset.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      resetInput(input);
+    });
 
     dot.addEventListener('click', (event) => {
       event.preventDefault();
@@ -266,6 +307,7 @@
     input.addEventListener('input', () => syncSlider(input));
     input.addEventListener('change', () => syncSlider(input));
 
+    field.appendChild(reset);
     field.appendChild(dot);
     field.appendChild(popover);
     syncSlider(input);
@@ -274,7 +316,10 @@
   function decorateAll() {
     document.querySelectorAll(NUMERIC_SELECTORS).forEach((input) => {
       decorate(input);
-      if (input?.dataset.v18ValueSlider === 'true') syncSlider(input);
+      if (input?.dataset.v18ValueSlider === 'true') {
+        rememberBaseline(input);
+        syncSlider(input);
+      }
     });
   }
 
