@@ -3,7 +3,7 @@
 .side-panel input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
-  padding-right: 32px !important;
+  padding-right: 56px !important;
 }
 
 .side-panel input[type="number"]::-webkit-outer-spin-button,
@@ -14,6 +14,29 @@
 
 .field.value-slider-field-v18 {
   position: relative;
+}
+
+.value-slider-reset-v18 {
+  position: absolute;
+  right: 26px;
+  bottom: 5px;
+  width: 23px;
+  height: 23px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  z-index: 7;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.value-slider-reset-v18:hover {
+  filter: drop-shadow(0 0 6px rgba(195, 0, 255, 0.92));
 }
 
 .value-slider-dot-v18 {
