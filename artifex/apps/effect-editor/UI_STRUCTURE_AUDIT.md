@@ -164,6 +164,8 @@ Composition / FX Asset
 - Tags
 - Scope: global / project
 - Project ID
+- Thumbnail preview
+- Capture Thumbnail button
 - Load Preset
 - Save New Version
 - Export buttons later
@@ -240,6 +242,95 @@ Fade Out
 ```
 
 For now, `Lifespan Frames` is fine.
+
+## 7. Thumbnail Camera Capture
+
+Add a camera/snapshot option to the editor.
+
+Purpose:
+
+```text
+Capture a square preview image of the current effect only.
+Use that image as the thumbnail shown in the FX Library cards.
+```
+
+This is not the same as exporting the effect itself. It is only the library/card preview image.
+
+Recommended UI locations:
+
+```text
+Canvas overlay: small camera button near play/pause and zoom controls.
+Composition / FX Asset card: thumbnail preview + Capture Thumbnail button.
+Save New Version modal: optional captured thumbnail preview before saving.
+```
+
+Recommended behaviour:
+
+```text
+User plays or pauses the effect at a nice moment.
+User clicks Camera.
+Editor captures the current canvas as a square image.
+Editor stores the thumbnail data/path with the saved composition.
+FX Library cards use this thumbnail instead of a generic icon.
+```
+
+Recommended capture format:
+
+```text
+JPEG for normal library thumbnails.
+512 x 512 square by default.
+Background-filled because JPEG has no transparency.
+Optional PNG later if transparent thumbnails are needed.
+```
+
+Important JPEG note:
+
+```text
+JPEG cannot store transparency.
+If the effect canvas is transparent, the editor must composite the thumbnail over a background colour before exporting.
+Default thumbnail background should match the editor dark preview background.
+```
+
+Recommended thumbnail settings:
+
+```text
+thumbnail.size = 512
+thumbnail.format = image/jpeg
+thumbnail.quality = 0.86
+thumbnail.background = #0f0c0b
+thumbnail.fit = contain
+thumbnail.padding = 32
+```
+
+Recommended saved composition metadata:
+
+```json
+{
+  "thumbnail": {
+    "type": "image/jpeg",
+    "width": 512,
+    "height": 512,
+    "background": "#0f0c0b",
+    "dataUrl": "data:image/jpeg;base64,..."
+  }
+}
+```
+
+For GitHub/project storage, the later preferred structure should be:
+
+```text
+assets/fx/thumbnails/fx_effect_id.jpg
+```
+
+And the FX JSON should store:
+
+```json
+{
+  "thumbnail": "assets/fx/thumbnails/fx_effect_id.jpg"
+}
+```
+
+Do not store huge base64 thumbnails inside final runtime FX JSON if avoidable. Base64 is acceptable for localStorage/editor drafts, but saved project assets should prefer a real `.jpg` file path.
 
 ## Bottom Panel Review
 
@@ -464,6 +555,20 @@ Preview controls
 Compact FPS / particle count status
 ```
 
+### Canvas Overlay
+
+Recommended canvas overlay controls:
+
+```text
+Play / pause
+Camera / Capture Thumbnail
+Zoom
+Reset zoom
+Preview options popover
+```
+
+The camera button should be visually near the playback controls because users will pause the effect at the desired frame and then capture it.
+
 ### View Menu
 
 Move these into View:
@@ -500,6 +605,7 @@ Do this after the safe module scaffolding is complete:
 4. Move duplicated workspace tools to File/View/Emitter locations.
 5. Collapse diagnostics into a smaller status area.
 6. Add textureSprite/custom PNG controls to Visual Configuration.
+7. Add Camera / Capture Thumbnail button and thumbnail metadata.
 ```
 
 ## Short Verdict
