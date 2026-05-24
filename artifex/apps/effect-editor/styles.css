@@ -36,6 +36,51 @@ body {
     border-color: #9e01ce;
 }
 
+/*
+ * Shared Artifex header branding for the Effect Editor.
+ * This uses the same image assets as the Scene Editor and does not require the
+ * temporary Phase 2 JavaScript patch to be loaded.
+ */
+body > header > div:first-child {
+    position: relative !important;
+    width: 250px !important;
+    min-width: 250px !important;
+    height: 48px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0 !important;
+}
+
+body > header > div:first-child > * {
+    display: none !important;
+}
+
+body > header > div:first-child::before {
+    content: "";
+    display: block;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    background-image: url("../../artifexlogo.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    filter: drop-shadow(0 0 10px rgba(158, 1, 206, 0.55));
+}
+
+body > header > div:first-child::after {
+    content: "";
+    display: block;
+    width: 190px;
+    height: 42px;
+    margin-left: 10px;
+    background-image: url("../../artifextitle.png");
+    background-repeat: no-repeat;
+    background-position: left center;
+    background-size: contain;
+    filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.75));
+}
+
 @keyframes blueFlash {
     0%, 100% {
         box-shadow: 0 0 5px #00a1d7, inset 0 0 5px #00a1d7;
