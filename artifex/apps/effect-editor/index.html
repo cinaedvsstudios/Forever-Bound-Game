@@ -61,46 +61,6 @@
             animation: blueFlash 1.5s infinite !important;
             outline: none !important;
         }
-
-
-        /* Shared Artifex background texture, matching the Scene Editor's darker textured shell. */
-        body::before {
-            content: "";
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 0;
-            background-image:
-                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0.42 0 0 0 0.24 0 0.30 0 0 0.14 0 0 0.24 0 0.08 0 0 0 0.30 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E"),
-                radial-gradient(circle at 22% 12%, rgba(158, 1, 206, 0.12), transparent 34%),
-                radial-gradient(circle at 78% 18%, rgba(184, 119, 63, 0.10), transparent 30%),
-                linear-gradient(135deg, rgba(255, 214, 166, 0.035), transparent 22%, rgba(0, 0, 0, 0.18) 70%);
-            background-size: 120px 120px, 900px 700px, 900px 700px, 100% 100%;
-            background-blend-mode: overlay, screen, screen, normal;
-            opacity: 0.72;
-            mix-blend-mode: soft-light;
-        }
-
-        body > header,
-        body > main,
-        body > #variation-modal,
-        body > #help-modal,
-        body > #toast-container {
-            position: relative;
-            z-index: 1;
-        }
-
-        header,
-        #sidebar-panel,
-        #lower-panel,
-        .bg-artifex-panel,
-        .bg-artifex-darkGray {
-            background-image:
-                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='80' height='80' filter='url(%23n)' opacity='0.20'/%3E%3C/svg%3E"),
-                linear-gradient(180deg, rgba(255, 220, 170, 0.035), rgba(0, 0, 0, 0.14));
-            background-size: 80px 80px, 100% 100%;
-            background-blend-mode: overlay, normal;
-        }
     </style>
 </head>
 <body class="text-slate-100 h-screen overflow-hidden flex flex-col bg-artifex-dark selection:bg-artifex-purpleAccent selection:text-white">
@@ -634,8 +594,8 @@ engine.start();</pre>
             <div id="canvas-splitter" class="hover:bg-[#33b8ef] bg-artifex-blue transition-colors w-full z-50 shadow-[0_0_12px_rgba(0,161,215,0.85)] flex-shrink-0" style="height: 8px; min-height: 8px; cursor: row-resize;" title="Drag to resize panel"></div>
 
             <!-- LOWER PANEL -->
-            <div id="lower-panel" class="bg-artifex-panel border-t border-artifex-border p-4 select-none flex-shrink-0 overflow-y-auto shadow-[0_-12px_30px_rgba(0,0,0,0.85)] flex flex-col gap-3.5" style="height: 200px; min-height: 200px;">
-                
+            <div id="lower-panel" class="bg-artifex-panel border-t border-artifex-border p-3 select-none flex-shrink-0 overflow-y-auto shadow-[0_-12px_30px_rgba(0,0,0,0.85)] flex flex-col gap-3" style="height: 220px; min-height: 180px;">
+
                 <div class="w-full bg-[#171719] border border-artifex-border px-3.5 py-2 rounded-xl text-[11px] flex items-center gap-3 shadow-inner shrink-0" title="Active layer context and status information.">
                     <span class="flex items-center gap-1.5 text-artifex-gold shrink-0">
                         <span class="w-1.5 h-1.5 rounded-full bg-artifex-purpleAccent animate-pulse shadow-[0_0_8px_#9e01ce]"></span> Active Layer Summary
@@ -646,82 +606,85 @@ engine.start();</pre>
                     </span>
                 </div>
 
-                <div class="grid grid-cols-4 gap-5 flex-1 text-xs font-sans">
-                    <!-- Column 1: Preview Options -->
-                    <div class="flex flex-col justify-between border-r border-artifex-border/40 pr-4">
-                        <div>
-                            <span class="text-artifex-gold uppercase font-bold text-[9px] tracking-wider mb-2.5 block">Preview Options</span>
-                            <div class="flex flex-col gap-1.5">
-                                <button onclick="toggleViewCheckbox('emitter-follow-mouse')" id="toolbar-follow" class="w-full text-left px-2.5 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-goldMuted border border-artifex-border rounded-md transition font-semibold focus:outline-none shadow-[0_2px_5px_rgba(0,0,0,0.6)]" title="Lock the emitter coordinate origin to exactly where your mouse points.">
-                                    Emitter Follows Mouse: <span id="toolbar-follow-status">OFF</span>
-                                </button>
-                                <button onclick="toggleViewCheckbox('show-emitter-hud')" id="toolbar-hud" class="w-full text-left px-2.5 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold border border-artifex-border rounded-md transition font-semibold focus:outline-none shadow-[0_2px_5px_rgba(0,0,0,0.6)]" title="Show or hide the visual crosshair and projection arcs on the canvas.">
-                                    Emitter Guide: <span id="toolbar-hud-status">ON</span>
-                                </button>
-                                <button onclick="toggleViewCheckbox('collision-bounce')" id="toolbar-bounce" class="w-full text-left px-2.5 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-goldMuted border border-artifex-border rounded-md transition font-semibold focus:outline-none shadow-[0_2px_5px_rgba(0,0,0,0.6)]" title="Force particles to bounce off the bottom boundary of the coordinate grid.">
-                                    Preview Floor Collision: <span id="toolbar-bounce-status">OFF</span>
-                                </button>
-                            </div>
+                <div class="grid grid-cols-12 gap-3 flex-1 text-xs font-sans min-h-0">
+                    <!-- Composer Column 1: Preview Options -->
+                    <div class="col-span-3 flex flex-col min-h-0 rounded-xl border border-artifex-border/50 bg-artifex-dark/45 p-3 shadow-inner">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-artifex-gold uppercase font-bold text-[9px] tracking-wider block">Preview Options</span>
+                            <span class="text-[8px] text-artifex-goldMuted font-mono">View</span>
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <button onclick="toggleViewCheckbox('emitter-follow-mouse')" id="toolbar-follow" class="w-full text-left px-2.5 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-goldMuted border border-artifex-border rounded-md transition font-semibold focus:outline-none shadow-[0_2px_5px_rgba(0,0,0,0.6)]" title="Let the emitter follow your pointer.">
+                                Emitter Follows Mouse: <span id="toolbar-follow-status">OFF</span>
+                            </button>
+                            <button onclick="toggleViewCheckbox('show-emitter-hud')" id="toolbar-hud" class="w-full text-left px-2.5 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold border border-artifex-border rounded-md transition font-semibold focus:outline-none shadow-[0_2px_5px_rgba(0,0,0,0.6)]" title="Show or hide the emitter guide and direction preview.">
+                                Emitter Guide: <span id="toolbar-hud-status">ON</span>
+                            </button>
+                            <button onclick="toggleViewCheckbox('collision-bounce')" id="toolbar-bounce" class="w-full text-left px-2.5 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-goldMuted border border-artifex-border rounded-md transition font-semibold focus:outline-none shadow-[0_2px_5px_rgba(0,0,0,0.6)]" title="Preview floor collision for falling particles.">
+                                Preview Floor Collision: <span id="toolbar-bounce-status">OFF</span>
+                            </button>
                         </div>
                     </div>
-                    
-                    <!-- Column 2: MULTI-LAYER CONTROLLER -->
-                    <div class="flex flex-col border-r border-artifex-border/40 pr-4 relative" title="Manage the multiple particle systems rendering on top of each other.">
-                        <div class="flex items-center justify-between mb-2 absolute top-0 left-0 right-4">
-                            <span class="text-artifex-gold uppercase font-bold text-[9px] tracking-wider block">Layer Stack</span>
+
+                    <!-- Composer Column 2: Layer Stack -->
+                    <div class="col-span-5 flex flex-col min-h-0 rounded-xl border border-artifex-purpleAccent/35 bg-artifex-dark/55 p-3 shadow-[inset_0_0_16px_rgba(158,1,206,0.08)] relative" title="Manage the multiple particle systems rendering on top of each other.">
+                        <div class="flex items-center justify-between mb-2 shrink-0">
+                            <div class="flex items-center gap-2">
+                                <span class="text-artifex-gold uppercase font-bold text-[9px] tracking-wider block">Layer Stack</span>
+                                <span class="text-[8px] text-artifex-goldMuted font-mono">front → back</span>
+                            </div>
                             <button id="btn-paste-layer" onclick="pasteLayerData()" class="hidden text-[9px] bg-emerald-600/30 hover:bg-emerald-500/50 text-emerald-400 border border-emerald-500/50 px-1.5 py-0.5 rounded transition shadow-md focus:outline-none" title="Paste Layer Properties">📋 Paste</button>
                         </div>
-                        <div id="layers-list-container" class="space-y-1.5 overflow-y-auto w-full mt-6 pr-1 max-h-[120px]">
+                        <div id="layers-list-container" class="space-y-1.5 overflow-y-auto w-full pr-1 flex-1 min-h-[80px]">
                             <!-- Injected dynamically by renderLayerList() -->
                         </div>
                     </div>
 
-                    <!-- Column 3: Preview Tools -->
-                    <div class="flex flex-col justify-between border-r border-artifex-border/40 pr-4">
-                        <div>
-                            <span class="text-artifex-gold uppercase font-bold text-[9px] tracking-wider mb-2.5 block">Preview Tools</span>
-                            <div class="flex flex-col gap-1.5">
-                                <button onclick="clearParticles()" class="w-full px-3 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray hover:text-white text-artifex-gold transition rounded-md border border-artifex-border text-[11px] font-semibold text-center focus:outline-none shadow-[0_2px_5px_rgba(0,0,0,0.6)]" title="Instantly clear all drawing arrays.">
-                                    Clear Particles
-                                </button>
-                                <button onclick="resetEmitterPosition()" class="w-full px-3 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray hover:text-white text-artifex-gold transition rounded-md border border-artifex-border text-[11px] font-semibold text-center focus:outline-none shadow-[0_2px_5px_rgba(0,0,0,0.6)]" title="Center the anchor point for all layers.">
-                                    Center Emitter
-                                </button>
-                                <button onclick="newConfiguration()" class="w-full px-3 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray hover:text-white text-artifex-gold transition rounded-md border border-artifex-border text-[11px] font-semibold text-center focus:outline-none shadow-[0_2px_5px_rgba(0,0,0,0.6)]" title="Wipe canvas back to an empty slate.">
-                                    Wipe Composition
-                                </button>
-                            </div>
+                    <!-- Composer Column 3: Preview Tools -->
+                    <div class="col-span-2 flex flex-col min-h-0 rounded-xl border border-artifex-border/50 bg-artifex-dark/45 p-3 shadow-inner">
+                        <span class="text-artifex-gold uppercase font-bold text-[9px] tracking-wider mb-2 block">Preview Tools</span>
+                        <div class="flex flex-col gap-1.5">
+                            <button onclick="clearParticles()" class="w-full px-3 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray hover:text-white text-artifex-gold transition rounded-md border border-artifex-border text-[11px] font-semibold text-center focus:outline-none shadow-[0_2px_5px_rgba(0,0,0,0.6)]" title="Instantly clear all drawing arrays.">
+                                Clear Particles
+                            </button>
+                            <button onclick="resetEmitterPosition()" class="w-full px-3 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray hover:text-white text-artifex-gold transition rounded-md border border-artifex-border text-[11px] font-semibold text-center focus:outline-none shadow-[0_2px_5px_rgba(0,0,0,0.6)]" title="Center the anchor point for all layers.">
+                                Center Emitter
+                            </button>
+                            <button onclick="newConfiguration()" class="w-full px-3 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray hover:text-white text-artifex-gold transition rounded-md border border-artifex-border text-[11px] font-semibold text-center focus:outline-none shadow-[0_2px_5px_rgba(0,0,0,0.6)]" title="Wipe canvas back to an empty slate.">
+                                New / Wipe
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Column 4: Details -->
-                    <div class="flex flex-col justify-between">
+                    <!-- Composer Column 4: Compact Status -->
+                    <div class="col-span-2 flex flex-col justify-between min-h-0 rounded-xl border border-artifex-border/50 bg-artifex-dark/45 p-3 shadow-inner">
                         <div>
                             <span class="text-artifex-gold uppercase font-bold text-[9px] tracking-wider mb-2 block font-sans">Status</span>
-                            <div class="flex flex-col gap-1.5 text-[11px] text-artifex-goldMuted font-mono">
+                            <div class="grid grid-cols-1 gap-1.5 text-[11px] text-artifex-goldMuted font-mono">
                                 <div class="flex justify-between" title="Active Layers Count">
-                                    <span>Active Layers:</span>
+                                    <span>Layers</span>
                                     <strong id="stats-layers-count" class="text-artifex-purpleAccent font-bold">0</strong>
                                 </div>
                                 <div class="flex justify-between" title="Total active particles currently processing in memory across all layers.">
-                                    <span>Total Particles:</span>
+                                    <span>Particles</span>
                                     <strong id="stats-particles" class="text-gray-300 font-bold">0</strong>
                                 </div>
                                 <div class="flex justify-between" title="Current pixel ratio scaling applied for high-resolution displays.">
-                                    <span>Scale:</span>
+                                    <span>Scale</span>
                                     <strong id="stats-scale" class="text-gray-300 font-bold">1.0x</strong>
                                 </div>
                                 <div class="flex justify-between" title="Live system updates speed frequency metrics.">
-                                    <span>Performance:</span>
+                                    <span>FPS</span>
                                     <strong id="stats-fps" class="text-emerald-400 font-bold font-mono">60 FPS</strong>
                                 </div>
                             </div>
                         </div>
-                        <div class="text-[9px] text-artifex-goldMuted mt-1 text-right font-mono">v2.3.0 ALPHA Preview Grid</div>
+                        <div class="text-[9px] text-artifex-goldMuted mt-2 text-right font-mono">v2.3.0 ALPHA Preview Grid</div>
                     </div>
                 </div>
 
             </div>
+
         </section>
     </main>
 
@@ -2809,7 +2772,7 @@ engine.start();</pre>
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${isVisible ? 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z' : 'M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21'}"></path></svg>
                     </button>
                     <div class="flex flex-col">
-                        <span class="text-[10px] font-bold text-artifex-gold truncate max-w-[90px]" title="${layer.layerName || layer.name}">${layer.layerName || layer.name || 'Unnamed Layer'}</span>
+                        <span class="text-[10px] font-bold text-artifex-gold truncate max-w-[220px]" title="${layer.layerName || layer.name}">${layer.layerName || layer.name || 'Unnamed Layer'}</span>
                         <span class="text-[8px] text-gray-500 uppercase tracking-widest">${layer.effectType}</span>
                     </div>
                 `;
