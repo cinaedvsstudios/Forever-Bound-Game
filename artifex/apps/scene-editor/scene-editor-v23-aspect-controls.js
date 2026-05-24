@@ -59,11 +59,11 @@
   }
   function syncBodyClasses() {
     document.body.classList.toggle('aspect-lock-enabled-v23', settings.aspectLock);
-    document.body.classList.toggle('wrap-box-enabled-v23', settings.wrapBoundingBox);
+    document.body.classList.toggle('wrap-box-enabled-v23', settings.wrapBoundingBox && settings.aspectLock);
   }
   function applyImageFit() {
     syncBodyClasses();
-    const fit = (settings.aspectLock || settings.wrapBoundingBox) ? 'contain' : 'fill';
+    const fit = settings.aspectLock ? 'contain' : 'fill';
     document.querySelectorAll('.scene-item img').forEach((img) => { img.style.objectFit = fit; });
   }
   function applyItemBox(item) {
@@ -85,7 +85,7 @@
     document.querySelectorAll('.wrap-image-btn').forEach((button) => {
       button.title = 'Wrap Bounding Box to Image';
       button.setAttribute('aria-label', 'Wrap Bounding Box to Image');
-      button.classList.toggle('is-enabled-v23', settings.wrapBoundingBox);
+      button.classList.toggle('is-enabled-v23', settings.wrapBoundingBox && settings.aspectLock);
     });
     document.querySelectorAll('.aspect-lock-btn-v23').forEach((button) => {
       button.classList.toggle('is-enabled-v23', settings.aspectLock);
@@ -132,9 +132,14 @@
     if (!button) return false;
     event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation();
     settings.wrapBoundingBox = !settings.wrapBoundingBox;
+    if (settings.wrapBoundingBox && !settings.aspectLock) {
+      settings.aspectLock = true;
+      toast('Aspect Ratio Lock enabled for Wrap Bounding Box to Image');
+    } else {
+      toast(`Wrap Bounding Box to Image ${settings.wrapBoundingBox ? 'enabled' : 'disabled'}`);
+    }
     saveSettings();
     setButtonState();
-    toast(`Wrap Bounding Box to Image ${settings.wrapBoundingBox ? 'enabled' : 'disabled'}`);
     if (settings.wrapBoundingBox) wrapBoundingBoxToImage();
     return true;
   }
@@ -143,6 +148,7 @@
     if (!button) return false;
     event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation();
     settings.aspectLock = !settings.aspectLock;
+    if (!settings.aspectLock) settings.wrapBoundingBox = false;
     saveSettings();
     setButtonState();
     toast(`Aspect Ratio Lock ${settings.aspectLock ? 'enabled' : 'disabled'}`);
@@ -232,7 +238,7 @@
     event?.preventDefault?.(); event?.stopPropagation?.(); event?.stopImmediatePropagation?.();
   }
   function enforceWrapAfterSizeInput(event) {
-    if (!settings.wrapBoundingBox) return;
+    if (!settings.wrapBoundingBox || !settings.aspectLock) return;
     const input = event.target.closest?.('#itemW, #itemH');
     if (!input || document.body.classList.contains('is-resizing-object')) return;
     window.clearTimeout(enforceWrapAfterSizeInput.timer);
