@@ -134,10 +134,15 @@
     loadHelper('./scene-editor-v24-object-preview.css', './scene-editor-v24-object-preview.js');
   }
 
+  function loadMenuPolish() {
+    loadHelper('./scene-editor-v25-menu-polish.css', './scene-editor-v25-menu-polish.js');
+  }
+
   function install() {
     updateNumberBounds();
     loadAspectControls();
     loadPreviewControls();
+    loadMenuPolish();
   }
 
   window.addEventListener('pointerdown', begin, true);
