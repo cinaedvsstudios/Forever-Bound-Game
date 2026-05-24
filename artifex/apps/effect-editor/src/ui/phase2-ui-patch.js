@@ -5,11 +5,14 @@
  * <script src="./src/ui/phase2-ui-patch.js"></script>
  *
  * This keeps Phase 2 small and reversible while the main index.html is still a giant file.
+ * It will be folded into the final clean files when index.html is split properly.
  */
 (function () {
     'use strict';
 
     var performanceMode = 'full';
+    var brandLogoPath = '../../artifexlogo.png';
+    var brandTitlePath = '../../artifextitle.png';
 
     var labelReplacements = [
         ['Layer Diagnostics', 'Active Layer Summary'],
@@ -58,6 +61,27 @@
                 .replace('Viewport Display Filters', 'Viewport Display Options');
             if (next !== title) el.setAttribute('title', next);
         });
+    }
+
+    function replaceHeaderBranding() {
+        var header = document.querySelector('header');
+        if (!header) return;
+
+        var oldBrandBlock = header.querySelector('div.flex.items-center.gap-4');
+        if (!oldBrandBlock || oldBrandBlock.dataset.fxBrandPatched === 'true') return;
+
+        oldBrandBlock.dataset.fxBrandPatched = 'true';
+        oldBrandBlock.className = 'flex items-center gap-3';
+        oldBrandBlock.innerHTML = [
+            '<img src="' + brandLogoPath + '" alt="Artifex logo" class="h-11 w-11 object-contain drop-shadow-[0_0_10px_rgba(158,1,206,0.55)]">',
+            '<div class="flex flex-col justify-center min-w-0">',
+            '  <img src="' + brandTitlePath + '" alt="Artifex" class="h-7 object-contain object-left max-w-[180px]">',
+            '  <div class="flex items-center gap-2 mt-0.5">',
+            '    <p class="text-[9px] text-artifex-goldMuted font-semibold tracking-wider uppercase font-serif">Visual Effects Editor</p>',
+            '    <span class="bg-artifex-purpleAccent/20 border border-artifex-purpleAccent text-purple-200 text-[8px] font-bold px-1.5 py-0.5 rounded-full font-sans tracking-normal shadow-[0_2px_5px_rgba(0,0,0,0.6)]">v2.3.0 ALPHA</span>',
+            '  </div>',
+            '</div>'
+        ].join('');
     }
 
     function moveParticleShapeToVisuals() {
@@ -125,12 +149,105 @@
         }
     };
 
+    function getDisplayValueNodeForSlider(slider) {
+        if (!slider || !slider.id) return null;
+        var id = slider.id.replace(/^param-/, 'val-');
+        var direct = document.getElementById(id);
+        if (direct) return direct;
+
+        var container = slider.closest('div[title], .p-2, .p-2\.5, .space-y-2, .space-y-3, .space-y-4');
+        if (!container) return null;
+        return container.querySelector('[id^="val-"]');
+    }
+
+    function precisionFromStep(step) {
+        var raw = String(step || '1');
+        if (raw.indexOf('.') === -1) return 0;
+        return raw.split('.')[1].length;
+    }
+
+    function formatNumberForSlider(value, slider) {
+        var precision = precisionFromStep(slider.step);
+        var numeric = Number(value);
+        if (!Number.isFinite(numeric)) numeric = Number(slider.value || 0);
+        if (precision <= 0) return String(Math.round(numeric));
+        return String(Number(numeric.toFixed(precision)));
+    }
+
+    function clampValueForSlider(value, slider) {
+        var min = slider.min === '' ? -Infinity : Number(slider.min);
+        var max = slider.max === '' ? Infinity : Number(slider.max);
+        var numeric = Number(value);
+        if (!Number.isFinite(numeric)) return Number(slider.value || 0);
+        return Math.min(max, Math.max(min, numeric));
+    }
+
+    function replaceDisplayWithNumber(displayNode, slider) {
+        if (!displayNode || !slider || displayNode.tagName === 'INPUT') return displayNode;
+
+        var input = document.createElement('input');
+        input.type = 'number';
+        input.id = displayNode.id;
+        input.min = slider.min || '';
+        input.max = slider.max || '';
+        input.step = slider.step || '1';
+        input.value = formatNumberForSlider(slider.value, slider);
+        input.className = 'w-16 bg-artifex-dark border border-artifex-border rounded-md px-1 py-0.5 text-artifex-gold font-mono text-xs text-right focus:outline-none focus:border-artifex-purpleAccent shadow-inner';
+        input.title = 'Click and type a value, then press Enter or leave the field.';
+        displayNode.replaceWith(input);
+        return input;
+    }
+
+    function bindSliderNumber(slider) {
+        if (!slider || slider.dataset.fxNumberBound === 'true') return;
+        var displayNode = getDisplayValueNodeForSlider(slider);
+        if (!displayNode) return;
+
+        var number = replaceDisplayWithNumber(displayNode, slider);
+        if (!number || number.tagName !== 'INPUT') return;
+
+        slider.dataset.fxNumberBound = 'true';
+        number.dataset.fxNumberBound = 'true';
+
+        var syncFromSlider = function () {
+            number.value = formatNumberForSlider(slider.value, slider);
+        };
+
+        var syncFromNumber = function () {
+            var next = clampValueForSlider(number.value, slider);
+            slider.value = formatNumberForSlider(next, slider);
+            number.value = formatNumberForSlider(next, slider);
+            slider.dispatchEvent(new Event('input', { bubbles: true }));
+            slider.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+
+        slider.addEventListener('input', syncFromSlider);
+        slider.addEventListener('change', syncFromSlider);
+        number.addEventListener('change', syncFromNumber);
+        number.addEventListener('blur', syncFromNumber);
+        number.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') number.blur();
+            if (event.key === 'Escape') {
+                number.value = formatNumberForSlider(slider.value, slider);
+                number.blur();
+            }
+        });
+
+        syncFromSlider();
+    }
+
+    function bindAllSliderNumbers() {
+        document.querySelectorAll('input[type="range"][id^="param-"]').forEach(bindSliderNumber);
+    }
+
     function applyPhase2UiPatch() {
+        replaceHeaderBranding();
         replaceTextInTextNodes(document.body);
         replaceTitleText();
         moveParticleShapeToVisuals();
         addPerformanceModeButton();
         syncPerformanceModeUI();
+        bindAllSliderNumbers();
     }
 
     var previousOnload = window.onload;
@@ -142,4 +259,12 @@
     document.addEventListener('DOMContentLoaded', function () {
         setTimeout(applyPhase2UiPatch, 0);
     });
+
+    window.addEventListener('artifex:render', function () {
+        setTimeout(bindAllSliderNumbers, 0);
+    });
+
+    setInterval(function () {
+        bindAllSliderNumbers();
+    }, 1500);
 })();
