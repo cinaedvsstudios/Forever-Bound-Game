@@ -10,6 +10,15 @@
   function readJson(key) { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; } }
   function dateText(iso) { if (!iso) return '—'; try { return new Date(iso).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }); } catch { return String(iso); } }
 
+  function loadFinalCss() {
+    const href = './scene-editor-v27-final-polish.css';
+    if (document.querySelector(`link[href="${href}"]`)) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
+  }
+
   function title(cardId, text) {
     const node = document.querySelector(`[data-card-id="${cardId}"] h2 span`);
     if (node && node.textContent !== text) node.textContent = text;
@@ -47,13 +56,13 @@
   }
 
   function fileNameFromPill(pill) {
-    const raw = pill?.querySelector('.file-pill-name')?.textContent || readJson(WORKING_COPY_KEY)?.fileName || 'Untitled JSON';
-    return raw.trim() || 'Untitled JSON';
+    const existing = pill?.querySelector('.file-pill-value')?.textContent || pill?.querySelector('.file-pill-name')?.textContent || readJson(WORKING_COPY_KEY)?.fileName || 'Untitled JSON';
+    return existing.trim() || 'Untitled JSON';
   }
 
   function patchFilePill() {
     const pill = document.querySelector('.file-pill');
-    if (!pill || pill.dataset.v26FilePill === 'true' || pill.textContent.trim() === 'No file loaded') return;
+    if (!pill || pill.textContent.trim() === 'No file loaded') return;
     const working = readJson(WORKING_COPY_KEY);
     const downloaded = readJson(DOWNLOAD_KEY);
     const file = fileNameFromPill(pill);
@@ -88,6 +97,7 @@
     if (patching) return;
     patching = true;
     try {
+      loadFinalCss();
       patchTitles();
       makeBackgroundCard();
       patchFilePill();
