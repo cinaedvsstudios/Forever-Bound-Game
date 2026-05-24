@@ -54,8 +54,8 @@
   pointer-events: none;
 }
 
-.metric-icon-button.wrap-image-btn[title="Wrap Bounding Box to Aspect Ratio"]::before {
-  content: 'box';
+.metric-icon-button.wrap-image-btn[title="Wrap Bounding Box to Image"]::before {
+  content: 'img';
   position: absolute;
   left: 50%;
   bottom: -13px;
