@@ -1,0 +1,59 @@
+{
+  "id": "ch00_q00_first_scene",
+  "screenType": "travel",
+  "name": "Chronicle 0 First Scene",
+  "quest": "Chronicle 0 Prototype",
+  "calling": "Walk through the forest route.",
+  "background": {
+    "image": "assets/scenes/ch00/ch00_q00_forest_route_bg.png",
+    "width": 3000,
+    "height": 1080,
+    "fit": "cover",
+    "scrollEnabled": true,
+    "loopBackground": false
+  },
+  "player": {
+    "id": "mel",
+    "sprite": "assets/characters/mel/mel_idle.png",
+    "image": "assets/characters/mel/mel_idle.png",
+    "startX": 240,
+    "startY": 790,
+    "widthPercent": 13.5,
+    "shadow": { "opacity": 0.6, "width": 120, "height": 26, "blur": 10 }
+  },
+  "travel": {
+    "groundY": 790,
+    "cameraFollow": true,
+    "cameraMinX": 0,
+    "cameraMaxX": 1920,
+    "endpointX": 2820,
+    "destinationScene": ""
+  },
+  "elements": [
+    {
+      "id": "route_marker_start",
+      "type": "zone",
+      "label": "Start Area",
+      "x": 4,
+      "y": 74,
+      "width": 16,
+      "height": 20,
+      "z": 2,
+      "visible": false,
+      "zoneType": "walkable"
+    }
+  ],
+  "objects": [],
+  "audio": {
+    "music": "",
+    "ambience": "assets/audio/ambience/amb_forest_day_loop.mp3",
+    "transitionSound": "assets/audio/sfx/sfx_transition_forest_01.mp3",
+    "buttonPressSound": "assets/audio/sfx/sfx_ui_click_01.mp3",
+    "musicVolume": 0.45,
+    "ambienceVolume": 0.5,
+    "sfxVolume": 0.75,
+    "loopMusic": true,
+    "loopAmbience": true
+  },
+  "editor": { "grid": { "columns": 20, "rows": 10 } }
+}
