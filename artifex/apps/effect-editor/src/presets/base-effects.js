@@ -66,3 +66,69 @@
         ]
     };
 })();
+
+/*
+ * Download filename policy.
+ * This file is loaded before the editor script, so this small boot patch waits until
+ * the editor has created downloadJSONPayload(), then wraps it so every exported file
+ * defaults to the Effect Archetype ID instead of the display name.
+ */
+(function () {
+    'use strict';
+
+    function sanitizeArchetypeFilePart(value, fallback = 'fx-archetype') {
+        return String(value || fallback)
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') || fallback;
+    }
+
+    function getPayloadArchetypeId(payload, fallback = 'fx-archetype') {
+        if (!payload || typeof payload !== 'object') return sanitizeArchetypeFilePart(fallback, fallback);
+        const direct = payload.archetypeId || payload.id;
+        const nested = payload.composition?.id || payload.asset?.id || payload.source?.id;
+        return sanitizeArchetypeFilePart(nested || direct || payload.name || payload.label || fallback, fallback);
+    }
+
+    function getDownloadExtension(requestedName = '', payload = null) {
+        const lower = String(requestedName || '').toLowerCase();
+        if (lower.endsWith('.composition.json') || lower.endsWith('-composition.json')) return 'composition.json';
+        if (lower.endsWith('.fxproject.json')) return 'fxproject.json';
+        if (lower.endsWith('.fxinstance.json')) return 'fxinstance.json';
+        if (lower.endsWith('.fx.json')) return 'fx.json';
+        if (payload?.schema === 'artifex.fxEditorProject.v1') return 'fxproject.json';
+        if (payload?.schema === 'artifex.sceneFxInstance.v1') return 'fxinstance.json';
+        if (payload?.schema === 'artifex.fxArchetype.v1') return 'fx.json';
+        return 'json';
+    }
+
+    function buildArchetypeDownloadFileName(payload, requestedName = '', fallback = 'fx-archetype') {
+        const id = getPayloadArchetypeId(payload, fallback);
+        const extension = getDownloadExtension(requestedName, payload);
+        return `${id}.${extension}`;
+    }
+
+    function installArchetypeFilenamePolicy() {
+        const originalDownload = window.downloadJSONPayload;
+        if (typeof originalDownload !== 'function' || originalDownload.__artifexArchetypeFilenamePolicy) return;
+
+        const wrappedDownload = function(payload, fileName) {
+            const finalName = buildArchetypeDownloadFileName(payload, fileName, 'fx-archetype');
+            return originalDownload.call(this, payload, finalName);
+        };
+        wrappedDownload.__artifexArchetypeFilenamePolicy = true;
+        wrappedDownload.__originalDownloadJSONPayload = originalDownload;
+        window.downloadJSONPayload = wrappedDownload;
+    }
+
+    window.ArtifexFxFilenamePolicy = {
+        sanitizeArchetypeFilePart,
+        getPayloadArchetypeId,
+        getDownloadExtension,
+        buildArchetypeDownloadFileName,
+        installArchetypeFilenamePolicy
+    };
+
+    window.addEventListener('load', installArchetypeFilenamePolicy);
+})();
