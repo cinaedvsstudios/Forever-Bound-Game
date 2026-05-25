@@ -62,46 +62,17 @@
             outline: none !important;
         }
 
-        /* Phase 1B menu-only fix: make the real dropdowns usable without touching canvas/render code. */
-        header,
-        header nav,
-        .dropdown-parent,
-        .dropdown-parent > button,
-        .dropdown-menu {
-            pointer-events: auto;
-        }
 
-        header nav {
-            position: relative;
-            z-index: 300;
-        }
-
-        .dropdown-parent {
-            position: relative;
-            z-index: 301;
-        }
-
-        .dropdown-parent:hover,
-        .dropdown-parent:focus-within,
-        .dropdown-parent.menu-open {
-            z-index: 400;
-        }
-
-        .dropdown-parent:hover > .dropdown-menu,
-        .dropdown-parent:focus-within > .dropdown-menu,
-        .dropdown-parent.menu-open > .dropdown-menu,
-        .dropdown-menu:not(.hidden) {
+        /* Phase 1B menu-only safety: keep real dropdowns clickable and visible when opened. */
+        header, header nav, .dropdown-parent, .dropdown-parent > button, .dropdown-menu { pointer-events: auto; }
+        header nav { position: relative; z-index: 300; }
+        .dropdown-parent { position: relative; z-index: 301; }
+        .dropdown-parent:hover, .dropdown-parent:focus-within { z-index: 400; }
+        .dropdown-parent:hover > .dropdown-menu, .dropdown-parent:focus-within > .dropdown-menu, .dropdown-menu:not(.hidden) {
             display: block !important;
             pointer-events: auto !important;
         }
-
-        .phase1b-menu-empty {
-            color: #8a7465;
-            font-size: 10px;
-            line-height: 1.35;
-            padding: 8px 10px;
-            font-style: italic;
-        }
+        .phase1b-menu-empty { color:#8a7465; font-size:10px; padding:8px 10px; font-style:italic; }
     </style>
 </head>
 <body class="text-slate-100 h-screen overflow-hidden flex flex-col bg-artifex-dark selection:bg-artifex-purpleAccent selection:text-white">
@@ -274,7 +245,7 @@
                     <button onclick="openTutorialModal()" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center gap-2">
                         <span>📖</span> Quick Start Guide
                     </button>
-                    <button onclick="showToast('Particle Studio v2.3.2 PHASE 1B preset restore build.', 'info')" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-400 flex items-center gap-2">
+                    <button onclick="showToast('Particle Studio v2.3.2 PHASE 1B insert menu fix.', 'info')" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-400 flex items-center gap-2">
                         <span>ℹ️</span> About FX Editor
                     </button>
                 </div>
@@ -1147,50 +1118,19 @@ engine.start();</pre>
 
     <!-- Live Toast Notification System -->
     <div id="toast-container" class="fixed bottom-16 right-6 z-[200] space-y-2 pointer-events-none"></div>
-
-    <script type="module" src="./src/presets/base-effects.js?v=2.3.2-phase1b-menu"></script>
-    <script type="module" src="./src/presets/composite-effects.js?v=2.3.2-phase1b-menu"></script>
+    <script>
+// Phase 1B: inline preset fallback so Insert can populate even when module files are staged-only.
+window.ARTIFEX_FX_PRESETS = {"particles":[{"id":"electric-sparks","effectType":"particles","subType":"electric-sparks","name":"Electric Sparks","description":"Fast additive sparks with warm yellow-to-red glow.","tags":"particles,sparks,electric,fire","emitter":{"rate":6,"width":2,"widthUnit":"PX"},"physics":{"speedMin":4,"speedMax":10,"angle":270,"spread":55,"gravityY":0.28,"friction":0.98,"orbitalForce":0},"visual":{"shapeMode":"builtInShape","shape":"spark","sizeStart":6,"sizeEnd":1,"colors":["#ffd23f","#ee4266"],"alphas":[1.0,1.0],"edgeBlur":0,"blur":0,"glow":20,"composite":"lighter"},"life":{"durationMin":25,"durationMax":50}}],"ribbon":[{"id":"blade-arc","effectType":"ribbon","subType":"blade-arc","name":"Blade Arc Slash","description":"Short-lived crescent slash ribbon.","tags":"ribbon,slash,impact","emitter":{"rate":10,"width":4,"widthUnit":"PX"},"physics":{"speedMin":2,"speedMax":6,"angle":0,"spread":18,"gravityY":0,"friction":0.92,"orbitalForce":0.6},"visual":{"shapeMode":"builtInShape","shape":"line","sizeStart":14,"sizeEnd":0.5,"colors":["#ffffff","#00a1d7","#9e01ce"],"alphas":[1,0.8,0],"edgeBlur":0,"blur":0.5,"glow":28,"composite":"lighter"},"life":{"durationMin":12,"durationMax":24}}],"ring":[{"id":"shockwave-ring","effectType":"ring","subType":"shockwave-ring","name":"Shockwave Ring","description":"Expanding ring with screen glow.","tags":"ring,impact,shockwave","emitter":{"rate":1,"width":1,"widthUnit":"PX"},"physics":{"speedMin":0,"speedMax":0,"angle":0,"spread":0,"gravityY":0,"friction":1,"orbitalForce":0},"visual":{"shapeMode":"builtInShape","shape":"ring","sizeStart":4,"sizeEnd":90,"colors":["#ffffff","#00a1d7"],"alphas":[0.9,0],"edgeBlur":0,"blur":1,"glow":35,"composite":"screen"},"life":{"durationMin":35,"durationMax":35}}],"lightning":[{"id":"tesla-bolt","effectType":"lightning","subType":"tesla-bolt","name":"Electric Discharge","description":"Jagged blue-white spark discharge.","tags":"lightning,electric,blue","emitter":{"rate":8,"width":5,"widthUnit":"PX"},"physics":{"speedMin":8,"speedMax":16,"angle":270,"spread":160,"gravityY":0,"friction":0.86,"orbitalForce":0},"visual":{"shapeMode":"builtInShape","shape":"spark","sizeStart":5,"sizeEnd":0.5,"colors":["#ffffff","#00a1d7"],"alphas":[1,0],"edgeBlur":0,"blur":0,"glow":45,"composite":"lighter"},"life":{"durationMin":6,"durationMax":14}}],"projectile":[{"id":"fireball-core","effectType":"projectile","subType":"fireball-core","name":"Fireball Core","description":"Warm travelling projectile with trailing embers.","tags":"projectile,fire,trail","emitter":{"rate":12,"width":3,"widthUnit":"PX"},"physics":{"speedMin":2,"speedMax":5,"angle":180,"spread":12,"gravityY":-0.02,"friction":0.97,"orbitalForce":0.1},"visual":{"shapeMode":"builtInShape","shape":"circle","sizeStart":16,"sizeEnd":0,"colors":["#ffffff","#ffd23f","#ee4266"],"alphas":[1,0.6,0],"edgeBlur":0,"blur":0.5,"glow":40,"composite":"lighter"},"life":{"durationMin":18,"durationMax":38}}],"gas":[{"id":"smoke-cloud","effectType":"gas","subType":"smoke-cloud","name":"Gas / Smoke Cloud","description":"Slow drifting soft smoke.","tags":"gas,smoke,fog","emitter":{"rate":3,"width":50,"widthUnit":"PX"},"physics":{"speedMin":0.2,"speedMax":0.8,"angle":270,"spread":90,"gravityY":-0.015,"friction":0.995,"orbitalForce":0.05},"visual":{"shapeMode":"builtInShape","shape":"circle","sizeStart":18,"sizeEnd":70,"colors":["#8a7465","#171210","#000000"],"alphas":[0.15,0.3,0],"edgeBlur":8,"blur":8,"glow":0,"composite":"source-over"},"life":{"durationMin":90,"durationMax":180}}],"refraction":[{"id":"heat-shimmer","effectType":"refraction","subType":"heat-shimmer","name":"Heat Shimmer Draft","description":"Transparent pale particles for distortion placeholder.","tags":"heat,shimmer,distortion","emitter":{"rate":2,"width":35,"widthUnit":"PX"},"physics":{"speedMin":0.3,"speedMax":0.9,"angle":270,"spread":25,"gravityY":-0.02,"friction":0.99,"orbitalForce":0},"visual":{"shapeMode":"builtInShape","shape":"circle","sizeStart":12,"sizeEnd":35,"colors":["#ffffff","#9ad8ff"],"alphas":[0.12,0],"edgeBlur":3,"blur":3,"glow":4,"composite":"screen"},"life":{"durationMin":40,"durationMax":80}}],"lensflare":[{"id":"anamorphic-streak","effectType":"lensflare","subType":"anamorphic-streak","name":"Lens Flare Spark","description":"Blue-white optical spark/glare placeholder.","tags":"lensflare,optical,blue","emitter":{"rate":2,"width":1,"widthUnit":"PX"},"physics":{"speedMin":0.1,"speedMax":0.5,"angle":0,"spread":360,"gravityY":0,"friction":0.95,"orbitalForce":0},"visual":{"shapeMode":"builtInShape","shape":"star","sizeStart":1,"sizeEnd":30,"colors":["#00a1d7","#ffffff"],"alphas":[1,0],"edgeBlur":0,"blur":0,"glow":40,"composite":"lighter"},"life":{"durationMin":20,"durationMax":45}}]};
+window.ARTIFEX_FX_COMPOSITES = [{"id":"verdant-spell-burst","name":"Verdant Spell Burst","tags":"magic,green,burst","description":"Three-layer green spell burst: sparks, smoke, ring shockwave.","layers":[{"id":"electric-sparks","effectType":"particles","subType":"electric-sparks","name":"Electric Sparks","description":"Fast additive sparks with warm yellow-to-red glow.","tags":"particles,sparks,electric,fire","emitter":{"rate":6,"width":2,"widthUnit":"PX"},"physics":{"speedMin":4,"speedMax":10,"angle":270,"spread":55,"gravityY":0.28,"friction":0.98,"orbitalForce":0},"visual":{"shapeMode":"builtInShape","shape":"spark","sizeStart":6,"sizeEnd":1,"colors":["#ffffff","#00ff88","#9e01ce"],"alphas":[1.0,1.0],"edgeBlur":0,"blur":0,"glow":20,"composite":"lighter"},"life":{"durationMin":25,"durationMax":50},"layerName":"Green Spark Core"},{"id":"smoke-cloud","effectType":"gas","subType":"smoke-cloud","name":"Gas / Smoke Cloud","description":"Slow drifting soft smoke.","tags":"gas,smoke,fog","emitter":{"rate":3,"width":50,"widthUnit":"PX"},"physics":{"speedMin":0.2,"speedMax":0.8,"angle":270,"spread":90,"gravityY":-0.015,"friction":0.995,"orbitalForce":0.05},"visual":{"shapeMode":"builtInShape","shape":"circle","sizeStart":18,"sizeEnd":70,"colors":["#00ff88","#123c2d","#000000"],"alphas":[0.15,0.3,0],"edgeBlur":8,"blur":10,"glow":0,"composite":"screen"},"life":{"durationMin":90,"durationMax":180},"layerName":"Emerald Smoke"},{"id":"shockwave-ring","effectType":"ring","subType":"shockwave-ring","name":"Shockwave Ring","description":"Expanding ring with screen glow.","tags":"ring,impact,shockwave","emitter":{"rate":1,"width":1,"widthUnit":"PX"},"physics":{"speedMin":0,"speedMax":0,"angle":0,"spread":0,"gravityY":0,"friction":1,"orbitalForce":0},"visual":{"shapeMode":"builtInShape","shape":"ring","sizeStart":4,"sizeEnd":90,"colors":["#ffffff","#00ff88"],"alphas":[0.9,0],"edgeBlur":0,"blur":1,"glow":45,"composite":"screen"},"life":{"durationMin":35,"durationMax":35},"layerName":"Spell Ring"}]},{"id":"ember-projectile","name":"Ember Projectile","tags":"fire,projectile,ember","description":"Fireball core with trailing sparks and smoke.","layers":[{"id":"fireball-core","effectType":"projectile","subType":"fireball-core","name":"Fireball Core","description":"Warm travelling projectile with trailing embers.","tags":"projectile,fire,trail","emitter":{"rate":12,"width":3,"widthUnit":"PX"},"physics":{"speedMin":2,"speedMax":5,"angle":180,"spread":12,"gravityY":-0.02,"friction":0.97,"orbitalForce":0.1},"visual":{"shapeMode":"builtInShape","shape":"circle","sizeStart":16,"sizeEnd":0,"colors":["#ffffff","#ffd23f","#ee4266"],"alphas":[1,0.6,0],"edgeBlur":0,"blur":0.5,"glow":40,"composite":"lighter"},"life":{"durationMin":18,"durationMax":38},"layerName":"Core Fireball"},{"id":"electric-sparks","effectType":"particles","subType":"electric-sparks","name":"Electric Sparks","description":"Fast additive sparks with warm yellow-to-red glow.","tags":"particles,sparks,electric,fire","emitter":{"rate":5,"width":2,"widthUnit":"PX"},"physics":{"speedMin":4,"speedMax":10,"angle":270,"spread":110,"gravityY":0.12,"friction":0.98,"orbitalForce":0},"visual":{"shapeMode":"builtInShape","shape":"spark","sizeStart":4,"sizeEnd":1,"colors":["#ffd23f","#ee4266"],"alphas":[1.0,1.0],"edgeBlur":0,"blur":0,"glow":18,"composite":"lighter"},"life":{"durationMin":25,"durationMax":50},"layerName":"Trailing Embers"},{"id":"smoke-cloud","effectType":"gas","subType":"smoke-cloud","name":"Gas / Smoke Cloud","description":"Slow drifting soft smoke.","tags":"gas,smoke,fog","emitter":{"rate":2,"width":50,"widthUnit":"PX"},"physics":{"speedMin":0.2,"speedMax":0.8,"angle":270,"spread":90,"gravityY":-0.015,"friction":0.995,"orbitalForce":0.05},"visual":{"shapeMode":"builtInShape","shape":"circle","sizeStart":18,"sizeEnd":70,"colors":["#6b4b3d","#171210"],"alphas":[0.15,0.3,0],"edgeBlur":8,"blur":7,"glow":0,"composite":"source-over"},"life":{"durationMin":90,"durationMax":180},"layerName":"After Smoke"}]}];
+</script>
     <script src="./src/fx-runtime.js?v=2.3.10-clean-index"></script>
     <!-- Visual Effects Engine Core JavaScript Implementation -->
     <script>
         // -------------------------------------------------------------
         // 1. REGISTRY OF ENGINE CATEGORIES AND DEFAULT PRESETS
         // -------------------------------------------------------------
-        let PRESETS_REGISTRY = window.ARTIFEX_FX_PRESETS || {};
-        let COMPOSITES_REGISTRY = window.ARTIFEX_FX_COMPOSITES || [];
-
-        async function loadPresetModules() {
-            const baseUrl = './src/presets/base-effects.js?v=2.3.2-phase1b-menu';
-            const compositeUrl = './src/presets/composite-effects.js?v=2.3.2-phase1b-menu';
-
-            const [baseResult, compositeResult] = await Promise.allSettled([
-                import(baseUrl),
-                import(compositeUrl)
-            ]);
-
-            if (baseResult.status === 'fulfilled') {
-                const modulePresets = baseResult.value.BASE_EFFECT_PRESETS || baseResult.value.default || window.ARTIFEX_FX_PRESETS || {};
-                if (modulePresets && typeof modulePresets === 'object' && Object.keys(modulePresets).length) {
-                    PRESETS_REGISTRY = modulePresets;
-                    window.ARTIFEX_FX_PRESETS = modulePresets;
-                }
-            } else {
-                console.warn('Phase 1B could not import base effect presets:', baseResult.reason);
-            }
-
-            if (compositeResult.status === 'fulfilled') {
-                const moduleComposites = compositeResult.value.COMPOSITE_EFFECT_PRESETS || compositeResult.value.default || window.ARTIFEX_FX_COMPOSITES || [];
-                if (Array.isArray(moduleComposites)) {
-                    COMPOSITES_REGISTRY = moduleComposites;
-                    window.ARTIFEX_FX_COMPOSITES = moduleComposites;
-                }
-            } else {
-                console.warn('Phase 1B could not import composite effect presets:', compositeResult.reason);
-            }
-
-            PRESETS_REGISTRY = PRESETS_REGISTRY && typeof PRESETS_REGISTRY === 'object' ? PRESETS_REGISTRY : {};
-            COMPOSITES_REGISTRY = Array.isArray(COMPOSITES_REGISTRY) ? COMPOSITES_REGISTRY : [];
-        }
+        const PRESETS_REGISTRY = window.ARTIFEX_FX_PRESETS || {};
+        const COMPOSITES_REGISTRY = window.ARTIFEX_FX_COMPOSITES || [];
 
         // -------------------------------------------------------------
         // 2. STATE CONTROLLERS (Phase 2 Multi-Layer Update)
@@ -1977,14 +1917,11 @@ engine.start();</pre>
             const menu = document.getElementById(dropdownId);
             if (!menu) return;
             const button = event?.currentTarget || document.querySelector(`[data-menu-id="${dropdownId}"]`);
-            const parent = button ? button.closest('.dropdown-parent') : menu.closest('.dropdown-parent');
             const shouldOpen = menu.classList.contains('hidden');
             closeAllDropdowns();
             if (shouldOpen) {
                 menu.classList.remove('hidden');
-                if (parent) parent.classList.add('menu-open');
                 if (button) button.classList.add('bg-artifex-purpleAccent/25', 'border-artifex-purpleAccent', 'text-white');
-                if (dropdownId === 'menu-insert') initPresetLists();
             }
         }
 
@@ -2038,12 +1975,11 @@ engine.start();</pre>
         function closeAllDropdowns() {
             const menus = document.querySelectorAll('.dropdown-menu');
             menus.forEach(menu => menu.classList.add('hidden'));
-            document.querySelectorAll('.dropdown-parent.menu-open').forEach(parent => parent.classList.remove('menu-open'));
             const btns = document.querySelectorAll('.dropdown-parent > button, .dropdown-parent [data-menu-id]');
             btns.forEach(btn => btn.classList.remove('bg-artifex-purpleAccent/25', 'border-artifex-purpleAccent', 'text-white'));
-
+            
             const shapeGrid = document.getElementById('shape-picker-grid');
-            if (shapeGrid) shapeGrid.classList.add('hidden');
+            if(shapeGrid) shapeGrid.classList.add('hidden');
         }
 
         function toggleDropdown(event, dropdownId) {
@@ -2849,7 +2785,7 @@ engine.start();</pre>
             html += `</optgroup>`;
             
             if (customPresets && customPresets.length > 0) {
-                html += `<optgroup label="Custom Saved Versions">`;
+                html += `<optgroup label="Custom Saved Effects">`;
                 customPresets.forEach(comp => {
                     html += `<option value="${comp.id}">${comp.name}</option>`;
                 });
@@ -4028,68 +3964,50 @@ engine.start();</pre>
         function initPresetLists() {
             const baseAcc = document.getElementById('acc-base');
             const compAcc = document.getElementById('acc-comp');
-
+            
             if (baseAcc) {
                 baseAcc.innerHTML = '';
-                const categories = Object.keys(PRESETS_REGISTRY || {});
-                if (!categories.length) {
-                    baseAcc.innerHTML = '<div class="phase1b-menu-empty">No base layer presets loaded. Check src/presets/base-effects.js.</div>';
-                } else {
-                    categories.forEach(categoryKey => {
-                        const presetList = Array.isArray(PRESETS_REGISTRY[categoryKey]) ? PRESETS_REGISTRY[categoryKey] : [];
-                        const firstPreset = presetList[0];
-                        const button = document.createElement('button');
-                        button.type = 'button';
-                        button.className = "w-full text-left px-3 py-1.5 rounded hover:bg-artifex-dark text-gray-300 hover:text-white transition flex justify-between focus:outline-none items-center shadow-sm border border-transparent hover:border-artifex-border/50";
-                        button.onclick = (event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            if (!firstPreset) return;
-                            selectEngineCategory(categoryKey);
-                            closeAllDropdowns();
-                        };
-
-                        let prettyName = categoryKey.charAt(0).toUpperCase() + categoryKey.slice(1) + " Engine";
-                        if (categoryKey === 'particles') prettyName = "Standard Particle";
-                        if (categoryKey === 'lensflare') prettyName = "Lens Flare / Optic";
-
-                        button.innerHTML = `
-                            <span class="font-bold text-[10px] text-artifex-gold">+ ${prettyName}</span>
-                            <span class="text-[8px] text-gray-500 ml-2 truncate">${firstPreset ? escapeHtml(firstPreset.name || firstPreset.id || '') : 'empty'}</span>
-                        `;
-                        baseAcc.appendChild(button);
-                    });
+                if (!Object.keys(PRESETS_REGISTRY || {}).length) {
+                    baseAcc.innerHTML = '<div class="phase1b-menu-empty">No base layer presets are loaded.</div>';
                 }
+                Object.keys(PRESETS_REGISTRY).forEach(categoryKey => {
+                    const button = document.createElement('button');
+                    button.className = "w-full text-left px-3 py-1.5 rounded hover:bg-artifex-dark text-gray-300 hover:text-white transition flex justify-between focus:outline-none items-center shadow-sm";
+                    button.onclick = () => selectEngineCategory(categoryKey);
+                    
+                    let prettyName = categoryKey.charAt(0).toUpperCase() + categoryKey.slice(1) + " Engine";
+                    if(categoryKey === 'particles') prettyName = "Standard Particle";
+                    if(categoryKey === 'lensflare') prettyName = "Lens Flare / Optic";
+                    
+                    button.innerHTML = `
+                        <span class="font-bold text-[10px] text-artifex-gold">+ ${prettyName}</span>
+                    `;
+                    baseAcc.appendChild(button);
+                });
             }
 
             if (compAcc) {
                 compAcc.innerHTML = '';
-                const composites = Array.isArray(COMPOSITES_REGISTRY) ? COMPOSITES_REGISTRY : [];
-                if (!composites.length) {
-                    compAcc.innerHTML = '<div class="phase1b-menu-empty">No effect archetype assets found.</div>';
-                } else {
-                    composites.forEach(comp => {
-                        const button = document.createElement('button');
-                        button.type = 'button';
-                        button.className = "w-full text-left px-3 py-1.5 rounded hover:bg-artifex-dark text-gray-300 hover:text-white transition flex flex-col focus:outline-none shadow-sm border border-transparent hover:border-emerald-900/60";
-                        button.onclick = (event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            loadComposition(comp);
-                            closeAllDropdowns();
-                        };
-
-                        const layerCount = Array.isArray(comp.layers) ? comp.layers.length : 0;
-                        button.innerHTML = `
-                            <div class="flex justify-between items-center w-full">
-                                <span class="font-bold text-[10px] text-emerald-400 truncate max-w-[150px]">${escapeHtml(comp.name || comp.id || 'Unnamed archetype')}</span>
-                                <span class="text-[8px] bg-emerald-900/50 px-1 rounded text-emerald-200">${layerCount} Layers</span>
-                            </div>
-                            <span class="text-[8px] text-gray-500 line-clamp-1">${escapeHtml(comp.tags || 'effect archetype')}</span>
-                        `;
-                        compAcc.appendChild(button);
-                    });
+                if (!COMPOSITES_REGISTRY.length) {
+                    compAcc.innerHTML = '<div class="phase1b-menu-empty">No effect archetype assets are loaded.</div>';
                 }
+                COMPOSITES_REGISTRY.forEach(comp => {
+                    const button = document.createElement('button');
+                    button.className = "w-full text-left px-3 py-1.5 rounded hover:bg-artifex-dark text-gray-300 hover:text-white transition flex flex-col focus:outline-none shadow-sm";
+                    button.onclick = () => {
+                        loadComposition(comp);
+                        closeAllDropdowns();
+                    };
+                    
+                    button.innerHTML = `
+                        <div class="flex justify-between items-center w-full">
+                            <span class="font-bold text-[10px] text-emerald-400 truncate max-w-[120px]">${comp.name}</span>
+                            <span class="text-[8px] bg-emerald-900/50 px-1 rounded text-emerald-200">${comp.layers.length} Layers</span>
+                        </div>
+                        <span class="text-[8px] text-gray-500 line-clamp-1">${comp.tags}</span>
+                    `;
+                    compAcc.appendChild(button);
+                });
             }
 
             loadCustomPresets();
@@ -5052,7 +4970,7 @@ engine.start();</pre>
             }
         }
 
-        window.onload = async function() {
+        window.onload = function() {
             const safeInit = (label, fn) => {
                 try {
                     fn();
@@ -5064,21 +4982,15 @@ engine.start();</pre>
                 }
             };
 
-            const safeInitAsync = async (label, fn) => {
-                try {
-                    await fn();
-                    return true;
-                } catch (err) {
-                    console.error(`Artifex startup step failed: ${label}`, err);
-                    showToast(`Startup warning: ${label} failed. Check console.`, 'error');
-                    return false;
-                }
-            };
-
-            await safeInitAsync('preset modules', loadPresetModules);
             safeInit('event listeners', setupEventListeners);
             safeInit('new empty archetype', newConfiguration);
             safeInit('preset lists', initPresetLists);
+            safeInit('phase 1B insert menu verification', () => {
+                const baseAcc = document.getElementById('acc-base');
+                const compAcc = document.getElementById('acc-comp');
+                if (baseAcc && !baseAcc.children.length) initPresetLists();
+                if (compAcc && !compAcc.children.length) initPresetLists();
+            });
             safeInit('viewport controls', syncViewportUI);
             safeInit('performance controls', syncPerformanceModeUI);
             safeInit('workspace view controls', updateWorkspaceViewUI);
