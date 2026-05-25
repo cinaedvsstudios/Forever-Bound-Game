@@ -68,15 +68,16 @@
 })();
 
 /*
- * Download filename policy.
- * This file is loaded before the editor script, so this small boot patch waits until
- * the editor has created downloadJSONPayload(), then wraps it so every exported file
- * defaults to the Effect Archetype ID instead of the display name.
+ * Thumbnail filename helper.
+ * Built-in thumbnails should be saved to:
+ * assets/archetype-thumbnails/[effect-archetype-id].jpg
  */
 (function () {
     'use strict';
 
-    function sanitizeArchetypeFilePart(value, fallback = 'fx-archetype') {
+    const THUMBNAIL_FOLDER = 'assets/archetype-thumbnails/';
+
+    function sanitizeArchetypeId(value, fallback = 'fx-archetype') {
         return String(value || fallback)
             .trim()
             .toLowerCase()
@@ -84,51 +85,95 @@
             .replace(/^-+|-+$/g, '') || fallback;
     }
 
-    function getPayloadArchetypeId(payload, fallback = 'fx-archetype') {
-        if (!payload || typeof payload !== 'object') return sanitizeArchetypeFilePart(fallback, fallback);
-        const direct = payload.archetypeId || payload.id;
-        const nested = payload.composition?.id || payload.asset?.id || payload.source?.id;
-        return sanitizeArchetypeFilePart(nested || direct || payload.name || payload.label || fallback, fallback);
+    function currentArchetypeId() {
+        const idInput = document.getElementById('comp-prop-id');
+        const nameInput = document.getElementById('modal-variation-name') || document.getElementById('comp-prop-name');
+        return sanitizeArchetypeId(idInput?.value || nameInput?.value || 'fx-archetype');
     }
 
-    function getDownloadExtension(requestedName = '', payload = null) {
-        const lower = String(requestedName || '').toLowerCase();
-        if (lower.endsWith('.composition.json') || lower.endsWith('-composition.json')) return 'composition.json';
-        if (lower.endsWith('.fxproject.json')) return 'fxproject.json';
-        if (lower.endsWith('.fxinstance.json')) return 'fxinstance.json';
-        if (lower.endsWith('.fx.json')) return 'fx.json';
-        if (payload?.schema === 'artifex.fxEditorProject.v1') return 'fxproject.json';
-        if (payload?.schema === 'artifex.sceneFxInstance.v1') return 'fxinstance.json';
-        if (payload?.schema === 'artifex.fxArchetype.v1') return 'fx.json';
-        return 'json';
+    function currentThumbnailDataUrl() {
+        const img = document.getElementById('comp-thumbnail-img');
+        if (img && !img.classList.contains('hidden') && img.src && /^data:image\//.test(img.src)) return img.src;
+        return '';
     }
 
-    function buildArchetypeDownloadFileName(payload, requestedName = '', fallback = 'fx-archetype') {
-        const id = getPayloadArchetypeId(payload, fallback);
-        const extension = getDownloadExtension(requestedName, payload);
-        return `${id}.${extension}`;
+    function thumbnailFileName() {
+        return `${currentArchetypeId()}.jpg`;
     }
 
-    function installArchetypeFilenamePolicy() {
-        const originalDownload = window.downloadJSONPayload;
-        if (typeof originalDownload !== 'function' || originalDownload.__artifexArchetypeFilenamePolicy) return;
-
-        const wrappedDownload = function(payload, fileName) {
-            const finalName = buildArchetypeDownloadFileName(payload, fileName, 'fx-archetype');
-            return originalDownload.call(this, payload, finalName);
-        };
-        wrappedDownload.__artifexArchetypeFilenamePolicy = true;
-        wrappedDownload.__originalDownloadJSONPayload = originalDownload;
-        window.downloadJSONPayload = wrappedDownload;
+    function thumbnailRepoPath() {
+        return `${THUMBNAIL_FOLDER}${thumbnailFileName()}`;
     }
 
-    window.ArtifexFxFilenamePolicy = {
-        sanitizeArchetypeFilePart,
-        getPayloadArchetypeId,
-        getDownloadExtension,
-        buildArchetypeDownloadFileName,
-        installArchetypeFilenamePolicy
+    function downloadCurrentThumbnail() {
+        const dataUrl = currentThumbnailDataUrl();
+        if (!dataUrl) {
+            if (typeof window.showToast === 'function') window.showToast('Capture a thumbnail first.', 'error');
+            return;
+        }
+
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = thumbnailFileName();
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        if (typeof window.showToast === 'function') {
+            window.showToast(`Thumbnail downloaded as ${thumbnailFileName()}. Put it in ${THUMBNAIL_FOLDER}`, 'success');
+        }
+    }
+
+    function annotateCapturedThumbnail() {
+        try {
+            if (typeof currentThumbnail === 'object' && currentThumbnail) {
+                currentThumbnail.fileName = thumbnailFileName();
+                currentThumbnail.path = thumbnailRepoPath();
+            }
+            if (typeof composition === 'object' && composition?.thumbnail) {
+                composition.thumbnail.fileName = thumbnailFileName();
+                composition.thumbnail.path = thumbnailRepoPath();
+            }
+        } catch (err) {
+            // The editor keeps these as global lexical bindings. If a browser blocks access,
+            // the download button still works from the rendered image src.
+        }
+    }
+
+    function installThumbnailFilenameHelper() {
+        const panel = document.getElementById('comp-thumbnail-panel');
+        if (!panel || document.getElementById('download-archetype-thumbnail')) return;
+
+        const button = document.createElement('button');
+        button.id = 'download-archetype-thumbnail';
+        button.type = 'button';
+        button.className = 'w-full py-1.5 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold transition rounded-lg text-[10px] font-semibold border border-artifex-border focus:outline-none';
+        button.title = `Download the captured JPEG as [archetype-id].jpg for ${THUMBNAIL_FOLDER}`;
+        button.textContent = '💾 Save Thumbnail JPG';
+        button.addEventListener('click', downloadCurrentThumbnail);
+        panel.appendChild(button);
+
+        const originalCapture = window.captureThumbnail;
+        if (typeof originalCapture === 'function' && !originalCapture.__artifexThumbnailFilenameHelper) {
+            const wrappedCapture = function(...args) {
+                const result = originalCapture.apply(this, args);
+                annotateCapturedThumbnail();
+                return result;
+            };
+            wrappedCapture.__artifexThumbnailFilenameHelper = true;
+            window.captureThumbnail = wrappedCapture;
+        }
+    }
+
+    window.ArtifexThumbnailFilenameHelper = {
+        folder: THUMBNAIL_FOLDER,
+        sanitizeArchetypeId,
+        currentArchetypeId,
+        thumbnailFileName,
+        thumbnailRepoPath,
+        downloadCurrentThumbnail,
+        installThumbnailFilenameHelper
     };
 
-    window.addEventListener('load', installArchetypeFilenamePolicy);
+    window.addEventListener('load', installThumbnailFilenameHelper);
 })();
