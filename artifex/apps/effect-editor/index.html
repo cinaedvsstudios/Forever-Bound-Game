@@ -73,7 +73,7 @@
                 <img src="../../artifextitle.png" alt="Artifex" class="h-7 object-contain object-left max-w-[190px]">
                 <div class="flex items-center gap-2 mt-0.5">
                     <p class="text-[9px] text-artifex-goldMuted font-semibold tracking-wider uppercase font-serif">Visual Effects Editor</p>
-                    <span class="bg-artifex-purpleAccent/20 border border-artifex-purpleAccent text-purple-200 text-[8px] font-bold px-1.5 py-0.5 rounded-full font-sans tracking-normal shadow-[0_2px_5px_rgba(0,0,0,0.6)]">v2.3.3 ALPHA</span>
+                    <span class="bg-artifex-purpleAccent/20 border border-artifex-purpleAccent text-purple-200 text-[8px] font-bold px-1.5 py-0.5 rounded-full font-sans tracking-normal shadow-[0_2px_5px_rgba(0,0,0,0.6)]">v2.3.10 ALPHA</span>
                 </div>
             </div>
         </div>
@@ -233,7 +233,7 @@
                     <button onclick="openTutorialModal()" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center gap-2">
                         <span>📖</span> Quick Start Guide
                     </button>
-                    <button onclick="showToast('Particle Studio v2.3.3 ALPHA preset restore build.', 'info')" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-400 flex items-center gap-2">
+                    <button onclick="showToast('Particle Studio v2.3.10 ALPHA preset restore build.', 'info')" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-400 flex items-center gap-2">
                         <span>ℹ️</span> About FX Editor
                     </button>
                 </div>
@@ -960,7 +960,7 @@ engine.start();</pre>
                                 </div>
                             </div>
                         </div>
-                        <div class="text-[9px] text-artifex-goldMuted mt-2 text-right font-mono">v2.3.3 ALPHA Preview Grid</div>
+                        <div class="text-[9px] text-artifex-goldMuted mt-2 text-right font-mono">v2.3.10 ALPHA Preview Grid</div>
                     </div>
                 </div>
 
@@ -1107,9 +1107,9 @@ engine.start();</pre>
     <!-- Live Toast Notification System -->
     <div id="toast-container" class="fixed bottom-16 right-6 z-[200] space-y-2 pointer-events-none"></div>
 
-    <script src="./src/presets/base-effects.js?v=phase9m-split-presets"></script>
-    <script src="./src/presets/composite-effects.js?v=phase9m-split-presets"></script>
-    <script src="./src/fx-runtime.js?v=phase9m-split-preset-fix"></script>
+    <script src="./src/presets/base-effects.js?v=2.3.10-clean-index"></script>
+    <script src="./src/presets/composite-effects.js?v=2.3.10-clean-index"></script>
+    <script src="./src/fx-runtime.js?v=2.3.10-clean-index"></script>
     <!-- Visual Effects Engine Core JavaScript Implementation -->
     <script>
         // -------------------------------------------------------------
@@ -1545,6 +1545,7 @@ engine.start();</pre>
         }
 
         function tick() {
+            try {
             calculateFPS();
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -1673,7 +1674,12 @@ engine.start();</pre>
             syncCoordinatesControls();
             updateTacticalHUD(totalParticles);
             
-            requestAnimationFrame(tick);
+        
+            } catch (err) {
+                console.error('Artifex render loop recovered after error', err);
+            } finally {
+                requestAnimationFrame(tick);
+            }
         }
 
         function drawEmitterHud() {
@@ -1750,13 +1756,17 @@ engine.start();</pre>
             }
             const sidebar = document.getElementById('sidebar-panel');
             if (sidebar && state.sidebarWidth) {
-                sidebar.style.width = `${state.sidebarWidth}px`;
-                sidebar.style.minWidth = `${state.sidebarWidth}px`;
+                const mainWidth = document.querySelector('main')?.getBoundingClientRect().width || window.innerWidth;
+                const safeWidth = Math.max(240, Math.min(Number(state.sidebarWidth) || 320, Math.max(260, mainWidth - 360)));
+                sidebar.style.width = `${safeWidth}px`;
+                sidebar.style.minWidth = `${safeWidth}px`;
             }
             const lowerPanel = document.getElementById('lower-panel');
             if (lowerPanel && state.lowerPanelHeight) {
-                lowerPanel.style.height = `${state.lowerPanelHeight}px`;
-                lowerPanel.style.minHeight = `${state.lowerPanelHeight}px`;
+                const rightHeight = document.querySelector('section.bg-artifex-dark')?.getBoundingClientRect().height || window.innerHeight;
+                const safeHeight = Math.max(140, Math.min(Number(state.lowerPanelHeight) || 220, Math.max(160, rightHeight - 150 - 8)));
+                lowerPanel.style.height = `${safeHeight}px`;
+                lowerPanel.style.minHeight = `${safeHeight}px`;
             }
         }
 
@@ -1834,8 +1844,8 @@ engine.start();</pre>
                 if (isResizingH && sidebar && mainSection) {
                     let deltaX = clientX - startX;
                     let newWidth = startWidth + deltaX;
-                    let maxWidth = mainSection.getBoundingClientRect().width - 240;
-                    if (newWidth < 180) newWidth = 180;
+                    let maxWidth = Math.max(260, mainSection.getBoundingClientRect().width - 360);
+                    if (newWidth < 240) newWidth = 240;
                     if (newWidth > maxWidth) newWidth = maxWidth;
                     
                     sidebar.style.width = `${newWidth}px`;
@@ -1845,8 +1855,8 @@ engine.start();</pre>
                 if (isResizingV && lowerPanel && rightSection) {
                     let deltaY = startY - clientY;
                     let newHeight = startHeight + deltaY;
-                    let maxHeight = rightSection.getBoundingClientRect().height - 150 - 8;
-                    if (newHeight < 60) newHeight = 60;
+                    let maxHeight = Math.max(160, rightSection.getBoundingClientRect().height - 150 - 8);
+                    if (newHeight < 140) newHeight = 140;
                     if (newHeight > maxHeight) newHeight = maxHeight;
                     
                     lowerPanel.style.height = `${newHeight}px`;
@@ -2041,28 +2051,36 @@ engine.start();</pre>
         const VIEW_FEATURES = {
             'emitter-follow-mouse': false,
             'show-emitter-hud': true,
+            'snap-to-grid': false,
             'collision-bounce': false
         };
 
         function isFeatureChecked(featureId) {
-            return VIEW_FEATURES[featureId];
+            return Boolean(VIEW_FEATURES[featureId]);
         }
 
         function toggleViewCheckbox(featureId) {
+            if (!Object.prototype.hasOwnProperty.call(VIEW_FEATURES, featureId)) {
+                VIEW_FEATURES[featureId] = false;
+            }
             VIEW_FEATURES[featureId] = !VIEW_FEATURES[featureId];
             syncViewportUI();
             let statusStr = VIEW_FEATURES[featureId] ? 'enabled' : 'disabled';
-            showToast(`${featureId.replace('show-', '').replace('emitter-', '').replace('collision-', '')} has been ${statusStr}`, "success");
+            showToast(`${featureId.replace('show-', '').replace('emitter-', '').replace('collision-', '').replace(/-/g, ' ')} has been ${statusStr}`, "success");
         }
 
         function syncViewportUI() {
             const hudNode = document.getElementById('view-hud-status');
+            const followNode = document.getElementById('view-follow-status');
+            const snapNode = document.getElementById('view-snap-status');
+            const helperIcon = document.getElementById('helper-toggle-icon');
+            const bounceNode = document.getElementById('view-bounce-status');
+
             if (hudNode) {
                 hudNode.innerText = VIEW_FEATURES['show-emitter-hud'] ? "ON" : "OFF";
                 hudNode.className = VIEW_FEATURES['show-emitter-hud'] ? "text-[9px] text-green-500" : "text-[9px] text-gray-400";
             }
             
-            const followNode = document.getElementById('view-follow-status');
             if (followNode) {
                 followNode.innerText = VIEW_FEATURES['emitter-follow-mouse'] ? "ON" : "OFF";
                 followNode.className = VIEW_FEATURES['emitter-follow-mouse'] ? "text-[9px] text-green-500" : "text-[9px] text-gray-400";
@@ -2076,7 +2094,6 @@ engine.start();</pre>
                 helperIcon.parentElement?.classList.toggle('opacity-60', !VIEW_FEATURES['show-emitter-hud']);
             }
             
-            const bounceNode = document.getElementById('view-bounce-status');
             if (bounceNode) {
                 bounceNode.innerText = VIEW_FEATURES['collision-bounce'] ? "ON" : "OFF";
                 bounceNode.className = VIEW_FEATURES['collision-bounce'] ? "text-[9px] text-green-500" : "text-[9px] text-gray-400";
@@ -2345,13 +2362,16 @@ engine.start();</pre>
         function resizeCanvas() {
             if (!container || !canvas) return;
             const rect = container.getBoundingClientRect();
-            canvas.width = rect.width * scaleFactor;
-            canvas.height = rect.height * scaleFactor;
+            if (!rect.width || !rect.height) return;
+            scaleFactor = window.devicePixelRatio || 1;
+            const nextWidth = Math.max(1, Math.round(rect.width * scaleFactor));
+            const nextHeight = Math.max(1, Math.round(rect.height * scaleFactor));
+            if (canvas.width !== nextWidth) canvas.width = nextWidth;
+            if (canvas.height !== nextHeight) canvas.height = nextHeight;
             
-            ctx.setTransform(1, 0, 0, 1, 0, 0); 
-            ctx.scale(scaleFactor, scaleFactor);
+            ctx.setTransform(scaleFactor, 0, 0, scaleFactor, 0, 0);
             const scaleNode = document.getElementById('stats-scale');
-            if (scaleNode) scaleNode.innerText = `${scaleFactor}x High-DPI`;
+            if (scaleNode) scaleNode.innerText = `${Number(scaleFactor).toFixed(3).replace(/\.0+$/, '')}x High-DPI`;
 
             updateGridBounds();
             updateEmitterFromRatio();
@@ -4368,7 +4388,7 @@ engine.start();</pre>
                 return;
             }
             selected.forEach((item, idx) => {
-                setTimeout(() => downloadJSONPayload(item, `${safeFileName(item.name || item.id || 'artifex-fx')}.fx.json`), idx * 180);
+                setTimeout(() => downloadJSONPayload(item, getEffectArchetypeFileName(item, 'fx.json', 'artifex-fx')), idx * 180);
             });
             showToast(`Downloading ${selected.length} local FX file(s).`, 'success');
         }
@@ -4491,10 +4511,18 @@ engine.start();</pre>
                 .replace(/^-+|-+$/g, '') || fallback;
         }
 
+        function getEffectArchetypeId(source = composition, fallback = 'fx-archetype') {
+            return sanitizeFileName(source?.id || source?.archetypeId || source?.name || fallback, fallback);
+        }
+
+        function getEffectArchetypeFileName(source = composition, extension = 'fx.json', fallback = 'fx-archetype') {
+            const id = getEffectArchetypeId(source, fallback);
+            const cleanExtension = String(extension || 'fx.json').replace(/^\.+/, '');
+            return `${id}.${cleanExtension}`;
+        }
+
         function createFxAssetId(rawName) {
-            const base = sanitizeFileName(rawName || composition?.name || composition?.id || 'effect', 'effect')
-                .replace(/-/g, '_');
-            return base.startsWith('fx_') ? base : `fx_${base}`;
+            return sanitizeFileName(rawName || composition?.id || composition?.name || 'effect', 'effect');
         }
 
         function downloadJSONPayload(payload, fileName) {
@@ -4584,7 +4612,7 @@ engine.start();</pre>
             if (!cleanComp) return null;
 
             const textureDependencies = collectTextureDependencies(cleanComp);
-            const fxId = createFxAssetId(cleanComp.name || cleanComp.id);
+            const fxId = getEffectArchetypeId(cleanComp, 'fx-asset');
             return {
                 schema: ARTIFEX_FX_SCHEMA_VERSION,
                 id: fxId,
@@ -4650,7 +4678,7 @@ engine.start();</pre>
             const cleanComp = getCleanCompositionForExport();
             if (!cleanComp) return;
 
-            const fileName = `${sanitizeFileName(cleanComp.name || cleanComp.id, 'custom-fx')}-composition.json`;
+            const fileName = getEffectArchetypeFileName(cleanComp, 'composition.json', 'custom-fx');
             downloadJSONPayload(cleanComp, fileName);
             markExported('Raw composition JSON');
         }
@@ -4660,7 +4688,7 @@ engine.start();</pre>
             const payload = buildEditorProjectPayload();
             if (!payload) return;
 
-            const fileName = `${sanitizeFileName(payload.composition?.name || payload.composition?.id, 'custom-fx')}.fxproject.json`;
+            const fileName = getEffectArchetypeFileName(payload.composition, 'fxproject.json', 'custom-fx');
             downloadJSONPayload(payload, fileName);
             markExported('Editor project JSON');
         }
@@ -4676,7 +4704,7 @@ engine.start();</pre>
                 showToast(`FX asset exported with ${issues.length} validation warning(s).`, 'info');
             }
 
-            const fileName = `${sanitizeFileName(payload.id, 'fx-asset')}.fx.json`;
+            const fileName = getEffectArchetypeFileName(payload, 'fx.json', 'fx-asset');
             downloadJSONPayload(payload, fileName);
             markExported('Effect Archetype Asset');
         }
@@ -4686,7 +4714,7 @@ engine.start();</pre>
             const payload = buildSceneFxInstancePayload();
             if (!payload) return;
 
-            const fileName = `${sanitizeFileName(payload.id, 'fx-instance')}.fxinstance.json`;
+            const fileName = getEffectArchetypeFileName({ id: payload.archetypeId || payload.id }, 'fxinstance.json', 'fx-instance');
             downloadJSONPayload(payload, fileName);
             markExported('Scene FX Instance');
         }
@@ -4923,18 +4951,27 @@ engine.start();</pre>
         }
 
         window.onload = function() {
-            setupEventListeners();
-            
-            // Start completely empty
-            newConfiguration();
-            
-            initPresetLists();
-            syncViewportUI();
-            syncPerformanceModeUI();
-            updateWorkspaceViewUI();
-            bindEditableSliderValues();
-            decorateInfoIcons();
-            tick();
+            const safeInit = (label, fn) => {
+                try {
+                    fn();
+                    return true;
+                } catch (err) {
+                    console.error(`Artifex startup step failed: ${label}`, err);
+                    showToast(`Startup warning: ${label} failed. Check console.`, 'error');
+                    return false;
+                }
+            };
+
+            safeInit('event listeners', setupEventListeners);
+            safeInit('new empty archetype', newConfiguration);
+            safeInit('preset lists', initPresetLists);
+            safeInit('viewport controls', syncViewportUI);
+            safeInit('performance controls', syncPerformanceModeUI);
+            safeInit('workspace view controls', updateWorkspaceViewUI);
+            safeInit('editable slider values', bindEditableSliderValues);
+            safeInit('info icons', decorateInfoIcons);
+            safeInit('initial canvas resize', resizeCanvas);
+            safeInit('render loop', tick);
             
             showToast("Artifex Particle Engine initialized successfully", "success");
         };
