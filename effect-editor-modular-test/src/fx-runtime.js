@@ -1,3 +1,5 @@
+const textureCache = new Map();
+
 export class Particle {
   constructor(layer, burstAngle = null) {
     const emitterRotation = finite(layer.emitterRotation, 0);
@@ -100,7 +102,9 @@ export function drawParticle(ctx, particle, layer, scale) {
     ctx.filter = `blur(${Math.min(30, layer.edgeBlur) * scale}px)`;
   }
 
-  if (layer.engine === 'lightning') {
+  if (layer.appearanceMode === 'custom' && layer.textureDataUrl) {
+    drawTextureParticle(ctx, x, y, size, color, rotation, layer);
+  } else if (layer.engine === 'lightning') {
     drawSpark(ctx, x, y, size, color, rotation);
   } else if (layer.engine === 'projectile') {
     drawProjectile(ctx, x, y, size, color, rotation);
@@ -111,12 +115,66 @@ export function drawParticle(ctx, particle, layer, scale) {
   } else if (layer.engine === 'refraction') {
     drawRefractionDraft(ctx, x, y, size, color, rotation);
   } else if (layer.appearanceMode === 'brush') {
-    drawBrushShape(ctx, x, y, size, color, rotation, layer.particleShape || 'star');
+    drawBuiltInBrush(ctx, x, y, size, color, rotation, layer.builtInBrush || 'spark');
   } else {
     drawShape(ctx, x, y, size, color, rotation, layer.particleShape || 'circle', layer.engine === 'gas');
   }
 
   ctx.restore();
+}
+
+function drawTextureParticle(ctx, x, y, size, color, rotation, layer) {
+  const image = getTextureImage(layer.textureDataUrl);
+  if (!image?.complete || !image.naturalWidth) {
+    drawBuiltInBrush(ctx, x, y, size, color, rotation, 'soft-dot');
+    return;
+  }
+
+  const box = getTextureDrawBox(image, size, layer.textureFit || 'contain');
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+
+  if (layer.tintMode === 'original') {
+    ctx.drawImage(image, -box.width / 2, -box.height / 2, box.width, box.height);
+  } else if (layer.tintMode === 'alpha-mask') {
+    drawTintedImage(ctx, image, -box.width / 2, -box.height / 2, box.width, box.height, color, 'source-in');
+  } else {
+    ctx.drawImage(image, -box.width / 2, -box.height / 2, box.width, box.height);
+    ctx.globalCompositeOperation = 'source-atop';
+    ctx.fillStyle = color;
+    ctx.fillRect(-box.width / 2, -box.height / 2, box.width, box.height);
+  }
+
+  ctx.restore();
+}
+
+function drawTintedImage(ctx, image, x, y, width, height, color, compositeMode) {
+  ctx.save();
+  ctx.drawImage(image, x, y, width, height);
+  ctx.globalCompositeOperation = compositeMode;
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, width, height);
+  ctx.restore();
+}
+
+function getTextureImage(src) {
+  if (!src) return null;
+  if (textureCache.has(src)) return textureCache.get(src);
+  const image = new Image();
+  image.src = src;
+  textureCache.set(src, image);
+  return image;
+}
+
+function getTextureDrawBox(image, size, fit) {
+  const base = Math.max(1, size * 2);
+  if (fit === 'stretch') return { width: base, height: base };
+  const ratio = image.naturalWidth / Math.max(1, image.naturalHeight);
+  if (fit === 'cover') {
+    return ratio >= 1 ? { width: base * ratio, height: base } : { width: base, height: base / ratio };
+  }
+  return ratio >= 1 ? { width: base, height: base / ratio } : { width: base * ratio, height: base };
 }
 
 function resolveEmitterWidth(layer) {
@@ -154,9 +212,11 @@ function drawShape(ctx, x, y, size, color, rotation, shape, smoky) {
   return drawSoftCircle(ctx, x, y, size, color, smoky);
 }
 
-function drawBrushShape(ctx, x, y, size, color, rotation, shape) {
-  if (shape === 'slash') return drawRibbonDot(ctx, x, y, size, color, rotation);
-  if (shape === 'square') return drawSquare(ctx, x, y, size, color, rotation);
+function drawBuiltInBrush(ctx, x, y, size, color, rotation, brush) {
+  if (brush === 'soft-dot') return drawSoftCircle(ctx, x, y, size, color, false);
+  if (brush === 'smoke-puff') return drawSoftCircle(ctx, x, y, size * 1.25, color, true);
+  if (brush === 'slash') return drawRibbonDot(ctx, x, y, size, color, rotation);
+  if (brush === 'flare') return drawLensFlare(ctx, x, y, size, color, rotation);
   return drawStar(ctx, x, y, size, color, rotation);
 }
 
