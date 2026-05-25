@@ -36,8 +36,11 @@ function ensureResolutionMenu(showToast) {
       <button id="apply-resolution-button" type="button">Apply Size</button>
       <button id="scale-resolution-button" type="button">Scale Content</button>
       <button id="preset-720p-button" type="button">1280×720</button>
+      <button id="preset-editor-button" type="button">1120×630</button>
       <button id="preset-1080p-button" type="button">1920×1080</button>
       <button id="preset-square-button" type="button">1024×1024</button>
+      <button id="preset-instagram-button" type="button">1080×1080</button>
+      <button id="preset-small-square-button" type="button">720×720</button>
       <button id="preset-portrait-button" type="button">1080×1920</button>
     </div>
     <p class="resolution-note">Resolution changes update the composition stage size. “Apply Size” keeps coordinates clamped; “Scale Content” rescales emitters and targets.</p>
@@ -50,8 +53,11 @@ function ensureResolutionMenu(showToast) {
     applyResolution(true, showToast);
   });
   document.getElementById('preset-720p-button')?.addEventListener('click', () => setPreset(1280, 720));
+  document.getElementById('preset-editor-button')?.addEventListener('click', () => setPreset(1120, 630));
   document.getElementById('preset-1080p-button')?.addEventListener('click', () => setPreset(1920, 1080));
   document.getElementById('preset-square-button')?.addEventListener('click', () => setPreset(1024, 1024));
+  document.getElementById('preset-instagram-button')?.addEventListener('click', () => setPreset(1080, 1080));
+  document.getElementById('preset-small-square-button')?.addEventListener('click', () => setPreset(720, 720));
   document.getElementById('preset-portrait-button')?.addEventListener('click', () => setPreset(1080, 1920));
 }
 
