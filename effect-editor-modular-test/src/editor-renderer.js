@@ -1,8 +1,8 @@
 import {
-  DESIGN_WIDTH,
-  DESIGN_HEIGHT,
   editorState,
   getActiveLayer,
+  getDesignHeight,
+  getDesignWidth,
   moveActiveEmitter,
   onStateChange
 } from './editor-state.js';
@@ -136,16 +136,18 @@ function draw() {
 }
 
 function drawStageBackground(scale) {
+  const designWidth = getDesignWidth();
+  const designHeight = getDesignHeight();
   ctx.fillStyle = editorState.workspaceMode === 'white' ? '#ffffff' : '#090708';
-  ctx.fillRect(0, 0, DESIGN_WIDTH * scale, DESIGN_HEIGHT * scale);
+  ctx.fillRect(0, 0, designWidth * scale, designHeight * scale);
 
   const gradient = ctx.createRadialGradient(
-    DESIGN_WIDTH * scale * 0.5,
-    DESIGN_HEIGHT * scale * 0.5,
+    designWidth * scale * 0.5,
+    designHeight * scale * 0.5,
     0,
-    DESIGN_WIDTH * scale * 0.5,
-    DESIGN_HEIGHT * scale * 0.5,
-    DESIGN_WIDTH * scale * 0.55
+    designWidth * scale * 0.5,
+    designHeight * scale * 0.5,
+    designWidth * scale * 0.55
   );
   if (editorState.workspaceMode === 'white') {
     gradient.addColorStop(0, '#ffffff');
@@ -155,11 +157,11 @@ function drawStageBackground(scale) {
     gradient.addColorStop(1, '#050405');
   }
   ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, DESIGN_WIDTH * scale, DESIGN_HEIGHT * scale);
+  ctx.fillRect(0, 0, designWidth * scale, designHeight * scale);
 
   ctx.strokeStyle = editorState.workspaceMode === 'white' ? '#c0b7ac' : '#382a21';
   ctx.lineWidth = Math.max(1, scale);
-  ctx.strokeRect(0, 0, DESIGN_WIDTH * scale, DESIGN_HEIGHT * scale);
+  ctx.strokeRect(0, 0, designWidth * scale, designHeight * scale);
 }
 
 function drawReferenceMedia(scale) {
@@ -167,8 +169,8 @@ function drawReferenceMedia(scale) {
   if (!reference?.visible || !reference.dataUrl || !referenceImage) return;
   if (!referenceImage.complete) return;
 
-  const stageW = DESIGN_WIDTH * scale;
-  const stageH = DESIGN_HEIGHT * scale;
+  const stageW = getDesignWidth() * scale;
+  const stageH = getDesignHeight() * scale;
   const imageRatio = referenceImage.naturalWidth / referenceImage.naturalHeight;
   const stageRatio = stageW / stageH;
   let drawW = stageW;
@@ -196,8 +198,10 @@ function syncReferenceImage() {
 }
 
 function drawGrid(scale) {
-  const stepX = DESIGN_WIDTH / 16;
-  const stepY = DESIGN_HEIGHT / 9;
+  const designWidth = getDesignWidth();
+  const designHeight = getDesignHeight();
+  const stepX = designWidth / 16;
+  const stepY = designHeight / 9;
   ctx.save();
   ctx.strokeStyle = editorState.workspaceMode === 'white' ? 'rgba(56,42,33,0.22)' : 'rgba(226,204,167,0.15)';
   ctx.fillStyle = editorState.workspaceMode === 'white' ? 'rgba(56,42,33,0.7)' : 'rgba(226,204,167,0.58)';
@@ -207,7 +211,7 @@ function drawGrid(scale) {
     const x = c * stepX * scale;
     ctx.beginPath();
     ctx.moveTo(x, 0);
-    ctx.lineTo(x, DESIGN_HEIGHT * scale);
+    ctx.lineTo(x, designHeight * scale);
     ctx.stroke();
     if (c < 16) {
       ctx.fillText(String(c + 1), x + 6, 16);
@@ -218,7 +222,7 @@ function drawGrid(scale) {
     const y = r * stepY * scale;
     ctx.beginPath();
     ctx.moveTo(0, y);
-    ctx.lineTo(DESIGN_WIDTH * scale, y);
+    ctx.lineTo(designWidth * scale, y);
     ctx.stroke();
     if (r < 9) {
       ctx.fillText(String.fromCharCode(65 + r), 6, y + 18);
@@ -269,19 +273,19 @@ function handlePointer(event) {
   const worldX = ((canvasX - offset.x) / editorState.zoom) / scale;
   const worldY = ((canvasY - offset.y) / editorState.zoom) / scale;
 
-  if (worldX >= 0 && worldX <= DESIGN_WIDTH && worldY >= 0 && worldY <= DESIGN_HEIGHT) {
+  if (worldX >= 0 && worldX <= getDesignWidth() && worldY >= 0 && worldY <= getDesignHeight()) {
     moveActiveEmitter(worldX, worldY);
   }
 }
 
 function getScale() {
-  return Math.min(canvas.width / DESIGN_WIDTH, canvas.height / DESIGN_HEIGHT);
+  return Math.min(canvas.width / getDesignWidth(), canvas.height / getDesignHeight());
 }
 
 function getOffset(scale) {
   return {
-    x: (canvas.width - DESIGN_WIDTH * scale * editorState.zoom) / 2,
-    y: (canvas.height - DESIGN_HEIGHT * scale * editorState.zoom) / 2
+    x: (canvas.width - getDesignWidth() * scale * editorState.zoom) / 2,
+    y: (canvas.height - getDesignHeight() * scale * editorState.zoom) / 2
   };
 }
 
