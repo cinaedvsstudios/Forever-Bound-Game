@@ -1,0 +1,253 @@
+import {
+  DESIGN_WIDTH,
+  DESIGN_HEIGHT,
+  editorState,
+  getActiveLayer,
+  moveActiveEmitter,
+  onStateChange
+} from './editor-state.js';
+import {
+  drawParticle,
+  spawnParticlesForLayer
+} from './fx-runtime.js';
+
+let canvas;
+let ctx;
+let workspace;
+let animationId;
+let lastFrame = performance.now();
+let fpsSmoothing = 60;
+
+export function initRenderer() {
+  canvas = document.getElementById('fx-canvas');
+  workspace = document.getElementById('workspace');
+  if (!canvas || !workspace) {
+    throw new Error('Renderer could not find #fx-canvas or #workspace.');
+  }
+
+  ctx = canvas.getContext('2d', { alpha: false });
+  resizeCanvas();
+
+  window.addEventListener('resize', resizeCanvas);
+  canvas.addEventListener('pointerdown', handlePointer);
+  canvas.addEventListener('pointermove', (event) => {
+    if (event.buttons === 1) handlePointer(event);
+  });
+
+  onStateChange(() => {
+    const active = getActiveLayer();
+    if (active) {
+      syncCanvasCursor();
+    }
+  });
+
+  animationId = requestAnimationFrame(tick);
+}
+
+export function resizeCanvas() {
+  if (!canvas || !workspace) return;
+  const rect = workspace.getBoundingClientRect();
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = Math.max(320, Math.floor(rect.width * ratio));
+  canvas.height = Math.max(180, Math.floor(rect.height * ratio));
+  ctx = canvas.getContext('2d', { alpha: false });
+}
+
+export function clearRendererParticles() {
+  editorState.particles = [];
+}
+
+export function takeSnapshot() {
+  if (!canvas) return;
+  const link = document.createElement('a');
+  link.download = `${editorState.composition.id || 'artifex-effect'}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+function tick(now) {
+  const delta = Math.max(1, now - lastFrame);
+  lastFrame = now;
+  const fps = 1000 / delta;
+  fpsSmoothing = fpsSmoothing * 0.92 + fps * 0.08;
+  editorState.renderStats.fps = Math.round(fpsSmoothing);
+
+  if (!editorState.isPaused) {
+    updateParticles();
+  }
+
+  draw();
+  animationId = requestAnimationFrame(tick);
+}
+
+function updateParticles() {
+  for (const layer of editorState.composition.layers) {
+    if (layer.visible !== false) {
+      const spawned = spawnParticlesForLayer(layer);
+      editorState.particles.push(...spawned.map((particle) => ({ particle, layerId: layer.id })));
+    }
+  }
+
+  for (const item of editorState.particles) {
+    const layer = editorState.composition.layers.find((candidate) => candidate.id === item.layerId);
+    if (layer) {
+      item.particle.update(layer);
+    }
+  }
+
+  editorState.particles = editorState.particles.filter((item) => item.particle.alive);
+  editorState.renderStats.particles = editorState.particles.length;
+}
+
+function draw() {
+  const scale = getScale();
+  const offset = getOffset(scale);
+
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = editorState.workspaceMode === 'white' ? '#f7f3ee' : '#050405';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.translate(offset.x, offset.y);
+  ctx.scale(editorState.zoom, editorState.zoom);
+
+  drawStageBackground(scale);
+
+  if (editorState.showGrid) {
+    drawGrid(scale);
+  }
+
+  for (const item of editorState.particles) {
+    const layer = editorState.composition.layers.find((candidate) => candidate.id === item.layerId);
+    if (layer?.visible !== false) {
+      drawParticle(ctx, item.particle, layer, scale);
+    }
+  }
+
+  if (editorState.showHelpers) {
+    drawEmitterHelpers(scale);
+  }
+
+  ctx.restore();
+}
+
+function drawStageBackground(scale) {
+  ctx.fillStyle = editorState.workspaceMode === 'white' ? '#ffffff' : '#090708';
+  ctx.fillRect(0, 0, DESIGN_WIDTH * scale, DESIGN_HEIGHT * scale);
+
+  const gradient = ctx.createRadialGradient(
+    DESIGN_WIDTH * scale * 0.5,
+    DESIGN_HEIGHT * scale * 0.5,
+    0,
+    DESIGN_WIDTH * scale * 0.5,
+    DESIGN_HEIGHT * scale * 0.5,
+    DESIGN_WIDTH * scale * 0.55
+  );
+  if (editorState.workspaceMode === 'white') {
+    gradient.addColorStop(0, '#ffffff');
+    gradient.addColorStop(1, '#e9e3dc');
+  } else {
+    gradient.addColorStop(0, '#191115');
+    gradient.addColorStop(1, '#050405');
+  }
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, DESIGN_WIDTH * scale, DESIGN_HEIGHT * scale);
+
+  ctx.strokeStyle = editorState.workspaceMode === 'white' ? '#c0b7ac' : '#382a21';
+  ctx.lineWidth = Math.max(1, scale);
+  ctx.strokeRect(0, 0, DESIGN_WIDTH * scale, DESIGN_HEIGHT * scale);
+}
+
+function drawGrid(scale) {
+  const stepX = DESIGN_WIDTH / 16;
+  const stepY = DESIGN_HEIGHT / 9;
+  ctx.save();
+  ctx.strokeStyle = editorState.workspaceMode === 'white' ? 'rgba(56,42,33,0.22)' : 'rgba(226,204,167,0.15)';
+  ctx.fillStyle = editorState.workspaceMode === 'white' ? 'rgba(56,42,33,0.7)' : 'rgba(226,204,167,0.58)';
+  ctx.lineWidth = 1;
+
+  for (let c = 0; c <= 16; c++) {
+    const x = c * stepX * scale;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, DESIGN_HEIGHT * scale);
+    ctx.stroke();
+    if (c < 16) {
+      ctx.fillText(String(c + 1), x + 6, 16);
+    }
+  }
+
+  for (let r = 0; r <= 9; r++) {
+    const y = r * stepY * scale;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(DESIGN_WIDTH * scale, y);
+    ctx.stroke();
+    if (r < 9) {
+      ctx.fillText(String.fromCharCode(65 + r), 6, y + 18);
+    }
+  }
+  ctx.restore();
+}
+
+function drawEmitterHelpers(scale) {
+  const active = getActiveLayer();
+  if (!active) return;
+
+  const x = active.emitterX * scale;
+  const y = active.emitterY * scale;
+
+  ctx.save();
+  ctx.strokeStyle = '#00a1d7';
+  ctx.fillStyle = '#00a1d7';
+  ctx.lineWidth = Math.max(1, 2 * scale);
+  ctx.beginPath();
+  ctx.arc(x, y, 10 * scale, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(x - 18 * scale, y);
+  ctx.lineTo(x + 18 * scale, y);
+  ctx.moveTo(x, y - 18 * scale);
+  ctx.lineTo(x, y + 18 * scale);
+  ctx.stroke();
+
+  ctx.font = `${Math.max(10, 12 * scale)}px monospace`;
+  ctx.fillText(`${Math.round(active.emitterX)}, ${Math.round(active.emitterY)}`, x + 14 * scale, y - 14 * scale);
+  ctx.restore();
+}
+
+function handlePointer(event) {
+  const active = getActiveLayer();
+  if (!active) return;
+  const rect = canvas.getBoundingClientRect();
+  const ratioX = canvas.width / rect.width;
+  const ratioY = canvas.height / rect.height;
+  const scale = getScale();
+  const offset = getOffset(scale);
+
+  const canvasX = (event.clientX - rect.left) * ratioX;
+  const canvasY = (event.clientY - rect.top) * ratioY;
+
+  const worldX = ((canvasX - offset.x) / editorState.zoom) / scale;
+  const worldY = ((canvasY - offset.y) / editorState.zoom) / scale;
+
+  if (worldX >= 0 && worldX <= DESIGN_WIDTH && worldY >= 0 && worldY <= DESIGN_HEIGHT) {
+    moveActiveEmitter(worldX, worldY);
+  }
+}
+
+function getScale() {
+  return Math.min(canvas.width / DESIGN_WIDTH, canvas.height / DESIGN_HEIGHT);
+}
+
+function getOffset(scale) {
+  return {
+    x: (canvas.width - DESIGN_WIDTH * scale * editorState.zoom) / 2,
+    y: (canvas.height - DESIGN_HEIGHT * scale * editorState.zoom) / 2
+  };
+}
+
+function syncCanvasCursor() {
+  canvas.style.cursor = 'crosshair';
+}

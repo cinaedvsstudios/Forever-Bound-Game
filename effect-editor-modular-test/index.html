@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Artifex Effect Editor — Modular Test</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <section class="brand">
+      <div class="brand-mark">✦</div>
+      <div>
+        <h1>ARTIFEX</h1>
+        <p>Visual Effects Editor <span id="version-badge">v2.3.1 MODULAR-TEST</span></p>
+      </div>
+    </section>
+
+    <nav class="menu-bar" aria-label="Editor menus">
+      <div class="menu">
+        <button class="menu-button" data-menu="file">File ▾</button>
+        <div class="menu-panel" id="menu-file">
+          <button id="new-effect-button">New Effect Archetype</button>
+          <label class="menu-file-label">Import FX JSON<input id="import-json-input" type="file" accept=".json,application/json" hidden /></label>
+          <button id="export-json-button">Export JSON</button>
+          <button id="save-local-button">Save to Local Storage</button>
+          <button id="view-local-button">View Local Files</button>
+        </div>
+      </div>
+
+      <div class="menu">
+        <button class="menu-button" data-menu="edit">Edit ▾</button>
+        <div class="menu-panel" id="menu-edit">
+          <button id="duplicate-layer-button">Duplicate Layer</button>
+          <button id="delete-layer-button">Delete Layer</button>
+          <button id="clear-particles-button">Clear Particles</button>
+          <button id="center-emitter-button">Center Emitter</button>
+        </div>
+      </div>
+
+      <div class="menu">
+        <button class="menu-button" data-menu="view">View ▾</button>
+        <div class="menu-panel" id="menu-view">
+          <button data-workspace-mode="dark">Dark Workspace</button>
+          <button data-workspace-mode="white">White Workspace</button>
+          <button id="toggle-grid-button">Toggle Grid</button>
+          <button id="toggle-helpers-button">Toggle Helper Guides</button>
+        </div>
+      </div>
+
+      <div class="menu">
+        <button class="menu-button primary" data-menu="insert">Insert ▾</button>
+        <div class="menu-panel wide" id="menu-insert">
+          <section class="insert-section">
+            <h3>Base Layer</h3>
+            <div id="base-layer-list" class="insert-list"></div>
+          </section>
+          <section class="insert-section">
+            <h3>Effect Archetype Assets</h3>
+            <button id="open-library-button">Open Effect Archetype Library</button>
+          </section>
+          <section class="insert-section">
+            <h3>Custom / Local</h3>
+            <button id="load-local-button">Load Saved Local Effect</button>
+          </section>
+        </div>
+      </div>
+
+      <div class="menu">
+        <button class="menu-button" data-menu="help">Help ▾</button>
+        <div class="menu-panel right" id="menu-help">
+          <button id="quick-start-button">Quick Start Guide</button>
+          <button id="about-button">About Modular Test</button>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <main class="app-shell">
+    <aside id="left-panel" class="side-panel">
+      <section class="card">
+        <header>
+          <h2>Effect Archetype Assets</h2>
+        </header>
+        <label>Archetype ID<input id="archetype-id-input" value="fx_modular_test_001" /></label>
+        <label>Layer Name<input id="layer-name-input" placeholder="Select or add a layer" /></label>
+        <label>Effect Engine<select id="engine-select"></select></label>
+      </section>
+
+      <section class="card">
+        <header>
+          <h2>Quick Edit Presets</h2>
+        </header>
+        <div class="button-row">
+          <button data-quick-preset="fire">Fire</button>
+          <button data-quick-preset="ice">Ice</button>
+          <button data-quick-preset="goodMagic">Good Magic</button>
+          <button data-quick-preset="darkMagic">Dark Magic</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <header>
+          <h2>Effect Layer Appearance</h2>
+        </header>
+        <label>Color A<input id="color-a-input" type="color" value="#ffcc66" /></label>
+        <label>Color B<input id="color-b-input" type="color" value="#ff6600" /></label>
+        <label>Start Alpha<input id="alpha-start-input" type="range" min="0" max="1" step="0.01" value="1" /><output id="alpha-start-output">1</output></label>
+        <label>End Alpha<input id="alpha-end-input" type="range" min="0" max="1" step="0.01" value="0" /><output id="alpha-end-output">0</output></label>
+        <label>Size Start<input id="size-start-input" type="range" min="1" max="90" step="1" value="20" /><output id="size-start-output">20</output></label>
+        <label>Size End<input id="size-end-input" type="range" min="0" max="120" step="1" value="4" /><output id="size-end-output">4</output></label>
+        <label>Glow<input id="glow-input" type="range" min="0" max="50" step="1" value="12" /><output id="glow-output">12</output></label>
+      </section>
+
+      <section class="card">
+        <header>
+          <h2>Effect Layer Dynamics</h2>
+        </header>
+        <label>Emitter X<input id="emitter-x-input" type="number" min="0" max="1280" value="640" /></label>
+        <label>Emitter Y<input id="emitter-y-input" type="number" min="0" max="720" value="450" /></label>
+        <label>Spawn Rate<input id="spawn-rate-input" type="range" min="1" max="80" step="1" value="16" /><output id="spawn-rate-output">16</output></label>
+        <label>Speed Min<input id="speed-min-input" type="range" min="0" max="16" step="0.1" value="1.5" /><output id="speed-min-output">1.5</output></label>
+        <label>Speed Max<input id="speed-max-input" type="range" min="0" max="28" step="0.1" value="6" /><output id="speed-max-output">6</output></label>
+        <label>Direction Angle<input id="angle-input" type="range" min="-180" max="180" step="1" value="-90" /><output id="angle-output">-90</output></label>
+        <label>Spread<input id="spread-input" type="range" min="0" max="360" step="1" value="60" /><output id="spread-output">60</output></label>
+        <label>Gravity<input id="gravity-input" type="range" min="-1" max="1" step="0.01" value="0.04" /><output id="gravity-output">0.04</output></label>
+        <label>Lifetime<input id="lifetime-input" type="range" min="10" max="240" step="1" value="80" /><output id="lifetime-output">80</output></label>
+      </section>
+    </aside>
+
+    <div id="side-resizer" class="side-resizer" title="Drag to resize side panel"></div>
+
+    <section class="workspace-column">
+      <section class="workspace-toolbar">
+        <button id="pause-button">Pause</button>
+        <button id="snapshot-button">Snapshot PNG</button>
+        <button id="zoom-out-button">−</button>
+        <span id="zoom-readout">100%</span>
+        <button id="zoom-in-button">+</button>
+        <button id="zoom-reset-button">Reset Zoom</button>
+        <span id="status-text">Ready.</span>
+      </section>
+
+      <section id="workspace" class="workspace">
+        <canvas id="fx-canvas" width="1280" height="720"></canvas>
+        <div id="toast-area" aria-live="polite"></div>
+      </section>
+
+      <div id="bottom-resizer" class="bottom-resizer" title="Drag to resize layer panel"></div>
+
+      <section id="bottom-panel" class="bottom-panel">
+        <header>
+          <h2>Layers</h2>
+          <span id="layer-count">0 layers</span>
+        </header>
+        <div id="layer-list" class="layer-list"></div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="library-dialog">
+    <form method="dialog">
+      <header class="dialog-header">
+        <h2>Effect Archetype Library</h2>
+        <button value="close">×</button>
+      </header>
+      <div id="composite-list" class="library-grid"></div>
+    </form>
+  </dialog>
+
+  <dialog id="local-dialog">
+    <form method="dialog">
+      <header class="dialog-header">
+        <h2>Local Files</h2>
+        <button value="close">×</button>
+      </header>
+      <pre id="local-files-output"></pre>
+    </form>
+  </dialog>
+
+  <script type="module" src="./src/editor-app.js"></script>
+</body>
+</html>
