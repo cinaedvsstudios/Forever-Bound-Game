@@ -1,0 +1,94 @@
+name: Artifex wire debug module
+
+on:
+  push:
+    branches:
+      - fb-effect-wire-debug
+    paths:
+      - .github/workflows/artifex-wire-debug.yml
+
+permissions:
+  contents: write
+
+jobs:
+  wire-debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: fb-effect-wire-debug
+
+      - name: Patch Effect Editor index with debug module wiring
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          index_path = Path('artifex/apps/effect-editor/index.html')
+          text = index_path.read_text(encoding='utf-8')
+
+          text = text.replace('v2.3.0 ALPHA stable build.', 'v2.3.1 SPLIT-DEBUG debug-wired build.')
+          text = text.replace('v2.3.0 ALPHA Active Grid', 'v2.3.1 SPLIT-DEBUG Active Grid')
+          text = text.replace('v2.3.0 ALPHA', 'v2.3.1 SPLIT-DEBUG')
+
+          marker = '<!-- Artifex split-step 1 debug module wiring -->'
+          module_script = '''
+    <!-- Artifex split-step 1 debug module wiring -->
+    <script type="module">
+        import { installArtifexModules } from './src/editor-bootstrap.js';
+        import './src/editor-debug.js';
+
+        try {
+            installArtifexModules(window);
+            console.info('Artifex split-step 1 modules loaded: bootstrap + debug.');
+        } catch (error) {
+            console.error('Artifex split-step 1 module wiring failed.', error);
+        }
+    </script>
+'''
+
+          if marker not in text:
+              text = text.replace('\n</body>\n</html>', module_script + '\n</body>\n</html>')
+
+          index_path.write_text(text, encoding='utf-8')
+
+          tracker_path = Path('artifex/apps/effect-editor/docs/clean-rebuild-tracker.md')
+          if tracker_path.exists():
+              tracker = tracker_path.read_text(encoding='utf-8')
+              section = '''
+
+## Split step 1 completed: live debug wiring
+
+Version label: `v2.3.1 SPLIT-DEBUG`
+
+Step 1 of 8 wires the debug and bootstrap modules into the real `index.html` without replacing render, canvas, presets, particle math, or menu logic.
+
+Expected result:
+
+- Help menu contains `Debug Console`.
+- Debug report shows `moduleBootstrapLoaded: true`.
+- Canvas is found.
+- File / Edit / View / Insert / Help still open.
+- Insert still adds effects.
+- Particles still render.
+- Captured errors and warnings stay at 0.
+
+Steps left after this: 7.
+'''
+              if '## Split step 1 completed: live debug wiring' not in tracker:
+                  tracker += section
+                  tracker_path.write_text(tracker, encoding='utf-8')
+          PY
+
+      - name: Commit patched files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git status --short
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git add artifex/apps/effect-editor/index.html artifex/apps/effect-editor/docs/clean-rebuild-tracker.md
+          git commit -m "Wire Effect Editor debug module into live index"
+          git push origin fb-effect-wire-debug
