@@ -9,6 +9,7 @@ export const editorState = {
   showGrid: true,
   showHelpers: true,
   workspaceMode: 'dark',
+  referenceMedia: createEmptyReferenceMedia(),
   zoom: 1,
   renderStats: {
     fps: 0,
@@ -25,6 +26,32 @@ export function createEmptyComposition() {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     layers: []
+  };
+}
+
+export function createEmptyReferenceMedia() {
+  return {
+    type: '',
+    name: '',
+    dataUrl: '',
+    opacity: 0.55,
+    visible: false,
+    frame: 0
+  };
+}
+
+export function getDesignWidth() {
+  return finiteNumber(editorState.composition?.designWidth, DESIGN_WIDTH);
+}
+
+export function getDesignHeight() {
+  return finiteNumber(editorState.composition?.designHeight, DESIGN_HEIGHT);
+}
+
+export function getDesignSize() {
+  return {
+    width: getDesignWidth(),
+    height: getDesignHeight()
   };
 }
 
@@ -48,8 +75,8 @@ export function normalizeComposition(input) {
   return {
     ...base,
     ...input,
-    designWidth: input?.designWidth || DESIGN_WIDTH,
-    designHeight: input?.designHeight || DESIGN_HEIGHT,
+    designWidth: finiteNumber(input?.designWidth, DESIGN_WIDTH),
+    designHeight: finiteNumber(input?.designHeight, DESIGN_HEIGHT),
     layers: layers.map(normalizeLayer)
   };
 }
@@ -75,8 +102,8 @@ export function normalizeLayer(layer) {
     spread: finiteNumber(layer.spread, 60),
     gravity: finiteNumber(layer.gravity, 0.04),
     lifetime,
-    emitterX: finiteNumber(layer.emitterX, DESIGN_WIDTH / 2),
-    emitterY: finiteNumber(layer.emitterY, DESIGN_HEIGHT * 0.64),
+    emitterX: finiteNumber(layer.emitterX, getDesignWidth() / 2),
+    emitterY: finiteNumber(layer.emitterY, getDesignHeight() * 0.64),
     appearanceMode: layer.appearanceMode || 'shape',
     particleShape: layer.particleShape || 'circle',
     blendMode: layer.blendMode || defaultBlendMode(layer.engine),
@@ -89,8 +116,8 @@ export function normalizeLayer(layer) {
     emitterWidth: finiteNumber(layer.emitterWidth, 0),
     emitterWidthUnit: layer.emitterWidthUnit || 'px',
     emitterRotation: finiteNumber(layer.emitterRotation, 0),
-    targetX: finiteNumber(layer.targetX, DESIGN_WIDTH / 2),
-    targetY: finiteNumber(layer.targetY, DESIGN_HEIGHT / 2),
+    targetX: finiteNumber(layer.targetX, getDesignWidth() / 2),
+    targetY: finiteNumber(layer.targetY, getDesignHeight() / 2),
     reverseNearTarget: Boolean(layer.reverseNearTarget),
     friction: finiteNumber(layer.friction, 0),
     orbitalForce: finiteNumber(layer.orbitalForce, 0),
@@ -137,6 +164,40 @@ export function updateActiveLayer(patch) {
   notifyChange();
 }
 
+export function setDesignSize(width, height, options = {}) {
+  const oldWidth = getDesignWidth();
+  const oldHeight = getDesignHeight();
+  const nextWidth = clamp(finiteNumber(width, oldWidth), 320, 4096);
+  const nextHeight = clamp(finiteNumber(height, oldHeight), 180, 4096);
+  const scaleX = nextWidth / oldWidth;
+  const scaleY = nextHeight / oldHeight;
+
+  editorState.composition.designWidth = Math.round(nextWidth);
+  editorState.composition.designHeight = Math.round(nextHeight);
+  editorState.composition.updatedAt = new Date().toISOString();
+
+  if (options.scaleContent) {
+    for (const layer of editorState.composition.layers) {
+      layer.emitterX = finiteNumber(layer.emitterX, oldWidth / 2) * scaleX;
+      layer.emitterY = finiteNumber(layer.emitterY, oldHeight / 2) * scaleY;
+      layer.targetX = finiteNumber(layer.targetX, oldWidth / 2) * scaleX;
+      layer.targetY = finiteNumber(layer.targetY, oldHeight / 2) * scaleY;
+      if (layer.emitterWidthUnit !== 'percent') {
+        layer.emitterWidth = finiteNumber(layer.emitterWidth, 0) * ((scaleX + scaleY) / 2);
+      }
+    }
+  } else {
+    for (const layer of editorState.composition.layers) {
+      layer.emitterX = clamp(finiteNumber(layer.emitterX, nextWidth / 2), 0, nextWidth);
+      layer.emitterY = clamp(finiteNumber(layer.emitterY, nextHeight / 2), 0, nextHeight);
+      layer.targetX = clamp(finiteNumber(layer.targetX, nextWidth / 2), 0, nextWidth);
+      layer.targetY = clamp(finiteNumber(layer.targetY, nextHeight / 2), 0, nextHeight);
+    }
+  }
+
+  notifyChange();
+}
+
 export function deleteActiveLayer() {
   if (editorState.activeLayerIndex < 0) return;
   editorState.composition.layers.splice(editorState.activeLayerIndex, 1);
@@ -157,13 +218,13 @@ export function duplicateActiveLayer() {
 }
 
 export function centerActiveEmitter() {
-  updateActiveLayer({ emitterX: DESIGN_WIDTH / 2, emitterY: DESIGN_HEIGHT / 2 });
+  updateActiveLayer({ emitterX: getDesignWidth() / 2, emitterY: getDesignHeight() / 2 });
 }
 
 export function moveActiveEmitter(x, y) {
   updateActiveLayer({
-    emitterX: clamp(Number(x), 0, DESIGN_WIDTH),
-    emitterY: clamp(Number(y), 0, DESIGN_HEIGHT)
+    emitterX: clamp(Number(x), 0, getDesignWidth()),
+    emitterY: clamp(Number(y), 0, getDesignHeight())
   });
 }
 
@@ -173,7 +234,16 @@ export function setPaused(value) {
 }
 
 export function setWorkspaceMode(mode) {
-  editorState.workspaceMode = mode === 'white' ? 'white' : 'dark';
+  editorState.workspaceMode = ['dark', 'white', 'reference'].includes(mode) ? mode : 'dark';
+  notifyChange();
+}
+
+export function setReferenceMedia(patch) {
+  editorState.referenceMedia = {
+    ...createEmptyReferenceMedia(),
+    ...(editorState.referenceMedia || {}),
+    ...patch
+  };
   notifyChange();
 }
 
