@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Artifex Effect Editor - Phase 1B Insert Menu Test</title>
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #050505;
+    }
+    #phase1b-frame {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+    }
+    #phase1b-status {
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      z-index: 999999;
+      max-width: 390px;
+      padding: 10px 12px;
+      border: 1px solid rgba(0,161,215,0.7);
+      border-radius: 12px;
+      background: rgba(10, 8, 8, 0.88);
+      color: #e2cca7;
+      font: 12px/1.45 system-ui, sans-serif;
+      box-shadow: 0 0 18px rgba(0,161,215,0.45);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <iframe id="phase1b-frame" src="./index.html"></iframe>
+  <div id="phase1b-status">Phase 1B patch loading…</div>
+  <script>
+    const statusBox = document.getElementById('phase1b-status');
+    const frame = document.getElementById('phase1b-frame');
+
+    function setStatus(message) {
+      statusBox.textContent = message;
+    }
+
+    function patchChild() {
+      const win = frame.contentWindow;
+      const doc = frame.contentDocument;
+      if (!win || !doc) {
+        setStatus('Phase 1B patch failed: iframe not accessible.');
+        return;
+      }
+
+      const style = doc.createElement('style');
+      style.id = 'phase1b-insert-menu-fix-style';
+      style.textContent = `
+        .dropdown-parent:hover > .dropdown-menu,
+        .dropdown-parent:focus-within > .dropdown-menu,
+        .dropdown-parent.dropdown-open > .dropdown-menu {
+          display: block !important;
+        }
+        .dropdown-menu {
+          min-height: 24px;
+        }
+        .phase1b-menu-status {
+          color: #8a7465;
+          font-size: 10px;
+          padding: 6px 10px;
+          font-style: italic;
+        }
+      `;
+      doc.head.appendChild(style);
+
+      const parents = Array.from(doc.querySelectorAll('.dropdown-parent'));
+      parents.forEach(parent => {
+        const button = parent.querySelector('button');
+        if (!button) return;
+        button.addEventListener('click', event => {
+          event.preventDefault();
+          event.stopPropagation();
+          parents.forEach(other => {
+            if (other !== parent) other.classList.remove('dropdown-open');
+          });
+          parent.classList.toggle('dropdown-open');
+        });
+      });
+      doc.addEventListener('click', event => {
+        if (!event.target.closest('.dropdown-parent')) {
+          parents.forEach(parent => parent.classList.remove('dropdown-open'));
+        }
+      });
+
+      const baseAcc = doc.getElementById('acc-base');
+      const compAcc = doc.getElementById('acc-comp');
+      const custAcc = doc.getElementById('acc-cust');
+
+      function button(className, html, onClick) {
+        const btn = doc.createElement('button');
+        btn.type = 'button';
+        btn.className = className;
+        btn.innerHTML = html;
+        btn.addEventListener('click', event => {
+          event.preventDefault();
+          event.stopPropagation();
+          try { onClick(); }
+          catch (error) {
+            console.error(error);
+            if (win.showToast) win.showToast('Insert action failed. See console.', 'error');
+          }
+        });
+        return btn;
+      }
+
+      const baseClass = 'w-full text-left px-3 py-1.5 rounded hover:bg-artifex-dark text-gray-300 hover:text-white transition flex flex-col focus:outline-none shadow-sm border border-transparent hover:border-artifex-border/50';
+      const compClass = 'w-full text-left px-3 py-1.5 rounded hover:bg-artifex-dark text-gray-300 hover:text-white transition flex flex-col focus:outline-none border border-transparent hover:border-emerald-900/60';
+
+      if (baseAcc) {
+        baseAcc.classList.remove('hidden');
+        baseAcc.innerHTML = '';
+        const basePresets = win.BASE_PRESETS || {};
+        const labels = {
+          particles: 'Standard Particle',
+          ribbon: 'Ribbon / Slash',
+          ring: 'Shockwave Ring',
+          lightning: 'Lightning Beam',
+          projectile: 'Projectile Trail',
+          gas: 'Gas / Smoke',
+          refraction: 'Refraction Draft',
+          lensflare: 'Lens Flare'
+        };
+        Object.keys(labels).forEach(category => {
+          const preset = basePresets[category] && basePresets[category][0];
+          if (!preset) return;
+          baseAcc.appendChild(button(
+            baseClass,
+            `<span class="font-bold text-[10px] text-artifex-gold">+ ${labels[category]}</span><span class="text-[8px] text-gray-500">${preset.name || preset.id}</span>`,
+            () => win.addLayerFromPreset(category, preset.id)
+          ));
+        });
+        if (!baseAcc.children.length) {
+          baseAcc.innerHTML = '<div class="phase1b-menu-status">No base presets found.</div>';
+        }
+      }
+
+      if (compAcc) {
+        compAcc.innerHTML = '';
+        const comps = win.COMPOSITE_PRESETS || [];
+        comps.forEach(preset => {
+          compAcc.appendChild(button(
+            compClass,
+            `<span class="font-bold text-[10px] text-emerald-400">✦ ${preset.name}</span><span class="text-[8px] text-gray-500">${preset.tags || 'effect archetype asset'}</span>`,
+            () => win.loadCompositePreset(preset.id)
+          ));
+        });
+        if (!compAcc.children.length) {
+          compAcc.innerHTML = '<div class="phase1b-menu-status">No effect archetype assets found.</div>';
+        }
+      }
+
+      if (custAcc) {
+        try {
+          if (win.renderCustomMenu) win.renderCustomMenu();
+        } catch (error) {
+          console.warn(error);
+        }
+      }
+
+      // Run the editor's own menu builder after the hard repair when available.
+      // If the editor builder is healthy, this keeps the wrapper aligned with index.html.
+      // If it fails, the repaired fallback menu above remains visible.
+      try {
+        if (win.initPresetLists) win.initPresetLists();
+      } catch (error) {
+        console.warn('Original initPresetLists failed; Phase 1B fallback remains active.', error);
+      }
+
+      setStatus('Phase 1B patch active: test Insert → Base Layer. This wrapper does not touch renderer, resolution, or particle math.');
+      setTimeout(() => { statusBox.style.opacity = '0.35'; }, 5000);
+    }
+
+    frame.addEventListener('load', () => {
+      setTimeout(patchChild, 450);
+    });
+  </script>
+</body>
+</html>
