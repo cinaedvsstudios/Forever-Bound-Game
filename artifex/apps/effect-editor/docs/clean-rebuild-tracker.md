@@ -14,7 +14,7 @@ This branch starts from the last known working Effect Editor render baseline.
 
 The confirmed working base is preserved on `fb-effect-base`.
 
-`fb-effect-split1` is the first modularisation branch. Stage 1 adds the extracted library module scaffold while leaving the live `index.html` render path untouched.
+`fb-effect-split1` is the first modularisation branch. Stages 1 and 2 add extracted module scaffolds while leaving the live `index.html` render path untouched.
 
 ## First test
 
@@ -57,11 +57,18 @@ Already present from earlier staged extraction:
 - `src/presets/base-effects.js`
 - `src/presets/composite-effects.js`
 
-Important: `index.html` is intentionally not wired to the modules yet. This keeps the live page behaviour identical while the module files are prepared.
+## Stage 2 completed
+
+Added:
+
+- `src/editor-state.js`
+- `src/fx-runtime.js`
+
+These are safe scaffold modules. `index.html` is intentionally not wired to them yet, so the live page behaviour should remain identical to the confirmed working base.
 
 ## Next step
 
-After confirming the `fb-effect-split1` URL still behaves exactly like `fb-effect-base`, wire only the preset registry reads in `index.html` to the library module. Do not touch renderer, canvas, resize, grid, or particle math.
+After confirming the `fb-effect-split1` URL still behaves exactly like `fb-effect-base`, wire only a tiny non-render module loader/check or a single registry read. Do not touch renderer, canvas, resize, grid, or particle math.
 
 ## Reapply later
 
