@@ -73,7 +73,7 @@
                 <img src="../../artifextitle.png" alt="Artifex" class="h-7 object-contain object-left max-w-[190px]">
                 <div class="flex items-center gap-2 mt-0.5">
                     <p class="text-[9px] text-artifex-goldMuted font-semibold tracking-wider uppercase font-serif">Visual Effects Editor</p>
-                    <span class="bg-artifex-purpleAccent/20 border border-artifex-purpleAccent text-purple-200 text-[8px] font-bold px-1.5 py-0.5 rounded-full font-sans tracking-normal shadow-[0_2px_5px_rgba(0,0,0,0.6)]">v2.3.2 ALPHA</span>
+                    <span class="bg-artifex-purpleAccent/20 border border-artifex-purpleAccent text-purple-200 text-[8px] font-bold px-1.5 py-0.5 rounded-full font-sans tracking-normal shadow-[0_2px_5px_rgba(0,0,0,0.6)]">v2.3.3 ALPHA</span>
                 </div>
             </div>
         </div>
@@ -233,7 +233,7 @@
                     <button onclick="openTutorialModal()" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center gap-2">
                         <span>📖</span> Quick Start Guide
                     </button>
-                    <button onclick="showToast('Particle Studio v2.3.2 ALPHA preset restore build.', 'info')" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-400 flex items-center gap-2">
+                    <button onclick="showToast('Particle Studio v2.3.3 ALPHA preset restore build.', 'info')" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-400 flex items-center gap-2">
                         <span>ℹ️</span> About FX Editor
                     </button>
                 </div>
@@ -960,7 +960,7 @@ engine.start();</pre>
                                 </div>
                             </div>
                         </div>
-                        <div class="text-[9px] text-artifex-goldMuted mt-2 text-right font-mono">v2.3.2 ALPHA Preview Grid</div>
+                        <div class="text-[9px] text-artifex-goldMuted mt-2 text-right font-mono">v2.3.3 ALPHA Preview Grid</div>
                     </div>
                 </div>
 
@@ -1107,8 +1107,9 @@ engine.start();</pre>
     <!-- Live Toast Notification System -->
     <div id="toast-container" class="fixed bottom-16 right-6 z-[200] space-y-2 pointer-events-none"></div>
 
-    <script src="./src/presets.js?v=phase7-presets-1"></script>
-    <script src="./src/fx-runtime.js?v=phase9j-scale-noise"></script>
+    <script src="./src/presets/base-effects.js?v=phase9m-split-presets"></script>
+    <script src="./src/presets/composite-effects.js?v=phase9m-split-presets"></script>
+    <script src="./src/fx-runtime.js?v=phase9m-split-preset-fix"></script>
     <!-- Visual Effects Engine Core JavaScript Implementation -->
     <script>
         // -------------------------------------------------------------
