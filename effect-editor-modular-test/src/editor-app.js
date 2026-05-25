@@ -7,9 +7,10 @@ import { initAppearanceParity } from './appearance-parity.js';
 import { initDynamicsParity } from './dynamics-parity.js';
 import { initIOParity } from './io-parity.js';
 import { initWorkspaceParity } from './workspace-parity.js';
+import { initResolutionParity } from './resolution-parity.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'v2.3.9 WORKSPACE';
+const VERSION_LABEL = 'v2.3.10 RESOLUTION';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
@@ -27,11 +28,12 @@ window.addEventListener('DOMContentLoaded', () => {
   initDynamicsParity(showToast);
   initIOParity(showToast);
   initWorkspaceParity(showToast);
+  initResolutionParity(showToast);
 
   const preset = cloneBasePreset('base', 'standard-particle');
   if (preset) {
     addLayer(preset.config);
   }
 
-  showToast(`${VERSION_LABEL} loaded. Workspace/reference controls parity pass is active.`, 'success');
+  showToast(`${VERSION_LABEL} loaded. Resolution and scale parity pass is active.`, 'success');
 });
