@@ -4,7 +4,7 @@ import { initUI, showToast } from './editor-ui.js';
 import { initLibrary } from './editor-library.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'v2.3.2 UI-PARITY';
+const VERSION_LABEL = 'v2.3.3 HEADER-MENU';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
@@ -23,5 +23,5 @@ window.addEventListener('DOMContentLoaded', () => {
     addLayer(preset.config);
   }
 
-  showToast(`${VERSION_LABEL} loaded. UI parity styling pass is active.`, 'success');
+  showToast(`${VERSION_LABEL} loaded. Header and menu parity pass is active.`, 'success');
 });
