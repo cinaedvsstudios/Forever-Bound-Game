@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Artifex Effect Editor Debug Mode</title>
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0f0c0b;
+      color: #e2cca7;
+      font-family: system-ui, sans-serif;
+    }
+    #debug-banner {
+      position: fixed;
+      left: 12px;
+      bottom: 12px;
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid #382a21;
+      border-radius: 999px;
+      background: rgba(23, 18, 16, 0.92);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.65);
+      padding: 8px 12px;
+      font-size: 12px;
+      pointer-events: auto;
+    }
+    #debug-banner strong { color: #86efac; }
+    #debug-banner button {
+      border: 1px solid #9e01ce;
+      border-radius: 999px;
+      background: #4e1452;
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    #debug-banner button:hover { background: #9e01ce; }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <iframe id="editor-frame" src="./index.html" title="Artifex Effect Editor"></iframe>
+  <div id="debug-banner">
+    <strong id="debug-status">Debug loading…</strong>
+    <span>Use Help → Debug Console inside the editor.</span>
+    <button type="button" id="open-debug">Open Debug</button>
+  </div>
+
+  <script>
+    const frame = document.getElementById('editor-frame');
+    const statusNode = document.getElementById('debug-status');
+    const openButton = document.getElementById('open-debug');
+
+    function setStatus(text, ok = true) {
+      statusNode.textContent = text;
+      statusNode.style.color = ok ? '#86efac' : '#fb7185';
+    }
+
+    function injectDebugModules() {
+      try {
+        const doc = frame.contentDocument;
+        const win = frame.contentWindow;
+        if (!doc || !win) throw new Error('iframe document/window unavailable');
+        if (doc.getElementById('artifex-debug-wrapper-module')) {
+          setStatus('Debug ready');
+          return;
+        }
+
+        const script = doc.createElement('script');
+        script.id = 'artifex-debug-wrapper-module';
+        script.type = 'module';
+        script.textContent = `
+          import { installArtifexModules } from './src/editor-bootstrap.js';
+          import { installArtifexDebugPanel } from './src/editor-debug.js';
+          installArtifexModules(window);
+          installArtifexDebugPanel();
+          console.info('Artifex debug mode modules installed in live editor frame.');
+        `;
+        doc.body.appendChild(script);
+
+        setTimeout(() => {
+          if (typeof win.openArtifexDebugPanel === 'function') {
+            setStatus('Debug ready');
+          } else {
+            setStatus('Debug injected; waiting', true);
+          }
+        }, 500);
+      } catch (error) {
+        console.error(error);
+        setStatus('Debug failed', false);
+      }
+    }
+
+    frame.addEventListener('load', () => {
+      setStatus('Injecting debug…');
+      setTimeout(injectDebugModules, 250);
+    });
+
+    openButton.addEventListener('click', () => {
+      try {
+        const win = frame.contentWindow;
+        if (typeof win.openArtifexDebugPanel === 'function') {
+          win.openArtifexDebugPanel();
+        } else {
+          injectDebugModules();
+        }
+      } catch (error) {
+        console.error(error);
+        setStatus('Debug failed', false);
+      }
+    });
+  </script>
+</body>
+</html>
