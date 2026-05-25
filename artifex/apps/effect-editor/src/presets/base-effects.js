@@ -1,4 +1,18 @@
 /* Artifex Effect Editor base effect preset registry. */
+
+/*
+ * Temporary viewport guard for current inline editor script.
+ * syncViewportUI() in index.html references snapNode/helperIcon as globals. If they are
+ * missing, the window.onload chain stops before tick(), leaving the workspace blank and
+ * panel resize feeling broken. These are intentionally var globals for that legacy script.
+ */
+var snapNode = document.getElementById('view-snap-status');
+var helperIcon = document.getElementById('helper-toggle-icon');
+window.addEventListener('load', function () {
+    snapNode = document.getElementById('view-snap-status');
+    helperIcon = document.getElementById('helper-toggle-icon');
+});
+
 (function () {
     'use strict';
     window.ARTIFEX_FX_PRESETS = {
@@ -69,7 +83,7 @@
         if (customButton) customButton.classList.add('hidden');
         if (customAcc) customAcc.classList.add('hidden');
         const badge = Array.from(document.querySelectorAll('span')).find(node => /v2\.3\./.test(node.textContent || ''));
-        if (badge) badge.textContent = 'v2.3.4 ALPHA';
+        if (badge) badge.textContent = 'v2.3.5 ALPHA';
     }
     window.ArtifexInsertMenuGuard = { restoreInsertMenuLayout };
     window.addEventListener('load', function () { setTimeout(restoreInsertMenuLayout, 90); setTimeout(restoreInsertMenuLayout, 400); });
