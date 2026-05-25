@@ -23,6 +23,15 @@ import { listBasePresets } from './presets/base-effects.js';
 import { takeSnapshot } from './editor-renderer.js';
 import { exportJSON, importJSONFromFile, saveToLocalStorage, showLocalFiles } from './editor-io.js';
 
+const ENGINE_OPTIONS = [
+  ['particles', 'Standard Particle Engine'],
+  ['lightning', 'Lightning / Beam Engine'],
+  ['ribbon', 'Trail / Ribbon Engine'],
+  ['ring', 'Ring / Shockwave Engine'],
+  ['projectile', 'Projectile / Trail Engine'],
+  ['gas', 'Gas / Smoke / Dust Engine']
+];
+
 const bindings = [
   ['layer-name-input', 'name', 'text'],
   ['engine-select', 'engine', 'text'],
@@ -198,17 +207,25 @@ function bindLayerControls() {
 }
 
 function populateEngineSelect() {
-  const engines = [
-    ['particles', 'Standard Particle Engine'],
-    ['lightning', 'Lightning / Beam Engine'],
-    ['ribbon', 'Trail / Ribbon Engine'],
-    ['ring', 'Ring / Shockwave Engine'],
-    ['projectile', 'Projectile / Trail Engine'],
-    ['gas', 'Gas / Smoke / Dust Engine']
-  ];
-
   const select = document.getElementById('engine-select');
-  select.innerHTML = engines.map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
+  select.innerHTML = ENGINE_OPTIONS.map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
+  select.title = 'Choose the active layer effect engine.';
+}
+
+function ensureEngineOption(value) {
+  const select = document.getElementById('engine-select');
+  if (!select.options.length) populateEngineSelect();
+  if (!value) return;
+  const exists = Array.from(select.options).some((option) => option.value === value);
+  if (!exists) {
+    select.append(new Option(labelForEngine(value), value));
+  }
+}
+
+function labelForEngine(value) {
+  const known = ENGINE_OPTIONS.find(([engine]) => engine === value);
+  if (known) return known[1];
+  return String(value || 'Unknown Engine').replace(/[-_]/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function syncUI() {
@@ -244,9 +261,20 @@ function syncControls() {
   for (const [elementId, property] of bindings) {
     const element = document.getElementById(elementId);
     element.disabled = disabled;
-    if (layer && String(element.value) !== String(layer[property])) {
-      element.value = layer[property];
+
+    if (layer) {
+      if (elementId === 'engine-select') {
+        ensureEngineOption(layer[property]);
+      }
+      if (String(element.value) !== String(layer[property])) {
+        element.value = layer[property];
+      }
+      if (elementId === 'engine-select') {
+        element.title = labelForEngine(layer[property]);
+        element.dataset.selectedLabel = labelForEngine(layer[property]);
+      }
     }
+
     const output = document.getElementById(elementId.replace('-input', '-output'));
     if (output && layer) output.textContent = String(layer[property]);
   }
