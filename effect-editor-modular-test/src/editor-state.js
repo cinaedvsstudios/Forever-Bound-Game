@@ -75,7 +75,16 @@ export function normalizeLayer(layer) {
     gravity: finiteNumber(layer.gravity, 0.04),
     lifetime: finiteNumber(layer.lifetime, 80),
     emitterX: finiteNumber(layer.emitterX, DESIGN_WIDTH / 2),
-    emitterY: finiteNumber(layer.emitterY, DESIGN_HEIGHT * 0.64)
+    emitterY: finiteNumber(layer.emitterY, DESIGN_HEIGHT * 0.64),
+    appearanceMode: layer.appearanceMode || 'shape',
+    particleShape: layer.particleShape || 'circle',
+    blendMode: layer.blendMode || defaultBlendMode(layer.engine),
+    reverseColor: Boolean(layer.reverseColor),
+    rotation: finiteNumber(layer.rotation, 0),
+    edgeBlur: finiteNumber(layer.edgeBlur, 0),
+    textureAlpha: finiteNumber(layer.textureAlpha, 1),
+    textureName: layer.textureName || '',
+    textureDataUrl: layer.textureDataUrl || ''
   };
 }
 
@@ -193,6 +202,10 @@ export function notifyChange() {
   for (const listener of changeListeners) {
     listener(editorState);
   }
+}
+
+function defaultBlendMode(engine) {
+  return engine === 'gas' || engine === 'refraction' ? 'source-over' : 'lighter';
 }
 
 function finiteNumber(value, fallback) {
