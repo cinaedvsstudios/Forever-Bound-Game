@@ -57,6 +57,7 @@ The live editor still works after scaffold extraction.
 - `src/editor-ui.js`
 - `src/editor-io.js`
 - `src/editor-bootstrap.js`
+- `src/editor-debug.js`
 - `src/editor-library.js`
 - `src/presets/base-effects.js`
 - `src/presets/composite-effects.js`
@@ -99,11 +100,25 @@ Added:
 - `src/editor-bootstrap.js`
 - `module-smoke-test.html`
 
-These are safe scaffold modules. `index.html` is intentionally not wired to them yet, so the live page behaviour should remain identical to the confirmed working base.
+## Debug scaffold completed
+
+Added:
+
+- `src/editor-debug.js`
+
+Planned Help menu debug console behaviour:
+
+- Adds a `Debug Console` entry to the Help menu once wired.
+- Captures browser runtime errors and unhandled promise rejections.
+- Mirrors `console.error` and `console.warn` into an in-page report.
+- Shows module import state, registry counts, canvas size, dropdown count, layer count, devicePixelRatio, and Artifex localStorage keys.
+- Includes a `Copy Report` button so the full diagnostic output can be pasted into a chat or issue.
+
+Important: the debug module is not wired into `index.html` yet. The live page remains unchanged until the next tiny wiring pass.
 
 ## Next step
 
-Do the first tiny live wiring pass: add a module script to `index.html` that imports `src/editor-bootstrap.js` and exposes `window.ArtifexEffectEditorModules`, without replacing live runtime logic.
+Do the first tiny live wiring pass: add module scripts to `index.html` that import `src/editor-bootstrap.js` and `src/editor-debug.js`, exposing `window.ArtifexEffectEditorModules` and adding the Help menu `Debug Console` entry, without replacing live runtime logic.
 
 ## Reapply later
 
