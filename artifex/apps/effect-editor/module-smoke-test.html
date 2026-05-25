@@ -15,7 +15,7 @@
       font-family: system-ui, sans-serif;
     }
     main {
-      width: min(720px, calc(100vw - 32px));
+      width: min(760px, calc(100vw - 32px));
       border: 1px solid #382a21;
       border-radius: 18px;
       background: rgba(23, 18, 16, 0.92);
@@ -34,6 +34,17 @@
       font-size: 13px;
       overflow: auto;
     }
+    button {
+      border: 1px solid #382a21;
+      background: #25282c;
+      color: #e2cca7;
+      border-radius: 999px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-weight: 700;
+      margin-right: 8px;
+    }
+    button:hover { color: white; border-color: #9e01ce; }
     a { color: #00a1d7; }
     .ok { color: #86efac; }
     .fail { color: #fb7185; }
@@ -42,26 +53,46 @@
 <body>
   <main>
     <h1>Artifex module smoke test</h1>
-    <p>This page only checks that the extracted module files can be imported by the browser. It does not run or modify the live Effect Editor.</p>
+    <p>This page checks that extracted module files can be imported by the browser. It does not run or modify the live Effect Editor.</p>
     <pre id="result">Loading module bootstrap…</pre>
-    <p><a href="./index.html">Open live editor</a></p>
+    <p>
+      <button id="open-debug" type="button" disabled>Open Debug Console</button>
+      <button id="copy-debug" type="button" disabled>Copy Debug Report</button>
+      <a href="./index.html">Open live editor</a>
+    </p>
   </main>
   <script type="module">
     const result = document.getElementById('result');
+    const openDebugButton = document.getElementById('open-debug');
+    const copyDebugButton = document.getElementById('copy-debug');
+
     try {
       const module = await import('./src/editor-bootstrap.js');
+      const debugModule = await import('./src/editor-debug.js');
       const installed = module.installArtifexModules(window);
       const groups = Object.keys(installed || {});
       const baseCount = Object.keys(installed.Library.PRESETS_REGISTRY || {}).length;
       const compositeCount = (installed.Library.COMPOSITES_REGISTRY || []).length;
+      const debugApi = debugModule.installArtifexDebugPanel();
+      const debugInstalled = typeof window.openArtifexDebugPanel === 'function' && typeof window.copyArtifexDebugReport === 'function';
+
+      openDebugButton.disabled = !debugInstalled;
+      copyDebugButton.disabled = !debugInstalled;
+      openDebugButton.addEventListener('click', () => window.openArtifexDebugPanel?.());
+      copyDebugButton.addEventListener('click', () => window.copyArtifexDebugReport?.());
+
       result.className = 'ok';
       result.textContent = [
         'PASS: editor-bootstrap.js imported successfully.',
+        'PASS: editor-debug.js imported successfully.',
         `Module groups: ${groups.join(', ')}`,
         `Base effect categories: ${baseCount}`,
         `Composite effect presets: ${compositeCount}`,
+        `Debug API installed: ${debugInstalled ? 'yes' : 'no'}`,
+        `Debug API keys: ${Object.keys(debugApi || {}).join(', ')}`,
         '',
-        'window.ArtifexEffectEditorModules is now available for the later index.html wiring pass.'
+        'window.ArtifexEffectEditorModules is available for the later index.html wiring pass.',
+        'window.openArtifexDebugPanel is available for the Help menu Debug Console.'
       ].join('\n');
     } catch (error) {
       result.className = 'fail';
