@@ -10,11 +10,25 @@ This branch starts from the last known working Effect Editor render baseline.
 
 `https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/fb-effect-split1/artifex/apps/effect-editor/index.html`
 
+## Module smoke test URL
+
+`https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/fb-effect-split1/artifex/apps/effect-editor/module-smoke-test.html`
+
 ## Current status
 
 The confirmed working base is preserved on `fb-effect-base`.
 
 `fb-effect-split1` is the first modularisation branch. Stages 1 through 5 add extracted module scaffolds while leaving the live `index.html` render path untouched.
+
+Module smoke test passed in browser:
+
+- `editor-bootstrap.js` imports successfully.
+- Module groups visible: Library, State, Runtime, Renderer, UI, IO.
+- Base effect categories visible: 8.
+- Composite effect presets visible: 3.
+- `window.ArtifexEffectEditorModules` is available on the smoke-test page.
+
+The live editor still works after scaffold extraction.
 
 ## First test
 
@@ -41,9 +55,9 @@ The confirmed working base is preserved on `fb-effect-base`.
 - `src/editor-renderer.js`
 - `src/fx-runtime.js`
 - `src/editor-ui.js`
-- `src/editor-library.js`
 - `src/editor-io.js`
 - `src/editor-bootstrap.js`
+- `src/editor-library.js`
 - `src/presets/base-effects.js`
 - `src/presets/composite-effects.js`
 
@@ -83,12 +97,13 @@ Added:
 Added:
 
 - `src/editor-bootstrap.js`
+- `module-smoke-test.html`
 
 These are safe scaffold modules. `index.html` is intentionally not wired to them yet, so the live page behaviour should remain identical to the confirmed working base.
 
 ## Next step
 
-After confirming the `fb-effect-split1` URL still behaves exactly like `fb-effect-base`, do the first tiny wiring pass. First candidate: add a module script to `index.html` that imports `src/editor-bootstrap.js` and exposes `window.ArtifexEffectEditorModules`, without replacing live runtime logic.
+Do the first tiny live wiring pass: add a module script to `index.html` that imports `src/editor-bootstrap.js` and exposes `window.ArtifexEffectEditorModules`, without replacing live runtime logic.
 
 ## Reapply later
 
