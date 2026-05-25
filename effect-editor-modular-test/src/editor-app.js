@@ -3,9 +3,10 @@ import { initRenderer } from './editor-renderer.js';
 import { initUI, showToast } from './editor-ui.js';
 import { initLibrary } from './editor-library.js';
 import { initSidePanelParity } from './side-panel-parity.js';
+import { initAppearanceParity } from './appearance-parity.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'v2.3.5 INSERT-PARITY';
+const VERSION_LABEL = 'v2.3.6 APPEARANCE';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
@@ -19,11 +20,12 @@ window.addEventListener('DOMContentLoaded', () => {
   initUI();
   initLibrary();
   initSidePanelParity(showToast);
+  initAppearanceParity(showToast);
 
   const preset = cloneBasePreset('base', 'standard-particle');
   if (preset) {
     addLayer(preset.config);
   }
 
-  showToast(`${VERSION_LABEL} loaded. Insert menu parity pass is active.`, 'success');
+  showToast(`${VERSION_LABEL} loaded. Appearance controls parity pass is active.`, 'success');
 });
