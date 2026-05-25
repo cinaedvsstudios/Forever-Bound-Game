@@ -1,10 +1,10 @@
-# Phase 1B Insert Menu Test Result
+# Artifex Effect Editor — Phase 1B Insert Menu Test Result
 
 ## What was broken
 
-The Artifex Effect Editor render baseline was restored, but the top Insert menu opened without usable populated entries. The editor UI contained the expected Insert accordion containers (`acc-base`, `acc-comp`, and `acc-cust`), but the menu population path was not reliably loading the preset registries into those containers.
+The Insert menu opened empty or could not be reliably opened after the render restore. The editor itself could still render particles, update the layer stack, and update the side panel, but the top menu bar needed a more defensive click handler and the Insert menu needed real population from the preset registries.
 
-The key cause addressed in this patch is that the preset files are ES module files with `export` statements. The editor was loading them as classic scripts, so the preset registry data was not available to the Insert menu builder.
+A follow-up test also showed the preview grid was rendering as rectangular cells in some layouts/settings. The preview grid should display square cells.
 
 ## Files changed
 
@@ -14,57 +14,40 @@ The key cause addressed in this patch is that the preset files are ES module fil
 ## What was fixed
 
 - Updated visible version text to `v2.3.2 PHASE 1B`.
-- Loaded the base preset and composite preset files as modules.
-- Added a Phase 1B preset module loader inside `index.html`.
-- Made `PRESETS_REGISTRY` and `COMPOSITES_REGISTRY` update from the imported module exports.
-- Rebuilt `initPresetLists()` so the Insert menu populates:
-  - `Base Layer` with actual clickable base preset entries.
-  - `Effect Archetype Assets` with actual composite/archetype entries.
-  - `Custom Effect` with saved custom effects or an empty state.
-- Added `addLayerFromPreset()` for adding real base preset layers from the Insert menu.
-- Added `loadCompositePreset()` for loading real composite/archetype presets from the Insert menu.
-- Added `renderCustomMenu()` as the custom effect menu renderer.
-- Added clear fallback messages when base presets, archetype assets, or custom effects are unavailable.
-- Added dropdown visibility support for the existing menu system without creating wrapper pages or overlay menus.
+- Kept the existing File / Edit / View / Insert / Help menu structure.
+- Added a capture-phase fallback click handler for top-menu buttons using their existing `data-menu-id` values.
+- Strengthened the existing `.dropdown-parent` / `.dropdown-menu` behaviour without adding overlay menus or wrapper pages.
+- Populated `Base Layer` from the real base preset registry.
+- Populated `Effect Archetype Assets` from the real composite/archetype registry, with a visible empty state if none are available.
+- Populated `Custom Effect` from saved local custom effects, with a visible empty state if none are available.
+- Added a square-cell preview grid layout using the existing 16-column / 9-row guide.
 
 ## Acceptance test steps
 
-1. Open the Phase 1B test URL.
+1. Open `https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/effect-editor-reapply-phase1b/artifex/apps/effect-editor/index.html`.
 2. Confirm the grid appears.
-3. Open `Insert`.
-4. Confirm `Base Layer` has visible entries.
-5. Click one `Base Layer` entry.
-6. Confirm a layer is added to the layer stack.
-7. Confirm particles visibly render.
-8. Reopen `Insert`.
-9. Expand/open `Effect Archetype Assets`.
-10. Confirm archetype/composite entries are visible, or a clear fallback/empty state appears.
-11. Click an archetype/composite if available.
-12. Confirm particles still render.
-13. Resize the side panel and bottom panel.
-14. Confirm grid labels remain visible.
-15. Confirm particles remain visible after resizing.
-16. Confirm `File`, `Edit`, `View`, and `Help` still open.
-17. Confirm the browser console has no new fatal errors from this Phase 1B change.
+3. Confirm grid cells are square, not stretched rectangles.
+4. Click `File`, `Edit`, `View`, `Insert`, and `Help` and confirm each menu opens.
+5. Open `Insert`.
+6. Confirm `Base Layer` has visible entries.
+7. Click one `Base Layer` entry.
+8. Confirm a layer is added to the bottom layer stack.
+9. Confirm particles visibly render.
+10. Reopen `Insert`.
+11. Expand/open `Effect Archetype Assets`.
+12. Confirm archetype/composite entries are visible, or a clear fallback/empty state appears.
+13. Click an archetype/composite if available.
+14. Confirm particles still render.
+15. Resize the side panel and bottom panel.
+16. Confirm grid labels remain visible.
+17. Confirm particles remain visible after resizing.
+18. Confirm browser console has no new fatal errors.
 
 ## Remaining issues
 
-- Preview performance is still very slow.
-- Performance tuning is intentionally postponed and was not attempted in this patch.
-- The temporary wrapper file previously added on the branch is not used by this fix. The real app fix is in `index.html`.
+- Performance is still very slow in full preview mode. This is intentionally not fixed in Phase 1B.
+- Any deeper optimisation should be handled separately so the working render restore is not destabilised.
 
-## Areas intentionally not touched
+## Explicit non-touch note
 
-This patch intentionally did not modify:
-
-- render loop logic
-- canvas scale logic
-- resolution logic
-- devicePixelRatio logic
-- particle math
-- particle update logic
-- particle drawing logic
-- brush rendering
-- performance tuning
-
-The goal of Phase 1B was only to restore real Insert menu population while preserving the working render baseline.
+Render loop logic, canvas scale logic, devicePixelRatio handling, resolution metadata, particle math, particle update, particle drawing, brush rendering, and performance tuning were intentionally not changed. The square-grid adjustment only changes the visible preview guide bounds/cell geometry so the guide displays square cells.

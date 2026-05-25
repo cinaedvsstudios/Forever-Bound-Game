@@ -63,10 +63,36 @@
         }
 
         /* Phase 1B: keep the real menu/dropdown system visible when clicked, hovered, or keyboard focused. */
+        header,
+        header nav,
+        .dropdown-parent,
+        .dropdown-parent > button,
+        .dropdown-menu {
+            pointer-events: auto;
+        }
+
+        header nav {
+            position: relative;
+            z-index: 300;
+        }
+
+        .dropdown-parent {
+            position: relative;
+            z-index: 301;
+        }
+
+        .dropdown-parent:hover,
+        .dropdown-parent:focus-within,
+        .dropdown-parent.menu-open {
+            z-index: 400;
+        }
+
         .dropdown-parent:hover > .dropdown-menu,
         .dropdown-parent:focus-within > .dropdown-menu,
-        .dropdown-parent.menu-open > .dropdown-menu {
+        .dropdown-parent.menu-open > .dropdown-menu,
+        .dropdown-menu:not(.hidden) {
             display: block !important;
+            pointer-events: auto !important;
         }
 
         .phase1b-menu-empty {
@@ -1214,6 +1240,8 @@ engine.start();</pre>
         let isResizingH = false;
         let isResizingV = false;
         let gridBounds = { left: 0, top: 0, width: 0, height: 0, right: 0, bottom: 0 };
+        const PREVIEW_GRID_COLUMNS = 16;
+        const PREVIEW_GRID_ROWS = 9;
 
         let lastTime = performance.now();
         let frameCount = 0;
@@ -1445,8 +1473,8 @@ engine.start();</pre>
 
             if (gridW <= 0 || gridH <= 0) return;
 
-            const cols = 16;
-            const rows = Math.max(1, Math.round(cols * (gridH / gridW)));
+            const cols = PREVIEW_GRID_COLUMNS;
+            const rows = PREVIEW_GRID_ROWS;
             const cellW = gridW / cols;
             const cellH = gridH / rows;
 
@@ -1942,20 +1970,24 @@ engine.start();</pre>
             document.addEventListener('touchend', stopResize);
         }
 
-        function toggleTopMenu(event, dropdownId) {
+        function toggleTopMenu(event, dropdownId, explicitButton = null) {
             if (event) {
                 event.preventDefault();
                 event.stopPropagation();
                 if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
             }
+
             const menu = document.getElementById(dropdownId);
             if (!menu) return;
-            const button = event?.currentTarget || document.querySelector(`[data-menu-id="${dropdownId}"]`);
-            const shouldOpen = menu.classList.contains('hidden');
+
+            const button = explicitButton || event?.currentTarget || document.querySelector(`[data-menu-id="${dropdownId}"]`);
+            const parent = button?.closest('.dropdown-parent') || menu.closest('.dropdown-parent');
+            const shouldOpen = menu.classList.contains('hidden') || !parent?.classList.contains('menu-open');
+
             closeAllDropdowns();
+
             if (shouldOpen) {
                 menu.classList.remove('hidden');
-                const parent = button?.closest('.dropdown-parent');
                 if (parent) parent.classList.add('menu-open');
                 if (button) button.classList.add('bg-artifex-purpleAccent/25', 'border-artifex-purpleAccent', 'text-white');
             }
@@ -1963,15 +1995,16 @@ engine.start();</pre>
 
         function setupDropdownInteractions() {
             const parents = document.querySelectorAll('.dropdown-parent');
-            
+
             parents.forEach(parent => {
                 const btn = parent.querySelector('button');
                 const menu = parent.querySelector('.dropdown-menu');
                 if (!btn || !menu || btn.dataset.menuId) return;
 
                 btn.addEventListener('click', (e) => {
+                    e.preventDefault();
                     e.stopPropagation();
-                    const isHidden = menu.classList.contains('hidden');
+                    const isHidden = menu.classList.contains('hidden') || !parent.classList.contains('menu-open');
                     closeAllDropdowns();
                     if (isHidden) {
                         menu.classList.remove('hidden');
@@ -1980,6 +2013,26 @@ engine.start();</pre>
                     }
                 });
             });
+
+            // Capture-phase handler protects the top menu bar even if another listener,
+            // browser focus behaviour, or a nested dropdown tries to swallow the click.
+            if (!document.body.dataset.phase1bTopMenusBound) {
+                document.body.dataset.phase1bTopMenusBound = 'true';
+                document.addEventListener('click', (e) => {
+                    const trigger = e.target.closest('[data-menu-id]');
+                    if (trigger) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+                        toggleTopMenu(null, trigger.dataset.menuId, trigger);
+                        return;
+                    }
+
+                    if (!e.target.closest('.dropdown-parent')) {
+                        closeAllDropdowns();
+                    }
+                }, true);
+            }
 
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('.dropdown-parent')) {
@@ -2015,9 +2068,9 @@ engine.start();</pre>
             document.querySelectorAll('.dropdown-parent.menu-open').forEach(parent => parent.classList.remove('menu-open'));
             const btns = document.querySelectorAll('.dropdown-parent > button, .dropdown-parent [data-menu-id]');
             btns.forEach(btn => btn.classList.remove('bg-artifex-purpleAccent/25', 'border-artifex-purpleAccent', 'text-white'));
-            
+
             const shapeGrid = document.getElementById('shape-picker-grid');
-            if(shapeGrid) shapeGrid.classList.add('hidden');
+            if (shapeGrid) shapeGrid.classList.add('hidden');
         }
 
         function toggleDropdown(event, dropdownId) {
@@ -2338,10 +2391,13 @@ engine.start();</pre>
             const availW = w - marginL - marginR;
             const availH = h - marginT - marginB;
             if (availW <= 0 || availH <= 0) return;
-            const res = getFxDesignResolution();
-            const fit = Math.min(availW / res.width, availH / res.height);
-            gridBounds.width = Math.max(80, res.width * fit);
-            gridBounds.height = Math.max(80, res.height * fit);
+
+            // Phase 1B-2: the preview grid is a 16 × 9 square-cell guide.
+            // This keeps the visual mapping grid square without changing canvas DPR,
+            // particle maths, exported FX resolution metadata, or brush rendering.
+            const cellSize = Math.max(8, Math.min(availW / PREVIEW_GRID_COLUMNS, availH / PREVIEW_GRID_ROWS));
+            gridBounds.width = PREVIEW_GRID_COLUMNS * cellSize;
+            gridBounds.height = PREVIEW_GRID_ROWS * cellSize;
             gridBounds.left = marginL + (availW - gridBounds.width) / 2;
             gridBounds.top = marginT + (availH - gridBounds.height) / 2;
             gridBounds.right = gridBounds.left + gridBounds.width;
