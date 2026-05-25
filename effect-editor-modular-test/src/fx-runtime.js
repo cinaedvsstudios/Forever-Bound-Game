@@ -121,7 +121,10 @@ export function drawParticle(ctx, particle, layer, scale) {
 
 function resolveEmitterWidth(layer) {
   const width = finite(layer.emitterWidth, 0);
-  if (layer.emitterWidthUnit === 'percent') return Math.max(0, width / 100 * 1280);
+  if (layer.emitterWidthUnit === 'percent') {
+    const stageWidth = finite(layer.designWidth, finite(globalThis.ArtifexDesignWidth, 1280));
+    return Math.max(0, width / 100 * stageWidth);
+  }
   return Math.max(0, width);
 }
 
