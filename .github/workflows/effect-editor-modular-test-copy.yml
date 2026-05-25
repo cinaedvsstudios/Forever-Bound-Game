@@ -1,0 +1,70 @@
+name: Create isolated Effect Editor test copy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - effect-editor-modular-test-package
+    paths:
+      - .github/workflows/effect-editor-modular-test-copy.yml
+
+permissions:
+  contents: write
+
+jobs:
+  copy-editor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: effect-editor-modular-test-package
+          fetch-depth: 0
+
+      - name: Create isolated test folder and zip
+        shell: bash
+        run: |
+          set -euo pipefail
+          TEST_DIR="artifex/apps/effect-editor-modular-test"
+          ZIP_FILE="artifex/apps/effect-editor-modular-test.zip"
+          rm -rf "$TEST_DIR" "$ZIP_FILE"
+          mkdir -p "$TEST_DIR"
+          cp -R artifex/apps/effect-editor/. "$TEST_DIR/"
+          cp "$TEST_DIR/index.html" "$TEST_DIR/index.monolith.backup.html"
+          cat > "$TEST_DIR/MODULAR_TEST_README.md" <<'EOF'
+          # Effect Editor Modular Test Folder
+
+          This folder is an isolated copy for testing. It does not replace the live `artifex/apps/effect-editor/` folder.
+
+          Test this URL/path after upload:
+          `artifex/apps/effect-editor-modular-test/index.html`
+
+          First goal:
+          - prove the editor can be packaged and tested outside the production folder
+          - keep the live editor untouched
+          - use this folder for module-splitting experiments
+
+          Manual checks:
+          1. Page loads.
+          2. Grid appears.
+          3. Insert menu opens.
+          4. Insert > Base Layer / Standard Particle creates visible particles.
+          5. Menus still open.
+          6. Sliders still affect the active layer.
+          7. Side/bottom resize does not kill render.
+          EOF
+          (cd artifex/apps && zip -qr effect-editor-modular-test.zip effect-editor-modular-test)
+
+      - name: Commit test folder
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifex/apps/effect-editor-modular-test artifex/apps/effect-editor-modular-test.zip
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Create isolated Effect Editor modular test copy"
+          git push origin effect-editor-modular-test-package
