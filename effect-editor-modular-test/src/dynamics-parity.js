@@ -46,39 +46,39 @@ function ensureDynamicsControls() {
 
   dynamicsCard.insertAdjacentHTML('beforeend', `
     <div class="dynamics-actions">
-      <button id="set-origin-button" type="button">Set Origin Center</button>
-      <button id="point-target-button" type="button">Point To Target</button>
+      <button id="set-origin-button" type="button">Center Origin</button>
+      <button id="point-target-button" type="button">Aim at Target</button>
     </div>
     <div class="dynamics-grid">
-      <label>Emitter Width
+      <label>Spawn Width
         <input id="emitter-width-input" type="range" min="0" max="400" step="1" value="0" />
         <output id="emitter-width-output">0</output>
       </label>
-      <label>Width Unit
+      <label>Spawn Width Unit
         <select id="emitter-width-unit-select">
           <option value="px">Pixels</option>
           <option value="percent">Percent Stage</option>
         </select>
       </label>
-      <label>Emitter Rotation
+      <label>Spawn Line Rotation
         <input id="emitter-rotation-input" type="range" min="-180" max="180" step="1" value="0" />
         <output id="emitter-rotation-output">0</output>
       </label>
-      <label>Friction
+      <label>Drag / Slowdown
         <input id="friction-input" type="range" min="0" max="0.08" step="0.001" value="0" />
         <output id="friction-output">0</output>
       </label>
-      <label>Target X
+      <label>Target Point X
         <input id="target-x-input" type="number" min="0" max="1280" step="1" value="640" />
       </label>
-      <label>Target Y
+      <label>Target Point Y
         <input id="target-y-input" type="number" min="0" max="720" step="1" value="360" />
       </label>
-      <label>Lifetime Min
+      <label>Min Life
         <input id="lifetime-min-input" type="range" min="4" max="300" step="1" value="60" />
         <output id="lifetime-min-output">60</output>
       </label>
-      <label>Lifetime Max
+      <label>Max Life
         <input id="lifetime-max-input" type="range" min="4" max="360" step="1" value="110" />
         <output id="lifetime-max-output">110</output>
       </label>
@@ -90,11 +90,11 @@ function ensureDynamicsControls() {
         <input id="noise-grain-input" type="range" min="0" max="1" step="0.01" value="0" />
         <output id="noise-grain-output">0</output>
       </label>
-      <label class="dynamics-toggle-row dynamics-wide">Reverse Near Target
+      <label class="dynamics-toggle-row dynamics-wide">Reverse Direction
         <input id="reverse-near-target-toggle" type="checkbox" />
       </label>
     </div>
-    <p class="dynamics-note">Dynamics controls are restored as modular state. Width, rotation, friction, lifetime range, orbital force, and noise grain are now wired into the runtime.</p>
+    <p class="dynamics-note">Dynamics controls are restored as modular state. Width, rotation, drag, lifetime range, Orbital Force, and noise grain are wired into the runtime.</p>
   `);
 }
 
@@ -121,14 +121,14 @@ function bindDynamicsControls(showToast) {
   });
   document.getElementById('set-origin-button')?.addEventListener('click', () => {
     updateActiveLayer({ emitterX: DESIGN_WIDTH / 2, emitterY: DESIGN_HEIGHT / 2 });
-    showToast('Emitter origin set to stage center.', 'success');
+    showToast('Origin centered on stage.', 'success');
   });
   document.getElementById('point-target-button')?.addEventListener('click', () => {
     const layer = getActiveLayer();
     if (!layer) return;
     const angle = Math.atan2((layer.targetY ?? DESIGN_HEIGHT / 2) - layer.emitterY, (layer.targetX ?? DESIGN_WIDTH / 2) - layer.emitterX) * 180 / Math.PI;
     updateActiveLayer({ angle: Math.round(angle) });
-    showToast('Layer direction pointed to target.', 'success');
+    showToast('Layer aimed at target point.', 'success');
   });
 
   for (const id of controlIds) {
