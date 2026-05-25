@@ -2,16 +2,179 @@
 
 /*
  * Temporary viewport guard for current inline editor script.
- * syncViewportUI() in index.html references snapNode/helperIcon as globals. If they are
- * missing, the window.onload chain stops before tick(), leaving the workspace blank and
- * panel resize feeling broken. These are intentionally var globals for that legacy script.
+ * This protects startup from stale UI sizes and missing globals while the editor is
+ * still mostly inline inside index.html. The consolidation pass should move this
+ * into the editor bootstrap.
  */
 var snapNode = document.getElementById('view-snap-status');
 var helperIcon = document.getElementById('helper-toggle-icon');
-window.addEventListener('load', function () {
-    snapNode = document.getElementById('view-snap-status');
-    helperIcon = document.getElementById('helper-toggle-icon');
-});
+
+(function () {
+    'use strict';
+
+    const UI_STATE_KEY = 'artifex_fx_editor_ui_state_v1';
+
+    function clampNumber(value, min, max, fallback) {
+        const number = Number(value);
+        if (!Number.isFinite(number)) return fallback;
+        return Math.max(min, Math.min(max, number));
+    }
+
+    function sanitizeStoredUiState() {
+        try {
+            const raw = JSON.parse(localStorage.getItem(UI_STATE_KEY) || '{}') || {};
+            const maxSidebar = Math.max(260, Math.min(window.innerWidth - 360, 520));
+            const maxLower = Math.max(160, Math.floor((window.innerHeight - 68) * 0.45));
+            let changed = false;
+
+            if (raw.sidebarWidth !== undefined) {
+                const next = clampNumber(raw.sidebarWidth, 240, maxSidebar, 320);
+                if (next !== raw.sidebarWidth) changed = true;
+                raw.sidebarWidth = next;
+            }
+
+            if (raw.lowerPanelHeight !== undefined) {
+                const next = clampNumber(raw.lowerPanelHeight, 140, maxLower, 220);
+                if (next !== raw.lowerPanelHeight) changed = true;
+                raw.lowerPanelHeight = next;
+            }
+
+            if (changed) localStorage.setItem(UI_STATE_KEY, JSON.stringify(raw));
+        } catch (err) {
+            try { localStorage.removeItem(UI_STATE_KEY); } catch (ignore) {}
+        }
+    }
+
+    function forceSafePanelSizes() {
+        const sidebar = document.getElementById('sidebar-panel');
+        const lower = document.getElementById('lower-panel');
+        const main = document.querySelector('main');
+        const right = document.querySelector('section.bg-artifex-dark');
+
+        if (sidebar && main) {
+            const mainW = main.getBoundingClientRect().width || window.innerWidth;
+            const current = sidebar.getBoundingClientRect().width || 320;
+            const max = Math.max(260, mainW - 360);
+            const next = clampNumber(current, 240, max, 320);
+            sidebar.style.width = next + 'px';
+            sidebar.style.minWidth = next + 'px';
+        }
+
+        if (lower && right) {
+            const rightH = right.getBoundingClientRect().height || (window.innerHeight - 68);
+            const current = lower.getBoundingClientRect().height || 220;
+            const max = Math.max(160, Math.floor(rightH * 0.45));
+            const next = clampNumber(current, 140, max, 220);
+            lower.style.height = next + 'px';
+            lower.style.minHeight = '140px';
+        }
+    }
+
+    function canvasLooksBlank() {
+        const cvs = document.getElementById('fx-canvas');
+        if (!cvs || cvs.width < 10 || cvs.height < 10) return true;
+        try {
+            const context = cvs.getContext('2d');
+            const samples = [
+                [Math.floor(cvs.width * 0.5), Math.floor(cvs.height * 0.5)],
+                [Math.floor(cvs.width * 0.35), Math.floor(cvs.height * 0.35)],
+                [Math.floor(cvs.width * 0.65), Math.floor(cvs.height * 0.65)]
+            ];
+            return samples.every(([x, y]) => {
+                const pixel = context.getImageData(x, y, 1, 1).data;
+                return pixel[0] === 0 && pixel[1] === 0 && pixel[2] === 0 && pixel[3] === 0;
+            });
+        } catch (err) {
+            return false;
+        }
+    }
+
+    function installFallbackResizers() {
+        if (window.__artifexFallbackResizersInstalled) return;
+        window.__artifexFallbackResizersInstalled = true;
+
+        const sideSplit = document.getElementById('sidebar-splitter');
+        const canvasSplit = document.getElementById('canvas-splitter');
+        const sidebar = document.getElementById('sidebar-panel');
+        const lower = document.getElementById('lower-panel');
+        const right = document.querySelector('section.bg-artifex-dark');
+        let mode = null;
+        let startX = 0;
+        let startY = 0;
+        let startW = 0;
+        let startH = 0;
+
+        function beginSide(event) {
+            mode = 'side';
+            startX = event.clientX;
+            startW = sidebar ? sidebar.getBoundingClientRect().width : 320;
+            document.body.style.cursor = 'col-resize';
+            event.preventDefault();
+        }
+
+        function beginLower(event) {
+            mode = 'lower';
+            startY = event.clientY;
+            startH = lower ? lower.getBoundingClientRect().height : 220;
+            document.body.style.cursor = 'row-resize';
+            event.preventDefault();
+        }
+
+        function move(event) {
+            if (!mode) return;
+            if (mode === 'side' && sidebar) {
+                const max = Math.max(260, (document.querySelector('main')?.getBoundingClientRect().width || window.innerWidth) - 360);
+                const next = clampNumber(startW + event.clientX - startX, 240, max, 320);
+                sidebar.style.width = next + 'px';
+                sidebar.style.minWidth = next + 'px';
+            }
+            if (mode === 'lower' && lower && right) {
+                const max = Math.max(160, Math.floor((right.getBoundingClientRect().height || window.innerHeight) * 0.55));
+                const next = clampNumber(startH + startY - event.clientY, 140, max, 220);
+                lower.style.height = next + 'px';
+                lower.style.minHeight = '140px';
+            }
+            if (typeof window.resizeCanvas === 'function') window.resizeCanvas();
+            event.preventDefault();
+        }
+
+        function end() {
+            if (!mode) return;
+            mode = null;
+            document.body.style.cursor = '';
+            if (typeof window.resizeCanvas === 'function') window.resizeCanvas();
+        }
+
+        sideSplit?.addEventListener('mousedown', beginSide);
+        canvasSplit?.addEventListener('mousedown', beginLower);
+        document.addEventListener('mousemove', move);
+        document.addEventListener('mouseup', end);
+    }
+
+    function recoverViewport() {
+        snapNode = document.getElementById('view-snap-status');
+        helperIcon = document.getElementById('helper-toggle-icon');
+        forceSafePanelSizes();
+        installFallbackResizers();
+
+        if (typeof window.resizeCanvas === 'function') {
+            try { window.resizeCanvas(); } catch (err) { console.warn('Artifex fallback resize failed', err); }
+        }
+
+        if (canvasLooksBlank() && typeof window.tick === 'function' && !window.__artifexFallbackTickStarted) {
+            window.__artifexFallbackTickStarted = true;
+            try { window.tick(); } catch (err) { console.warn('Artifex fallback tick failed', err); }
+        }
+    }
+
+    sanitizeStoredUiState();
+    window.addEventListener('load', function () {
+        sanitizeStoredUiState();
+        setTimeout(recoverViewport, 120);
+        setTimeout(recoverViewport, 700);
+        setTimeout(recoverViewport, 1500);
+    });
+})();
 
 (function () {
     'use strict';
@@ -83,7 +246,7 @@ window.addEventListener('load', function () {
         if (customButton) customButton.classList.add('hidden');
         if (customAcc) customAcc.classList.add('hidden');
         const badge = Array.from(document.querySelectorAll('span')).find(node => /v2\.3\./.test(node.textContent || ''));
-        if (badge) badge.textContent = 'v2.3.5 ALPHA';
+        if (badge) badge.textContent = 'v2.3.6 ALPHA';
     }
     window.ArtifexInsertMenuGuard = { restoreInsertMenuLayout };
     window.addEventListener('load', function () { setTimeout(restoreInsertMenuLayout, 90); setTimeout(restoreInsertMenuLayout, 400); });
