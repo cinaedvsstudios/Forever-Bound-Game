@@ -71,12 +71,12 @@
         return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
     }
 
-    function getProcessedTexture(record, mode = 'native', contrast = 1.4, threshold = 0.035) {
+    function getProcessedTexture(record, mode = 'native', contrast = 1.7, threshold = 0.14) {
         if (!record || !record.loaded || !record.image || record.failed) return null;
         if (!mode || mode === 'native') return record.image;
 
-        const safeContrast = Math.max(0.35, Math.min(3, Number(contrast || 1.4)));
-        const safeThreshold = Math.max(0, Math.min(0.7, Number(threshold || 0.035)));
+        const safeContrast = Math.max(0.35, Math.min(3, Number(contrast || 1.7)));
+        const safeThreshold = Math.max(0, Math.min(0.7, Number(threshold || 0.14)));
         const key = `${mode}|${safeContrast.toFixed(2)}|${safeThreshold.toFixed(3)}`;
         if (!record.processed) record.processed = new Map();
         if (record.processed.has(key)) return record.processed.get(key);
@@ -104,6 +104,7 @@
                 alpha = clampUnit(alpha * safeContrast);
                 // Keep soft falloff from smoke/fog brushes, but make spark and line brushes punchier as contrast rises.
                 alpha = Math.pow(alpha, safeContrast > 1 ? 1 / Math.min(2.2, safeContrast) : 1.15);
+                if (alpha < 0.04) alpha = 0;
                 data[i] = 255;
                 data[i + 1] = 255;
                 data[i + 2] = 255;
@@ -420,37 +421,29 @@
         ctx.save();
         ctx.translate(particle.x, particle.y);
         if (rotation) ctx.rotate(rotation);
-        ctx.drawImage(img, dx, dy, drawW, drawH);
 
         if (particle.tintMode && particle.tintMode !== 'none') {
-            const previousComposite = ctx.globalCompositeOperation;
-            ctx.globalCompositeOperation = particle.tintMode;
-            ctx.fillStyle = color;
-            ctx.fillRect(dx, dy, drawW, drawH);
-            ctx.globalCompositeOperation = previousComposite;
+            // Tint in an isolated offscreen canvas so the canvas background/grid does not become part of the mask.
+            const ow = Math.max(1, Math.ceil(drawW));
+            const oh = Math.max(1, Math.ceil(drawH));
+            const off = document.createElement('canvas');
+            off.width = ow;
+            off.height = oh;
+            const octx = off.getContext('2d');
+            if (octx) {
+                octx.drawImage(img, 0, 0, ow, oh);
+                octx.globalCompositeOperation = 'source-in';
+                octx.fillStyle = color;
+                octx.fillRect(0, 0, ow, oh);
+                ctx.drawImage(off, dx, dy, drawW, drawH);
+            } else {
+                ctx.drawImage(img, dx, dy, drawW, drawH);
+            }
+        } else {
+            ctx.drawImage(img, dx, dy, drawW, drawH);
         }
+
         ctx.restore();
-    }
-
-    const SOFT_SPRITE_CACHE = new Map();
-
-    function createSoftSprite(key, stops) {
-        if (SOFT_SPRITE_CACHE.has(key)) return SOFT_SPRITE_CACHE.get(key);
-        const size = 96;
-        const c = document.createElement('canvas');
-        c.width = size;
-        c.height = size;
-        const gctx = c.getContext('2d');
-        const gradient = gctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-        (stops || [
-            [0.0, 'rgba(255,255,255,0.70)'],
-            [0.35, 'rgba(255,255,255,0.35)'],
-            [1.0, 'rgba(255,255,255,0.0)']
-        ]).forEach(([pos, color]) => gradient.addColorStop(pos, color));
-        gctx.fillStyle = gradient;
-        gctx.fillRect(0, 0, size, size);
-        SOFT_SPRITE_CACHE.set(key, c);
-        return c;
     }
 
     function drawSoftParticleSprite(ctx, particle, color, alphaMultiplier = 1) {
@@ -709,12 +702,12 @@
             this.textureSrc = v.textureDataUrl || v.texture || null;
             this.textureName = v.textureName || '';
             this.useTextureAlpha = v.useTextureAlpha !== false;
-            this.brushAlphaMode = v.brushAlphaMode || (this.sourceType === 'brush' ? 'lumaAlpha' : 'native');
-            this.textureContrast = Math.max(0.35, Math.min(3, Number(v.textureContrast || 1.4)));
-            this.textureThreshold = Math.max(0, Math.min(0.7, Number(v.textureThreshold || 0.035)));
+            this.brushAlphaMode = v.brushAlphaMode || (this.sourceType === 'brush' || this.shapeMode === 'brush' ? 'lumaAlpha' : 'native');
+            this.textureContrast = Math.max(0.35, Math.min(3, Number(v.textureContrast || (this.sourceType === 'brush' || this.shapeMode === 'brush' ? 1.7 : 1.4))));
+            this.textureThreshold = Math.max(0, Math.min(0.7, Number(v.textureThreshold || (this.sourceType === 'brush' || this.shapeMode === 'brush' ? 0.14 : 0.035))));
             this.tintMode = v.tintMode || 'none';
             this.fitMode = v.fitMode || 'contain';
-            if (this.shapeMode === 'textureSprite' && this.textureSrc) getCachedTexture(this.textureSrc);
+            if ((this.shapeMode === 'textureSprite' || this.shapeMode === 'brush' || this.shapeMode === 'custom') && this.textureSrc) getCachedTexture(this.textureSrc);
 
             this.orbitalForce = p.orbitalForce || 0;
             this.emitterOriginX = x;
@@ -742,7 +735,7 @@
                 this.vy += ty * this.orbitalForce * 0.45;
             }
 
-            this.vy += (p?.gravityY || 0);
+            this.vy += (p?.gravityY || 0) * (p?.gravityScale ?? 0.1);
             this.x += this.vx;
             this.y += this.vy;
 
@@ -791,9 +784,9 @@
 
             ctx.beginPath();
 
-            if (shouldUseSoftSprite && this.shapeMode !== 'textureSprite') {
+            if (shouldUseSoftSprite && !['textureSprite','brush','custom'].includes(this.shapeMode)) {
                 drawSoftParticleSprite(ctx, this, color, 0.95);
-            } else if (this.shapeMode === 'textureSprite' && this.textureSrc) {
+            } else if ((this.shapeMode === 'textureSprite' || this.shapeMode === 'brush' || this.shapeMode === 'custom') && this.textureSrc) {
                 drawTextureSprite(ctx, this, color);
             } else {
                 const rotation = ((this.rotation || 0) * Math.PI) / 180;

@@ -80,7 +80,7 @@
 
         <div class="hidden md:block h-10 w-px bg-gradient-to-b from-transparent via-artifex-border to-transparent opacity-90 shrink-0" title="Artifex tool navigation divider"></div>
 
-        <nav class="flex flex-wrap items-center gap-1 select-none ml-10">
+        <nav class="flex flex-wrap items-center gap-1 select-none ml-16">
             
             <div class="relative dropdown-parent">
                 <button title="File management, imports, and exports" class="px-4 py-1.5 hover:bg-artifex-gray text-xs font-semibold text-artifex-gold rounded-full transition border border-transparent hover:border-artifex-border flex items-center gap-1.5 focus:outline-none shadow-[0_4px_10px_rgba(0,0,0,0.8)]">
@@ -113,7 +113,15 @@
                         <span>📌</span> Scene FX Instance
                     </button>
                     <div class="border-t border-artifex-border my-1"></div>
-                    <button onclick="showToast('Editor workspace preferences stub opened.', 'info')" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-400 flex items-center gap-2" title="Adjust application settings.">
+                    <div class="px-4 py-1 text-[10px] uppercase font-bold text-artifex-goldMuted tracking-wider">Local Files</div>
+                    <button onclick="saveCurrentToLocalFiles(false)" class="w-full text-left px-4 py-1.5 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center gap-2" title="Save this effect archetype into browser local storage without downloading a file yet.">
+                        <span>💾</span> Save to Local Storage
+                    </button>
+                    <button onclick="openLocalFilesModal()" class="w-full text-left px-4 py-1.5 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center gap-2" title="View local saved FX and export selected items as JSON files.">
+                        <span>🗃️</span> View Local Files
+                    </button>
+                    <div class="border-t border-artifex-border my-1"></div>
+                    <button onclick="openSettingsModal()" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-400 flex items-center gap-2" title="Adjust application settings.">
                         <span>⚙️</span> Settings
                     </button>
                 </div>
@@ -158,6 +166,9 @@
                     </button>
                     <button onclick="toggleViewCheckbox('emitter-follow-mouse')" class="w-full text-left px-4 py-1.5 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center justify-between" title="Let the emitter follow your pointer.">
                         <span>Emitter Follows Pointer</span> <span id="view-follow-status" class="text-[9px] text-slate-500">OFF</span>
+                    </button>
+                    <button onclick="toggleViewCheckbox('snap-to-grid')" class="w-full text-left px-4 py-1.5 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center justify-between" title="Snap emitter movement and click placement to the nearest grid intersection.">
+                        <span>Snap To Grid</span> <span id="view-snap-status" class="text-[9px] text-slate-500">OFF</span>
                     </button>
                     <button onclick="toggleViewCheckbox('collision-bounce')" class="w-full text-left px-4 py-1.5 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center justify-between" title="Preview floor collision for falling particles.">
                         <span>Preview Floor Collision</span> <span id="view-bounce-status" class="text-[9px] text-slate-500">OFF</span>
@@ -254,16 +265,16 @@
                 <!-- COMPOSITION PROPERTIES -->
                 <div class="bg-artifex-panel border border-artifex-border rounded-xl overflow-hidden shadow-[0_8px_20px_rgba(0,0,0,0.9)]" title="High-level settings for the reusable effect archetype.">
                     <div class="bg-artifex-darkGray px-4 py-3 border-b border-artifex-border flex items-center justify-between select-none">
-                        <span class="serif-font font-bold text-artifex-gold text-xs tracking-wide">Preset Archetypes</span>
+                        <span class="serif-font font-bold text-artifex-gold text-xs tracking-wide">Effect Archetype Assets</span>
                         <div class="bg-artifex-blue text-white text-[10px] rounded-md font-semibold w-5 h-5 flex items-center justify-center shadow-[0_0_8px_#00a1d7] cursor-pointer hover:bg-[#33b8ef] transition" title="Toggle visibility" onclick="toggleCard('card-body-comp')">↕</div>
                     </div>
                     <div id="card-body-comp" class="p-4 space-y-4">
-                        <div title="Select a saved template to load into the workspace, replacing current layers.">
-                            <label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Load Archetype</label>
-                            <select id="comp-loader-dropdown" onchange="loadCompositionById(this.value)" class="w-full bg-artifex-dark border border-artifex-border text-artifex-gold text-xs rounded-xl p-2.5 focus:outline-none focus:border-amber-500 shadow-inner cursor-pointer">
-                                <option value="">-- None (Blank Archetype) --</option>
-                                <!-- Injected -->
-                            </select>
+                        <div title="Open the Effect Archetype Asset library. Cards can replace the current workspace or add their layers into the current archetype.">
+                            <label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Effect Archetype Library</label>
+                            <button onclick="openArchetypeAssetsModal()" class="w-full bg-artifex-dark border border-artifex-border hover:border-artifex-purpleAccent transition text-artifex-gold text-xs rounded-xl p-2.5 flex justify-between items-center focus:outline-none shadow-inner">
+                                <span>Open Effect Archetype Assets</span>
+                                <span class="text-[10px] text-artifex-goldMuted">LIBRARY</span>
+                            </button>
                         </div>
                         <div title="The auto-generated, strictly unique hash identifier for this save data.">
                             <label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Archetype ID</label>
@@ -415,11 +426,12 @@
                                     <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Visual Source</span>
                                 </div>
 
-<div title="Choose whether this layer uses a procedural built-in shape or a custom PNG particle texture.">
+<div title="Choose the visual source for this layer: procedural hard shape, built-in PNG brush, or a custom uploaded PNG.">
 <label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Shape Mode</label>
 <select class="w-full bg-artifex-dark border border-artifex-border text-artifex-gold text-xs rounded-xl p-2.5 focus:ring-1 focus:ring-artifex-purpleAccent focus:outline-none cursor-pointer shadow-inner" id="param-visual-shapeMode" onchange="changeShapeMode(this.value)">
-<option value="builtInShape">Built-In Shape</option>
-<option value="textureSprite">Custom PNG Texture Sprite</option>
+<option value="shape">Shape</option>
+<option value="brush">Brush</option>
+<option value="custom">Custom</option>
 </select>
 </div>
 <div id="built-in-shape-panel" title="Select the built-in visual particle shape used for this layer.">
@@ -438,6 +450,25 @@
 </div>
 <input id="param-visual-shape" type="hidden" value="circle"/>
 </div>
+</div>
+<div class="hidden border border-artifex-border/50 rounded-xl bg-artifex-dark/45 p-3 space-y-3" id="brush-sprite-panel" title="Use a built-in PNG brush for soft particles, fog, sparks, halos, trails, lightning, and shockwaves.">
+<label class="block text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider mb-1.5">Built-In Brush</label>
+<div id="brush-picker-grid" class="grid grid-cols-3 gap-2 max-h-56 overflow-y-auto pr-1"><!-- brush buttons injected --></div>
+<div title="Raises or lowers the brightness-to-alpha mask. Higher values make brush edges harder; lower values keep them softer.">
+<div class="flex justify-between text-xs mb-1">
+<span class="text-artifex-goldMuted uppercase font-bold text-[8px] tracking-wider">Brush Contrast</span>
+<span class="text-artifex-gold font-mono text-[10px]" id="val-brush-textureContrast">1.7</span>
+</div>
+<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-brush-textureContrast" max="3" min="0.4" step="0.1" type="range" value="1.7" oninput="updateTextureOption('textureContrast', parseFloat(this.value)); const label=document.getElementById('val-brush-textureContrast'); if(label) label.innerText=parseFloat(this.value).toFixed(1);"/>
+</div>
+<div title="Removes dark boxed backgrounds from brush PNGs before tinting.">
+<div class="flex justify-between text-xs mb-1">
+<span class="text-artifex-goldMuted uppercase font-bold text-[8px] tracking-wider">Black Cutoff</span>
+<span class="text-artifex-gold font-mono text-[10px]" id="val-brush-textureThreshold">0.14</span>
+</div>
+<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-brush-textureThreshold" max="0.6" min="0" step="0.01" type="range" value="0.14" oninput="updateTextureOption('textureThreshold', parseFloat(this.value)); const label=document.getElementById('val-brush-textureThreshold'); if(label) label.innerText=parseFloat(this.value).toFixed(2);"/>
+</div>
+<div class="text-[9px] text-artifex-goldMuted leading-relaxed">Brushes are PNG masks. They avoid slow live blur by baking softness into the texture.</div>
 </div>
 <div class="hidden border border-artifex-border/50 rounded-xl bg-artifex-dark/45 p-3 space-y-3" id="texture-sprite-panel" title="Use a custom transparent PNG as the particle shape.">
 <div>
@@ -590,6 +621,20 @@
 <input class="w-full bg-artifex-dark border border-artifex-border rounded-lg text-center text-xs text-artifex-gold p-1.5 focus:outline-none focus:border-amber-500 shadow-inner font-mono" id="emitter-coord-y" type="number"/>
 </div>
 </div>
+<div title="Rotates the emitter width axis. This is separate from particle direction; it controls whether a wide emitter is horizontal, diagonal, or vertical.">
+<div class="flex justify-between text-xs mb-1">
+<span class="text-artifex-goldMuted uppercase font-bold text-[8px] tracking-wider">Emitter Axis Rotation</span>
+<span class="text-artifex-gold font-mono text-[10px]" id="val-emitter-rotation">0°</span>
+</div>
+<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-emitter-rotation" max="360" min="-360" step="1" type="range" value="0"/>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<button class="px-2 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold transition rounded-md border border-artifex-border text-[9px] font-semibold" onclick="activateSetOriginMode()" title="Click this, then click the preview to place the emitter origin exactly there.">Set Origin</button>
+<div class="flex gap-1">
+<button class="flex-1 px-2 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold transition rounded-md border border-artifex-border text-[9px] font-semibold" onclick="activatePointTargetMode()" title="Click this, then click the preview to aim the active layer direction at that target.">Point Target</button>
+<label class="px-1.5 py-1.5 bg-artifex-dark border border-artifex-border rounded-md text-[8px] text-artifex-goldMuted flex items-center gap-1" title="Flip the target direction 180 degrees, useful when a trail origin is visually the front of the effect."><input id="target-reverse-checkbox" type="checkbox" class="accent-artifex-purpleAccent"> Rev</label>
+</div>
+</div>
 <div class="flex gap-2">
 <button class="flex-1 px-2 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold transition rounded-md border border-artifex-border text-[9px] font-semibold" onclick="centerEmitterHorizontal()" title="Snap the emitter anchor perfectly to horizontal center.">Center H</button>
 <button class="flex-1 px-2 py-1.5 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold transition rounded-md border border-artifex-border text-[9px] font-semibold" onclick="centerEmitterVertical()" title="Snap the emitter anchor perfectly to vertical center.">Center V</button>
@@ -653,12 +698,12 @@
 </div>
 <input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-physics-spread" max="360" min="0" step="5" type="range" value="45"/>
 </div>
-<div title="Constant vertical force. Positive pulls down, negative floats up.">
+<div title="Editor gravity. 1.0 means full earth-style gravity; the runtime scales it down to a practical per-frame force. Positive pulls down, negative floats up.">
 <div class="flex justify-between text-xs mb-1">
 <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Gravity (Y)</span>
 <span class="text-artifex-gold font-mono text-[11px]" id="val-physics-gravityY">0.15</span>
 </div>
-<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-physics-gravityY" max="1.5" min="-1" step="0.05" type="range" value="0.15"/>
+<input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-physics-gravityY" max="2" min="-1" step="0.05" type="range" value="0.15"/>
 </div>
 <div title="Air resistance. 1.0 is no drag. 0.95 will aggressively slow particles to a stop.">
 <div class="flex justify-between text-xs mb-1">
@@ -697,6 +742,36 @@
 <input class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold shadow-[0_2px_5px_rgba(0,0,0,0.8)]" id="param-life-durationMax" max="300" min="10" step="5" type="range" value="60"/>
 </div>
 </div>
+</div>
+<div class="border-t border-artifex-border/40 pt-3 space-y-3" title="Adds tiny microscopic speckles over this layer. Useful for fire grain, ash, magic dust, smoke dirt, and tiny sparkle texture.">
+    <div class="flex items-center justify-between gap-2">
+        <span class="text-artifex-goldMuted uppercase font-bold text-[9px] tracking-wider">Noise Grain</span>
+        <label class="flex items-center gap-1 text-[9px] text-artifex-goldMuted"><input id="param-noise-enabled" type="checkbox" class="accent-artifex-purpleAccent" onchange="updateNoiseOption('enabled', this.checked)"> ON</label>
+    </div>
+    <div class="grid grid-cols-2 gap-2">
+        <label class="block">
+            <span class="text-[8px] text-artifex-goldMuted block mb-0.5">Colour A</span>
+            <input id="param-noise-colorA" type="color" value="#ffd36a" onchange="updateNoiseOption('colorA', this.value)" class="w-full h-7 border-0 p-0 rounded cursor-pointer bg-transparent">
+        </label>
+        <label class="block">
+            <span class="text-[8px] text-artifex-goldMuted block mb-0.5">Colour B</span>
+            <input id="param-noise-colorB" type="color" value="#ff4b22" onchange="updateNoiseOption('colorB', this.value)" class="w-full h-7 border-0 p-0 rounded cursor-pointer bg-transparent">
+        </label>
+    </div>
+    <div>
+        <div class="flex justify-between text-xs mb-1"><span class="text-artifex-goldMuted uppercase font-bold text-[8px] tracking-wider">Density</span><span id="val-noise-density" class="text-artifex-gold font-mono text-[10px]">24</span></div>
+        <input id="param-noise-density" type="range" min="0" max="160" step="1" value="24" oninput="updateNoiseOption('density', parseFloat(this.value)); document.getElementById('val-noise-density').innerText=this.value" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold">
+    </div>
+    <div class="grid grid-cols-2 gap-2">
+        <div>
+            <div class="flex justify-between text-xs mb-1"><span class="text-artifex-goldMuted uppercase font-bold text-[8px] tracking-wider">Dot Size</span><span id="val-noise-size" class="text-artifex-gold font-mono text-[10px]">0.6</span></div>
+            <input id="param-noise-size" type="range" min="0.1" max="2.5" step="0.1" value="0.6" oninput="updateNoiseOption('size', parseFloat(this.value)); document.getElementById('val-noise-size').innerText=parseFloat(this.value).toFixed(1)" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold">
+        </div>
+        <div>
+            <div class="flex justify-between text-xs mb-1"><span class="text-artifex-goldMuted uppercase font-bold text-[8px] tracking-wider">Alpha</span><span id="val-noise-alpha" class="text-artifex-gold font-mono text-[10px]">0.45</span></div>
+            <input id="param-noise-alpha" type="range" min="0" max="1" step="0.05" value="0.45" oninput="updateNoiseOption('alpha', parseFloat(this.value)); document.getElementById('val-noise-alpha').innerText=parseFloat(this.value).toFixed(2)" class="w-full h-1 bg-artifex-gray rounded-lg appearance-none cursor-pointer accent-artifex-gold">
+        </div>
+    </div>
 </div>
 
                             </section>
@@ -766,16 +841,19 @@ engine.start();</pre>
                 
                 <!-- NEW INTERACTIVE PAUSE BUTTON OVERLAY (TOP LEFT) -->
                 <div class="absolute top-4 left-4 z-20 bg-artifex-panel/95 border border-artifex-border backdrop-blur-md px-3 py-1.5 rounded-xl flex items-center gap-2 shadow-[0_4px_12px_rgba(0,0,0,0.7)] select-none">
-                    <button onclick="togglePause()" id="btn-pause" title="Play / Pause Simulation" class="text-artifex-gold hover:text-white transition focus:outline-none flex items-center gap-1.5">
-                        <span id="icon-pause" class="text-[14px]">⏸️</span> <span class="text-[9px] font-bold font-mono tracking-wider pt-0.5">PAUSE</span>
+                    <button onclick="togglePause()" id="btn-pause" title="Play / Pause simulation" class="text-artifex-gold hover:text-white transition focus:outline-none flex items-center justify-center w-7 h-7 rounded-lg hover:bg-artifex-gray">
+                        <span id="icon-pause" class="text-[15px]">⏸️</span>
                     </button>
                     <span class="w-px h-4 bg-artifex-border"></span>
-                    <button onclick="captureThumbnail()" id="btn-thumbnail-camera" title="Capture a square FX library thumbnail from the current frame." class="text-artifex-gold hover:text-white transition focus:outline-none flex items-center gap-1.5">
-                        <span class="text-[14px]">📸</span> <span class="text-[9px] font-bold font-mono tracking-wider pt-0.5">CAMERA</span>
+                    <button onclick="captureThumbnail()" id="btn-thumbnail-camera" title="Capture thumbnail from the current zoomed view" class="text-artifex-gold hover:text-white transition focus:outline-none flex items-center justify-center w-7 h-7 rounded-lg hover:bg-artifex-gray">
+                        <span class="text-[15px]">📸</span>
                     </button>
                     <span class="w-px h-4 bg-artifex-border"></span>
-                    <button onclick="cycleWorkspaceView()" id="btn-view-cycle" title="Cycle workspace background: dark, white, reference image/video." class="text-artifex-gold hover:text-white transition focus:outline-none flex items-center gap-1.5">
-                        <span class="text-[14px]">👁️</span> <span class="text-[9px] font-bold font-mono tracking-wider pt-0.5" id="view-cycle-label">DARK</span>
+                    <button onclick="cycleWorkspaceView()" id="btn-view-cycle" title="Cycle background: dark / white / reference" class="text-artifex-gold hover:text-white transition focus:outline-none flex items-center justify-center w-7 h-7 rounded-lg hover:bg-artifex-gray">
+                        <span class="text-[15px]">👁️</span>
+                    </button>
+                    <button onclick="toggleViewCheckbox('show-emitter-hud')" id="btn-helper-toggle" title="Show / hide emitter helper guides" class="text-artifex-gold hover:text-white transition focus:outline-none flex items-center justify-center w-7 h-7 rounded-lg hover:bg-artifex-gray">
+                        <span class="text-[15px]" id="helper-toggle-icon">🎯</span>
                     </button>
                 </div>
                 <div id="video-reference-controls" class="hidden absolute top-16 left-4 z-20 bg-artifex-panel/95 border border-artifex-border backdrop-blur-md px-3 py-1.5 rounded-xl items-center gap-2 shadow-[0_4px_12px_rgba(0,0,0,0.7)] select-none">
@@ -897,9 +975,12 @@ engine.start();</pre>
             <h3 class="serif-font text-lg font-bold text-artifex-gold mb-2 flex items-center gap-2">
                 Save Archetype Version
             </h3>
-            <p class="text-xs text-artifex-goldMuted mb-5">
-                This compiles your multi-layered workspace into a standalone custom composition preset.
+            <p class="text-xs text-artifex-goldMuted mb-3">
+                This compiles your multi-layered workspace into a standalone custom composition preset. A thumbnail is required for proper library use.
             </p>
+            <div id="save-thumbnail-warning" class="hidden mb-4 border border-rose-500/60 bg-rose-950/30 rounded-xl p-3 text-[11px] text-rose-200 leading-relaxed">
+                Cannot save without a thumbnail. Click Camera first, or use Emergency Backup if you only need to preserve work quickly.
+            </div>
             <div class="space-y-4">
                 <div>
                     <label class="block text-xs text-artifex-goldMuted font-semibold mb-1.5">Composition Name</label>
@@ -914,9 +995,89 @@ engine.start();</pre>
                 <button onclick="closeVariationModal()" class="px-4 py-2 text-xs font-semibold text-artifex-goldMuted hover:text-white transition focus:outline-none">
                     Cancel
                 </button>
-                <button onclick="submitSaveVariation()" class="px-5 py-2 bg-gradient-to-r from-[#4a0d4c] to-artifex-purpleAccent border border-artifex-purpleAccent text-white transition rounded-full text-xs font-semibold shadow-lg focus:outline-none">
+                <button onclick="submitSaveVariation(true)" class="px-3 py-2 bg-artifex-darkGray hover:bg-artifex-gray border border-rose-500/50 text-rose-200 transition rounded-full text-[10px] font-semibold shadow-lg focus:outline-none" title="Save without thumbnail only when you need an emergency backup.">
+                    Emergency Backup
+                </button>
+                <button onclick="submitSaveVariation(false)" class="px-5 py-2 bg-gradient-to-r from-[#4a0d4c] to-artifex-purpleAccent border border-artifex-purpleAccent text-white transition rounded-full text-xs font-semibold shadow-lg focus:outline-none">
                     Confirm
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Effect Archetype Asset Library Modal -->
+    <div id="archetype-assets-modal" class="fixed inset-0 bg-artifex-dark/90 backdrop-blur-sm z-[150] hidden flex items-center justify-center p-4 select-none">
+        <div class="bg-artifex-panel border border-artifex-border rounded-2xl w-full max-w-5xl max-h-[86vh] p-5 shadow-[0_15px_30px_rgba(0,0,0,0.95)] relative flex flex-col gap-4">
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <h3 class="serif-font text-lg font-bold text-artifex-gold">Effect Archetype Assets</h3>
+                    <p class="text-xs text-artifex-goldMuted">Open an archetype, or add its layer stack into the current workspace.</p>
+                </div>
+                <button onclick="closeArchetypeAssetsModal()" class="text-artifex-goldMuted hover:text-white text-xl leading-none">&times;</button>
+            </div>
+            <div id="archetype-assets-grid" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 overflow-y-auto pr-1"></div>
+        </div>
+    </div>
+
+    <!-- Local Files Modal -->
+    <div id="local-files-modal" class="fixed inset-0 bg-artifex-dark/90 backdrop-blur-sm z-[150] hidden flex items-center justify-center p-4 select-none">
+        <div class="bg-artifex-panel border border-artifex-border rounded-2xl w-full max-w-4xl max-h-[86vh] p-5 shadow-[0_15px_30px_rgba(0,0,0,0.95)] relative flex flex-col gap-4">
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <h3 class="serif-font text-lg font-bold text-artifex-gold">Local Storage Files</h3>
+                    <p class="text-xs text-artifex-goldMuted">Browser-saved effect archetypes. Select several, then download them as JSON files.</p>
+                </div>
+                <button onclick="closeLocalFilesModal()" class="text-artifex-goldMuted hover:text-white text-xl leading-none">&times;</button>
+            </div>
+            <div id="local-files-list" class="space-y-2 overflow-y-auto pr-1"></div>
+            <div class="flex justify-end gap-2 border-t border-artifex-border pt-3">
+                <button onclick="downloadSelectedLocalFiles()" class="px-4 py-2 bg-artifex-purple hover:bg-artifex-purpleAccent text-white rounded-full text-xs font-semibold">Download Selected</button>
+                <button onclick="clearLocalFilesSelection()" class="px-4 py-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-full text-xs font-semibold">Clear Selection</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Editor Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-artifex-dark/90 backdrop-blur-sm z-[150] hidden flex items-center justify-center p-4 select-none">
+        <div class="bg-artifex-panel border border-artifex-border rounded-2xl w-full max-w-xl max-h-[86vh] p-5 shadow-[0_15px_30px_rgba(0,0,0,0.95)] relative flex flex-col gap-4">
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <h3 class="serif-font text-lg font-bold text-artifex-gold">Editor Settings</h3>
+                    <p class="text-xs text-artifex-goldMuted">Set the logical FX design resolution used for scale, thumbnails, and exported archetype metadata.</p>
+                </div>
+                <button onclick="closeSettingsModal()" class="text-artifex-goldMuted hover:text-white text-xl leading-none">&times;</button>
+            </div>
+            <div class="space-y-4 text-xs">
+                <div class="border border-artifex-border rounded-xl bg-artifex-dark/60 p-4 space-y-3">
+                    <div class="flex items-center justify-between gap-3">
+                        <label class="text-artifex-goldMuted uppercase font-bold tracking-wider text-[10px]">Scene / FX Resolution</label>
+                        <span id="settings-resolution-readout" class="text-artifex-gold font-mono text-[10px]">1280 × 720</span>
+                    </div>
+                    <select id="settings-resolution-preset" onchange="handleResolutionPresetChange(this.value)" class="w-full bg-artifex-dark border border-artifex-border text-artifex-gold text-xs rounded-xl p-2.5 focus:ring-1 focus:ring-artifex-purpleAccent focus:outline-none cursor-pointer shadow-inner">
+                        <option value="1280x720">1280 × 720 — Default 16:9</option>
+                        <option value="1120x630">1120 × 630 — Scene Editor Preview Match</option>
+                        <option value="1920x1080">1920 × 1080 — Full HD 16:9</option>
+                        <option value="1080x1080">1080 × 1080 — Instagram Square</option>
+                        <option value="720x720">720 × 720 — Small Square</option>
+                        <option value="1080x1920">1080 × 1920 — Instagram Story / Reel</option>
+                        <option value="custom">Custom…</option>
+                    </select>
+                    <div class="grid grid-cols-2 gap-2" id="settings-custom-resolution-row">
+                        <label class="block">
+                            <span class="text-[9px] text-artifex-goldMuted uppercase font-bold">Width</span>
+                            <input id="settings-resolution-width" type="number" min="64" max="4096" step="1" class="w-full mt-1 bg-artifex-dark border border-artifex-border rounded-lg p-2 text-artifex-gold font-mono" oninput="handleCustomResolutionInput()">
+                        </label>
+                        <label class="block">
+                            <span class="text-[9px] text-artifex-goldMuted uppercase font-bold">Height</span>
+                            <input id="settings-resolution-height" type="number" min="64" max="4096" step="1" class="w-full mt-1 bg-artifex-dark border border-artifex-border rounded-lg p-2 text-artifex-gold font-mono" oninput="handleCustomResolutionInput()">
+                        </label>
+                    </div>
+                    <p class="text-[10px] leading-relaxed text-artifex-goldMuted">This does not stretch the browser UI. It tells the FX editor what one logical scene is, so particle size, gravity, thumbnails, and Scene Editor placement stay predictable.</p>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 border-t border-artifex-border pt-3">
+                <button onclick="applyEditorSettings()" class="px-4 py-2 bg-artifex-purple hover:bg-artifex-purpleAccent text-white rounded-full text-xs font-semibold">Apply Settings</button>
+                <button onclick="resetEditorSettings()" class="px-4 py-2 bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold rounded-full text-xs font-semibold">Reset Default</button>
             </div>
         </div>
     </div>
@@ -947,7 +1108,7 @@ engine.start();</pre>
     <div id="toast-container" class="fixed bottom-16 right-6 z-[200] space-y-2 pointer-events-none"></div>
 
     <script src="./src/presets.js?v=phase7-presets-1"></script>
-    <script src="./src/fx-runtime.js?v=phase7-runtime-1"></script>
+    <script src="./src/fx-runtime.js?v=phase9j-scale-noise"></script>
     <!-- Visual Effects Engine Core JavaScript Implementation -->
     <script>
         // -------------------------------------------------------------
@@ -966,6 +1127,18 @@ engine.start();</pre>
         const ARTIFEX_SCENE_FX_INSTANCE_SCHEMA_VERSION = 'artifex.sceneFxInstance.v1';
         
         let customPresets = [];
+        const LOCAL_FILES_KEY = 'artifex_fx_local_files_v1';
+        const UI_STATE_KEY = 'artifex_fx_editor_ui_state_v1';
+        const FX_SETTINGS_KEY = 'artifex_fx_editor_settings_v1';
+        const FX_RESOLUTION_PRESETS = {
+            '1280x720': { width: 1280, height: 720, label: '1280 × 720' },
+            '1120x630': { width: 1120, height: 630, label: '1120 × 630' },
+            '1920x1080': { width: 1920, height: 1080, label: '1920 × 1080' },
+            '1080x1080': { width: 1080, height: 1080, label: '1080 × 1080' },
+            '720x720': { width: 720, height: 720, label: '720 × 720' },
+            '1080x1920': { width: 1080, height: 1920, label: '1080 × 1920' }
+        };
+        let editorSettings = readEditorSettings();
         let activeLayerIndex = -1;
         let layerClipboard = null; 
         let lastSavedTime = null;
@@ -977,6 +1150,7 @@ engine.start();</pre>
         let isDraggingEmitter = false;
         let isDrawingBurst = false;
         let mousePos = { x: 0, y: 0 };
+        let pendingCanvasPick = null;
 
         let zoomLevel = 1.0;
         let panOffset = { x: 0, y: 0 };
@@ -1004,6 +1178,113 @@ engine.start();</pre>
         let draggedIndex = null;
         let activeOpenDropdown = null;
         let isDropdownLocked = false;
+
+        function readEditorSettings() {
+            try {
+                const raw = JSON.parse(localStorage.getItem(FX_SETTINGS_KEY) || '{}') || {};
+                return {
+                    resolutionPreset: raw.resolutionPreset || '1280x720',
+                    resolutionWidth: Math.max(64, Number(raw.resolutionWidth || raw.width || 1280)),
+                    resolutionHeight: Math.max(64, Number(raw.resolutionHeight || raw.height || 720))
+                };
+            } catch (e) {
+                return { resolutionPreset: '1280x720', resolutionWidth: 1280, resolutionHeight: 720 };
+            }
+        }
+
+        function writeEditorSettings() {
+            try { localStorage.setItem(FX_SETTINGS_KEY, JSON.stringify(editorSettings)); }
+            catch (e) { /* local storage can be blocked; editor still works */ }
+        }
+
+        function getFxDesignResolution() {
+            return {
+                width: Math.max(64, Number(editorSettings.resolutionWidth || 1280)),
+                height: Math.max(64, Number(editorSettings.resolutionHeight || 720)),
+                preset: editorSettings.resolutionPreset || '1280x720'
+            };
+        }
+
+        function getFxResolutionMetadata() {
+            const res = getFxDesignResolution();
+            return {
+                width: res.width,
+                height: res.height,
+                aspect: Number((res.width / res.height).toFixed(6)),
+                preset: res.preset,
+                unit: 'logicalScenePixels'
+            };
+        }
+
+        function syncSettingsModal() {
+            const preset = document.getElementById('settings-resolution-preset');
+            const width = document.getElementById('settings-resolution-width');
+            const height = document.getElementById('settings-resolution-height');
+            const readout = document.getElementById('settings-resolution-readout');
+            const row = document.getElementById('settings-custom-resolution-row');
+            const matched = Object.entries(FX_RESOLUTION_PRESETS).find(([, value]) => value.width === editorSettings.resolutionWidth && value.height === editorSettings.resolutionHeight);
+            const presetValue = editorSettings.resolutionPreset === 'custom' ? 'custom' : (matched?.[0] || editorSettings.resolutionPreset || '1280x720');
+            if (preset) preset.value = FX_RESOLUTION_PRESETS[presetValue] ? presetValue : 'custom';
+            if (width) width.value = editorSettings.resolutionWidth;
+            if (height) height.value = editorSettings.resolutionHeight;
+            if (readout) readout.innerText = `${editorSettings.resolutionWidth} × ${editorSettings.resolutionHeight}`;
+            if (row) row.classList.toggle('opacity-55', preset?.value !== 'custom');
+        }
+
+        function openSettingsModal() {
+            syncSettingsModal();
+            document.getElementById('settings-modal')?.classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal')?.classList.add('hidden');
+        }
+
+        function handleResolutionPresetChange(value) {
+            const preset = FX_RESOLUTION_PRESETS[value];
+            if (preset) {
+                editorSettings.resolutionPreset = value;
+                editorSettings.resolutionWidth = preset.width;
+                editorSettings.resolutionHeight = preset.height;
+            } else {
+                editorSettings.resolutionPreset = 'custom';
+            }
+            syncSettingsModal();
+        }
+
+        function handleCustomResolutionInput() {
+            const width = Number(document.getElementById('settings-resolution-width')?.value || 1280);
+            const height = Number(document.getElementById('settings-resolution-height')?.value || 720);
+            editorSettings.resolutionPreset = 'custom';
+            editorSettings.resolutionWidth = Math.max(64, Math.min(4096, width));
+            editorSettings.resolutionHeight = Math.max(64, Math.min(4096, height));
+            syncSettingsModal();
+        }
+
+        function applyEditorSettings() {
+            const width = Number(document.getElementById('settings-resolution-width')?.value || editorSettings.resolutionWidth || 1280);
+            const height = Number(document.getElementById('settings-resolution-height')?.value || editorSettings.resolutionHeight || 720);
+            editorSettings.resolutionWidth = Math.max(64, Math.min(4096, width));
+            editorSettings.resolutionHeight = Math.max(64, Math.min(4096, height));
+            if (!Object.values(FX_RESOLUTION_PRESETS).some(p => p.width === editorSettings.resolutionWidth && p.height === editorSettings.resolutionHeight)) {
+                editorSettings.resolutionPreset = 'custom';
+            }
+            writeEditorSettings();
+            if (composition) {
+                composition.settings = Object.assign({}, composition.settings || {}, { resolution: getFxResolutionMetadata() });
+            }
+            resizeCanvas();
+            syncSettingsModal();
+            syncJSONOutput();
+            showToast(`FX resolution set to ${editorSettings.resolutionWidth} × ${editorSettings.resolutionHeight}.`, 'success');
+        }
+
+        function resetEditorSettings() {
+            editorSettings = { resolutionPreset: '1280x720', resolutionWidth: 1280, resolutionHeight: 720 };
+            writeEditorSettings();
+            syncSettingsModal();
+            applyEditorSettings();
+        }
 
         // -------------------------------------------------------------
         // 3. ENGINE IMPLEMENTATION (THE UNIVERSAL BRAIN)
@@ -1052,7 +1333,7 @@ engine.start();</pre>
             const brush = BUILT_IN_BRUSHES[brushKey];
             if (!brush) return;
             Object.assign(layer.visual, {
-                shapeMode: 'textureSprite',
+                shapeMode: 'brush',
                 sourceType: 'brush',
                 brush: brushKey,
                 shape: 'texture',
@@ -1065,7 +1346,7 @@ engine.start();</pre>
                 tintMode: options.tintMode || layer.visual.tintMode || 'source-atop',
                 brushAlphaMode: options.brushAlphaMode || 'lumaAlpha',
                 textureContrast: options.textureContrast !== undefined ? options.textureContrast : (layer.visual.textureContrast || 1.45),
-                textureThreshold: options.textureThreshold !== undefined ? options.textureThreshold : (layer.visual.textureThreshold || 0.035),
+                textureThreshold: options.textureThreshold !== undefined ? options.textureThreshold : (layer.visual.textureThreshold || 0.14),
                 blur: 0,
                 edgeBlur: 0
             });
@@ -1116,8 +1397,9 @@ engine.start();</pre>
             if (gridW <= 0 || gridH <= 0) return;
 
             const cols = 16;
-            const rows = 9;
-            const cellSize = gridW / cols;
+            const rows = Math.max(1, Math.round(cols * (gridH / gridW)));
+            const cellW = gridW / cols;
+            const cellH = gridH / rows;
 
             ctx.strokeStyle = "#382a21";
             ctx.lineWidth = 1.5;
@@ -1133,7 +1415,7 @@ engine.start();</pre>
             ctx.lineWidth = 1;
 
             for (let i = 1; i < rows; i++) {
-                const y = topOffset + i * cellSize;
+                const y = topOffset + i * cellH;
                 ctx.beginPath();
                 ctx.moveTo(leftOffset, y);
                 ctx.lineTo(leftOffset + gridW, y);
@@ -1141,7 +1423,7 @@ engine.start();</pre>
             }
 
             for (let j = 1; j < cols; j++) {
-                const x = leftOffset + j * cellSize;
+                const x = leftOffset + j * cellW;
                 ctx.beginPath();
                 ctx.moveTo(x, topOffset);
                 ctx.lineTo(x, topOffset + gridH);
@@ -1154,14 +1436,14 @@ engine.start();</pre>
             ctx.textBaseline = "middle";
 
             for (let j = 0; j < cols; j++) {
-                const x = leftOffset + (j + 0.5) * cellSize;
+                const x = leftOffset + (j + 0.5) * cellW;
                 ctx.fillText(j + 1, x, topOffset - 15);
             }
 
-            const rowLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
             for (let i = 0; i < rows; i++) {
-                const y = topOffset + (i + 0.5) * cellSize;
-                ctx.fillText(rowLetters[i], leftOffset - 18, y);
+                const y = topOffset + (i + 0.5) * cellH;
+                const label = String.fromCharCode(65 + (i % 26));
+                ctx.fillText(label, leftOffset - 18, y);
             }
 
             ctx.font = "bold 14px 'Cinzel', serif";
@@ -1230,7 +1512,7 @@ engine.start();</pre>
         function togglePause() {
             isPaused = !isPaused;
             const btn = document.getElementById('icon-pause');
-            const text = document.querySelector('#btn-pause').children[1];
+            const text = document.querySelector('#btn-pause .toolbar-text');
             if (isPaused) {
                 if(btn) btn.innerText = '▶️';
                 if(text) text.innerText = 'PLAY';
@@ -1293,6 +1575,7 @@ engine.start();</pre>
                 composition.layers.forEach((layer) => {
                     try {
                         if (!layer._particles) layer._particles = [];
+                        drawLayerNoise(ctx, layer);
                         if (!layer.isVisible) return; 
 
                         ctx.globalCompositeOperation = layer.visual?.composite || 'source-over';
@@ -1329,8 +1612,11 @@ engine.start();</pre>
                             if (rate > 0) {
                                 for (let i = 0; i < rate; i++) {
                                     const xOffset = (Math.random() - 0.5) * activeWidth;
+                                    const emitterAxisRad = ((layer.emitter?.rotation || 0) * Math.PI) / 180;
+                                    const spawnX = emitterPos.x + Math.cos(emitterAxisRad) * xOffset;
+                                    const spawnY = emitterPos.y + Math.sin(emitterAxisRad) * xOffset;
                                     clampEmitterPosition();
-                                    layer._particles.push(new Particle(emitterPos.x + xOffset, emitterPos.y, layer));
+                                    layer._particles.push(new Particle(spawnX, spawnY, layer));
                                 }
                             }
 
@@ -1434,11 +1720,51 @@ engine.start();</pre>
             ctx.restore();
         }
 
+
+        function readUiState() {
+            try { return JSON.parse(localStorage.getItem(UI_STATE_KEY) || '{}') || {}; }
+            catch (e) { return {}; }
+        }
+
+        function writeUiState(patch) {
+            const state = readUiState();
+            localStorage.setItem(UI_STATE_KEY, JSON.stringify(Object.assign(state, patch || {})));
+        }
+
+        function applyStoredUiState() {
+            const state = readUiState();
+            if (state.cardHidden) {
+                Object.entries(state.cardHidden).forEach(([id, hidden]) => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.toggle('hidden', Boolean(hidden));
+                });
+            }
+            if (state.accordionHidden) {
+                Object.entries(state.accordionHidden).forEach(([id, hidden]) => {
+                    const el = document.getElementById(id);
+                    const icon = document.getElementById('icon-' + id);
+                    if (el) el.classList.toggle('hidden', Boolean(hidden));
+                    if (icon) icon.innerText = hidden ? '▶' : '▼';
+                });
+            }
+            const sidebar = document.getElementById('sidebar-panel');
+            if (sidebar && state.sidebarWidth) {
+                sidebar.style.width = `${state.sidebarWidth}px`;
+                sidebar.style.minWidth = `${state.sidebarWidth}px`;
+            }
+            const lowerPanel = document.getElementById('lower-panel');
+            if (lowerPanel && state.lowerPanelHeight) {
+                lowerPanel.style.height = `${state.lowerPanelHeight}px`;
+                lowerPanel.style.minHeight = `${state.lowerPanelHeight}px`;
+            }
+        }
+
         // -------------------------------------------------------------
         // 5. INTERACTIVITY & EVENTS WRAPPING
         // -------------------------------------------------------------
         function setupEventListeners() {
             window.addEventListener('resize', resizeCanvas);
+            applyStoredUiState();
             resizeCanvas(); 
 
             canvas.addEventListener('mousedown', handleMouseDown);
@@ -1460,6 +1786,7 @@ engine.start();</pre>
             setupZoomControls();
             bindParameters();
             initShapePicker();
+            initBrushPicker();
         }
 
         function setupPanelResizer() {
@@ -1542,6 +1869,12 @@ engine.start();</pre>
                     document.body.style.cursor = '';
                     if (canvasElem) canvasElem.style.pointerEvents = 'auto';
                     document.body.classList.remove('select-none');
+                    const sidebarNow = document.getElementById('sidebar-panel');
+                    const lowerNow = document.getElementById('lower-panel');
+                    writeUiState({
+                        sidebarWidth: sidebarNow ? Math.round(sidebarNow.getBoundingClientRect().width) : undefined,
+                        lowerPanelHeight: lowerNow ? Math.round(lowerNow.getBoundingClientRect().height) : undefined
+                    });
                 }
             };
 
@@ -1591,6 +1924,10 @@ engine.start();</pre>
             } else {
                 el.classList.add('hidden');
             }
+            const state = readUiState();
+            state.cardHidden = state.cardHidden || {};
+            state.cardHidden[id] = el.classList.contains('hidden');
+            localStorage.setItem(UI_STATE_KEY, JSON.stringify(state));
         }
 
         function closeAllDropdowns() {
@@ -1628,6 +1965,10 @@ engine.start();</pre>
                 content.classList.add('hidden');
                 icon.innerText = '▶';
             }
+            const state = readUiState();
+            state.accordionHidden = state.accordionHidden || {};
+            state.accordionHidden[id] = content.classList.contains('hidden');
+            localStorage.setItem(UI_STATE_KEY, JSON.stringify(state));
         }
 
         function setupCoordinatesInputs() {
@@ -1707,6 +2048,14 @@ engine.start();</pre>
             if (followNode) {
                 followNode.innerText = VIEW_FEATURES['emitter-follow-mouse'] ? "ON" : "OFF";
                 followNode.className = VIEW_FEATURES['emitter-follow-mouse'] ? "text-[9px] text-green-500" : "text-[9px] text-gray-400";
+            }
+            if (snapNode) {
+                snapNode.innerText = VIEW_FEATURES['snap-to-grid'] ? "ON" : "OFF";
+                snapNode.className = VIEW_FEATURES['snap-to-grid'] ? "text-[9px] text-green-500" : "text-[9px] text-gray-400";
+            }
+            if (helperIcon) {
+                helperIcon.textContent = VIEW_FEATURES['show-emitter-hud'] ? '🎯' : '🙈';
+                helperIcon.parentElement?.classList.toggle('opacity-60', !VIEW_FEATURES['show-emitter-hud']);
             }
             
             const bounceNode = document.getElementById('view-bounce-status');
@@ -1895,24 +2244,17 @@ engine.start();</pre>
             if (!canvas || !scaleFactor) return;
             const w = canvas.width / scaleFactor;
             const h = canvas.height / scaleFactor;
-
             const marginL = 40;
             const marginT = 40;
             const marginR = 40;
             const marginB = 40;
-
             const availW = w - marginL - marginR;
             const availH = h - marginT - marginB;
-
             if (availW <= 0 || availH <= 0) return;
-
-            const cols = 16;
-            const rows = 9;
-
-            const cellSize = Math.min(availW / cols, availH / rows);
-            gridBounds.width = cellSize * cols;
-            gridBounds.height = cellSize * rows;
-
+            const res = getFxDesignResolution();
+            const fit = Math.min(availW / res.width, availH / res.height);
+            gridBounds.width = Math.max(80, res.width * fit);
+            gridBounds.height = Math.max(80, res.height * fit);
             gridBounds.left = marginL + (availW - gridBounds.width) / 2;
             gridBounds.top = marginT + (availH - gridBounds.height) / 2;
             gridBounds.right = gridBounds.left + gridBounds.width;
@@ -2006,6 +2348,72 @@ engine.start();</pre>
             panOffset.y = Math.max(-limitY, Math.min(limitY, panOffset.y));
         }
 
+
+        function snapCoordsToGrid(coords) {
+            if (!VIEW_FEATURES['snap-to-grid'] || !gridBounds.width || !gridBounds.height) return coords;
+            const cols = 16;
+            const rows = Math.max(1, Math.round(cols * (gridBounds.height / gridBounds.width)));
+            const cellW = gridBounds.width / cols;
+            const cellH = gridBounds.height / rows;
+            const x = gridBounds.left + Math.round((coords.x - gridBounds.left) / cellW) * cellW;
+            const y = gridBounds.top + Math.round((coords.y - gridBounds.top) / cellH) * cellH;
+            return {
+                x: Math.max(gridBounds.left, Math.min(gridBounds.right, x)),
+                y: Math.max(gridBounds.top, Math.min(gridBounds.bottom, y))
+            };
+        }
+
+        function placeEmitterAt(coords) {
+            emitterPos = snapCoordsToGrid(coords);
+            clampEmitterPosition();
+            updateRatioFromEmitter();
+        }
+
+        function activateSetOriginMode() {
+            pendingCanvasPick = 'origin';
+            showToast('Set Origin: click the preview where the emitter should start.', 'info');
+        }
+
+        function activatePointTargetMode() {
+            if (activeLayerIndex === -1) {
+                showToast('Select a layer before using Point Target.', 'error');
+                return;
+            }
+            pendingCanvasPick = 'target';
+            showToast('Point Target: click the preview where this layer should aim.', 'info');
+        }
+
+        function handlePendingCanvasPick(coords) {
+            if (!pendingCanvasPick) return false;
+            if (pendingCanvasPick === 'origin') {
+                placeEmitterAt(coords);
+                pendingCanvasPick = null;
+                showToast('Emitter origin placed.', 'success');
+                return true;
+            }
+            if (pendingCanvasPick === 'target') {
+                const layer = composition?.layers?.[activeLayerIndex];
+                if (!layer) {
+                    pendingCanvasPick = null;
+                    showToast('No active layer to aim.', 'error');
+                    return true;
+                }
+                if (!layer.physics) layer.physics = {};
+                const reverse = document.getElementById('target-reverse-checkbox')?.checked;
+                let deg = Math.atan2(coords.y - emitterPos.y, coords.x - emitterPos.x) * 180 / Math.PI;
+                if (reverse) deg += 180;
+                deg = ((deg % 360) + 360) % 360;
+                layer.physics.angle = Math.round(deg);
+                syncUIFromConfig();
+                syncJSONOutput();
+                pendingCanvasPick = null;
+                showToast(`Layer aimed at target: ${Math.round(deg)}°`, 'success');
+                return true;
+            }
+            pendingCanvasPick = null;
+            return false;
+        }
+
         function handleMouseDown(e) {
             if (isResizingH || isResizingV) return;
 
@@ -2019,6 +2427,7 @@ engine.start();</pre>
             }
 
             const coords = getCanvasCoords(e);
+            if (handlePendingCanvasPick(coords)) return;
             const dist = Math.hypot(coords.x - emitterPos.x, coords.y - emitterPos.y);
             if (dist < 25 && !VIEW_FEATURES['emitter-follow-mouse']) {
                 isDraggingEmitter = true;
@@ -2041,16 +2450,12 @@ engine.start();</pre>
             const coords = getCanvasCoords(e);
             
             if (VIEW_FEATURES['emitter-follow-mouse']) {
-                emitterPos = coords;
-                clampEmitterPosition();
-                updateRatioFromEmitter();
+                placeEmitterAt(coords);
                 return;
             }
 
             if (isDraggingEmitter) {
-                emitterPos = coords;
-                clampEmitterPosition();
-                updateRatioFromEmitter();
+                placeEmitterAt(coords);
             } else if (isDrawingBurst) {
                 mousePos = coords;
             }
@@ -2070,6 +2475,7 @@ engine.start();</pre>
             e.preventDefault();
             const t = e.touches[0];
             const coords = getCanvasCoords(t);
+            if (handlePendingCanvasPick(coords)) return;
             const dist = Math.hypot(coords.x - emitterPos.x, coords.y - emitterPos.y);
 
             if (dist < 35 && !VIEW_FEATURES['emitter-follow-mouse']) {
@@ -2087,16 +2493,12 @@ engine.start();</pre>
             const coords = getCanvasCoords(t);
 
             if (VIEW_FEATURES['emitter-follow-mouse']) {
-                emitterPos = coords;
-                clampEmitterPosition();
-                updateRatioFromEmitter();
+                placeEmitterAt(coords);
                 return;
             }
 
             if (isDraggingEmitter) {
-                emitterPos = coords;
-                clampEmitterPosition();
-                updateRatioFromEmitter();
+                placeEmitterAt(coords);
             } else if (isDrawingBurst) {
                 mousePos = coords;
             }
@@ -2133,6 +2535,7 @@ engine.start();</pre>
                 name: "",
                 tags: "",
                 thumbnail: null,
+                settings: { resolution: getFxResolutionMetadata() },
                 layers: []
             };
             currentThumbnail = null;
@@ -2148,6 +2551,7 @@ engine.start();</pre>
         const SLIDER_MAP = {
             'param-emitter-rate': 'emitter.rate',
             'param-emitter-width': 'emitter.width',
+            'param-emitter-rotation': 'emitter.rotation',
             'param-physics-speedMin': 'physics.speedMin',
             'param-physics-speedMax': 'physics.speedMax',
             'param-physics-angle': 'physics.angle',
@@ -2187,7 +2591,7 @@ engine.start();</pre>
                     if (activeLayerIndex === -1 || !composition || !composition.layers) return;
                     const layer = composition.layers[activeLayerIndex];
                     normalizeLayerVisualShapeConfig(layer);
-                    layer.visual.shapeMode = 'builtInShape';
+                    layer.visual.shapeMode = 'shape';
                     layer.visual.shape = e.target.value;
                     layer.visual.previousBuiltInShape = e.target.value;
                     syncShapeModeUI(layer);
@@ -2215,11 +2619,12 @@ engine.start();</pre>
         function updateStatsLabel(id, value) {
             const labelId = id.replace('param-', 'val-');
             const labelNode = document.getElementById(labelId);
+            const displayValue = (id.includes('rotation') || id.includes('angle')) ? `${value}°` : value;
             if (labelNode) {
                 if (labelNode.tagName === 'INPUT') {
                     labelNode.value = value;
                 } else {
-                    labelNode.innerText = value;
+                    labelNode.innerText = displayValue;
                 }
             }
         }
@@ -2413,6 +2818,7 @@ engine.start();</pre>
 
             normalizeLayerVisualShapeConfig(activeLayer);
             syncShapeModeUI(activeLayer);
+            syncNoiseUI(activeLayer);
             if (activeLayer.visual && activeLayer.visual.shape && activeLayer.visual.shape !== 'texture') {
                 updateShapeLabel(activeLayer.visual.shape);
             }
@@ -2445,14 +2851,18 @@ engine.start();</pre>
             if (!layer) return;
             if (!layer.visual) layer.visual = {};
             const visual = layer.visual;
-            if (!visual.shapeMode) visual.shapeMode = visual.textureDataUrl || visual.texture ? 'textureSprite' : 'builtInShape';
-            if (!visual.shape) visual.shape = visual.shapeMode === 'textureSprite' ? 'texture' : 'circle';
+            if (visual.shapeMode === 'builtInShape') visual.shapeMode = 'shape';
+            if (visual.shapeMode === 'textureSprite') visual.shapeMode = visual.sourceType === 'brush' || visual.brush ? 'brush' : 'custom';
+            if (!visual.shapeMode) visual.shapeMode = visual.textureDataUrl ? 'custom' : (visual.brush || visual.texture ? 'brush' : 'shape');
+            if (!visual.shape) visual.shape = visual.shapeMode === 'shape' ? 'circle' : 'texture';
             if (visual.useTextureAlpha === undefined) visual.useTextureAlpha = true;
-            if (!visual.tintMode) visual.tintMode = 'none';
+            if (!visual.tintMode) visual.tintMode = visual.shapeMode === 'brush' ? 'source-atop' : 'none';
             if (!visual.fitMode) visual.fitMode = 'contain';
             if (visual.rotation === undefined) visual.rotation = 0;
             if (visual.blur === undefined) visual.blur = 0;
             visual.blur = Math.max(0, Math.min(5, Number(visual.blur) || 0));
+            if (visual.textureThreshold === undefined) visual.textureThreshold = visual.shapeMode === 'brush' ? 0.14 : 0.035;
+            if (visual.textureContrast === undefined) visual.textureContrast = visual.shapeMode === 'brush' ? 1.7 : 1.4;
             visual.edgeBlur = 0;
         }
 
@@ -2466,12 +2876,27 @@ engine.start();</pre>
         function changeShapeMode(mode) {
             const layer = getActiveLayerForShapeEdit();
             if (!layer) return;
+            const previousShape = layer.visual.shape && layer.visual.shape !== 'texture' ? layer.visual.shape : (layer.visual.previousBuiltInShape || 'circle');
+            layer.visual.previousBuiltInShape = previousShape;
 
-            layer.visual.shapeMode = mode === 'textureSprite' ? 'textureSprite' : 'builtInShape';
-            if (layer.visual.shapeMode === 'textureSprite') {
+            if (mode === 'brush') {
+                layer.visual.shapeMode = 'brush';
+                layer.visual.sourceType = 'brush';
+                if (!layer.visual.brush) applyBrushToLayer(layer, 'particle2', { textureContrast: 1.65, textureThreshold: 0.14 });
+                else layer.visual.shape = 'texture';
+            } else if (mode === 'custom') {
+                layer.visual.shapeMode = 'custom';
+                layer.visual.sourceType = 'customTexture';
                 layer.visual.shape = 'texture';
             } else {
-                layer.visual.shape = layer.visual.previousBuiltInShape || (layer.visual.shape && layer.visual.shape !== 'texture' ? layer.visual.shape : 'circle');
+                layer.visual.shapeMode = 'shape';
+                layer.visual.sourceType = 'shape';
+                layer.visual.shape = previousShape || 'circle';
+                delete layer.visual.brush;
+                delete layer.visual.texture;
+                delete layer.visual.textureName;
+                delete layer.visual.textureDataUrl;
+                delete layer.visual.textureType;
             }
 
             syncShapeModeUI(layer);
@@ -2485,6 +2910,105 @@ engine.start();</pre>
             syncShapeModeUI(layer);
             syncJSONOutput();
         }
+        function ensureLayerNoiseConfig(layer) {
+            if (!layer) return null;
+            if (!layer.noise) {
+                layer.noise = {
+                    enabled: false,
+                    density: 24,
+                    size: 0.6,
+                    alpha: 0.45,
+                    colorA: '#ffd36a',
+                    colorB: '#ff4b22'
+                };
+            }
+            layer.noise.density = Number(layer.noise.density ?? 24);
+            layer.noise.size = Number(layer.noise.size ?? 0.6);
+            layer.noise.alpha = Number(layer.noise.alpha ?? 0.45);
+            layer.noise.colorA = layer.noise.colorA || '#ffd36a';
+            layer.noise.colorB = layer.noise.colorB || '#ff4b22';
+            return layer.noise;
+        }
+
+        function updateNoiseOption(key, value) {
+            if (activeLayerIndex === -1 || !composition?.layers?.[activeLayerIndex]) return;
+            const layer = composition.layers[activeLayerIndex];
+            const noise = ensureLayerNoiseConfig(layer);
+            noise[key] = value;
+            syncNoiseUI(layer);
+            syncJSONOutput();
+        }
+
+        function syncNoiseUI(layer) {
+            if (!layer) return;
+            const noise = ensureLayerNoiseConfig(layer);
+            const enabled = document.getElementById('param-noise-enabled');
+            const density = document.getElementById('param-noise-density');
+            const size = document.getElementById('param-noise-size');
+            const alpha = document.getElementById('param-noise-alpha');
+            const colorA = document.getElementById('param-noise-colorA');
+            const colorB = document.getElementById('param-noise-colorB');
+            if (enabled) enabled.checked = Boolean(noise.enabled);
+            if (density) density.value = noise.density;
+            if (size) size.value = noise.size;
+            if (alpha) alpha.value = noise.alpha;
+            if (colorA) colorA.value = noise.colorA;
+            if (colorB) colorB.value = noise.colorB;
+            const densityLabel = document.getElementById('val-noise-density');
+            const sizeLabel = document.getElementById('val-noise-size');
+            const alphaLabel = document.getElementById('val-noise-alpha');
+            if (densityLabel) densityLabel.innerText = String(noise.density);
+            if (sizeLabel) sizeLabel.innerText = Number(noise.size).toFixed(1);
+            if (alphaLabel) alphaLabel.innerText = Number(noise.alpha).toFixed(2);
+        }
+
+        function hexToRgb(hex) {
+            const clean = String(hex || '#ffffff').replace('#', '').trim();
+            const full = clean.length === 3 ? clean.split('').map(ch => ch + ch).join('') : clean.padEnd(6, 'f').slice(0, 6);
+            return {
+                r: parseInt(full.slice(0, 2), 16) || 255,
+                g: parseInt(full.slice(2, 4), 16) || 255,
+                b: parseInt(full.slice(4, 6), 16) || 255
+            };
+        }
+
+        function mixHexColor(a, b, t) {
+            const ca = hexToRgb(a);
+            const cb = hexToRgb(b);
+            const r = Math.round(ca.r + (cb.r - ca.r) * t);
+            const g = Math.round(ca.g + (cb.g - ca.g) * t);
+            const blue = Math.round(ca.b + (cb.b - ca.b) * t);
+            return `rgb(${r}, ${g}, ${blue})`;
+        }
+
+        function drawLayerNoise(ctx, layer) {
+            const noise = layer?.noise;
+            if (!noise || !noise.enabled || !gridBounds.width || !gridBounds.height) return;
+            const count = Math.max(0, Math.min(400, Math.round(Number(noise.density || 0))));
+            if (!count) return;
+            const alpha = Math.max(0, Math.min(1, Number(noise.alpha ?? 0.45)));
+            const baseSize = Math.max(0.05, Math.min(6, Number(noise.size || 0.6)));
+            const visual = layer.visual || {};
+            const centerX = emitterPos.x;
+            const centerY = emitterPos.y;
+            const radius = Math.max(18, Math.max(Number(visual.sizeStart || 8), Number(visual.sizeEnd || 8)) * 4 + (layer.emitter?.width || 0) * 0.45);
+            ctx.save();
+            ctx.globalCompositeOperation = visual.composite || 'lighter';
+            for (let i = 0; i < count; i++) {
+                const t = Math.random();
+                const angle = Math.random() * Math.PI * 2;
+                const dist = Math.sqrt(Math.random()) * radius;
+                const x = centerX + Math.cos(angle) * dist;
+                const y = centerY + Math.sin(angle) * dist;
+                if (x < gridBounds.left || x > gridBounds.right || y < gridBounds.top || y > gridBounds.bottom) continue;
+                ctx.globalAlpha = alpha * (0.35 + Math.random() * 0.65);
+                ctx.fillStyle = mixHexColor(noise.colorA, noise.colorB, t);
+                const dotSize = baseSize * (0.45 + Math.random() * 1.2);
+                ctx.fillRect(x, y, dotSize, dotSize);
+            }
+            ctx.restore();
+        }
+
 
         function handleTextureFileInput(event) {
             const layer = getActiveLayerForShapeEdit();
@@ -2493,7 +3017,8 @@ engine.start();</pre>
             const file = event.target.files[0];
             const reader = new FileReader();
             reader.onload = function(loadEvent) {
-                layer.visual.shapeMode = 'textureSprite';
+                layer.visual.shapeMode = 'custom';
+                layer.visual.sourceType = 'customTexture';
                 layer.visual.previousBuiltInShape = layer.visual.previousBuiltInShape || (layer.visual.shape !== 'texture' ? layer.visual.shape : 'circle');
                 layer.visual.shape = 'texture';
                 layer.visual.textureDataUrl = loadEvent.target.result;
@@ -2506,6 +3031,7 @@ engine.start();</pre>
                 layer.visual.textureThreshold = layer.visual.textureThreshold || 0.035;
                 layer.visual.tintMode = layer.visual.tintMode || 'none';
                 layer.visual.fitMode = layer.visual.fitMode || 'contain';
+                delete layer.visual.brush;
                 getCachedTexture(layer.visual.textureDataUrl);
                 syncShapeModeUI(layer);
                 syncJSONOutput();
@@ -2525,12 +3051,14 @@ engine.start();</pre>
             delete layer.visual.texture;
             delete layer.visual.textureName;
             delete layer.visual.textureType;
-            layer.visual.shapeMode = 'builtInShape';
+            delete layer.visual.brush;
+            layer.visual.shapeMode = 'shape';
+            layer.visual.sourceType = 'shape';
             layer.visual.shape = layer.visual.previousBuiltInShape || 'circle';
             syncShapeModeUI(layer);
             updateShapeLabel(layer.visual.shape);
             syncJSONOutput();
-            showToast('Texture sprite cleared.', 'info');
+            showToast('Texture or brush cleared.', 'info');
         }
 
         function syncShapeModeUI(layer) {
@@ -2540,6 +3068,7 @@ engine.start();</pre>
 
             const shapeModeSelect = document.getElementById('param-visual-shapeMode');
             const builtInPanel = document.getElementById('built-in-shape-panel');
+            const brushPanel = document.getElementById('brush-sprite-panel');
             const texturePanel = document.getElementById('texture-sprite-panel');
             const textureLabel = document.getElementById('texture-file-label');
             const previewBox = document.getElementById('texture-preview-box');
@@ -2550,16 +3079,25 @@ engine.start();</pre>
             const useAlpha = document.getElementById('param-visual-useTextureAlpha');
             const textureContrast = document.getElementById('param-visual-textureContrast');
             const textureContrastLabel = document.getElementById('val-visual-textureContrast');
+            const brushContrast = document.getElementById('param-brush-textureContrast');
+            const brushContrastLabel = document.getElementById('val-brush-textureContrast');
+            const brushThreshold = document.getElementById('param-brush-textureThreshold');
+            const brushThresholdLabel = document.getElementById('val-brush-textureThreshold');
 
-            if (shapeModeSelect) shapeModeSelect.value = visual.shapeMode;
-            if (builtInPanel) builtInPanel.classList.toggle('hidden', visual.shapeMode === 'textureSprite');
-            if (texturePanel) texturePanel.classList.toggle('hidden', visual.shapeMode !== 'textureSprite');
+            if (shapeModeSelect) shapeModeSelect.value = visual.shapeMode || 'shape';
+            if (builtInPanel) builtInPanel.classList.toggle('hidden', visual.shapeMode !== 'shape');
+            if (brushPanel) brushPanel.classList.toggle('hidden', visual.shapeMode !== 'brush');
+            if (texturePanel) texturePanel.classList.toggle('hidden', visual.shapeMode !== 'custom');
 
-            if (tintMode) tintMode.value = visual.tintMode || 'none';
+            if (tintMode) tintMode.value = visual.tintMode || (visual.shapeMode === 'brush' ? 'source-atop' : 'none');
             if (fitMode) fitMode.value = visual.fitMode || 'contain';
             if (useAlpha) useAlpha.checked = visual.useTextureAlpha !== false;
             if (textureContrast) textureContrast.value = Number(visual.textureContrast || 1.4);
             if (textureContrastLabel) textureContrastLabel.innerText = Number(visual.textureContrast || 1.4).toFixed(1);
+            if (brushContrast) brushContrast.value = Number(visual.textureContrast || 1.7);
+            if (brushContrastLabel) brushContrastLabel.innerText = Number(visual.textureContrast || 1.7).toFixed(1);
+            if (brushThreshold) brushThreshold.value = Number(visual.textureThreshold || 0.14);
+            if (brushThresholdLabel) brushThresholdLabel.innerText = Number(visual.textureThreshold || 0.14).toFixed(2);
 
             const hasTexture = Boolean(visual.textureDataUrl || visual.texture);
             if (textureLabel) textureLabel.innerText = visual.textureName || visual.texture || 'Choose PNG...';
@@ -2572,9 +3110,10 @@ engine.start();</pre>
             }
             if (previewName) previewName.innerText = visual.textureName || visual.texture || 'Texture loaded';
 
-            if (visual.shapeMode !== 'textureSprite') {
+            if (visual.shapeMode === 'shape') {
                 updateShapeLabel(visual.shape || 'circle');
             }
+            updateBrushPickerSelection(visual.brush || null);
         }
 
         // Shape Picker Logic
@@ -2617,6 +3156,45 @@ engine.start();</pre>
             if(!label) return;
             const def = SHAPE_DEFS.find(s => s.id === id) || SHAPE_DEFS[0];
             label.innerHTML = `<svg class="w-4 h-4 text-artifex-gold shrink-0" viewBox="0 0 24 24">${def.svg}</svg> <span class="truncate">${def.name}</span>`;
+        }
+
+        function initBrushPicker() {
+            const grid = document.getElementById('brush-picker-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            Object.entries(BUILT_IN_BRUSHES).forEach(([key, brush]) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.dataset.brushKey = key;
+                btn.className = 'brush-picker-btn flex flex-col items-center justify-center gap-1 p-1.5 rounded-lg bg-artifex-dark border border-artifex-border hover:border-artifex-purpleAccent hover:text-white text-artifex-goldMuted transition focus:outline-none min-h-[64px]';
+                btn.title = brush.label;
+                btn.onclick = () => selectBrush(key);
+                btn.innerHTML = `
+                    <div class="w-10 h-10 rounded bg-black/50 border border-artifex-border/60 flex items-center justify-center overflow-hidden">
+                        <img src="${brush.path}" alt="${escapeHtml(brush.label)}" class="max-w-full max-h-full object-contain">
+                    </div>
+                    <span class="text-[7px] font-bold uppercase tracking-wider text-center leading-tight">${escapeHtml(brush.label)}</span>
+                `;
+                grid.appendChild(btn);
+            });
+        }
+
+        function updateBrushPickerSelection(key) {
+            document.querySelectorAll('.brush-picker-btn').forEach(btn => {
+                btn.classList.toggle('border-artifex-purpleAccent', btn.dataset.brushKey === key);
+                btn.classList.toggle('text-white', btn.dataset.brushKey === key);
+            });
+        }
+
+        function selectBrush(key) {
+            const layer = getActiveLayerForShapeEdit();
+            if (!layer) return;
+            applyBrushToLayer(layer, key, { textureContrast: layer.visual.textureContrast || 1.7, textureThreshold: layer.visual.textureThreshold || 0.14 });
+            layer.visual.shapeMode = 'brush';
+            layer.visual.sourceType = 'brush';
+            syncShapeModeUI(layer);
+            syncJSONOutput();
+            showToast(`Brush selected: ${BUILT_IN_BRUSHES[key]?.label || key}`, 'success');
         }
 
 
@@ -3076,10 +3654,10 @@ engine.start();</pre>
             layer.isVisible = layer.isVisible !== false;
             layer.effectType = 'particles';
             layer.subType = 'default-particle-layer';
-            layer.emitter = { rate: 6, width: 12, widthUnit: 'PX' };
+            layer.emitter = { rate: 6, width: 12, widthUnit: 'PX', rotation: 0 };
             layer.physics = { speedMin: 2, speedMax: 6, angle: 270, spread: 45, gravityY: 0.04, friction: 0.985, orbitalForce: 0 };
             layer.visual = {
-                shapeMode: 'builtInShape',
+                shapeMode: 'shape',
                 sourceType: 'shape',
                 shape: 'spark',
                 previousBuiltInShape: 'spark',
@@ -3099,7 +3677,7 @@ engine.start();</pre>
                 useTextureAlpha: true,
                 brushAlphaMode: 'native',
                 textureContrast: 1.4,
-                textureThreshold: 0.035,
+                textureThreshold: 0.14,
                 texture: null,
                 textureDataUrl: null,
                 textureName: ''
@@ -3117,7 +3695,7 @@ engine.start();</pre>
             const setPhysics = values => Object.assign(layer.physics, values);
             const setEmitter = values => Object.assign(layer.emitter, values);
             const setLife = values => Object.assign(layer.life, values);
-            const brushOptions = (extra = {}) => Object.assign({ tintMode: 'source-atop', fitMode: 'contain', brushAlphaMode: 'lumaAlpha', textureContrast: 1.45, textureThreshold: 0.035 }, extra);
+            const brushOptions = (extra = {}) => Object.assign({ tintMode: 'source-atop', fitMode: 'contain', brushAlphaMode: 'lumaAlpha', textureContrast: 1.45, textureThreshold: 0.14 }, extra);
 
             const presets = {
                 'soft-glow': () => {
@@ -3381,6 +3959,7 @@ engine.start();</pre>
         function loadComposition(comp) {
             composition = JSON.parse(JSON.stringify(comp));
             if (!composition.thumbnail) composition.thumbnail = null;
+            composition.settings = Object.assign({}, composition.settings || {}, { resolution: composition.settings?.resolution || getFxResolutionMetadata() });
             currentThumbnail = composition.thumbnail || null;
             composition.layers.forEach(layer => {
                 layer._particles = [];
@@ -3544,20 +4123,35 @@ engine.start();</pre>
             thumbCtx.fillRect(0, 0, size, size);
 
             if (composition && composition.layers && gridBounds.width > 0 && gridBounds.height > 0) {
-                const padding = 42;
-                const sourceSize = Math.max(gridBounds.width, gridBounds.height);
-                const scale = (size - padding * 2) / sourceSize;
-                const drawW = gridBounds.width * scale;
-                const drawH = gridBounds.height * scale;
-                const offsetX = (size - drawW) / 2 - gridBounds.left * scale;
-                const offsetY = (size - drawH) / 2 - gridBounds.top * scale;
-
+                const useViewportCapture = Math.abs(zoomLevel - 1) > 0.01 || Math.abs(panOffset.x) > 0.5 || Math.abs(panOffset.y) > 0.5;
                 thumbCtx.save();
-                thumbCtx.translate(offsetX, offsetY);
-                thumbCtx.scale(scale, scale);
+                if (useViewportCapture) {
+                    const viewW = canvas.width / scaleFactor;
+                    const viewH = canvas.height / scaleFactor;
+                    const sourceSize = Math.min(viewW, viewH);
+                    const scale = size / sourceSize;
+                    thumbCtx.translate(size / 2, size / 2);
+                    thumbCtx.scale(scale, scale);
+                    thumbCtx.translate(-viewW / 2, -viewH / 2);
+                    thumbCtx.translate(emitterPos.x + panOffset.x, emitterPos.y + panOffset.y);
+                    thumbCtx.scale(zoomLevel, zoomLevel);
+                    thumbCtx.translate(-emitterPos.x, -emitterPos.y);
+                } else {
+                    const padding = 42;
+                    const sourceSize = Math.max(gridBounds.width, gridBounds.height);
+                    const scale = (size - padding * 2) / sourceSize;
+                    const drawW = gridBounds.width * scale;
+                    const drawH = gridBounds.height * scale;
+                    const offsetX = (size - drawW) / 2 - gridBounds.left * scale;
+                    const offsetY = (size - drawH) / 2 - gridBounds.top * scale;
+                    thumbCtx.translate(offsetX, offsetY);
+                    thumbCtx.scale(scale, scale);
+                }
 
                 composition.layers.forEach(layer => {
-                    if (!layer || layer.isVisible === false || !Array.isArray(layer._particles)) return;
+                    if (!layer || layer.isVisible === false) return;
+                    drawLayerNoise(thumbCtx, layer);
+                    if (!Array.isArray(layer._particles)) return;
                     thumbCtx.globalCompositeOperation = layer.visual?.composite || 'source-over';
                     layer._particles.forEach(particle => {
                         if (particle && typeof particle.draw === 'function') {
@@ -3576,6 +4170,8 @@ engine.start();</pre>
                 height: size,
                 background: '#0f0c0b',
                 capturedAt: new Date().toISOString(),
+                captureMode: (Math.abs(zoomLevel - 1) > 0.01 || Math.abs(panOffset.x) > 0.5 || Math.abs(panOffset.y) > 0.5) ? 'zoomedViewport' : 'fullGrid',
+                resolution: getFxResolutionMetadata(),
                 dataUrl
             };
         }
@@ -3593,6 +4189,8 @@ engine.start();</pre>
                 varTagsNode.classList.add('input-glow-flash');
             }
 
+            const warning = document.getElementById('save-thumbnail-warning');
+            if (warning) warning.classList.toggle('hidden', Boolean(currentThumbnail || composition?.thumbnail));
             const modal = document.getElementById('variation-modal');
             if (modal) modal.classList.remove('hidden');
         }
@@ -3607,7 +4205,7 @@ engine.start();</pre>
             if (modal) modal.classList.add('hidden');
         }
 
-        function submitSaveVariation() {
+        function submitSaveVariation(emergencyBackup = false) {
             const nameNode = document.getElementById('modal-variation-name');
             const tagsNode = document.getElementById('modal-variation-tags');
             
@@ -3620,6 +4218,13 @@ engine.start();</pre>
             if (!name) {
                 showToast("Please enter a name for your custom composition", "error");
                 if (nameNode) nameNode.classList.add('input-glow-flash');
+                return;
+            }
+
+            if (!emergencyBackup && !(currentThumbnail || composition?.thumbnail)) {
+                const warning = document.getElementById('save-thumbnail-warning');
+                if (warning) warning.classList.remove('hidden');
+                showToast('Cannot save without a thumbnail. Capture one first, or use Emergency Backup.', 'error');
                 return;
             }
 
@@ -3648,6 +4253,194 @@ engine.start();</pre>
             loadCustomPresets();
             populateCompLoaderDropdown();
             showToast(`Deleted custom preset: "${name}"`, "info");
+        }
+
+
+        function getLocalFiles() {
+            try { return JSON.parse(localStorage.getItem(LOCAL_FILES_KEY) || '[]') || []; }
+            catch (e) { return []; }
+        }
+
+        function setLocalFiles(files) {
+            localStorage.setItem(LOCAL_FILES_KEY, JSON.stringify(files || []));
+        }
+
+        function cleanCompositionForSave(source = composition) {
+            return JSON.parse(JSON.stringify(source, (k, v) => k === '_particles' ? undefined : v));
+        }
+
+        function saveCurrentToLocalFiles(emergencyBackup = false) {
+            if (!composition) {
+                showToast('No effect archetype loaded to save.', 'error');
+                return;
+            }
+            const thumb = currentThumbnail || composition.thumbnail || null;
+            if (!thumb && !emergencyBackup) {
+                showToast('Cannot save to local storage without a thumbnail. Capture one first, or use Emergency Backup from the save modal.', 'error');
+                openVariationModal();
+                return;
+            }
+            const copy = cleanCompositionForSave();
+            copy.id = copy.id || generateHashID();
+            copy.name = copy.name || document.getElementById('modal-variation-name')?.value?.trim() || `FX Archetype ${copy.id}`;
+            copy.thumbnail = thumb || null;
+            copy.savedAt = new Date().toISOString();
+            const files = getLocalFiles();
+            files.unshift(copy);
+            setLocalFiles(files);
+            showToast('Effect archetype saved to local browser files.', 'success');
+        }
+
+        function openLocalFilesModal() {
+            renderLocalFilesList();
+            const modal = document.getElementById('local-files-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeLocalFilesModal() {
+            const modal = document.getElementById('local-files-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function renderLocalFilesList() {
+            const list = document.getElementById('local-files-list');
+            if (!list) return;
+            const files = getLocalFiles();
+            if (!files.length) {
+                list.innerHTML = '<div class="text-center text-artifex-goldMuted text-xs py-8 italic">No local files saved yet.</div>';
+                return;
+            }
+            list.innerHTML = '';
+            files.forEach((item, idx) => {
+                const row = document.createElement('label');
+                row.className = 'grid grid-cols-[24px_54px_minmax(0,1fr)_auto] gap-3 items-center p-2 rounded-xl bg-artifex-dark/60 border border-artifex-border hover:border-artifex-purpleAccent cursor-pointer';
+                const thumb = item.thumbnail?.dataUrl || '';
+                row.innerHTML = `
+                    <input type="checkbox" class="local-file-checkbox accent-artifex-purpleAccent" value="${idx}">
+                    <div class="w-12 h-12 rounded-lg border border-artifex-border bg-black/50 overflow-hidden flex items-center justify-center">${thumb ? `<img src="${thumb}" class="w-full h-full object-cover">` : '<span>✨</span>'}</div>
+                    <div class="min-w-0">
+                        <div class="font-bold text-xs text-artifex-gold truncate">${escapeHtml(item.name || item.id || 'Untitled FX')}</div>
+                        <div class="text-[9px] text-artifex-goldMuted truncate">${escapeHtml(item.id || '')} · ${(item.layers || []).length} layer(s)</div>
+                    </div>
+                    <button type="button" onclick="deleteLocalFile(event, ${idx})" class="px-2 py-1 text-[10px] rounded bg-rose-950/40 text-rose-300 border border-rose-700/50 hover:bg-rose-900/60">Delete</button>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        function deleteLocalFile(event, index) {
+            event.preventDefault();
+            event.stopPropagation();
+            const files = getLocalFiles();
+            files.splice(index, 1);
+            setLocalFiles(files);
+            renderLocalFilesList();
+            showToast('Local file deleted.', 'info');
+        }
+
+        function clearLocalFilesSelection() {
+            document.querySelectorAll('.local-file-checkbox').forEach(cb => cb.checked = false);
+        }
+
+        function downloadSelectedLocalFiles() {
+            const files = getLocalFiles();
+            const selected = Array.from(document.querySelectorAll('.local-file-checkbox:checked')).map(cb => files[Number(cb.value)]).filter(Boolean);
+            if (!selected.length) {
+                showToast('Select at least one local file to download.', 'error');
+                return;
+            }
+            selected.forEach((item, idx) => {
+                setTimeout(() => downloadJSONPayload(item, `${safeFileName(item.name || item.id || 'artifex-fx')}.fx.json`), idx * 180);
+            });
+            showToast(`Downloading ${selected.length} local FX file(s).`, 'success');
+        }
+
+        function safeFileName(name) {
+            return String(name || 'artifex-fx').trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'artifex-fx';
+        }
+
+        function collectArchetypeAssets() {
+            const items = [];
+            COMPOSITES_REGISTRY.forEach(comp => items.push({ kind: 'composite', source: comp, name: comp.name, tags: comp.tags, layerCount: comp.layers?.length || 0 }));
+            customPresets.forEach(comp => items.push({ kind: 'custom', source: comp, name: comp.name, tags: comp.tags, layerCount: comp.layers?.length || 0 }));
+            Object.entries(PRESETS_REGISTRY).forEach(([category, presets]) => {
+                (presets || []).forEach(preset => items.push({ kind: 'base', category, source: preset, name: preset.name, tags: preset.tags, layerCount: 1 }));
+            });
+            return items;
+        }
+
+        function openArchetypeAssetsModal() {
+            renderArchetypeAssetsGrid();
+            const modal = document.getElementById('archetype-assets-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeArchetypeAssetsModal() {
+            const modal = document.getElementById('archetype-assets-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function renderArchetypeAssetsGrid() {
+            const grid = document.getElementById('archetype-assets-grid');
+            if (!grid) return;
+            const items = collectArchetypeAssets();
+            grid.innerHTML = '';
+            items.forEach((asset, idx) => {
+                const item = asset.source;
+                const card = document.createElement('div');
+                card.className = 'rounded-xl bg-artifex-dark/70 border border-artifex-border overflow-hidden shadow-lg flex flex-col';
+                const thumb = item.thumbnail?.dataUrl || '';
+                card.innerHTML = `
+                    <div class="aspect-square bg-black/60 border-b border-artifex-border flex items-center justify-center overflow-hidden">${thumb ? `<img src="${thumb}" class="w-full h-full object-cover">` : '<span class="text-3xl opacity-70">✨</span>'}</div>
+                    <div class="p-3 flex-1 min-h-0">
+                        <div class="font-bold text-xs text-artifex-gold truncate">${escapeHtml(asset.name || 'FX Asset')}</div>
+                        <div class="text-[9px] text-artifex-goldMuted mt-1 line-clamp-2 min-h-[24px]">${escapeHtml(asset.tags || asset.kind)}</div>
+                        <div class="text-[9px] text-slate-500 mt-1">${asset.layerCount} layer(s) · ${asset.kind}</div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 p-3 pt-0">
+                        <button onclick="loadArchetypeAssetFromLibrary(${idx})" class="py-1.5 rounded-lg text-[10px] font-semibold bg-artifex-purple hover:bg-artifex-purpleAccent text-white">Open</button>
+                        <button onclick="addArchetypeAssetLayers(${idx})" class="py-1.5 rounded-lg text-[10px] font-semibold bg-artifex-gray hover:bg-artifex-darkGray text-artifex-gold border border-artifex-border">Add</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function loadArchetypeAssetFromLibrary(index) {
+            const asset = collectArchetypeAssets()[index];
+            if (!asset) return;
+            if (asset.kind === 'base') {
+                if (!composition) newConfiguration();
+                composition.layers = [JSON.parse(JSON.stringify(asset.source))];
+                composition.layers[0].layerName = asset.source.name || asset.source.id;
+                composition.layers[0]._particles = [];
+                activeLayerIndex = 0;
+                syncUIFromConfig();
+                renderLayerList();
+            } else {
+                loadComposition(asset.source);
+            }
+            closeArchetypeAssetsModal();
+        }
+
+        function addArchetypeAssetLayers(index) {
+            const asset = collectArchetypeAssets()[index];
+            if (!asset) return;
+            if (!composition) newConfiguration();
+            if (!composition.layers) composition.layers = [];
+            const sourceLayers = asset.kind === 'base' ? [asset.source] : (asset.source.layers || []);
+            sourceLayers.forEach(src => {
+                const clone = JSON.parse(JSON.stringify(src));
+                clone.layerName = clone.layerName || clone.name || asset.name || 'Added FX Layer';
+                clone.isVisible = clone.isVisible !== false;
+                clone._particles = [];
+                composition.layers.push(clone);
+            });
+            activeLayerIndex = composition.layers.length - 1;
+            syncUIFromConfig();
+            renderLayerList();
+            closeArchetypeAssetsModal();
+            showToast(`Added ${sourceLayers.length} layer(s) from ${asset.name}.`, 'success');
         }
 
         function escapeHtml(value) {
@@ -3707,6 +4500,7 @@ engine.start();</pre>
             cleanComp.id = cleanComp.id || generateHashID();
             cleanComp.name = cleanComp.name || 'Untitled FX Composition';
             cleanComp.tags = cleanComp.tags || '';
+            cleanComp.settings = Object.assign({}, cleanComp.settings || {}, { resolution: getFxResolutionMetadata() });
             if (currentThumbnail && !cleanComp.thumbnail) cleanComp.thumbnail = currentThumbnail;
             return cleanComp;
         }
@@ -3734,6 +4528,7 @@ engine.start();</pre>
                 engine: 'artifex-particle-studio',
                 engineVersion: '2.3.0-alpha',
                 savedAt: new Date().toISOString(),
+                resolution: getFxResolutionMetadata(),
                 editor: {
                     app: 'Artifex Visual Effects Editor',
                     format: 'editableProject',
@@ -3749,7 +4544,7 @@ engine.start();</pre>
             const layers = Array.isArray(cleanComp?.layers) ? cleanComp.layers : [];
             layers.forEach((layer, index) => {
                 const visual = layer.visual || {};
-                if (visual.shapeMode !== 'textureSprite' && !visual.texture && !visual.textureName && !visual.textureDataUrl) return;
+                if (!['textureSprite','brush','custom'].includes(visual.shapeMode) && !visual.texture && !visual.textureName && !visual.textureDataUrl) return;
                 const name = visual.textureName || visual.texture || `embedded-texture-layer-${index + 1}.png`;
                 const key = name + '|' + Boolean(visual.textureDataUrl);
                 if (seen.has(key)) return;
@@ -3781,12 +4576,13 @@ engine.start();</pre>
                 projectId: 'forever-bound',
                 engine: 'artifex-particle-studio',
                 engineVersion: '2.3.0-alpha',
+                resolution: getFxResolutionMetadata(),
                 tags: normalizeTags(cleanComp.tags),
                 thumbnail: cleanComp.thumbnail || null,
                 assets: {
                     textures: textureDependencies,
                     audio: [],
-                    notes: textureDependencies.length ? 'Texture dependencies were detected from textureSprite layers.' : 'No texture dependencies detected.'
+                    notes: textureDependencies.length ? 'Texture dependencies were detected from brush/custom texture layers.' : 'No texture dependencies detected.'
                 },
                 composition: {
                     id: cleanComp.id || fxId,
@@ -3952,7 +4748,7 @@ engine.start();</pre>
                         effectType: 'ring',
                         emitter: { rate: 0, width: 1, widthUnit: 'PX' },
                         physics: { speedMin: 1, speedMax: 3, angle: 0, spread: 360, gravityY: 0, friction: 0.96, orbitalForce: 0.45 },
-                        visual: { shapeMode: 'builtInShape', shape: 'ring', sizeStart: 8, sizeEnd: 42, colors: ['#ffffff', '#9e01ce', '#00a1d7'], alphas: [0.0, 0.85, 0.0], edgeBlur: 0, blur: 0, glow: 24, composite: 'screen' },
+                        visual: { shapeMode: 'shape', shape: 'ring', sizeStart: 8, sizeEnd: 42, colors: ['#ffffff', '#9e01ce', '#00a1d7'], alphas: [0.0, 0.85, 0.0], edgeBlur: 0, blur: 0, glow: 24, composite: 'screen' },
                         life: { durationMin: 45, durationMax: 90 }
                     },
                     {
@@ -3962,7 +4758,7 @@ engine.start();</pre>
                         emitter: { rate: 7, width: 45, widthUnit: 'PX' },
                         physics: { speedMin: 1.5, speedMax: 5, angle: 270, spread: 55, gravityY: -0.04, friction: 0.985, orbitalForce: 0.8 },
                         visual: {
-                            shapeMode: textures.length ? 'textureSprite' : 'builtInShape',
+                            shapeMode: textures.length ? 'custom' : 'shape',
                             shape: textures.length ? 'texture' : 'soft-star',
                             texture: firstTexture,
                             textureName: firstTexture,
