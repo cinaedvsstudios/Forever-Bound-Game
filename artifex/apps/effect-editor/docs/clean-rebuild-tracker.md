@@ -14,6 +14,10 @@ This branch starts from the last known working Effect Editor render baseline.
 
 `https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/fb-effect-split1/artifex/apps/effect-editor/module-smoke-test.html`
 
+## Live debug wrapper URL
+
+`https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/fb-effect-split1/artifex/apps/effect-editor/debug-live.html`
+
 ## Current status
 
 The confirmed working base is preserved on `fb-effect-base`.
@@ -23,12 +27,29 @@ The confirmed working base is preserved on `fb-effect-base`.
 Module smoke test passed in browser:
 
 - `editor-bootstrap.js` imports successfully.
+- `editor-debug.js` imports successfully.
 - Module groups visible: Library, State, Runtime, Renderer, UI, IO.
 - Base effect categories visible: 8.
 - Composite effect presets visible: 3.
 - `window.ArtifexEffectEditorModules` is available on the smoke-test page.
+- `window.openArtifexDebugPanel` is available on the smoke-test page.
 
-The live editor still works after scaffold extraction.
+Live debug wrapper passed in browser:
+
+- Wrapper loaded the real `index.html` in an iframe.
+- Debug tools injected into the live editor frame.
+- `moduleBootstrapLoaded: true`.
+- Module groups visible: Library, State, Runtime, Renderer, UI, IO.
+- Base effect categories visible: 8.
+- Composite effect presets visible: 3.
+- Canvas found: true.
+- Canvas client size reported: 1069 × 345.
+- Canvas backing size reported: 1470 × 474.
+- Dropdown count reported: 5.
+- Captured errors: 0.
+- Captured warnings: 0.
+
+The live editor still works after scaffold extraction and debug wrapper testing.
 
 ## First test
 
@@ -99,6 +120,7 @@ Added:
 
 - `src/editor-bootstrap.js`
 - `module-smoke-test.html`
+- `debug-live.html`
 
 ## Debug scaffold completed
 
