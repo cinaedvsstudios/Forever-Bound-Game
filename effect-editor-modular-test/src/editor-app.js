@@ -10,7 +10,7 @@ import { initWorkspaceParity } from './workspace-parity.js';
 import { initResolutionParity } from './resolution-parity.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'v2.3.10 RESOLUTION';
+const VERSION_LABEL = 'v2.3.11 TEXTURE-RENDER';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
@@ -35,5 +35,5 @@ window.addEventListener('DOMContentLoaded', () => {
     addLayer(preset.config);
   }
 
-  showToast(`${VERSION_LABEL} loaded. Resolution and scale parity pass is active.`, 'success');
+  showToast(`${VERSION_LABEL} loaded. Texture render parity pass is active.`, 'success');
 });
