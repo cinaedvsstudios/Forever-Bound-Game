@@ -57,16 +57,52 @@ assets/
     music/
     ambience/
     sfx/
+  fx/
+
+artifex/
+  index.html
+  apps/
+    scene-editor/
+    effect-editor/
+    fx-editor/
+    archetype-object-creator/
+  assets-library/
+  templates/
+
 data/
   scenes/
+  screens/
   settings/
+  editor/
+  items/
+  map/
+
 docs/
+  artifex/
+  archive/
+
 src/
+  core/
+  modes/
+  systems/
+  ui/
   main.js
+  main.ts
   styles.css
+
 index.html
 README.md
 ```
+
+## Artifex Module Folder Notes
+
+`artifex/apps/scene-editor/` contains the visual scene/screen editor.
+
+`artifex/apps/effect-editor/` and `artifex/apps/fx-editor/` contain FX/effect editor work and related notes. These create or manage FX Archetypes such as magic, fog, particles, overlays, and plate/video effects.
+
+`artifex/apps/archetype-object-creator/` is the placeholder folder for the future Object Archetype creation module. This is for creating non-FX reusable Object Archetypes such as characters, animals, NPCs, enemies, props, doors, pickups, markers, and interactable objects.
+
+The Asset Library stores raw files and file metadata. The Archetype Object Creator turns those assets into reusable game objects with properties, animation sets, behaviours, tags, defaults, and runtime meaning.
 
 ## Design Notes
 
