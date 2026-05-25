@@ -55,6 +55,7 @@ export function normalizeComposition(input) {
 }
 
 export function normalizeLayer(layer) {
+  const lifetime = finiteNumber(layer.lifetime, 80);
   return {
     id: layer.id || `layer_${cryptoRandom()}`,
     name: layer.name || 'Effect Layer',
@@ -73,7 +74,7 @@ export function normalizeLayer(layer) {
     angle: finiteNumber(layer.angle, -90),
     spread: finiteNumber(layer.spread, 60),
     gravity: finiteNumber(layer.gravity, 0.04),
-    lifetime: finiteNumber(layer.lifetime, 80),
+    lifetime,
     emitterX: finiteNumber(layer.emitterX, DESIGN_WIDTH / 2),
     emitterY: finiteNumber(layer.emitterY, DESIGN_HEIGHT * 0.64),
     appearanceMode: layer.appearanceMode || 'shape',
@@ -84,7 +85,18 @@ export function normalizeLayer(layer) {
     edgeBlur: finiteNumber(layer.edgeBlur, 0),
     textureAlpha: finiteNumber(layer.textureAlpha, 1),
     textureName: layer.textureName || '',
-    textureDataUrl: layer.textureDataUrl || ''
+    textureDataUrl: layer.textureDataUrl || '',
+    emitterWidth: finiteNumber(layer.emitterWidth, 0),
+    emitterWidthUnit: layer.emitterWidthUnit || 'px',
+    emitterRotation: finiteNumber(layer.emitterRotation, 0),
+    targetX: finiteNumber(layer.targetX, DESIGN_WIDTH / 2),
+    targetY: finiteNumber(layer.targetY, DESIGN_HEIGHT / 2),
+    reverseNearTarget: Boolean(layer.reverseNearTarget),
+    friction: finiteNumber(layer.friction, 0),
+    orbitalForce: finiteNumber(layer.orbitalForce, 0),
+    lifetimeMin: finiteNumber(layer.lifetimeMin, Math.max(4, lifetime * 0.75)),
+    lifetimeMax: finiteNumber(layer.lifetimeMax, Math.max(4, lifetime * 1.25)),
+    noiseGrain: finiteNumber(layer.noiseGrain, 0)
   };
 }
 
