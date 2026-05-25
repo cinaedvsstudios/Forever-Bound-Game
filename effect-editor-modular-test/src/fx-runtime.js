@@ -1,15 +1,19 @@
 export class Particle {
   constructor(layer, burstAngle = null) {
-    const angle = degreesToRadians(burstAngle ?? randomRange(layer.angle - layer.spread / 2, layer.angle + layer.spread / 2));
+    const emitterRotation = finite(layer.emitterRotation, 0);
+    const angle = degreesToRadians(emitterRotation + (burstAngle ?? randomRange(layer.angle - layer.spread / 2, layer.angle + layer.spread / 2)));
     const speed = randomRange(layer.speedMin, layer.speedMax);
     const jitter = layer.engine === 'gas' || layer.engine === 'refraction' ? 28 : 7;
+    const emitterWidth = resolveEmitterWidth(layer);
+    const widthOffset = randomRange(-emitterWidth / 2, emitterWidth / 2);
+    const widthAngle = degreesToRadians(emitterRotation + 90);
 
-    this.x = layer.emitterX + randomRange(-jitter, jitter);
-    this.y = layer.emitterY + randomRange(-jitter, jitter);
+    this.x = layer.emitterX + Math.cos(widthAngle) * widthOffset + randomRange(-jitter, jitter);
+    this.y = layer.emitterY + Math.sin(widthAngle) * widthOffset + randomRange(-jitter, jitter);
     this.vx = Math.cos(angle) * speed;
     this.vy = Math.sin(angle) * speed;
     this.age = 0;
-    this.life = Math.max(4, layer.lifetime * randomRange(0.75, 1.25));
+    this.life = Math.max(4, randomRange(finite(layer.lifetimeMin, layer.lifetime * 0.75), finite(layer.lifetimeMax, layer.lifetime * 1.25)));
     this.rotation = randomRange(0, Math.PI * 2);
     this.rotationSpeed = randomRange(-0.05, 0.05);
     this.seed = Math.random();
@@ -18,6 +22,7 @@ export class Particle {
   update(layer) {
     this.age += 1;
     this.vy += layer.gravity;
+    applyTargetForces(this, layer);
     if (layer.engine === 'gas' || layer.engine === 'refraction') {
       this.vx += Math.sin((this.age + this.seed * 30) * 0.04) * 0.025;
       this.vy *= 0.992;
@@ -26,6 +31,16 @@ export class Particle {
     if (layer.engine === 'ribbon' || layer.engine === 'lensflare') {
       this.vx *= 0.988;
       this.vy *= 0.988;
+    }
+    const friction = Math.min(0.08, Math.max(0, finite(layer.friction, 0)));
+    if (friction > 0) {
+      this.vx *= 1 - friction;
+      this.vy *= 1 - friction;
+    }
+    const noise = Math.max(0, finite(layer.noiseGrain, 0));
+    if (noise > 0) {
+      this.vx += (Math.random() - 0.5) * noise * 0.7;
+      this.vy += (Math.random() - 0.5) * noise * 0.7;
     }
     this.x += this.vx;
     this.y += this.vy;
@@ -102,6 +117,30 @@ export function drawParticle(ctx, particle, layer, scale) {
   }
 
   ctx.restore();
+}
+
+function resolveEmitterWidth(layer) {
+  const width = finite(layer.emitterWidth, 0);
+  if (layer.emitterWidthUnit === 'percent') return Math.max(0, width / 100 * 1280);
+  return Math.max(0, width);
+}
+
+function applyTargetForces(particle, layer) {
+  const orbitalForce = finite(layer.orbitalForce, 0);
+  if (!orbitalForce && !layer.reverseNearTarget) return;
+  const dx = finite(layer.targetX, 640) - particle.x;
+  const dy = finite(layer.targetY, 360) - particle.y;
+  const distance = Math.max(1, Math.hypot(dx, dy));
+  const nx = dx / distance;
+  const ny = dy / distance;
+  if (orbitalForce) {
+    particle.vx += -ny * orbitalForce;
+    particle.vy += nx * orbitalForce;
+  }
+  if (layer.reverseNearTarget && distance < 96) {
+    particle.vx -= nx * 0.08;
+    particle.vy -= ny * 0.08;
+  }
 }
 
 function drawShape(ctx, x, y, size, color, rotation, shape, smoky) {
