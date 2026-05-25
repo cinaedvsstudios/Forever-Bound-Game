@@ -61,21 +61,6 @@
             animation: blueFlash 1.5s infinite !important;
             outline: none !important;
         }
-
-        /* Phase 1B: keep the real menu/dropdown system visible when clicked, hovered, or keyboard focused. */
-        .dropdown-parent:hover > .dropdown-menu,
-        .dropdown-parent:focus-within > .dropdown-menu,
-        .dropdown-parent.menu-open > .dropdown-menu {
-            display: block !important;
-        }
-
-        .phase1b-menu-empty {
-            color: #8a7465;
-            font-size: 10px;
-            line-height: 1.35;
-            padding: 8px 10px;
-            font-style: italic;
-        }
     </style>
 </head>
 <body class="text-slate-100 h-screen overflow-hidden flex flex-col bg-artifex-dark selection:bg-artifex-purpleAccent selection:text-white">
@@ -88,7 +73,7 @@
                 <img src="../../artifextitle.png" alt="Artifex" class="h-7 object-contain object-left max-w-[190px]">
                 <div class="flex items-center gap-2 mt-0.5">
                     <p class="text-[9px] text-artifex-goldMuted font-semibold tracking-wider uppercase font-serif">Visual Effects Editor</p>
-                    <span class="bg-artifex-purpleAccent/20 border border-artifex-purpleAccent text-purple-200 text-[8px] font-bold px-1.5 py-0.5 rounded-full font-sans tracking-normal shadow-[0_2px_5px_rgba(0,0,0,0.6)]">v2.3.2 PHASE 1B</span>
+                    <span class="bg-artifex-purpleAccent/20 border border-artifex-purpleAccent text-purple-200 text-[8px] font-bold px-1.5 py-0.5 rounded-full font-sans tracking-normal shadow-[0_2px_5px_rgba(0,0,0,0.6)]">v2.3.10 ALPHA</span>
                 </div>
             </div>
         </div>
@@ -226,7 +211,7 @@
                         <!-- Custom Effects Accordion -->
                         <button onclick="toggleAccordion('acc-cust')" title="Load your locally saved custom compositions." class="w-full text-left px-3 py-2 text-[11px] font-bold text-purple-400 bg-artifex-gray hover:bg-artifex-darkGray rounded-md border border-purple-900/50 flex justify-between items-center mb-1 transition focus:outline-none shadow-sm">
                             <div class="flex items-center gap-2">
-                                <span>Custom Effect</span>
+                                <span>Custom Archetypes</span>
                                 <span class="text-[8px] bg-purple-900/50 text-purple-200 px-1.5 py-0.2 rounded" id="custom-count-menu">0</span>
                             </div>
                             <span id="icon-acc-cust" class="text-[9px]">▶</span>
@@ -248,7 +233,7 @@
                     <button onclick="openTutorialModal()" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-300 flex items-center gap-2">
                         <span>📖</span> Quick Start Guide
                     </button>
-                    <button onclick="showToast('Particle Studio v2.3.2 PHASE 1B insert menu restore build.', 'info')" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-400 flex items-center gap-2">
+                    <button onclick="showToast('Particle Studio v2.3.10 ALPHA preset restore build.', 'info')" class="w-full text-left px-4 py-2 text-xs hover:bg-artifex-gray hover:text-white transition text-slate-400 flex items-center gap-2">
                         <span>ℹ️</span> About FX Editor
                     </button>
                 </div>
@@ -975,7 +960,7 @@ engine.start();</pre>
                                 </div>
                             </div>
                         </div>
-                        <div class="text-[9px] text-artifex-goldMuted mt-2 text-right font-mono">v2.3.2 PHASE 1B Preview Grid</div>
+                        <div class="text-[9px] text-artifex-goldMuted mt-2 text-right font-mono">v2.3.10 ALPHA Preview Grid</div>
                     </div>
                 </div>
 
@@ -1122,49 +1107,16 @@ engine.start();</pre>
     <!-- Live Toast Notification System -->
     <div id="toast-container" class="fixed bottom-16 right-6 z-[200] space-y-2 pointer-events-none"></div>
 
-    <script type="module" src="./src/presets/base-effects.js?v=2.3.2-phase1b"></script>
-    <script type="module" src="./src/presets/composite-effects.js?v=2.3.2-phase1b"></script>
+    <script src="./src/presets/base-effects.js?v=2.3.10-clean-index"></script>
+    <script src="./src/presets/composite-effects.js?v=2.3.10-clean-index"></script>
     <script src="./src/fx-runtime.js?v=2.3.10-clean-index"></script>
     <!-- Visual Effects Engine Core JavaScript Implementation -->
     <script>
         // -------------------------------------------------------------
         // 1. REGISTRY OF ENGINE CATEGORIES AND DEFAULT PRESETS
         // -------------------------------------------------------------
-        let PRESETS_REGISTRY = window.ARTIFEX_FX_PRESETS || window.BASE_PRESETS || {};
-        let COMPOSITES_REGISTRY = window.ARTIFEX_FX_COMPOSITES || window.COMPOSITE_PRESETS || [];
-
-        async function loadPresetModules() {
-            const baseUrl = './src/presets/base-effects.js?v=2.3.2-phase1b';
-            const compositeUrl = './src/presets/composite-effects.js?v=2.3.2-phase1b';
-
-            const [baseResult, compositeResult] = await Promise.allSettled([
-                import(baseUrl),
-                import(compositeUrl)
-            ]);
-
-            if (baseResult.status === 'fulfilled') {
-                const modulePresets = baseResult.value.BASE_EFFECT_PRESETS || baseResult.value.default || {};
-                if (modulePresets && Object.keys(modulePresets).length) {
-                    PRESETS_REGISTRY = modulePresets;
-                    window.ARTIFEX_FX_PRESETS = modulePresets;
-                }
-            } else {
-                console.warn('Phase 1B could not import base effect presets:', baseResult.reason);
-            }
-
-            if (compositeResult.status === 'fulfilled') {
-                const moduleComposites = compositeResult.value.COMPOSITE_EFFECT_PRESETS || compositeResult.value.default || [];
-                if (Array.isArray(moduleComposites)) {
-                    COMPOSITES_REGISTRY = moduleComposites;
-                    window.ARTIFEX_FX_COMPOSITES = moduleComposites;
-                }
-            } else {
-                console.warn('Phase 1B could not import composite effect presets:', compositeResult.reason);
-            }
-
-            PRESETS_REGISTRY = PRESETS_REGISTRY && typeof PRESETS_REGISTRY === 'object' ? PRESETS_REGISTRY : {};
-            COMPOSITES_REGISTRY = Array.isArray(COMPOSITES_REGISTRY) ? COMPOSITES_REGISTRY : [];
-        }
+        const PRESETS_REGISTRY = window.ARTIFEX_FX_PRESETS || {};
+        const COMPOSITES_REGISTRY = window.ARTIFEX_FX_COMPOSITES || [];
 
         // -------------------------------------------------------------
         // 2. STATE CONTROLLERS (Phase 2 Multi-Layer Update)
@@ -1955,8 +1907,6 @@ engine.start();</pre>
             closeAllDropdowns();
             if (shouldOpen) {
                 menu.classList.remove('hidden');
-                const parent = button?.closest('.dropdown-parent');
-                if (parent) parent.classList.add('menu-open');
                 if (button) button.classList.add('bg-artifex-purpleAccent/25', 'border-artifex-purpleAccent', 'text-white');
             }
         }
@@ -1975,7 +1925,6 @@ engine.start();</pre>
                     closeAllDropdowns();
                     if (isHidden) {
                         menu.classList.remove('hidden');
-                        parent.classList.add('menu-open');
                         btn.classList.add('bg-artifex-purpleAccent/25', 'border-artifex-purpleAccent', 'text-white');
                     }
                 });
@@ -2012,7 +1961,6 @@ engine.start();</pre>
         function closeAllDropdowns() {
             const menus = document.querySelectorAll('.dropdown-menu');
             menus.forEach(menu => menu.classList.add('hidden'));
-            document.querySelectorAll('.dropdown-parent.menu-open').forEach(parent => parent.classList.remove('menu-open'));
             const btns = document.querySelectorAll('.dropdown-parent > button, .dropdown-parent [data-menu-id]');
             btns.forEach(btn => btn.classList.remove('bg-artifex-purpleAccent/25', 'border-artifex-purpleAccent', 'text-white'));
             
@@ -3999,137 +3947,52 @@ engine.start();</pre>
         // -------------------------------------------------------------
         // 7. PRESET REGISTRY & PERSISTENCE (SAVE / LOAD COMPOSITIONS)
         // -------------------------------------------------------------
-        function prettyEffectCategoryName(categoryKey) {
-            const labels = {
-                particles: 'Standard Particle',
-                ribbon: 'Ribbon / Slash',
-                ring: 'Shockwave Ring',
-                lightning: 'Lightning Beam',
-                projectile: 'Projectile Trail',
-                gas: 'Gas / Smoke',
-                refraction: 'Refraction Draft',
-                lensflare: 'Lens Flare'
-            };
-            return labels[categoryKey] || `${String(categoryKey || 'Effect').charAt(0).toUpperCase()}${String(categoryKey || 'Effect').slice(1)} Engine`;
-        }
-
-        function getPresetListForCategory(categoryKey) {
-            const list = PRESETS_REGISTRY && PRESETS_REGISTRY[categoryKey];
-            return Array.isArray(list) ? list : [];
-        }
-
-        function renderInsertEmptyState(container, message) {
-            if (!container) return;
-            container.innerHTML = `<div class="phase1b-menu-empty">${escapeHtml(message)}</div>`;
-        }
-
-        function addLayerFromPreset(categoryKey, presetId) {
-            if (!composition) newConfiguration();
-            const preset = getPresetListForCategory(categoryKey).find(item => item.id === presetId);
-            if (!preset) {
-                showToast(`Base preset not found: ${categoryKey}/${presetId}`, 'error');
-                return;
-            }
-
-            const newLayer = JSON.parse(JSON.stringify(preset));
-            newLayer.layerName = newLayer.layerName || newLayer.name || `${prettyEffectCategoryName(categoryKey)} Layer`;
-            newLayer.effectType = newLayer.effectType || categoryKey;
-            newLayer.subType = newLayer.subType || newLayer.id || presetId;
-            newLayer.isVisible = newLayer.isVisible !== false;
-            newLayer._particles = [];
-
-            if (!composition.layers) composition.layers = [];
-            composition.layers.push(newLayer);
-            activeLayerIndex = composition.layers.length - 1;
-
-            normalizeLayerVisualShapeConfig(newLayer);
-            syncUIFromConfig();
-            renderLayerList();
-            closeAllDropdowns();
-            showToast(`Added base layer: ${newLayer.name || newLayer.layerName}`, 'success');
-        }
-
-        function loadCompositePreset(presetId) {
-            const comp = COMPOSITES_REGISTRY.find(item => item.id === presetId);
-            if (!comp) {
-                showToast(`Effect archetype asset not found: ${presetId}`, 'error');
-                return;
-            }
-            loadComposition(comp);
-            closeAllDropdowns();
-        }
-
-        function renderCustomMenu() {
-            loadCustomPresets();
-        }
-
         function initPresetLists() {
             const baseAcc = document.getElementById('acc-base');
             const compAcc = document.getElementById('acc-comp');
-
+            
             if (baseAcc) {
                 baseAcc.innerHTML = '';
-                const categories = Object.keys(PRESETS_REGISTRY || {}).filter(categoryKey => getPresetListForCategory(categoryKey).length);
-
-                categories.forEach(categoryKey => {
-                    getPresetListForCategory(categoryKey).forEach(preset => {
-                        const button = document.createElement('button');
-                        button.type = 'button';
-                        button.className = "w-full text-left px-3 py-1.5 rounded hover:bg-artifex-dark text-gray-300 hover:text-white transition flex flex-col focus:outline-none shadow-sm border border-transparent hover:border-artifex-border/50";
-                        button.title = preset.description || `Add ${preset.name || preset.id}`;
-                        button.onclick = (event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            addLayerFromPreset(categoryKey, preset.id);
-                        };
-
-                        button.innerHTML = `
-                            <span class="font-bold text-[10px] text-artifex-gold">+ ${escapeHtml(preset.name || prettyEffectCategoryName(categoryKey))}</span>
-                            <span class="text-[8px] text-gray-500">${escapeHtml(prettyEffectCategoryName(categoryKey))}${preset.tags ? ' · ' + escapeHtml(preset.tags) : ''}</span>
-                        `;
-                        baseAcc.appendChild(button);
-                    });
+                Object.keys(PRESETS_REGISTRY).forEach(categoryKey => {
+                    const button = document.createElement('button');
+                    button.className = "w-full text-left px-3 py-1.5 rounded hover:bg-artifex-dark text-gray-300 hover:text-white transition flex justify-between focus:outline-none items-center shadow-sm";
+                    button.onclick = () => selectEngineCategory(categoryKey);
+                    
+                    let prettyName = categoryKey.charAt(0).toUpperCase() + categoryKey.slice(1) + " Engine";
+                    if(categoryKey === 'particles') prettyName = "Standard Particle";
+                    if(categoryKey === 'lensflare') prettyName = "Lens Flare / Optic";
+                    
+                    button.innerHTML = `
+                        <span class="font-bold text-[10px] text-artifex-gold">+ ${prettyName}</span>
+                    `;
+                    baseAcc.appendChild(button);
                 });
-
-                if (!baseAcc.children.length) {
-                    renderInsertEmptyState(baseAcc, 'No base layer presets found. Check src/presets/base-effects.js.');
-                }
             }
 
             if (compAcc) {
                 compAcc.innerHTML = '';
-                const composites = Array.isArray(COMPOSITES_REGISTRY) ? COMPOSITES_REGISTRY : [];
-
-                composites.forEach(comp => {
+                COMPOSITES_REGISTRY.forEach(comp => {
                     const button = document.createElement('button');
-                    button.type = 'button';
-                    button.className = "w-full text-left px-3 py-1.5 rounded hover:bg-artifex-dark text-gray-300 hover:text-white transition flex flex-col focus:outline-none shadow-sm border border-transparent hover:border-emerald-900/60";
-                    button.title = comp.name || 'Effect archetype asset';
-                    button.onclick = (event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        loadCompositePreset(comp.id);
+                    button.className = "w-full text-left px-3 py-1.5 rounded hover:bg-artifex-dark text-gray-300 hover:text-white transition flex flex-col focus:outline-none shadow-sm";
+                    button.onclick = () => {
+                        loadComposition(comp);
+                        closeAllDropdowns();
                     };
-
+                    
                     button.innerHTML = `
-                        <div class="flex justify-between items-center w-full gap-2">
-                            <span class="font-bold text-[10px] text-emerald-400 truncate max-w-[150px]">${escapeHtml(comp.name || comp.id || 'Effect Archetype')}</span>
-                            <span class="text-[8px] bg-emerald-900/50 px-1 rounded text-emerald-200 shrink-0">${(comp.layers || []).length} Layers</span>
+                        <div class="flex justify-between items-center w-full">
+                            <span class="font-bold text-[10px] text-emerald-400 truncate max-w-[120px]">${comp.name}</span>
+                            <span class="text-[8px] bg-emerald-900/50 px-1 rounded text-emerald-200">${comp.layers.length} Layers</span>
                         </div>
-                        <span class="text-[8px] text-gray-500 line-clamp-1">${escapeHtml(comp.tags || 'effect archetype asset')}</span>
+                        <span class="text-[8px] text-gray-500 line-clamp-1">${comp.tags}</span>
                     `;
                     compAcc.appendChild(button);
                 });
-
-                if (!compAcc.children.length) {
-                    renderInsertEmptyState(compAcc, 'No effect archetype assets found. Check src/presets/composite-effects.js.');
-                }
             }
 
-            renderCustomMenu();
+            loadCustomPresets();
             populateCompLoaderDropdown();
         }
-
 
         function loadComposition(comp) {
             composition = JSON.parse(JSON.stringify(comp));
@@ -4169,7 +4032,7 @@ engine.start();</pre>
             if (customPresets.length === 0) {
                 custAcc.innerHTML = `
                     <div class="text-center py-2 text-artifex-goldMuted text-[10px] italic">
-                        No custom effects saved yet
+                        No saved compositions yet
                     </div>
                 `;
                 return;
@@ -5087,7 +4950,7 @@ engine.start();</pre>
             }
         }
 
-        window.onload = async function() {
+        window.onload = function() {
             const safeInit = (label, fn) => {
                 try {
                     fn();
@@ -5099,19 +4962,7 @@ engine.start();</pre>
                 }
             };
 
-            const safeInitAsync = async (label, fn) => {
-                try {
-                    await fn();
-                    return true;
-                } catch (err) {
-                    console.error(`Artifex startup step failed: ${label}`, err);
-                    showToast(`Startup warning: ${label} failed. Check console.`, 'error');
-                    return false;
-                }
-            };
-
             safeInit('event listeners', setupEventListeners);
-            await safeInitAsync('preset modules', loadPresetModules);
             safeInit('new empty archetype', newConfiguration);
             safeInit('preset lists', initPresetLists);
             safeInit('viewport controls', syncViewportUI);
@@ -5121,7 +4972,7 @@ engine.start();</pre>
             safeInit('info icons', decorateInfoIcons);
             safeInit('initial canvas resize', resizeCanvas);
             safeInit('render loop', tick);
-
+            
             showToast("Artifex Particle Engine initialized successfully", "success");
         };
     </script>
