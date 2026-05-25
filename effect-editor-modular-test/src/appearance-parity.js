@@ -3,7 +3,10 @@ import { getActiveLayer, onStateChange, updateActiveLayer } from './editor-state
 const controlIds = [
   'appearance-mode-select',
   'particle-shape-select',
+  'brush-select',
   'blend-mode-select',
+  'tint-mode-select',
+  'texture-fit-select',
   'reverse-toggle',
   'rotation-input',
   'edge-blur-input',
@@ -59,12 +62,35 @@ function ensureAppearanceControls() {
           <option value="slash">Slash</option>
         </select>
       </label>
+      <label>Built-in Brush
+        <select id="brush-select">
+          <option value="spark">Spark</option>
+          <option value="soft-dot">Soft Dot</option>
+          <option value="smoke-puff">Smoke Puff</option>
+          <option value="slash">Slash</option>
+          <option value="flare">Flare</option>
+        </select>
+      </label>
       <label>Blend Mode
         <select id="blend-mode-select">
           <option value="lighter">Additive / Glow</option>
           <option value="source-over">Normal</option>
           <option value="screen">Screen</option>
           <option value="multiply">Multiply</option>
+        </select>
+      </label>
+      <label>Tint Mode
+        <select id="tint-mode-select">
+          <option value="tint">Tint Texture</option>
+          <option value="original">Original Texture Colours</option>
+          <option value="alpha-mask">Alpha Mask Only</option>
+        </select>
+      </label>
+      <label>Texture Fit
+        <select id="texture-fit-select">
+          <option value="contain">Contain</option>
+          <option value="cover">Cover</option>
+          <option value="stretch">Stretch</option>
         </select>
       </label>
       <label>Rotate
@@ -104,8 +130,17 @@ function bindAppearanceControls(showToast) {
   document.getElementById('particle-shape-select')?.addEventListener('change', (event) => {
     updateActiveLayer({ particleShape: event.target.value });
   });
+  document.getElementById('brush-select')?.addEventListener('change', (event) => {
+    updateActiveLayer({ builtInBrush: event.target.value, appearanceMode: 'brush' });
+  });
   document.getElementById('blend-mode-select')?.addEventListener('change', (event) => {
     updateActiveLayer({ blendMode: event.target.value });
+  });
+  document.getElementById('tint-mode-select')?.addEventListener('change', (event) => {
+    updateActiveLayer({ tintMode: event.target.value });
+  });
+  document.getElementById('texture-fit-select')?.addEventListener('change', (event) => {
+    updateActiveLayer({ textureFit: event.target.value });
   });
   document.getElementById('reverse-toggle')?.addEventListener('change', (event) => {
     updateActiveLayer({ reverseColor: event.target.checked });
@@ -154,7 +189,10 @@ function syncAppearanceControls() {
 
   setValue('appearance-mode-select', layer.appearanceMode || 'shape');
   setValue('particle-shape-select', layer.particleShape || 'circle');
+  setValue('brush-select', layer.builtInBrush || 'spark');
   setValue('blend-mode-select', layer.blendMode || defaultBlendMode(layer.engine));
+  setValue('tint-mode-select', layer.tintMode || 'tint');
+  setValue('texture-fit-select', layer.textureFit || 'contain');
   setValue('rotation-input', finite(layer.rotation, 0));
   setValue('edge-blur-input', finite(layer.edgeBlur, 0));
   setValue('texture-alpha-input', finite(layer.textureAlpha, 1));
