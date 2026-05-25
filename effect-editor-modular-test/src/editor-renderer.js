@@ -17,6 +17,8 @@ let workspace;
 let animationId;
 let lastFrame = performance.now();
 let fpsSmoothing = 60;
+let referenceImage = null;
+let referenceImageSource = '';
 
 export function initRenderer() {
   canvas = document.getElementById('fx-canvas');
@@ -39,6 +41,7 @@ export function initRenderer() {
     if (active) {
       syncCanvasCursor();
     }
+    syncReferenceImage();
   });
 
   animationId = requestAnimationFrame(tick);
@@ -112,6 +115,7 @@ function draw() {
   ctx.scale(editorState.zoom, editorState.zoom);
 
   drawStageBackground(scale);
+  drawReferenceMedia(scale);
 
   if (editorState.showGrid) {
     drawGrid(scale);
@@ -156,6 +160,39 @@ function drawStageBackground(scale) {
   ctx.strokeStyle = editorState.workspaceMode === 'white' ? '#c0b7ac' : '#382a21';
   ctx.lineWidth = Math.max(1, scale);
   ctx.strokeRect(0, 0, DESIGN_WIDTH * scale, DESIGN_HEIGHT * scale);
+}
+
+function drawReferenceMedia(scale) {
+  const reference = editorState.referenceMedia;
+  if (!reference?.visible || !reference.dataUrl || !referenceImage) return;
+  if (!referenceImage.complete) return;
+
+  const stageW = DESIGN_WIDTH * scale;
+  const stageH = DESIGN_HEIGHT * scale;
+  const imageRatio = referenceImage.naturalWidth / referenceImage.naturalHeight;
+  const stageRatio = stageW / stageH;
+  let drawW = stageW;
+  let drawH = stageH;
+  if (imageRatio > stageRatio) {
+    drawH = stageW / imageRatio;
+  } else {
+    drawW = stageH * imageRatio;
+  }
+  const drawX = (stageW - drawW) / 2;
+  const drawY = (stageH - drawH) / 2;
+
+  ctx.save();
+  ctx.globalAlpha = Math.max(0, Math.min(1, Number(reference.opacity) || 0.55));
+  ctx.drawImage(referenceImage, drawX, drawY, drawW, drawH);
+  ctx.restore();
+}
+
+function syncReferenceImage() {
+  const reference = editorState.referenceMedia;
+  if (!reference?.dataUrl || reference.dataUrl === referenceImageSource || reference.type === 'video') return;
+  referenceImageSource = reference.dataUrl;
+  referenceImage = new Image();
+  referenceImage.src = reference.dataUrl;
 }
 
 function drawGrid(scale) {
