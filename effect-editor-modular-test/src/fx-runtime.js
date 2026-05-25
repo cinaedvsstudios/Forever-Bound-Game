@@ -62,38 +62,60 @@ export function spawnParticlesForLayer(layer) {
 
 export function drawParticle(ctx, particle, layer, scale) {
   const t = Math.min(1, particle.age / particle.life);
-  const alpha = lerp(layer.alphaStart, layer.alphaEnd, easeOut(t));
+  const alpha = lerp(layer.alphaStart, layer.alphaEnd, easeOut(t)) * finite(layer.textureAlpha, 1);
   if (alpha <= 0.005) return;
 
   const size = Math.max(0.5, lerp(layer.sizeStart, layer.sizeEnd, easeOut(t))) * scale;
-  const color = mixHex(layer.colorA, layer.colorB, t, alpha);
+  const fromColor = layer.reverseColor ? layer.colorB : layer.colorA;
+  const toColor = layer.reverseColor ? layer.colorA : layer.colorB;
+  const color = mixHex(fromColor, toColor, t, alpha);
   const x = particle.x * scale;
   const y = particle.y * scale;
+  const rotation = particle.rotation + degreesToRadians(finite(layer.rotation, 0));
 
   ctx.save();
-  ctx.globalCompositeOperation = layer.engine === 'gas' || layer.engine === 'refraction' ? 'source-over' : 'lighter';
+  ctx.globalCompositeOperation = layer.blendMode || defaultBlendMode(layer.engine);
   ctx.globalAlpha = alpha;
 
   if (layer.glow > 0) {
     ctx.shadowBlur = layer.glow * scale;
-    ctx.shadowColor = layer.colorA;
+    ctx.shadowColor = fromColor;
+  }
+  if (layer.edgeBlur > 0) {
+    ctx.filter = `blur(${Math.min(30, layer.edgeBlur) * scale}px)`;
   }
 
   if (layer.engine === 'lightning') {
-    drawSpark(ctx, x, y, size, color, particle.rotation);
+    drawSpark(ctx, x, y, size, color, rotation);
   } else if (layer.engine === 'projectile') {
-    drawProjectile(ctx, x, y, size, color, particle.rotation);
+    drawProjectile(ctx, x, y, size, color, rotation);
   } else if (layer.engine === 'ribbon') {
-    drawRibbonDot(ctx, x, y, size, color, particle.rotation);
+    drawRibbonDot(ctx, x, y, size, color, rotation);
   } else if (layer.engine === 'lensflare') {
-    drawLensFlare(ctx, x, y, size, color, particle.rotation);
+    drawLensFlare(ctx, x, y, size, color, rotation);
   } else if (layer.engine === 'refraction') {
-    drawRefractionDraft(ctx, x, y, size, color, particle.rotation);
+    drawRefractionDraft(ctx, x, y, size, color, rotation);
+  } else if (layer.appearanceMode === 'brush') {
+    drawBrushShape(ctx, x, y, size, color, rotation, layer.particleShape || 'star');
   } else {
-    drawSoftCircle(ctx, x, y, size, color, layer.engine === 'gas');
+    drawShape(ctx, x, y, size, color, rotation, layer.particleShape || 'circle', layer.engine === 'gas');
   }
 
   ctx.restore();
+}
+
+function drawShape(ctx, x, y, size, color, rotation, shape, smoky) {
+  if (shape === 'square') return drawSquare(ctx, x, y, size, color, rotation);
+  if (shape === 'diamond') return drawDiamond(ctx, x, y, size, color, rotation);
+  if (shape === 'star') return drawStar(ctx, x, y, size, color, rotation);
+  if (shape === 'slash') return drawRibbonDot(ctx, x, y, size, color, rotation);
+  return drawSoftCircle(ctx, x, y, size, color, smoky);
+}
+
+function drawBrushShape(ctx, x, y, size, color, rotation, shape) {
+  if (shape === 'slash') return drawRibbonDot(ctx, x, y, size, color, rotation);
+  if (shape === 'square') return drawSquare(ctx, x, y, size, color, rotation);
+  return drawStar(ctx, x, y, size, color, rotation);
 }
 
 function drawSoftCircle(ctx, x, y, size, color, smoky) {
@@ -114,6 +136,37 @@ function drawSoftCircle(ctx, x, y, size, color, smoky) {
       ctx.fill();
     }
   }
+}
+
+function drawSquare(ctx, x, y, size, color, rotation) {
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  ctx.fillStyle = color;
+  ctx.fillRect(-size * 0.55, -size * 0.55, size * 1.1, size * 1.1);
+}
+
+function drawDiamond(ctx, x, y, size, color, rotation) {
+  ctx.translate(x, y);
+  ctx.rotate(rotation + Math.PI / 4);
+  ctx.fillStyle = color;
+  ctx.fillRect(-size * 0.48, -size * 0.48, size * 0.96, size * 0.96);
+}
+
+function drawStar(ctx, x, y, size, color, rotation) {
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const radius = i % 2 === 0 ? size : size * 0.38;
+    const angle = (Math.PI * 2 * i) / 10 - Math.PI / 2;
+    const px = Math.cos(angle) * radius;
+    const py = Math.sin(angle) * radius;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fill();
 }
 
 function drawSpark(ctx, x, y, size, color, rotation) {
@@ -190,6 +243,15 @@ function hexToRgb(hex) {
     g: (number >> 8) & 255,
     b: number & 255
   };
+}
+
+function defaultBlendMode(engine) {
+  return engine === 'gas' || engine === 'refraction' ? 'source-over' : 'lighter';
+}
+
+function finite(value, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
 }
 
 function easeOut(t) {
