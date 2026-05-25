@@ -5,7 +5,7 @@ import { initLibrary } from './editor-library.js';
 import { initSidePanelParity } from './side-panel-parity.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'v2.3.4 SIDE-PANEL';
+const VERSION_LABEL = 'v2.3.5 INSERT-PARITY';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
@@ -25,5 +25,5 @@ window.addEventListener('DOMContentLoaded', () => {
     addLayer(preset.config);
   }
 
-  showToast(`${VERSION_LABEL} loaded. Side panel card parity pass is active.`, 'success');
+  showToast(`${VERSION_LABEL} loaded. Insert menu parity pass is active.`, 'success');
 });
