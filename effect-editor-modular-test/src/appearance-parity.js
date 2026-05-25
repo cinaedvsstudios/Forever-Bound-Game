@@ -46,20 +46,20 @@ function ensureAppearanceControls() {
 
   appearanceCard.insertAdjacentHTML('beforeend', `
     <div class="appearance-grid">
-      <label class="appearance-wide">Mode
+      <label class="appearance-wide">Particle Render Mode
         <select id="appearance-mode-select">
           <option value="shape">Shape</option>
           <option value="brush">Built-in Brush</option>
-          <option value="custom">Custom PNG</option>
+          <option value="custom">Custom Image Brush</option>
         </select>
       </label>
-      <label>Particle Shape
+      <label>Shape
         <select id="particle-shape-select">
           <option value="circle">Circle / Soft Orb</option>
           <option value="square">Square</option>
           <option value="diamond">Diamond</option>
           <option value="star">Star Spark</option>
-          <option value="slash">Slash</option>
+          <option value="slash">Slash Stroke</option>
         </select>
       </label>
       <label>Built-in Brush
@@ -67,51 +67,51 @@ function ensureAppearanceControls() {
           <option value="spark">Spark</option>
           <option value="soft-dot">Soft Dot</option>
           <option value="smoke-puff">Smoke Puff</option>
-          <option value="slash">Slash</option>
-          <option value="flare">Flare</option>
+          <option value="slash">Slash Stroke</option>
+          <option value="flare">Flare Cross</option>
         </select>
       </label>
       <label>Blend Mode
         <select id="blend-mode-select">
-          <option value="lighter">Additive / Glow</option>
-          <option value="source-over">Normal</option>
-          <option value="screen">Screen</option>
-          <option value="multiply">Multiply</option>
+          <option value="lighter">Additive Glow</option>
+          <option value="source-over">Normal Alpha</option>
+          <option value="screen">Screen Lighten</option>
+          <option value="multiply">Multiply Darken</option>
         </select>
       </label>
       <label>Tint Mode
         <select id="tint-mode-select">
-          <option value="tint">Tint Texture</option>
-          <option value="original">Original Texture Colours</option>
-          <option value="alpha-mask">Alpha Mask Only</option>
+          <option value="tint">Tint visible pixels</option>
+          <option value="original">Keep original colours</option>
+          <option value="alpha-mask">Use as alpha mask</option>
         </select>
       </label>
       <label>Texture Fit
         <select id="texture-fit-select">
-          <option value="contain">Contain</option>
-          <option value="cover">Cover</option>
-          <option value="stretch">Stretch</option>
+          <option value="contain">Fit inside particle</option>
+          <option value="cover">Fill particle area</option>
+          <option value="stretch">Stretch to square</option>
         </select>
       </label>
       <label>Rotate
         <input id="rotation-input" type="range" min="-180" max="180" step="1" value="0" />
         <output id="rotation-output">0</output>
       </label>
-      <label>Edge Blur
-        <input id="edge-blur-input" type="range" min="0" max="30" step="1" value="0" />
+      <label>Soft Edge
+        <input id="edge-blur-input" type="range" min="0" max="5" step="0.1" value="0" />
         <output id="edge-blur-output">0</output>
       </label>
-      <label class="appearance-wide">Texture Alpha
+      <label class="appearance-wide">Texture Opacity
         <input id="texture-alpha-input" type="range" min="0" max="1" step="0.01" value="1" />
         <output id="texture-alpha-output">1</output>
       </label>
     </div>
-    <label class="texture-file-label">Custom PNG Texture
+    <label class="texture-file-label">Custom Image Brush
       <input id="custom-texture-input" type="file" accept="image/png,image/webp,image/jpeg" />
       <span>Choose a transparent PNG/WebP/JPG brush texture</span>
       <div id="texture-status" class="texture-status">No custom texture loaded</div>
     </label>
-    <label class="inline-toggle-row">Reverse Colour Direction
+    <label class="inline-toggle-row">Reverse Colour Gradient
       <input id="reverse-toggle" type="checkbox" />
     </label>
   `);
