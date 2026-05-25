@@ -10,7 +10,7 @@ import { initWorkspaceParity } from './workspace-parity.js';
 import { initResolutionParity } from './resolution-parity.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'v2.3.11 TEXTURE-RENDER';
+const VERSION_LABEL = 'v2.3.12 POLISH-STEP-1';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
@@ -35,5 +35,5 @@ window.addEventListener('DOMContentLoaded', () => {
     addLayer(preset.config);
   }
 
-  showToast(`${VERSION_LABEL} loaded. Texture render parity pass is active.`, 'success');
+  showToast(`${VERSION_LABEL} loaded. UI identity, labels, and defaults are active.`, 'success');
 });
