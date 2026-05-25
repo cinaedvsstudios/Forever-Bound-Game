@@ -2,7 +2,7 @@ export class Particle {
   constructor(layer, burstAngle = null) {
     const angle = degreesToRadians(burstAngle ?? randomRange(layer.angle - layer.spread / 2, layer.angle + layer.spread / 2));
     const speed = randomRange(layer.speedMin, layer.speedMax);
-    const jitter = layer.engine === 'gas' ? 28 : 7;
+    const jitter = layer.engine === 'gas' || layer.engine === 'refraction' ? 28 : 7;
 
     this.x = layer.emitterX + randomRange(-jitter, jitter);
     this.y = layer.emitterY + randomRange(-jitter, jitter);
@@ -18,12 +18,12 @@ export class Particle {
   update(layer) {
     this.age += 1;
     this.vy += layer.gravity;
-    if (layer.engine === 'gas') {
+    if (layer.engine === 'gas' || layer.engine === 'refraction') {
       this.vx += Math.sin((this.age + this.seed * 30) * 0.04) * 0.025;
       this.vy *= 0.992;
       this.vx *= 0.995;
     }
-    if (layer.engine === 'ribbon') {
+    if (layer.engine === 'ribbon' || layer.engine === 'lensflare') {
       this.vx *= 0.988;
       this.vy *= 0.988;
     }
@@ -71,7 +71,7 @@ export function drawParticle(ctx, particle, layer, scale) {
   const y = particle.y * scale;
 
   ctx.save();
-  ctx.globalCompositeOperation = layer.engine === 'gas' ? 'source-over' : 'lighter';
+  ctx.globalCompositeOperation = layer.engine === 'gas' || layer.engine === 'refraction' ? 'source-over' : 'lighter';
   ctx.globalAlpha = alpha;
 
   if (layer.glow > 0) {
@@ -85,6 +85,10 @@ export function drawParticle(ctx, particle, layer, scale) {
     drawProjectile(ctx, x, y, size, color, particle.rotation);
   } else if (layer.engine === 'ribbon') {
     drawRibbonDot(ctx, x, y, size, color, particle.rotation);
+  } else if (layer.engine === 'lensflare') {
+    drawLensFlare(ctx, x, y, size, color, particle.rotation);
+  } else if (layer.engine === 'refraction') {
+    drawRefractionDraft(ctx, x, y, size, color, particle.rotation);
   } else {
     drawSoftCircle(ctx, x, y, size, color, layer.engine === 'gas');
   }
@@ -137,6 +141,33 @@ function drawRibbonDot(ctx, x, y, size, color, rotation) {
   ctx.beginPath();
   ctx.roundRect(-size * 0.85, -size * 0.22, size * 1.7, size * 0.44, size * 0.2);
   ctx.fill();
+}
+
+function drawLensFlare(ctx, x, y, size, color, rotation) {
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = Math.max(1, size * 0.08);
+  ctx.beginPath();
+  ctx.arc(0, 0, size * 0.42, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-size * 1.4, 0);
+  ctx.lineTo(size * 1.4, 0);
+  ctx.moveTo(0, -size * 1.4);
+  ctx.lineTo(0, size * 1.4);
+  ctx.stroke();
+}
+
+function drawRefractionDraft(ctx, x, y, size, color, rotation) {
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(1, size * 0.035);
+  ctx.beginPath();
+  ctx.ellipse(0, 0, size * 0.65, size * 0.38, 0, 0, Math.PI * 2);
+  ctx.stroke();
 }
 
 export function mixHex(a, b, t, alpha = 1) {
