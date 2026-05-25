@@ -1,0 +1,281 @@
+name: Artifex Effect Editor real split step 1
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/artifex-real-split-step1.yml
+
+permissions:
+  contents: write
+
+jobs:
+  split-presets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout real split branch
+        uses: actions/checkout@v4
+        with:
+          ref: fb-effect-real-split
+          fetch-depth: 0
+
+      - name: Extract preset registries from live index
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('artifex/apps/effect-editor')
+          index_path = root / 'index.html'
+          text = index_path.read_text(encoding='utf-8')
+
+          # Preserve a recovery copy, but never use this as the final runtime.
+          backup_path = root / 'index.monolith.backup.html'
+          if not backup_path.exists():
+              backup_path.write_text(text, encoding='utf-8')
+
+          def find_const_statement(source, name):
+              marker = f'const {name}'
+              start = source.find(marker)
+              if start == -1:
+                  raise RuntimeError(f'Missing {marker}')
+              eq = source.find('=', start)
+              if eq == -1:
+                  raise RuntimeError(f'Missing equals for {name}')
+              i = eq + 1
+              depth = 0
+              quote = None
+              escape = False
+              line_comment = False
+              block_comment = False
+              while i < len(source):
+                  ch = source[i]
+                  nxt = source[i + 1] if i + 1 < len(source) else ''
+                  if line_comment:
+                      if ch == '\n':
+                          line_comment = False
+                      i += 1
+                      continue
+                  if block_comment:
+                      if ch == '*' and nxt == '/':
+                          block_comment = False
+                          i += 2
+                          continue
+                      i += 1
+                      continue
+                  if quote:
+                      if escape:
+                          escape = False
+                      elif ch == '\\':
+                          escape = True
+                      elif ch == quote:
+                          quote = None
+                      i += 1
+                      continue
+                  if ch == '/' and nxt == '/':
+                      line_comment = True
+                      i += 2
+                      continue
+                  if ch == '/' and nxt == '*':
+                      block_comment = True
+                      i += 2
+                      continue
+                  if ch in ('"', "'", '`'):
+                      quote = ch
+                      i += 1
+                      continue
+                  if ch in '[{(':
+                      depth += 1
+                  elif ch in ']})':
+                      depth -= 1
+                  elif ch == ';' and depth == 0:
+                      expression = source[eq + 1:i].strip()
+                      statement = source[start:i + 1]
+                      return start, i + 1, statement, expression
+                  i += 1
+              raise RuntimeError(f'Could not find end of {name}')
+
+          # Extract expressions from the original text before modifying it.
+          pre_start, pre_end, pre_stmt, pre_expr = find_const_statement(text, 'PRESETS_REGISTRY')
+          comp_start, comp_end, comp_stmt, comp_expr = find_const_statement(text, 'COMPOSITES_REGISTRY')
+
+          presets_dir = root / 'src' / 'presets'
+          presets_dir.mkdir(parents=True, exist_ok=True)
+
+          (presets_dir / 'base-effects.js').write_text(f'''/*
+ * Artifex Effect Editor base preset registry.
+ * Extracted from the working monolithic editor in Step 1 / 8.
+ */
+
+export const PRESETS_REGISTRY = {pre_expr};
+export const BASE_EFFECT_PRESETS = PRESETS_REGISTRY;
+
+export function cloneBasePreset(category, id) {{
+    const group = PRESETS_REGISTRY?.[category];
+    if (!Array.isArray(group)) return null;
+    const preset = group.find((item) => item.id === id);
+    return preset ? JSON.parse(JSON.stringify(preset)) : null;
+}}
+
+export function listBaseCategories() {{
+    return Object.keys(PRESETS_REGISTRY);
+}}
+''', encoding='utf-8')
+
+          (presets_dir / 'composite-effects.js').write_text(f'''/*
+ * Artifex Effect Editor composite / archetype registry.
+ * Extracted from the working monolithic editor in Step 1 / 8.
+ */
+
+export const COMPOSITES_REGISTRY = {comp_expr};
+export const COMPOSITE_EFFECT_PRESETS = COMPOSITES_REGISTRY;
+
+export function cloneCompositePreset(id) {{
+    const preset = COMPOSITES_REGISTRY.find((item) => item.id === id);
+    return preset ? JSON.parse(JSON.stringify(preset)) : null;
+}}
+''', encoding='utf-8')
+
+          (root / 'src' / 'editor-app.js').write_text('''/*
+ * Artifex Effect Editor module entrypoint.
+ * Step 1 / 8: preset and archetype registries.
+ */
+
+import { PRESETS_REGISTRY } from './presets/base-effects.js';
+import { COMPOSITES_REGISTRY } from './presets/composite-effects.js';
+
+window.ArtifexEffectEditorModules = {
+    ...(window.ArtifexEffectEditorModules || {}),
+    presets: {
+        PRESETS_REGISTRY,
+        COMPOSITES_REGISTRY
+    }
+};
+''', encoding='utf-8')
+
+          # Replace the inlined registry declarations with imports and comments.
+          text = text.replace(pre_stmt, '// PRESETS_REGISTRY extracted to ./src/presets/base-effects.js')
+          text = text.replace(comp_stmt, '// COMPOSITES_REGISTRY extracted to ./src/presets/composite-effects.js')
+
+          # Make the live editor script a module and import the extracted registries.
+          import_block = """
+        import { PRESETS_REGISTRY } from './src/presets/base-effects.js';
+        import { COMPOSITES_REGISTRY } from './src/presets/composite-effects.js';
+        import './src/editor-app.js';
+"""
+          if "./src/presets/base-effects.js" not in text:
+              target = '// -------------------------------------------------------------\n        // 1. PRESET REGISTRY'
+              tag_start = text.find('<script>', 0, text.find(target))
+              while tag_start != -1:
+                  next_tag = text.find('<script>', tag_start + 1)
+                  close_tag = text.find('</script>', tag_start)
+                  if tag_start < text.find(target) < close_tag:
+                      break
+                  tag_start = next_tag
+              if tag_start == -1:
+                  raise RuntimeError('Could not locate main editor script tag')
+              tag_end = text.find('>', tag_start)
+              text = text[:tag_start] + '<script type="module"' + text[tag_end:]
+              insert_at = text.find(target)
+              text = text[:insert_at] + import_block + '\n        ' + text[insert_at:]
+
+          # Phase 1B wording consistency.
+          text = text.replace('Base Effect Layer', 'Base Layer')
+          text = text.replace('Composite Effect</span> <span id="icon-acc-comp"', 'Effect Archetype Assets</span> <span id="icon-acc-comp"')
+          text = text.replace('v2.3.0 ALPHA', 'v2.3.1 SPLIT-PRESETS')
+          text = text.replace('Particle Studio v2.3.0 ALPHA stable build.', 'Particle Studio v2.3.1 SPLIT-PRESETS preset registry split build.')
+
+          # Re-export inline event-handler functions from the module script to window.
+          handler_names = set()
+          for attr in re.findall(r'\bon(?:click|change|input|submit|mousedown|mouseup|mousemove)="([^"]+)"', text):
+              for name in re.findall(r'\b([A-Za-z_$][\w$]*)\s*\(', attr):
+                  if name not in {'if', 'for', 'while', 'switch', 'Math', 'Number', 'String'}:
+                      handler_names.add(name)
+          export_lines = [
+              '',
+              '        // Step 1 module compatibility: expose handlers used by inline HTML attributes.',
+          ]
+          for name in sorted(handler_names):
+              export_lines.append(f"        try {{ if (typeof {name} !== 'undefined') window.{name} = {name}; }} catch (error) {{ /* noop */ }}")
+          export_block = '\n'.join(export_lines) + '\n'
+
+          marker = '// Step 1 module compatibility: expose handlers used by inline HTML attributes.'
+          if marker not in text:
+              target_close = text.rfind('</script>')
+              if target_close == -1:
+                  raise RuntimeError('Could not locate closing script tag')
+              text = text[:target_close] + export_block + text[target_close:]
+
+          index_path.write_text(text, encoding='utf-8')
+
+          report = root / 'docs' / 'real-split-step1-report.md'
+          report.write_text('''# Real Split Step 1 Report
+
+Step: 1 / 8
+Version: v2.3.1 SPLIT-PRESETS
+Steps left: 7
+Branch: fb-effect-real-split
+
+## Changed files
+
+- `artifex/apps/effect-editor/index.html`
+- `artifex/apps/effect-editor/index.monolith.backup.html`
+- `artifex/apps/effect-editor/src/editor-app.js`
+- `artifex/apps/effect-editor/src/presets/base-effects.js`
+- `artifex/apps/effect-editor/src/presets/composite-effects.js`
+
+## What changed
+
+- Extracted `PRESETS_REGISTRY` from the monolithic `index.html`.
+- Extracted `COMPOSITES_REGISTRY` from the monolithic `index.html`.
+- Converted the live editor script to a module so it can import the extracted registries.
+- Added compatibility exports for inline HTML event handlers.
+- Updated version label to `v2.3.1 SPLIT-PRESETS`.
+- Aligned Insert wording with Phase 1B: `Base Layer`, `Effect Archetype Assets`, `Custom Effect`.
+
+## What was not changed
+
+- rendering math
+- canvas scale
+- devicePixelRatio handling
+- particle behaviour
+- resolution behaviour
+- brush rendering
+
+## Required manual checks
+
+1. Grid appears.
+2. File / Edit / View / Insert / Help open.
+3. Insert contains `Base Layer`.
+4. Insert contains `Effect Archetype Assets`.
+5. Insert contains `Custom Effect`.
+6. Base Layer entry can add a layer.
+7. Particles render.
+8. Effect Archetype Assets loads if entries exist.
+9. Custom Effect shows saved entries or clear empty state.
+10. Side/bottom resize does not hide grid labels or particles.
+11. Browser console has no new fatal errors.
+''', encoding='utf-8')
+          PY
+
+      - name: Commit Step 1
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git diff --check
+          git status --short
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git add artifex/apps/effect-editor/index.html \
+                  artifex/apps/effect-editor/index.monolith.backup.html \
+                  artifex/apps/effect-editor/src/editor-app.js \
+                  artifex/apps/effect-editor/src/presets/base-effects.js \
+                  artifex/apps/effect-editor/src/presets/composite-effects.js \
+                  artifex/apps/effect-editor/docs/real-split-step1-report.md
+          git commit -m "Split Effect Editor preset registries"
+          git push origin fb-effect-real-split
