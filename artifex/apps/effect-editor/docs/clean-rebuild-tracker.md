@@ -1,13 +1,20 @@
 # Effect Editor Clean Rebuild Tracker
 
-Branch: `fb-effect-base`
+Branch: `fb-effect-split1`
+Base branch: `fb-effect-base`
 Base commit: `fed68ad0526bca288f6ba41f1bcc0413de5355d0`
 
 This branch starts from the last known working Effect Editor render baseline.
 
 ## Test URL
 
-`https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/fb-effect-base/artifex/apps/effect-editor/index.html`
+`https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/fb-effect-split1/artifex/apps/effect-editor/index.html`
+
+## Current status
+
+The confirmed working base is preserved on `fb-effect-base`.
+
+`fb-effect-split1` is the first modularisation branch. Stage 1 adds the extracted library module scaffold while leaving the live `index.html` render path untouched.
 
 ## First test
 
@@ -38,6 +45,23 @@ This branch starts from the last known working Effect Editor render baseline.
 - `src/editor-io.js`
 - `src/presets/base-effects.js`
 - `src/presets/composite-effects.js`
+
+## Stage 1 completed
+
+Added:
+
+- `src/editor-library.js`
+
+Already present from earlier staged extraction:
+
+- `src/presets/base-effects.js`
+- `src/presets/composite-effects.js`
+
+Important: `index.html` is intentionally not wired to the modules yet. This keeps the live page behaviour identical while the module files are prepared.
+
+## Next step
+
+After confirming the `fb-effect-split1` URL still behaves exactly like `fb-effect-base`, wire only the preset registry reads in `index.html` to the library module. Do not touch renderer, canvas, resize, grid, or particle math.
 
 ## Reapply later
 
