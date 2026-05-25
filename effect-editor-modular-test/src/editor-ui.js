@@ -83,16 +83,16 @@ function injectHeaderMenuStyles() {
   style.id = 'header-menu-parity-style';
   style.textContent = `
     .brand { min-width: 300px; }
-    .brand-logo-img { width: 42px; height: 42px; object-fit: contain; display: block; filter: drop-shadow(0 0 10px rgba(158,1,206,.55)); }
+    .brand-logo-img { width: 42px; height: 42px; object-fit: contain; display: block; filter: drop-shadow(0 0 10px var(--module-glow)); }
     .brand-title-img { height: 28px; max-width: 192px; object-fit: contain; object-position: left center; display: block; }
     .brand-title-fallback { font-family: 'Cinzel', Georgia, serif; font-size: 22px; letter-spacing: .18em; color: var(--gold-bright); }
-    .menu-panel.parity-wide { width: min(300px, calc(100vw - 24px)); }
+    .menu-panel.parity-wide { width: min(330px, calc(100vw - 24px)); }
     .menu-section-title { margin: 8px 4px 6px; color: var(--gold-muted); font-family: 'Cinzel', Georgia, serif; font-size: 10px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
     .menu-section-title:first-child { margin-top: 0; }
     .menu-divider { height: 1px; margin: 7px 2px; background: rgba(56,42,33,.82); }
     .menu-panel button.is-placeholder { color: var(--muted); opacity: .9; }
     .menu-panel button.is-danger { color: #ffb4c0; }
-    .menu-panel button.is-accent { color: white; border-color: rgba(158,1,206,.65); background: linear-gradient(180deg, #52205a 0%, #2b182d 100%); }
+    .menu-panel button.is-accent { color: white; border-color: var(--module-accent); background: linear-gradient(180deg, rgba(0,174,234,.35) 0%, #18272d 100%); }
   `;
   document.head.append(style);
 }
@@ -136,15 +136,15 @@ function rebuildTopMenus() {
     <button class="is-placeholder" data-toast-message="Effekseer Draft import is reserved for a later compatibility pass.">Import Effekseer Draft</button>
     <div class="menu-divider"></div>
     <div class="menu-section-title">Export Archetype</div>
-    <button id="export-json-button">Raw Layer Composition</button>
-    <button class="is-placeholder" data-toast-message="Editor Project export will be restored in the IO parity pass.">Editor Project</button>
-    <button class="is-placeholder" data-toast-message="Effect Archetype Asset export will be restored with thumbnail/save flow.">Effect Archetype Asset</button>
-    <button class="is-placeholder" data-toast-message="Scene FX Instance export will be restored after runtime compatibility is stable.">Scene FX Instance</button>
+    <button id="export-json-button">Export Raw Composition JSON</button>
+    <button class="is-placeholder" data-toast-message="Editor Project export is wired by the IO parity module.">Export Editor Project JSON</button>
+    <button class="is-placeholder" data-toast-message="Effect Archetype export is wired by the IO parity module.">Export Effect Archetype JSON</button>
+    <button class="is-placeholder" data-toast-message="Scene FX Instance export is wired by the IO parity module.">Export Scene FX Instance JSON</button>
     <div class="menu-divider"></div>
     <div class="menu-section-title">Local Files</div>
-    <button id="save-local-button">Save to Local Storage</button>
-    <button id="view-local-button">View Local Files</button>
-    <button class="is-placeholder" data-toast-message="Scene / FX Resolution settings are scheduled for the resolution pass.">Settings</button>
+    <button id="save-local-button">Save Locally in Browser</button>
+    <button id="view-local-button">Manage Local Effects</button>
+    <button class="is-placeholder" data-toast-message="Scene / FX Resolution settings are available lower in this File menu.">Settings</button>
   `, 'parity-wide');
 
   setPanelHTML('menu-edit', `
@@ -154,21 +154,27 @@ function rebuildTopMenus() {
     <button id="clear-particles-button">Clear All Particles</button>
     <div class="menu-divider"></div>
     <div class="menu-section-title">Emitter</div>
-    <button id="center-emitter-button">Center / Reset Emitter</button>
+    <button id="center-emitter-button">Center Origin</button>
     <button class="is-placeholder" data-toast-message="Bring Forward / Send Back will be restored with layer ordering controls.">Bring Forward / Send Back</button>
   `, 'parity-wide');
 
   setPanelHTML('menu-view', `
-    <div class="menu-section-title">Workspace Profile</div>
-    <button data-workspace-mode="dark">Dark Workspace</button>
-    <button data-workspace-mode="white">White Workspace</button>
-    <button class="is-placeholder" data-toast-message="Reference image/video mode will be restored in the workspace controls pass.">Reference Image / Video</button>
+    <div class="menu-section-title">Workspace Background</div>
+    <button data-workspace-mode="dark">Background: Dark</button>
+    <button data-workspace-mode="white">Background: White</button>
+    <button class="is-placeholder" data-toast-message="Load an image/video underlay from the toolbar, then use Background: Underlay.">Background: Underlay</button>
     <div class="menu-divider"></div>
-    <div class="menu-section-title">Helpers</div>
-    <button id="toggle-grid-button">Snap / Grid Guides</button>
-    <button id="toggle-helpers-button">Helper Visibility</button>
-    <button class="is-placeholder" data-toast-message="Load reference image/video is scheduled for the workspace controls pass.">Load Reference Image / Video</button>
-    <button class="is-placeholder" data-toast-message="Low Performance Mode will be restored after runtime controls are stable.">Low Performance Mode</button>
+    <div class="menu-section-title">Guides</div>
+    <button id="toggle-grid-button">Toggle Grid</button>
+    <button id="toggle-helpers-button">Toggle Guides</button>
+    <button class="is-placeholder" data-toast-message="Load Underlay is available in the workspace toolbar.">Load Underlay</button>
+    <button class="is-placeholder" data-toast-message="Low Performance Mode is scheduled for Step 2.">Low Performance Mode</button>
+    <div class="menu-divider"></div>
+    <div class="menu-section-title">JSON / Boilerplate</div>
+    <button class="is-placeholder" data-toast-message="View JSON is scheduled for Step 3.">View JSON</button>
+    <button class="is-placeholder" data-toast-message="Edit JSON is scheduled for Step 3.">Edit JSON</button>
+    <button class="is-placeholder" data-toast-message="View Boilerplate is scheduled for Step 3.">View Boilerplate</button>
+    <button class="is-placeholder" data-toast-message="Export Boilerplate is scheduled for Step 3.">Export Boilerplate</button>
   `, 'parity-wide');
 
   setPanelHTML('menu-help', `
@@ -226,7 +232,7 @@ function setupButtons() {
   });
   document.getElementById('center-emitter-button').addEventListener('click', () => {
     centerActiveEmitter();
-    showToast('Emitter centered.', 'success');
+    showToast('Origin centered.', 'success');
   });
   document.getElementById('export-json-button').addEventListener('click', exportJSON);
   document.getElementById('save-local-button').addEventListener('click', saveToLocalStorage);
@@ -246,7 +252,7 @@ function setupButtons() {
     showToast('Insert > Base Layer > Standard Particle, then adjust sliders.', 'info');
   });
   document.getElementById('about-button').addEventListener('click', () => {
-    showToast('Artifex Effect Editor modular test build: header/menu parity active.', 'info');
+    showToast('Artifex Effect Editor modular test build: Step 1 polish active.', 'info');
   });
 
   document.querySelectorAll('[data-workspace-mode]').forEach((button) => {
