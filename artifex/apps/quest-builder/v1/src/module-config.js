@@ -1,7 +1,7 @@
 export const MODULE_SLUG = 'quest-builder';
 export const MODULE_LABEL = 'Quest Builder';
 export const MODULE_KIND = 'quest-builder';
-export const MODULE_VERSION = 'V1.0';
+export const MODULE_VERSION = 'V1.0.1';
 export const MODULE_STORAGE_KEY = 'artifex_quest_builder_local_saves';
 
 export const MODULE_THEME = {

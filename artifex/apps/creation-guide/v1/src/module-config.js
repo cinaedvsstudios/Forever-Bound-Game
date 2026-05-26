@@ -1,7 +1,7 @@
 export const MODULE_SLUG = 'creation-guide';
 export const MODULE_LABEL = 'Creation Guide';
 export const MODULE_KIND = 'creation-guide';
-export const MODULE_VERSION = 'V1.0';
+export const MODULE_VERSION = 'V1.0.2';
 export const MODULE_STORAGE_KEY = 'artifex.creationGuide.localSaves';
 
 export const MODULE_THEME = {

@@ -1,4 +1,4 @@
-import { DESIGN_WIDTH, DESIGN_HEIGHT, MODULE_KIND, MODULE_VERSION } from './module-config.js';
+import { DESIGN_WIDTH, DESIGN_HEIGHT, MODULE_KIND, MODULE_VERSION } from './module-config.js?v=qb-v1-0-1-20260526d';
 
 export const state = {
   document: createEmptyDocument(),

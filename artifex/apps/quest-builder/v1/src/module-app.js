@@ -1,4 +1,4 @@
-import { MODULE_VERSION } from './module-config.js';
+import { MODULE_VERSION } from './module-config.js?v=qb-v1-0-1-20260526d';
 import {
   addBlock,
   addQuest,
@@ -14,9 +14,9 @@ import {
   updateBlock,
   updateDocument,
   updateQuest
-} from './module-state.js';
-import { exportJson, importJsonFile, saveLocal } from './module-io.js';
-import { initRenderer } from './module-renderer.js';
+} from './module-state.js?v=qb-v1-0-1-20260526d';
+import { exportJson, importJsonFile, saveLocal } from './module-io.js?v=qb-v1-0-1-20260526d';
+import { initRenderer } from './module-renderer.js?v=qb-v1-0-1-20260526d';
 
 let syncing = false;
 
