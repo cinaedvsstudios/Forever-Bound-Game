@@ -84,7 +84,7 @@ export function drawParticle(ctx, particle, layer, scale) {
   if (alpha <= 0.005) return;
 
   const size = Math.max(0.5, ramp.size) * scale;
-  const color = rgbaFromHex(ramp.color, alpha);
+  const color = rgbaFromHex(ramp.color, 1);
   const x = particle.x * scale;
   const y = particle.y * scale;
   const rotation = particle.rotation + degreesToRadians(finite(layer.rotation, 0));
@@ -171,31 +171,30 @@ function drawTextureParticle(ctx, x, y, size, color, rotation, layer) {
   }
 
   const box = getTextureDrawBox(image, size, layer.textureFit || 'contain');
+  const brush = renderBrushToCanvas(image, box.width, box.height, color, layer.tintMode || 'tint');
+
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(rotation);
-
-  if (layer.tintMode === 'original') {
-    ctx.drawImage(image, -box.width / 2, -box.height / 2, box.width, box.height);
-  } else if (layer.tintMode === 'alpha-mask') {
-    drawTintedImage(ctx, image, -box.width / 2, -box.height / 2, box.width, box.height, color, 'source-in');
-  } else {
-    ctx.drawImage(image, -box.width / 2, -box.height / 2, box.width, box.height);
-    ctx.globalCompositeOperation = 'source-atop';
-    ctx.fillStyle = color;
-    ctx.fillRect(-box.width / 2, -box.height / 2, box.width, box.height);
-  }
-
+  ctx.drawImage(brush, -box.width / 2, -box.height / 2, box.width, box.height);
   ctx.restore();
 }
 
-function drawTintedImage(ctx, image, x, y, width, height, color, compositeMode) {
-  ctx.save();
-  ctx.drawImage(image, x, y, width, height);
-  ctx.globalCompositeOperation = compositeMode;
-  ctx.fillStyle = color;
-  ctx.fillRect(x, y, width, height);
-  ctx.restore();
+function renderBrushToCanvas(image, width, height, color, tintMode) {
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.ceil(width));
+  canvas.height = Math.max(1, Math.ceil(height));
+  const brushCtx = canvas.getContext('2d');
+  brushCtx.clearRect(0, 0, canvas.width, canvas.height);
+  brushCtx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+  if (tintMode === 'original') return canvas;
+
+  brushCtx.globalCompositeOperation = tintMode === 'alpha-mask' ? 'source-in' : 'source-atop';
+  brushCtx.fillStyle = color;
+  brushCtx.fillRect(0, 0, canvas.width, canvas.height);
+  brushCtx.globalCompositeOperation = 'source-over';
+  return canvas;
 }
 
 function getTextureImage(src) {
@@ -211,9 +210,7 @@ function getTextureDrawBox(image, size, fit) {
   const base = Math.max(1, size * 2);
   if (fit === 'stretch') return { width: base, height: base };
   const ratio = image.naturalWidth / Math.max(1, image.naturalHeight);
-  if (fit === 'cover') {
-    return ratio >= 1 ? { width: base * ratio, height: base } : { width: base, height: base / ratio };
-  }
+  if (fit === 'cover') return ratio >= 1 ? { width: base * ratio, height: base } : { width: base, height: base / ratio };
   return ratio >= 1 ? { width: base, height: base / ratio } : { width: base * ratio, height: base };
 }
 
@@ -390,9 +387,7 @@ function toHex(value) {
 function normalizeHex(value) {
   const string = String(value || '').trim();
   if (/^#[0-9a-f]{6}$/iu.test(string)) return string;
-  if (/^#[0-9a-f]{3}$/iu.test(string)) {
-    return `#${string.slice(1).split('').map((char) => char + char).join('')}`;
-  }
+  if (/^#[0-9a-f]{3}$/iu.test(string)) return `#${string.slice(1).split('').map((char) => char + char).join('')}`;
   return '#ffcc66';
 }
 
