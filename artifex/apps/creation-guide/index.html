@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Artifex Creation Guide V1.0.3</title>
-  <link rel="stylesheet" href="./v1/styles.css?v=creation-guide-1.0.3" />
+  <title>Artifex Creation Guide V1.0.4</title>
+  <link rel="stylesheet" href="./v1/styles.css?v=creation-guide-1.0.4" />
 </head>
 <body>
   <header class="topbar">
@@ -12,75 +12,86 @@
       <div class="brand-mark" id="brand-mark">✦</div>
       <div>
         <h1>ARTIFEX</h1>
-        <p><span id="module-label">Creation Guide</span> <span id="version-badge">V1.0.3</span></p>
+        <p><span id="module-label">Creation Guide</span> <span id="version-badge">V1.0.4</span></p>
       </div>
     </section>
 
-    <nav class="menu-bar" aria-label="Creation Guide menus">
-      <div class="menu">
-        <button class="menu-button" data-menu="file">File ▾</button>
-        <div class="menu-panel" id="menu-file">
-          <button id="new-guide-button">New Creation Guide</button>
-          <label class="menu-file-label">Import JSON<input id="import-json-input" type="file" accept=".json,application/json" hidden /></label>
-          <button id="export-json-button">Export JSON</button>
-          <button id="save-local-button">Save Locally in Browser</button>
-          <button id="view-local-button">Manage Local Saves</button>
-        </div>
+    <nav class="top-center" aria-label="Creation Guide controls">
+      <div class="quick-icons" aria-label="Quick tools">
+        <button class="icon-button" id="open-assignments-button" title="Assignments">📋</button>
+        <button class="icon-button" id="open-detail-button" title="Selected assignment detail">🃏</button>
+        <button class="icon-button" id="snapshot-button" title="Snapshot">📸</button>
       </div>
 
-      <div class="menu">
-        <button class="menu-button" data-menu="edit">Edit ▾</button>
-        <div class="menu-panel" id="menu-edit">
-          <button id="duplicate-assignment-button">Duplicate Selected Assignment</button>
-          <button id="delete-assignment-button">Delete Selected Assignment</button>
-          <button id="open-detail-button">Open Assignment Detail</button>
+      <div class="menu-bar" aria-label="Creation Guide menus">
+        <div class="menu">
+          <button class="menu-button" data-menu="file">File ▾</button>
+          <div class="menu-panel" id="menu-file">
+            <button id="new-guide-button">New Creation Guide</button>
+            <label class="menu-file-label">Import JSON<input id="import-json-input" type="file" accept=".json,application/json" hidden /></label>
+            <button id="export-json-button">Export JSON</button>
+            <button id="save-local-button">Save Locally in Browser</button>
+            <button id="view-local-button">Manage Local Saves</button>
+          </div>
         </div>
-      </div>
 
-      <div class="menu">
-        <button class="menu-button" data-menu="view">View ▾</button>
-        <div class="menu-panel" id="menu-view">
-          <button data-workspace-mode="dark">Background: Dark</button>
-          <button data-workspace-mode="white">Background: White</button>
-          <button id="toggle-grid-button">Toggle Grid</button>
-          <button id="toggle-helpers-button">Toggle Guides</button>
+        <div class="menu">
+          <button class="menu-button" data-menu="edit">Edit ▾</button>
+          <div class="menu-panel" id="menu-edit">
+            <button id="duplicate-assignment-button">Duplicate Selected Assignment</button>
+            <button id="delete-assignment-button">Delete Selected Assignment</button>
+            <button id="open-detail-menu-button">Open Assignment Detail</button>
+            <button id="open-assignments-menu-button">Open Assignments Window</button>
+          </div>
         </div>
-      </div>
 
-      <div class="menu">
-        <button class="menu-button primary" data-menu="insert">Insert ▾</button>
-        <div class="menu-panel wide" id="menu-insert">
-          <section class="insert-section">
-            <h3>Assignments</h3>
-            <button id="add-assignment-button">Add Blank Assignment</button>
-          </section>
-          <section class="insert-section">
-            <h3>Starter Assignment Templates</h3>
-            <div id="template-list" class="insert-list"></div>
-          </section>
+        <div class="menu">
+          <button class="menu-button" data-menu="view">View ▾</button>
+          <div class="menu-panel" id="menu-view">
+            <button data-workspace-mode="dark">Background: Dark</button>
+            <button data-workspace-mode="white">Background: White</button>
+            <button id="toggle-grid-button">Toggle Grid</button>
+            <button id="toggle-helpers-button">Toggle Guides</button>
+          </div>
         </div>
-      </div>
 
-      <div class="menu">
-        <button class="menu-button" data-menu="open">Open ▾</button>
-        <div class="menu-panel right" id="menu-open">
-          <a href="../../index.html?v=creation-guide-1.0.3">Artifex Portal</a>
-          <a href="../scene-editor/?v=creation-guide-1.0.3">Scene Editor</a>
-          <a href="../module-boilerplate/?v=creation-guide-1.0.3">Blank Module Boilerplate</a>
+        <div class="menu">
+          <button class="menu-button primary" data-menu="insert">Insert ▾</button>
+          <div class="menu-panel wide" id="menu-insert">
+            <section class="insert-section">
+              <h3>Assignments</h3>
+              <button id="add-assignment-button">Add Blank Assignment</button>
+            </section>
+            <section class="insert-section">
+              <h3>Starter Assignment Templates</h3>
+              <div id="template-list" class="insert-list"></div>
+            </section>
+          </div>
         </div>
-      </div>
 
-      <div class="menu">
-        <button class="menu-button" data-menu="help">Help ▾</button>
-        <div class="menu-panel right" id="menu-help">
-          <button id="quick-start-button">Quick Start Guide</button>
-          <button id="about-button">About Creation Guide</button>
+        <div class="menu">
+          <button class="menu-button" data-menu="open">Open ▾</button>
+          <div class="menu-panel right" id="menu-open">
+            <a href="../../index.html?v=creation-guide-1.0.4">Artifex Portal</a>
+            <a href="../scene-editor/?v=creation-guide-1.0.4">Scene Editor</a>
+            <a href="../module-boilerplate/?v=creation-guide-1.0.4">Blank Module Boilerplate</a>
+          </div>
+        </div>
+
+        <div class="menu">
+          <button class="menu-button" data-menu="help">Help ▾</button>
+          <div class="menu-panel right" id="menu-help">
+            <button id="quick-start-button">Quick Start Guide</button>
+            <button id="about-button">About Creation Guide</button>
+          </div>
         </div>
       </div>
     </nav>
+
+    <div class="top-spacer" aria-hidden="true"></div>
   </header>
 
-  <main class="app-shell">
+  <main class="app-shell two-panel-layout">
     <aside id="left-panel" class="side-panel">
       <section class="card">
         <header><h2>Project Setup</h2><span id="setup-percent">0%</span></header>
@@ -116,9 +127,8 @@
 
     <div id="side-resizer" class="side-resizer" title="Drag to resize side panel"></div>
 
-    <section class="workspace-column">
+    <section class="workspace-column viewing-panel">
       <section class="workspace-toolbar">
-        <button id="snapshot-button">Snapshot</button>
         <button id="zoom-out-button">−</button>
         <span id="zoom-readout">100%</span>
         <button id="zoom-in-button">+</button>
@@ -130,6 +140,7 @@
           <option value="almost-complete">Almost Complete</option>
           <option value="by-module">By Module</option>
         </select>
+        <button id="open-assignments-toolbar-button">📋 Assignments</button>
         <span id="status-text">Ready.</span>
       </section>
 
@@ -137,16 +148,22 @@
         <canvas id="module-canvas" width="1280" height="720"></canvas>
         <div id="toast-area" aria-live="polite"></div>
       </section>
-
-      <div id="bottom-resizer" class="bottom-resizer" title="Drag to resize assignment panel"></div>
-
-      <section id="bottom-panel" class="bottom-panel">
-        <header><h2>Assignments</h2><span id="assignment-count">0 assignments</span></header>
-        <div class="assignment-tabs" id="assignment-tabs"></div>
-        <div id="assignment-list" class="assignment-list"></div>
-      </section>
     </section>
   </main>
+
+  <dialog id="assignments-dialog" class="assignments-dialog">
+    <form method="dialog">
+      <header class="dialog-header accent-dialog-header">
+        <div>
+          <h2>📋 Assignments</h2>
+          <p id="assignment-count">0 assignments</p>
+        </div>
+        <button value="close">×</button>
+      </header>
+      <div class="assignment-tabs" id="assignment-tabs"></div>
+      <div id="assignment-list" class="assignment-list popup-assignment-list"></div>
+    </form>
+  </dialog>
 
   <dialog id="assignment-dialog">
     <form method="dialog">
@@ -169,6 +186,6 @@
     </form>
   </dialog>
 
-  <script src="./v1/src/module-app.js?v=creation-guide-1.0.3"></script>
+  <script src="./v1/src/module-app.js?v=creation-guide-1.0.4"></script>
 </body>
 </html>
