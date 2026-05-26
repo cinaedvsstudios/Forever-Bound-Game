@@ -1,6 +1,30 @@
 export const DESIGN_WIDTH = 1280;
 export const DESIGN_HEIGHT = 720;
 
+export const MODULE_THEMES = {
+  effects: {
+    label: 'Effects',
+    accent: '#00aeea',
+    accentSoft: 'rgba(0, 174, 234, 0.18)',
+    accentStrong: '#27d7ff',
+    glow: 'rgba(0, 174, 234, 0.42)'
+  },
+  archetype: {
+    label: 'Archetype',
+    accent: '#d84545',
+    accentSoft: 'rgba(216, 69, 69, 0.18)',
+    accentStrong: '#ff7474',
+    glow: 'rgba(216, 69, 69, 0.42)'
+  },
+  project: {
+    label: 'Project',
+    accent: '#9dbb3f',
+    accentSoft: 'rgba(157, 187, 63, 0.18)',
+    accentStrong: '#d9e979',
+    glow: 'rgba(157, 187, 63, 0.42)'
+  }
+};
+
 export const editorState = {
   composition: createEmptyComposition(),
   activeLayerIndex: -1,
@@ -11,9 +35,13 @@ export const editorState = {
   workspaceMode: 'dark',
   referenceMedia: createEmptyReferenceMedia(),
   zoom: 1,
+  lowPerformanceMode: false,
+  moduleTheme: 'effects',
   renderStats: {
     fps: 0,
-    particles: 0
+    particles: 0,
+    particleCap: 900,
+    performanceMode: 'Full'
   }
 };
 
@@ -249,7 +277,11 @@ export function setPaused(value) {
 }
 
 export function setWorkspaceMode(mode) {
-  editorState.workspaceMode = ['dark', 'white', 'reference'].includes(mode) ? mode : 'dark';
+  const normalized = mode === 'reference' ? 'underlay' : mode;
+  editorState.workspaceMode = ['dark', 'white', 'underlay'].includes(normalized) ? normalized : 'dark';
+  if (editorState.workspaceMode === 'underlay') {
+    editorState.referenceMedia.visible = Boolean(editorState.referenceMedia?.dataUrl);
+  }
   notifyChange();
 }
 
@@ -264,6 +296,25 @@ export function setReferenceMedia(patch) {
 
 export function setZoom(value) {
   editorState.zoom = clamp(Number(value), 0.4, 3);
+  notifyChange();
+}
+
+export function setLowPerformanceMode(value) {
+  editorState.lowPerformanceMode = Boolean(value);
+  editorState.renderStats.performanceMode = editorState.lowPerformanceMode ? 'Low' : 'Full';
+  editorState.renderStats.particleCap = editorState.lowPerformanceMode ? 260 : 900;
+  if (editorState.particles.length > editorState.renderStats.particleCap) {
+    editorState.particles = editorState.particles.slice(-editorState.renderStats.particleCap);
+  }
+  notifyChange();
+}
+
+export function toggleLowPerformanceMode() {
+  setLowPerformanceMode(!editorState.lowPerformanceMode);
+}
+
+export function setModuleTheme(themeName) {
+  editorState.moduleTheme = MODULE_THEMES[themeName] ? themeName : 'effects';
   notifyChange();
 }
 
