@@ -89,7 +89,8 @@ function buildProjectSetupChecks(stateManager) {
       label: 'Project manifest exists',
       detail: 'project.json / Project Manifest is loaded in editor state.',
       pass: Boolean(stateManager.project?.projectId),
-      owner: 'Creation Guide'
+      owner: 'Creation Guide',
+      creationGuideAction: true
     },
     {
       label: 'Start screen assigned',
@@ -101,7 +102,8 @@ function buildProjectSetupChecks(stateManager) {
       label: 'Input map expected',
       detail: 'Creation Guide should create input-map.json; Project Manager validates action mappings.',
       pass: false,
-      owner: 'Creation Guide / Project Settings'
+      owner: 'Creation Guide / Project Settings',
+      creationGuideAction: true
     },
     {
       label: 'Library links expected',
@@ -136,7 +138,7 @@ function buildProjectSetupChecks(stateManager) {
   ];
 }
 
-function renderAssetBrowser({ stateManager }) {
+function renderAssetBrowser({ stateManager, ui }) {
   const container = document.getElementById('assetBrowserWorkspace');
   if (!container) return;
 
@@ -160,7 +162,7 @@ function renderAssetBrowser({ stateManager }) {
               <h2 class="text-lg font-bold text-zinc-100 tracking-wide">${escapeHtml(activeMode.label)}</h2>
               <p class="text-xs text-zinc-500">Shared browser shell · Owner: ${escapeHtml(activeMode.owner)} · Expected index: <span class="font-mono text-projectGoldGlow">${escapeHtml(activeMode.file)}</span></p>
             </div>
-            <button data-workspace-target="flatplan" class="px-3 py-2 rounded-lg border border-projectGold/30 text-xs text-projectGoldGlow hover:bg-accentDark/50 transition">Return to Flatplan</button>
+            <button data-return-flatplan class="px-3 py-2 rounded-lg border border-projectGold/30 text-xs text-projectGoldGlow hover:bg-accentDark/50 transition">Return to Flatplan</button>
           </div>
 
           <div class="p-4 border-b border-[#2d2d42] grid grid-cols-[1fr_auto_auto] gap-3">
@@ -205,9 +207,13 @@ function renderAssetBrowser({ stateManager }) {
   container.querySelectorAll('[data-asset-browser-mode]').forEach((button) => {
     button.addEventListener('click', () => {
       setStorageItem(INTEGRATION_STORAGE_KEYS.assetBrowserMode, button.dataset.assetBrowserMode || 'assets');
-      renderAssetBrowser({ stateManager });
+      renderAssetBrowser({ stateManager, ui });
       if (window.lucide) window.lucide.createIcons();
     });
+  });
+
+  container.querySelector('[data-return-flatplan]')?.addEventListener('click', () => {
+    ui?.setWorkspace?.('flatplan');
   });
 
   if (window.lucide) window.lucide.createIcons();
@@ -219,20 +225,34 @@ function renderGettingStartedWizard({ stateManager }) {
 
   const checks = buildProjectSetupChecks(stateManager);
   const passed = checks.filter((check) => check.pass).length;
+  const needsCreationGuide = checks.some((check) => !check.pass && check.creationGuideAction);
 
   container.innerHTML = `
     <div class="h-full overflow-y-auto p-6">
       <div class="max-w-5xl mx-auto space-y-5">
-        <div class="border-b border-[#2d2d42] pb-4 flex items-center justify-between">
+        <div class="border-b border-[#2d2d42] pb-4 flex items-center justify-between gap-4">
           <div>
             <h2 class="text-xl font-bold tracking-wide text-zinc-100">Getting Started / Missing Setup Wizard</h2>
             <p class="text-xs text-zinc-500">This does not create a new project. It inspects the current project package and shows missing setup.</p>
           </div>
-          <div class="text-right">
-            <div class="text-2xl font-black text-projectGoldGlow">${passed}/${checks.length}</div>
-            <div class="text-[10px] text-zinc-500 font-mono">checks passed</div>
+          <div class="flex items-center gap-3">
+            ${needsCreationGuide ? '<a href="../creation-guide/" class="px-3 py-2 rounded-lg border border-projectGold/40 bg-accentDark/35 text-xs text-projectGoldGlow hover:bg-accentDark/60 transition">Open Creation Guide</a>' : ''}
+            <div class="text-right">
+              <div class="text-2xl font-black text-projectGoldGlow">${passed}/${checks.length}</div>
+              <div class="text-[10px] text-zinc-500 font-mono">checks passed</div>
+            </div>
           </div>
         </div>
+
+        ${needsCreationGuide ? `
+          <div class="rounded-xl border border-projectGold/35 bg-accentDark/20 p-4 flex items-start justify-between gap-4">
+            <div>
+              <div class="text-sm font-bold text-projectGoldGlow">Some missing setup belongs in Creation Guide</div>
+              <div class="text-xs text-zinc-500 mt-1 leading-relaxed">Creation Guide owns new project creation and starter setup files such as project.json and input-map.json. Use it when the wizard flags missing setup owned by Creation Guide.</div>
+            </div>
+            <a href="../creation-guide/" class="px-3 py-2 rounded-lg border border-projectGold/40 text-xs text-projectGoldGlow hover:bg-accentDark/50 transition flex-shrink-0">Go to Creation Guide</a>
+          </div>
+        ` : ''}
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
           <div class="lg:col-span-2 bg-cardDark border border-[#2d2d42] rounded-xl p-4 space-y-3">
@@ -242,6 +262,7 @@ function renderGettingStartedWizard({ stateManager }) {
                   <div class="text-sm font-bold text-zinc-200">${escapeHtml(check.label)}</div>
                   <div class="text-xs text-zinc-500 mt-1">${escapeHtml(check.detail)}</div>
                   <div class="text-[10px] text-zinc-600 mt-2 font-mono">Fix owner: ${escapeHtml(check.owner)}</div>
+                  ${!check.pass && check.creationGuideAction ? '<a href="../creation-guide/" class="inline-flex mt-2 text-[10px] text-projectGoldGlow hover:underline">Open Creation Guide for this setup →</a>' : ''}
                 </div>
                 <div class="text-[10px] font-mono font-bold ${check.pass ? 'text-projectGreen' : 'text-orange-400'}">${check.pass ? 'PASS' : 'MISSING'}</div>
               </div>
@@ -258,6 +279,7 @@ function renderGettingStartedWizard({ stateManager }) {
               <li>Link library items to Flatplan nodes/routes.</li>
               <li>Run Build Prep health checks.</li>
             </ol>
+            <a href="../creation-guide/" class="block text-center rounded-lg border border-projectGold/40 px-3 py-2 text-xs text-projectGoldGlow hover:bg-accentDark/50 transition">Open Creation Guide</a>
             <div class="rounded-lg bg-black/30 border border-[#2d2d42] p-3 text-[10px] text-zinc-500 leading-relaxed">
               Creation Guide owns new project creation. Project Manager only assembles, links, validates, and exports existing project structure.
             </div>
@@ -276,7 +298,7 @@ export function enhanceProjectUI({ ui, stateManager }) {
   const baseSetWorkspace = ui.setWorkspace.bind(ui);
   const baseWireTopCanvasControls = ui.wireTopCanvasControls.bind(ui);
 
-  ui.renderAssetBrowser = () => renderAssetBrowser({ stateManager });
+  ui.renderAssetBrowser = () => renderAssetBrowser({ stateManager, ui });
   ui.renderGettingStartedWizard = () => renderGettingStartedWizard({ stateManager });
 
   ui.setWorkspace = (workspace) => {
