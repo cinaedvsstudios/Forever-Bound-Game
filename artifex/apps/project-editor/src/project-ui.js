@@ -233,18 +233,29 @@ export function createProjectUI({
   }
 
   function wireTopCanvasControls() {
-    document.getElementById('zoomInBtn')?.onclick = () => {
-      canvasController?.zoomByFactor(1.12);
-      renderJsonPreview();
-    };
-    document.getElementById('zoomOutBtn')?.onclick = () => {
-      canvasController?.zoomByFactor(0.88);
-      renderJsonPreview();
-    };
-    document.getElementById('resetViewportBtn')?.onclick = () => {
-      canvasController?.resetViewport();
-      renderJsonPreview();
-    };
+    const zoomInBtn = document.getElementById('zoomInBtn');
+    if (zoomInBtn) {
+      zoomInBtn.onclick = () => {
+        canvasController?.zoomByFactor(1.12);
+        renderJsonPreview();
+      };
+    }
+
+    const zoomOutBtn = document.getElementById('zoomOutBtn');
+    if (zoomOutBtn) {
+      zoomOutBtn.onclick = () => {
+        canvasController?.zoomByFactor(0.88);
+        renderJsonPreview();
+      };
+    }
+
+    const resetViewportBtn = document.getElementById('resetViewportBtn');
+    if (resetViewportBtn) {
+      resetViewportBtn.onclick = () => {
+        canvasController?.resetViewport();
+        renderJsonPreview();
+      };
+    }
 
     document.querySelectorAll('[data-workspace-target]').forEach((button) => {
       button.onclick = () => setWorkspace(button.dataset.workspaceTarget || 'flatplan');
