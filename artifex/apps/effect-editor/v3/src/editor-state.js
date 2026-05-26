@@ -145,8 +145,11 @@ export function normalizeLayer(layer) {
     blendMode: layer.blendMode || defaultBlendMode(layer.engine),
     reverseColor: Boolean(layer.reverseColor),
     rotation: finiteNumber(layer.rotation, 0),
+    rotationMode: layer.rotationMode || 'random',
+    rotationJitter: finiteNumber(layer.rotationJitter, 5),
     edgeBlur: finiteNumber(layer.edgeBlur, 0),
     textureAlpha: finiteNumber(layer.textureAlpha, 1),
+    textureContrast: finiteNumber(layer.textureContrast, 1),
     textureName: layer.textureName || '',
     textureDataUrl: layer.textureDataUrl || '',
     builtInBrush: layer.builtInBrush || 'spark',
@@ -312,7 +315,7 @@ export function setDesignSize(width, height, options = {}) {
       layer.emitterX = clamp(finiteNumber(layer.emitterX, nextWidth / 2), 0, nextWidth);
       layer.emitterY = clamp(finiteNumber(layer.emitterY, nextHeight / 2), 0, nextHeight);
       layer.targetX = clamp(finiteNumber(layer.targetX, nextWidth / 2), 0, nextWidth);
-      layer.targetY = clamp(finiteNumber(layer.targetY, nextHeight / 2), 0, nextHeight);
+      layer.targetY = clamp(finiteNumber(layer.targetY, nextHeight / 2), 0, nextWidth);
     }
   }
 
