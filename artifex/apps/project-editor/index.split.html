@@ -46,7 +46,16 @@
     </div>
 
     <div class="flex items-center gap-2">
-      <span id="projectEditorVersionBadge" data-project-version-badge class="text-[10px] font-mono border border-projectGold/40 text-projectGoldGlow px-2 py-1 rounded bg-accentDark/40">v0.1.1 SPLIT-THEME</span>
+      <span id="projectEditorVersionBadge" data-project-version-badge class="text-[10px] font-mono border border-projectGold/40 text-projectGoldGlow px-2 py-1 rounded bg-accentDark/40">v0.1.5 SPLIT-CANVAS</span>
+      <button id="zoomInBtn" class="w-8 h-8 hover:bg-accentDark/50 text-projectGoldGlow border border-projectGold/30 flex items-center justify-center rounded transition" title="Zoom In">
+        <i data-lucide="plus" class="w-4 h-4"></i>
+      </button>
+      <button id="resetViewportBtn" class="w-8 h-8 hover:bg-accentDark/50 text-projectGoldGlow border border-projectGold/30 flex items-center justify-center rounded transition" title="Recenter View">
+        <i data-lucide="crosshair" class="w-4 h-4"></i>
+      </button>
+      <button id="zoomOutBtn" class="w-8 h-8 hover:bg-accentDark/50 text-projectGoldGlow border border-projectGold/30 flex items-center justify-center rounded transition" title="Zoom Out">
+        <i data-lucide="minus" class="w-4 h-4"></i>
+      </button>
       <button id="activeWorkspaceBtn" class="bg-gradient-to-r from-accentDark to-projectGold border border-projectGold/60 text-white font-bold px-4 py-2.5 rounded-lg text-xs shadow-project-glow flex items-center space-x-2 transition cursor-default">
         <i data-lucide="layers" class="w-4 h-4 text-projectParchment"></i>
         <span id="activeWorkspaceName" class="tracking-wide text-xs">FLATPLAN</span>
@@ -80,26 +89,28 @@
             </div>
           </button>
           <div class="p-3 border-t border-[#1d1d2b] text-xs text-zinc-500 leading-relaxed">
-            Split shell placeholder. Step 2 will move default data, catalog seed data, and type styles into module files, then this panel will be repopulated from those modules.
+            Loading split catalog modules...
           </div>
         </div>
       </div>
     </aside>
 
     <main class="flex-1 bg-obsidian relative overflow-hidden flex flex-col">
-      <div id="flatplanCanvas" class="w-full h-full relative cursor-default infinite-grid overflow-hidden flex-1">
-        <div class="absolute top-4 left-4 z-30 bg-cardDark/80 backdrop-blur-md border border-projectGold/40 rounded-lg p-3 shadow-card-glow max-w-md">
+      <div id="flatplanCanvas" class="w-full h-full relative cursor-grab infinite-grid overflow-hidden flex-1 touch-none">
+        <div class="absolute top-4 left-4 z-30 bg-cardDark/80 backdrop-blur-md border border-projectGold/40 rounded-lg p-3 shadow-card-glow max-w-md pointer-events-none">
           <div class="flex items-center gap-2 text-projectGoldGlow font-bold text-sm">
             <i data-lucide="map" class="w-4 h-4"></i>
             <span>Project Editor Split Shell</span>
           </div>
           <p class="text-xs text-zinc-500 mt-2 leading-relaxed">
-            This is the new split index shell. The original monolith is preserved in <code>index.html</code> and <code>index.monolith.backup.html</code>. Future steps add working modules into this shell before it becomes the live runtime.
+            Drag nodes to move them. Drag empty canvas to pan. Mouse-wheel zooms around the cursor. Top controls zoom/recenter.
           </p>
         </div>
 
-        <svg id="svgEdgeLayer" class="absolute inset-0 pointer-events-none w-full h-full"></svg>
-        <div id="nodesContainer" class="absolute inset-0 pointer-events-none"></div>
+        <div id="canvasViewport" class="absolute inset-0 origin-top-left select-none will-change-transform" style="transform: translate(0px, 0px) scale(1);">
+          <svg id="svgEdgeLayer" class="absolute pointer-events-none w-[5000px] h-[5000px]" style="top: -2500px; left: -2500px;"></svg>
+          <div id="nodesContainer" class="absolute inset-0 pointer-events-none"></div>
+        </div>
       </div>
     </main>
   </div>
