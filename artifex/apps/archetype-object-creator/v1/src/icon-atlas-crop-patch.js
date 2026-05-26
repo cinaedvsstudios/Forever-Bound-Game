@@ -1,11 +1,14 @@
 import { ROLE_TEMPLATES } from './templates.js';
 
-const PATCH_VERSION = '1.04';
-const ICON_ATLAS_PATH = `./v1/icons/object-archetypes/icons1.png?v=${PATCH_VERSION}`;
+const PATCH_VERSION = '1.06';
+const ICON_ROW_PATHS = [
+  `./v1/icons/object-archetypes/icons1.png?v=${PATCH_VERSION}`,
+  `./v1/icons/object-archetypes/icons2.png?v=${PATCH_VERSION}`,
+  `./v1/icons/object-archetypes/icons3.png?v=${PATCH_VERSION}`
+];
 const ATLAS_COLUMNS = 6;
-const ATLAS_ROWS = 3;
-const ATLAS_CROP_HEIGHT_RATIO = 0.74;
-const ATLAS_CROP_TOP_INSET = 5;
+const OUTPUT_WIDTH = 304;
+const OUTPUT_HEIGHT = 305;
 
 const TEMPLATE_ATLAS_POSITIONS = {
   person_static: [0, 0],
@@ -28,19 +31,21 @@ const TEMPLATE_ATLAS_POSITIONS = {
   hazard: [5, 2]
 };
 
-let atlasPromise = null;
+const rowAtlasPromises = new Map();
 let queued = false;
 const cropCache = new Map();
 
-function loadAtlas() {
-  if (atlasPromise) return atlasPromise;
-  atlasPromise = new Promise((resolve, reject) => {
+function loadRowAtlas(row) {
+  if (rowAtlasPromises.has(row)) return rowAtlasPromises.get(row);
+  const path = ICON_ROW_PATHS[row] || ICON_ROW_PATHS[0];
+  const promise = new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error(`Unable to load ${ICON_ATLAS_PATH}`));
-    image.src = ICON_ATLAS_PATH;
+    image.onerror = () => reject(new Error(`Unable to load ${path}`));
+    image.src = path;
   });
-  return atlasPromise;
+  rowAtlasPromises.set(row, promise);
+  return promise;
 }
 
 function cropIcon(templateId) {
@@ -48,30 +53,21 @@ function cropIcon(templateId) {
   const position = TEMPLATE_ATLAS_POSITIONS[templateId];
   if (!position) return Promise.resolve('');
 
-  return loadAtlas().then((atlas) => {
-    const [column, row] = position;
+  const [column, row] = position;
+  return loadRowAtlas(row).then((atlas) => {
     const cellWidth = atlas.naturalWidth / ATLAS_COLUMNS;
-    const cellHeight = atlas.naturalHeight / ATLAS_ROWS;
+    const cellHeight = atlas.naturalHeight;
     const sourceX = column * cellWidth;
-    const sourceY = row * cellHeight + ATLAS_CROP_TOP_INSET;
-    const sourceWidth = cellWidth;
-    const sourceHeight = cellHeight * ATLAS_CROP_HEIGHT_RATIO;
+    const sourceY = 0;
 
     const canvas = document.createElement('canvas');
-    canvas.width = 304;
-    canvas.height = 305;
+    canvas.width = OUTPUT_WIDTH;
+    canvas.height = OUTPUT_HEIGHT;
     const context = canvas.getContext('2d');
     if (!context) return '';
 
     context.clearRect(0, 0, canvas.width, canvas.height);
-    const padding = 2;
-    const scale = Math.min((canvas.width - padding * 2) / sourceWidth, (canvas.height - padding * 2) / sourceHeight);
-    const drawWidth = sourceWidth * scale;
-    const drawHeight = sourceHeight * scale;
-    const drawX = (canvas.width - drawWidth) / 2;
-    const drawY = (canvas.height - drawHeight) / 2;
-
-    context.drawImage(atlas, sourceX, sourceY, sourceWidth, sourceHeight, drawX, drawY, drawWidth, drawHeight);
+    context.drawImage(atlas, sourceX, sourceY, cellWidth, cellHeight, 0, 0, OUTPUT_WIDTH, OUTPUT_HEIGHT);
     const dataUrl = canvas.toDataURL('image/png');
     cropCache.set(templateId, dataUrl);
     return dataUrl;
