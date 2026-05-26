@@ -4,6 +4,10 @@
 // Owns catalog/sidebar UI, inspector UI, JSON preview, workspace switching,
 // and top toolbar wiring for the split shell.
 
+const UI_STORAGE_KEYS = Object.freeze({
+  splitStatePreviewVisible: 'artifex_project_split_state_preview_visible'
+});
+
 function escapeHtml(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -11,6 +15,25 @@ function escapeHtml(value) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
+}
+
+function readBooleanPreference(key, fallback = false) {
+  try {
+    const raw = globalThis.localStorage?.getItem(key);
+    if (raw === 'true') return true;
+    if (raw === 'false') return false;
+  } catch (error) {
+    console.warn(`[ProjectUI] Could not read UI preference ${key}`, error);
+  }
+  return fallback;
+}
+
+function writeBooleanPreference(key, value) {
+  try {
+    globalThis.localStorage?.setItem(key, String(Boolean(value)));
+  } catch (error) {
+    console.warn(`[ProjectUI] Could not write UI preference ${key}`, error);
+  }
 }
 
 export function createProjectUI({
@@ -23,6 +46,8 @@ export function createProjectUI({
   renderStitcher,
   renderBuildPrep
 }) {
+  let splitStatePreviewVisible = readBooleanPreference(UI_STORAGE_KEYS.splitStatePreviewVisible, false);
+
   const refs = {
     sidebar: document.getElementById('sidebarAccordion'),
     canvas: document.getElementById('flatplanCanvas'),
@@ -99,10 +124,17 @@ export function createProjectUI({
     });
   }
 
+  function updateSplitPreviewMenuLabel() {
+    const toggle = document.getElementById('toggleSplitStatePreview');
+    if (!toggle) return;
+    toggle.textContent = splitStatePreviewVisible ? 'Hide Split State Preview' : 'Show Split State Preview';
+  }
+
   function renderJsonPreview() {
     const existing = document.getElementById('splitDataPreview');
     if (existing) existing.remove();
-    if (!refs.canvas) return;
+    updateSplitPreviewMenuLabel();
+    if (!refs.canvas || !splitStatePreviewVisible) return;
 
     const panel = document.createElement('div');
     panel.id = 'splitDataPreview';
@@ -110,15 +142,29 @@ export function createProjectUI({
     panel.innerHTML = `
       <div class="flex items-center justify-between px-3 py-2 border-b border-[#2d2d42]">
         <span class="text-xs font-bold text-projectGoldGlow">Split State Preview</span>
-        <button id="resetSplitStateBtn" class="text-[9px] font-mono text-zinc-500 hover:text-projectGoldGlow transition">reset</button>
+        <div class="flex items-center gap-3">
+          <button id="hideSplitStatePreviewBtn" class="text-[9px] font-mono text-zinc-500 hover:text-projectGoldGlow transition">hide</button>
+          <button id="resetSplitStateBtn" class="text-[9px] font-mono text-zinc-500 hover:text-projectGoldGlow transition">reset</button>
+        </div>
       </div>
       <pre class="p-3 text-[9px] leading-relaxed text-emerald-300 overflow-auto max-h-[220px]">${escapeHtml(JSON.stringify(stateManager.exportSnapshot(), null, 2))}</pre>
     `;
     refs.canvas.appendChild(panel);
+    panel.querySelector('#hideSplitStatePreviewBtn')?.addEventListener('click', () => {
+      splitStatePreviewVisible = false;
+      writeBooleanPreference(UI_STORAGE_KEYS.splitStatePreviewVisible, splitStatePreviewVisible);
+      renderJsonPreview();
+    });
     panel.querySelector('#resetSplitStateBtn')?.addEventListener('click', () => {
       stateManager.resetToDefaults();
       onRefresh?.();
     });
+  }
+
+  function toggleSplitStatePreview() {
+    splitStatePreviewVisible = !splitStatePreviewVisible;
+    writeBooleanPreference(UI_STORAGE_KEYS.splitStatePreviewVisible, splitStatePreviewVisible);
+    renderJsonPreview();
   }
 
   function renderInspectorPreview() {
@@ -232,6 +278,12 @@ export function createProjectUI({
     if (window.lucide) window.lucide.createIcons();
   }
 
+  function closeAllMenus() {
+    document.querySelectorAll('.project-menu details[open]').forEach((menu) => {
+      menu.removeAttribute('open');
+    });
+  }
+
   function wireTopCanvasControls() {
     const zoomInBtn = document.getElementById('zoomInBtn');
     if (zoomInBtn) {
@@ -257,8 +309,20 @@ export function createProjectUI({
       };
     }
 
+    const toggleSplitStatePreviewButton = document.getElementById('toggleSplitStatePreview');
+    if (toggleSplitStatePreviewButton) {
+      toggleSplitStatePreviewButton.onclick = () => {
+        toggleSplitStatePreview();
+        closeAllMenus();
+      };
+    }
+    updateSplitPreviewMenuLabel();
+
     document.querySelectorAll('[data-workspace-target]').forEach((button) => {
-      button.onclick = () => setWorkspace(button.dataset.workspaceTarget || 'flatplan');
+      button.onclick = () => {
+        setWorkspace(button.dataset.workspaceTarget || 'flatplan');
+        closeAllMenus();
+      };
     });
   }
 
