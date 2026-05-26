@@ -6,10 +6,8 @@
 
 :root {
   --dark: #0f0c0b;
-  --dark-2: #120e0d;
   --panel: #171210;
-  --panel-strong: #1b1412;
-  --panel2: #211914;
+  --panel-strong: #1f1713;
   --border: #382a21;
   --gold: #e2cca7;
   --gold-bright: #fff0ce;
@@ -25,8 +23,8 @@
   --warning: #d9a441;
   --radius-card: 18px;
   --radius-pill: 999px;
-  --shadow-heavy: 0 12px 30px rgba(0, 0, 0, 0.82);
-  --shadow-soft: 0 8px 20px rgba(0, 0, 0, 0.55);
+  --shadow-heavy: 0 14px 34px rgba(0, 0, 0, 0.84);
+  --shadow-soft: 0 8px 22px rgba(0, 0, 0, 0.58);
 }
 
 html,
@@ -102,9 +100,9 @@ a:focus-visible {
 
 .topbar {
   height: 68px;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(230px, 1fr) auto minmax(230px, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
   padding: 10px 18px;
   border-bottom: 1px solid var(--border);
@@ -118,9 +116,8 @@ a:focus-visible {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 250px;
-  padding-right: 18px;
-  border-right: 1px solid rgba(226, 204, 167, 0.2);
+  min-width: 0;
+  justify-self: start;
 }
 
 .brand-mark {
@@ -134,6 +131,7 @@ a:focus-visible {
   background: linear-gradient(135deg, #382a21, #160f0d 60%, #0f0c0b);
   box-shadow: 0 0 16px var(--module-glow), inset 0 0 18px rgba(226, 204, 167, 0.05);
   font-size: 25px;
+  flex-shrink: 0;
 }
 
 .brand h1 {
@@ -153,6 +151,7 @@ a:focus-visible {
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 #version-badge {
@@ -167,10 +166,49 @@ a:focus-visible {
   letter-spacing: 0.09em;
 }
 
+.top-center {
+  justify-self: center;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.top-spacer {
+  justify-self: stretch;
+}
+
+.quick-icons {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px;
+  border: 1px solid rgba(226, 204, 167, 0.16);
+  border-radius: var(--radius-pill);
+  background: rgba(15, 12, 11, 0.55);
+  box-shadow: inset 0 0 10px rgba(0,0,0,.55);
+}
+
+.icon-button {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: var(--radius-pill);
+  font-size: 18px;
+}
+
+#open-assignments-button {
+  border-color: var(--module-accent);
+  background: var(--module-accent-soft);
+  box-shadow: 0 0 16px var(--module-glow);
+}
+
 .menu-bar {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 8px;
   min-width: 0;
 }
@@ -267,9 +305,13 @@ a:focus-visible {
   background: var(--dark);
 }
 
+.two-panel-layout {
+  grid-template-columns: auto 7px 1fr;
+}
+
 .side-panel {
-  width: 360px;
-  min-width: 245px;
+  width: 365px;
+  min-width: 270px;
   max-width: 560px;
   overflow: auto;
   background: rgba(23, 18, 16, 0.9);
@@ -294,6 +336,10 @@ a:focus-visible {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.viewing-panel {
+  background: #050405;
 }
 
 .workspace-toolbar {
@@ -346,29 +392,6 @@ a:focus-visible {
   height: 100%;
 }
 
-.bottom-resizer {
-  height: 7px;
-  cursor: row-resize;
-  background: linear-gradient(to bottom, #0f0c0b, var(--module-accent), #1a1311);
-  border-top: 1px solid rgba(226, 204, 167, 0.13);
-  border-bottom: 1px solid rgba(226, 204, 167, 0.13);
-  box-shadow: 0 0 18px var(--module-glow);
-  flex-shrink: 0;
-}
-
-.bottom-panel {
-  height: 230px;
-  min-height: 100px;
-  max-height: 460px;
-  overflow: auto;
-  background: rgba(23, 18, 16, 0.96);
-  border-top: 1px solid var(--border);
-  padding: 12px;
-  box-shadow: inset 0 1px 0 rgba(226, 204, 167, 0.04);
-  flex-shrink: 0;
-}
-
-.bottom-panel header,
 .card header,
 .dialog-header {
   display: flex;
@@ -377,7 +400,6 @@ a:focus-visible {
   gap: 12px;
 }
 
-.bottom-panel h2,
 .card h2,
 .dialog-header h2 {
   margin: 0;
@@ -388,12 +410,13 @@ a:focus-visible {
   letter-spacing: 0.13em;
 }
 
-#assignment-count,
+.dialog-header p,
 #setup-percent,
 #assignment-percent {
   color: var(--module-accent-strong);
   font-size: 13px;
   font-weight: 800;
+  margin: 4px 0 0;
 }
 
 .card {
@@ -466,9 +489,15 @@ textarea {
 }
 
 .assignment-list {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 9px;
+}
+
+.popup-assignment-list {
+  max-height: 55vh;
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .assignment-item {
@@ -476,11 +505,10 @@ textarea {
   --assignment-accent-soft: var(--module-accent-soft);
   position: relative;
   display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) auto;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
   align-items: center;
   gap: 9px;
-  min-width: 250px;
-  max-width: 390px;
+  min-width: 0;
   text-align: left;
   border-color: rgba(226, 204, 167, 0.25);
   background: linear-gradient(180deg, #201713 0%, #17100e 100%);
@@ -638,8 +666,13 @@ dialog {
   box-shadow: var(--shadow-heavy);
 }
 
+.assignments-dialog {
+  max-width: 1040px;
+  width: min(1040px, 94vw);
+}
+
 dialog::backdrop {
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.72);
 }
 
 .accent-dialog-header {
@@ -707,28 +740,35 @@ pre {
   font-size: 11px;
 }
 
-@media (max-width: 900px) {
+.boot-error {
+  padding: 20px;
+  background: #171210;
+  color: #fff0ce;
+}
+
+@media (max-width: 980px) {
   .topbar {
     height: auto;
-    align-items: flex-start;
-    flex-direction: column;
+    grid-template-columns: 1fr;
+    align-items: start;
   }
 
-  .brand {
-    border-right: 0;
-  }
-
-  .app-shell {
-    height: calc(100vh - 116px);
-  }
-
-  .side-panel {
-    width: 280px;
+  .top-center {
+    justify-self: start;
+    flex-wrap: wrap;
   }
 
   .menu-bar {
     flex-wrap: wrap;
     justify-content: flex-start;
+  }
+
+  .app-shell {
+    height: calc(100vh - 132px);
+  }
+
+  .side-panel {
+    width: 300px;
   }
 
   #menu-insert,
