@@ -20,7 +20,7 @@ import { initV314Polish } from './v314-polish.js';
 import { initV315Polish } from './v315-polish.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'V3.15';
+const VERSION_LABEL = 'V3.16';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
