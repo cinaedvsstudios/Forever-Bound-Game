@@ -5,10 +5,10 @@ import { getTypeStyle } from './data/type-styles.js';
 
 // Project Editor app bootstrap.
 //
-// Step 4 split note:
-// The split shell now has a dedicated canvas interaction controller. Node
-// dragging is wired through project-canvas.js and persists via the state manager.
-// Pan/zoom and route drawing can expand in this module next.
+// Step 5 split note:
+// Canvas interaction now supports node dragging, empty-canvas panning,
+// mouse-wheel zoom, explicit zoom buttons, and recentering. Camera state is
+// persisted through ProjectEditorStateManager.
 
 applyProjectTheme();
 
@@ -28,7 +28,7 @@ const versionTargets = [
 
 for (const selector of versionTargets) {
   const el = document.querySelector(selector);
-  if (el) el.textContent = 'v0.1.4 SPLIT-CANVAS-DRAG';
+  if (el) el.textContent = 'v0.1.5 SPLIT-CANVAS';
 }
 
 function escapeHtml(value) {
@@ -45,6 +45,7 @@ function refreshSplitShell() {
   renderGraphPreview();
   renderJsonPreview();
   renderInspectorPreview();
+  wireTopCanvasControls();
   if (window.lucide) window.lucide.createIcons();
 }
 
@@ -108,7 +109,14 @@ function renderCatalog() {
   sidebar.querySelectorAll('[data-catalog-type]').forEach((button) => {
     button.addEventListener('click', () => {
       const type = button.dataset.catalogType || 'Station';
-      appState.addNode({ type, position: { x: 120 + appState.logic.nodes.length * 24, y: 120 + appState.logic.nodes.length * 18 } });
+      const camera = appState.camera;
+      appState.addNode({
+        type,
+        position: {
+          x: Math.round((180 - camera.panX) / camera.zoom + appState.logic.nodes.length * 24),
+          y: Math.round((160 - camera.panY) / camera.zoom + appState.logic.nodes.length * 18)
+        }
+      });
       refreshSplitShell();
     });
   });
@@ -153,7 +161,8 @@ function drawRoutes() {
 function renderGraphPreview() {
   const nodesContainer = document.getElementById('nodesContainer');
   const canvas = document.getElementById('flatplanCanvas');
-  if (!nodesContainer || !canvas) return;
+  const viewport = document.getElementById('canvasViewport');
+  if (!nodesContainer || !canvas || !viewport) return;
 
   nodesContainer.innerHTML = '';
   drawRoutes();
@@ -161,9 +170,11 @@ function renderGraphPreview() {
   canvasController = createProjectCanvasController({
     stateManager: appState,
     canvasElement: canvas,
+    viewportElement: viewport,
     onNodeMoved: () => redrawGraphOnly(),
     onNodeSelected: () => renderInspectorPreview(),
-    onInteractionEnd: () => redrawGraphOnly()
+    onInteractionEnd: () => redrawGraphOnly(),
+    onCameraChanged: () => renderJsonPreview()
   });
 
   const layoutNodes = appState.layout.nodes;
@@ -196,6 +207,21 @@ function renderGraphPreview() {
     canvasController.attachNodeDrag(nodeEl, logicNode.id);
     nodesContainer.appendChild(nodeEl);
   }
+}
+
+function wireTopCanvasControls() {
+  document.getElementById('zoomInBtn')?.addEventListener('click', () => {
+    canvasController?.zoomByFactor(1.12);
+    renderJsonPreview();
+  });
+  document.getElementById('zoomOutBtn')?.addEventListener('click', () => {
+    canvasController?.zoomByFactor(0.88);
+    renderJsonPreview();
+  });
+  document.getElementById('resetViewportBtn')?.addEventListener('click', () => {
+    canvasController?.resetViewport();
+    renderJsonPreview();
+  });
 }
 
 function renderJsonPreview() {
@@ -282,14 +308,14 @@ function renderInspectorPreview() {
 
   panel.innerHTML = `
     <div class="px-3 py-2 border-b border-[#2d2d42] text-xs font-bold text-projectGoldGlow">Inspector</div>
-    <div class="p-3 text-xs text-zinc-500 leading-relaxed">Click or drag a node. Click a catalog placeholder to create a new node. Changes are owned by ProjectEditorStateManager and persist to localStorage.</div>
+    <div class="p-3 text-xs text-zinc-500 leading-relaxed">Click or drag a node. Drag empty canvas to pan. Mouse-wheel zooms. Click a catalog placeholder to create a new node.</div>
   `;
   canvas.appendChild(panel);
 }
 
 function initProjectEditorSplitShell() {
   refreshSplitShell();
-  console.info('[Artifex Project Editor] Split canvas dragging loaded:', {
+  console.info('[Artifex Project Editor] Split canvas pan/zoom loaded:', {
     nodes: appState.logic.nodes.length,
     routes: appState.logic.routes.length,
     catalog: appState.catalog.placeholders.length + appState.catalog.realAssets.length
