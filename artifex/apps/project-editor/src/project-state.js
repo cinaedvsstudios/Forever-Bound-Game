@@ -1,5 +1,5 @@
-import { createDefaultProjectState, cloneDefaultData } from './data/project-defaults.js';
-import { listCatalogItems } from './data/flatplan-catalog.js';
+import { createDefaultProjectState, cloneDefaultData } from './data/project-defaults.js?v=0.1.8-hotfix1';
+import { listCatalogItems } from './data/flatplan-catalog.js?v=0.1.8-hotfix1';
 
 // Artifex Project Editor state manager
 // Step 3 of the Project Editor real split.
