@@ -324,8 +324,13 @@ export function setDesignSize(width, height, options = {}) {
 
 export function deleteActiveLayer() {
   if (editorState.activeLayerIndex < 0) return;
-  editorState.composition.layers.splice(editorState.activeLayerIndex, 1);
-  editorState.activeLayerIndex = Math.min(editorState.activeLayerIndex, editorState.composition.layers.length - 1);
+  const [deletedLayer] = editorState.composition.layers.splice(editorState.activeLayerIndex, 1);
+  if (deletedLayer?.id) {
+    editorState.particles = editorState.particles.filter((item) => item.layerId !== deletedLayer.id);
+  }
+  editorState.activeLayerIndex = editorState.composition.layers.length
+    ? Math.min(editorState.activeLayerIndex, editorState.composition.layers.length - 1)
+    : -1;
   editorState.composition.updatedAt = new Date().toISOString();
   notifyChange();
 }
