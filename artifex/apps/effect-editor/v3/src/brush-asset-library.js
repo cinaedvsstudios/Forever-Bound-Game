@@ -50,9 +50,9 @@ function injectBrushLibraryStyles() {
     }
     .brush-library-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
       gap: 8px;
-      max-height: 220px;
+      max-height: 240px;
       overflow: auto;
       padding-right: 2px;
     }
@@ -63,6 +63,8 @@ function injectBrushLibraryStyles() {
       background: rgba(0,0,0,.28);
       cursor: pointer;
       min-width: 0;
+      display: block;
+      width: 100%;
     }
     .brush-asset-card:hover,
     .brush-asset-card.is-selected {
@@ -70,7 +72,8 @@ function injectBrushLibraryStyles() {
       box-shadow: 0 0 12px var(--module-glow);
     }
     .brush-asset-thumb {
-      height: 54px;
+      width: 100%;
+      aspect-ratio: 1 / 1;
       border-radius: 8px;
       background:
         linear-gradient(45deg, rgba(255,255,255,.08) 25%, transparent 25%),
@@ -102,6 +105,7 @@ function injectBrushLibraryStyles() {
       text-align: center;
     }
     .brush-library-empty {
+      grid-column: 1 / -1;
       border: 1px dashed rgba(226,204,167,.24);
       border-radius: 12px;
       padding: 12px;
