@@ -167,21 +167,38 @@ export function normalizeLayer(layer) {
     lifetimeMax: finiteNumber(layer.lifetimeMax, Math.max(4, lifetime * 1.25)),
     noiseGrain: finiteNumber(layer.noiseGrain, 0),
     arcLength: finiteNumber(layer.arcLength, 82),
+    arcLengthVariation: finiteNumber(layer.arcLengthVariation, 0),
     arcBranches: finiteNumber(layer.arcBranches, 3),
+    arcBranchLength: finiteNumber(layer.arcBranchLength, 38),
     arcJaggedness: finiteNumber(layer.arcJaggedness, 18),
     arcFlicker: finiteNumber(layer.arcFlicker, 0.7),
     shockwaveRadius: finiteNumber(layer.shockwaveRadius, 245),
+    shockwaveStartRadius: finiteNumber(layer.shockwaveStartRadius, 4),
     shockwaveThickness: finiteNumber(layer.shockwaveThickness, 9),
+    shockwaveSoftness: finiteNumber(layer.shockwaveSoftness, 0),
+    shockwaveBreakup: finiteNumber(layer.shockwaveBreakup, 0),
+    shockwaveSegments: finiteNumber(layer.shockwaveSegments, 0),
     shockwaveCenterFlash: finiteNumber(layer.shockwaveCenterFlash, 0.28),
+    pulseMode: layer.pulseMode || 'once',
+    pulseDelay: finiteNumber(layer.pulseDelay, 80),
+    burstCount: finiteNumber(layer.burstCount, finiteNumber(layer.spawnRate, 64)),
+    burstDuration: finiteNumber(layer.burstDuration, 1),
     distortionStrength: finiteNumber(layer.distortionStrength, 12),
     distortionScale: finiteNumber(layer.distortionScale, 28),
     flareStreakLength: finiteNumber(layer.flareStreakLength, 320),
     flareGhosts: finiteNumber(layer.flareGhosts, 4),
     flareHalo: finiteNumber(layer.flareHalo, 72),
+    flareOverlayScale: finiteNumber(layer.flareOverlayScale, 1),
+    flareOverlayOpacity: finiteNumber(layer.flareOverlayOpacity, 0.8),
+    flareOverlayUrl: layer.flareOverlayUrl || '',
+    flareOverlayDataUrl: layer.flareOverlayDataUrl || '',
     textContent: layer.textContent || 'AETHERA',
     textAlign: layer.textAlign || 'center',
     textFont: layer.textFont || 'Cinzel, Georgia, serif',
     textWeight: layer.textWeight || '700',
+    textKeepUpright: layer.textKeepUpright !== false,
+    textRotation: finiteNumber(layer.textRotation, 0),
+    textSizeOverride: finiteNumber(layer.textSizeOverride, 0),
     textStroke: layer.textStroke !== false,
     textStrokeWidth: finiteNumber(layer.textStrokeWidth, 2),
     textLetterSpacing: finiteNumber(layer.textLetterSpacing, 1),
@@ -532,7 +549,7 @@ function syncLegacyAppearanceFields(layer) {
 }
 
 function defaultBlendMode(engine) {
-  return engine === 'gas' || engine === 'refraction' ? 'source-over' : 'lighter';
+  return ['gas', 'refraction', 'heatdistortion'].includes(engine) ? 'source-over' : 'lighter';
 }
 
 function finiteNumber(value, fallback) {
