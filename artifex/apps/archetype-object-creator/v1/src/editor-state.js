@@ -49,6 +49,10 @@ export function createEmptyArchetype() {
       snapToGround: true,
       defaultFacing: 'right'
     },
+    productionAssets: {
+      version: '1.09',
+      requirements: {}
+    },
     exportTarget: 'projects/<project-id>/library/objects.json',
     notes: ''
   });
@@ -105,6 +109,7 @@ export function normalizeArchetype(input = {}) {
       snapToGround: input.placement?.snapToGround !== false,
       defaultFacing: input.placement?.defaultFacing || 'right'
     },
+    productionAssets: normalizeProductionAssets(input.productionAssets),
     exportTarget: input.exportTarget || 'projects/<project-id>/library/objects.json',
     notes: String(input.notes || ''),
     createdAt: input.createdAt || new Date().toISOString(),
@@ -148,6 +153,10 @@ export function applyRoleTemplate(roleId) {
     animationProfile: {
       gameplayActions: [...template.gameplayActions],
       portraitActions: [...template.portraitActions]
+    },
+    productionAssets: {
+      version: '1.09',
+      requirements: {}
     }
   });
   validateCurrentArchetype();
@@ -295,6 +304,15 @@ function normalizeTags(tags) {
 
 function normalizeActionList(actions) {
   return [...new Set((Array.isArray(actions) ? actions : []).map((item) => String(item).trim()).filter(Boolean).filter((item) => item !== 'talk'))];
+}
+
+function normalizeProductionAssets(value) {
+  const source = value && typeof value === 'object' ? value : {};
+  const requirements = source.requirements && typeof source.requirements === 'object' ? source.requirements : {};
+  return {
+    version: String(source.version || '1.09'),
+    requirements: { ...requirements }
+  };
 }
 
 function safeId(value) {
