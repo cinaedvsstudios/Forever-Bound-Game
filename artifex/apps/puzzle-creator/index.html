@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Artifex Maze Maker · Forever Bound</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="src/css/artifex-theme.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand-lockup">
+        <div class="brand-sigil" aria-hidden="true">ᚨ</div>
+        <div>
+          <p class="eyebrow">Artifex Puzzle Maker Module</p>
+          <h1>Maze Maker</h1>
+          <p class="subtitle">Build a maze puzzle, preview it in 3D, then export game-readable JSON.</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-export-json" class="primary-button">Download Game JSON</button>
+      </div>
+    </header>
+
+    <main class="workspace two-panel-workspace">
+      <aside class="control-rail left-panel" aria-label="Maze Maker controls">
+        <nav class="left-icon-bar" aria-label="Maze Maker sections">
+          <button class="panel-nav-button is-active" type="button" data-panel="build" title="Build maze" aria-label="Build maze">⚒</button>
+          <button class="panel-nav-button" type="button" data-panel="display" title="Display" aria-label="Display">◈</button>
+          <button class="panel-nav-button" type="button" data-panel="logic" title="Game logic" aria-label="Game logic">☍</button>
+          <button class="panel-nav-button" type="button" data-panel="materials" title="Materials" aria-label="Materials">▧</button>
+          <button class="panel-nav-button" type="button" data-panel="paint" title="Paint and edit" aria-label="Paint and edit">✦</button>
+          <button class="panel-nav-button" type="button" data-panel="help" title="Help" aria-label="Help">?</button>
+        </nav>
+
+        <div class="left-panel-body">
+          <section class="panel tool-panel is-active" data-panel-content="build">
+            <div class="panel-title-row">
+              <div>
+                <p class="eyebrow">01 · Construction</p>
+                <h2>Build maze</h2>
+              </div>
+              <span id="analysis-state" class="status-pill is-waiting">Ready</span>
+            </div>
+
+            <div class="button-grid two build-quick-actions">
+              <button id="btn-random" class="wide-button">Fresh Random</button>
+              <button id="btn-load-reference" class="wide-button">Load Reference</button>
+            </div>
+
+            <label class="range-row">
+              <span>Grid Resolution <output id="grid-val">31 × 31</output></span>
+              <input id="grid-slider" type="range" min="11" max="61" step="2" value="31" />
+            </label>
+
+            <label class="range-row">
+              <span>Wall Detection <output id="threshold-val">50%</output></span>
+              <input id="threshold-slider" type="range" min="10" max="90" value="50" />
+            </label>
+
+            <label class="toggle-row">
+              <span>
+                <strong>Invert walls and paths</strong>
+                <small>Swap detected wall cells with path cells.</small>
+              </span>
+              <input id="invert-checkbox" type="checkbox" />
+            </label>
+
+            <div class="button-grid two">
+              <button id="btn-reparse" class="wide-button">Re-parse</button>
+              <label id="dropzone" class="wide-button image-reference-button" title="Use an uploaded image as a maze map reference">
+                <input id="image-upload" type="file" accept="image/*" />
+                Use image as map reference
+              </label>
+            </div>
+
+            <div class="split-row build-file-row">
+              <label class="field-block">
+                <span>Import Artifex JSON</span>
+                <input id="json-import" type="file" accept="application/json,.json" />
+              </label>
+              <label class="field-block">
+                <span>Module ID</span>
+                <input id="module-id" type="text" value="ch00_q00_labyrinth_maze" />
+              </label>
+            </div>
+          </section>
+
+          <section class="panel tool-panel" data-panel-content="display" hidden>
+            <div class="panel-title-row">
+              <div>
+                <p class="eyebrow">02 · Display</p>
+                <h2>Display</h2>
+              </div>
+            </div>
+
+            <div class="button-grid two mode-buttons" role="group" aria-label="View mode">
+              <button id="view-mode-diorama" class="segmented is-active">Diorama</button>
+              <button id="view-mode-fps" class="segmented">Walk Test</button>
+            </div>
+
+            <label class="range-row">
+              <span>Wall Height <output id="wall-height-val">1.5</output></span>
+              <input id="wall-height-slider" type="range" min="0.2" max="4" step="0.1" value="1.5" />
+            </label>
+
+            <label class="range-row">
+              <span>Block Spacing <output id="gap-val">0.98</output></span>
+              <input id="gap-slider" type="range" min="0.8" max="1" step="0.01" value="0.98" />
+            </label>
+
+            <label class="range-row">
+              <span>Layout Shape <output id="layout-style-val">Straight</output></span>
+              <input id="layout-style-slider" type="range" min="0" max="2" step="1" value="0" />
+            </label>
+
+            <label class="range-row">
+              <span>Edge Style <output id="edge-style-val">Sharp</output></span>
+              <input id="edge-style-slider" type="range" min="0" max="2" step="1" value="0" />
+            </label>
+          </section>
+
+          <section class="panel tool-panel" data-panel-content="logic" hidden>
+            <div class="panel-title-row">
+              <div>
+                <p class="eyebrow">03 · Quest Data</p>
+                <h2>Game logic</h2>
+              </div>
+            </div>
+
+            <div class="split-row">
+              <label class="field-block">
+                <span>Puzzle Type</span>
+                <select id="puzzle-type">
+                  <option value="pass_environmental_obstacle">Pass Environmental Obstacle</option>
+                  <option value="unlock_route">Unlock Route</option>
+                  <option value="survive_route">Survive Route</option>
+                  <option value="ritual_sequence">Ritual Sequence</option>
+                </select>
+              </label>
+              <label class="field-block">
+                <span>Gameplay Mode</span>
+                <select id="gameplay-mode">
+                  <option value="scene_mode">Scene Mode</option>
+                  <option value="travel_mode">Travel Mode</option>
+                  <option value="battle_mode">Battle Mode</option>
+                </select>
+              </label>
+            </div>
+
+            <label class="field-block">
+              <span>Completion Flag</span>
+              <input id="completion-flag" type="text" value="maze_exit_reached" />
+            </label>
+
+            <label class="field-block">
+              <span>Calling Text</span>
+              <textarea id="calling-text" rows="3">Find the correct passage through the labyrinth.</textarea>
+            </label>
+
+            <div class="button-grid two">
+              <button id="btn-solve" class="wide-button">Plot Solution Path</button>
+              <button id="btn-copy-json" class="wide-button">Copy JSON</button>
+            </div>
+          </section>
+
+          <section class="panel tool-panel" data-panel-content="materials" hidden>
+            <div class="panel-title-row">
+              <div>
+                <p class="eyebrow">04 · Surface</p>
+                <h2>Materials</h2>
+              </div>
+            </div>
+
+            <div class="button-grid two material-buttons" role="group" aria-label="Wall material preset">
+              <button class="material-preset is-active" data-style="hedge">Hedge</button>
+              <button class="material-preset" data-style="stone">Ancient Stone</button>
+              <button class="material-preset" data-style="rune">Runic Bronze</button>
+              <button class="material-preset" data-style="shadow">Underworld</button>
+            </div>
+
+            <div class="split-row">
+              <label class="field-block compact">
+                <span>Wall Colour</span>
+                <input id="wall-color-picker" type="color" value="#24513a" />
+              </label>
+              <label class="field-block compact">
+                <span>Floor Surface</span>
+                <select id="floor-style">
+                  <option value="soil">Deep Forest Soil</option>
+                  <option value="parchment">Parchment Planning Grid</option>
+                  <option value="stone">Worn Stone Path</option>
+                  <option value="underworld">Underworld Dark Oil</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section class="panel tool-panel" data-panel-content="paint" hidden>
+            <div class="panel-title-row">
+              <div>
+                <p class="eyebrow">05 · Edit</p>
+                <h2>Paint and edit</h2>
+              </div>
+            </div>
+
+            <label class="field-block compact">
+              <span>Brush Colour</span>
+              <input id="brush-color-picker" type="color" value="#8b3f2f" />
+            </label>
+
+            <div class="button-grid four tool-buttons" role="group" aria-label="Editor tool">
+              <button class="tool-button is-active" data-tool="camera">Camera</button>
+              <button class="tool-button" data-tool="paint">Paint</button>
+              <button class="tool-button" data-tool="paintSection">Section</button>
+              <button class="tool-button" data-tool="toggle">Draw</button>
+            </div>
+
+            <div class="swatch-row" id="swatch-row" aria-label="Brush swatches"></div>
+            <button id="btn-clear-paint" class="wide-button danger-lite">Clear Paint Overrides</button>
+          </section>
+
+          <section class="panel tool-panel small-help" data-panel-content="help" hidden>
+            <div class="panel-title-row">
+              <div>
+                <p class="eyebrow">06 · Notes</p>
+                <h2>Help</h2>
+              </div>
+            </div>
+            <p><strong>Build</strong> creates or parses the maze. <strong>Display</strong> controls the 3D presentation. <strong>Logic</strong> controls the game-readable quest metadata. <strong>Materials</strong> changes the theme. <strong>Paint</strong> lets you edit wall cells directly.</p>
+            <p><strong>Controls:</strong> Diorama mode rotates with mouse drag. Walk Test uses WASD or arrow keys. Paint and Draw work on either the 2D matrix or the 3D wall blocks.</p>
+          </section>
+        </div>
+      </aside>
+
+      <section class="stage right-panel" aria-label="Maze preview workspace">
+        <div class="stage-toolbar right-panel-toolbar">
+          <div>
+            <p class="eyebrow">Preview</p>
+            <h2>Matrix and 3D maze</h2>
+          </div>
+          <div class="toolbar-buttons">
+            <button id="btn-zoom-out" class="small-button">−</button>
+            <button id="btn-zoom-reset" class="small-button">Fit</button>
+            <button id="btn-zoom-in" class="small-button">+</button>
+          </div>
+        </div>
+
+        <div class="right-preview-layout">
+          <div class="matrix-strip">
+            <div class="preview-card-header matrix-strip-header">
+              <strong>2D Matrix</strong>
+              <span id="matrix-summary">No cells yet</span>
+            </div>
+            <div class="canvas-frame matrix-canvas-frame">
+              <canvas id="analysis-canvas" width="300" height="300"></canvas>
+            </div>
+            <div class="legend-row compact-legend">
+              <span><i class="legend wall"></i>Wall</span>
+              <span><i class="legend path"></i>Path</span>
+              <span><i class="legend start"></i>Start</span>
+              <span><i class="legend end"></i>Exit</span>
+            </div>
+          </div>
+
+          <div class="render-viewport">
+            <div class="render-status-line">
+              <strong>3D Playability Preview</strong>
+              <span id="player-status-indicator">Diorama camera</span>
+            </div>
+            <div id="threejs-container" class="threejs-container"></div>
+            <div id="virtual-dpad" class="virtual-dpad is-hidden" aria-label="Walk test controls">
+              <button data-dpad="w">▲</button>
+              <div>
+                <button data-dpad="a">◀</button>
+                <span>WALK</span>
+                <button data-dpad="d">▶</button>
+              </div>
+              <button data-dpad="s">▼</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <img id="source-image-loader" class="hidden" alt="Source image loader" />
+  <script type="module" src="src/js/main.js"></script>
+</body>
+</html>
