@@ -38,6 +38,7 @@ function injectStyles() {
     .quick-helper-info-button { margin-left:auto; min-width:24px; min-height:24px !important; padding:1px 6px; border-radius:5px !important; background:linear-gradient(180deg,#58a0ff 0%,#1d4f99 100%); color:white; font-size:11px !important; }
     .quick-helper-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px 10px; }
     .quick-helper-grid button { border-color:rgba(0,174,234,.25); background:linear-gradient(180deg,#252b31 0%,#1d2227 100%); }
+    .quick-helper-grid button[data-helper-preset^='colour:'] { border-color:rgba(41,227,108,.28); }
     .layer-stack-toolbar button { width:32px; min-width:32px; padding-left:0; padding-right:0; font-size:14px; }
     .layer-stack-toolbar .layer-stack-hint { font-size:9px; }
     .card-collapse-button, .bottom-panel-collapse-button { margin-left:auto; min-width:32px; min-height:27px; padding:2px 7px; border-radius:8px; font-size:14px; text-align:center; }
@@ -134,10 +135,11 @@ function installHelperPresetsInsideQuickCard(showToast) {
   if (!quickCard || document.getElementById('quick-helper-sections')) return;
   const title = quickCard.querySelector('h2');
   if (title) title.textContent = 'Quick Edit Helpers';
+  hideOriginalQuickButtons(quickCard);
   quickCard.insertAdjacentHTML('beforeend', `
     <div id="quick-helper-sections">
+      ${sectionHtml('Colour Helpers', 'colour', ['Fire','Ice','Good Magic','Dark Magic','Water','Evil'])}
       ${sectionHtml('Appearance Helpers', 'appearance', ['Soft Glow','Sharp Sparks','Fade In/Out','Bright Add','White Fog','Sooty Smoke'])}
-      ${sectionHtml('Extra Colour Helpers', 'colour', ['Water','Evil'])}
       ${sectionHtml('Dynamics Helpers', 'dynamics', ['Slow Drift','Burst Out','Rise Up','Tight Trail'])}
     </div>
   `);
@@ -148,6 +150,12 @@ function installHelperPresetsInsideQuickCard(showToast) {
   document.querySelectorAll('.quick-helper-info-button').forEach((button) => button.addEventListener('click', () => showToast(button.title, 'info')));
 }
 
+function hideOriginalQuickButtons(quickCard) {
+  quickCard.querySelectorAll('[data-quick-preset]').forEach((button) => {
+    button.style.display = 'none';
+  });
+}
+
 function correctQuickPresetButtons(showToast) {
   const darkButton = document.querySelector('[data-quick-preset="darkMagic"]');
   if (darkButton && darkButton.dataset.correctedPreset !== 'true') {
@@ -156,15 +164,7 @@ function correctQuickPresetButtons(showToast) {
     darkButton.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopImmediatePropagation();
-      updateActiveLayer({
-        appearanceStops: [
-          { position: 0, color: '#b6ff2e', opacity: 0.95, size: 20, glow: 24 },
-          { position: 0.5, color: '#29e36c', opacity: 0.8, size: 24, glow: 20 },
-          { position: 1, color: '#061709', opacity: 0, size: 6, glow: 0 }
-        ],
-        gravity: 0.015,
-        blendMode: 'lighter'
-      });
+      updateActiveLayer(greenDarkMagicPatch());
       showToast('Dark Magic helper applied.', 'success');
     }, true);
   }
@@ -176,16 +176,32 @@ function sectionHtml(title, group, labels) {
 
 function slug(label) { return label.toLowerCase().replace(/[^a-z0-9]+/g, '-'); }
 
+function greenDarkMagicPatch() {
+  return {
+    appearanceStops: [
+      { position: 0, color: '#b6ff2e', opacity: 0.95, size: 20, glow: 24 },
+      { position: 0.5, color: '#29e36c', opacity: 0.8, size: 24, glow: 20 },
+      { position: 1, color: '#061709', opacity: 0, size: 6, glow: 0 }
+    ],
+    gravity: 0.015,
+    blendMode: 'lighter'
+  };
+}
+
 function applyHelper(id) {
   const patches = {
+    'colour:fire': { appearanceStops:[{position:0,color:'#fff1a8',opacity:1,size:24,glow:34},{position:.5,color:'#ff8a00',opacity:.8,size:18,glow:24},{position:1,color:'#ff2600',opacity:0,size:5,glow:0}], gravity:.04, blendMode:'lighter' },
+    'colour:ice': { appearanceStops:[{position:0,color:'#ffffff',opacity:.95,size:18,glow:22},{position:.5,color:'#99f2ff',opacity:.7,size:14,glow:16},{position:1,color:'#00a1d7',opacity:0,size:2,glow:0}], gravity:-.01, blendMode:'screen' },
+    'colour:good-magic': { appearanceStops:[{position:0,color:'#fff7cf',opacity:1,size:18,glow:30},{position:.5,color:'#d65cff',opacity:.85,size:22,glow:34},{position:1,color:'#5e8cff',opacity:0,size:8,glow:0}], gravity:-.008, blendMode:'lighter' },
+    'colour:dark-magic': greenDarkMagicPatch(),
+    'colour:water': { appearanceStops:[{position:0,color:'#dffbff',opacity:.9,size:18,glow:10},{position:.5,color:'#38b6ff',opacity:.75,size:20,glow:12},{position:1,color:'#0356a6',opacity:0,size:5,glow:0}] },
+    'colour:evil': { appearanceStops:[{position:0,color:'#ffb0b0',opacity:.95,size:19,glow:24},{position:.45,color:'#ff003c',opacity:.85,size:24,glow:22},{position:1,color:'#130006',opacity:0,size:7,glow:0}], blendMode:'lighter' },
     'appearance:soft-glow': { glow:24, edgeBlur:1.2, blendMode:'screen', textureContrast:.9 },
     'appearance:sharp-sparks': { appearanceMode:'brush', builtInBrush:'slash', glow:10, edgeBlur:0, sizeStart:10, sizeEnd:1, textureContrast:1.45 },
     'appearance:fade-in-out': { appearanceStops:[{position:0,color:'#ffcc66',opacity:0,size:4,glow:0},{position:.5,color:'#fff1a8',opacity:1,size:18,glow:18},{position:1,color:'#ff6600',opacity:0,size:2,glow:0}] },
     'appearance:bright-add': { blendMode:'lighter', glow:34, alphaStart:1, textureAlpha:1 },
     'appearance:white-fog': { engine:'gas', appearanceMode:'brush', builtInBrush:'smoke-puff', blendMode:'screen', appearanceStops:[{position:0,color:'#ffffff',opacity:.45,size:38,glow:3},{position:1,color:'#dce8ff',opacity:0,size:72,glow:0}] },
     'appearance:sooty-smoke': { engine:'gas', appearanceMode:'brush', builtInBrush:'smoke-puff', blendMode:'source-over', appearanceStops:[{position:0,color:'#2b221c',opacity:.5,size:28,glow:0},{position:1,color:'#050505',opacity:0,size:68,glow:0}] },
-    'colour:water': { appearanceStops:[{position:0,color:'#dffbff',opacity:.9,size:18,glow:10},{position:.5,color:'#38b6ff',opacity:.75,size:20,glow:12},{position:1,color:'#0356a6',opacity:0,size:5,glow:0}] },
-    'colour:evil': { appearanceStops:[{position:0,color:'#ffb0b0',opacity:.95,size:19,glow:24},{position:.45,color:'#ff003c',opacity:.85,size:24,glow:22},{position:1,color:'#130006',opacity:0,size:7,glow:0}], blendMode:'lighter' },
     'dynamics:slow-drift': { speedMin:.2, speedMax:1.2, gravity:-.002, spread:140, friction:.01, noiseGrain:.2 },
     'dynamics:burst-out': { speedMin:5, speedMax:14, spread:360, gravity:.01, lifetime:52, spawnRate:42 },
     'dynamics:rise-up': { angle:-90, spread:46, speedMin:1.4, speedMax:5.2, gravity:-.025, lifetime:96 },
