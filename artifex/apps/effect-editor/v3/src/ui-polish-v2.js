@@ -1,6 +1,7 @@
 import { editorState, onStateChange, updateActiveLayer } from './editor-state.js';
 
-const CARD_KEY = 'artifex-effect-editor-card-collapse-v2';
+const LEFT_CARD_KEY = 'artifex-effect-editor-left-card-collapse-v3';
+const BOTTOM_PANEL_KEY = 'artifex-effect-editor-bottom-panel-collapsed-v1';
 
 export function initUIPolishV2(showToast = () => {}) {
   injectStyles();
@@ -8,12 +9,14 @@ export function initUIPolishV2(showToast = () => {}) {
   compactWorkspaceButtons();
   iconizeLayerToolbar();
   installHelperCards(showToast);
-  installCollapseButtons();
+  installLeftCardCollapseButtons();
+  installBottomPanelCollapseButton();
   normalizeLeftPanelText();
   onStateChange(() => {
     compactWorkspaceButtons();
     iconizeLayerToolbar();
-    installCollapseButtons();
+    installLeftCardCollapseButtons();
+    installBottomPanelCollapseButton();
   });
 }
 
@@ -32,15 +35,19 @@ function injectStyles() {
     .helper-grid button { border-color:rgba(0,174,234,.25); background:linear-gradient(180deg,#252b31 0%,#1d2227 100%); }
     .layer-stack-toolbar button { width:32px; min-width:32px; padding-left:0; padding-right:0; font-size:14px; }
     .layer-stack-toolbar .layer-stack-hint { font-size:9px; }
-    .card-collapse-button { margin-left:auto; min-width:28px; min-height:25px; padding:2px 7px; border-radius:8px; font-size:11px; }
-    .collapsible-card.is-collapsed > :not(header), .bottom-tool-card.is-collapsed > :not(header) { display:none !important; }
-    .collapsible-card > header, .bottom-tool-card > header { display:flex; align-items:center; gap:8px; }
+    .card-collapse-button, .bottom-panel-collapse-button { margin-left:auto; min-width:32px; min-height:27px; padding:2px 7px; border-radius:8px; font-size:14px; text-align:center; }
+    .collapsible-card.is-collapsed > :not(header) { display:none !important; }
+    .collapsible-card > header, #bottom-panel > header { display:flex; align-items:center; gap:8px; }
+    #bottom-panel.is-collapsed > :not(header) { display:none !important; }
     #workspace-mode-cycle-button.bg-mode-dark { background:linear-gradient(180deg,#0a0909 0%,#000 100%); color:#f6e7c8; }
     #workspace-mode-cycle-button.bg-mode-white { background:linear-gradient(180deg,#fff 0%,#dedede 100%); color:#111; }
     #workspace-mode-cycle-button.bg-mode-underlay { background:linear-gradient(90deg,#ff3158 0%,#ffc64d 25%,#49d86e 50%,#2cc8ff 75%,#b25cff 100%); color:white; text-shadow:0 1px 2px rgba(0,0,0,.8); }
     #helper-cycle-button { min-width:72px; }
     #helper-cycle-button.guides-active { border-color:var(--module-accent) !important; box-shadow:0 0 14px var(--module-glow) !important; color:white; }
     #toggle-reference-button { display:none !important; }
+    .workspace-extra-controls { flex-wrap: nowrap !important; overflow-x: auto; gap: 7px !important; }
+    .workspace-extra-controls button, .workspace-extra-controls .reference-file-label { min-width: 42px; text-align:center; padding-left: 9px; padding-right: 9px; }
+    #low-performance-button, #low-performance-button-playback { min-width: 42px; }
   `;
   document.head.append(style);
 }
@@ -76,6 +83,30 @@ function compactWorkspaceButtons() {
     guides.title = 'Toggle grid and emitter guides.';
     guides.classList.toggle('guides-active', editorState.showGrid || editorState.showHelpers);
   }
+  const underlayLabel = document.querySelector('.reference-file-label');
+  if (underlayLabel) {
+    underlayLabel.childNodes.forEach((node) => { if (node.nodeType === Node.TEXT_NODE) node.textContent = ''; });
+    if (!underlayLabel.querySelector('.underlay-emoji-label')) {
+      underlayLabel.insertAdjacentHTML('afterbegin', '<span class="underlay-emoji-label">🖼️</span>');
+    }
+    underlayLabel.title = 'Load an image or video underlay.';
+  }
+  const perf = document.getElementById('low-performance-button');
+  if (perf) {
+    perf.textContent = '🐢';
+    perf.title = editorState.lowPerformanceMode ? 'Low Performance Mode is on.' : 'Toggle Low Performance Mode.';
+  }
+  const perfBottom = document.getElementById('low-performance-button-playback');
+  if (perfBottom) {
+    perfBottom.textContent = '🐢';
+    perfBottom.title = 'Toggle Low Performance Mode.';
+  }
+  const clearReference = document.getElementById('clear-reference-button');
+  if (clearReference) clearReference.textContent = '🗑️';
+  const frameBack = document.getElementById('reference-frame-back-button');
+  if (frameBack) frameBack.textContent = '◀';
+  const frameForward = document.getElementById('reference-frame-forward-button');
+  if (frameForward) frameForward.textContent = '▶';
   document.getElementById('toggle-reference-button')?.remove();
 }
 
@@ -130,9 +161,9 @@ function applyHelper(id) {
   if (patches[id]) updateActiveLayer(patches[id]);
 }
 
-function installCollapseButtons() {
-  const state = collapseState();
-  document.querySelectorAll('#left-panel .card, .bottom-tool-card').forEach((card, index) => {
+function installLeftCardCollapseButtons() {
+  const state = collapseState(LEFT_CARD_KEY);
+  document.querySelectorAll('#left-panel .card').forEach((card, index) => {
     const header = card.querySelector(':scope > header');
     if (!header || header.querySelector('.card-collapse-button')) return;
     card.classList.add('collapsible-card');
@@ -140,20 +171,43 @@ function installCollapseButtons() {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'card-collapse-button';
-    button.title = 'Collapse or expand this panel.';
-    button.textContent = state[key] ? '▸' : '▾';
-    card.classList.toggle('is-collapsed', Boolean(state[key]));
+    button.title = 'Collapse or expand this card.';
+    const collapsed = Boolean(state[key]);
+    button.textContent = collapsed ? '⏬' : '⏫';
+    card.classList.toggle('is-collapsed', collapsed);
     button.addEventListener('click', (event) => {
       event.stopPropagation();
-      const collapsed = !card.classList.contains('is-collapsed');
-      card.classList.toggle('is-collapsed', collapsed);
-      button.textContent = collapsed ? '▸' : '▾';
-      const next = collapseState();
-      next[key] = collapsed;
-      localStorage.setItem(CARD_KEY, JSON.stringify(next));
+      const nextCollapsed = !card.classList.contains('is-collapsed');
+      card.classList.toggle('is-collapsed', nextCollapsed);
+      button.textContent = nextCollapsed ? '⏬' : '⏫';
+      const next = collapseState(LEFT_CARD_KEY);
+      next[key] = nextCollapsed;
+      localStorage.setItem(LEFT_CARD_KEY, JSON.stringify(next));
     });
     header.append(button);
   });
+}
+
+function installBottomPanelCollapseButton() {
+  const panel = document.getElementById('bottom-panel');
+  const header = panel?.querySelector(':scope > header');
+  if (!panel || !header || document.getElementById('bottom-panel-collapse-button')) return;
+  const saved = localStorage.getItem(BOTTOM_PANEL_KEY) === 'true';
+  panel.classList.toggle('is-collapsed', saved);
+  const button = document.createElement('button');
+  button.id = 'bottom-panel-collapse-button';
+  button.type = 'button';
+  button.className = 'bottom-panel-collapse-button';
+  button.title = 'Collapse or expand the whole bottom panel.';
+  button.textContent = saved ? '⏬' : '⏫';
+  button.addEventListener('click', (event) => {
+    event.stopPropagation();
+    const collapsed = !panel.classList.contains('is-collapsed');
+    panel.classList.toggle('is-collapsed', collapsed);
+    button.textContent = collapsed ? '⏬' : '⏫';
+    localStorage.setItem(BOTTOM_PANEL_KEY, String(collapsed));
+  });
+  header.append(button);
 }
 
 function cardKey(card, index) {
@@ -161,8 +215,8 @@ function cardKey(card, index) {
   return title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 }
 
-function collapseState() {
-  try { return JSON.parse(localStorage.getItem(CARD_KEY) || '{}'); } catch { return {}; }
+function collapseState(key) {
+  try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch { return {}; }
 }
 
 function normalizeLeftPanelText() {
