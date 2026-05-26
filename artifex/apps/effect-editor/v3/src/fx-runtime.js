@@ -3,9 +3,10 @@ const textureCache = new Map();
 export class Particle {
   constructor(layer, burstAngle = null) {
     const emitterRotation = finite(layer.emitterRotation, 0);
-    const angle = degreesToRadians(emitterRotation + (burstAngle ?? randomRange(layer.angle - layer.spread / 2, layer.angle + layer.spread / 2)));
+    const angleDegrees = emitterRotation + (burstAngle ?? randomRange(layer.angle - layer.spread / 2, layer.angle + layer.spread / 2));
+    const angle = degreesToRadians(angleDegrees);
     const speed = randomRange(layer.speedMin, layer.speedMax);
-    const jitter = layer.engine === 'gas' || layer.engine === 'refraction' ? 28 : 7;
+    const jitter = ['gas', 'refraction', 'heatdistortion'].includes(layer.engine) ? 28 : 7;
     const emitterWidth = resolveEmitterWidth(layer);
     const widthOffset = randomRange(-emitterWidth / 2, emitterWidth / 2);
     const widthAngle = degreesToRadians(emitterRotation + 90);
@@ -16,21 +17,28 @@ export class Particle {
     this.vy = Math.sin(angle) * speed;
     this.age = 0;
     this.life = Math.max(4, randomRange(finite(layer.lifetimeMin, layer.lifetime * 0.75), finite(layer.lifetimeMax, layer.lifetime * 1.25)));
-    this.rotation = randomRange(0, Math.PI * 2);
-    this.rotationSpeed = randomRange(-0.05, 0.05);
     this.seed = Math.random();
+
+    if (layer.rotationMode === 'fixed') {
+      const jitterDegrees = finite(layer.rotationJitter, 5);
+      this.rotation = degreesToRadians(finite(layer.rotation, 0) + randomRange(-jitterDegrees, jitterDegrees));
+      this.rotationSpeed = 0;
+    } else {
+      this.rotation = randomRange(0, Math.PI * 2);
+      this.rotationSpeed = randomRange(-0.05, 0.05);
+    }
   }
 
   update(layer) {
     this.age += 1;
     this.vy += layer.gravity;
     applyTargetForces(this, layer);
-    if (layer.engine === 'gas' || layer.engine === 'refraction') {
+    if (['gas', 'refraction', 'heatdistortion'].includes(layer.engine)) {
       this.vx += Math.sin((this.age + this.seed * 30) * 0.04) * 0.025;
       this.vy *= 0.992;
       this.vx *= 0.995;
     }
-    if (layer.engine === 'ribbon' || layer.engine === 'lensflare') {
+    if (['ribbon', 'lensflare', 'true-lensflare'].includes(layer.engine)) {
       this.vx *= 0.988;
       this.vy *= 0.988;
     }
@@ -70,6 +78,14 @@ export function spawnParticlesForLayer(layer, densityScale = 1) {
     layer.spawnRate = Math.max(1, layer.spawnRate * 0.985);
     return particles;
   }
+  if (layer.engine === 'shockwave') {
+    if (Math.random() < Math.max(0.02, spawnRate / 24)) particles.push(new Particle(layer, 0));
+    return particles;
+  }
+  if (layer.engine === 'true-lensflare') {
+    if (Math.random() < Math.max(0.02, spawnRate / 36)) particles.push(new Particle(layer, 0));
+    return particles;
+  }
 
   for (let i = 0; i < total; i++) {
     particles.push(new Particle(layer));
@@ -87,7 +103,7 @@ export function drawParticle(ctx, particle, layer, scale) {
   const color = rgbaFromHex(ramp.color, 1);
   const x = particle.x * scale;
   const y = particle.y * scale;
-  const rotation = particle.rotation + degreesToRadians(finite(layer.rotation, 0));
+  const rotation = particle.rotation;
 
   ctx.save();
   ctx.globalCompositeOperation = layer.blendMode || defaultBlendMode(layer.engine);
@@ -101,10 +117,14 @@ export function drawParticle(ctx, particle, layer, scale) {
     ctx.filter = `blur(${Math.min(30, layer.edgeBlur) * scale}px)`;
   }
 
-  if (layer.appearanceMode === 'custom' && layer.textureDataUrl) {
+  if (layer.engine === 'electric-arc' || layer.engine === 'lightning') {
+    drawElectricArc(ctx, x, y, size, color, rotation, layer, particle, scale);
+  } else if (layer.engine === 'shockwave') {
+    drawShockwave(ctx, x, y, ramp, t, layer, scale);
+  } else if (layer.engine === 'true-lensflare') {
+    drawTrueLensFlare(ctx, x, y, ramp, t, layer, scale);
+  } else if (layer.appearanceMode === 'custom' && layer.textureDataUrl) {
     drawTextureParticle(ctx, x, y, size, color, rotation, layer);
-  } else if (layer.engine === 'lightning') {
-    drawSpark(ctx, x, y, size, color, rotation);
   } else if (layer.engine === 'projectile') {
     drawProjectile(ctx, x, y, size, color, rotation);
   } else if (layer.engine === 'ribbon') {
@@ -113,12 +133,39 @@ export function drawParticle(ctx, particle, layer, scale) {
     drawLensFlare(ctx, x, y, size, color, rotation);
   } else if (layer.engine === 'refraction') {
     drawRefractionDraft(ctx, x, y, size, color, rotation);
+  } else if (layer.engine === 'heatdistortion') {
+    drawHeatHazeParticle(ctx, x, y, size, color, rotation, layer, particle, scale);
   } else if (layer.appearanceMode === 'brush') {
     drawBuiltInBrush(ctx, x, y, size, color, rotation, layer.builtInBrush || 'spark');
   } else {
-    drawShape(ctx, x, y, size, color, rotation, layer.particleShape || 'circle', layer.engine === 'gas');
+    drawShape(ctx, x, y, size, color, rotation, layer.particleShape || 'circle', layer.engine === 'gas', layer);
   }
 
+  ctx.restore();
+}
+
+export function drawHeatDistortionLayer(ctx, layer, scale, time) {
+  if (!layer?.visible || layer.engine !== 'heatdistortion') return;
+  const x = finite(layer.emitterX, 640) * scale;
+  const y = finite(layer.emitterY, 360) * scale;
+  const strength = finite(layer.distortionStrength, 12) * scale;
+  const radius = finite(layer.sizeEnd, 140) * scale;
+  const strips = 18;
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  ctx.globalAlpha = 0.14;
+  ctx.strokeStyle = rgbaFromHex(layer.colorA || '#fff0b6', 0.55);
+  ctx.lineWidth = Math.max(1, 2 * scale);
+  for (let i = 0; i < strips; i++) {
+    const yy = y - radius + (i / Math.max(1, strips - 1)) * radius * 2;
+    const width = Math.cos((i / strips - 0.5) * Math.PI) * radius;
+    const offset = Math.sin(time * 0.004 + i * 1.7) * strength;
+    ctx.beginPath();
+    ctx.moveTo(x - width + offset, yy);
+    ctx.bezierCurveTo(x - width * 0.3 - offset, yy - 8 * scale, x + width * 0.25 + offset, yy + 8 * scale, x + width - offset, yy);
+    ctx.stroke();
+  }
   ctx.restore();
 }
 
@@ -169,10 +216,8 @@ function drawTextureParticle(ctx, x, y, size, color, rotation, layer) {
     drawBuiltInBrush(ctx, x, y, size, color, rotation, 'soft-dot');
     return;
   }
-
   const box = getTextureDrawBox(image, size, layer.textureFit || 'contain');
   const brush = renderBrushToCanvas(image, box.width, box.height, color, layer.tintMode || 'tint');
-
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(rotation);
@@ -187,9 +232,7 @@ function renderBrushToCanvas(image, width, height, color, tintMode) {
   const brushCtx = canvas.getContext('2d');
   brushCtx.clearRect(0, 0, canvas.width, canvas.height);
   brushCtx.drawImage(image, 0, 0, canvas.width, canvas.height);
-
   if (tintMode === 'original') return canvas;
-
   brushCtx.globalCompositeOperation = tintMode === 'alpha-mask' ? 'source-in' : 'source-atop';
   brushCtx.fillStyle = color;
   brushCtx.fillRect(0, 0, canvas.width, canvas.height);
@@ -241,7 +284,8 @@ function applyTargetForces(particle, layer) {
   }
 }
 
-function drawShape(ctx, x, y, size, color, rotation, shape, smoky) {
+function drawShape(ctx, x, y, size, color, rotation, shape, smoky, layer) {
+  if (shape === 'text') return drawTextShape(ctx, x, y, size, color, rotation, layer);
   if (shape === 'square') return drawSquare(ctx, x, y, size, color, rotation);
   if (shape === 'diamond') return drawDiamond(ctx, x, y, size, color, rotation);
   if (shape === 'star') return drawStar(ctx, x, y, size, color, rotation);
@@ -254,7 +298,7 @@ function drawBuiltInBrush(ctx, x, y, size, color, rotation, brush) {
   if (brush === 'smoke-puff') return drawSoftCircle(ctx, x, y, size * 1.25, color, true);
   if (brush === 'slash') return drawRibbonDot(ctx, x, y, size, color, rotation);
   if (brush === 'flare') return drawLensFlare(ctx, x, y, size, color, rotation);
-  return drawStar(ctx, x, y, size, color, rotation);
+  return drawSpark(ctx, x, y, size, color, rotation);
 }
 
 function drawSoftCircle(ctx, x, y, size, color, smoky) {
@@ -266,7 +310,6 @@ function drawSoftCircle(ctx, x, y, size, color, smoky) {
   ctx.beginPath();
   ctx.arc(x, y, size, 0, Math.PI * 2);
   ctx.fill();
-
   if (smoky) {
     ctx.fillStyle = color.replace(/[\d.]+\)$/u, '0.15)');
     for (let i = 0; i < 3; i++) {
@@ -309,12 +352,16 @@ function drawStar(ctx, x, y, size, color, rotation) {
 }
 
 function drawSpark(ctx, x, y, size, color, rotation) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
   ctx.strokeStyle = color;
   ctx.lineWidth = Math.max(1, size * 0.22);
   ctx.beginPath();
-  ctx.moveTo(x - Math.cos(rotation) * size, y - Math.sin(rotation) * size);
-  ctx.lineTo(x + Math.cos(rotation) * size, y + Math.sin(rotation) * size);
+  ctx.moveTo(-size, 0);
+  ctx.lineTo(size, 0);
   ctx.stroke();
+  ctx.restore();
 }
 
 function drawProjectile(ctx, x, y, size, color, rotation) {
@@ -335,6 +382,68 @@ function drawRibbonDot(ctx, x, y, size, color, rotation) {
   ctx.fill();
 }
 
+function drawTextShape(ctx, x, y, size, color, rotation, layer) {
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  ctx.font = `${layer.textWeight || '700'} ${Math.max(8, size)}px ${layer.textFont || 'Cinzel, Georgia, serif'}`;
+  ctx.textAlign = layer.textAlign || 'center';
+  ctx.textBaseline = 'middle';
+  const text = String(layer.textContent || 'AETHERA');
+  if (layer.textStroke) {
+    ctx.lineWidth = Math.max(0.5, finite(layer.textStrokeWidth, 2));
+    ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+    ctx.strokeText(text, 0, 0);
+  }
+  ctx.fillStyle = color;
+  ctx.fillText(text, 0, 0);
+}
+
+function drawElectricArc(ctx, x, y, size, color, rotation, layer, particle, scale) {
+  const length = finite(layer.arcLength, 82) * scale;
+  const jag = finite(layer.arcJaggedness, 18) * scale;
+  const segments = Math.max(4, Math.round(length / Math.max(10, 16 * scale)));
+  const flicker = finite(layer.arcFlicker, 0.7);
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(1, size * 0.25);
+  ctx.globalAlpha *= 0.75 + Math.random() * flicker * 0.35;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  for (let i = 1; i <= segments; i++) {
+    const px = (i / segments) * length;
+    const py = (Math.sin(i * 12.989 + particle.seed * 90 + particle.age * 0.7) * 0.5 + Math.random() - 0.5) * jag;
+    ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  const branches = Math.max(0, Math.round(finite(layer.arcBranches, 3)));
+  ctx.lineWidth *= 0.55;
+  for (let b = 0; b < branches; b++) {
+    const start = randomRange(length * 0.18, length * 0.82);
+    const side = Math.random() < 0.5 ? -1 : 1;
+    ctx.beginPath();
+    ctx.moveTo(start, Math.sin(start + particle.seed) * jag * 0.3);
+    ctx.lineTo(start + randomRange(12, 38) * scale, side * randomRange(12, 34) * scale);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawShockwave(ctx, x, y, ramp, t, layer, scale) {
+  const radius = lerp(4, finite(layer.shockwaveRadius, 245), easeOut(t)) * scale;
+  const thickness = Math.max(1, finite(layer.shockwaveThickness, 9) * scale * (1 - t * 0.6));
+  ctx.save();
+  ctx.strokeStyle = rgbaFromHex(ramp.color, Math.max(0, 1 - t));
+  ctx.lineWidth = thickness;
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.stroke();
+  const flash = finite(layer.shockwaveCenterFlash, 0.28) * (1 - t);
+  if (flash > 0.02) drawSoftCircle(ctx, x, y, radius * 0.18, rgbaFromHex(ramp.color, flash), false);
+  ctx.restore();
+}
+
 function drawLensFlare(ctx, x, y, size, color, rotation) {
   ctx.translate(x, y);
   ctx.rotate(rotation);
@@ -352,6 +461,34 @@ function drawLensFlare(ctx, x, y, size, color, rotation) {
   ctx.stroke();
 }
 
+function drawTrueLensFlare(ctx, x, y, ramp, t, layer, scale) {
+  const color = rgbaFromHex(ramp.color, 1);
+  const halo = finite(layer.flareHalo, 72) * scale;
+  const streak = finite(layer.flareStreakLength, 320) * scale;
+  const ghosts = Math.max(0, Math.round(finite(layer.flareGhosts, 4)));
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(degreesToRadians(finite(layer.rotation, 0)));
+  drawSoftCircle(ctx, 0, 0, halo * 0.55, color, false);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(1, 3 * scale);
+  ctx.beginPath();
+  ctx.moveTo(-streak / 2, 0);
+  ctx.lineTo(streak / 2, 0);
+  ctx.stroke();
+  ctx.lineWidth = Math.max(1, 1.5 * scale);
+  ctx.beginPath();
+  ctx.moveTo(0, -halo * 1.15);
+  ctx.lineTo(0, halo * 1.15);
+  ctx.stroke();
+  for (let i = 1; i <= ghosts; i++) {
+    const gx = (i / (ghosts + 1) - 0.5) * streak * 1.15;
+    ctx.globalAlpha *= 0.82;
+    drawSoftCircle(ctx, gx, 0, halo * (0.12 + i * 0.035), color, false);
+  }
+  ctx.restore();
+}
+
 function drawRefractionDraft(ctx, x, y, size, color, rotation) {
   ctx.translate(x, y);
   ctx.rotate(rotation);
@@ -360,6 +497,20 @@ function drawRefractionDraft(ctx, x, y, size, color, rotation) {
   ctx.beginPath();
   ctx.ellipse(0, 0, size * 0.65, size * 0.38, 0, 0, Math.PI * 2);
   ctx.stroke();
+}
+
+function drawHeatHazeParticle(ctx, x, y, size, color, rotation, layer, particle, scale) {
+  ctx.translate(x, y);
+  ctx.rotate(rotation + Math.sin(particle.age * 0.05) * 0.2);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(1, size * 0.03);
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath();
+    const yy = (i - 1) * size * 0.25;
+    ctx.moveTo(-size * 0.45, yy);
+    ctx.bezierCurveTo(-size * 0.12, yy - size * 0.15, size * 0.14, yy + size * 0.15, size * 0.45, yy);
+    ctx.stroke();
+  }
 }
 
 export function mixHex(a, b, t, alpha = 1) {
@@ -402,7 +553,7 @@ function hexToRgb(hex) {
 }
 
 function defaultBlendMode(engine) {
-  return engine === 'gas' || engine === 'refraction' ? 'source-over' : 'lighter';
+  return ['gas', 'refraction', 'heatdistortion'].includes(engine) ? 'source-over' : 'lighter';
 }
 
 function finite(value, fallback) {
