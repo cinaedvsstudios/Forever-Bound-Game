@@ -7,6 +7,7 @@ import {
   onStateChange
 } from './editor-state.js';
 import {
+  drawHeatDistortionLayer,
   drawParticle,
   spawnParticlesForLayer
 } from './fx-runtime.js';
@@ -23,6 +24,7 @@ let referenceImage = null;
 let referenceImageSource = '';
 let lowPerfFrameSkip = false;
 let lowPerfRedrawSkip = false;
+let renderTime = 0;
 
 export function initRenderer() {
   canvas = document.getElementById('fx-canvas');
@@ -72,6 +74,7 @@ export function takeSnapshot() {
 }
 
 function tick(now) {
+  renderTime = now;
   const delta = Math.max(1, now - lastFrame);
   lastFrame = now;
   const fps = 1000 / delta;
@@ -142,6 +145,10 @@ function draw() {
 
   drawStageBackground(scale);
   drawUnderlayMedia(scale);
+
+  for (const layer of editorState.composition.layers) {
+    drawHeatDistortionLayer(ctx, layer, scale, renderTime);
+  }
 
   if (editorState.showGrid) drawGrid(scale);
 
