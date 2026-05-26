@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Artifex Project Editor v0.1.9 MENU - Flatplan</title>
+  <title>Artifex Project Editor v0.1.10 INSPECTOR - Flatplan</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="stylesheet" href="./src/project-theme-overrides.css?v=0.1.9-menu">
+  <link rel="stylesheet" href="./src/project-theme-overrides.css?v=0.1.10-inspector">
   <style>
     .project-menu summary::-webkit-details-marker { display: none; }
     .project-menu details[open] summary { color: #f4c76a; background: rgba(90, 58, 18, 0.42); }
@@ -32,7 +32,7 @@
     </nav>
 
     <div class="flex items-center gap-2 flex-shrink-0">
-      <span id="projectEditorVersionBadge" data-project-version-badge class="text-[10px] font-mono border border-projectGold/40 text-projectGoldGlow px-2 py-1 rounded bg-accentDark/40">v0.1.9 MENU</span>
+      <span id="projectEditorVersionBadge" data-project-version-badge class="text-[10px] font-mono border border-projectGold/40 text-projectGoldGlow px-2 py-1 rounded bg-accentDark/40">v0.1.10 INSPECTOR</span>
       <button id="zoomInBtn" class="w-8 h-8 hover:bg-accentDark/50 text-projectGoldGlow border border-projectGold/30 flex items-center justify-center rounded transition" title="Zoom In"><i data-lucide="plus" class="w-4 h-4"></i></button>
       <button id="resetViewportBtn" class="w-8 h-8 hover:bg-accentDark/50 text-projectGoldGlow border border-projectGold/30 flex items-center justify-center rounded transition" title="Recenter View"><i data-lucide="crosshair" class="w-4 h-4"></i></button>
       <button id="zoomOutBtn" class="w-8 h-8 hover:bg-accentDark/50 text-projectGoldGlow border border-projectGold/30 flex items-center justify-center rounded transition" title="Zoom Out"><i data-lucide="minus" class="w-4 h-4"></i></button>
@@ -49,12 +49,11 @@
       <div id="stitcherWorkspace" class="hidden absolute inset-0 bg-obsidian z-20"></div>
       <div id="buildPrepWorkspace" class="hidden absolute inset-0 bg-obsidian z-20"></div>
       <div id="flatplanCanvas" class="w-full h-full relative cursor-default infinite-grid overflow-hidden flex-1 touch-none">
-        <div class="absolute top-4 left-4 z-30 bg-cardDark/80 backdrop-blur-md border border-projectGold/40 rounded-lg p-3 shadow-card-glow max-w-md pointer-events-none"><div class="flex items-center gap-2 text-projectGoldGlow font-bold text-sm"><i data-lucide="map" class="w-4 h-4"></i><span>Project Editor Split Shell</span></div><p class="text-xs text-zinc-500 mt-2 leading-relaxed">Left-drag nodes to move them. Scrollwheel-click / third mouse button drag pans. Mousewheel zooms.</p></div>
         <div id="canvasViewport" class="absolute inset-0 origin-top-left select-none will-change-transform" style="transform: translate(0px, 0px) scale(1);"><svg id="svgEdgeLayer" class="absolute inset-0 pointer-events-none w-[5000px] h-[5000px]"></svg><div id="nodesContainer" class="absolute inset-0 pointer-events-none"></div></div>
       </div>
     </main>
   </div>
-  <script type="module" src="./src/project-app.v7.js?v=0.1.9-menu"></script>
+  <script type="module" src="./src/project-app.v7.js?v=0.1.10-inspector"></script>
   <script>window.addEventListener('DOMContentLoaded', () => { if (window.lucide) window.lucide.createIcons(); });</script>
 </body>
 </html>
