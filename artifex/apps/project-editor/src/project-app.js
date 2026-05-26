@@ -1,28 +1,23 @@
 import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js';
-import { createDefaultProjectState } from './data/project-defaults.js';
-import { listCatalogItems } from './data/flatplan-catalog.js';
+import { createProjectEditorStateManager } from './project-state.js';
 import { getTypeStyle } from './data/type-styles.js';
 
 // Project Editor app bootstrap.
 //
-// Step 2 split note:
-// The new split shell now imports default data, Flatplan Catalog seed data,
-// and type styles from real modules. This is still intentionally small: state,
-// canvas interactions, renderer, Stitcher, Build Prep, and IO will be promoted
-// into dedicated modules in later steps.
+// Step 3 split note:
+// The split shell now uses ProjectEditorStateManager for project, logic, layout,
+// registry, selection, and localStorage-backed persistence. Renderer, canvas
+// controls, IO, Stitcher, and Build Prep will continue moving out in later steps.
 
 applyProjectTheme();
 
-const projectEditorState = createDefaultProjectState();
-projectEditorState.catalog = {
-  placeholders: listCatalogItems('placeholders'),
-  realAssets: listCatalogItems('realAssets')
-};
+const appState = createProjectEditorStateManager();
 
 window.ArtifexProjectTheme = PROJECT_THEME;
 window.applyProjectTheme = applyProjectTheme;
 window.getProjectThemeTailwindConfig = getProjectThemeTailwindConfig;
-window.ArtifexProjectEditorState = projectEditorState;
+window.ArtifexProjectEditorState = appState.state;
+window.ProjectEditorStateManager = appState;
 
 const versionTargets = [
   '#projectEditorVersionBadge',
@@ -31,7 +26,7 @@ const versionTargets = [
 
 for (const selector of versionTargets) {
   const el = document.querySelector(selector);
-  if (el) el.textContent = 'v0.1.2 SPLIT-DATA';
+  if (el) el.textContent = 'v0.1.3 SPLIT-STATE';
 }
 
 function escapeHtml(value) {
@@ -43,12 +38,20 @@ function escapeHtml(value) {
     .replaceAll("'", '&#039;');
 }
 
+function refreshSplitShell() {
+  renderCatalog();
+  renderGraphPreview();
+  renderJsonPreview();
+  renderInspectorPreview();
+  if (window.lucide) window.lucide.createIcons();
+}
+
 function renderCatalog() {
   const sidebar = document.getElementById('sidebarAccordion');
   if (!sidebar) return;
 
-  const placeholders = projectEditorState.catalog.placeholders;
-  const realAssets = projectEditorState.catalog.realAssets;
+  const placeholders = appState.catalog.placeholders;
+  const realAssets = appState.catalog.realAssets;
 
   const placeholderCards = placeholders.map((item) => {
     const style = getTypeStyle(item.type);
@@ -92,6 +95,14 @@ function renderCatalog() {
       </div>
     </div>
   `;
+
+  sidebar.querySelectorAll('[data-catalog-type]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const type = button.dataset.catalogType || 'Station';
+      appState.addNode({ type, position: { x: 120 + appState.logic.nodes.length * 24, y: 120 + appState.logic.nodes.length * 18 } });
+      refreshSplitShell();
+    });
+  });
 }
 
 function renderGraphPreview() {
@@ -103,13 +114,13 @@ function renderGraphPreview() {
   svgLayer.innerHTML = '';
 
   const nodeSize = { width: 200, height: 80 };
-  const layoutNodes = projectEditorState.layout.nodes;
-  const logicNodes = projectEditorState.logic.nodes;
+  const layoutNodes = appState.layout.nodes;
+  const logicNodes = appState.logic.nodes;
 
-  for (const route of projectEditorState.logic.routes) {
+  for (const route of appState.logic.routes) {
     const sourceLayout = layoutNodes.find((node) => node.id === route.source);
     const targetLayout = layoutNodes.find((node) => node.id === route.target);
-    const routeLayout = projectEditorState.layout.routes.find((item) => item.id === route.id);
+    const routeLayout = appState.layout.routes.find((item) => item.id === route.id);
     if (!sourceLayout || !targetLayout) continue;
 
     const sx = sourceLayout.position.x + nodeSize.width / 2;
@@ -123,7 +134,13 @@ function renderGraphPreview() {
     path.setAttribute('stroke', routeLayout?.visual?.lineColor || PROJECT_THEME.accent.primary);
     path.setAttribute('stroke-width', route.type === 'Quest' ? '5' : '3');
     path.setAttribute('opacity', '0.9');
+    path.style.pointerEvents = 'auto';
+    path.style.cursor = 'pointer';
     if (routeLayout?.visual?.animated) path.setAttribute('class', 'edge-path');
+    path.addEventListener('click', () => {
+      appState.selectRoute(route.id);
+      refreshSplitShell();
+    });
     svgLayer.appendChild(path);
   }
 
@@ -131,8 +148,9 @@ function renderGraphPreview() {
     const logicNode = logicNodes.find((node) => node.id === layoutNode.id);
     if (!logicNode) continue;
     const style = getTypeStyle(logicNode.type);
+    const selected = appState.selectedNodeId === logicNode.id;
     const nodeEl = document.createElement('div');
-    nodeEl.className = 'absolute w-[200px] h-[80px] rounded-lg border-2 border-projectGold/40 bg-cardDark/90 backdrop-blur-sm pointer-events-auto transition-shadow duration-300 flex flex-col p-2 select-none shadow-card-glow';
+    nodeEl.className = `absolute w-[200px] h-[80px] rounded-lg border-2 ${selected ? 'neon-card-active' : 'border-projectGold/40'} bg-cardDark/90 backdrop-blur-sm pointer-events-auto transition-shadow duration-300 flex flex-col p-2 select-none shadow-card-glow cursor-pointer`;
     nodeEl.style.transform = `translate(${layoutNode.position.x}px, ${layoutNode.position.y}px)`;
     nodeEl.innerHTML = `
       <div class="flex items-center justify-between mb-1">
@@ -144,6 +162,10 @@ function renderGraphPreview() {
         <span class="text-[8px] text-zinc-500 truncate block">${escapeHtml(logicNode.properties.description)}</span>
       </div>
     `;
+    nodeEl.addEventListener('click', () => {
+      appState.selectNode(logicNode.id);
+      refreshSplitShell();
+    });
     nodesContainer.appendChild(nodeEl);
   }
 }
@@ -160,23 +182,89 @@ function renderJsonPreview() {
   panel.className = 'absolute bottom-4 right-4 z-30 w-[360px] max-h-[280px] overflow-hidden bg-cardDark/85 backdrop-blur-md border border-projectGold/30 rounded-lg shadow-card-glow';
   panel.innerHTML = `
     <div class="flex items-center justify-between px-3 py-2 border-b border-[#2d2d42]">
-      <span class="text-xs font-bold text-projectGoldGlow">Split Data Preview</span>
-      <span class="text-[9px] font-mono text-zinc-500">logic/layout seed</span>
+      <span class="text-xs font-bold text-projectGoldGlow">Split State Preview</span>
+      <button id="resetSplitStateBtn" class="text-[9px] font-mono text-zinc-500 hover:text-projectGoldGlow transition">reset</button>
     </div>
-    <pre class="p-3 text-[9px] leading-relaxed text-emerald-300 overflow-auto max-h-[220px]">${escapeHtml(JSON.stringify({ logic: projectEditorState.logic, layout: projectEditorState.layout }, null, 2))}</pre>
+    <pre class="p-3 text-[9px] leading-relaxed text-emerald-300 overflow-auto max-h-[220px]">${escapeHtml(JSON.stringify(appState.exportSnapshot(), null, 2))}</pre>
+  `;
+  canvas.appendChild(panel);
+
+  panel.querySelector('#resetSplitStateBtn')?.addEventListener('click', () => {
+    appState.resetToDefaults();
+    refreshSplitShell();
+  });
+}
+
+function renderInspectorPreview() {
+  const existing = document.getElementById('splitInspectorPreview');
+  if (existing) existing.remove();
+
+  const canvas = document.getElementById('flatplanCanvas');
+  if (!canvas) return;
+
+  const selectedNode = appState.selectedNodeId ? appState.getNode(appState.selectedNodeId) : null;
+  const selectedRoute = appState.selectedEdgeId ? appState.getRoute(appState.selectedEdgeId) : null;
+
+  const panel = document.createElement('div');
+  panel.id = 'splitInspectorPreview';
+  panel.className = 'absolute top-4 right-4 z-30 w-[300px] bg-cardDark/85 backdrop-blur-md border border-projectGold/30 rounded-lg shadow-card-glow';
+
+  if (selectedNode) {
+    panel.innerHTML = `
+      <div class="px-3 py-2 border-b border-[#2d2d42] text-xs font-bold text-projectGoldGlow">Selected Node</div>
+      <div class="p-3 space-y-2">
+        <div class="text-[10px] font-mono text-zinc-500">${escapeHtml(selectedNode.id)} · ${escapeHtml(selectedNode.type)}</div>
+        <label class="block text-[10px] font-mono text-zinc-500">NAME</label>
+        <input id="splitNodeNameInput" value="${escapeHtml(selectedNode.properties.name)}" class="w-full bg-black/40 border border-[#2d2d42] rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none">
+        <label class="block text-[10px] font-mono text-zinc-500">DESCRIPTION</label>
+        <textarea id="splitNodeDescInput" rows="3" class="w-full bg-black/40 border border-[#2d2d42] rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none">${escapeHtml(selectedNode.properties.description)}</textarea>
+        <button id="deleteSplitNodeBtn" class="w-full bg-red-950/40 border border-red-500/30 hover:bg-red-900/50 text-red-200 px-3 py-1.5 rounded text-xs transition">Delete Node</button>
+      </div>
+    `;
+    canvas.appendChild(panel);
+    panel.querySelector('#splitNodeNameInput')?.addEventListener('input', (event) => {
+      appState.updateNode(selectedNode.id, { properties: { name: event.target.value } });
+      renderGraphPreview();
+      renderJsonPreview();
+    });
+    panel.querySelector('#splitNodeDescInput')?.addEventListener('input', (event) => {
+      appState.updateNode(selectedNode.id, { properties: { description: event.target.value } });
+      renderGraphPreview();
+      renderJsonPreview();
+    });
+    panel.querySelector('#deleteSplitNodeBtn')?.addEventListener('click', () => {
+      appState.deleteNode(selectedNode.id);
+      refreshSplitShell();
+    });
+    return;
+  }
+
+  if (selectedRoute) {
+    panel.innerHTML = `
+      <div class="px-3 py-2 border-b border-[#2d2d42] text-xs font-bold text-projectGoldGlow">Selected Route</div>
+      <div class="p-3 space-y-2 text-xs text-zinc-400">
+        <div class="text-[10px] font-mono text-zinc-500">${escapeHtml(selectedRoute.id)}</div>
+        <div>${escapeHtml(selectedRoute.source)} → ${escapeHtml(selectedRoute.target)}</div>
+        <div>Type: ${escapeHtml(selectedRoute.type)}</div>
+      </div>
+    `;
+    canvas.appendChild(panel);
+    return;
+  }
+
+  panel.innerHTML = `
+    <div class="px-3 py-2 border-b border-[#2d2d42] text-xs font-bold text-projectGoldGlow">Inspector</div>
+    <div class="p-3 text-xs text-zinc-500 leading-relaxed">Click a node or route to inspect it. Click a catalog placeholder to create a new node. Changes are now owned by ProjectEditorStateManager and persist to localStorage.</div>
   `;
   canvas.appendChild(panel);
 }
 
 function initProjectEditorSplitShell() {
-  renderCatalog();
-  renderGraphPreview();
-  renderJsonPreview();
-  if (window.lucide) window.lucide.createIcons();
-  console.info('[Artifex Project Editor] Split data modules loaded:', {
-    nodes: projectEditorState.logic.nodes.length,
-    routes: projectEditorState.logic.routes.length,
-    catalog: projectEditorState.catalog.placeholders.length + projectEditorState.catalog.realAssets.length
+  refreshSplitShell();
+  console.info('[Artifex Project Editor] Split state manager loaded:', {
+    nodes: appState.logic.nodes.length,
+    routes: appState.logic.routes.length,
+    catalog: appState.catalog.placeholders.length + appState.catalog.realAssets.length
   });
 }
 
