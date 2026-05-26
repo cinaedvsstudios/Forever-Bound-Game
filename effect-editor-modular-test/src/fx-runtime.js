@@ -54,16 +54,16 @@ export class Particle {
   }
 }
 
-export function spawnParticlesForLayer(layer) {
+export function spawnParticlesForLayer(layer, densityScale = 1) {
   if (!layer.visible) return [];
-  const spawnRate = Math.max(0, Number(layer.spawnRate) || 0);
+  const spawnRate = Math.max(0, (Number(layer.spawnRate) || 0) * Math.max(0, densityScale));
   const count = Math.floor(spawnRate / 4);
   const chance = (spawnRate / 4) - count;
   const total = count + (Math.random() < chance ? 1 : 0);
 
   const particles = [];
   if (layer.engine === 'ring') {
-    const ringTotal = Math.max(24, Math.round(spawnRate));
+    const ringTotal = Math.max(12, Math.round(spawnRate));
     for (let i = 0; i < ringTotal; i++) {
       particles.push(new Particle(layer, (360 / ringTotal) * i));
     }
