@@ -1,5 +1,6 @@
 (() => {
-  const VERSION = 'v0.16-transform-core';
+  const VERSION = 'v0.29-title-cache-sync';
+  document.title = `Artifex Scene Editor · ${VERSION}`;
   const SETTINGS_KEY = 'artifex.sceneEditor.settings.v1';
   const WORKING_COPY_KEY = 'artifex.sceneEditor.workingCopy.v1';
   const DOWNLOAD_KEY = 'artifex.sceneEditor.lastDownload.v1';
@@ -293,7 +294,7 @@
     saveWorkingCopySoon('work-area');
   }
   function titleBar() {
-    return `<header class="top-bar"><div class="brand" data-tip="Artifex Scene Editor"><img class="brand-logo" src="${brandLogo}" alt="Artifex logo"><img class="brand-title" src="${brandTitle}" alt="Artifex"></div><button class="btn manual-local-save" id="manualLocalSave" type="button" data-tip="Force save to local browser backup.">💾</button><span class="title-divider"></span><div class="import-menu ${importOpen ? 'is-open' : ''}" id="importMenu"><button class="import-button" id="importBtn" type="button" data-tip="Import JSON from hard drive, URL, or template.">Import ▾</button><div class="import-dropdown"><label class="file-button">From hard drive<input class="hidden-file" id="jsonFile" type="file" accept=".json,application/json"></label><button class="btn" id="importUrl" type="button">From URL</button><button class="btn" id="importTemplate" type="button">From templates</button></div></div><button class="btn" id="downloadJson" type="button" data-tip="Download the current JSON.">Download JSON</button><button class="btn" id="blankBtn" type="button" data-tip="Clear to blank editor.">Blank Screen</button><span class="tooltip-status" id="hoverStatus">${esc(tip)}</span><span class="status ok">${esc(status)}</span><span class="top-spacer"></span><a class="btn" href="../../">Portal</a></header>`;
+    return `<header class="top-bar"><div class="brand" data-tip="Scene Editor · ${VERSION}"><img class="brand-logo" src="${brandLogo}" alt="Artifex logo"><span class="brand-title-stack" style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;line-height:1;"><img class="brand-title" src="${brandTitle}" alt="Artifex"><span class="brand-subtitle" style="color:#f1dcc2;font-size:10px;letter-spacing:.08em;text-transform:uppercase;text-shadow:0 0 8px rgba(195,0,255,.45);white-space:nowrap;">Scene Editor · ${VERSION}</span></span></div><button class="btn manual-local-save" id="manualLocalSave" type="button" data-tip="Force save to local browser backup.">💾</button><span class="title-divider"></span><div class="import-menu ${importOpen ? 'is-open' : ''}" id="importMenu"><button class="import-button" id="importBtn" type="button" data-tip="Import JSON from hard drive, URL, or template.">Import ▾</button><div class="import-dropdown"><label class="file-button">From hard drive<input class="hidden-file" id="jsonFile" type="file" accept=".json,application/json"></label><button class="btn" id="importUrl" type="button">From URL</button><button class="btn" id="importTemplate" type="button">From templates</button></div></div><button class="btn" id="downloadJson" type="button" data-tip="Download the current JSON.">Download JSON</button><button class="btn" id="blankBtn" type="button" data-tip="Clear to blank editor.">Blank Screen</button><span class="tooltip-status" id="hoverStatus">${esc(tip)}</span><span class="status ok">${esc(status)}</span><span class="top-spacer"></span><a class="btn" href="../../">Portal</a></header>`;
   }
   function card(id, title, body, tone = '') {
     const isCollapsed = collapsed[id];
@@ -465,6 +466,8 @@
   function duplicateSelected() { const i=real(); if(!i)return; const c=structuredClone(i); c.id=`${i.id||'item'}_copy_${Math.random().toString(36).slice(2,5)}`; c.name=`${i.name||i.id||'Item'} Copy`; c.x=clamp(Number(i.x||0)+3,0,100); c.y=clamp(Number(i.y||0)+3,0,100); c.layer=Number(i.layer||0)+1; scene[key(selectedKind)].push(c); selectedId=c.id; context=null; toast('Object duplicated'); saveWorkingCopySoon('duplicate'); render(); }
   function removeSelected() { if(!selectedId)return; scene[key(selectedKind)]=(scene[key(selectedKind)]||[]).filter(i=>i.id!==selectedId); const first=allItems()[0]; selectedKind=first?.kind||'element'; selectedId=first?.id||''; context=null; toast('Object deleted'); saveWorkingCopySoon('delete'); render(); }
   window.ArtifexSceneEditorCore = {
+    version: VERSION,
+    getVersion: () => VERSION,
     getScene: () => scene,
     getSelectedId: () => selectedId,
     getSelectedKind: () => selectedKind,
