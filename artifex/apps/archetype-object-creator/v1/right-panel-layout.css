@@ -1,0 +1,205 @@
+/* Archetype Object Creator right-panel layout override.
+   This keeps the main identity/visual/collision form on the left and moves
+   actions, flags, and validation into a right-side tabbed inspector. */
+
+.object-creator-shell {
+  display: grid;
+  grid-template-columns: 286px 7px minmax(420px, 1fr) minmax(310px, 360px);
+  min-width: 0;
+}
+
+.compact-left-panel {
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  padding: 10px;
+}
+
+.compact-left-panel .card {
+  margin-bottom: 10px;
+  padding: 11px;
+}
+
+.compact-left-panel label {
+  margin: 8px 0;
+}
+
+.compact-left-panel input,
+.compact-left-panel select {
+  padding: 8px 9px;
+}
+
+.object-workspace-column {
+  min-width: 0;
+}
+
+.right-panel {
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: rgba(23, 18, 16, 0.96);
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.55);
+}
+
+.right-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 50px;
+  padding: 12px 12px 8px;
+  border-bottom: 1px solid rgba(56, 42, 33, 0.7);
+}
+
+.right-panel-header h2 {
+  margin: 0;
+  color: var(--gold-bright);
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 13px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.right-panel-header #action-count {
+  flex: 0 0 auto;
+  color: var(--red-strong);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.right-tab-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.right-tabbar {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(56, 42, 33, 0.72);
+  background: rgba(15, 12, 11, 0.74);
+  scrollbar-width: thin;
+}
+
+.right-tabbar label {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: #100c0b;
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+#right-tab-actions:checked ~ .right-tabbar label[for='right-tab-actions'],
+#right-tab-portraits:checked ~ .right-tabbar label[for='right-tab-portraits'],
+#right-tab-flags:checked ~ .right-tabbar label[for='right-tab-flags'],
+#right-tab-validation:checked ~ .right-tabbar label[for='right-tab-validation'] {
+  border-color: var(--red);
+  color: white;
+  background: rgba(216, 69, 69, 0.20);
+  box-shadow: 0 0 14px rgba(216, 69, 69, 0.22);
+}
+
+.right-panel-body {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+}
+
+.right-tab-panel {
+  display: none;
+}
+
+#right-tab-actions:checked ~ .right-panel-body [data-right-panel='actions'],
+#right-tab-portraits:checked ~ .right-panel-body [data-right-panel='portraits'],
+#right-tab-flags:checked ~ .right-panel-body [data-right-panel='flags'],
+#right-tab-validation:checked ~ .right-panel-body [data-right-panel='validation'] {
+  display: block;
+}
+
+.right-tab-panel h3 {
+  margin: 0 0 7px;
+  color: var(--gold-bright);
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.vertical-chip-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.vertical-chip-list .action-chip {
+  width: 100%;
+  text-align: left;
+  justify-content: flex-start;
+}
+
+.right-panel .check-grid {
+  gap: 8px;
+}
+
+.right-panel pre {
+  max-height: none;
+  min-height: 240px;
+}
+
+.bottom-resizer,
+.bottom-panel {
+  display: none !important;
+}
+
+@media (max-width: 1180px) {
+  .object-creator-shell {
+    grid-template-columns: 270px 7px minmax(360px, 1fr) 320px;
+  }
+}
+
+@media (max-width: 980px) {
+  .object-creator-shell {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    height: auto;
+    min-height: calc(100vh - 116px);
+  }
+
+  .compact-left-panel,
+  .right-panel {
+    width: 100%;
+    max-width: none;
+    min-height: auto;
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .side-resizer {
+    display: none;
+  }
+
+  .object-workspace-column {
+    min-height: 420px;
+  }
+
+  .right-panel {
+    min-height: 360px;
+    border-top: 1px solid var(--border);
+  }
+}
