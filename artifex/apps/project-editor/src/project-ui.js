@@ -1,13 +1,22 @@
 // Artifex Project Editor UI workspace module
-// Step 7 of the Project Editor real split.
-//
-// Owns catalog/sidebar UI, inspector UI, JSON preview, workspace switching,
-// and top toolbar wiring for the split shell.
+// Integration pass: catalog/sidebar UI, inspector UI, JSON preview, workspace
+// switching, top toolbar wiring, shared Asset Browser shell, and Missing Setup Wizard.
 
 const UI_STORAGE_KEYS = Object.freeze({
   splitStatePreviewVisible: 'artifex_project_split_state_preview_visible',
-  inspectorPosition: 'artifex_project_inspector_position'
+  inspectorPosition: 'artifex_project_inspector_position',
+  assetBrowserMode: 'artifex_project_asset_browser_mode'
 });
+
+const LIBRARY_MODES = Object.freeze([
+  { id: 'quests', label: 'Quest Library', icon: 'scroll-text', type: 'quest', file: 'quests/quest-index.json', sourceModule: 'quest-builder' },
+  { id: 'sidequests', label: 'Side Quest Library', icon: 'git-branch', type: 'sidequest', file: 'sidequests/sidequest-index.json', sourceModule: 'quest-builder' },
+  { id: 'scenes-screens', label: 'Scenes/Screens Library', icon: 'layout-template', type: 'scene-screen', file: 'scenes/scene-index.json + screens/screen-index.json', sourceModule: 'scene-editor' },
+  { id: 'puzzles', label: 'Puzzle Library', icon: 'puzzle', type: 'puzzle', file: 'puzzles/puzzle-index.json', sourceModule: 'puzzle-library' },
+  { id: 'archetype-objects', label: 'Archetype Object Library', icon: 'boxes', type: 'archobj', file: 'archetypes/object-index.json', sourceModule: 'archetype-object-creator' },
+  { id: 'archetype-effects', label: 'Archetype Effect Library', icon: 'sparkles', type: 'archeffect', file: 'archetypes/effect-index.json', sourceModule: 'effect-editor' },
+  { id: 'assets', label: 'Asset Browser', icon: 'image', type: 'asset', file: 'assets/asset-index.json', sourceModule: 'asset-library' }
+]);
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -55,6 +64,10 @@ function writeJSONPreference(key, value) {
   }
 }
 
+function getById(id) {
+  return document.getElementById(id);
+}
+
 export function createProjectUI({
   stateManager,
   getTypeStyle,
@@ -67,16 +80,19 @@ export function createProjectUI({
 }) {
   let splitStatePreviewVisible = readBooleanPreference(UI_STORAGE_KEYS.splitStatePreviewVisible, false);
   let inspectorPosition = readJSONPreference(UI_STORAGE_KEYS.inspectorPosition, { top: 16, right: 16 });
+  let assetBrowserMode = globalThis.localStorage?.getItem(UI_STORAGE_KEYS.assetBrowserMode) || 'assets';
+  let menuOutsideListenerAttached = false;
 
   const refs = {
-    sidebar: document.getElementById('sidebarAccordion'),
-    canvas: document.getElementById('flatplanCanvas'),
-    workspaceLabel: document.getElementById('activeWorkspaceName'),
-    workspaceStage: document.getElementById('workspaceStage'),
-    flatplanStage: document.getElementById('flatplanCanvas'),
-    manifestStage: document.getElementById('manifestWorkspace'),
-    stitcherStage: document.getElementById('stitcherWorkspace'),
-    buildPrepStage: document.getElementById('buildPrepWorkspace')
+    sidebar: getById('sidebarAccordion'),
+    canvas: getById('flatplanCanvas'),
+    workspaceLabel: getById('activeWorkspaceName'),
+    flatplanStage: getById('flatplanCanvas'),
+    manifestStage: getById('manifestWorkspace'),
+    stitcherStage: getById('stitcherWorkspace'),
+    buildPrepStage: getById('buildPrepWorkspace'),
+    assetBrowserStage: getById('assetBrowserWorkspace'),
+    wizardStage: getById('wizardWorkspace')
   };
 
   function renderCatalog() {
@@ -145,13 +161,13 @@ export function createProjectUI({
   }
 
   function updateSplitPreviewMenuLabel() {
-    const toggle = document.getElementById('toggleSplitStatePreview');
+    const toggle = getById('toggleSplitStatePreview');
     if (!toggle) return;
     toggle.textContent = splitStatePreviewVisible ? 'Hide Split State Preview' : 'Show Split State Preview';
   }
 
   function renderJsonPreview() {
-    const existing = document.getElementById('splitDataPreview');
+    const existing = getById('splitDataPreview');
     if (existing) existing.remove();
     updateSplitPreviewMenuLabel();
     if (!refs.canvas || !splitStatePreviewVisible) return;
@@ -266,7 +282,7 @@ export function createProjectUI({
   }
 
   function renderInspectorPreview() {
-    const existing = document.getElementById('splitInspectorPreview');
+    const existing = getById('splitInspectorPreview');
     if (existing) existing.remove();
     if (!refs.canvas) return;
 
@@ -348,7 +364,7 @@ export function createProjectUI({
         <div class="max-w-4xl mx-auto space-y-6">
           <div class="border-b border-[#2d2d42] pb-4">
             <h2 class="text-xl font-bold tracking-wide text-zinc-100">Project Manifest</h2>
-            <p class="text-xs text-zinc-500">Global project setup, start screen, and enabled modules.</p>
+            <p class="text-xs text-zinc-500">Global project setup, start screen, enabled modules, and project package references.</p>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-cardDark border border-[#2d2d42] rounded-lg p-4 space-y-3">
@@ -373,6 +389,128 @@ export function createProjectUI({
     `;
   }
 
+  function getWizardChecks() {
+    const nodeIds = new Set(stateManager.logic.nodes.map((node) => node.id));
+    const routeProblems = stateManager.logic.routes.filter((route) => !nodeIds.has(route.source) || !nodeIds.has(route.target));
+    const linkedScenes = stateManager.logic.nodes.filter((node) => node.properties?.linkedSceneId);
+    const startScreenOk = nodeIds.has(stateManager.project.startScreen) || Boolean(stateManager.project.startScreen);
+    return [
+      { name: 'Project manifest', detail: 'project.json / manifest state exists', pass: Boolean(stateManager.project?.projectId), owner: 'Creation Guide' },
+      { name: 'Input map', detail: 'input-map.json should be generated by Creation Guide', pass: false, owner: 'Creation Guide / Project Settings' },
+      { name: 'Library links', detail: 'library-links.json should map graph records to module outputs', pass: false, owner: 'Project Manager' },
+      { name: 'Start screen', detail: stateManager.project.startScreen || 'No start screen set', pass: startScreenOk, owner: 'Project Manager + Scene Editor' },
+      { name: 'Flatplan nodes', detail: `${stateManager.logic.nodes.length} nodes found`, pass: stateManager.logic.nodes.length > 0, owner: 'Project Manager' },
+      { name: 'Route endpoints', detail: routeProblems.length ? `${routeProblems.length} route endpoint issue(s)` : 'All route endpoints resolve', pass: routeProblems.length === 0, owner: 'Project Manager' },
+      { name: 'Linked scenes/screens', detail: `${linkedScenes.length} node(s) have linked scenes/screens`, pass: linkedScenes.length > 0, owner: 'Scene Editor + Project Manager' },
+      { name: 'Quest library', detail: 'Quest index not loaded yet', pass: false, owner: 'Quest Builder' },
+      { name: 'Puzzle library', detail: 'Puzzle index not loaded yet', pass: false, owner: 'Puzzle Library' },
+      { name: 'Shared health guide', detail: 'Health checks should move to artifex/shared/health-guide/', pass: false, owner: 'Shared Health Guide' }
+    ];
+  }
+
+  function renderGettingStartedWizard() {
+    if (!refs.wizardStage) return;
+    const checks = getWizardChecks();
+    const passCount = checks.filter((check) => check.pass).length;
+    refs.wizardStage.innerHTML = `
+      <div class="h-full overflow-y-auto p-6">
+        <div class="max-w-5xl mx-auto space-y-6">
+          <div class="border-b border-[#2d2d42] pb-4 flex items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-bold tracking-wide text-zinc-100">Getting Started / Missing Setup Wizard</h2>
+              <p class="text-xs text-zinc-500">This checks the current project package. New project creation belongs in Creation Guide.</p>
+            </div>
+            <span class="text-[10px] font-mono border border-projectGold/30 text-projectGoldGlow px-3 py-1 rounded-full">${passCount}/${checks.length} checks passed</span>
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-cardDark border border-[#2d2d42] rounded-xl p-5 space-y-3">
+              ${checks.map((check) => `
+                <div class="p-3 rounded-lg border ${check.pass ? 'border-projectGreen/30 bg-emerald-950/20' : 'border-orange-400/25 bg-orange-950/10'} flex justify-between gap-4">
+                  <div>
+                    <div class="text-sm font-semibold text-zinc-100">${escapeHtml(check.name)}</div>
+                    <div class="text-xs text-zinc-500 mt-1">${escapeHtml(check.detail)}</div>
+                    <div class="text-[10px] text-zinc-600 mt-1 font-mono">Owner: ${escapeHtml(check.owner)}</div>
+                  </div>
+                  <div class="text-[10px] font-mono font-bold ${check.pass ? 'text-projectGreen' : 'text-orange-300'}">${check.pass ? 'READY' : 'MISSING'}</div>
+                </div>
+              `).join('')}
+            </div>
+            <div class="bg-cardDark border border-[#2d2d42] rounded-xl p-5 space-y-4">
+              <h3 class="text-sm font-bold text-projectGoldGlow flex items-center gap-2"><i data-lucide="route" class="w-4 h-4"></i> Setup order</h3>
+              <ol class="text-xs text-zinc-400 space-y-2 list-decimal list-inside leading-relaxed">
+                <li>Create/open project in Creation Guide.</li>
+                <li>Generate project.json and input-map.json.</li>
+                <li>Create scenes/screens in Scene Editor.</li>
+                <li>Create quests, side quests, puzzles, objects, and effects in their owning modules.</li>
+                <li>Assemble the project here in Flatplan and Stitcher.</li>
+                <li>Run health checks, then hand off to Build Game.</li>
+              </ol>
+              <button data-workspace-target="flatplan" class="w-full bg-gradient-to-r from-accentDark to-projectGold border border-projectGold/40 text-white font-bold py-2.5 rounded-lg text-xs shadow-project-glow">Return to Flatplan</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    wireWorkspaceButtons();
+  }
+
+  function renderAssetBrowser(mode = assetBrowserMode) {
+    if (!refs.assetBrowserStage) return;
+    assetBrowserMode = LIBRARY_MODES.some((item) => item.id === mode) ? mode : 'assets';
+    globalThis.localStorage?.setItem(UI_STORAGE_KEYS.assetBrowserMode, assetBrowserMode);
+    const active = LIBRARY_MODES.find((item) => item.id === assetBrowserMode) || LIBRARY_MODES.at(-1);
+    const sampleResults = LIBRARY_MODES.map((item) => ({
+      id: `${item.type}_example`,
+      type: item.type,
+      name: `${item.label} example`,
+      sourceModule: item.sourceModule,
+      file: item.file,
+      status: item.id === active.id ? 'selected mode' : 'available mode'
+    }));
+
+    refs.assetBrowserStage.innerHTML = `
+      <div class="h-full p-6 flex flex-col gap-5">
+        <div class="border-b border-[#2d2d42] pb-4 flex items-center justify-between gap-4">
+          <div>
+            <h2 class="text-xl font-bold tracking-wide text-zinc-100">Asset Browser</h2>
+            <p class="text-xs text-zinc-500">Shared browser shell for quests, side quests, scenes/screens, puzzles, archetypes, effects, and assets.</p>
+          </div>
+          <span class="text-[10px] font-mono border border-projectGold/30 text-projectGoldGlow px-3 py-1 rounded-full">${escapeHtml(active.label)}</span>
+        </div>
+        <div class="flex-1 grid grid-cols-[72px_1fr] gap-4 min-h-0">
+          <div class="bg-cardDark border border-[#2d2d42] rounded-xl p-2 flex flex-col gap-2">
+            ${LIBRARY_MODES.map((item) => `
+              <button data-library-mode="${escapeHtml(item.id)}" title="${escapeHtml(item.label)}" class="w-12 h-12 rounded-xl border ${item.id === active.id ? 'border-projectGold/70 bg-accentDark/60 text-projectGoldGlow' : 'border-zinc-800 bg-black/25 text-zinc-500 hover:text-projectGoldGlow hover:border-projectGold/40'} flex items-center justify-center transition">
+                <i data-lucide="${escapeHtml(item.icon)}" class="w-5 h-5"></i>
+              </button>
+            `).join('')}
+          </div>
+          <div class="bg-cardDark border border-[#2d2d42] rounded-xl p-5 min-h-0 flex flex-col gap-4">
+            <div class="grid grid-cols-[1fr_auto_auto] gap-3">
+              <input placeholder="Search ${escapeHtml(active.label)}..." class="bg-black/40 border border-[#2d2d42] rounded-lg px-3 py-2 text-xs text-zinc-300 focus:outline-none">
+              <button class="px-3 py-2 rounded-lg border border-projectGold/30 text-xs text-projectGoldGlow bg-accentDark/20">Filters</button>
+              <button class="px-3 py-2 rounded-lg border border-projectGold/30 text-xs text-projectGoldGlow bg-accentDark/20">Refresh</button>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 overflow-y-auto pr-1">
+              ${sampleResults.map((item) => `
+                <div class="p-3 rounded-lg border border-[#2d2d42] bg-black/25">
+                  <div class="text-sm font-semibold text-zinc-100">${escapeHtml(item.name)}</div>
+                  <div class="text-[10px] text-zinc-500 mt-1 font-mono">${escapeHtml(item.id)} · ${escapeHtml(item.type)}</div>
+                  <div class="text-[10px] text-zinc-600 mt-1 font-mono">${escapeHtml(item.file)}</div>
+                  <div class="mt-2 flex justify-between text-[10px]"><span class="text-projectGoldGlow">${escapeHtml(item.sourceModule)}</span><span class="text-zinc-500">${escapeHtml(item.status)}</span></div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    refs.assetBrowserStage.querySelectorAll('[data-library-mode]').forEach((button) => {
+      button.addEventListener('click', () => renderAssetBrowser(button.dataset.libraryMode));
+    });
+    if (window.lucide) window.lucide.createIcons();
+  }
+
   function setWorkspace(workspace) {
     stateManager.activeWorkspace = workspace;
     if (refs.workspaceLabel) refs.workspaceLabel.textContent = workspace.toUpperCase();
@@ -380,54 +518,25 @@ export function createProjectUI({
     refs.flatplanStage?.classList.toggle('hidden', workspace !== 'flatplan');
     refs.stitcherStage?.classList.toggle('hidden', workspace !== 'stitcher');
     refs.buildPrepStage?.classList.toggle('hidden', workspace !== 'buildprep');
+    refs.assetBrowserStage?.classList.toggle('hidden', workspace !== 'assetbrowser');
+    refs.wizardStage?.classList.toggle('hidden', workspace !== 'wizard');
 
     if (workspace === 'manifest') renderManifest();
     if (workspace === 'flatplan') onRefresh?.();
     if (workspace === 'stitcher') renderStitcher?.();
     if (workspace === 'buildprep') renderBuildPrep?.();
+    if (workspace === 'assetbrowser') renderAssetBrowser();
+    if (workspace === 'wizard') renderGettingStartedWizard();
     if (window.lucide) window.lucide.createIcons();
   }
 
-  function closeAllMenus() {
+  function closeAllMenus(except = null) {
     document.querySelectorAll('.project-menu details[open]').forEach((menu) => {
-      menu.removeAttribute('open');
+      if (menu !== except) menu.removeAttribute('open');
     });
   }
 
-  function wireTopCanvasControls() {
-    const zoomInBtn = document.getElementById('zoomInBtn');
-    if (zoomInBtn) {
-      zoomInBtn.onclick = () => {
-        canvasController?.zoomByFactor(1.12);
-        renderJsonPreview();
-      };
-    }
-
-    const zoomOutBtn = document.getElementById('zoomOutBtn');
-    if (zoomOutBtn) {
-      zoomOutBtn.onclick = () => {
-        canvasController?.zoomByFactor(0.88);
-        renderJsonPreview();
-      };
-    }
-
-    const resetViewportBtn = document.getElementById('resetViewportBtn');
-    if (resetViewportBtn) {
-      resetViewportBtn.onclick = () => {
-        canvasController?.resetViewport();
-        renderJsonPreview();
-      };
-    }
-
-    const toggleSplitStatePreviewButton = document.getElementById('toggleSplitStatePreview');
-    if (toggleSplitStatePreviewButton) {
-      toggleSplitStatePreviewButton.onclick = () => {
-        toggleSplitStatePreview();
-        closeAllMenus();
-      };
-    }
-    updateSplitPreviewMenuLabel();
-
+  function wireWorkspaceButtons() {
     document.querySelectorAll('[data-workspace-target]').forEach((button) => {
       button.onclick = () => {
         setWorkspace(button.dataset.workspaceTarget || 'flatplan');
@@ -436,11 +545,77 @@ export function createProjectUI({
     });
   }
 
+  function wireMenuBehavior() {
+    document.querySelectorAll('.project-menu details').forEach((menu) => {
+      menu.ontoggle = () => {
+        if (menu.open) closeAllMenus(menu);
+      };
+    });
+
+    if (!menuOutsideListenerAttached) {
+      menuOutsideListenerAttached = true;
+      document.addEventListener('pointerdown', (event) => {
+        if (!event.target.closest?.('.project-menu')) closeAllMenus();
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeAllMenus();
+      });
+    }
+  }
+
+  function wireTopCanvasControls() {
+    const zoomInBtn = getById('zoomInBtn');
+    if (zoomInBtn) {
+      zoomInBtn.onclick = () => {
+        canvasController?.zoomByFactor(1.12);
+        renderJsonPreview();
+      };
+    }
+
+    const zoomOutBtn = getById('zoomOutBtn');
+    if (zoomOutBtn) {
+      zoomOutBtn.onclick = () => {
+        canvasController?.zoomByFactor(0.88);
+        renderJsonPreview();
+      };
+    }
+
+    const resetViewportBtn = getById('resetViewportBtn');
+    if (resetViewportBtn) {
+      resetViewportBtn.onclick = () => {
+        canvasController?.resetViewport();
+        renderJsonPreview();
+      };
+    }
+
+    const toggleSplitStatePreviewButton = getById('toggleSplitStatePreview');
+    if (toggleSplitStatePreviewButton) {
+      toggleSplitStatePreviewButton.onclick = () => {
+        toggleSplitStatePreview();
+        closeAllMenus();
+      };
+    }
+    updateSplitPreviewMenuLabel();
+
+    document.querySelectorAll('[data-library-target]').forEach((button) => {
+      button.onclick = () => {
+        assetBrowserMode = button.dataset.libraryTarget || 'assets';
+        setWorkspace('assetbrowser');
+        closeAllMenus();
+      };
+    });
+
+    wireWorkspaceButtons();
+    wireMenuBehavior();
+  }
+
   return {
     renderCatalog,
     renderJsonPreview,
     renderInspectorPreview,
     renderManifest,
+    renderAssetBrowser,
+    renderGettingStartedWizard,
     setWorkspace,
     wireTopCanvasControls
   };
