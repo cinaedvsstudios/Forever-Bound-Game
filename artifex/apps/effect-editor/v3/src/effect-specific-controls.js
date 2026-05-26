@@ -4,23 +4,38 @@ const CONTROL_CONFIG = {
   'electric-arc': {
     title: 'Electric Arc Controls',
     fields: [
-      ['arcLength', 'Arc Length', 'range', 10, 240, 1],
+      ['arcLength', 'Arc Length', 'range', 10, 260, 1],
+      ['arcLengthVariation', 'Length Variation', 'range', 0, 180, 1],
       ['arcBranches', 'Branches', 'range', 0, 10, 1],
-      ['arcJaggedness', 'Jaggedness', 'range', 0, 60, 1],
+      ['arcBranchLength', 'Branch Length', 'range', 4, 120, 1],
+      ['arcJaggedness', 'Jaggedness', 'range', 0, 80, 1],
       ['arcFlicker', 'Flicker', 'range', 0, 1, 0.05]
     ]
   },
   shockwave: {
     title: 'Shockwave Pulse Controls',
     fields: [
-      ['shockwaveRadius', 'Ring Radius', 'range', 20, 600, 1],
-      ['shockwaveThickness', 'Ring Thickness', 'range', 1, 40, 1],
+      ['shockwaveRadius', 'Ring Radius', 'range', 20, 650, 1],
+      ['shockwaveStartRadius', 'Start Offset', 'range', 0, 220, 1],
+      ['shockwaveThickness', 'Ring Thickness', 'range', 1, 60, 1],
+      ['shockwaveSoftness', 'Ring Softness', 'range', 0, 1, 0.05],
+      ['shockwaveBreakup', 'Breakup', 'range', 0, 1, 0.05],
+      ['shockwaveSegments', 'Segments', 'range', 0, 36, 1],
       ['shockwaveCenterFlash', 'Centre Flash', 'range', 0, 1, 0.05]
+    ]
+  },
+  ring: {
+    title: 'Radial Burst Controls',
+    fields: [
+      ['pulseMode', 'Emission Mode', 'select', ['once', 'loop', 'continuous']],
+      ['pulseDelay', 'Pulse Delay', 'range', 10, 240, 1],
+      ['burstCount', 'Burst Count', 'range', 6, 180, 1],
+      ['burstDuration', 'Burst Duration', 'range', 1, 40, 1]
     ]
   },
   heatdistortion: {
     title: 'Heat Distortion Controls',
-    notice: 'Works best with an image/video underlay or visible background behind it.',
+    notice: 'Current V3.12 version is still a visual heat-haze overlay. True image/video pixel warping needs the next renderer pass.',
     fields: [
       ['distortionStrength', 'Warp Strength', 'range', 0, 48, 1],
       ['distortionScale', 'Warp Scale', 'range', 4, 96, 1]
@@ -28,21 +43,28 @@ const CONTROL_CONFIG = {
   },
   'true-lensflare': {
     title: 'True Lens Flare Controls',
+    notice: 'Overlays will auto-load from artifex/apps/effect-editor/overlays when image files are added there.',
     fields: [
-      ['flareStreakLength', 'Streak Length', 'range', 20, 900, 1],
+      ['flareStreakLength', 'Streak Length', 'range', 20, 1000, 1],
       ['flareGhosts', 'Ghost Orbs', 'range', 0, 8, 1],
-      ['flareHalo', 'Halo Size', 'range', 4, 220, 1]
+      ['flareHalo', 'Halo Size', 'range', 4, 260, 1],
+      ['flareOverlayScale', 'Overlay Scale', 'range', 0.1, 3, 0.05],
+      ['flareOverlayOpacity', 'Overlay Opacity', 'range', 0, 1, 0.05]
     ]
   },
   text: {
     title: 'Text Effect Controls',
     fields: [
       ['textContent', 'Text', 'text'],
+      ['textFont', 'Font', 'select', ['Cinzel, Georgia, serif', 'Georgia, serif', 'Garamond, serif', 'Arial, sans-serif', 'monospace']],
       ['textAlign', 'Align', 'select', ['left', 'center', 'right']],
       ['textWeight', 'Weight', 'select', ['400', '500', '700', '900']],
+      ['textKeepUpright', 'Keep Upright', 'checkbox'],
       ['textStroke', 'Stroke', 'checkbox'],
       ['textStrokeWidth', 'Stroke Width', 'range', 0, 8, 0.5],
-      ['textLetterSpacing', 'Letter Spacing', 'range', 0, 12, 1]
+      ['textLetterSpacing', 'Letter Spacing', 'range', 0, 12, 1],
+      ['textRotation', 'Text Rotation', 'range', -180, 180, 1],
+      ['textSizeOverride', 'Text Size', 'range', 0, 140, 1]
     ]
   }
 };
@@ -77,6 +99,7 @@ function injectStyles() {
       gap: 10px;
     }
     .effect-specific-grid label.wide { grid-column: 1 / -1; }
+    .effect-specific-grid select { font-size: 10px !important; font-weight: 400 !important; }
     .sync-control-row {
       display: grid;
       grid-template-columns: 1fr auto;
@@ -167,15 +190,19 @@ function renderField(field, layer) {
     return `<label>${label}<input data-effect-field="${key}" type="range" min="${a}" max="${b}" step="${c}" value="${display}" title="Adjust ${label}." /><output>${format(display)}</output></label>`;
   }
   if (type === 'select') {
-    return `<label>${label}<select data-effect-field="${key}" title="Choose ${label}.">${a.map((option) => `<option value="${escapeHtml(option)}" ${String(value) === option ? 'selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select></label>`;
+    return `<label>${label}<select data-effect-field="${key}" title="Choose ${label}.">${a.map((option) => `<option value="${escapeHtml(option)}" ${String(value) === option ? 'selected' : ''}>${escapeHtml(readableOption(option))}</option>`).join('')}</select></label>`;
   }
   if (type === 'checkbox') {
-    return `<label>${label}<button data-effect-field="${key}" data-checkbox="true" type="button" title="Toggle ${label}.">${value !== false ? '✅' : '⬜'}</button></label>`;
+    return `<label>${label}<button data-effect-field="${key}" data-checkbox="true" type="button" title="Toggle ${label}.">${value ? '✅' : '⬜'}</button></label>`;
   }
   return `<label class="wide">${label}<input data-effect-field="${key}" type="text" value="${escapeHtml(value || '')}" title="Type ${label}." /></label>`;
 }
 
-function bindDynamicFields(config) {
+function readableOption(value) {
+  return String(value).replace(/,.*$/u, '').replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function bindDynamicFields() {
   document.querySelectorAll('[data-effect-field]').forEach((control) => {
     const key = control.dataset.effectField;
     if (control.dataset.boundEffectSpecific === 'true') return;
@@ -183,7 +210,7 @@ function bindDynamicFields(config) {
     if (control.dataset.checkbox === 'true') {
       control.addEventListener('click', () => {
         const layer = getActiveLayer();
-        updateActiveLayer({ [key]: !(layer?.[key] !== false) });
+        updateActiveLayer({ [key]: !Boolean(layer?.[key]) });
       });
       return;
     }
