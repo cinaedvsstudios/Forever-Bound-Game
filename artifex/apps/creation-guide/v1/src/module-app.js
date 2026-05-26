@@ -1,4 +1,4 @@
-const VERSION = 'V1.0.3';
+const VERSION = 'V1.0.4';
 
 const MODULES = {
   'effect-editor': { label: 'Effect Editor', color: '#31d7ff', soft: 'rgba(49,215,255,.18)', icon: '✹' },
@@ -31,9 +31,8 @@ const state = {
 
 window.addEventListener('DOMContentLoaded', () => {
   injectFallbackStyles();
-  try {
-    boot();
-  } catch (error) {
+  try { boot(); }
+  catch (error) {
     console.error(error);
     document.body.innerHTML = `<main class="boot-error"><h1>Creation Guide failed to start</h1><p>${escapeHtml(error.message || error)}</p></main>`;
   }
@@ -137,7 +136,7 @@ function renderTemplates() {
   if (!target || target.dataset.ready) return;
   target.dataset.ready = 'true';
   target.innerHTML = TEMPLATES.map((template, index) => `<button type="button" data-template="${index}"><strong>${escapeHtml(MODULES[template.primaryModule].label)}</strong><br><small>${escapeHtml(template.title)}</small></button>`).join('');
-  target.querySelectorAll('[data-template]').forEach((button) => button.addEventListener('click', () => { addAssignment(TEMPLATES[Number(button.dataset.template)]); closeMenus(); render(); toast('Template assignment added.'); }));
+  target.querySelectorAll('[data-template]').forEach((button) => button.addEventListener('click', () => { addAssignment(TEMPLATES[Number(button.dataset.template)]); closeMenus(); render(); toast('Template assignment added.'); showAssignments(); }));
 }
 
 function renderList() {
@@ -197,10 +196,13 @@ function renderCanvas() {
   ctx.fillStyle = '#c7b8ff';
   ctx.font = '600 15px Arial, sans-serif';
   ctx.fillText(`${state.assignments.length} assignments · ${state.filter} · ${state.sort}`, 44, 88);
+  ctx.fillStyle = '#d9c3ac';
+  ctx.font = '500 13px Arial, sans-serif';
+  ctx.fillText('Open 📋 Assignments to manage the card board. The canvas is the high-level viewing panel.', 44, 112);
   visibleAssignments().slice(0, 8).forEach((item, i) => {
     const module = MODULES[item.primaryModule] || MODULES.unassigned;
     const x = 44 + (i % 4) * 295;
-    const y = 130 + Math.floor(i / 4) * 155;
+    const y = 150 + Math.floor(i / 4) * 155;
     roundRect(ctx, x, y, 260, 125, 18);
     ctx.fillStyle = '#171210';
     ctx.fill();
@@ -249,10 +251,14 @@ function wireInputs() {
 }
 
 function wireActions() {
-  byId('add-assignment-button')?.addEventListener('click', () => { addAssignment(); closeMenus(); render(); toast('Assignment added.'); });
-  byId('duplicate-assignment-button')?.addEventListener('click', () => { const item = activeAssignment(); if (item) { addAssignment(JSON.parse(JSON.stringify(item))); activeAssignment().title += ' Copy'; render(); toast('Assignment duplicated.'); } });
+  byId('add-assignment-button')?.addEventListener('click', () => { addAssignment(); closeMenus(); render(); toast('Assignment added.'); showAssignments(); });
+  byId('duplicate-assignment-button')?.addEventListener('click', () => { const item = activeAssignment(); if (item) { addAssignment(JSON.parse(JSON.stringify(item))); activeAssignment().title += ' Copy'; render(); toast('Assignment duplicated.'); showAssignments(); } });
   byId('delete-assignment-button')?.addEventListener('click', () => { if (activeAssignment()) { state.assignments.splice(state.active, 1); state.active = Math.max(0, state.active - 1); render(); toast('Assignment deleted.', 'warn'); } });
   byId('open-detail-button')?.addEventListener('click', showDetail);
+  byId('open-detail-menu-button')?.addEventListener('click', () => { closeMenus(); showDetail(); });
+  byId('open-assignments-button')?.addEventListener('click', showAssignments);
+  byId('open-assignments-menu-button')?.addEventListener('click', () => { closeMenus(); showAssignments(); });
+  byId('open-assignments-toolbar-button')?.addEventListener('click', showAssignments);
   byId('add-subtask-button')?.addEventListener('click', () => { const input = byId('subtask-text-input'); const item = activeAssignment(); if (input?.value.trim() && item) { item.subtasks.push({ id: `subtask_${Math.random().toString(36).slice(2, 9)}`, text: input.value.trim(), status: 'open' }); input.value = ''; render(); } });
   byId('todo-sort-input')?.addEventListener('change', (event) => { state.sort = event.target.value; render(); });
   byId('zoom-in-button')?.addEventListener('click', () => { state.zoom = Math.min(2, state.zoom + .1); setZoom(); });
@@ -276,6 +282,11 @@ function wireMenus() {
   document.querySelectorAll('.menu-panel').forEach((panel) => panel.addEventListener('click', (event) => event.stopPropagation()));
 }
 
+function showAssignments() {
+  render();
+  byId('assignments-dialog')?.showModal();
+}
+
 function showDetail() {
   const item = activeAssignment();
   const dialog = byId('assignment-dialog');
@@ -293,15 +304,8 @@ function showHelp(title, html) {
   byId('help-dialog').showModal();
 }
 
-function setZoom() {
-  const canvas = byId('module-canvas');
-  if (canvas) canvas.style.transform = `scale(${state.zoom})`;
-  setText('zoom-readout', `${Math.round(state.zoom * 100)}%`);
-}
-
-function bind(id, handler) {
-  byId(id)?.addEventListener('input', (event) => { handler(event.target.value); activeAssignment() && (activeAssignment().updatedAt = new Date().toISOString()); render(); });
-}
+function setZoom() { const canvas = byId('module-canvas'); if (canvas) canvas.style.transform = `scale(${state.zoom})`; setText('zoom-readout', `${Math.round(state.zoom * 100)}%`); }
+function bind(id, handler) { byId(id)?.addEventListener('input', (event) => { handler(event.target.value); activeAssignment() && (activeAssignment().updatedAt = new Date().toISOString()); render(); }); }
 function closeMenus() { document.querySelectorAll('.menu-panel.open').forEach((panel) => panel.classList.remove('open')); }
 function injectFallbackStyles() { const style = document.createElement('style'); style.textContent = `body{background:#0f0c0b!important;color:#f2eee9!important}.boot-error{padding:20px;background:#171210;color:#fff0ce}.menu-panel:not(.open){display:none}`; document.head.appendChild(style); }
 function toast(message, type = 'success') { const area = byId('toast-area'); if (!area) return; const div = document.createElement('div'); div.className = `toast ${type}`; div.textContent = message; area.appendChild(div); setTimeout(() => div.remove(), 2600); }
