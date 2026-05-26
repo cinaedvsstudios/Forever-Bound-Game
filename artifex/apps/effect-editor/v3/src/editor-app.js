@@ -5,6 +5,7 @@ import { initLibrary } from './editor-library.js';
 import { initSidePanelParity } from './side-panel-parity.js';
 import { initAppearanceParity } from './appearance-parity.js';
 import { initBrushAssetLibrary } from './brush-asset-library.js';
+import { initBrushRenderControls } from './brush-render-controls.js';
 import { initDynamicsParity } from './dynamics-parity.js';
 import { initIOParity } from './io-parity.js';
 import { initWorkspaceParity } from './workspace-parity.js';
@@ -29,6 +30,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initSidePanelParity(showToast);
   initAppearanceParity(showToast);
   initBrushAssetLibrary(showToast);
+  initBrushRenderControls(showToast);
   initDynamicsParity(showToast);
   initIOParity(showToast);
   initWorkspaceParity(showToast);
