@@ -1,12 +1,17 @@
 import { getActiveLayer, onStateChange, updateActiveLayer } from './editor-state.js';
 
+const REPO_BRUSH_API_URL = 'https://api.github.com/repos/cinaedvsstudios/Forever-Bound-Game/contents/artifex/apps/effect-editor/brushes?ref=main';
+const IMAGE_EXTENSION_RE = /\.(png|webp|jpe?g)$/iu;
+
 let brushAssets = [];
 let activeFilter = '';
+let repositoryBrushesLoaded = false;
 
 export function initBrushAssetLibrary(showToast = () => {}) {
   injectBrushLibraryStyles();
   ensureBrushLibraryPanel(showToast);
   renderBrushLibrary();
+  autoLoadRepositoryBrushes(showToast);
   onStateChange(renderBrushLibrary);
 }
 
@@ -143,16 +148,16 @@ function ensureBrushLibraryPanel(showToast) {
       <input id="brush-files-input" type="file" accept="image/png,image/webp,image/jpeg" multiple hidden />
       <input id="brush-folder-input" type="file" accept="image/png,image/webp,image/jpeg" multiple webkitdirectory hidden />
       <div id="brush-library-grid" class="brush-library-grid"></div>
-      <p class="brush-library-note">Loaded brushes are kept for this editing session. Selecting one applies it to the active layer as a Custom Image Brush, so saves/exports keep the chosen brush.</p>
+      <p class="brush-library-note">Brushes from <code>artifex/apps/effect-editor/brushes</code> auto-load. You can also load extra files or folders for this session.</p>
     </div>
   `);
 
   document.getElementById('load-brush-files-button')?.addEventListener('click', () => document.getElementById('brush-files-input')?.click());
   document.getElementById('load-brush-folder-button')?.addEventListener('click', () => document.getElementById('brush-folder-input')?.click());
   document.getElementById('clear-brush-library-button')?.addEventListener('click', () => {
-    brushAssets = [];
+    brushAssets = brushAssets.filter((asset) => asset.source === 'repo');
     renderBrushLibrary();
-    showToast('Brush asset library cleared.', 'warn');
+    showToast('Session brush assets cleared. Repository brushes remain loaded.', 'warn');
   });
   document.getElementById('brush-library-search-input')?.addEventListener('input', (event) => {
     activeFilter = String(event.target.value || '').trim().toLowerCase();
@@ -162,8 +167,43 @@ function ensureBrushLibraryPanel(showToast) {
   document.getElementById('brush-folder-input')?.addEventListener('change', async (event) => loadBrushFiles(event, showToast));
 }
 
+async function autoLoadRepositoryBrushes(showToast) {
+  if (repositoryBrushesLoaded) return;
+  repositoryBrushesLoaded = true;
+  try {
+    const response = await fetch(REPO_BRUSH_API_URL, { cache: 'no-store' });
+    if (!response.ok) return;
+    const entries = await response.json();
+    if (!Array.isArray(entries)) return;
+    const imageEntries = entries.filter((entry) => entry?.type === 'file' && IMAGE_EXTENSION_RE.test(entry.name || ''));
+    if (!imageEntries.length) return;
+    const loaded = await Promise.all(imageEntries.map(readRepositoryBrush).filter(Boolean));
+    const added = addBrushAssets(loaded.filter(Boolean));
+    if (added) showToast(`${added} repository brush asset${added === 1 ? '' : 's'} auto-loaded.`, 'success');
+  } catch (error) {
+    console.warn('Repository brush auto-load failed', error);
+  }
+}
+
+async function readRepositoryBrush(entry) {
+  const url = entry.download_url || new URL(`../brushes/${encodeURIComponent(entry.name)}`, window.location.href).href;
+  const response = await fetch(url, { cache: 'force-cache' });
+  if (!response.ok) return null;
+  const blob = await response.blob();
+  const dataUrl = await blobToDataUrl(blob);
+  return {
+    id: `repo:${entry.path || entry.name}:${entry.sha || blob.size}`,
+    name: entry.name,
+    path: entry.path || `artifex/apps/effect-editor/brushes/${entry.name}`,
+    size: blob.size,
+    type: blob.type || mimeFromName(entry.name),
+    dataUrl,
+    source: 'repo'
+  };
+}
+
 async function loadBrushFiles(event, showToast) {
-  const files = Array.from(event.target.files || []).filter((file) => file.type.startsWith('image/'));
+  const files = Array.from(event.target.files || []).filter((file) => file.type.startsWith('image/') || IMAGE_EXTENSION_RE.test(file.name));
   if (!files.length) {
     showToast('No brush image files found.', 'warn');
     event.target.value = '';
@@ -171,18 +211,24 @@ async function loadBrushFiles(event, showToast) {
   }
 
   const loaded = await Promise.all(files.map(readBrushFile));
+  const added = addBrushAssets(loaded);
+  event.target.value = '';
+  renderBrushLibrary();
+  showToast(`${added} brush asset${added === 1 ? '' : 's'} loaded.`, added ? 'success' : 'info');
+}
+
+function addBrushAssets(assets) {
   const existing = new Set(brushAssets.map((asset) => asset.id));
   let added = 0;
-  for (const asset of loaded) {
-    if (existing.has(asset.id)) continue;
+  for (const asset of assets) {
+    if (!asset || existing.has(asset.id)) continue;
     brushAssets.push(asset);
     existing.add(asset.id);
     added += 1;
   }
-  brushAssets.sort((a, b) => a.name.localeCompare(b.name));
-  event.target.value = '';
+  brushAssets.sort((a, b) => `${a.source === 'repo' ? '0' : '1'}${a.name}`.localeCompare(`${b.source === 'repo' ? '0' : '1'}${b.name}`));
   renderBrushLibrary();
-  showToast(`${added} brush asset${added === 1 ? '' : 's'} loaded.`, added ? 'success' : 'info');
+  return added;
 }
 
 function readBrushFile(file) {
@@ -191,16 +237,26 @@ function readBrushFile(file) {
     reader.addEventListener('load', () => {
       const path = file.webkitRelativePath || file.name;
       resolve({
-        id: `${path}:${file.size}:${file.lastModified}`,
+        id: `session:${path}:${file.size}:${file.lastModified}`,
         name: file.name,
         path,
         size: file.size,
-        type: file.type,
-        dataUrl: String(reader.result || '')
+        type: file.type || mimeFromName(file.name),
+        dataUrl: String(reader.result || ''),
+        source: 'session'
       });
     });
     reader.addEventListener('error', reject);
     reader.readAsDataURL(file);
+  });
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener('load', () => resolve(String(reader.result || '')));
+    reader.addEventListener('error', reject);
+    reader.readAsDataURL(blob);
   });
 }
 
@@ -214,7 +270,7 @@ function renderBrushLibrary() {
   });
 
   if (!visibleAssets.length) {
-    grid.innerHTML = `<div class="brush-library-empty">${brushAssets.length ? 'No matching brush assets.' : 'Load PNG/WebP/JPG files or a folder of brushes.'}</div>`;
+    grid.innerHTML = `<div class="brush-library-empty">${repositoryBrushesLoaded ? 'No brush assets found. Load PNG/WebP/JPG files or a folder of brushes.' : 'Loading repository brush assets…'}</div>`;
     return;
   }
 
@@ -238,8 +294,18 @@ function applyBrushAsset(asset) {
   updateActiveLayer({
     appearanceMode: 'custom',
     textureName: asset.name,
-    textureDataUrl: asset.dataUrl
+    textureDataUrl: asset.dataUrl,
+    tintMode: getActiveLayer()?.tintMode || 'tint',
+    rotationMode: getActiveLayer()?.rotationMode || 'fixed',
+    rotationJitter: Number.isFinite(Number(getActiveLayer()?.rotationJitter)) ? getActiveLayer().rotationJitter : 5,
+    blendMode: getActiveLayer()?.blendMode || 'source-over'
   });
+}
+
+function mimeFromName(name) {
+  if (/\.webp$/iu.test(name)) return 'image/webp';
+  if (/\.jpe?g$/iu.test(name)) return 'image/jpeg';
+  return 'image/png';
 }
 
 function escapeHtml(value) {
