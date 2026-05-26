@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Artifex Archetype Object Creator V1.0</title>
+  <link rel="stylesheet" href="./v1/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <section class="brand">
+      <div class="brand-mark">⬡</div>
+      <div>
+        <h1>ARTIFEX</h1>
+        <p>Archetype Object Creator <span id="version-badge">V1.0</span></p>
+      </div>
+    </section>
+
+    <nav class="menu-bar" aria-label="Object archetype creator menus">
+      <div class="menu">
+        <button class="menu-button" data-menu="file">File ▾</button>
+        <div class="menu-panel" id="menu-file">
+          <button id="new-archetype-button">New Object Archetype</button>
+          <label class="menu-file-label">Import Object JSON<input id="import-json-input" type="file" accept=".json,application/json" hidden /></label>
+          <button id="export-json-button">Export Object Archetype JSON</button>
+          <button id="save-local-button">Save Locally in Browser</button>
+          <button id="view-local-button">Manage Local Archetypes</button>
+        </div>
+      </div>
+      <div class="menu">
+        <button class="menu-button" data-menu="edit">Edit ▾</button>
+        <div class="menu-panel" id="menu-edit">
+          <button id="duplicate-action-button">Duplicate Selected Action</button>
+          <button id="delete-action-button">Remove Selected Action</button>
+          <button id="reset-bounds-button">Reset Bounds</button>
+          <button id="validate-button">Validate Archetype</button>
+        </div>
+      </div>
+      <div class="menu">
+        <button class="menu-button" data-menu="view">View ▾</button>
+        <div class="menu-panel" id="menu-view">
+          <button data-workspace-mode="dark">Background: Dark</button>
+          <button data-workspace-mode="white">Background: White</button>
+          <button data-workspace-mode="scene">Background: Scene Grey</button>
+          <button id="toggle-grid-button">Toggle Grid</button>
+          <button id="toggle-helpers-button">Toggle Helpers</button>
+        </div>
+      </div>
+      <div class="menu">
+        <button class="menu-button primary" data-menu="insert">Templates ▾</button>
+        <div class="menu-panel wide" id="menu-insert">
+          <section class="insert-section">
+            <h3>People</h3>
+            <div id="person-template-list" class="insert-list"></div>
+          </section>
+          <section class="insert-section">
+            <h3>Objects</h3>
+            <div id="object-template-list" class="insert-list"></div>
+          </section>
+        </div>
+      </div>
+      <div class="menu">
+        <button class="menu-button" data-menu="help">Help ▾</button>
+        <div class="menu-panel right" id="menu-help">
+          <button id="quick-start-button">Quick Start Guide</button>
+          <button id="about-button">About V1.0</button>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <main class="app-shell">
+    <aside id="left-panel" class="side-panel">
+      <section class="card">
+        <header><h2>Object Identity</h2></header>
+        <label>Archetype ID<input id="archetype-id-input" /></label>
+        <label>Name<input id="archetype-name-input" /></label>
+        <label>Category<select id="category-select"></select></label>
+        <label>Role / Template<select id="role-select"></select></label>
+        <label>Subtype<input id="subtype-input" placeholder="guard, villager, chalice, stone_marker" /></label>
+        <label>Tags<input id="tags-input" placeholder="comma, separated, tags" /></label>
+      </section>
+
+      <section class="card">
+        <header><h2>Visual Asset Links</h2></header>
+        <label>Gameplay Sprite Asset ID<input id="sprite-asset-input" placeholder="asset_mel_sheet_001" /></label>
+        <label>Dialogue Portrait Asset ID<input id="portrait-asset-input" placeholder="portrait_mel_001" /></label>
+        <label>Default Width<input id="width-input" type="number" min="8" max="1024" /></label>
+        <label>Default Height<input id="height-input" type="number" min="8" max="1024" /></label>
+        <label>Scene Layer<input id="layer-input" type="number" min="0" max="999" /></label>
+        <label>Anchor<select id="anchor-select"><option value="bottom-center">bottom-center</option><option value="center">center</option><option value="bottom-left">bottom-left</option><option value="top-left">top-left</option></select></label>
+      </section>
+
+      <section class="card">
+        <header><h2>Collision & Interaction</h2></header>
+        <label>Collision Type<select id="collision-type-select"><option value="box">box</option><option value="circle">circle</option><option value="none">none</option></select></label>
+        <label>Hitbox X<input id="hitbox-x-input" type="number" /></label>
+        <label>Hitbox Y<input id="hitbox-y-input" type="number" /></label>
+        <label>Hitbox Width<input id="hitbox-width-input" type="number" min="0" /></label>
+        <label>Hitbox Height<input id="hitbox-height-input" type="number" min="0" /></label>
+        <label>Interaction Radius<input id="interaction-radius-input" type="number" min="0" /></label>
+      </section>
+
+      <section class="card">
+        <header><h2>Runtime Behaviour</h2></header>
+        <div id="flag-list" class="check-grid"></div>
+      </section>
+    </aside>
+
+    <div id="side-resizer" class="side-resizer" title="Drag to resize side panel"></div>
+
+    <section class="workspace-column">
+      <section class="workspace-toolbar">
+        <button id="zoom-out-button">−</button>
+        <span id="zoom-readout">100%</span>
+        <button id="zoom-in-button">+</button>
+        <button id="zoom-reset-button">Reset Zoom</button>
+        <button id="snapshot-button">Snapshot</button>
+        <span id="status-text">Ready.</span>
+      </section>
+
+      <section id="workspace" class="workspace">
+        <canvas id="object-canvas" width="1280" height="720"></canvas>
+        <div id="toast-area" aria-live="polite"></div>
+      </section>
+
+      <div id="bottom-resizer" class="bottom-resizer" title="Drag to resize action panel"></div>
+
+      <section id="bottom-panel" class="bottom-panel">
+        <header>
+          <h2>Action Profile</h2>
+          <span id="action-count">0 gameplay actions</span>
+        </header>
+        <div class="action-layout">
+          <section>
+            <h3>Gameplay Sprite Actions</h3>
+            <p class="hint">Full-body gameplay actions only. Dialogue/talk lives in portrait actions below.</p>
+            <div id="gameplay-action-list" class="chip-list"></div>
+          </section>
+          <section>
+            <h3>Dialogue Portrait Actions</h3>
+            <p class="hint">Close-up portrait expressions and mouth loops. These are not body sprite rows.</p>
+            <div id="portrait-action-list" class="chip-list"></div>
+          </section>
+          <section>
+            <h3>Validation</h3>
+            <pre id="validation-output">No validation yet.</pre>
+          </section>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="local-dialog">
+    <form method="dialog">
+      <header class="dialog-header"><h2>Local Object Archetypes</h2><button value="close">×</button></header>
+      <div id="local-files-output" class="library-grid"></div>
+    </form>
+  </dialog>
+
+  <dialog id="help-dialog">
+    <form method="dialog">
+      <header class="dialog-header"><h2 id="help-title">Help</h2><button value="close">×</button></header>
+      <div id="help-content" class="help-content"></div>
+    </form>
+  </dialog>
+
+  <script type="module" src="./v1/src/editor-app.js"></script>
+</body>
+</html>

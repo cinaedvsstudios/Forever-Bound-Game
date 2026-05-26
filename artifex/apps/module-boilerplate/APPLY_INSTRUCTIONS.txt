@@ -1,0 +1,67 @@
+Artifex Blank Module Boilerplate V1
+==================================
+
+Purpose
+-------
+This package is a neutral starting point for new Artifex mini-app modules.
+
+It keeps the same broad editor architecture used by the existing Artifex editor tools:
+- index.html entry file
+- v1/styles.css visual shell
+- v1/src/module-app.js startup file
+- v1/src/module-state.js state and JSON schema helpers
+- v1/src/module-ui.js menus, panels, form wiring, list rendering
+- v1/src/module-renderer.js canvas/workspace rendering
+- v1/src/module-io.js import/export/local-browser-save
+- v1/src/module-library.js starter template/library records
+- README.md module notes
+- docs/EXTENSION_NOTES.md implementation guidance
+
+Install
+-------
+1. Copy the folder:
+
+   artifex/apps/blank-module/
+
+   into your repository.
+
+2. Rename the folder to the new module slug, for example:
+
+   artifex/apps/font-packer/
+   artifex/apps/sprite-wizard/
+   artifex/apps/archetype-object-creator/
+   artifex/apps/palette-maker/
+
+3. Open the copied index.html and replace:
+
+   Blank Module
+   blank-module
+   Artifex Blank Module
+
+   with the actual module name.
+
+4. Open v1/src/module-config.js and set:
+   - MODULE_SLUG
+   - MODULE_LABEL
+   - MODULE_KIND
+   - MODULE_VERSION
+   - MODULE_ACCENT
+
+5. Keep the file structure stable unless the module genuinely needs extra folders.
+
+What to change first
+--------------------
+For a new module, usually edit these files in this order:
+
+1. v1/src/module-config.js
+2. v1/src/module-state.js
+3. v1/src/module-ui.js
+4. v1/src/module-renderer.js
+5. README.md
+
+What not to do
+--------------
+Do not hardcode project-specific data into the app shell.
+Do not mix the new module's runtime data with the Asset Library or Scene Editor data.
+Do not put final project assets inside this boilerplate folder.
+Do not keep the name "blank-module" after making a real module.

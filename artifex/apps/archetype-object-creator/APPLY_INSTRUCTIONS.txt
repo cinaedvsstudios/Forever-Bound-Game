@@ -1,0 +1,43 @@
+Archetype Object Creator V1 apply instructions
+
+Target repository folder:
+artifex/apps/archetype-object-creator/
+
+Copy these files:
+
+1. index.html
+   -> artifex/apps/archetype-object-creator/index.html
+
+2. v1/styles.css
+   -> artifex/apps/archetype-object-creator/v1/styles.css
+
+3. v1/src/*.js
+   -> artifex/apps/archetype-object-creator/v1/src/*.js
+
+4. README.md
+   -> artifex/apps/archetype-object-creator/README.md
+
+5. sprites_README.md
+   -> artifex/apps/archetype-object-creator/sprites/README.md
+
+This is a non-FX copy of the Effect Editor shell architecture:
+- top menu bar
+- left editor panel
+- canvas preview workspace
+- bottom action panel
+- local browser save
+- JSON import/export
+- templates
+- validation
+- preview snapshot
+
+Effect-specific systems removed:
+- particles
+- emitter dynamics
+- glow/colour-stop editing
+- blend modes
+- FX layers
+- effect archetype presets
+
+Important design rule:
+Talk is not a gameplay sprite action. It belongs to the separate Dialogue Portrait actions.

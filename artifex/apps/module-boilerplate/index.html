@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Artifex Blank Module V1.0</title>
+  <link rel="stylesheet" href="./v1/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <section class="brand">
+      <div class="brand-mark" id="brand-mark">◆</div>
+      <div>
+        <h1>ARTIFEX</h1>
+        <p><span id="module-label">Blank Module</span> <span id="version-badge">V1.0</span></p>
+      </div>
+    </section>
+
+    <nav class="menu-bar" aria-label="Module menus">
+      <div class="menu">
+        <button class="menu-button" data-menu="file">File ▾</button>
+        <div class="menu-panel" id="menu-file">
+          <button id="new-module-button">New Module Data</button>
+          <label class="menu-file-label">Import JSON<input id="import-json-input" type="file" accept=".json,application/json" hidden /></label>
+          <button id="export-json-button">Export JSON</button>
+          <button id="save-local-button">Save Locally in Browser</button>
+          <button id="view-local-button">Manage Local Saves</button>
+        </div>
+      </div>
+
+      <div class="menu">
+        <button class="menu-button" data-menu="edit">Edit ▾</button>
+        <div class="menu-panel" id="menu-edit">
+          <button id="duplicate-record-button">Duplicate Selected Record</button>
+          <button id="delete-record-button">Delete Selected Record</button>
+        </div>
+      </div>
+
+      <div class="menu">
+        <button class="menu-button" data-menu="view">View ▾</button>
+        <div class="menu-panel" id="menu-view">
+          <button data-workspace-mode="dark">Background: Dark</button>
+          <button data-workspace-mode="white">Background: White</button>
+          <button id="toggle-grid-button">Toggle Grid</button>
+          <button id="toggle-helpers-button">Toggle Guides</button>
+        </div>
+      </div>
+
+      <div class="menu">
+        <button class="menu-button primary" data-menu="insert">Insert ▾</button>
+        <div class="menu-panel wide" id="menu-insert">
+          <section class="insert-section">
+            <h3>Blank Records</h3>
+            <button id="add-record-button">Add Generic Record</button>
+          </section>
+          <section class="insert-section">
+            <h3>Starter Templates</h3>
+            <div id="template-list" class="insert-list"></div>
+          </section>
+        </div>
+      </div>
+
+      <div class="menu">
+        <button class="menu-button" data-menu="help">Help ▾</button>
+        <div class="menu-panel right" id="menu-help">
+          <button id="quick-start-button">Quick Start Guide</button>
+          <button id="about-button">About This Boilerplate</button>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <main class="app-shell">
+    <aside id="left-panel" class="side-panel">
+      <section class="card">
+        <header><h2>Module Data</h2></header>
+        <label>Module ID<input id="module-id-input" /></label>
+        <label>Module Name<input id="module-name-input" /></label>
+        <label>Module Kind<input id="module-kind-input" /></label>
+      </section>
+
+      <section class="card">
+        <header><h2>Selected Record</h2></header>
+        <label>Record Name<input id="record-name-input" placeholder="Select or add a record" /></label>
+        <label>Record Type<input id="record-type-input" placeholder="generic" /></label>
+        <label>Category<input id="record-category-input" placeholder="uncategorised" /></label>
+        <label>Tags<input id="record-tags-input" placeholder="comma, separated, tags" /></label>
+        <label>Notes<textarea id="record-notes-input" rows="5" placeholder="Internal notes for this record"></textarea></label>
+      </section>
+
+      <section class="card">
+        <header><h2>Generic Properties</h2></header>
+        <label>Property Key<input id="property-key-input" placeholder="exampleProperty" /></label>
+        <label>Property Value<input id="property-value-input" placeholder="example value" /></label>
+        <div class="button-row">
+          <button id="set-property-button">Set Property</button>
+          <button id="remove-property-button">Remove Property</button>
+        </div>
+        <pre id="properties-output">{}</pre>
+      </section>
+    </aside>
+
+    <div id="side-resizer" class="side-resizer" title="Drag to resize side panel"></div>
+
+    <section class="workspace-column">
+      <section class="workspace-toolbar">
+        <button id="snapshot-button">Snapshot</button>
+        <button id="zoom-out-button">−</button>
+        <span id="zoom-readout">100%</span>
+        <button id="zoom-in-button">+</button>
+        <button id="zoom-reset-button">Reset Zoom</button>
+        <span id="status-text">Ready.</span>
+      </section>
+
+      <section id="workspace" class="workspace">
+        <canvas id="module-canvas" width="1280" height="720"></canvas>
+        <div id="toast-area" aria-live="polite"></div>
+      </section>
+
+      <div id="bottom-resizer" class="bottom-resizer" title="Drag to resize record panel"></div>
+
+      <section id="bottom-panel" class="bottom-panel">
+        <header><h2>Records</h2><span id="record-count">0 records</span></header>
+        <div id="record-list" class="record-list"></div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="local-dialog">
+    <form method="dialog">
+      <header class="dialog-header"><h2>Local Saves</h2><button value="close">×</button></header>
+      <pre id="local-files-output"></pre>
+    </form>
+  </dialog>
+
+  <dialog id="help-dialog">
+    <form method="dialog">
+      <header class="dialog-header"><h2 id="help-dialog-title">Help</h2><button value="close">×</button></header>
+      <div id="help-dialog-body" class="dialog-body"></div>
+    </form>
+  </dialog>
+
+  <script type="module" src="./v1/src/module-app.js"></script>
+</body>
+</html>
