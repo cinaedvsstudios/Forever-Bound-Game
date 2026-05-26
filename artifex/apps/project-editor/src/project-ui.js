@@ -5,7 +5,8 @@
 // and top toolbar wiring for the split shell.
 
 const UI_STORAGE_KEYS = Object.freeze({
-  splitStatePreviewVisible: 'artifex_project_split_state_preview_visible'
+  splitStatePreviewVisible: 'artifex_project_split_state_preview_visible',
+  inspectorPosition: 'artifex_project_inspector_position'
 });
 
 function escapeHtml(value) {
@@ -36,6 +37,24 @@ function writeBooleanPreference(key, value) {
   }
 }
 
+function readJSONPreference(key, fallback) {
+  try {
+    const raw = globalThis.localStorage?.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch (error) {
+    console.warn(`[ProjectUI] Could not read JSON preference ${key}`, error);
+    return fallback;
+  }
+}
+
+function writeJSONPreference(key, value) {
+  try {
+    globalThis.localStorage?.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.warn(`[ProjectUI] Could not write JSON preference ${key}`, error);
+  }
+}
+
 export function createProjectUI({
   stateManager,
   getTypeStyle,
@@ -47,6 +66,7 @@ export function createProjectUI({
   renderBuildPrep
 }) {
   let splitStatePreviewVisible = readBooleanPreference(UI_STORAGE_KEYS.splitStatePreviewVisible, false);
+  let inspectorPosition = readJSONPreference(UI_STORAGE_KEYS.inspectorPosition, { top: 16, right: 16 });
 
   const refs = {
     sidebar: document.getElementById('sidebarAccordion'),
@@ -167,6 +187,84 @@ export function createProjectUI({
     renderJsonPreview();
   }
 
+  function getInspectorStatusFooter() {
+    return `
+      <div class="border-t border-[#2d2d42] px-3 py-2 bg-black/25 text-[10px] text-zinc-500 leading-relaxed rounded-b-lg">
+        <div class="flex items-center gap-1.5 text-projectGoldGlow font-bold mb-1">
+          <i data-lucide="info" class="w-3 h-3"></i>
+          <span>Canvas controls</span>
+        </div>
+        <div>Drag nodes with left mouse. Scrollwheel-click / middle-button drag pans. Mousewheel zooms.</div>
+      </div>
+    `;
+  }
+
+  function applyInspectorPosition(panel) {
+    const top = Number(inspectorPosition?.top);
+    const right = Number(inspectorPosition?.right);
+    panel.style.top = `${Number.isFinite(top) ? Math.max(8, top) : 16}px`;
+    panel.style.right = `${Number.isFinite(right) ? Math.max(8, right) : 16}px`;
+    panel.style.left = 'auto';
+  }
+
+  function makeInspectorDraggable(panel) {
+    const handle = panel.querySelector('[data-inspector-drag-handle]');
+    const resetButton = panel.querySelector('[data-inspector-reset-position]');
+    if (!handle) return;
+
+    handle.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const canvasRect = refs.canvas.getBoundingClientRect();
+      const startRect = panel.getBoundingClientRect();
+      const startX = event.clientX;
+      const startY = event.clientY;
+      const startLeft = startRect.left - canvasRect.left;
+      const startTop = startRect.top - canvasRect.top;
+      const panelWidth = startRect.width;
+      const panelHeight = startRect.height;
+
+      handle.setPointerCapture?.(event.pointerId);
+      panel.classList.add('ring-1', 'ring-projectGold/50');
+
+      const onMove = (moveEvent) => {
+        const nextLeft = Math.max(8, Math.min(canvasRect.width - panelWidth - 8, startLeft + moveEvent.clientX - startX));
+        const nextTop = Math.max(8, Math.min(canvasRect.height - panelHeight - 8, startTop + moveEvent.clientY - startY));
+        const nextRight = Math.max(8, canvasRect.width - nextLeft - panelWidth);
+        panel.style.left = 'auto';
+        panel.style.right = `${nextRight}px`;
+        panel.style.top = `${nextTop}px`;
+        inspectorPosition = { top: Math.round(nextTop), right: Math.round(nextRight) };
+      };
+
+      const onUp = () => {
+        panel.classList.remove('ring-1', 'ring-projectGold/50');
+        writeJSONPreference(UI_STORAGE_KEYS.inspectorPosition, inspectorPosition);
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+      };
+
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp, { once: true });
+    });
+
+    resetButton?.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      inspectorPosition = { top: 16, right: 16 };
+      writeJSONPreference(UI_STORAGE_KEYS.inspectorPosition, inspectorPosition);
+      applyInspectorPosition(panel);
+    });
+  }
+
+  function finishInspectorPanel(panel) {
+    refs.canvas.appendChild(panel);
+    applyInspectorPosition(panel);
+    makeInspectorDraggable(panel);
+    if (window.lucide) window.lucide.createIcons();
+  }
+
   function renderInspectorPreview() {
     const existing = document.getElementById('splitInspectorPreview');
     if (existing) existing.remove();
@@ -177,11 +275,14 @@ export function createProjectUI({
 
     const panel = document.createElement('div');
     panel.id = 'splitInspectorPreview';
-    panel.className = 'absolute top-4 right-4 z-30 w-[300px] bg-cardDark/85 backdrop-blur-md border border-projectGold/30 rounded-lg shadow-card-glow';
+    panel.className = 'absolute z-30 w-[300px] bg-cardDark/85 backdrop-blur-md border border-projectGold/30 rounded-lg shadow-card-glow';
 
     if (selectedNode) {
       panel.innerHTML = `
-        <div class="px-3 py-2 border-b border-[#2d2d42] text-xs font-bold text-projectGoldGlow">Selected Node</div>
+        <div data-inspector-drag-handle class="px-3 py-2 border-b border-[#2d2d42] text-xs font-bold text-projectGoldGlow flex items-center justify-between cursor-move select-none">
+          <span>Selected Node</span>
+          <button data-inspector-reset-position class="text-[9px] font-mono text-zinc-500 hover:text-projectGoldGlow cursor-pointer">reset pos</button>
+        </div>
         <div class="p-3 space-y-2">
           <div class="text-[10px] font-mono text-zinc-500">${escapeHtml(selectedNode.id)} · ${escapeHtml(selectedNode.type)}</div>
           <label class="block text-[10px] font-mono text-zinc-500">NAME</label>
@@ -190,8 +291,9 @@ export function createProjectUI({
           <textarea id="splitNodeDescInput" rows="3" class="w-full bg-black/40 border border-[#2d2d42] rounded px-2 py-1 text-xs text-zinc-200 focus:outline-none">${escapeHtml(selectedNode.properties.description)}</textarea>
           <button id="deleteSplitNodeBtn" class="w-full bg-red-950/40 border border-red-500/30 hover:bg-red-900/50 text-red-200 px-3 py-1.5 rounded text-xs transition">Delete Node</button>
         </div>
+        ${getInspectorStatusFooter()}
       `;
-      refs.canvas.appendChild(panel);
+      finishInspectorPanel(panel);
       panel.querySelector('#splitNodeNameInput')?.addEventListener('input', (event) => {
         stateManager.updateNode(selectedNode.id, { properties: { name: event.target.value } });
         renderer?.renderGraph();
@@ -213,22 +315,30 @@ export function createProjectUI({
 
     if (selectedRoute) {
       panel.innerHTML = `
-        <div class="px-3 py-2 border-b border-[#2d2d42] text-xs font-bold text-projectGoldGlow">Selected Route</div>
+        <div data-inspector-drag-handle class="px-3 py-2 border-b border-[#2d2d42] text-xs font-bold text-projectGoldGlow flex items-center justify-between cursor-move select-none">
+          <span>Selected Route</span>
+          <button data-inspector-reset-position class="text-[9px] font-mono text-zinc-500 hover:text-projectGoldGlow cursor-pointer">reset pos</button>
+        </div>
         <div class="p-3 space-y-2 text-xs text-zinc-400">
           <div class="text-[10px] font-mono text-zinc-500">${escapeHtml(selectedRoute.id)}</div>
           <div>${escapeHtml(selectedRoute.source)} → ${escapeHtml(selectedRoute.target)}</div>
           <div>Type: ${escapeHtml(selectedRoute.type)}</div>
         </div>
+        ${getInspectorStatusFooter()}
       `;
-      refs.canvas.appendChild(panel);
+      finishInspectorPanel(panel);
       return;
     }
 
     panel.innerHTML = `
-      <div class="px-3 py-2 border-b border-[#2d2d42] text-xs font-bold text-projectGoldGlow">Inspector</div>
-      <div class="p-3 text-xs text-zinc-500 leading-relaxed">Click or drag a node. Scrollwheel-click / third mouse button drag pans the canvas. Mousewheel zooms. Click a catalog placeholder to create a new node.</div>
+      <div data-inspector-drag-handle class="px-3 py-2 border-b border-[#2d2d42] text-xs font-bold text-projectGoldGlow flex items-center justify-between cursor-move select-none">
+        <span>Inspector</span>
+        <button data-inspector-reset-position class="text-[9px] font-mono text-zinc-500 hover:text-projectGoldGlow cursor-pointer">reset pos</button>
+      </div>
+      <div class="p-3 text-xs text-zinc-500 leading-relaxed">Click a node or route to edit it here. Drag this inspector from its header.</div>
+      ${getInspectorStatusFooter()}
     `;
-    refs.canvas.appendChild(panel);
+    finishInspectorPanel(panel);
   }
 
   function renderManifest() {
