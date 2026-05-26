@@ -1,10 +1,11 @@
 import './template-card-patch.js?v=1.02';
 import './right-panel-layout-patch.js?v=1.02';
+import './square-icon-cards-patch.js?v=1.03';
 import { initRenderer } from './editor-renderer.js';
 import { initUI, showToast } from './editor-ui.js';
 import { validateCurrentArchetype } from './editor-state.js';
 
-const VERSION_LABEL = 'V1.02';
+const VERSION_LABEL = 'V1.03';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
