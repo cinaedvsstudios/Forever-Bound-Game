@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document preserves the starter colour and display rules from the older docs folder.
+This document preserves the starter colour and display rules from the older docs folder and adds the current Artifex UI branding rules used by the editor modules.
 
 ## Base Display
 
@@ -44,6 +44,81 @@ Default design frame:
 - Red = boss danger
 - Yellow = Jobs, Errands, rewards, Silver activity
 - Copper / bronze = ancient UI, title branding, borders
+
+## Artifex Tool UI Branding Rules
+
+These rules apply to Artifex editor tools, including the Effect Editor, Scene Editor, Sprite Wizard, Archetype tools, and future mini-apps.
+
+### Overall UI tone
+
+- The UI should feel ancient, magical, crafted, and slightly arcane, not flat or generic.
+- Panels should use dark brown / near-black surfaces with parchment, bronze, copper, and soft gold text.
+- The default editor chrome should remain dark and warm: black, deep brown, bronze, gold, parchment, and muted cream.
+- Module-specific accent colours may be used to identify the current tool family, but they must not become a user-facing theme picker unless that is explicitly required.
+
+### Module accent colours
+
+Use accent colours to tell the user which Artifex module they are in:
+
+- Effects / FX Editor: cyan-blue accent and glow.
+- Archetype / Object tools: red accent and glow.
+- Project / Library tools: gold-green accent and glow.
+
+Accent colour should appear on active states, selected borders, glowing indicators, helper dots, and key module identity details. It should not replace the base bronze/gold Artifex look.
+
+### Typography and text size
+
+- Main tool title: large serif fantasy title, usually `ARTIFEX`.
+- Section/card titles: serif, uppercase, letter-spaced, around 13px in dense editor panels.
+- Labels, compact controls, helper buttons, outputs, and side-panel body text: around 11px.
+- Small metadata, hints, diagnostics, and secondary notes: around 9–10px.
+- Text should be consistent inside a panel. Do not mix multiple arbitrary sizes in the same control group.
+- Use minimal text on controls wherever the icon/emoji plus tooltip is clear enough.
+
+### Cards and panels
+
+- Cards should use rounded corners, dark surfaces, and thin bronze/copper borders.
+- Standard editor cards should use roughly 14–16px border radius.
+- Card headers should include a collapse/expand control when the card is long or part of a dense side panel.
+- Collapse buttons should use compact emoji/double-arrow style controls, with mouseover tooltips.
+- Related helper presets should be grouped into one card, separated by internal section headers, not scattered across multiple separate cards.
+
+### Buttons and controls
+
+- Buttons should be rounded and tactile, normally around 10–13px border radius.
+- Tiny utility buttons may use around 8px radius.
+- Buttons should use dark bronze/brown gradients by default.
+- Active buttons should glow using the current module accent colour.
+- Selected cards, active objects, chosen layers, selected brush thumbnails, active ramp handles, focused inputs, and chosen controls should use a cyan/blue border/glow in the Effects module.
+- Destructive buttons may use red/pink text or border accents but should still fit the Artifex theme.
+
+### Emoji / minimal text rule
+
+- Toolbars and dense action rows should prefer emojis, icons, or very short labels.
+- Use an emoji or symbol when the action is simple: pause/play, snapshot, clear, save, delete, underlay, performance mode, collapse, expand, move up, move down, duplicate, show/hide, reset, zoom target, etc.
+- If text is needed, keep it short, such as `BG`, `Guides`, `Save`, `Library`, or `SNAP`.
+- Avoid long button labels in dense panels. Move explanation into the tooltip.
+- Every button, icon-only control, slider, select, and important input must have a mouseover tooltip via the `title` attribute.
+
+### Slider and input rules
+
+- Sliders should have visible numeric output nearby when the value matters.
+- Every slider must have a tooltip explaining what it controls.
+- Direction/rotation sliders may include snap toggles when useful.
+- Snap controls should be clear and compact, such as `SNAP`, with tooltip text explaining the snap behaviour.
+- Input/select focus state should use the module accent border/glow.
+
+### Background / guides / underlay controls
+
+- Background controls should stay compact. Use `BG` as the label and use visual state to show dark, white, or underlay/rainbow mode.
+- Guide controls should say `Guides`; the active state should be shown by glow, not by appending `On` or `Off` in the button text.
+- Underlay load controls should use a compact image emoji button, for example `🖼️`, with a tooltip.
+
+### Bottom panel rules
+
+- The bottom panel should have one collapse/expand control for the whole panel, not separate collapse controls on every bottom card.
+- Layer actions in the bottom panel should prefer compact icons or emoji instead of wordy buttons.
+- Keep related controls together: playback/export controls, layer controls, diagnostics.
 
 ## Reference Image
 
