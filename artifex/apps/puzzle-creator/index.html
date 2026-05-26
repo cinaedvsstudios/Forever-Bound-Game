@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Artifex Maze Maker · Forever Bound</title>
+  <title>Artifex Puzzle Creator · Forever Bound</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -13,15 +13,15 @@
   <div class="app-shell">
     <header class="app-header">
       <div class="brand-lockup">
-        <div class="brand-sigil" aria-hidden="true">ᚠ</div>
+        <div class="brand-sigil" aria-hidden="true"><span class="brand-rune">ᚠ</span></div>
         <div>
           <p class="eyebrow">Artifex Quest Builder Module</p>
-          <h1>Maze Maker</h1>
-          <p class="subtitle">Build a maze puzzle, preview it, then export game-readable JSON.</p>
+          <h1>Puzzle Creator</h1>
+          <p class="subtitle">Build puzzle modules, preview them, then export game-readable JSON.</p>
         </div>
       </div>
 
-      <nav class="app-menu" aria-label="Maze Maker menu">
+      <nav class="app-menu" aria-label="Puzzle Creator menu">
         <div class="menu-group">
           <button class="menu-top" type="button">File</button>
           <div class="menu-panel">
@@ -61,7 +61,7 @@
         <div class="menu-group">
           <button class="menu-top" type="button">Help</button>
           <div class="menu-panel wide-menu-panel">
-            <p><strong>Build</strong> creates the maze. <strong>Display</strong> changes the preview. <strong>Game logic</strong> controls export metadata and difficulty. <strong>Visuals & Paint</strong> edits appearance and wall cells.</p>
+            <p><strong>Build</strong> creates the maze. <strong>Display</strong> changes the playable preview. <strong>Game logic</strong> controls quest metadata and difficulty. <strong>Visuals & Paint</strong> edits the look and cell colours.</p>
           </div>
         </div>
       </nav>
@@ -72,8 +72,8 @@
     </header>
 
     <main class="workspace two-panel-workspace">
-      <aside class="control-rail left-panel" aria-label="Maze Maker controls">
-        <nav class="left-icon-bar" aria-label="Maze Maker sections">
+      <aside class="control-rail left-panel" aria-label="Puzzle Creator controls">
+        <nav class="left-icon-bar" aria-label="Puzzle Creator sections">
           <button class="panel-nav-button is-active" type="button" data-panel="build" data-check="build" title="Build maze" aria-label="Build maze">⚒</button>
           <button class="panel-nav-button" type="button" data-panel="display" data-check="display" title="Display" aria-label="Display">◈</button>
           <button class="panel-nav-button" type="button" data-panel="logic" data-check="logic" title="Game logic" aria-label="Game logic">☍</button>
@@ -86,7 +86,6 @@
               <div><p class="eyebrow">01 · Construction</p><h2>Build maze</h2></div>
               <span id="analysis-state" class="status-pill is-waiting">Ready</span>
             </div>
-
             <div class="button-grid two build-quick-actions">
               <button id="btn-random" class="wide-button">Fresh Random</button>
               <button id="btn-load-reference" class="wide-button">Load Reference</button>
@@ -116,7 +115,7 @@
           <section class="panel tool-panel" data-panel-content="logic" hidden>
             <div class="panel-title-row"><div><p class="eyebrow">03 · Quest Data</p><h2>Game logic</h2></div></div>
             <label class="field-block"><span>Puzzle Type</span><select id="puzzle-type"><option value="pass_environmental_obstacle">Pass Environmental Obstacle</option><option value="unlock_route">Unlock Route</option><option value="survive_route">Survive Route</option><option value="ritual_sequence">Ritual Sequence</option></select></label>
-            <label class="field-block"><span>Integration Context</span><select id="gameplay-mode"><option value="scene_mode">Scene / Room puzzle</option><option value="travel_mode">Travel route puzzle</option></select><small>This only affects the exported quest metadata; it does not change the maze geometry.</small></label>
+            <label class="field-block"><span>Integration Context</span><select id="gameplay-mode"><option value="scene_mode">Scene / Room puzzle</option><option value="travel_mode">Travel route puzzle</option></select><small>This affects export metadata, not the generated maze shape.</small></label>
             <label class="range-row"><span>Difficulty <output id="difficulty-val">3 · Balanced</output></span><input id="difficulty-slider" type="range" min="1" max="5" step="1" value="3" /></label>
             <div class="button-grid two"><button id="btn-apply-difficulty" class="wide-button">Apply Difficulty</button><button id="btn-solve" class="wide-button">Plot Solution Path</button></div>
             <label class="field-block"><span>Completion Flag</span><input id="completion-flag" type="text" value="maze_exit_reached" /></label>
@@ -136,18 +135,26 @@
         </div>
       </aside>
 
-      <section class="stage right-panel" aria-label="Maze preview workspace">
-        <div class="stage-toolbar right-panel-toolbar"><div><p class="eyebrow">Preview</p><h2>Maze workspace</h2></div><div class="toolbar-buttons"><button id="btn-zoom-out" class="small-button">−</button><button id="btn-zoom-reset" class="small-button">Fit</button><button id="btn-zoom-in" class="small-button">+</button></div></div>
+      <section class="stage right-panel" aria-label="Puzzle preview workspace">
         <div class="right-preview-layout" id="preview-workspace">
-          <div class="render-viewport"><div class="render-status-line"><strong>Playable Preview</strong><span id="player-status-indicator">Diorama camera</span></div><div id="threejs-container" class="threejs-container"></div><div id="virtual-dpad" class="virtual-dpad is-hidden" aria-label="Walk test controls"><button data-dpad="w">▲</button><div><button data-dpad="a">◀</button><span>WALK</span><button data-dpad="d">▶</button></div><button data-dpad="s">▼</button></div></div>
-          <div class="overview-window" id="overview-window">
-            <div class="overview-titlebar" id="overview-titlebar"><strong>Overview</strong><span id="matrix-summary">No cells yet</span><button id="overview-close" type="button" aria-label="Hide overview">×</button></div>
-            <div class="canvas-frame matrix-canvas-frame"><canvas id="analysis-canvas" width="300" height="300"></canvas></div>
-            <div class="legend-row compact-legend"><span><i class="legend wall"></i>Wall</span><span><i class="legend path"></i>Path</span><span><i class="legend start"></i>Start</span><span><i class="legend end"></i>Exit</span></div>
+          <div class="render-viewport">
+            <div class="render-status-line">
+              <strong>Playable Preview</strong>
+              <span id="player-status-indicator">Diorama camera</span>
+              <div class="play-toolbar"><button id="btn-zoom-out" class="small-button">−</button><button id="btn-zoom-reset" class="small-button">Fit</button><button id="btn-zoom-in" class="small-button">+</button></div>
+            </div>
+            <div id="threejs-container" class="threejs-container"></div>
+            <div id="virtual-dpad" class="virtual-dpad is-hidden" aria-label="Walk test controls"><button data-dpad="w">▲</button><div><button data-dpad="a">◀</button><span>WALK</span><button data-dpad="d">▶</button></div><button data-dpad="s">▼</button></div>
           </div>
         </div>
       </section>
     </main>
+  </div>
+
+  <div class="overview-window" id="overview-window">
+    <div class="overview-titlebar" id="overview-titlebar"><strong>Overview</strong><span id="matrix-summary">No cells yet</span><button id="overview-close" type="button" aria-label="Hide overview">×</button></div>
+    <div class="canvas-frame matrix-canvas-frame"><canvas id="analysis-canvas" width="300" height="300"></canvas></div>
+    <div class="legend-row compact-legend"><span><i class="legend wall"></i>Wall</span><span><i class="legend path"></i>Path</span><span><i class="legend start"></i>Start</span><span><i class="legend end"></i>Exit</span></div>
   </div>
 
   <script type="module" src="src/js/main.js"></script>
