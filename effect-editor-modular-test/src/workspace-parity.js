@@ -25,7 +25,7 @@ function injectWorkspaceStyles() {
   const style = document.createElement('style');
   style.id = 'workspace-parity-style';
   style.textContent = `
-    .workspace-extra-controls { display: flex; align-items: center; gap: 8px; margin-left: 8px; }
+    .workspace-extra-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .workspace-extra-controls button { min-height: 34px; padding: 6px 10px; font-size: 12px; white-space: nowrap; }
     .reference-file-label { border: 1px solid var(--border); border-radius: 13px; padding: 7px 10px; background: linear-gradient(180deg, #2a201a 0%, #1b1411 100%); color: var(--gold); cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,.62); font-size: 12px; white-space: nowrap; }
     .reference-file-label input { display: none; }
@@ -39,28 +39,27 @@ function injectWorkspaceStyles() {
 }
 
 function ensureToolbarControls() {
-  const toolbar = document.querySelector('.workspace-toolbar');
+  const controlsHost = document.getElementById('bottom-workspace-controls') || document.querySelector('.workspace-toolbar');
   const workspace = document.getElementById('workspace');
-  if (!toolbar || !workspace || document.getElementById('workspace-mode-cycle-button')) return;
+  if (!controlsHost || !workspace || document.getElementById('workspace-mode-cycle-button')) return;
 
-  const status = document.getElementById('status-text');
   const controls = document.createElement('div');
   controls.className = 'workspace-extra-controls';
   controls.innerHTML = `
-    <button id="workspace-mode-cycle-button" type="button">Background: Dark</button>
-    <button id="helper-cycle-button" type="button">Guides: On</button>
-    <label class="reference-file-label">Load Underlay<input id="reference-file-input" type="file" accept="image/*,video/*" /></label>
-    <button id="toggle-reference-button" type="button">Underlay: Off</button>
+    <button id="workspace-mode-cycle-button" type="button" title="Cycle the preview background between dark, white, and loaded underlay.">Background: Dark</button>
+    <button id="helper-cycle-button" type="button" title="Toggle grid and emitter guide visibility.">Guides: On</button>
+    <label class="reference-file-label" title="Load an image/video underlay behind the effect.">Load Underlay<input id="reference-file-input" type="file" accept="image/*,video/*" /></label>
+    <button id="toggle-reference-button" type="button" title="Show or hide the loaded image/video underlay.">Underlay: Off</button>
   `;
-  toolbar.insertBefore(controls, status || null);
+  controlsHost.append(controls);
 
   workspace.insertAdjacentHTML('beforeend', `
     <div id="reference-control-strip" class="reference-control-strip" hidden>
       <span id="reference-name" class="reference-name">No underlay loaded</span>
       <label>Opacity <input id="reference-opacity-input" type="range" min="0" max="1" step="0.01" value="0.55" /></label>
-      <button id="reference-frame-back-button" type="button">Frame −</button>
-      <button id="reference-frame-forward-button" type="button">Frame +</button>
-      <button id="clear-reference-button" type="button">Clear Underlay</button>
+      <button id="reference-frame-back-button" type="button" title="Move the underlay video one frame backward once video support is wired.">Frame −</button>
+      <button id="reference-frame-forward-button" type="button" title="Move the underlay video one frame forward once video support is wired.">Frame +</button>
+      <button id="clear-reference-button" type="button" title="Clear the loaded underlay.">Clear Underlay</button>
     </div>
   `);
 }
