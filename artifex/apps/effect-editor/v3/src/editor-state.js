@@ -165,7 +165,27 @@ export function normalizeLayer(layer) {
     orbitalForce: finiteNumber(layer.orbitalForce, 0),
     lifetimeMin: finiteNumber(layer.lifetimeMin, Math.max(4, lifetime * 0.75)),
     lifetimeMax: finiteNumber(layer.lifetimeMax, Math.max(4, lifetime * 1.25)),
-    noiseGrain: finiteNumber(layer.noiseGrain, 0)
+    noiseGrain: finiteNumber(layer.noiseGrain, 0),
+    arcLength: finiteNumber(layer.arcLength, 82),
+    arcBranches: finiteNumber(layer.arcBranches, 3),
+    arcJaggedness: finiteNumber(layer.arcJaggedness, 18),
+    arcFlicker: finiteNumber(layer.arcFlicker, 0.7),
+    shockwaveRadius: finiteNumber(layer.shockwaveRadius, 245),
+    shockwaveThickness: finiteNumber(layer.shockwaveThickness, 9),
+    shockwaveCenterFlash: finiteNumber(layer.shockwaveCenterFlash, 0.28),
+    distortionStrength: finiteNumber(layer.distortionStrength, 12),
+    distortionScale: finiteNumber(layer.distortionScale, 28),
+    flareStreakLength: finiteNumber(layer.flareStreakLength, 320),
+    flareGhosts: finiteNumber(layer.flareGhosts, 4),
+    flareHalo: finiteNumber(layer.flareHalo, 72),
+    textContent: layer.textContent || 'AETHERA',
+    textAlign: layer.textAlign || 'center',
+    textFont: layer.textFont || 'Cinzel, Georgia, serif',
+    textWeight: layer.textWeight || '700',
+    textStroke: layer.textStroke !== false,
+    textStrokeWidth: finiteNumber(layer.textStrokeWidth, 2),
+    textLetterSpacing: finiteNumber(layer.textLetterSpacing, 1),
+    syncGroup: layer.syncGroup || ''
   };
 }
 
@@ -206,6 +226,17 @@ export function updateActiveLayer(patch) {
     layer.appearanceStops = normalizeAppearanceStops(patch.appearanceStops, layer);
     layer.activeAppearanceStopIndex = clamp(Math.round(finiteNumber(layer.activeAppearanceStopIndex, 0)), 0, Math.max(0, layer.appearanceStops.length - 1));
     syncLegacyAppearanceFields(layer);
+  }
+  editorState.composition.updatedAt = new Date().toISOString();
+  notifyChange();
+}
+
+export function updateSyncedLayers(syncGroup, patch) {
+  const group = String(syncGroup || '').trim();
+  if (!group) return;
+  for (const layer of editorState.composition.layers) {
+    if (layer.syncGroup !== group || layer.locked) continue;
+    Object.assign(layer, patch);
   }
   editorState.composition.updatedAt = new Date().toISOString();
   notifyChange();
