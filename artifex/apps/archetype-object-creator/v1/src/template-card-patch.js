@@ -1,6 +1,9 @@
 import { ROLE_TEMPLATES } from './templates.js';
 
-const ICON_BASE_PATH = './v1/icons/object-archetypes/';
+const ICON_ATLAS_PATH = './v1/icons/object-archetypes/icons1.png';
+const ATLAS_COLUMNS = 6;
+const ATLAS_ROWS = 3;
+const ATLAS_ICON_CROP_RATIO = 0.78;
 
 export const TEMPLATE_COLOUR_GROUPS = {
   person_static: 'people',
@@ -23,9 +26,26 @@ export const TEMPLATE_COLOUR_GROUPS = {
   hazard: 'hazard'
 };
 
-export const TEMPLATE_ICON_FILES = Object.fromEntries(
-  Object.keys(TEMPLATE_COLOUR_GROUPS).map((id) => [id, `${id}.png`])
-);
+export const TEMPLATE_ATLAS_POSITIONS = {
+  person_static: [0, 0],
+  person_npc_basic: [1, 0],
+  person_npc_moving: [2, 0],
+  person_vendor_job: [3, 0],
+  person_companion: [4, 0],
+  person_player_full: [5, 0],
+  person_foe_human: [0, 1],
+  person_thrall: [1, 1],
+  person_caster: [2, 1],
+  creature_foe: [3, 1],
+  boss_bellator: [4, 1],
+  static_prop: [5, 1],
+  door_exit: [0, 2],
+  pickup: [1, 2],
+  searchable_cache: [2, 2],
+  throwable_object: [3, 2],
+  marker: [4, 2],
+  hazard: [5, 2]
+};
 
 const FALLBACK_SYMBOLS = {
   person_static: '♙',
@@ -90,8 +110,8 @@ const GROUP_THEME_CSS = `
   box-shadow: inset 0 0 0 1px rgba(255, 240, 206, 0.04);
 }
 .template-icon-img {
-  max-width: 70px;
-  max-height: 70px;
+  width: 92px;
+  height: 92px;
   object-fit: contain;
   filter: drop-shadow(0 0 12px var(--template-glow));
 }
@@ -115,6 +135,9 @@ const GROUP_THEME_CSS = `
   .menu-bar { justify-content: flex-start; }
 }
 `;
+
+let atlasImagePromise = null;
+const croppedIconCache = new Map();
 
 function injectTemplateCardStyles() {
   if (document.getElementById('object-template-card-colour-styles')) return;
@@ -142,22 +165,74 @@ function decorateTemplateCards() {
 
     visual.dataset.templateGroup = TEMPLATE_COLOUR_GROUPS[templateId] || 'default';
     visual.innerHTML = '';
-
-    const image = document.createElement('img');
-    image.className = 'template-icon-img';
-    image.alt = `${ROLE_TEMPLATES[templateId].label} icon`;
-    image.src = `${ICON_BASE_PATH}${TEMPLATE_ICON_FILES[templateId]}`;
-    image.onerror = () => {
-      image.remove();
-      if (!visual.querySelector('.template-icon-fallback')) {
-        const fallback = document.createElement('span');
-        fallback.className = 'template-icon-fallback';
-        fallback.textContent = FALLBACK_SYMBOLS[templateId] || '⬡';
-        visual.appendChild(fallback);
-      }
-    };
-    visual.appendChild(image);
+    renderAtlasIcon(visual, templateId);
   });
+}
+
+function renderAtlasIcon(visual, templateId) {
+  const fallback = document.createElement('span');
+  fallback.className = 'template-icon-fallback';
+  fallback.textContent = FALLBACK_SYMBOLS[templateId] || '⬡';
+  visual.appendChild(fallback);
+
+  cropIconFromAtlas(templateId)
+    .then((dataUrl) => {
+      if (!dataUrl) return;
+      const image = document.createElement('img');
+      image.className = 'template-icon-img';
+      image.alt = `${ROLE_TEMPLATES[templateId].label} icon`;
+      image.src = dataUrl;
+      visual.innerHTML = '';
+      visual.appendChild(image);
+    })
+    .catch(() => {
+      // Keep the fallback symbol if the icon sheet is missing or cannot be cropped.
+    });
+}
+
+function cropIconFromAtlas(templateId) {
+  if (croppedIconCache.has(templateId)) return Promise.resolve(croppedIconCache.get(templateId));
+  const position = TEMPLATE_ATLAS_POSITIONS[templateId];
+  if (!position) return Promise.resolve('');
+
+  return loadAtlasImage().then((atlas) => {
+    const [column, row] = position;
+    const cellWidth = atlas.naturalWidth / ATLAS_COLUMNS;
+    const cellHeight = atlas.naturalHeight / ATLAS_ROWS;
+    const sourceX = column * cellWidth;
+    const sourceY = row * cellHeight;
+    const sourceWidth = cellWidth;
+    const sourceHeight = cellHeight * ATLAS_ICON_CROP_RATIO;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const context = canvas.getContext('2d');
+    context.clearRect(0, 0, canvas.width, canvas.height);
+
+    const padding = 10;
+    const scale = Math.min((canvas.width - padding * 2) / sourceWidth, (canvas.height - padding * 2) / sourceHeight);
+    const drawWidth = sourceWidth * scale;
+    const drawHeight = sourceHeight * scale;
+    const drawX = (canvas.width - drawWidth) / 2;
+    const drawY = (canvas.height - drawHeight) / 2;
+
+    context.drawImage(atlas, sourceX, sourceY, sourceWidth, sourceHeight, drawX, drawY, drawWidth, drawHeight);
+    const dataUrl = canvas.toDataURL('image/png');
+    croppedIconCache.set(templateId, dataUrl);
+    return dataUrl;
+  });
+}
+
+function loadAtlasImage() {
+  if (atlasImagePromise) return atlasImagePromise;
+  atlasImagePromise = new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error(`Unable to load ${ICON_ATLAS_PATH}`));
+    image.src = ICON_ATLAS_PATH;
+  });
+  return atlasImagePromise;
 }
 
 function readTemplateId(card) {
