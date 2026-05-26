@@ -9,6 +9,7 @@ const BUILT_IN_ASSETS = [
   { id: 'shape:diamond', source: 'built-in', kind: 'shape', value: 'diamond', name: 'Diamond', symbol: '◆' },
   { id: 'shape:star', source: 'built-in', kind: 'shape', value: 'star', name: 'Star', symbol: '✦' },
   { id: 'shape:slash', source: 'built-in', kind: 'shape', value: 'slash', name: 'Slash Stroke', symbol: '╱' },
+  { id: 'shape:text', source: 'built-in', kind: 'shape', value: 'text', name: 'Text', symbol: 'T' },
   { id: 'brush:spark', source: 'built-in', kind: 'brush', value: 'spark', name: 'Sharp Spark', symbol: '—' },
   { id: 'brush:soft-dot', source: 'built-in', kind: 'brush', value: 'soft-dot', name: 'Soft Dot', symbol: '●' },
   { id: 'brush:smoke-puff', source: 'built-in', kind: 'brush', value: 'smoke-puff', name: 'Smoke Puff', symbol: '☁' },
@@ -318,7 +319,12 @@ function isSelectedAsset(layer, asset) {
 
 function applyBrushAsset(asset) {
   if (asset.kind === 'shape') {
-    updateActiveLayer({ appearanceMode: 'shape', particleShape: asset.value });
+    const patch = { appearanceMode: 'shape', particleShape: asset.value };
+    if (asset.value === 'text') {
+      patch.textContent = getActiveLayer()?.textContent || 'AETHERA';
+      patch.spawnRate = Math.min(Number(getActiveLayer()?.spawnRate) || 4, 8);
+    }
+    updateActiveLayer(patch);
   } else if (asset.kind === 'brush') {
     updateActiveLayer({ appearanceMode: 'brush', builtInBrush: asset.value });
   } else {
