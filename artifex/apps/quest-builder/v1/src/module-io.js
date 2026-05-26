@@ -1,5 +1,5 @@
-import { MODULE_SLUG, MODULE_STORAGE_KEY } from './module-config.js';
-import { loadDocument, serializeDocument, state } from './module-state.js';
+import { MODULE_SLUG, MODULE_STORAGE_KEY } from './module-config.js?v=qb-v1-0-1-20260526d';
+import { loadDocument, serializeDocument, state } from './module-state.js?v=qb-v1-0-1-20260526d';
 
 export function exportJson() {
   const blob = new Blob([serializeDocument()], { type: 'application/json' });
