@@ -16,7 +16,7 @@ import { initWorkflowPolish } from './workflow-polish.js';
 import { initUIPolishV2 } from './ui-polish-v2.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'V3.0';
+const VERSION_LABEL = 'V3.10';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
