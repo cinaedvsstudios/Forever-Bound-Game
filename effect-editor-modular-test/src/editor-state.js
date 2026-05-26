@@ -83,18 +83,25 @@ export function normalizeComposition(input) {
 
 export function normalizeLayer(layer) {
   const lifetime = finiteNumber(layer.lifetime, 80);
+  const normalizedStops = normalizeAppearanceStops(layer.appearanceStops, layer);
+  const activeAppearanceStopIndex = clamp(Math.round(finiteNumber(layer.activeAppearanceStopIndex, 0)), 0, Math.max(0, normalizedStops.length - 1));
+  const firstStop = normalizedStops[0];
+  const lastStop = normalizedStops[normalizedStops.length - 1] || firstStop;
+
   return {
     id: layer.id || `layer_${cryptoRandom()}`,
     name: layer.name || 'Effect Layer',
     visible: layer.visible !== false,
     engine: layer.engine || 'particles',
-    colorA: layer.colorA || '#ffcc66',
-    colorB: layer.colorB || '#ff6600',
-    alphaStart: finiteNumber(layer.alphaStart, 1),
-    alphaEnd: finiteNumber(layer.alphaEnd, 0),
-    sizeStart: finiteNumber(layer.sizeStart, 20),
-    sizeEnd: finiteNumber(layer.sizeEnd, 4),
-    glow: finiteNumber(layer.glow, 12),
+    colorA: firstStop?.color || layer.colorA || '#ffcc66',
+    colorB: lastStop?.color || layer.colorB || '#ff6600',
+    alphaStart: finiteNumber(firstStop?.opacity, finiteNumber(layer.alphaStart, 1)),
+    alphaEnd: finiteNumber(lastStop?.opacity, finiteNumber(layer.alphaEnd, 0)),
+    sizeStart: finiteNumber(firstStop?.size, finiteNumber(layer.sizeStart, 20)),
+    sizeEnd: finiteNumber(lastStop?.size, finiteNumber(layer.sizeEnd, 4)),
+    glow: finiteNumber(firstStop?.glow, finiteNumber(layer.glow, 12)),
+    appearanceStops: normalizedStops,
+    activeAppearanceStopIndex,
     spawnRate: finiteNumber(layer.spawnRate, 16),
     speedMin: finiteNumber(layer.speedMin, 1.5),
     speedMax: finiteNumber(layer.speedMax, 6),
@@ -163,6 +170,11 @@ export function updateActiveLayer(patch) {
   const layer = getActiveLayer();
   if (!layer) return;
   Object.assign(layer, patch);
+  if (patch.appearanceStops) {
+    layer.appearanceStops = normalizeAppearanceStops(patch.appearanceStops, layer);
+    layer.activeAppearanceStopIndex = clamp(Math.round(finiteNumber(layer.activeAppearanceStopIndex, 0)), 0, Math.max(0, layer.appearanceStops.length - 1));
+    syncLegacyAppearanceFields(layer);
+  }
   editorState.composition.updatedAt = new Date().toISOString();
   notifyChange();
 }
@@ -289,6 +301,65 @@ export function notifyChange() {
   }
 }
 
+function normalizeAppearanceStops(stops, layer = {}) {
+  const fallback = createDefaultAppearanceStops(layer);
+  const rawStops = Array.isArray(stops) && stops.length ? stops : fallback;
+  const mapped = rawStops.slice(0, 5).map((stop, index) => ({
+    id: stop.id || `stop_${index + 1}_${cryptoRandom()}`,
+    position: snap01(finiteNumber(stop.position, index / Math.max(1, rawStops.length - 1))),
+    color: normalizeHex(stop.color || (index === 0 ? layer.colorA : layer.colorB) || '#ffcc66'),
+    opacity: clamp(finiteNumber(stop.opacity, index === 0 ? finiteNumber(layer.alphaStart, 1) : finiteNumber(layer.alphaEnd, 0)), 0, 1),
+    size: clamp(finiteNumber(stop.size, index === 0 ? finiteNumber(layer.sizeStart, 20) : finiteNumber(layer.sizeEnd, 4)), 0, 180),
+    glow: clamp(finiteNumber(stop.glow, index === 0 ? finiteNumber(layer.glow, 12) : 0), 0, 80)
+  })).sort((a, b) => a.position - b.position);
+
+  if (!mapped.length) return fallback;
+  mapped[0].position = 0;
+  if (mapped.length > 1) mapped[mapped.length - 1].position = 1;
+
+  for (let index = 1; index < mapped.length - 1; index += 1) {
+    const min = mapped[index - 1].position + 0.1;
+    const max = mapped[index + 1].position - 0.1;
+    mapped[index].position = snap01(clamp(mapped[index].position, min, max));
+  }
+
+  return mapped;
+}
+
+function createDefaultAppearanceStops(layer = {}) {
+  return [
+    {
+      id: `stop_start_${cryptoRandom()}`,
+      position: 0,
+      color: normalizeHex(layer.colorA || '#ffcc66'),
+      opacity: clamp(finiteNumber(layer.alphaStart, 1), 0, 1),
+      size: clamp(finiteNumber(layer.sizeStart, 20), 0, 180),
+      glow: clamp(finiteNumber(layer.glow, 12), 0, 80)
+    },
+    {
+      id: `stop_end_${cryptoRandom()}`,
+      position: 1,
+      color: normalizeHex(layer.colorB || '#ff6600'),
+      opacity: clamp(finiteNumber(layer.alphaEnd, 0), 0, 1),
+      size: clamp(finiteNumber(layer.sizeEnd, 4), 0, 180),
+      glow: 0
+    }
+  ];
+}
+
+function syncLegacyAppearanceFields(layer) {
+  const stops = normalizeAppearanceStops(layer.appearanceStops, layer);
+  const first = stops[0];
+  const last = stops[stops.length - 1] || first;
+  layer.colorA = first.color;
+  layer.colorB = last.color;
+  layer.alphaStart = first.opacity;
+  layer.alphaEnd = last.opacity;
+  layer.sizeStart = first.size;
+  layer.sizeEnd = last.size;
+  layer.glow = first.glow;
+}
+
 function defaultBlendMode(engine) {
   return engine === 'gas' || engine === 'refraction' ? 'source-over' : 'lighter';
 }
@@ -305,6 +376,19 @@ function cryptoRandom() {
     return buffer[0].toString(36);
   }
   return Math.random().toString(36).slice(2);
+}
+
+function normalizeHex(value) {
+  const string = String(value || '').trim();
+  if (/^#[0-9a-f]{6}$/iu.test(string)) return string;
+  if (/^#[0-9a-f]{3}$/iu.test(string)) {
+    return `#${string.slice(1).split('').map((char) => char + char).join('')}`;
+  }
+  return '#ffcc66';
+}
+
+function snap01(value) {
+  return clamp(Math.round(Number(value) * 10) / 10, 0, 1);
 }
 
 function clamp(value, min, max) {
