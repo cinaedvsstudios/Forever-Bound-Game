@@ -4,10 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-store" />
-  <title>Artifex Quest Builder V1.0.3</title>
+  <title>Artifex Quest Builder V1.0.4</title>
   <style>
     * { box-sizing: border-box; }
-
     :root {
       --bg: #101112;
       --panel: #1b1d1e;
@@ -25,9 +24,7 @@
       --muted: #aaa09a;
       --danger: #be3144;
     }
-
-    html,
-    body {
+    html, body {
       margin: 0;
       width: 100%;
       height: 100%;
@@ -37,16 +34,8 @@
       font-family: Inter, "Segoe UI", Arial, sans-serif;
       color-scheme: dark;
     }
-
-    button,
-    input,
-    select,
-    textarea {
-      font: inherit;
-    }
-
-    button,
-    .file-label {
+    button, input, select, textarea { font: inherit; }
+    button, .file-label {
       border: 1px solid var(--border);
       background: linear-gradient(180deg, #242628, #171819);
       color: var(--gold);
@@ -55,25 +44,21 @@
       cursor: pointer;
       box-shadow: 0 4px 10px rgba(0,0,0,.45);
     }
-
-    button:hover,
-    .file-label:hover {
+    button:hover, .file-label:hover {
       border-color: rgba(62,180,137,.7);
       color: #fff;
       box-shadow: 0 0 14px var(--accent-glow);
     }
-
     .primary {
       background: linear-gradient(180deg, rgba(62,180,137,.38), #171819);
       border-color: rgba(62,180,137,.75);
       color: #fff;
     }
-
     .topbar {
       height: 68px;
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(250px, 340px) 1fr minmax(250px, 340px);
       align-items: center;
-      justify-content: space-between;
       gap: 16px;
       padding: 10px 18px;
       border-bottom: 1px solid var(--border);
@@ -82,16 +67,14 @@
       position: relative;
       z-index: 30;
     }
-
     .brand {
       display: flex;
       align-items: center;
       gap: 12px;
-      min-width: 250px;
+      min-width: 0;
       padding-right: 18px;
       border-right: 1px solid rgba(226,204,167,.18);
     }
-
     .brand-mark {
       width: 48px;
       height: 48px;
@@ -103,8 +86,8 @@
       color: var(--gold-bright);
       box-shadow: 0 0 14px var(--accent-glow);
       font-size: 25px;
+      flex: 0 0 auto;
     }
-
     .brand h1 {
       margin: 0;
       font-family: Georgia, serif;
@@ -113,7 +96,6 @@
       line-height: 1;
       color: var(--gold-bright);
     }
-
     .brand p {
       margin: 4px 0 0;
       font-size: 9px;
@@ -122,7 +104,6 @@
       letter-spacing: .14em;
       font-weight: 700;
     }
-
     .badge {
       display: inline-block;
       margin-left: 8px;
@@ -132,27 +113,23 @@
       color: var(--accent-strong);
       background: var(--accent-soft);
     }
-
     .menu-bar {
       display: flex;
       align-items: center;
-      justify-content: flex-end;
+      justify-content: center;
       gap: 8px;
       min-width: 0;
     }
-
-    .menu {
-      position: relative;
-    }
-
+    .topbar-spacer { min-width: 0; }
+    .menu { position: relative; }
     .menu-button {
       border-radius: 999px;
       padding: 9px 16px;
       font-size: 13px;
       font-weight: 700;
       background: rgba(36,38,40,.92);
+      white-space: nowrap;
     }
-
     .menu-panel {
       display: none;
       position: absolute;
@@ -168,40 +145,28 @@
       box-shadow: 0 18px 38px rgba(0,0,0,.9);
       z-index: 100;
     }
-
-    .menu-panel.open {
-      display: block;
-    }
-
-    .menu-panel.right {
-      right: 0;
-      left: auto;
-    }
-
-    .menu-panel.wide {
-      width: min(420px, calc(100vw - 24px));
-    }
-
-    .menu-panel button,
-    .menu-panel .file-label {
+    .menu-panel.open { display: block; }
+    .menu-panel.right { right: 0; left: auto; }
+    .menu-panel.wide { width: min(420px, calc(100vw - 24px)); }
+    .menu-panel button, .menu-panel .file-label {
       display: block;
       width: 100%;
       text-align: left;
       margin-bottom: 6px;
     }
-
+    .menu-panel small {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.35;
+      margin-top: 3px;
+    }
     .insert-section {
       border-top: 1px solid var(--border-soft);
       padding-top: 10px;
       margin-top: 10px;
     }
-
-    .insert-section:first-child {
-      border-top: 0;
-      padding-top: 0;
-      margin-top: 0;
-    }
-
+    .insert-section:first-child { border-top: 0; padding-top: 0; margin-top: 0; }
     .insert-section h3 {
       margin: 0 0 9px;
       font-family: Georgia, serif;
@@ -210,7 +175,6 @@
       text-transform: uppercase;
       letter-spacing: .16em;
     }
-
     .app-shell {
       height: calc(100vh - 68px);
       display: grid;
@@ -219,7 +183,6 @@
       min-height: 0;
       overflow: hidden;
     }
-
     .side-panel {
       overflow: auto;
       background: rgba(24,25,26,.96);
@@ -227,88 +190,27 @@
       border-right: 1px solid var(--border);
       box-shadow: 8px 0 24px rgba(0,0,0,.45);
     }
-
     .workspace-column {
       min-width: 0;
       min-height: 0;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .flow-strip-shell {
-      min-height: 84px;
-      max-height: 92px;
-      background: rgba(21,22,23,.98);
-      border-bottom: 1px solid var(--border);
-      display: grid;
-      grid-template-columns: 150px 1fr;
-      align-items: stretch;
-      overflow: hidden;
-      flex-shrink: 0;
-    }
-
-    .flow-strip-header {
-      padding: 12px;
-      border-right: 1px solid var(--border-soft);
-    }
-
-    .flow-strip-header h2,
-    .card h2,
-    .dialog-header h2 {
-      margin: 0;
-      color: var(--gold-bright);
-      font-family: Georgia, serif;
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: .13em;
-    }
-
-    .flow-strip-header span {
-      display: block;
-      color: var(--muted);
-      font-size: 12px;
-      margin-top: 6px;
-    }
-
-    .flow-strip {
-      display: flex;
-      flex-wrap: nowrap;
-      gap: 9px;
-      overflow-x: auto;
-      overflow-y: hidden;
-      padding: 10px 12px;
-      align-items: center;
-    }
-
-    .workspace-toolbar {
-      min-height: 44px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 10px;
-      background: rgba(18,19,20,.98);
-      border-bottom: 1px solid var(--border);
-      overflow-x: auto;
-      flex-shrink: 0;
-    }
-
-    .workspace {
       position: relative;
-      flex: 1;
-      min-height: 160px;
-      overflow: auto;
+      overflow: hidden;
       background: #111214;
+    }
+    .workspace {
+      position: absolute;
+      inset: 0;
+      overflow: auto;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 18px;
+      padding: 36px;
+      background: radial-gradient(circle at 50% 35%, rgba(62,180,137,.08), transparent 44%), #111214;
     }
-
     #module-canvas {
       display: block;
       aspect-ratio: 16 / 9;
-      width: min(100%, calc((100vh - 230px) * 1.7777778));
+      width: min(100%, calc((100vh - 150px) * 1.7777778));
       max-width: 100%;
       max-height: 100%;
       height: auto;
@@ -319,21 +221,111 @@
       transform-origin: center center;
       flex-shrink: 0;
     }
-
+    .viewport-controls {
+      position: absolute;
+      top: 16px;
+      right: 18px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      z-index: 18;
+      padding: 7px;
+      border: 1px solid rgba(226,204,167,.16);
+      border-radius: 18px;
+      background: rgba(16,17,18,.82);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 12px 30px rgba(0,0,0,.58);
+    }
+    .viewport-controls button { padding: 7px 11px; border-radius: 12px; }
     #zoom-readout {
       min-width: 48px;
       text-align: center;
       color: var(--gold-bright);
       font-weight: 700;
     }
-
     #status-text {
-      margin-left: auto;
+      position: absolute;
+      left: 22px;
+      top: 18px;
       color: var(--accent-strong);
       font-size: 12px;
       white-space: nowrap;
+      z-index: 18;
+      padding: 8px 12px;
+      border: 1px solid rgba(226,204,167,.12);
+      border-radius: 999px;
+      background: rgba(16,17,18,.74);
+      backdrop-filter: blur(8px);
     }
-
+    .flow-window {
+      position: absolute;
+      left: 26px;
+      top: 72px;
+      width: min(860px, calc(100% - 52px));
+      min-width: 360px;
+      max-width: calc(100% - 52px);
+      border: 1px solid rgba(226,204,167,.18);
+      border-radius: 18px;
+      background: rgba(21,22,23,.91);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 18px 38px rgba(0,0,0,.72);
+      overflow: hidden;
+      z-index: 16;
+      resize: horizontal;
+    }
+    .flow-window.dragging {
+      user-select: none;
+      box-shadow: 0 0 0 1px rgba(62,180,137,.4), 0 22px 45px rgba(0,0,0,.82);
+    }
+    .flow-window-header {
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border-soft);
+      cursor: grab;
+      background: rgba(18,19,20,.96);
+    }
+    .flow-window-header:active { cursor: grabbing; }
+    .flow-title {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      min-width: 0;
+    }
+    .flow-title h2 {
+      margin: 0;
+      color: var(--gold-bright);
+      font-family: Georgia, serif;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .13em;
+      white-space: nowrap;
+    }
+    .flow-title span {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .flow-window-actions { display: flex; gap: 6px; flex: 0 0 auto; }
+    .flow-window-actions button {
+      padding: 5px 8px;
+      border-radius: 10px;
+      font-size: 12px;
+    }
+    .flow-strip {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 9px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 10px 12px 12px;
+      align-items: center;
+    }
+    .flow-window.collapsed .flow-strip { display: none; }
+    .flow-window.collapsed { width: 320px; min-width: 320px; }
     .card {
       border: 1px solid var(--border);
       border-radius: 18px;
@@ -342,7 +334,6 @@
       padding: 13px;
       box-shadow: 0 8px 20px rgba(0,0,0,.45);
     }
-
     .card header {
       display: flex;
       align-items: center;
@@ -351,7 +342,14 @@
       border-bottom: 1px solid var(--border-soft);
       margin-bottom: 13px;
     }
-
+    .card h2, .dialog-header h2 {
+      margin: 0;
+      color: var(--gold-bright);
+      font-family: Georgia, serif;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .13em;
+    }
     .mini-label {
       margin: 0 0 6px;
       color: var(--gold-muted);
@@ -360,32 +358,11 @@
       letter-spacing: .12em;
       font-weight: 800;
     }
-
-    .mini-copy,
-    .summary-copy {
-      color: var(--muted);
-      line-height: 1.45;
-    }
-
-    .small-button {
-      padding: 5px 9px;
-      border-radius: 999px;
-      font-size: 12px;
-    }
-
-    .button-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    .stack-list {
-      display: grid;
-      gap: 9px;
-    }
-
-    .quest-item,
-    .record-item {
+    .mini-copy, .summary-copy { color: var(--muted); line-height: 1.45; }
+    .small-button { padding: 5px 9px; border-radius: 999px; font-size: 12px; }
+    .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stack-list { display: grid; gap: 9px; }
+    .quest-item, .record-item {
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 9px 12px;
@@ -394,35 +371,27 @@
       text-align: left;
       color: var(--text);
     }
-
     .record-item {
-      flex: 0 0 230px;
+      flex: 0 0 250px;
       min-height: 62px;
       display: grid;
-      grid-template-columns: 34px minmax(0, 1fr);
+      grid-template-columns: 32px minmax(0, 1fr);
       align-items: center;
-      gap: 8px;
+      gap: 9px;
     }
-
     .block-emoji {
-      width: 30px;
-      height: 30px;
       display: grid;
       place-items: center;
-      border-radius: 10px;
-      background: var(--accent-soft);
-      border: 1px solid rgba(62,180,137,.45);
-      font-size: 17px;
+      font-size: 24px;
+      line-height: 1;
+      width: 30px;
+      height: 30px;
     }
-
-    .quest-item.selected,
-    .record-item.selected {
+    .quest-item.selected, .record-item.selected {
       border-color: rgba(62,180,137,.78);
       box-shadow: 0 0 0 1px var(--accent-soft), 0 0 16px var(--accent-glow);
     }
-
-    .quest-item strong,
-    .record-item strong {
+    .quest-item strong, .record-item strong {
       display: block;
       color: #fff;
       font-size: 12px;
@@ -430,9 +399,7 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-
-    .quest-item span,
-    .record-item span {
+    .quest-item span, .record-item span {
       display: block;
       color: var(--gold-muted);
       font-size: 10px;
@@ -441,7 +408,6 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-
     label {
       display: grid;
       gap: 6px;
@@ -452,10 +418,7 @@
       letter-spacing: .12em;
       font-weight: 800;
     }
-
-    input,
-    select,
-    textarea {
+    input, select, textarea {
       width: 100%;
       border: 1px solid var(--border);
       border-radius: 12px;
@@ -464,14 +427,8 @@
       background: #101112;
       box-shadow: inset 0 2px 6px rgba(0,0,0,.55);
     }
-
-    textarea {
-      resize: vertical;
-      min-height: 72px;
-    }
-
-    .editor-dialog,
-    .json-dialog {
+    textarea { resize: vertical; min-height: 72px; }
+    .editor-dialog, .json-dialog {
       border: 1px solid var(--border);
       border-radius: 20px;
       background: rgba(24,25,26,.98);
@@ -480,12 +437,7 @@
       width: min(760px, 92vw);
       max-height: 88vh;
     }
-
-    dialog::backdrop {
-      background: rgba(0,0,0,.68);
-      backdrop-filter: blur(4px);
-    }
-
+    dialog::backdrop { background: rgba(0,0,0,.68); backdrop-filter: blur(4px); }
     .dialog-header {
       display: flex;
       align-items: center;
@@ -494,20 +446,9 @@
       padding-bottom: 12px;
       margin-bottom: 14px;
     }
-
-    .dialog-close {
-      border-radius: 999px;
-      min-width: 38px;
-    }
-
-    .editor-section {
-      display: none;
-    }
-
-    .editor-section.is-active {
-      display: block;
-    }
-
+    .dialog-close { border-radius: 999px; min-width: 38px; }
+    .editor-section { display: none; }
+    .editor-section.is-active { display: block; }
     .dialog-actions {
       display: flex;
       justify-content: flex-end;
@@ -515,36 +456,20 @@
       border-top: 1px solid var(--border-soft);
       margin-top: 14px;
     }
-
-    .dialog-body {
-      color: var(--text);
-      line-height: 1.55;
-    }
-
+    .dialog-body { color: var(--text); line-height: 1.55; }
     .block-type-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
       gap: 8px;
     }
-
     .block-type-card {
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 10px;
       background: #101112;
     }
-
-    .block-type-card strong {
-      display: block;
-      color: var(--gold-bright);
-      margin-bottom: 4px;
-    }
-
-    .block-type-card span {
-      color: var(--muted);
-      font-size: 12px;
-    }
-
+    .block-type-card strong { display: block; color: var(--gold-bright); margin-bottom: 4px; }
+    .block-type-card span { color: var(--muted); font-size: 12px; }
     pre {
       white-space: pre-wrap;
       max-height: 65vh;
@@ -557,7 +482,6 @@
       font-family: Consolas, monospace;
       font-size: 11px;
     }
-
     #toast-area {
       position: absolute;
       right: 22px;
@@ -565,9 +489,8 @@
       display: grid;
       gap: 8px;
       pointer-events: none;
-      z-index: 10;
+      z-index: 40;
     }
-
     .toast {
       padding: 10px 13px;
       border-radius: 13px;
@@ -576,35 +499,14 @@
       color: #fff;
       box-shadow: 0 12px 30px rgba(0,0,0,.82);
     }
-
-    @media (max-width: 900px) {
-      .topbar {
-        height: auto;
-        align-items: flex-start;
-        flex-direction: column;
-      }
-
-      .brand {
-        border-right: 0;
-      }
-
-      .app-shell {
-        height: calc(100vh - 116px);
-        grid-template-columns: 260px 1fr;
-      }
-
-      .menu-bar {
-        flex-wrap: wrap;
-        justify-content: flex-start;
-      }
-
-      .flow-strip-shell {
-        grid-template-columns: 110px 1fr;
-      }
-
-      #module-canvas {
-        width: min(100%, calc((100vh - 270px) * 1.7777778));
-      }
+    @media (max-width: 1020px) {
+      .topbar { grid-template-columns: 1fr; height: auto; align-items: flex-start; }
+      .brand { border-right: 0; }
+      .menu-bar { flex-wrap: wrap; justify-content: flex-start; }
+      .topbar-spacer { display: none; }
+      .app-shell { height: calc(100vh - 116px); grid-template-columns: 260px 1fr; }
+      #module-canvas { width: min(100%, calc((100vh - 170px) * 1.7777778)); }
+      .flow-window { top: 62px; width: min(720px, calc(100% - 42px)); }
     }
   </style>
 </head>
@@ -614,7 +516,7 @@
       <div class="brand-mark">✦</div>
       <div>
         <h1>ARTIFEX</h1>
-        <p>Quest Builder <span class="badge" id="version-badge">V1.0.3</span></p>
+        <p>Quest Builder <span class="badge" id="version-badge">V1.0.4</span></p>
       </div>
     </section>
 
@@ -628,7 +530,6 @@
           <button id="save-local-button">Save Locally in Browser</button>
         </div>
       </div>
-
       <div class="menu">
         <button class="menu-button" data-menu="edit">Edit ▾</button>
         <div class="menu-panel" id="menu-edit">
@@ -639,16 +540,15 @@
           <button id="delete-block-button">Delete Selected Block</button>
         </div>
       </div>
-
       <div class="menu">
         <button class="menu-button" data-menu="view">View ▾</button>
         <div class="menu-panel" id="menu-view">
           <button id="bg-dark-button">Background: Charcoal</button>
           <button id="bg-light-button">Background: Light</button>
           <button id="snapshot-button">Snapshot Canvas</button>
+          <button id="reset-flow-window-button">Reset Quest Flow Window</button>
         </div>
       </div>
-
       <div class="menu">
         <button class="menu-button primary" data-menu="templates">Templates ▾</button>
         <div class="menu-panel wide" id="menu-templates">
@@ -663,7 +563,6 @@
           </section>
         </div>
       </div>
-
       <div class="menu">
         <button class="menu-button" data-menu="library">Library ▾</button>
         <div class="menu-panel" id="menu-library">
@@ -672,7 +571,6 @@
           <button id="library-note-button">Linked Libraries Note</button>
         </div>
       </div>
-
       <div class="menu">
         <button class="menu-button" data-menu="help">Help ▾</button>
         <div class="menu-panel right" id="menu-help">
@@ -681,6 +579,8 @@
         </div>
       </div>
     </nav>
+
+    <div class="topbar-spacer" aria-hidden="true"></div>
   </header>
 
   <main class="app-shell">
@@ -692,12 +592,10 @@
         <p class="mini-copy" id="file-summary-meta">chronicle_01</p>
         <button id="edit-file-button" class="small-button">Edit File Info</button>
       </section>
-
       <section class="card">
         <header><h2>Quests</h2><button id="side-add-quest-button" class="small-button">+</button></header>
         <div id="quest-list" class="stack-list"></div>
       </section>
-
       <section class="card">
         <header><h2>Selected</h2></header>
         <p class="mini-label">Calling</p>
@@ -709,26 +607,31 @@
       </section>
     </aside>
 
-    <section class="workspace-column">
-      <section class="flow-strip-shell">
-        <div class="flow-strip-header">
-          <h2>Quest Flow</h2>
-          <span id="block-count">0 blocks</span>
-        </div>
-        <div id="block-list" class="flow-strip"></div>
-      </section>
-
-      <section class="workspace-toolbar">
-        <button id="zoom-out-button">−</button>
-        <span id="zoom-readout">100%</span>
-        <button id="zoom-in-button">+</button>
-        <button id="zoom-reset-button">Reset Zoom</button>
-        <span id="status-text">Ready.</span>
-      </section>
-
+    <section class="workspace-column" id="workspace-column">
       <section class="workspace">
         <canvas id="module-canvas" width="1280" height="720"></canvas>
+        <span id="status-text">Ready.</span>
+        <div class="viewport-controls" aria-label="Viewport controls">
+          <button id="zoom-out-button">−</button>
+          <span id="zoom-readout">100%</span>
+          <button id="zoom-in-button">+</button>
+          <button id="zoom-reset-button">Reset</button>
+        </div>
         <div id="toast-area"></div>
+      </section>
+
+      <section id="flow-window" class="flow-window" aria-label="Draggable Quest Flow window">
+        <header id="flow-window-header" class="flow-window-header">
+          <div class="flow-title">
+            <h2>Quest Flow</h2>
+            <span id="block-count">0 blocks</span>
+          </div>
+          <div class="flow-window-actions">
+            <button id="add-flow-block-button" title="Add block">+</button>
+            <button id="collapse-flow-button" title="Collapse Quest Flow">−</button>
+          </div>
+        </header>
+        <div id="block-list" class="flow-strip"></div>
       </section>
     </section>
   </main>
@@ -739,23 +642,14 @@
         <h2 id="editor-title">Edit</h2>
         <button value="close" class="dialog-close">×</button>
       </header>
-
       <section id="file-editor" class="editor-section">
         <label>File ID<input id="file-id-input"></label>
         <label>File Name<input id="file-name-input"></label>
         <label>Default Chronicle ID<input id="chronicle-id-input" placeholder="chronicle_01"></label>
       </section>
-
       <section id="quest-editor" class="editor-section">
         <label>Quest Name<input id="quest-name-input"></label>
-        <label>Quest Type
-          <select id="quest-type-input">
-            <option value="main">main</option>
-            <option value="side">side</option>
-            <option value="errand">errand</option>
-            <option value="tutorial">tutorial</option>
-          </select>
-        </label>
+        <label>Quest Type<select id="quest-type-input"><option value="main">main</option><option value="side">side</option><option value="errand">errand</option><option value="tutorial">tutorial</option></select></label>
         <label>Calling Text<textarea id="calling-text-input" rows="3"></textarea></label>
         <label>Scene IDs<input id="quest-scenes-input" placeholder="scene_forest, scene_church"></label>
         <label>Object IDs<input id="quest-objects-input" placeholder="npc_vitus, relic_chalice"></label>
@@ -764,7 +658,6 @@
         <label>Codice Updates<input id="quest-codice-input" placeholder="codice_chalice_truth"></label>
         <label>Notes<textarea id="quest-notes-input" rows="4"></textarea></label>
       </section>
-
       <section id="block-editor" class="editor-section">
         <label>Block Name<input id="block-name-input"></label>
         <label>Block Type<select id="block-type-input"></select></label>
@@ -777,41 +670,31 @@
         <label>Capra Feedback<textarea id="block-capra-input" rows="3"></textarea></label>
         <label>Notes<textarea id="block-notes-input" rows="4"></textarea></label>
       </section>
-
-      <footer class="dialog-actions">
-        <button id="save-editor-button" value="close" class="primary">Save</button>
-      </footer>
+      <footer class="dialog-actions"><button id="save-editor-button" value="close" class="primary">Save</button></footer>
     </form>
   </dialog>
 
   <dialog id="json-dialog" class="json-dialog">
     <form method="dialog">
-      <header class="dialog-header">
-        <h2>JSON Preview</h2>
-        <button value="close" class="dialog-close">×</button>
-      </header>
+      <header class="dialog-header"><h2>JSON Preview</h2><button value="close" class="dialog-close">×</button></header>
       <pre id="json-preview"></pre>
     </form>
   </dialog>
 
   <dialog id="help-dialog" class="json-dialog">
     <form method="dialog">
-      <header class="dialog-header">
-        <h2 id="help-title">Help</h2>
-        <button value="close" class="dialog-close">×</button>
-      </header>
+      <header class="dialog-header"><h2 id="help-title">Help</h2><button value="close" class="dialog-close">×</button></header>
       <div id="help-body" class="dialog-body"></div>
     </form>
   </dialog>
 
   <script>
-    const VERSION = 'V1.0.3';
+    const VERSION = 'V1.0.4';
     const KEY = 'artifex_quest_builder_local_saves';
     const W = 1280;
     const H = 720;
-
     const BLOCK_TYPES = {
-      scene: { name: 'Scene Block', emoji: '🏞️', hint: 'Loads, gates, or checks a playable scene.' },
+      scene: { name: 'Scene Block', emoji: '🖼️', hint: 'Loads, gates, or checks a playable scene.' },
       travel: { name: 'Travel Section', emoji: '🚶', hint: 'Side-scrolling route or movement challenge.' },
       dialogue: { name: 'Dialogue Block', emoji: '💬', hint: 'NPC, companion, or story conversation.' },
       object: { name: 'Object Interaction', emoji: '🧩', hint: 'Pick up, use, give, inspect, or activate an object.' },
@@ -828,12 +711,11 @@
       ui: { name: 'UI Overlay', emoji: '🪟', hint: 'Calling Fulfilled, popup, map, inventory, or custom overlay.' },
       completion: { name: 'Calling Fulfilled', emoji: '✅', hint: 'Final Quest completion condition and next unlock.' }
     };
-
     let mode = 'dark';
     let activeQuest = 0;
     let activeBlock = 0;
     let zoom = 1;
-
+    let flowPos = { x: 26, y: 72 };
     const doc = {
       id: 'quest_file_demo',
       name: 'Untitled Quest File',
@@ -843,17 +725,10 @@
       designHeight: H,
       defaultChronicleId: 'chronicle_01',
       quests: [{
-        id: 'quest_demo',
-        name: 'Recover the Chalice',
-        type: 'main',
-        chronicleId: 'chronicle_01',
+        id: 'quest_demo', name: 'Recover the Chalice', type: 'main', chronicleId: 'chronicle_01',
         callingText: 'Find the true chalice and bring it to the altar.',
-        sceneIds: ['scene_church', 'scene_crypt'],
-        objectIds: ['npc_vitus', 'relic_chalice', 'altar'],
-        completionFlag: 'chalice_delivered',
-        rewards: ['silver:20', 'unlock:route_bridge'],
-        codiceUpdates: ['codice_chalice_truth'],
-        notes: '',
+        sceneIds: ['scene_church', 'scene_crypt'], objectIds: ['npc_vitus', 'relic_chalice', 'altar'],
+        completionFlag: 'chalice_delivered', rewards: ['silver:20', 'unlock:route_bridge'], codiceUpdates: ['codice_chalice_truth'], notes: '',
         blocks: [
           { id: 'b1', name: 'Enter Church', type: 'scene', sceneId: 'scene_church', objectId: '', dialogueId: '', condition: '', action: 'set_flag:church_entered', uiOverlay: '', capraFeedback: '', notes: '' },
           { id: 'b2', name: 'Speak With Vitus', type: 'dialogue', sceneId: '', objectId: 'npc_vitus', dialogueId: 'ch01_q03_vitus_warning', condition: '', action: '', uiOverlay: '', capraFeedback: '', notes: '' },
@@ -864,40 +739,27 @@
         ]
       }]
     };
-
     const $ = (id) => document.getElementById(id);
     const quest = () => doc.quests[activeQuest] || null;
     const block = () => quest()?.blocks?.[activeBlock] || null;
     const list = (value) => Array.isArray(value) ? value : String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
     const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
     const meta = (type) => BLOCK_TYPES[type] || { name: titleCase(type || 'block'), emoji: '◇', hint: 'Custom Quest block.' };
-
     function boot() {
       fillBlockTypeMenus();
       wireMenus();
       wireActions();
       wireInputs();
+      wireFlowDrag();
       render();
       toast(`Quest Builder ${VERSION} loaded.`);
     }
-
     function fillBlockTypeMenus() {
       const menu = $('block-type-menu');
       const select = $('block-type-input');
-
-      if (menu) {
-        menu.innerHTML = Object.entries(BLOCK_TYPES)
-          .map(([key, item]) => `<button type="button" data-add-block="${key}">${item.emoji} ${item.name}<br><small>${item.hint}</small></button>`)
-          .join('');
-      }
-
-      if (select) {
-        select.innerHTML = Object.entries(BLOCK_TYPES)
-          .map(([key, item]) => `<option value="${key}">${item.emoji} ${item.name}</option>`)
-          .join('');
-      }
+      if (menu) menu.innerHTML = Object.entries(BLOCK_TYPES).map(([key, item]) => `<button type="button" data-add-block="${key}">${item.emoji} ${item.name}<small>${item.hint}</small></button>`).join('');
+      if (select) select.innerHTML = Object.entries(BLOCK_TYPES).map(([key, item]) => `<option value="${key}">${item.emoji} ${item.name}</option>`).join('');
     }
-
     function wireMenus() {
       document.querySelectorAll('.menu-button').forEach((button) => {
         button.addEventListener('click', (event) => {
@@ -908,57 +770,61 @@
           if (panel && !isOpen) panel.classList.add('open');
         });
       });
-
       document.querySelectorAll('.menu-panel').forEach((panel) => panel.addEventListener('click', (event) => event.stopPropagation()));
       document.addEventListener('click', closeMenus);
     }
-
-    function closeMenus() {
-      document.querySelectorAll('.menu-panel.open').forEach((panel) => panel.classList.remove('open'));
-    }
-
-    function addQuest(patch = {}) {
-      doc.quests.push({
-        id: 'quest_' + Date.now(),
-        name: 'New Quest',
-        type: 'main',
-        chronicleId: doc.defaultChronicleId,
-        callingText: 'Define the Calling text for this Quest.',
-        sceneIds: [],
-        objectIds: [],
-        completionFlag: '',
-        rewards: [],
-        codiceUpdates: [],
-        notes: '',
-        blocks: [],
-        ...patch
+    function closeMenus() { document.querySelectorAll('.menu-panel.open').forEach((panel) => panel.classList.remove('open')); }
+    function wireFlowDrag() {
+      const win = $('flow-window');
+      const handle = $('flow-window-header');
+      let dragging = false;
+      let startX = 0;
+      let startY = 0;
+      let baseX = 0;
+      let baseY = 0;
+      handle.addEventListener('pointerdown', (event) => {
+        if (event.target.closest('button')) return;
+        dragging = true;
+        startX = event.clientX;
+        startY = event.clientY;
+        baseX = flowPos.x;
+        baseY = flowPos.y;
+        win.classList.add('dragging');
+        handle.setPointerCapture(event.pointerId);
       });
+      handle.addEventListener('pointermove', (event) => {
+        if (!dragging) return;
+        const bounds = $('workspace-column').getBoundingClientRect();
+        const nextX = baseX + event.clientX - startX;
+        const nextY = baseY + event.clientY - startY;
+        flowPos.x = Math.max(8, Math.min(nextX, bounds.width - 120));
+        flowPos.y = Math.max(8, Math.min(nextY, bounds.height - 52));
+        applyFlowPosition();
+      });
+      handle.addEventListener('pointerup', (event) => {
+        dragging = false;
+        win.classList.remove('dragging');
+        try { handle.releasePointerCapture(event.pointerId); } catch { /* ignore */ }
+      });
+    }
+    function applyFlowPosition() {
+      const win = $('flow-window');
+      win.style.left = flowPos.x + 'px';
+      win.style.top = flowPos.y + 'px';
+    }
+    function addQuest(patch = {}) {
+      doc.quests.push({ id: 'quest_' + Date.now(), name: 'New Quest', type: 'main', chronicleId: doc.defaultChronicleId, callingText: 'Define the Calling text for this Quest.', sceneIds: [], objectIds: [], completionFlag: '', rewards: [], codiceUpdates: [], notes: '', blocks: [], ...patch });
       activeQuest = doc.quests.length - 1;
       activeBlock = 0;
       render();
     }
-
     function addBlock(type = 'scene', patch = {}) {
       if (!quest()) addQuest();
       const item = meta(type);
-      quest().blocks.push({
-        id: 'block_' + Date.now(),
-        name: item.name,
-        type,
-        sceneId: '',
-        objectId: '',
-        dialogueId: '',
-        condition: '',
-        action: '',
-        uiOverlay: '',
-        capraFeedback: '',
-        notes: '',
-        ...patch
-      });
+      quest().blocks.push({ id: 'block_' + Date.now(), name: item.name, type, sceneId: '', objectId: '', dialogueId: '', condition: '', action: '', uiOverlay: '', capraFeedback: '', notes: '', ...patch });
       activeBlock = quest().blocks.length - 1;
       render();
     }
-
     function removeQuest() {
       if (!quest()) return;
       doc.quests.splice(activeQuest, 1);
@@ -966,14 +832,12 @@
       activeBlock = 0;
       render();
     }
-
     function removeBlock() {
       if (!block()) return;
       quest().blocks.splice(activeBlock, 1);
       activeBlock = Math.max(0, Math.min(activeBlock, quest().blocks.length - 1));
       render();
     }
-
     function openEditor(which) {
       if (which === 'quest' && !quest()) addQuest();
       if (which === 'block' && !block()) addBlock();
@@ -983,51 +847,19 @@
       fillInputs();
       $('editor-dialog').showModal();
     }
-
     function fillInputs() {
-      set('file-id-input', doc.id);
-      set('file-name-input', doc.name);
-      set('chronicle-id-input', doc.defaultChronicleId);
-
+      set('file-id-input', doc.id); set('file-name-input', doc.name); set('chronicle-id-input', doc.defaultChronicleId);
       const q = quest() || {};
-      set('quest-name-input', q.name);
-      set('quest-type-input', q.type || 'main');
-      set('calling-text-input', q.callingText);
-      set('quest-scenes-input', (q.sceneIds || []).join(', '));
-      set('quest-objects-input', (q.objectIds || []).join(', '));
-      set('completion-flag-input', q.completionFlag);
-      set('quest-rewards-input', (q.rewards || []).join(', '));
-      set('quest-codice-input', (q.codiceUpdates || []).join(', '));
-      set('quest-notes-input', q.notes);
-
+      set('quest-name-input', q.name); set('quest-type-input', q.type || 'main'); set('calling-text-input', q.callingText); set('quest-scenes-input', (q.sceneIds || []).join(', ')); set('quest-objects-input', (q.objectIds || []).join(', ')); set('completion-flag-input', q.completionFlag); set('quest-rewards-input', (q.rewards || []).join(', ')); set('quest-codice-input', (q.codiceUpdates || []).join(', ')); set('quest-notes-input', q.notes);
       const b = block() || {};
-      set('block-name-input', b.name || '');
-      set('block-type-input', b.type || 'scene');
-      set('block-scene-input', b.sceneId || '');
-      set('block-object-input', b.objectId || '');
-      set('block-dialogue-input', b.dialogueId || '');
-      set('block-condition-input', b.condition || '');
-      set('block-action-input', b.action || '');
-      set('block-overlay-input', b.uiOverlay || '');
-      set('block-capra-input', b.capraFeedback || '');
-      set('block-notes-input', b.notes || '');
+      set('block-name-input', b.name || ''); set('block-type-input', b.type || 'scene'); set('block-scene-input', b.sceneId || ''); set('block-object-input', b.objectId || ''); set('block-dialogue-input', b.dialogueId || ''); set('block-condition-input', b.condition || ''); set('block-action-input', b.action || ''); set('block-overlay-input', b.uiOverlay || ''); set('block-capra-input', b.capraFeedback || ''); set('block-notes-input', b.notes || '');
     }
-
-    function set(id, value) {
-      const el = $(id);
-      if (el) el.value = value ?? '';
-    }
-
-    function txt(id, value) {
-      const el = $(id);
-      if (el) el.textContent = value ?? '';
-    }
-
+    function set(id, value) { const el = $(id); if (el) el.value = value ?? ''; }
+    function txt(id, value) { const el = $(id); if (el) el.textContent = value ?? ''; }
     function wireInputs() {
       bind('file-id-input', (value) => doc.id = value);
       bind('file-name-input', (value) => doc.name = value || 'Untitled Quest File');
       bind('chronicle-id-input', (value) => doc.defaultChronicleId = value || 'chronicle_01');
-
       bind('quest-name-input', (value) => quest().name = value || 'New Quest');
       bind('quest-type-input', (value) => quest().type = value || 'main');
       bind('calling-text-input', (value) => quest().callingText = value);
@@ -1037,13 +869,8 @@
       bind('quest-rewards-input', (value) => quest().rewards = list(value));
       bind('quest-codice-input', (value) => quest().codiceUpdates = list(value));
       bind('quest-notes-input', (value) => quest().notes = value);
-
       bind('block-name-input', (value) => block().name = value || meta(block().type).name);
-      bind('block-type-input', (value) => {
-        const b = block();
-        b.type = value;
-        if (!b.name || Object.values(BLOCK_TYPES).some((item) => item.name === b.name)) b.name = meta(value).name;
-      });
+      bind('block-type-input', (value) => { const b = block(); b.type = value; if (!b.name || Object.values(BLOCK_TYPES).some((item) => item.name === b.name)) b.name = meta(value).name; });
       bind('block-scene-input', (value) => block().sceneId = value);
       bind('block-object-input', (value) => block().objectId = value);
       bind('block-dialogue-input', (value) => block().dialogueId = value);
@@ -1053,215 +880,53 @@
       bind('block-capra-input', (value) => block().capraFeedback = value);
       bind('block-notes-input', (value) => block().notes = value);
     }
-
     function bind(id, fn) {
       $(id)?.addEventListener('input', (event) => {
-        if (quest() || id.startsWith('file')) {
-          fn(event.target.value);
-          render();
-        }
+        if (quest() || id.startsWith('file')) { fn(event.target.value); render(); }
       });
     }
-
     function wireActions() {
-      $('new-file-button').onclick = () => {
-        doc.quests = [];
-        doc.name = 'Untitled Quest File';
-        activeQuest = 0;
-        activeBlock = 0;
-        closeMenus();
-        render();
-        toast('New Quest file created.');
-      };
-
-      $('save-local-button').onclick = () => {
-        localStorage.setItem(KEY, JSON.stringify(doc));
-        closeMenus();
-        toast('Saved locally.');
-      };
-
-      $('add-quest-button').onclick = $('side-add-quest-button').onclick = () => {
-        addQuest();
-        closeMenus();
-        openEditor('quest');
-        toast('Quest added.');
-      };
-
-      $('edit-quest-button').onclick = $('side-edit-quest-button').onclick = () => {
-        closeMenus();
-        openEditor('quest');
-      };
-
-      $('delete-quest-button').onclick = () => {
-        removeQuest();
-        closeMenus();
-        toast('Quest deleted.');
-      };
-
-      $('side-add-block-button').onclick = () => {
-        addBlock();
-        openEditor('block');
-      };
-
-      $('edit-block-button').onclick = () => {
-        closeMenus();
-        openEditor('block');
-      };
-
-      $('delete-block-button').onclick = () => {
-        removeBlock();
-        closeMenus();
-        toast('Block deleted.');
-      };
-
+      $('new-file-button').onclick = () => { doc.quests = []; doc.name = 'Untitled Quest File'; activeQuest = 0; activeBlock = 0; closeMenus(); render(); toast('New Quest file created.'); };
+      $('save-local-button').onclick = () => { localStorage.setItem(KEY, JSON.stringify(doc)); closeMenus(); toast('Saved locally.'); };
+      $('add-quest-button').onclick = $('side-add-quest-button').onclick = () => { addQuest(); closeMenus(); openEditor('quest'); toast('Quest added.'); };
+      $('edit-quest-button').onclick = $('side-edit-quest-button').onclick = () => { closeMenus(); openEditor('quest'); };
+      $('delete-quest-button').onclick = () => { removeQuest(); closeMenus(); toast('Quest deleted.'); };
+      $('side-add-block-button').onclick = $('add-flow-block-button').onclick = () => { addBlock(); openEditor('block'); };
+      $('edit-block-button').onclick = () => { closeMenus(); openEditor('block'); };
+      $('delete-block-button').onclick = () => { removeBlock(); closeMenus(); toast('Block deleted.'); };
       $('edit-file-button').onclick = () => openEditor('file');
       $('save-editor-button').onclick = () => toast('Saved.');
-
-      document.querySelectorAll('[data-add-block]').forEach((button) => {
-        button.onclick = () => {
-          addBlock(button.dataset.addBlock);
-          closeMenus();
-          openEditor('block');
-        };
-      });
-
-      $('template-main-quest-button').onclick = () => {
-        addQuest({
-          name: 'New Main Quest',
-          callingText: 'Define the main Calling for this Quest.',
-          blocks: [
-            { name: 'Start Scene', type: 'scene' },
-            { name: 'Key Interaction', type: 'object' },
-            { name: 'Calling Fulfilled', type: 'completion', uiOverlay: 'calling_fulfilled' }
-          ]
-        });
-        closeMenus();
-        openEditor('quest');
-      };
-
-      $('template-side-quest-button').onclick = () => {
-        addQuest({
-          name: 'New Side Quest',
-          type: 'side',
-          callingText: 'Define the optional objective or Errand.',
-          blocks: [
-            { name: 'Optional Trigger', type: 'condition' },
-            { name: 'Reward', type: 'reward' }
-          ]
-        });
-        closeMenus();
-        openEditor('quest');
-      };
-
-      $('export-json-button').onclick = () => {
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' }));
-        link.download = (doc.name || 'quest-file').toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.json';
-        link.click();
-        URL.revokeObjectURL(link.href);
-        closeMenus();
-        toast('JSON exported.');
-      };
-
-      $('view-json-button').onclick = () => {
-        $('json-preview').textContent = JSON.stringify(doc, null, 2);
-        closeMenus();
-        $('json-dialog').showModal();
-      };
-
-      $('block-types-button').onclick = () => {
-        const rows = Object.entries(BLOCK_TYPES).map(([key, item]) => `<article class="block-type-card"><strong>${item.emoji} ${item.name}</strong><span>${key}: ${item.hint}</span></article>`).join('');
-        help('Quest Block Type List', `<div class="block-type-grid">${rows}</div>`);
-        closeMenus();
-      };
-
-      $('library-note-button').onclick = () => {
-        help('Linked Libraries', '<p>Quest Builder references completed scenes, archetype objects, dialogue IDs, Capra popup templates, Codice entries, UI overlays, rewards, route unlocks, and completion flags. It should not own those libraries directly.</p>');
-        closeMenus();
-      };
-
-      $('quick-start-button').onclick = () => {
-        help('Quick Start', '<p>Select a Quest on the left. Select a block in the Quest Flow strip. Use Templates to add typed Quest blocks. Double-click a block or use Edit to open the popup editor.</p>');
-        closeMenus();
-      };
-
-      $('about-button').onclick = () => {
-        help('About Quest Builder', '<p>Quest Builder assembles scenes, archetype objects, dialogue, Capra feedback, Codice updates, UI overlays, rewards, map unlocks, and completion flags into playable Quest flow.</p>');
-        closeMenus();
-      };
-
-      $('bg-dark-button').onclick = () => {
-        mode = 'dark';
-        closeMenus();
-        draw();
-      };
-
-      $('bg-light-button').onclick = () => {
-        mode = 'light';
-        closeMenus();
-        draw();
-      };
-
-      $('zoom-in-button').onclick = () => {
-        zoom = Math.min(1.6, zoom + .1);
-        render();
-      };
-
-      $('zoom-out-button').onclick = () => {
-        zoom = Math.max(.7, zoom - .1);
-        render();
-      };
-
-      $('zoom-reset-button').onclick = () => {
-        zoom = 1;
-        render();
-      };
-
-      $('import-json-input').onchange = async (event) => {
-        const file = event.target.files[0];
-        if (!file) return;
-        Object.assign(doc, JSON.parse(await file.text()));
-        activeQuest = 0;
-        activeBlock = 0;
-        closeMenus();
-        render();
-        toast('JSON imported.');
-      };
-
-      $('snapshot-button').onclick = () => {
-        const link = document.createElement('a');
-        link.href = canvas.toDataURL('image/png');
-        link.download = 'quest-builder-snapshot.png';
-        link.click();
-        closeMenus();
-      };
+      document.querySelectorAll('[data-add-block]').forEach((button) => { button.onclick = () => { addBlock(button.dataset.addBlock); closeMenus(); openEditor('block'); }; });
+      $('template-main-quest-button').onclick = () => { addQuest({ name: 'New Main Quest', callingText: 'Define the main Calling for this Quest.', blocks: [{ name: 'Start Scene', type: 'scene' }, { name: 'Key Interaction', type: 'object' }, { name: 'Calling Fulfilled', type: 'completion', uiOverlay: 'calling_fulfilled' }] }); closeMenus(); openEditor('quest'); };
+      $('template-side-quest-button').onclick = () => { addQuest({ name: 'New Side Quest', type: 'side', callingText: 'Define the optional objective or Errand.', blocks: [{ name: 'Optional Trigger', type: 'condition' }, { name: 'Reward', type: 'reward' }] }); closeMenus(); openEditor('quest'); };
+      $('export-json-button').onclick = () => { const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' })); link.download = (doc.name || 'quest-file').toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.json'; link.click(); URL.revokeObjectURL(link.href); closeMenus(); toast('JSON exported.'); };
+      $('view-json-button').onclick = () => { $('json-preview').textContent = JSON.stringify(doc, null, 2); closeMenus(); $('json-dialog').showModal(); };
+      $('block-types-button').onclick = () => { const rows = Object.entries(BLOCK_TYPES).map(([key, item]) => `<article class="block-type-card"><strong>${item.emoji} ${item.name}</strong><span>${key}: ${item.hint}</span></article>`).join(''); help('Quest Block Type List', `<div class="block-type-grid">${rows}</div>`); closeMenus(); };
+      $('library-note-button').onclick = () => { help('Linked Libraries', '<p>Quest Builder references completed scenes, archetype objects, dialogue IDs, Capra popup templates, Codice entries, UI overlays, rewards, route unlocks, and completion flags. It should not own those libraries directly.</p>'); closeMenus(); };
+      $('quick-start-button').onclick = () => { help('Quick Start', '<p>Select a Quest on the left. Drag the Quest Flow window anywhere over the viewing panel. Select a block in that window, then double-click or use Edit to open the popup editor.</p>'); closeMenus(); };
+      $('about-button').onclick = () => { help('About Quest Builder', '<p>Quest Builder assembles scenes, archetype objects, dialogue, Capra feedback, Codice updates, UI overlays, rewards, map unlocks, and completion flags into playable Quest flow.</p>'); closeMenus(); };
+      $('bg-dark-button').onclick = () => { mode = 'dark'; closeMenus(); draw(); };
+      $('bg-light-button').onclick = () => { mode = 'light'; closeMenus(); draw(); };
+      $('zoom-in-button').onclick = () => { zoom = Math.min(1.6, zoom + .1); render(); };
+      $('zoom-out-button').onclick = () => { zoom = Math.max(.7, zoom - .1); render(); };
+      $('zoom-reset-button').onclick = () => { zoom = 1; render(); };
+      $('collapse-flow-button').onclick = () => { $('flow-window').classList.toggle('collapsed'); $('collapse-flow-button').textContent = $('flow-window').classList.contains('collapsed') ? '+' : '−'; };
+      $('reset-flow-window-button').onclick = () => { flowPos = { x: 26, y: 72 }; applyFlowPosition(); $('flow-window').classList.remove('collapsed'); $('collapse-flow-button').textContent = '−'; closeMenus(); };
+      $('import-json-input').onchange = async (event) => { const file = event.target.files[0]; if (!file) return; Object.assign(doc, JSON.parse(await file.text())); activeQuest = 0; activeBlock = 0; closeMenus(); render(); toast('JSON imported.'); };
+      $('snapshot-button').onclick = () => { const link = document.createElement('a'); link.href = canvas.toDataURL('image/png'); link.download = 'quest-builder-snapshot.png'; link.click(); closeMenus(); };
     }
-
-    function help(title, body) {
-      $('help-title').textContent = title;
-      $('help-body').innerHTML = body;
-      $('help-dialog').showModal();
-    }
-
-    function toast(message) {
-      const div = document.createElement('div');
-      div.className = 'toast';
-      div.textContent = message;
-      $('toast-area').appendChild(div);
-      setTimeout(() => div.remove(), 2600);
-    }
-
+    function help(title, body) { $('help-title').textContent = title; $('help-body').innerHTML = body; $('help-dialog').showModal(); }
+    function toast(message) { const div = document.createElement('div'); div.className = 'toast'; div.textContent = message; $('toast-area').appendChild(div); setTimeout(() => div.remove(), 2600); }
     function render() {
+      applyFlowPosition();
       txt('version-badge', VERSION);
       txt('file-summary-name', doc.name);
       txt('file-summary-meta', doc.defaultChronicleId);
-
       const q = quest();
       txt('calling-summary', q?.callingText || 'Select a Quest to view its Calling.');
       txt('status-text', q ? 'Editing ' + q.name : 'Ready.');
       txt('block-count', (q?.blocks?.length || 0) + ' blocks');
       txt('zoom-readout', Math.round(zoom * 100) + '%');
-
       $('quest-list').innerHTML = '';
       doc.quests.forEach((item, index) => {
         const button = document.createElement('button');
@@ -1271,7 +936,6 @@
         button.ondblclick = () => openEditor('quest');
         $('quest-list').appendChild(button);
       });
-
       $('block-list').innerHTML = '';
       (q?.blocks || []).forEach((item, index) => {
         const blockInfo = meta(item.type);
@@ -1282,129 +946,44 @@
         button.ondblclick = () => openEditor('block');
         $('block-list').appendChild(button);
       });
-
       draw();
     }
-
     const canvas = $('module-canvas');
     const ctx = canvas.getContext('2d');
-
     function draw() {
       canvas.style.transform = `scale(${zoom})`;
       canvas.width = W;
       canvas.height = H;
-
       ctx.fillStyle = mode === 'light' ? '#eef6ef' : '#050805';
       ctx.fillRect(0, 0, W, H);
-
       const glow = ctx.createRadialGradient(W * .52, H * .42, 80, W * .5, H * .5, W * .7);
-      glow.addColorStop(0, 'rgba(62,180,137,.16)');
-      glow.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = glow;
-      ctx.fillRect(0, 0, W, H);
-
-      ctx.strokeStyle = 'rgba(226,204,167,.07)';
-      for (let x = 0; x < W; x += 80) line(x, 0, x, H);
-      for (let y = 0; y < H; y += 80) line(0, y, W, y);
-
+      glow.addColorStop(0, 'rgba(62,180,137,.16)'); glow.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = 'rgba(226,204,167,.07)'; for (let x = 0; x < W; x += 80) line(x, 0, x, H); for (let y = 0; y < H; y += 80) line(0, y, W, y);
       box(32, 28, W - 64, 82, 20, 'rgba(17,26,20,.86)');
-      ctx.fillStyle = '#fff0ce';
-      ctx.font = '700 24px Georgia';
-      ctx.fillText('QUEST BUILDER', 58, 64);
-
+      ctx.fillStyle = '#fff0ce'; ctx.font = '700 24px Georgia'; ctx.fillText('QUEST BUILDER', 58, 64);
       const q = quest();
-      ctx.fillStyle = '#7ff0bd';
-      ctx.font = '600 15px Arial';
-      ctx.fillText(q ? `${q.chronicleId} / ${q.name}` : 'Create a Quest to begin assembly', 58, 91);
-
+      ctx.fillStyle = '#7ff0bd'; ctx.font = '600 15px Arial'; ctx.fillText(q ? `${q.chronicleId} / ${q.name}` : 'Create a Quest to begin assembly', 58, 91);
       if (!q) return;
-
-      ctx.fillStyle = 'rgba(226,204,167,.78)';
-      ctx.font = '600 14px Arial';
-      ctx.fillText('Calling: ' + short(q.callingText || 'No Calling text set', 112), 60, 132);
-
-      let x = 60;
-      let y = 170;
-      const cw = 250;
-      const ch = 118;
-      const gap = 36;
-
+      ctx.fillStyle = 'rgba(226,204,167,.78)'; ctx.font = '600 14px Arial'; ctx.fillText('Calling: ' + short(q.callingText || 'No Calling text set', 112), 60, 132);
+      let x = 60; let y = 170; const cw = 250; const ch = 118; const gap = 36;
       (q.blocks || []).forEach((item, index) => {
         const blockInfo = meta(item.type);
-        if (x + cw > W - 40) {
-          x = 60;
-          y += ch + 58;
-        }
-
-        if (index > 0 && x > 60) {
-          ctx.strokeStyle = 'rgba(62,180,137,.55)';
-          ctx.lineWidth = 2;
-          line(x - gap, y + ch / 2, x, y + ch / 2);
-        }
-
+        if (x + cw > W - 40) { x = 60; y += ch + 58; }
+        if (index > 0 && x > 60) { ctx.strokeStyle = 'rgba(62,180,137,.55)'; ctx.lineWidth = 2; line(x - gap, y + ch / 2, x, y + ch / 2); }
         const selected = index === activeBlock;
         box(x, y, cw, ch, 18, selected ? 'rgba(62,180,137,.18)' : 'rgba(17,26,20,.86)', selected ? '#3eb489' : 'rgba(226,204,167,.23)');
-
-        ctx.fillStyle = 'rgba(62,180,137,.18)';
-        ctx.fillRect(x + 14, y + 14, 34, 34);
-        ctx.strokeStyle = 'rgba(62,180,137,.45)';
-        ctx.strokeRect(x + 14, y + 14, 34, 34);
-
-        ctx.fillStyle = '#fff0ce';
-        ctx.font = '21px Arial';
-        ctx.fillText(blockInfo.emoji, x + 20, y + 38);
-
-        ctx.fillStyle = '#fff0ce';
-        ctx.font = '700 15px Arial';
-        ctx.fillText(short(item.name || blockInfo.name, 24), x + 60, y + 30);
-
-        ctx.fillStyle = '#7ff0bd';
-        ctx.font = '600 12px Arial';
-        ctx.fillText(blockInfo.name, x + 60, y + 52);
-
-        ctx.fillStyle = 'rgba(226,204,167,.78)';
-        ctx.font = '500 11px Arial';
-        ctx.fillText(short(item.sceneId || item.objectId || item.dialogueId || item.condition || item.action || 'unlinked', 32), x + 60, y + 76);
-
-        if (item.uiOverlay || item.capraFeedback) {
-          ctx.fillStyle = 'rgba(127,240,189,.82)';
-          ctx.fillText(short(item.uiOverlay || 'Capra feedback', 32), x + 60, y + 98);
-        }
-
+        ctx.fillStyle = '#fff0ce'; ctx.font = '25px Arial'; ctx.fillText(blockInfo.emoji, x + 18, y + 40);
+        ctx.fillStyle = '#fff0ce'; ctx.font = '700 15px Arial'; ctx.fillText(short(item.name || blockInfo.name, 24), x + 60, y + 30);
+        ctx.fillStyle = '#7ff0bd'; ctx.font = '600 12px Arial'; ctx.fillText(blockInfo.name, x + 60, y + 52);
+        ctx.fillStyle = 'rgba(226,204,167,.78)'; ctx.font = '500 11px Arial'; ctx.fillText(short(item.sceneId || item.objectId || item.dialogueId || item.condition || item.action || 'unlinked', 32), x + 60, y + 76);
+        if (item.uiOverlay || item.capraFeedback) { ctx.fillStyle = 'rgba(127,240,189,.82)'; ctx.fillText(short(item.uiOverlay || 'Capra feedback', 32), x + 60, y + 98); }
         x += cw + gap;
       });
     }
-
-    function line(x1, y1, x2, y2) {
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
-    }
-
-    function box(x, y, w, h, r, fill, stroke = 'rgba(226,204,167,.25)') {
-      ctx.beginPath();
-      ctx.moveTo(x + r, y);
-      ctx.arcTo(x + w, y, x + w, y + h, r);
-      ctx.arcTo(x + w, y + h, x, y + h, r);
-      ctx.arcTo(x, y + h, x, y, r);
-      ctx.arcTo(x, y, x + w, y, r);
-      ctx.closePath();
-      ctx.fillStyle = fill;
-      ctx.fill();
-      ctx.strokeStyle = stroke;
-      ctx.stroke();
-    }
-
-    function short(value, max) {
-      value = String(value || '');
-      return value.length > max ? value.slice(0, max - 1) + '…' : value;
-    }
-
-    function titleCase(value) {
-      return String(value || '').replace(/[-_]/g, ' ').replace(/\b\w/g, (match) => match.toUpperCase());
-    }
-
+    function line(x1, y1, x2, y2) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+    function box(x, y, w, h, r, fill, stroke = 'rgba(226,204,167,.25)') { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = stroke; ctx.stroke(); }
+    function short(value, max) { value = String(value || ''); return value.length > max ? value.slice(0, max - 1) + '…' : value; }
+    function titleCase(value) { return String(value || '').replace(/[-_]/g, ' ').replace(/\b\w/g, (match) => match.toUpperCase()); }
     boot();
   </script>
 </body>
