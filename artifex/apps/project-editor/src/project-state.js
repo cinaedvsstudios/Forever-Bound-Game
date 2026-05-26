@@ -25,6 +25,7 @@ export class ProjectEditorStateManager {
       realAssets: listCatalogItems('realAssets')
     };
     this.loadFromStorage();
+    this.ensureCameraDefaults();
   }
 
   get project() {
@@ -45,6 +46,11 @@ export class ProjectEditorStateManager {
 
   get catalog() {
     return this.state.catalog;
+  }
+
+  get camera() {
+    this.ensureCameraDefaults();
+    return this.layout.camera;
   }
 
   get activeWorkspace() {
@@ -113,8 +119,36 @@ export class ProjectEditorStateManager {
     const fresh = createDefaultProjectState();
     fresh.catalog = this.state.catalog;
     this.state = fresh;
+    this.ensureCameraDefaults();
     if (persist) this.saveToStorage();
     return this.state;
+  }
+
+  ensureCameraDefaults() {
+    this.layout.camera = {
+      zoom: Number(this.layout.camera?.zoom) || 1,
+      panX: Number(this.layout.camera?.panX) || 0,
+      panY: Number(this.layout.camera?.panY) || 0
+    };
+    this.layout.camera.zoom = Math.max(0.3, Math.min(2.5, this.layout.camera.zoom));
+  }
+
+  updateCamera(patch = {}, { persist = true } = {}) {
+    this.ensureCameraDefaults();
+    this.layout.camera = {
+      zoom: Number(patch.zoom ?? this.layout.camera.zoom) || 1,
+      panX: Number(patch.panX ?? this.layout.camera.panX) || 0,
+      panY: Number(patch.panY ?? this.layout.camera.panY) || 0
+    };
+    this.layout.camera.zoom = Math.max(0.3, Math.min(2.5, this.layout.camera.zoom));
+    if (persist) this.saveToStorage();
+    return this.layout.camera;
+  }
+
+  resetCamera({ persist = true } = {}) {
+    this.layout.camera = { zoom: 1, panX: 0, panY: 0 };
+    if (persist) this.saveToStorage();
+    return this.layout.camera;
   }
 
   selectNode(nodeId) {
