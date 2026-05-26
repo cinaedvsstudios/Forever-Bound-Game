@@ -1,4 +1,5 @@
 const textureCache = new Map();
+const layerRuntimeState = new Map();
 
 export class Particle {
   constructor(layer, burstAngle = null) {
@@ -71,12 +72,7 @@ export function spawnParticlesForLayer(layer, densityScale = 1) {
 
   const particles = [];
   if (layer.engine === 'ring') {
-    const ringTotal = Math.max(12, Math.round(spawnRate));
-    for (let i = 0; i < ringTotal; i++) {
-      particles.push(new Particle(layer, (360 / ringTotal) * i));
-    }
-    layer.spawnRate = Math.max(1, layer.spawnRate * 0.985);
-    return particles;
+    return spawnRingBurst(layer, spawnRate);
   }
   if (layer.engine === 'shockwave') {
     if (Math.random() < Math.max(0.02, spawnRate / 24)) particles.push(new Particle(layer, 0));
@@ -91,6 +87,32 @@ export function spawnParticlesForLayer(layer, densityScale = 1) {
     particles.push(new Particle(layer));
   }
   return particles;
+}
+
+function spawnRingBurst(layer, spawnRate) {
+  const state = getLayerRuntimeState(layer);
+  const mode = layer.pulseMode || 'once';
+  const duration = Math.max(1, Math.round(finite(layer.burstDuration, 1)));
+  const delay = Math.max(1, Math.round(finite(layer.pulseDelay, 80)));
+  const count = Math.max(6, Math.round(finite(layer.burstCount, spawnRate || 64)));
+  const particles = [];
+
+  state.frame = (state.frame || 0) + 1;
+  if (mode === 'continuous') {
+    for (let i = 0; i < Math.max(6, Math.round(spawnRate)); i++) particles.push(new Particle(layer, (360 / Math.max(6, Math.round(spawnRate))) * i));
+    return particles;
+  }
+  if (mode === 'once' && state.hasPulsed) return particles;
+  const inPulse = state.frame <= duration || (mode === 'loop' && ((state.frame - 1) % delay) < duration);
+  if (!inPulse) return particles;
+  if (mode === 'once') state.hasPulsed = true;
+  for (let i = 0; i < count; i++) particles.push(new Particle(layer, (360 / count) * i));
+  return particles;
+}
+
+function getLayerRuntimeState(layer) {
+  if (!layerRuntimeState.has(layer.id)) layerRuntimeState.set(layer.id, {});
+  return layerRuntimeState.get(layer.id);
 }
 
 export function drawParticle(ctx, particle, layer, scale) {
@@ -290,6 +312,9 @@ function drawShape(ctx, x, y, size, color, rotation, shape, smoky, layer) {
   if (shape === 'diamond') return drawDiamond(ctx, x, y, size, color, rotation);
   if (shape === 'star') return drawStar(ctx, x, y, size, color, rotation);
   if (shape === 'slash') return drawRibbonDot(ctx, x, y, size, color, rotation);
+  if (shape === 'dot-cluster') return drawDotCluster(ctx, x, y, size, color, rotation);
+  if (shape === 'figure-eight-rings') return drawFigureEightRings(ctx, x, y, size, color, rotation);
+  if (shape === 'diamond-net') return drawDiamondNet(ctx, x, y, size, color, rotation);
   return drawSoftCircle(ctx, x, y, size, color, smoky);
 }
 
@@ -351,6 +376,53 @@ function drawStar(ctx, x, y, size, color, rotation) {
   ctx.fill();
 }
 
+function drawDotCluster(ctx, x, y, size, color, rotation) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  ctx.fillStyle = color;
+  const dots = [[0,0,.28],[-.45,-.15,.18],[.38,-.18,.16],[-.22,.4,.14],[.28,.34,.13],[.02,-.46,.12]];
+  for (const [dx, dy, radius] of dots) {
+    ctx.beginPath();
+    ctx.arc(dx * size, dy * size, Math.max(1, size * radius), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawFigureEightRings(ctx, x, y, size, color, rotation) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(1, size * 0.13);
+  ctx.beginPath();
+  ctx.ellipse(-size * 0.34, 0, size * 0.42, size * 0.58, 0, 0, Math.PI * 2);
+  ctx.ellipse(size * 0.34, 0, size * 0.42, size * 0.58, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawDiamondNet(ctx, x, y, size, color, rotation) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(1, size * 0.06);
+  const step = size * 0.38;
+  for (let i = -2; i <= 2; i++) {
+    ctx.beginPath();
+    ctx.moveTo(-size, i * step);
+    ctx.lineTo(i * step, -size);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-size, i * step);
+    ctx.lineTo(-i * step, size);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function drawSpark(ctx, x, y, size, color, rotation) {
   ctx.save();
   ctx.translate(x, y);
@@ -384,8 +456,10 @@ function drawRibbonDot(ctx, x, y, size, color, rotation) {
 
 function drawTextShape(ctx, x, y, size, color, rotation, layer) {
   ctx.translate(x, y);
-  ctx.rotate(rotation);
-  ctx.font = `${layer.textWeight || '700'} ${Math.max(8, size)}px ${layer.textFont || 'Cinzel, Georgia, serif'}`;
+  const textRotation = degreesToRadians(finite(layer.textRotation, 0));
+  ctx.rotate(layer.textKeepUpright ? textRotation : rotation + textRotation);
+  const textSize = finite(layer.textSizeOverride, 0) > 0 ? finite(layer.textSizeOverride, 0) : size;
+  ctx.font = `${layer.textWeight || '700'} ${Math.max(8, textSize)}px ${layer.textFont || 'Cinzel, Georgia, serif'}`;
   ctx.textAlign = layer.textAlign || 'center';
   ctx.textBaseline = 'middle';
   const text = String(layer.textContent || 'AETHERA');
@@ -399,8 +473,11 @@ function drawTextShape(ctx, x, y, size, color, rotation, layer) {
 }
 
 function drawElectricArc(ctx, x, y, size, color, rotation, layer, particle, scale) {
-  const length = finite(layer.arcLength, 82) * scale;
+  const baseLength = finite(layer.arcLength, 82);
+  const lengthVariation = finite(layer.arcLengthVariation, 0);
+  const length = Math.max(4, baseLength + (particle.seed - 0.5) * lengthVariation) * scale;
   const jag = finite(layer.arcJaggedness, 18) * scale;
+  const branchLength = finite(layer.arcBranchLength, 38) * scale;
   const segments = Math.max(4, Math.round(length / Math.max(10, 16 * scale)));
   const flicker = finite(layer.arcFlicker, 0.7);
   ctx.save();
@@ -424,21 +501,38 @@ function drawElectricArc(ctx, x, y, size, color, rotation, layer, particle, scal
     const side = Math.random() < 0.5 ? -1 : 1;
     ctx.beginPath();
     ctx.moveTo(start, Math.sin(start + particle.seed) * jag * 0.3);
-    ctx.lineTo(start + randomRange(12, 38) * scale, side * randomRange(12, 34) * scale);
+    ctx.lineTo(start + randomRange(branchLength * 0.35, branchLength), side * randomRange(branchLength * 0.25, branchLength * 0.8));
     ctx.stroke();
   }
   ctx.restore();
 }
 
 function drawShockwave(ctx, x, y, ramp, t, layer, scale) {
-  const radius = lerp(4, finite(layer.shockwaveRadius, 245), easeOut(t)) * scale;
+  const startRadius = finite(layer.shockwaveStartRadius, 4);
+  const radius = lerp(startRadius, finite(layer.shockwaveRadius, 245), easeOut(t)) * scale;
   const thickness = Math.max(1, finite(layer.shockwaveThickness, 9) * scale * (1 - t * 0.6));
+  const breakup = Math.max(0, Math.min(1, finite(layer.shockwaveBreakup, 0)));
+  const segments = Math.max(0, Math.round(finite(layer.shockwaveSegments, 0)));
   ctx.save();
   ctx.strokeStyle = rgbaFromHex(ramp.color, Math.max(0, 1 - t));
   ctx.lineWidth = thickness;
-  ctx.beginPath();
-  ctx.arc(x, y, radius, 0, Math.PI * 2);
-  ctx.stroke();
+  ctx.lineCap = 'round';
+  if (finite(layer.shockwaveSoftness, 0) > 0) ctx.filter = `blur(${finite(layer.shockwaveSoftness, 0) * thickness}px)`;
+  if (segments > 1 || breakup > 0) {
+    const parts = segments > 1 ? segments : 24;
+    for (let i = 0; i < parts; i++) {
+      if (breakup > 0 && ((i * 37) % 100) / 100 < breakup * 0.55) continue;
+      const a0 = (i / parts) * Math.PI * 2;
+      const a1 = ((i + 0.62) / parts) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, a0, a1);
+      ctx.stroke();
+    }
+  } else {
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+  }
   const flash = finite(layer.shockwaveCenterFlash, 0.28) * (1 - t);
   if (flash > 0.02) drawSoftCircle(ctx, x, y, radius * 0.18, rgbaFromHex(ramp.color, flash), false);
   ctx.restore();
@@ -469,23 +563,63 @@ function drawTrueLensFlare(ctx, x, y, ramp, t, layer, scale) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(degreesToRadians(finite(layer.rotation, 0)));
-  drawSoftCircle(ctx, 0, 0, halo * 0.55, color, false);
+  drawSoftCircle(ctx, 0, 0, halo * 0.7, color, false);
+  const ringGradient = ctx.createRadialGradient(0, 0, halo * 0.35, 0, 0, halo * 1.3);
+  ringGradient.addColorStop(0, 'rgba(255,255,255,0)');
+  ringGradient.addColorStop(0.62, rgbaFromHex(layer.colorB || '#7be7ff', 0.18));
+  ringGradient.addColorStop(0.72, rgbaFromHex(layer.colorA || '#fff8d6', 0.28));
+  ringGradient.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = ringGradient;
+  ctx.beginPath();
+  ctx.arc(0, 0, halo * 1.35, 0, Math.PI * 2);
+  ctx.fill();
+  drawChromaticRing(ctx, 0, 0, halo * 1.65);
   ctx.strokeStyle = color;
-  ctx.lineWidth = Math.max(1, 3 * scale);
+  ctx.lineWidth = Math.max(1, 2 * scale);
   ctx.beginPath();
   ctx.moveTo(-streak / 2, 0);
   ctx.lineTo(streak / 2, 0);
   ctx.stroke();
-  ctx.lineWidth = Math.max(1, 1.5 * scale);
+  ctx.lineWidth = Math.max(1, 1.2 * scale);
   ctx.beginPath();
-  ctx.moveTo(0, -halo * 1.15);
-  ctx.lineTo(0, halo * 1.15);
+  ctx.moveTo(0, -halo * 1.3);
+  ctx.lineTo(0, halo * 1.3);
   ctx.stroke();
   for (let i = 1; i <= ghosts; i++) {
-    const gx = (i / (ghosts + 1) - 0.5) * streak * 1.15;
-    ctx.globalAlpha *= 0.82;
-    drawSoftCircle(ctx, gx, 0, halo * (0.12 + i * 0.035), color, false);
+    const gx = (i / (ghosts + 1) - 0.5) * streak * 1.25;
+    ctx.globalAlpha *= 0.84;
+    drawSoftCircle(ctx, gx, 0, halo * (0.15 + i * 0.035), rgbaFromHex(i % 2 ? layer.colorB || '#7be7ff' : layer.colorA || '#fff8d6', 0.7), false);
   }
+  drawOverlayImageIfAvailable(ctx, layer, halo, streak);
+  ctx.restore();
+}
+
+function drawOverlayImageIfAvailable(ctx, layer, halo, streak) {
+  const src = layer.flareOverlayDataUrl || layer.flareOverlayUrl || globalThis.ArtifexLensFlareOverlayDataUrl || '';
+  if (!src) return;
+  const image = getTextureImage(src);
+  if (!image?.complete || !image.naturalWidth) return;
+  const scale = Math.max(0.1, finite(layer.flareOverlayScale, 1));
+  const opacity = Math.max(0, Math.min(1, finite(layer.flareOverlayOpacity, 0.8)));
+  const width = Math.max(streak, halo * 4.5) * scale;
+  const height = width / Math.max(0.1, image.naturalWidth / image.naturalHeight);
+  ctx.save();
+  ctx.globalAlpha *= opacity;
+  ctx.globalCompositeOperation = 'screen';
+  ctx.drawImage(image, -width / 2, -height / 2, width, height);
+  ctx.restore();
+}
+
+function drawChromaticRing(ctx, x, y, radius) {
+  ctx.save();
+  ctx.lineWidth = Math.max(1, radius * 0.045);
+  const colors = ['rgba(255,60,60,.22)', 'rgba(255,220,70,.2)', 'rgba(50,230,110,.2)', 'rgba(50,180,255,.22)', 'rgba(170,80,255,.18)'];
+  colors.forEach((stroke, index) => {
+    ctx.strokeStyle = stroke;
+    ctx.beginPath();
+    ctx.arc(x, y, radius + index * ctx.lineWidth * 0.32, 0, Math.PI * 2);
+    ctx.stroke();
+  });
   ctx.restore();
 }
 
