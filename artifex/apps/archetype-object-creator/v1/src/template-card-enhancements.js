@@ -1,7 +1,7 @@
 import { editorState } from './editor-state.js';
 import { ROLE_TEMPLATES } from './templates.js';
 
-const VERSION = '1.10';
+const VERSION = '1.11';
 const ICON_PATHS = [
   `./v1/icons/object-archetypes/icons1.png?v=${VERSION}`,
   `./v1/icons/object-archetypes/icons2.png?v=${VERSION}`,
@@ -53,7 +53,7 @@ const CSS = `
 .template-icon-fallback{width:40% !important;height:40% !important;display:grid !important;place-items:center !important;border-radius:999px !important;color:#fff0ce !important;background:var(--template-soft) !important;box-shadow:0 0 18px var(--template-glow) !important;font-size:clamp(28px,4vw,46px) !important;line-height:1 !important}
 .object-template-card h4{font-size:13px !important;line-height:1.2 !important;margin-bottom:5px !important}.object-template-card p{font-size:11px !important;line-height:1.25 !important}.object-template-card button{width:100% !important;min-height:38px !important;padding:8px 10px !important;font-size:13px !important}.menu-bar{flex:1;justify-content:center}@media(max-width:980px){.menu-bar{justify-content:flex-start}}
 body .wizard-session-wrap .wizard-session-button{width:auto!important;height:auto!important;min-width:0!important;min-height:0!important;padding:0 6px!important;border:none!important;background:transparent!important;border-radius:0!important;box-shadow:none!important;color:#fff0ce!important;font-size:30px!important;line-height:1!important;display:flex!important;align-items:center!important;justify-content:center!important;text-shadow:0 0 6px rgba(216,69,69,.90),0 0 16px rgba(216,69,69,.72),0 0 28px rgba(216,69,69,.50),0 0 42px rgba(216,69,69,.28)!important;filter:none!important}body .wizard-session-wrap .wizard-session-button:hover,body .wizard-session-wrap .wizard-session-button:focus{background:transparent!important;border:none!important;box-shadow:none!important;transform:scale(1.12)!important}.wizard-session-wrap{display:none;align-items:center}.wizard-session-wrap.has-sessions{display:flex!important}
-#quickstart-dialog.wizard-dialog{width:min(94vw,1400px)!important;max-width:94vw!important;overflow:hidden!important}#quickstart-dialog .dialog-shell{width:100%!important;max-width:100%!important;max-height:92vh!important;overflow:hidden!important}#quickstart-dialog .wizard-content{max-height:calc(92vh - 112px)!important;overflow:auto!important;overflow-x:hidden!important;padding-right:8px!important}#quickstart-dialog .wizard-build-shell{grid-template-columns:minmax(230px,310px) minmax(0,1fr)!important;gap:14px!important;min-height:620px!important;max-width:100%!important;overflow:hidden!important}#quickstart-dialog .wizard-build-left{min-width:0!important}#quickstart-dialog .wizard-build-nav button{grid-template-columns:22px minmax(0,1fr) auto!important}#quickstart-dialog .wizard-build-nav small{display:block!important;margin-top:3px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}#quickstart-dialog .wizard-build-detail-panel{display:grid!important;grid-template-columns:minmax(280px,.82fr) minmax(300px,1.18fr)!important;align-content:start!important;column-gap:16px!important;row-gap:10px!important;min-width:0!important;overflow:hidden!important}#quickstart-dialog .wizard-build-detail-panel>h3,#quickstart-dialog .wizard-build-detail-panel>p.hint{grid-column:1/-1!important;min-width:0!important}#quickstart-dialog .wizard-preview-stage{grid-column:1!important;grid-row:3!important;width:100%!important;max-width:390px!important;margin:2px 0 0!important}#quickstart-dialog .wizard-preview-controls{grid-column:1!important;grid-row:4!important;margin:8px 0 0!important}#quickstart-dialog .wizard-build-fields{grid-column:2!important;grid-row:3!important;grid-template-columns:repeat(2,minmax(130px,1fr))!important;margin:0!important;align-self:start!important;min-width:0!important}#quickstart-dialog .wizard-build-detail-panel>.wizard-notes-field{grid-column:2!important;grid-row:4/span 2!important;align-self:start!important;min-width:0!important}#quickstart-dialog .wizard-build-detail-panel>.wizard-notes-field textarea{min-height:96px!important;resize:vertical!important}#quickstart-dialog .wizard-correction-grid{grid-column:1!important;grid-row:5!important;grid-template-columns:1fr!important;gap:8px!important;align-self:start!important;margin:0!important}#quickstart-dialog .wizard-correction-grid label{grid-template-columns:1fr!important}#quickstart-dialog .wizard-correction-grid button{width:100%!important;min-height:40px!important;text-align:center!important}#quickstart-dialog .wizard-frame-strip{grid-column:1/-1!important;grid-row:6!important;min-height:170px!important;width:100%!important;max-width:100%!important;overflow-x:auto!important;margin-top:4px!important}#quickstart-dialog .wizard-frame-strip.is-drag-over{box-shadow:0 0 0 1px var(--red),0 0 22px rgba(216,69,69,.32)!important}#quickstart-dialog .wizard-frame-strip .hint{margin:auto!important;text-align:center!important}#quickstart-dialog .wizard-build-actions{grid-column:1/-1!important;grid-row:7!important;display:flex!important;flex-wrap:wrap!important;gap:8px!important;margin:0!important}#quickstart-dialog .wizard-download-zip-button{margin-left:auto!important}.wizard-frame-file-table-wrap{grid-column:1/-1!important;grid-row:8!important;border:1px solid rgba(226,204,167,.18);border-radius:14px;background:rgba(0,0,0,.14);overflow:auto;max-width:100%}.wizard-frame-file-table{width:100%;border-collapse:collapse;font-size:11px}.wizard-frame-file-table th,.wizard-frame-file-table td{padding:7px 8px;border-bottom:1px solid rgba(226,204,167,.12);vertical-align:top}.wizard-frame-file-table th{text-align:left;color:#e2cca7;text-transform:uppercase;letter-spacing:.08em;font-size:10px}.wizard-frame-file-table code{white-space:normal;word-break:break-word;color:#fff0ce}.wizard-frame-file-table .muted{color:rgba(255,240,206,.58)}#quickstart-dialog .wizard-frame-box{flex-basis:112px!important;min-height:112px!important}@media(max-width:1100px){#quickstart-dialog.wizard-dialog{width:96vw!important;max-width:96vw!important}#quickstart-dialog .wizard-build-shell{grid-template-columns:1fr!important}#quickstart-dialog .wizard-build-detail-panel{grid-template-columns:1fr!important}#quickstart-dialog .wizard-build-detail-panel>*{grid-column:1!important;grid-row:auto!important}#quickstart-dialog .wizard-build-fields{grid-template-columns:1fr!important}}
+#quickstart-dialog.wizard-dialog{width:min(94vw,1360px)!important;max-width:94vw!important;overflow:hidden!important}#quickstart-dialog .dialog-shell{width:100%!important;max-width:100%!important;max-height:92vh!important;overflow:hidden!important}#quickstart-dialog .wizard-content{max-height:calc(92vh - 112px)!important;overflow:auto!important;overflow-x:hidden!important;padding:0 8px 10px 0!important}#quickstart-dialog .wizard-toolbar{margin:4px 0 9px!important;gap:6px!important}#quickstart-dialog .wizard-toolbar button{min-height:31px!important;padding:5px 9px!important;font-size:11px!important;line-height:1.1!important;white-space:nowrap!important}#quickstart-dialog .wizard-build-shell{grid-template-columns:minmax(220px,300px) minmax(0,1fr)!important;gap:14px!important;min-height:620px!important;max-width:100%!important;overflow:hidden!important;margin-top:4px!important}#quickstart-dialog .wizard-build-left{min-width:0!important}#quickstart-dialog .wizard-build-nav button{grid-template-columns:22px minmax(0,1fr) auto!important}#quickstart-dialog .wizard-build-nav small{display:block!important;margin-top:3px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}#quickstart-dialog .wizard-build-detail-panel{display:grid!important;grid-template-columns:minmax(270px,.82fr) minmax(300px,1.18fr)!important;align-content:start!important;column-gap:16px!important;row-gap:10px!important;min-width:0!important;overflow:hidden!important}#quickstart-dialog .wizard-build-detail-panel>h3,#quickstart-dialog .wizard-build-detail-panel>p.hint{grid-column:1/-1!important;min-width:0!important}#quickstart-dialog .wizard-preview-stage{grid-column:1!important;grid-row:3!important;width:100%!important;max-width:390px!important;margin:2px 0 0!important}#quickstart-dialog .wizard-preview-controls{grid-column:1!important;grid-row:4!important;margin:8px 0 0!important}#quickstart-dialog .wizard-preview-controls button{min-height:33px!important;padding:6px 10px!important;font-size:12px!important}#quickstart-dialog .wizard-right-stack{grid-column:2!important;grid-row:3 / span 2!important;display:grid!important;grid-template-columns:1fr!important;gap:10px!important;align-self:start!important;min-width:0!important}#quickstart-dialog .wizard-right-stack .wizard-build-fields{grid-column:auto!important;grid-row:auto!important;grid-template-columns:repeat(2,minmax(130px,1fr))!important;margin:0!important;align-self:start!important;min-width:0!important}#quickstart-dialog .wizard-right-stack .wizard-notes-field{grid-column:auto!important;grid-row:auto!important;align-self:start!important;min-width:0!important}#quickstart-dialog .wizard-right-stack .wizard-notes-field textarea{min-height:86px!important;resize:vertical!important}.wizard-sound-list{border:1px solid rgba(226,204,167,.18);border-radius:14px;background:rgba(0,0,0,.14);padding:8px 10px}.wizard-sound-list summary{cursor:pointer;color:#fff0ce;font-size:12px;font-weight:800;letter-spacing:.05em}.wizard-sound-rows{display:grid;gap:7px;margin-top:8px}.wizard-sound-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:7px;align-items:center}.wizard-sound-row span{color:rgba(255,240,206,.68);font-size:11px}.wizard-sound-row input{width:100%;padding:7px 8px!important;font-size:12px!important}.wizard-sound-row button{min-height:28px!important;padding:4px 8px!important;font-size:11px!important}.wizard-add-sound-button{margin-top:8px!important;min-height:29px!important;padding:5px 9px!important;font-size:11px!important}#quickstart-dialog .wizard-correction-grid{grid-column:1!important;grid-row:5!important;grid-template-columns:1fr!important;gap:8px!important;align-self:start!important;margin:0!important}#quickstart-dialog .wizard-correction-grid label{grid-template-columns:1fr!important}#quickstart-dialog .wizard-correction-grid button{width:100%!important;min-height:36px!important;text-align:center!important;font-size:12px!important;padding:6px 10px!important}#quickstart-dialog .wizard-frame-strip{grid-column:1/-1!important;grid-row:6!important;min-height:170px!important;width:100%!important;max-width:100%!important;overflow-x:auto!important;margin-top:4px!important}#quickstart-dialog .wizard-frame-strip.is-drag-over{box-shadow:0 0 0 1px var(--red),0 0 22px rgba(216,69,69,.32)!important}#quickstart-dialog .wizard-frame-strip .hint{margin:auto!important;text-align:center!important}#quickstart-dialog .wizard-build-actions{grid-column:1/-1!important;grid-row:7!important;display:flex!important;flex-wrap:wrap!important;gap:8px!important;margin:0!important;align-items:center!important}#quickstart-dialog .wizard-build-actions label.button-like{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:34px!important;padding:6px 12px!important;border:1px solid var(--border)!important;border-radius:var(--radius-pill)!important;background:linear-gradient(180deg,rgba(51,38,30,.98),rgba(28,20,17,.98))!important;color:#fff0ce!important;font-family:inherit!important;font-size:12px!important;font-weight:700!important;letter-spacing:normal!important;text-transform:none!important;cursor:pointer!important}#quickstart-dialog [data-empty-frame],#quickstart-dialog .wizard-download-zip-button{min-height:34px!important;padding:6px 12px!important;font-size:12px!important}.wizard-download-zip-button{margin-left:auto!important}.wizard-frame-file-table-wrap{grid-column:1/-1!important;grid-row:8!important;border:1px solid rgba(226,204,167,.18);border-radius:14px;background:rgba(0,0,0,.14);overflow:auto;max-width:100%}.wizard-frame-file-table{width:100%;border-collapse:collapse;font-size:11px}.wizard-frame-file-table th,.wizard-frame-file-table td{padding:7px 8px;border-bottom:1px solid rgba(226,204,167,.12);vertical-align:top}.wizard-frame-file-table th{text-align:left;color:#e2cca7;text-transform:uppercase;letter-spacing:.08em;font-size:10px}.wizard-frame-file-table code{white-space:normal;word-break:break-word;color:#fff0ce}.wizard-frame-file-table .muted{color:rgba(255,240,206,.58)}#quickstart-dialog .wizard-frame-box{flex-basis:112px!important;min-height:112px!important}@media(max-width:1100px){#quickstart-dialog.wizard-dialog{width:96vw!important;max-width:96vw!important}#quickstart-dialog .wizard-build-shell{grid-template-columns:1fr!important}#quickstart-dialog .wizard-build-detail-panel{grid-template-columns:1fr!important}#quickstart-dialog .wizard-build-detail-panel>*{grid-column:1!important;grid-row:auto!important}#quickstart-dialog .wizard-right-stack{grid-column:1!important;grid-row:auto!important}#quickstart-dialog .wizard-right-stack .wizard-build-fields{grid-template-columns:1fr!important}}
 `;
 
 const imagePromises = new Map();
@@ -91,22 +91,18 @@ function cropIcon(templateId) {
   const position = POSITIONS[templateId];
   if (!position) return Promise.resolve('');
   const [column, row] = position;
-
   return loadBestAtlas(row).then((atlas) => {
     const singleCellWidth = atlas.naturalWidth / COLUMNS;
     const looksCombined = atlas.naturalHeight > singleCellWidth * 1.45;
     const sourceCellHeight = looksCombined ? atlas.naturalHeight / COMBINED_ROWS : atlas.naturalHeight;
     const sourceRow = looksCombined ? row : 0;
-
     const canvas = document.createElement('canvas');
     canvas.width = OUT_W;
     canvas.height = OUT_H;
     const context = canvas.getContext('2d');
     if (!context) return '';
-
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.drawImage(atlas, column * singleCellWidth, sourceRow * sourceCellHeight, singleCellWidth, sourceCellHeight, 0, 0, OUT_W, OUT_H);
-
     const dataUrl = canvas.toDataURL('image/png');
     cropCache.set(templateId, dataUrl);
     return dataUrl;
@@ -120,27 +116,22 @@ function decorateTemplateCards() {
 function decorateTemplateCard(card) {
   const templateId = readTemplateId(card);
   if (!templateId || !ROLE_TEMPLATES[templateId]) return;
-
   card.dataset.templateId = templateId;
   card.dataset.templateGroup = GROUPS[templateId] || 'default';
   card.classList.add('object-template-card');
-
   let visual = card.querySelector(':scope > .template-visual') || card.querySelector('.template-visual, .library-card-preview, .template-icon');
   if (!visual) {
     visual = document.createElement('div');
     visual.className = 'template-visual';
     card.prepend(visual);
   }
-
   visual.classList.add('template-visual');
   visual.dataset.templateGroup = GROUPS[templateId] || 'default';
   visual.dataset.iconFor = templateId;
-
   if (card.dataset.templateIconReady !== `${templateId}-${VERSION}`) {
     showFallbackIcon(visual, templateId);
     card.dataset.templateIconReady = `${templateId}-${VERSION}`;
   }
-
   cropIcon(templateId).then((dataUrl) => {
     if (!dataUrl || visual.dataset.iconFor !== templateId) return;
     const image = document.createElement('img');
@@ -169,45 +160,141 @@ function readTemplateId(card) {
 }
 
 function enhanceWizardBuildPanel() {
+  const wizardContent = document.getElementById('quickstart-content');
+  const intro = wizardContent?.querySelector(':scope > p.hint');
+  if (intro?.textContent?.includes('Use the numbered list')) intro.remove();
+  enhanceWizardButtons(wizardContent);
+
   const panel = document.querySelector('#quickstart-dialog .wizard-build-detail-panel');
   if (!panel) return;
+  const fields = panel.querySelector(':scope > .wizard-build-fields');
+  if (!fields) return;
+
+  let rightStack = panel.querySelector('.wizard-right-stack');
+  if (!rightStack) {
+    rightStack = document.createElement('section');
+    rightStack.className = 'wizard-right-stack';
+    fields.before(rightStack);
+  }
+  if (fields.parentElement !== rightStack) rightStack.appendChild(fields);
 
   const notesField = panel.querySelector('textarea[data-build="notes"]')?.closest('label');
-  if (notesField) notesField.classList.add('wizard-notes-field');
+  if (notesField) {
+    notesField.classList.add('wizard-notes-field');
+    if (notesField.parentElement !== rightStack) rightStack.appendChild(notesField);
+  }
+
+  enhanceSoundList(rightStack, fields.querySelector('[data-build="soundAssetId"]'));
 
   const strip = panel.querySelector('[data-frame-strip]');
   if (strip) {
     strip.classList.add('wizard-frame-drop-zone');
     const hint = strip.querySelector('.hint');
-    if (hint && !strip.querySelector('.wizard-frame-box')) hint.textContent = 'Drop image files here, or use Add image files below.';
+    if (hint && !strip.querySelector('.wizard-frame-box')) hint.textContent = 'Drop image files here, or use 🖼️ Add Images below.';
   }
 
   const actions = panel.querySelector('.wizard-build-actions');
-  if (actions && !actions.querySelector('[data-download-asset-zip]')) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'wizard-download-zip-button';
-    button.dataset.downloadAssetZip = 'true';
-    button.textContent = 'Download asset ZIP';
-    button.addEventListener('click', downloadAssetZip);
-    actions.appendChild(button);
+  if (actions) {
+    const addImages = actions.querySelector('label.button-like');
+    if (addImages) setLabelButtonText(addImages, '🖼️ Add Images');
+    const addFrame = actions.querySelector('[data-empty-frame]');
+    setButtonText(addFrame, '➕ Add Frame');
+    if (!actions.querySelector('[data-download-asset-zip]')) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'wizard-download-zip-button';
+      button.dataset.downloadAssetZip = 'true';
+      button.textContent = '📦 Download ZIP';
+      button.addEventListener('click', downloadAssetZip);
+      actions.appendChild(button);
+    }
   }
 
   renderFramePathTable(panel);
+}
+
+function enhanceWizardButtons(root) {
+  if (!root) return;
+  setButtonText(root.querySelector('[data-back]'), '← Back');
+  setButtonText(root.querySelector('[data-session]'), '💾 Save');
+  setButtonText(root.querySelector('[data-save]'), '✅ Save Local');
+  setButtonText(root.querySelector('[data-finish]'), '🏁 Finish');
+  const play = root.querySelector('[data-play-toggle]');
+  if (play && !/^▶|^⏸/.test(play.textContent.trim())) play.textContent = `${play.textContent.trim().toLowerCase().includes('pause') ? '⏸️' : '▶️'} ${play.textContent.trim()}`;
+  setButtonText(root.querySelector('[data-prev-frame]'), '◀ Frame');
+  setButtonText(root.querySelector('[data-next-frame]'), 'Frame ▶');
+  const brightness = root.querySelector('[data-match-brightness]');
+  if (brightness && !brightness.textContent.includes('✨')) brightness.textContent = '✨ Match brightness across frames';
+}
+
+function setButtonText(button, text) {
+  if (button && button.textContent.trim() !== text) button.textContent = text;
+}
+
+function setLabelButtonText(label, text) {
+  const input = label.querySelector('input');
+  label.textContent = text;
+  if (input) label.appendChild(input);
+}
+
+function enhanceSoundList(container, soundField) {
+  if (!container || !soundField) return;
+  let details = container.querySelector('.wizard-sound-list');
+  if (!details) {
+    details = document.createElement('details');
+    details.className = 'wizard-sound-list';
+    details.open = false;
+    details.innerHTML = '<summary>🔊 Sound files for this action</summary><div class="wizard-sound-rows"></div><button type="button" class="wizard-add-sound-button">➕ Add Sound</button>';
+    container.insertBefore(details, container.querySelector('.wizard-notes-field'));
+  }
+  const rows = details.querySelector('.wizard-sound-rows');
+  if (!rows || rows.dataset.syncedFrom === soundField.value) return;
+  rows.dataset.syncedFrom = soundField.value;
+  const values = splitSoundValues(soundField.value);
+  rows.innerHTML = '';
+  (values.length ? values : ['']).forEach((value, index) => addSoundRow(rows, soundField, value, index));
+  details.querySelector('.wizard-add-sound-button')?.addEventListener('click', () => {
+    addSoundRow(rows, soundField, '', rows.querySelectorAll('.wizard-sound-row').length);
+    syncSoundRows(rows, soundField);
+  }, { once: true });
+}
+
+function addSoundRow(rows, soundField, value, index) {
+  const row = document.createElement('div');
+  row.className = 'wizard-sound-row';
+  row.innerHTML = `<span>${index + 1}</span><input value="${escapeHtml(value)}" placeholder="assets/audio/sfx/${safeId(actionFromSelected())}_${String(index + 1).padStart(2, '0')}.ogg" /><button type="button">×</button>`;
+  row.querySelector('input').addEventListener('input', () => syncSoundRows(rows, soundField));
+  row.querySelector('button').addEventListener('click', () => { row.remove(); renumberSoundRows(rows); syncSoundRows(rows, soundField); });
+  rows.appendChild(row);
+  renumberSoundRows(rows);
+}
+
+function splitSoundValues(value) {
+  return String(value || '').split(/[\n,]+/).map((item) => item.trim()).filter(Boolean);
+}
+
+function syncSoundRows(rows, soundField) {
+  const values = Array.from(rows.querySelectorAll('input')).map((input) => input.value.trim()).filter(Boolean);
+  soundField.value = values.join(', ');
+  rows.dataset.syncedFrom = soundField.value;
+  soundField.dispatchEvent(new Event('input', { bubbles: true }));
+  soundField.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function renumberSoundRows(rows) {
+  rows.querySelectorAll('.wizard-sound-row span').forEach((span, index) => { span.textContent = `${index + 1}`; });
 }
 
 function renderFramePathTable(panel) {
   const selectedId = selectedRequirementId();
   const actions = panel.querySelector('.wizard-build-actions');
   if (!selectedId || !actions) return;
-
   let wrap = panel.querySelector('.wizard-frame-file-table-wrap');
   if (!wrap) {
     wrap = document.createElement('section');
     wrap.className = 'wizard-frame-file-table-wrap';
     actions.after(wrap);
   }
-
   const data = getRequirementData(selectedId);
   const frames = data.frames || [];
   const count = Math.max(frames.length, Number(data.frameCount) || 0);
@@ -216,7 +303,6 @@ function renderFramePathTable(panel) {
     const frame = frames[index] || { name: `Frame ${index + 1}`, assetId: '' };
     rows.push(`<tr><td>${index + 1}</td><td>${escapeHtml(frame.name || `Frame ${index + 1}`)}</td><td><code>${escapeHtml(expectedFramePath(selectedId, frame, index))}</code></td></tr>`);
   }
-
   wrap.innerHTML = `<table class="wizard-frame-file-table"><thead><tr><th>#</th><th>Frame name</th><th>Expected game folder / file path</th></tr></thead><tbody>${rows.length ? rows.join('') : '<tr><td colspan="3" class="muted">No frame slots yet. Add images or set a frame count.</td></tr>'}</tbody></table>`;
 }
 
@@ -257,18 +343,23 @@ function actionIdFromRequirement(requirementId) {
   return String(requirementId || '').split(':')[1] || String(requirementId || 'asset');
 }
 
+function actionFromSelected() {
+  return actionIdFromRequirement(selectedRequirementId() || 'sound');
+}
+
 function downloadAssetZip() {
   try {
     const zipBytes = buildAssetZip();
     const blob = new Blob([zipBytes], { type: 'application/zip' });
     const objectId = safeId(editorState.archetype?.id || editorState.archetype?.name || 'object_archetype');
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
+    link.href = url;
     link.download = `${objectId}_asset_package.zip`;
     document.body.appendChild(link);
     link.click();
     link.remove();
-    URL.revokeObjectURL(link.href);
+    URL.revokeObjectURL(url);
     window.dispatchEvent(new CustomEvent('artifex:toast', { detail: { message: 'Asset ZIP created from uploaded frames.', type: 'success' } }));
   } catch (error) {
     window.dispatchEvent(new CustomEvent('artifex:toast', { detail: { message: `Could not create ZIP: ${error.message}`, type: 'error' } }));
@@ -288,7 +379,6 @@ function buildAssetZip() {
     generatedAt: new Date().toISOString(),
     files: []
   };
-
   Object.entries(requirements).forEach(([requirementId, data]) => {
     (data.frames || []).forEach((frame, index) => {
       if (!frame.dataUrl) return;
@@ -297,7 +387,6 @@ function buildAssetZip() {
       manifest.files.push({ requirementId, frame: index + 1, name: frame.name || `Frame ${index + 1}`, path });
     });
   });
-
   files.push({ path: `${objectAssetFolder()}/metadata/archetype.json`, bytes: textEncoder.encode(JSON.stringify(item, null, 2)) });
   files.push({ path: `${objectAssetFolder()}/metadata/asset_manifest.json`, bytes: textEncoder.encode(JSON.stringify(manifest, null, 2)) });
   return createZip(files);
@@ -338,7 +427,6 @@ function createZip(files) {
     view.setUint16(28, 0, true);
     local.set(name, 30);
     localParts.push(local, data);
-
     const central = new Uint8Array(46 + name.length);
     const cview = new DataView(central.buffer);
     cview.setUint32(0, 0x02014b50, true);
