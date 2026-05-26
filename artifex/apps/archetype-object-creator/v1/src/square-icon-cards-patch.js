@@ -24,8 +24,8 @@ const SQUARE_ICON_CARD_CSS = `
 .object-template-card .template-icon-img,
 .template-card > .template-visual .template-icon-img,
 .library-card > .template-visual .template-icon-img {
-  width: 88% !important;
-  height: 88% !important;
+  width: 44% !important;
+  height: 44% !important;
   max-width: none !important;
   max-height: none !important;
   object-fit: contain !important;
@@ -34,9 +34,9 @@ const SQUARE_ICON_CARD_CSS = `
 .object-template-card .template-icon-fallback,
 .template-card > .template-visual .template-icon-fallback,
 .library-card > .template-visual .template-icon-fallback {
-  width: 46% !important;
-  height: 46% !important;
-  font-size: clamp(36px, 8vw, 72px) !important;
+  width: 32% !important;
+  height: 32% !important;
+  font-size: clamp(28px, 5vw, 48px) !important;
 }
 `;
 
