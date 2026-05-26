@@ -4,11 +4,13 @@ import { initUI, showToast } from './editor-ui.js';
 import { initLibrary } from './editor-library.js';
 import { initSidePanelParity } from './side-panel-parity.js';
 import { initAppearanceParity } from './appearance-parity.js';
+import { initBrushAssetLibrary } from './brush-asset-library.js';
 import { initDynamicsParity } from './dynamics-parity.js';
 import { initIOParity } from './io-parity.js';
 import { initWorkspaceParity } from './workspace-parity.js';
 import { initResolutionParity } from './resolution-parity.js';
 import { initLayerOrderParity } from './layer-order-parity.js';
+import { initMenuCleanupParity } from './menu-cleanup-parity.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
 const VERSION_LABEL = 'V3.0';
@@ -26,11 +28,13 @@ window.addEventListener('DOMContentLoaded', () => {
   initLibrary();
   initSidePanelParity(showToast);
   initAppearanceParity(showToast);
+  initBrushAssetLibrary(showToast);
   initDynamicsParity(showToast);
   initIOParity(showToast);
   initWorkspaceParity(showToast);
   initResolutionParity(showToast);
   initLayerOrderParity(showToast);
+  initMenuCleanupParity(showToast);
 
   const preset = cloneBasePreset('base', 'standard-particle');
   if (preset) {
