@@ -10,7 +10,7 @@ import { initWorkspaceParity } from './workspace-parity.js';
 import { initResolutionParity } from './resolution-parity.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'v2.3.13 APPEARANCE-RAMP';
+const VERSION_LABEL = 'v2.3.14 LAYOUT-POLISH';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
@@ -35,5 +35,5 @@ window.addEventListener('DOMContentLoaded', () => {
     addLayer(preset.config);
   }
 
-  showToast(`${VERSION_LABEL} loaded. Draggable appearance markers are active.`, 'success');
+  showToast(`${VERSION_LABEL} loaded. Layout polish refinements are active.`, 'success');
 });
