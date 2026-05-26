@@ -1,7 +1,7 @@
-import { editorState } from './editor-state.js';
+import { editorState, updateArchetype } from './editor-state.js';
 import { ROLE_TEMPLATES } from './templates.js';
 
-const VERSION = '1.11';
+const VERSION = '1.12';
 const ICON_PATHS = [
   `./v1/icons/object-archetypes/icons1.png?v=${VERSION}`,
   `./v1/icons/object-archetypes/icons2.png?v=${VERSION}`,
@@ -30,6 +30,66 @@ const FALLBACK = {
   door_exit: '⌂', pickup: '✦', searchable_cache: '▤', throwable_object: '◈', marker: '⬡', hazard: '⚠'
 };
 
+const ACTION_INFO = {
+  idle: 'Default resting state. Usually loops and is returned to after short one-shot actions finish.',
+  turn_face: 'Used when the object changes facing direction without changing position. Helps the engine select left/right/up/down variants.',
+  walk: 'Used when the object moves under player input, AI patrol, scripted movement, or pathfinding. Often triggers repeated footstep audio events.',
+  patrol_walk: 'Used for autonomous route movement. Usually maps to AI patrol state instead of direct player input.',
+  move: 'General movement action for objects that slide, drift, push, float, or translate without a character walk cycle.',
+  jump: 'Used for launch, air, and landing movement. Needs frame markers for launch sound, airborne state, and landing sound if used.',
+  crouch_hide: 'Used for hiding, lowering profile, sneaking, or cover behaviour. May change collision height or visibility flags.',
+  pickup: 'Used when an object is grabbed from the scene. Needs a pickup/grab frame marker and optional inventory completion marker.',
+  hold_carry: 'Used while an object is being held, carried, or displayed in hands. Often loops until released or used.',
+  throw: 'Used when a carried item or projectile is released. Needs a release frame marker and optional projectile spawn settings.',
+  use_item: 'Used when an item activates an effect. It may trigger scene changes, inventory effects, sounds, or puzzle-state updates.',
+  gesture: 'Non-combat body animation such as point, wave, warn, beckon, or react. Usually one-shot then returns to idle.',
+  give_item: 'Used when handing something to another character or container. Needs handoff/completion frame marker if game logic waits for it.',
+  receive_item: 'Used when accepting an item from another object. May trigger inventory, quest, or dialogue changes.',
+  interact_assist: 'Generic interaction support animation, usually triggered by an interaction prompt, quest event, or helper action.',
+  sing_magic_cast: 'Performance or magic vocal casting. Usually uses longer timing, channel audio, and frame markers for glow/effect moments.',
+  cast_ritual: 'Ritual/casting animation. Often loops or channels until a script, timer, or quest condition completes.',
+  channel: 'Sustained magical or energy state. Usually looped and stopped by an external trigger or action transition.',
+  attack: 'Combat action. Needs hit-frame windows, optional weapon/projectile spawn frame, and impact audio/effect markers.',
+  special_attack: 'Higher-priority combat action with stronger timing, VFX, cooldown, and possible non-interruptible playback.',
+  take_damage: 'Reaction to harm. Usually one-shot, briefly interrupts current action, then returns to previous or idle state.',
+  stunned: 'Temporary disabled state. Often looped until a timer or gameplay event releases the object.',
+  phase_change: 'Transformation or state swap. Usually non-interruptible and may switch archetype state, visibility, or collision rules.',
+  death: 'Removal, fall, vanish, or destruction animation. Usually does not return to idle and may end by disabling the object.',
+  enter_door: 'Transition into a doorway, portal, or passage. Needs a completion/transition frame marker.',
+  exit_door: 'Transition out of a doorway or portal. Often paired with spawn-position and facing-direction rules.',
+  open: 'Object changes to open state. Usually one-shot, then holds final state or switches to an opened variant.',
+  close: 'Object changes to closed state. Usually one-shot, then holds final state or switches to a closed variant.',
+  locked: 'Feedback action for blocked interaction. Usually short shake, rattle, glow, or denied sound.',
+  collect: 'Used when the object is picked up/collected by contact or interaction. Often removes the object after completion.',
+  searched_opened: 'Used when a cache or container has been searched. Often switches visual state to opened/empty.',
+  activate: 'Object begins or performs an active state, such as lever on, rune lit, mechanism running.',
+  trigger: 'Object fires a scene event, trap, puzzle signal, or script action.',
+  reset: 'Object returns to default state after activation, failure, timer, or puzzle reset.',
+  land_break: 'Impact/break action for thrown objects, falling objects, hazards, or destructible props.',
+  possession_overlay: 'Overlay/FX state used when an object is possessed, controlled, cursed, or influenced.'
+};
+
+const DEFAULT_PLAYBACK = {
+  loop: false,
+  pingPong: false,
+  holdLastFrame: false,
+  returnToIdle: true,
+  interruptible: true,
+  priority: 5,
+  blendFrames: 0
+};
+const DEFAULT_TRIGGER = {
+  source: 'auto',
+  inputAction: '',
+  keyboard: '',
+  gamepad: '',
+  touch: '',
+  aiState: '',
+  sceneEvent: ''
+};
+const FRAME_EVENT_TYPES = ['play_sound', 'hitbox_on', 'hitbox_off', 'spawn_object', 'release_projectile', 'complete_action', 'transition', 'custom'];
+const TRIGGER_SOURCES = ['auto', 'player_input', 'ai_state', 'interaction_button', 'collision_contact', 'quest_event', 'scene_script', 'timer', 'cutscene'];
+
 const CSS = `
 .object-template-card { --template-accent:#e2cca7; --template-soft:rgba(226,204,167,.16); --template-glow:rgba(226,204,167,.28); max-width:186px !important; padding:10px !important; border-color:color-mix(in srgb,var(--template-accent),#382a21 58%) !important; background:radial-gradient(circle at 50% 14%,var(--template-soft),transparent 44%),linear-gradient(180deg,rgba(34,25,20,.98),rgba(16,12,10,.98)) !important; box-shadow:0 10px 22px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,240,206,.03) !important; }
 .object-template-card:hover { border-color:var(--template-accent) !important; box-shadow:0 0 0 1px var(--template-soft),0 0 24px var(--template-glow),0 14px 26px rgba(0,0,0,.72) !important; }
@@ -53,7 +113,7 @@ const CSS = `
 .template-icon-fallback{width:40% !important;height:40% !important;display:grid !important;place-items:center !important;border-radius:999px !important;color:#fff0ce !important;background:var(--template-soft) !important;box-shadow:0 0 18px var(--template-glow) !important;font-size:clamp(28px,4vw,46px) !important;line-height:1 !important}
 .object-template-card h4{font-size:13px !important;line-height:1.2 !important;margin-bottom:5px !important}.object-template-card p{font-size:11px !important;line-height:1.25 !important}.object-template-card button{width:100% !important;min-height:38px !important;padding:8px 10px !important;font-size:13px !important}.menu-bar{flex:1;justify-content:center}@media(max-width:980px){.menu-bar{justify-content:flex-start}}
 body .wizard-session-wrap .wizard-session-button{width:auto!important;height:auto!important;min-width:0!important;min-height:0!important;padding:0 6px!important;border:none!important;background:transparent!important;border-radius:0!important;box-shadow:none!important;color:#fff0ce!important;font-size:30px!important;line-height:1!important;display:flex!important;align-items:center!important;justify-content:center!important;text-shadow:0 0 6px rgba(216,69,69,.90),0 0 16px rgba(216,69,69,.72),0 0 28px rgba(216,69,69,.50),0 0 42px rgba(216,69,69,.28)!important;filter:none!important}body .wizard-session-wrap .wizard-session-button:hover,body .wizard-session-wrap .wizard-session-button:focus{background:transparent!important;border:none!important;box-shadow:none!important;transform:scale(1.12)!important}.wizard-session-wrap{display:none;align-items:center}.wizard-session-wrap.has-sessions{display:flex!important}
-#quickstart-dialog.wizard-dialog{width:min(94vw,1360px)!important;max-width:94vw!important;overflow:hidden!important}#quickstart-dialog .dialog-shell{width:100%!important;max-width:100%!important;max-height:92vh!important;overflow:hidden!important}#quickstart-dialog .wizard-content{max-height:calc(92vh - 112px)!important;overflow:auto!important;overflow-x:hidden!important;padding:0 8px 10px 0!important}#quickstart-dialog .wizard-toolbar{margin:4px 0 9px!important;gap:6px!important}#quickstart-dialog .wizard-toolbar button{min-height:31px!important;padding:5px 9px!important;font-size:11px!important;line-height:1.1!important;white-space:nowrap!important}#quickstart-dialog .wizard-build-shell{grid-template-columns:minmax(220px,300px) minmax(0,1fr)!important;gap:14px!important;min-height:620px!important;max-width:100%!important;overflow:hidden!important;margin-top:4px!important}#quickstart-dialog .wizard-build-left{min-width:0!important}#quickstart-dialog .wizard-build-nav button{grid-template-columns:22px minmax(0,1fr) auto!important}#quickstart-dialog .wizard-build-nav small{display:block!important;margin-top:3px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}#quickstart-dialog .wizard-build-detail-panel{display:grid!important;grid-template-columns:minmax(270px,.82fr) minmax(300px,1.18fr)!important;align-content:start!important;column-gap:16px!important;row-gap:10px!important;min-width:0!important;overflow:hidden!important}#quickstart-dialog .wizard-build-detail-panel>h3,#quickstart-dialog .wizard-build-detail-panel>p.hint{grid-column:1/-1!important;min-width:0!important}#quickstart-dialog .wizard-preview-stage{grid-column:1!important;grid-row:3!important;width:100%!important;max-width:390px!important;margin:2px 0 0!important}#quickstart-dialog .wizard-preview-controls{grid-column:1!important;grid-row:4!important;margin:8px 0 0!important}#quickstart-dialog .wizard-preview-controls button{min-height:33px!important;padding:6px 10px!important;font-size:12px!important}#quickstart-dialog .wizard-right-stack{grid-column:2!important;grid-row:3 / span 2!important;display:grid!important;grid-template-columns:1fr!important;gap:10px!important;align-self:start!important;min-width:0!important}#quickstart-dialog .wizard-right-stack .wizard-build-fields{grid-column:auto!important;grid-row:auto!important;grid-template-columns:repeat(2,minmax(130px,1fr))!important;margin:0!important;align-self:start!important;min-width:0!important}#quickstart-dialog .wizard-right-stack .wizard-notes-field{grid-column:auto!important;grid-row:auto!important;align-self:start!important;min-width:0!important}#quickstart-dialog .wizard-right-stack .wizard-notes-field textarea{min-height:86px!important;resize:vertical!important}.wizard-sound-list{border:1px solid rgba(226,204,167,.18);border-radius:14px;background:rgba(0,0,0,.14);padding:8px 10px}.wizard-sound-list summary{cursor:pointer;color:#fff0ce;font-size:12px;font-weight:800;letter-spacing:.05em}.wizard-sound-rows{display:grid;gap:7px;margin-top:8px}.wizard-sound-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:7px;align-items:center}.wizard-sound-row span{color:rgba(255,240,206,.68);font-size:11px}.wizard-sound-row input{width:100%;padding:7px 8px!important;font-size:12px!important}.wizard-sound-row button{min-height:28px!important;padding:4px 8px!important;font-size:11px!important}.wizard-add-sound-button{margin-top:8px!important;min-height:29px!important;padding:5px 9px!important;font-size:11px!important}#quickstart-dialog .wizard-correction-grid{grid-column:1!important;grid-row:5!important;grid-template-columns:1fr!important;gap:8px!important;align-self:start!important;margin:0!important}#quickstart-dialog .wizard-correction-grid label{grid-template-columns:1fr!important}#quickstart-dialog .wizard-correction-grid button{width:100%!important;min-height:36px!important;text-align:center!important;font-size:12px!important;padding:6px 10px!important}#quickstart-dialog .wizard-frame-strip{grid-column:1/-1!important;grid-row:6!important;min-height:170px!important;width:100%!important;max-width:100%!important;overflow-x:auto!important;margin-top:4px!important}#quickstart-dialog .wizard-frame-strip.is-drag-over{box-shadow:0 0 0 1px var(--red),0 0 22px rgba(216,69,69,.32)!important}#quickstart-dialog .wizard-frame-strip .hint{margin:auto!important;text-align:center!important}#quickstart-dialog .wizard-build-actions{grid-column:1/-1!important;grid-row:7!important;display:flex!important;flex-wrap:wrap!important;gap:8px!important;margin:0!important;align-items:center!important}#quickstart-dialog .wizard-build-actions label.button-like{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:34px!important;padding:6px 12px!important;border:1px solid var(--border)!important;border-radius:var(--radius-pill)!important;background:linear-gradient(180deg,rgba(51,38,30,.98),rgba(28,20,17,.98))!important;color:#fff0ce!important;font-family:inherit!important;font-size:12px!important;font-weight:700!important;letter-spacing:normal!important;text-transform:none!important;cursor:pointer!important}#quickstart-dialog [data-empty-frame],#quickstart-dialog .wizard-download-zip-button{min-height:34px!important;padding:6px 12px!important;font-size:12px!important}.wizard-download-zip-button{margin-left:auto!important}.wizard-frame-file-table-wrap{grid-column:1/-1!important;grid-row:8!important;border:1px solid rgba(226,204,167,.18);border-radius:14px;background:rgba(0,0,0,.14);overflow:auto;max-width:100%}.wizard-frame-file-table{width:100%;border-collapse:collapse;font-size:11px}.wizard-frame-file-table th,.wizard-frame-file-table td{padding:7px 8px;border-bottom:1px solid rgba(226,204,167,.12);vertical-align:top}.wizard-frame-file-table th{text-align:left;color:#e2cca7;text-transform:uppercase;letter-spacing:.08em;font-size:10px}.wizard-frame-file-table code{white-space:normal;word-break:break-word;color:#fff0ce}.wizard-frame-file-table .muted{color:rgba(255,240,206,.58)}#quickstart-dialog .wizard-frame-box{flex-basis:112px!important;min-height:112px!important}@media(max-width:1100px){#quickstart-dialog.wizard-dialog{width:96vw!important;max-width:96vw!important}#quickstart-dialog .wizard-build-shell{grid-template-columns:1fr!important}#quickstart-dialog .wizard-build-detail-panel{grid-template-columns:1fr!important}#quickstart-dialog .wizard-build-detail-panel>*{grid-column:1!important;grid-row:auto!important}#quickstart-dialog .wizard-right-stack{grid-column:1!important;grid-row:auto!important}#quickstart-dialog .wizard-right-stack .wizard-build-fields{grid-template-columns:1fr!important}}
+#quickstart-dialog.wizard-dialog{width:min(94vw,1360px)!important;max-width:94vw!important;overflow:hidden!important}#quickstart-dialog .dialog-shell{width:100%!important;max-width:100%!important;max-height:92vh!important;overflow:hidden!important}#quickstart-dialog .wizard-content{max-height:calc(92vh - 112px)!important;overflow:auto!important;overflow-x:hidden!important;padding:0 8px 10px 0!important}#quickstart-dialog .wizard-toolbar{margin:4px 0 9px!important;gap:6px!important}#quickstart-dialog .wizard-toolbar button{min-height:31px!important;padding:5px 9px!important;font-size:11px!important;line-height:1.1!important;white-space:nowrap!important}#quickstart-dialog .wizard-build-shell{grid-template-columns:minmax(220px,300px) minmax(0,1fr)!important;gap:14px!important;min-height:620px!important;max-width:100%!important;overflow:hidden!important;margin-top:4px!important}#quickstart-dialog .wizard-build-left{min-width:0!important}#quickstart-dialog .wizard-build-nav button{grid-template-columns:22px minmax(0,1fr) auto!important}#quickstart-dialog .wizard-build-nav small{display:block!important;margin-top:3px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}#quickstart-dialog .wizard-build-detail-panel{display:grid!important;grid-template-columns:minmax(270px,.82fr) minmax(300px,1.18fr)!important;align-content:start!important;column-gap:16px!important;row-gap:10px!important;min-width:0!important;overflow:hidden!important}#quickstart-dialog .wizard-build-detail-panel>h3,#quickstart-dialog .wizard-build-detail-panel>p.hint{grid-column:1/-1!important;min-width:0!important}#quickstart-dialog .wizard-build-detail-panel>h3{display:flex!important;align-items:center!important;gap:8px!important}#quickstart-dialog .wizard-action-info-button{margin-left:auto!important;width:26px!important;height:26px!important;min-height:26px!important;border-radius:999px!important;padding:0!important;font-size:14px!important;font-weight:900!important;color:#fff0ce!important;border:1px solid var(--red)!important;background:rgba(216,69,69,.16)!important}#quickstart-dialog .wizard-action-info-text{grid-column:1/-1!important;margin:0 0 2px!important;padding:8px 10px!important;border:1px solid rgba(226,204,167,.18)!important;border-radius:12px!important;background:rgba(0,0,0,.16)!important;color:rgba(255,240,206,.78)!important;font-size:12px!important;line-height:1.35!important}#quickstart-dialog .wizard-preview-stage{grid-column:1!important;grid-row:4!important;width:100%!important;max-width:390px!important;margin:2px 0 0!important}#quickstart-dialog .wizard-preview-controls{grid-column:1!important;grid-row:5!important;margin:8px 0 0!important}#quickstart-dialog .wizard-preview-controls button{min-height:33px!important;padding:6px 10px!important;font-size:12px!important}#quickstart-dialog .wizard-right-stack{grid-column:2!important;grid-row:4 / span 2!important;display:grid!important;grid-template-columns:1fr!important;gap:10px!important;align-self:start!important;min-width:0!important}#quickstart-dialog .wizard-right-stack .wizard-build-fields{grid-column:auto!important;grid-row:auto!important;grid-template-columns:repeat(2,minmax(130px,1fr))!important;margin:0!important;align-self:start!important;min-width:0!important}#quickstart-dialog .wizard-right-stack .wizard-notes-field{grid-column:auto!important;grid-row:auto!important;align-self:start!important;min-width:0!important}#quickstart-dialog .wizard-right-stack .wizard-notes-field textarea{min-height:86px!important;resize:vertical!important}.wizard-sound-list,.wizard-action-behaviour-panel{border:1px solid rgba(226,204,167,.18);border-radius:14px;background:rgba(0,0,0,.14);padding:8px 10px}.wizard-sound-list summary,.wizard-action-behaviour-panel summary{cursor:pointer;color:#fff0ce;font-size:12px;font-weight:800;letter-spacing:.05em}.wizard-sound-rows{display:grid;gap:7px;margin-top:8px}.wizard-sound-row{display:grid;grid-template-columns:auto minmax(0,1fr) 90px 62px 62px 76px auto;gap:7px;align-items:center}.wizard-sound-row span{color:rgba(255,240,206,.68);font-size:11px}.wizard-sound-row input,.wizard-sound-row select{width:100%;padding:7px 8px!important;font-size:12px!important}.wizard-sound-row button{min-height:28px!important;padding:4px 8px!important;font-size:11px!important}.wizard-add-sound-button{margin-top:8px!important;min-height:29px!important;padding:5px 9px!important;font-size:11px!important}.wizard-action-behaviour-panel{grid-column:1!important;grid-row:6!important;align-self:start!important}.wizard-behaviour-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:9px}.wizard-behaviour-grid label{font-size:10px!important;letter-spacing:.08em!important;text-transform:uppercase!important;color:rgba(226,204,167,.82)!important}.wizard-check-line{display:flex!important;align-items:center!important;gap:7px!important;font-size:12px!important;text-transform:none!important;letter-spacing:normal!important;color:#fff0ce!important}.wizard-check-line input{width:auto!important}.wizard-frame-events{display:grid;gap:7px;margin-top:9px}.wizard-frame-event-row{display:grid;grid-template-columns:56px 130px minmax(0,1fr) auto;gap:7px;align-items:end}.wizard-frame-event-row input,.wizard-frame-event-row select{width:100%;padding:7px 8px!important;font-size:12px!important}.wizard-frame-event-row button{min-height:28px!important;padding:4px 8px!important;font-size:11px!important}.wizard-add-frame-event{margin-top:8px!important;min-height:29px!important;padding:5px 9px!important;font-size:11px!important}#quickstart-dialog .wizard-correction-grid{grid-column:1!important;grid-row:7!important;grid-template-columns:1fr!important;gap:8px!important;align-self:start!important;margin:0!important}#quickstart-dialog .wizard-correction-grid label{grid-template-columns:1fr!important}#quickstart-dialog .wizard-correction-grid button{width:100%!important;min-height:36px!important;text-align:center!important;font-size:12px!important;padding:6px 10px!important}#quickstart-dialog .wizard-frame-strip{grid-column:1/-1!important;grid-row:8!important;min-height:170px!important;width:100%!important;max-width:100%!important;overflow-x:auto!important;margin-top:4px!important}#quickstart-dialog .wizard-frame-strip.is-drag-over{box-shadow:0 0 0 1px var(--red),0 0 22px rgba(216,69,69,.32)!important}#quickstart-dialog .wizard-frame-strip .hint{margin:auto!important;text-align:center!important}#quickstart-dialog .wizard-build-actions{grid-column:1/-1!important;grid-row:9!important;display:flex!important;flex-wrap:wrap!important;gap:8px!important;margin:0!important;align-items:center!important}#quickstart-dialog .wizard-build-actions label.button-like{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:34px!important;padding:6px 12px!important;border:1px solid var(--border)!important;border-radius:var(--radius-pill)!important;background:linear-gradient(180deg,rgba(51,38,30,.98),rgba(28,20,17,.98))!important;color:#fff0ce!important;font-family:inherit!important;font-size:12px!important;font-weight:700!important;letter-spacing:normal!important;text-transform:none!important;cursor:pointer!important}#quickstart-dialog [data-empty-frame],#quickstart-dialog .wizard-download-zip-button{min-height:34px!important;padding:6px 12px!important;font-size:12px!important}.wizard-download-zip-button{margin-left:auto!important}.wizard-frame-file-table-wrap{grid-column:1/-1!important;grid-row:10!important;border:1px solid rgba(226,204,167,.18);border-radius:14px;background:rgba(0,0,0,.14);overflow:auto;max-width:100%}.wizard-frame-file-table{width:100%;border-collapse:collapse;font-size:11px}.wizard-frame-file-table th,.wizard-frame-file-table td{padding:7px 8px;border-bottom:1px solid rgba(226,204,167,.12);vertical-align:top}.wizard-frame-file-table th{text-align:left;color:#e2cca7;text-transform:uppercase;letter-spacing:.08em;font-size:10px}.wizard-frame-file-table code{white-space:normal;word-break:break-word;color:#fff0ce}.wizard-frame-file-table .muted{color:rgba(255,240,206,.58)}#quickstart-dialog .wizard-frame-box{flex-basis:112px!important;min-height:112px!important}@media(max-width:1100px){#quickstart-dialog.wizard-dialog{width:96vw!important;max-width:96vw!important}#quickstart-dialog .wizard-build-shell{grid-template-columns:1fr!important}#quickstart-dialog .wizard-build-detail-panel{grid-template-columns:1fr!important}#quickstart-dialog .wizard-build-detail-panel>*{grid-column:1!important;grid-row:auto!important}#quickstart-dialog .wizard-right-stack{grid-column:1!important;grid-row:auto!important}.wizard-sound-row,.wizard-frame-event-row{grid-template-columns:1fr!important}#quickstart-dialog .wizard-right-stack .wizard-build-fields{grid-template-columns:1fr!important}}
 `;
 
 const imagePromises = new Map();
@@ -82,9 +142,7 @@ function loadImage(path) {
   return promise;
 }
 
-function loadBestAtlas(row) {
-  return loadImage(ICON_PATHS[row] || ICON_PATHS[0]).catch(() => loadImage(ICON_PATHS[0]));
-}
+function loadBestAtlas(row) { return loadImage(ICON_PATHS[row] || ICON_PATHS[0]).catch(() => loadImage(ICON_PATHS[0])); }
 
 function cropIcon(templateId) {
   if (cropCache.has(templateId)) return Promise.resolve(cropCache.get(templateId));
@@ -109,9 +167,7 @@ function cropIcon(templateId) {
   });
 }
 
-function decorateTemplateCards() {
-  document.querySelectorAll('.template-card, .library-card').forEach(decorateTemplateCard);
-}
+function decorateTemplateCards() { document.querySelectorAll('.template-card, .library-card').forEach(decorateTemplateCard); }
 
 function decorateTemplateCard(card) {
   const templateId = readTemplateId(card);
@@ -167,9 +223,12 @@ function enhanceWizardBuildPanel() {
 
   const panel = document.querySelector('#quickstart-dialog .wizard-build-detail-panel');
   if (!panel) return;
+  const selectedId = selectedRequirementId();
+  if (!selectedId) return;
+  enhanceActionInfo(panel, selectedId);
+
   const fields = panel.querySelector(':scope > .wizard-build-fields');
   if (!fields) return;
-
   let rightStack = panel.querySelector('.wizard-right-stack');
   if (!rightStack) {
     rightStack = document.createElement('section');
@@ -185,6 +244,7 @@ function enhanceWizardBuildPanel() {
   }
 
   enhanceSoundList(rightStack, fields.querySelector('[data-build="soundAssetId"]'));
+  enhanceActionBehaviour(panel, selectedId);
 
   const strip = panel.querySelector('[data-frame-strip]');
   if (strip) {
@@ -209,8 +269,33 @@ function enhanceWizardBuildPanel() {
       actions.appendChild(button);
     }
   }
-
   renderFramePathTable(panel);
+}
+
+function enhanceActionInfo(panel, requirementId) {
+  const h3 = panel.querySelector(':scope > h3');
+  if (!h3) return;
+  if (!h3.querySelector('.wizard-action-info-button')) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'wizard-action-info-button';
+    button.textContent = 'i';
+    button.title = 'Explain this gameplay action';
+    h3.appendChild(button);
+    button.addEventListener('click', () => {
+      const text = panel.querySelector('.wizard-action-info-text');
+      if (text) text.hidden = !text.hidden;
+    });
+  }
+  let info = panel.querySelector(':scope > .wizard-action-info-text');
+  if (!info) {
+    info = document.createElement('p');
+    info.className = 'wizard-action-info-text';
+    h3.after(info);
+  }
+  const action = actionIdFromRequirement(requirementId);
+  info.textContent = ACTION_INFO[action] || `Defines how ${humanize(action)} behaves, what triggers it, how it plays back, which sounds fire, and which frame events affect gameplay.`;
+  info.hidden = true;
 }
 
 function enhanceWizardButtons(root) {
@@ -227,15 +312,8 @@ function enhanceWizardButtons(root) {
   if (brightness && !brightness.textContent.includes('✨')) brightness.textContent = '✨ Match brightness across frames';
 }
 
-function setButtonText(button, text) {
-  if (button && button.textContent.trim() !== text) button.textContent = text;
-}
-
-function setLabelButtonText(label, text) {
-  const input = label.querySelector('input');
-  label.textContent = text;
-  if (input) label.appendChild(input);
-}
+function setButtonText(button, text) { if (button && button.textContent.trim() !== text) button.textContent = text; }
+function setLabelButtonText(label, text) { const input = label.querySelector('input'); label.textContent = text; if (input) label.appendChild(input); }
 
 function enhanceSoundList(container, soundField) {
   if (!container || !soundField) return;
@@ -248,41 +326,147 @@ function enhanceSoundList(container, soundField) {
     container.insertBefore(details, container.querySelector('.wizard-notes-field'));
   }
   const rows = details.querySelector('.wizard-sound-rows');
-  if (!rows || rows.dataset.syncedFrom === soundField.value) return;
-  rows.dataset.syncedFrom = soundField.value;
-  const values = splitSoundValues(soundField.value);
+  const selectedId = selectedRequirementId();
+  const data = getRequirementData(selectedId);
+  const soundEvents = Array.isArray(data.soundEvents) ? data.soundEvents : splitSoundValues(soundField.value).map((path) => ({ path, trigger: 'frame', frame: '', volume: 1, pitchVariance: 0, spatial: false, loop: false, stopOnEnd: true, cooldown: 0 }));
+  if (rows.dataset.renderedFor === `${selectedId}:${JSON.stringify(soundEvents)}`) return;
+  rows.dataset.renderedFor = `${selectedId}:${JSON.stringify(soundEvents)}`;
   rows.innerHTML = '';
-  (values.length ? values : ['']).forEach((value, index) => addSoundRow(rows, soundField, value, index));
-  details.querySelector('.wizard-add-sound-button')?.addEventListener('click', () => {
-    addSoundRow(rows, soundField, '', rows.querySelectorAll('.wizard-sound-row').length);
-    syncSoundRows(rows, soundField);
-  }, { once: true });
+  (soundEvents.length ? soundEvents : [{ path: '', trigger: 'frame', frame: '', volume: 1, pitchVariance: 0, spatial: false, loop: false, stopOnEnd: true, cooldown: 0 }]).forEach((event, index) => addSoundRow(rows, soundField, event, index));
+  const addButton = details.querySelector('.wizard-add-sound-button');
+  if (addButton && !addButton.dataset.bound) {
+    addButton.dataset.bound = 'true';
+    addButton.addEventListener('click', () => {
+      const current = readSoundRows(rows);
+      current.push({ path: '', trigger: 'frame', frame: '', volume: 1, pitchVariance: 0, spatial: false, loop: false, stopOnEnd: true, cooldown: 0 });
+      writeRequirementData(selectedRequirementId(), { soundEvents: current });
+      rows.dataset.renderedFor = '';
+      enhanceSoundList(container, soundField);
+    });
+  }
 }
 
-function addSoundRow(rows, soundField, value, index) {
+function addSoundRow(rows, soundField, event, index) {
   const row = document.createElement('div');
   row.className = 'wizard-sound-row';
-  row.innerHTML = `<span>${index + 1}</span><input value="${escapeHtml(value)}" placeholder="assets/audio/sfx/${safeId(actionFromSelected())}_${String(index + 1).padStart(2, '0')}.ogg" /><button type="button">×</button>`;
-  row.querySelector('input').addEventListener('input', () => syncSoundRows(rows, soundField));
+  row.innerHTML = `<span>${index + 1}</span><input data-sound="path" value="${escapeHtml(event.path || '')}" placeholder="assets/audio/sfx/${safeId(actionFromSelected())}_${String(index + 1).padStart(2, '0')}.ogg" /><select data-sound="trigger"><option value="frame">frame</option><option value="start">start</option><option value="end">end</option><option value="loop">loop</option><option value="random">random</option></select><input data-sound="frame" type="number" min="0" value="${escapeHtml(event.frame ?? '')}" placeholder="Frame" /><input data-sound="volume" type="number" min="0" max="2" step="0.05" value="${escapeHtml(event.volume ?? 1)}" title="Volume" /><input data-sound="pitchVariance" type="number" min="0" max="1" step="0.01" value="${escapeHtml(event.pitchVariance ?? 0)}" title="Pitch variance" /><button type="button">×</button>`;
+  row.querySelector('[data-sound="trigger"]').value = event.trigger || 'frame';
+  row.querySelectorAll('[data-sound]').forEach((input) => input.addEventListener('input', () => syncSoundRows(rows, soundField)));
+  row.querySelectorAll('select[data-sound]').forEach((input) => input.addEventListener('change', () => syncSoundRows(rows, soundField)));
   row.querySelector('button').addEventListener('click', () => { row.remove(); renumberSoundRows(rows); syncSoundRows(rows, soundField); });
   rows.appendChild(row);
   renumberSoundRows(rows);
 }
 
-function splitSoundValues(value) {
-  return String(value || '').split(/[\n,]+/).map((item) => item.trim()).filter(Boolean);
+function readSoundRows(rows) {
+  return Array.from(rows.querySelectorAll('.wizard-sound-row')).map((row) => ({
+    path: row.querySelector('[data-sound="path"]')?.value.trim() || '',
+    trigger: row.querySelector('[data-sound="trigger"]')?.value || 'frame',
+    frame: row.querySelector('[data-sound="frame"]')?.value || '',
+    volume: Number(row.querySelector('[data-sound="volume"]')?.value || 1),
+    pitchVariance: Number(row.querySelector('[data-sound="pitchVariance"]')?.value || 0),
+    spatial: false,
+    loop: false,
+    stopOnEnd: true,
+    cooldown: 0
+  })).filter((item) => item.path || item.frame);
 }
 
+function splitSoundValues(value) { return String(value || '').split(/[\n,]+/).map((item) => item.trim()).filter(Boolean); }
+
 function syncSoundRows(rows, soundField) {
-  const values = Array.from(rows.querySelectorAll('input')).map((input) => input.value.trim()).filter(Boolean);
-  soundField.value = values.join(', ');
-  rows.dataset.syncedFrom = soundField.value;
+  const values = readSoundRows(rows);
+  soundField.value = values.map((item) => item.path).filter(Boolean).join(', ');
+  writeRequirementData(selectedRequirementId(), { soundEvents: values, soundAssetId: soundField.value });
   soundField.dispatchEvent(new Event('input', { bubbles: true }));
   soundField.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
-function renumberSoundRows(rows) {
-  rows.querySelectorAll('.wizard-sound-row span').forEach((span, index) => { span.textContent = `${index + 1}`; });
+function renumberSoundRows(rows) { rows.querySelectorAll('.wizard-sound-row span').forEach((span, index) => { span.textContent = `${index + 1}`; }); }
+
+function enhanceActionBehaviour(panel, requirementId) {
+  let section = panel.querySelector('.wizard-action-behaviour-panel');
+  if (!section) {
+    section = document.createElement('details');
+    section.className = 'wizard-action-behaviour-panel';
+    section.open = true;
+    const correction = panel.querySelector('.wizard-correction-grid');
+    correction?.before(section);
+  }
+  if (section.dataset.renderedFor === requirementId) return;
+  section.dataset.renderedFor = requirementId;
+  const data = getRequirementData(requirementId);
+  const playback = { ...DEFAULT_PLAYBACK, ...(data.playbackRules || {}) };
+  const trigger = { ...DEFAULT_TRIGGER, ...(data.triggerMapping || {}) };
+  const frameEvents = Array.isArray(data.frameEvents) ? data.frameEvents : [];
+  section.innerHTML = `<summary>🎮 Action Behaviour</summary><div class="wizard-behaviour-grid"><label>Trigger source<select data-trigger="source">${TRIGGER_SOURCES.map((item) => `<option value="${item}">${humanize(item)}</option>`).join('')}</select></label><label>Input/action name<input data-trigger="inputAction" value="${escapeHtml(trigger.inputAction)}" placeholder="move_left, interact, attack" /></label><label>Keyboard<input data-trigger="keyboard" value="${escapeHtml(trigger.keyboard)}" placeholder="WASD, Space, E" /></label><label>Gamepad<input data-trigger="gamepad" value="${escapeHtml(trigger.gamepad)}" placeholder="Left stick, A, RT" /></label><label>Touch<input data-trigger="touch" value="${escapeHtml(trigger.touch)}" placeholder="Swipe, tap, hold" /></label><label>AI / scene state<input data-trigger="aiState" value="${escapeHtml(trigger.aiState)}" placeholder="patrol, alert, scripted" /></label><label class="wizard-check-line"><input type="checkbox" data-playback="loop" ${playback.loop ? 'checked' : ''}/> Loop</label><label class="wizard-check-line"><input type="checkbox" data-playback="pingPong" ${playback.pingPong ? 'checked' : ''}/> Ping-pong</label><label class="wizard-check-line"><input type="checkbox" data-playback="holdLastFrame" ${playback.holdLastFrame ? 'checked' : ''}/> Hold last frame</label><label class="wizard-check-line"><input type="checkbox" data-playback="returnToIdle" ${playback.returnToIdle ? 'checked' : ''}/> Return to idle</label><label class="wizard-check-line"><input type="checkbox" data-playback="interruptible" ${playback.interruptible ? 'checked' : ''}/> Interruptible</label><label>Priority<input type="number" data-playback="priority" value="${escapeHtml(playback.priority)}" min="0" max="99" /></label><label>Blend frames<input type="number" data-playback="blendFrames" value="${escapeHtml(playback.blendFrames)}" min="0" max="30" /></label><label>Scene event<input data-trigger="sceneEvent" value="${escapeHtml(trigger.sceneEvent)}" placeholder="quest.updated, door.opened" /></label></div><div class="wizard-frame-events" data-frame-events></div><button type="button" class="wizard-add-frame-event">➕ Add Frame Event</button>`;
+  section.querySelector('[data-trigger="source"]').value = trigger.source || 'auto';
+  section.querySelectorAll('[data-trigger]').forEach((input) => input.addEventListener('input', () => saveTriggerMapping(section, requirementId)));
+  section.querySelectorAll('select[data-trigger]').forEach((input) => input.addEventListener('change', () => saveTriggerMapping(section, requirementId)));
+  section.querySelectorAll('[data-playback]').forEach((input) => input.addEventListener('input', () => savePlaybackRules(section, requirementId)));
+  section.querySelectorAll('input[type="checkbox"][data-playback]').forEach((input) => input.addEventListener('change', () => savePlaybackRules(section, requirementId)));
+  renderFrameEvents(section, requirementId, frameEvents);
+  section.querySelector('.wizard-add-frame-event')?.addEventListener('click', () => {
+    const current = readFrameEvents(section);
+    current.push({ frame: '', eventType: 'custom', payload: '' });
+    writeRequirementData(requirementId, { frameEvents: current });
+    section.dataset.renderedFor = '';
+    enhanceActionBehaviour(panel, requirementId);
+  });
+}
+
+function saveTriggerMapping(section, requirementId) {
+  const triggerMapping = { ...DEFAULT_TRIGGER };
+  section.querySelectorAll('[data-trigger]').forEach((input) => { triggerMapping[input.dataset.trigger] = input.value; });
+  writeRequirementData(requirementId, { triggerMapping });
+}
+
+function savePlaybackRules(section, requirementId) {
+  const playbackRules = { ...DEFAULT_PLAYBACK };
+  section.querySelectorAll('[data-playback]').forEach((input) => {
+    playbackRules[input.dataset.playback] = input.type === 'checkbox' ? input.checked : Number.isFinite(Number(input.value)) ? Number(input.value) : input.value;
+  });
+  writeRequirementData(requirementId, { playbackRules });
+}
+
+function renderFrameEvents(section, requirementId, frameEvents) {
+  const list = section.querySelector('[data-frame-events]');
+  list.innerHTML = '';
+  (frameEvents.length ? frameEvents : [{ frame: '', eventType: 'play_sound', payload: '' }]).forEach((item, index) => {
+    const row = document.createElement('div');
+    row.className = 'wizard-frame-event-row';
+    row.innerHTML = `<input data-frame-event="frame" type="number" min="0" value="${escapeHtml(item.frame ?? '')}" placeholder="Frame" /><select data-frame-event="eventType">${FRAME_EVENT_TYPES.map((type) => `<option value="${type}">${humanize(type)}</option>`).join('')}</select><input data-frame-event="payload" value="${escapeHtml(item.payload || '')}" placeholder="sound id, hitbox name, object id, event payload" /><button type="button">×</button>`;
+    row.querySelector('[data-frame-event="eventType"]').value = item.eventType || 'custom';
+    row.querySelectorAll('[data-frame-event]').forEach((input) => input.addEventListener('input', () => writeRequirementData(requirementId, { frameEvents: readFrameEvents(section) })));
+    row.querySelectorAll('select[data-frame-event]').forEach((input) => input.addEventListener('change', () => writeRequirementData(requirementId, { frameEvents: readFrameEvents(section) })));
+    row.querySelector('button').addEventListener('click', () => { row.remove(); writeRequirementData(requirementId, { frameEvents: readFrameEvents(section) }); });
+    list.appendChild(row);
+  });
+}
+
+function readFrameEvents(section) {
+  return Array.from(section.querySelectorAll('.wizard-frame-event-row')).map((row) => ({
+    frame: row.querySelector('[data-frame-event="frame"]')?.value || '',
+    eventType: row.querySelector('[data-frame-event="eventType"]')?.value || 'custom',
+    payload: row.querySelector('[data-frame-event="payload"]')?.value.trim() || ''
+  })).filter((item) => item.frame || item.payload);
+}
+
+function writeRequirementData(requirementId, updates) {
+  if (!requirementId) return;
+  const current = editorState.archetype?.productionAssets || { version: VERSION, requirements: {}, requirementOrder: [] };
+  const productionAssets = {
+    ...current,
+    version: VERSION,
+    requirements: {
+      ...(current.requirements || {}),
+      [requirementId]: {
+        ...((current.requirements || {})[requirementId] || {}),
+        ...updates
+      }
+    }
+  };
+  updateArchetype({ productionAssets });
 }
 
 function renderFramePathTable(panel) {
@@ -306,13 +490,8 @@ function renderFramePathTable(panel) {
   wrap.innerHTML = `<table class="wizard-frame-file-table"><thead><tr><th>#</th><th>Frame name</th><th>Expected game folder / file path</th></tr></thead><tbody>${rows.length ? rows.join('') : '<tr><td colspan="3" class="muted">No frame slots yet. Add images or set a frame count.</td></tr>'}</tbody></table>`;
 }
 
-function selectedRequirementId() {
-  return document.querySelector('#quickstart-dialog .wizard-build-nav button.is-selected')?.dataset.requirementId || '';
-}
-
-function getRequirementData(requirementId) {
-  return editorState.archetype?.productionAssets?.requirements?.[requirementId] || {};
-}
+function selectedRequirementId() { return document.querySelector('#quickstart-dialog .wizard-build-nav button.is-selected')?.dataset.requirementId || ''; }
+function getRequirementData(requirementId) { return editorState.archetype?.productionAssets?.requirements?.[requirementId] || {}; }
 
 function expectedFramePath(requirementId, frame, index) {
   const actionId = actionIdFromRequirement(requirementId);
@@ -339,13 +518,8 @@ function objectAssetFolder() {
   return `assets/objects/${id}`;
 }
 
-function actionIdFromRequirement(requirementId) {
-  return String(requirementId || '').split(':')[1] || String(requirementId || 'asset');
-}
-
-function actionFromSelected() {
-  return actionIdFromRequirement(selectedRequirementId() || 'sound');
-}
+function actionIdFromRequirement(requirementId) { return String(requirementId || '').split(':')[1] || String(requirementId || 'asset'); }
+function actionFromSelected() { return actionIdFromRequirement(selectedRequirementId() || 'sound'); }
 
 function downloadAssetZip() {
   try {
@@ -377,9 +551,16 @@ function buildAssetZip() {
     archetypeName: item.name,
     rootFolder: objectAssetFolder(),
     generatedAt: new Date().toISOString(),
-    files: []
+    files: [],
+    actionSettings: {}
   };
   Object.entries(requirements).forEach(([requirementId, data]) => {
+    manifest.actionSettings[requirementId] = {
+      playbackRules: data.playbackRules || {},
+      triggerMapping: data.triggerMapping || {},
+      soundEvents: data.soundEvents || [],
+      frameEvents: data.frameEvents || []
+    };
     (data.frames || []).forEach((frame, index) => {
       if (!frame.dataUrl) return;
       const path = expectedFramePath(requirementId, frame, index);
@@ -490,6 +671,7 @@ function dosDate(date = new Date()) { return ((date.getFullYear() - 1980) << 9) 
 function extensionFromName(name) { return String(name || '').split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || ''; }
 function removeExtension(name) { return String(name || '').replace(/\.[^.]+$/, ''); }
 function safeId(value) { return String(value || 'object').trim().toLowerCase().replace(/[^a-z0-9_\-]+/g, '_').replace(/^_+|_+$/g, '') || 'object'; }
+function humanize(value) { return String(value || '').replace(/[_-]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()); }
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char])); }
 
 function scheduleDecorate() {
