@@ -15,9 +15,10 @@ import { initLayerOrderParity } from './layer-order-parity.js';
 import { initMenuCleanupParity } from './menu-cleanup-parity.js';
 import { initWorkflowPolish } from './workflow-polish.js';
 import { initUIPolishV2 } from './ui-polish-v2.js';
+import { initV312Polish } from './v312-polish.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'V3.11';
+const VERSION_LABEL = 'V3.12';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
@@ -43,6 +44,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initMenuCleanupParity(showToast);
   initWorkflowPolish(showToast);
   initUIPolishV2(showToast);
+  initV312Polish(showToast);
 
   const preset = cloneBasePreset('base', 'standard-particle');
   if (preset) {
