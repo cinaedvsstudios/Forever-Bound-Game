@@ -18,7 +18,7 @@ import { initUIPolishV2 } from './ui-polish-v2.js';
 import { initV312Polish } from './v312-polish.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'V3.12';
+const VERSION_LABEL = 'V3.13';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
