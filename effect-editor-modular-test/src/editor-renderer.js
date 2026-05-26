@@ -16,10 +16,13 @@ let ctx;
 let workspace;
 let animationId;
 let lastFrame = performance.now();
+let lastDrawFrame = performance.now();
 let fpsSmoothing = 60;
+let drawFpsSmoothing = 60;
 let referenceImage = null;
 let referenceImageSource = '';
 let lowPerfFrameSkip = false;
+let lowPerfRedrawSkip = false;
 
 export function initRenderer() {
   canvas = document.getElementById('fx-canvas');
@@ -73,8 +76,8 @@ function tick(now) {
   lastFrame = now;
   const fps = 1000 / delta;
   fpsSmoothing = fpsSmoothing * 0.92 + fps * 0.08;
-  editorState.renderStats.fps = Math.round(fpsSmoothing);
-  editorState.renderStats.performanceMode = editorState.lowPerformanceMode ? 'Low' : 'Full';
+  editorState.renderStats.fps = Math.round(drawFpsSmoothing);
+  editorState.renderStats.performanceMode = editorState.lowPerformanceMode ? 'Low · 50% redraw' : 'Full';
   editorState.renderStats.particleCap = editorState.lowPerformanceMode ? 260 : 900;
 
   if (!editorState.isPaused) {
@@ -86,7 +89,21 @@ function tick(now) {
     }
   }
 
-  draw();
+  let shouldDraw = true;
+  if (editorState.lowPerformanceMode) {
+    lowPerfRedrawSkip = !lowPerfRedrawSkip;
+    shouldDraw = !lowPerfRedrawSkip;
+  } else {
+    lowPerfRedrawSkip = false;
+  }
+
+  if (shouldDraw) {
+    const drawDelta = Math.max(1, now - lastDrawFrame);
+    lastDrawFrame = now;
+    drawFpsSmoothing = drawFpsSmoothing * 0.9 + (1000 / drawDelta) * 0.1;
+    draw();
+  }
+
   animationId = requestAnimationFrame(tick);
 }
 
