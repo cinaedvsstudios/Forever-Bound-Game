@@ -6,7 +6,6 @@ import {
   deleteQuest,
   getActiveBlock,
   getActiveQuest,
-  loadDocument,
   onStateChange,
   resetDocument,
   selectBlock,
@@ -23,6 +22,7 @@ let syncing = false;
 
 window.addEventListener('DOMContentLoaded', () => {
   initRenderer();
+  wireMenus();
   wireActions();
   wireInputs();
   onStateChange(renderUI);
@@ -48,13 +48,91 @@ window.addEventListener('DOMContentLoaded', () => {
   toast(`Quest Builder ${MODULE_VERSION} loaded.`);
 });
 
+function wireMenus() {
+  document.querySelectorAll('.menu-button').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const panel = byId(`menu-${button.dataset.menu}`);
+      const isOpen = panel?.classList.contains('open');
+      closeMenus();
+      if (panel && !isOpen) panel.classList.add('open');
+    });
+  });
+
+  document.querySelectorAll('.menu-panel').forEach((panel) => {
+    panel.addEventListener('click', (event) => event.stopPropagation());
+  });
+
+  document.addEventListener('click', closeMenus);
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeMenus();
+  });
+}
+
+function closeMenus() {
+  document.querySelectorAll('.menu-panel.open').forEach((panel) => panel.classList.remove('open'));
+}
+
 function wireActions() {
-  byId('new-file-button')?.addEventListener('click', () => { resetDocument(); toast('New Quest file created.'); });
-  byId('add-quest-button')?.addEventListener('click', () => { addQuest(); toast('Quest added.'); });
-  byId('delete-quest-button')?.addEventListener('click', () => { deleteQuest(); toast('Quest deleted.'); });
-  byId('add-block-button')?.addEventListener('click', () => { addBlock('scene'); toast('Block added.'); });
-  byId('delete-block-button')?.addEventListener('click', () => { deleteBlock(); toast('Block deleted.'); });
-  byId('export-json-button')?.addEventListener('click', () => { exportJson(); toast('JSON exported.'); });
+  byId('new-file-button')?.addEventListener('click', () => { resetDocument(); closeMenus(); toast('New Quest file created.'); });
+  byId('save-local-button')?.addEventListener('click', () => { saveLocal(); closeMenus(); toast('Saved locally in this browser.'); });
+  byId('add-quest-button')?.addEventListener('click', () => { addQuest(); closeMenus(); openEditor('quest'); toast('Quest added.'); });
+  byId('side-add-quest-button')?.addEventListener('click', () => { addQuest(); openEditor('quest'); toast('Quest added.'); });
+  byId('edit-quest-button')?.addEventListener('click', () => { closeMenus(); openEditor('quest'); });
+  byId('side-edit-quest-button')?.addEventListener('click', () => openEditor('quest'));
+  byId('delete-quest-button')?.addEventListener('click', () => { deleteQuest(); closeMenus(); toast('Quest deleted.'); });
+  byId('side-add-block-button')?.addEventListener('click', () => { addBlock('scene'); openEditor('block'); toast('Block added.'); });
+  byId('edit-block-button')?.addEventListener('click', () => { closeMenus(); openEditor('block'); });
+  byId('delete-block-button')?.addEventListener('click', () => { deleteBlock(); closeMenus(); toast('Block deleted.'); });
+  byId('edit-file-button')?.addEventListener('click', () => openEditor('file'));
+  byId('save-editor-button')?.addEventListener('click', () => toast('Saved.'));
+
+  document.querySelectorAll('[data-add-block]').forEach((button) => {
+    button.addEventListener('click', () => {
+      addBlock(button.dataset.addBlock || 'scene');
+      closeMenus();
+      openEditor('block');
+      toast('Block added.');
+    });
+  });
+
+  byId('template-main-quest-button')?.addEventListener('click', () => {
+    addQuest({
+      name: 'New Main Quest',
+      type: 'main',
+      callingText: 'Define the main Calling for this Quest.',
+      blocks: [
+        { name: 'Start Scene', type: 'scene' },
+        { name: 'Key Interaction', type: 'object' },
+        { name: 'Completion', type: 'completion', uiOverlay: 'calling_fulfilled' }
+      ]
+    });
+    closeMenus();
+    openEditor('quest');
+    toast('Main Quest template added.');
+  });
+
+  byId('template-side-quest-button')?.addEventListener('click', () => {
+    addQuest({
+      name: 'New Side Quest',
+      type: 'side',
+      callingText: 'Define the optional objective or Errand.',
+      blocks: [
+        { name: 'Optional Trigger', type: 'condition' },
+        { name: 'Reward', type: 'reward' }
+      ]
+    });
+    closeMenus();
+    openEditor('quest');
+    toast('Side Quest template added.');
+  });
+
+  byId('export-json-button')?.addEventListener('click', () => { exportJson(); closeMenus(); toast('JSON exported.'); });
+  byId('view-json-button')?.addEventListener('click', () => { closeMenus(); byId('json-dialog')?.showModal(); });
+  byId('library-note-button')?.addEventListener('click', () => { closeMenus(); showHelp('Linked Libraries', '<p>Quest Builder will reference completed scenes, archetype objects, dialogue IDs, Capra popup templates, Codice entries, UI overlays, rewards, and route unlocks. It should not own those libraries directly.</p>'); });
+  byId('quick-start-button')?.addEventListener('click', () => { closeMenus(); showHelp('Quick Start', '<p>Select a Quest on the left, use the horizontal Quest Flow strip to select a block, then use Edit or Templates to open the popup editor. Press Save to close the popup.</p>'); });
+  byId('about-button')?.addEventListener('click', () => { closeMenus(); showHelp('About Quest Builder', '<p>Quest Builder assembles scenes, archetype objects, dialogue, Capra feedback, Codice updates, UI overlays, rewards, and completion flags into playable Quest flow.</p>'); });
+
   byId('import-json-input')?.addEventListener('change', async (event) => {
     try {
       await importJsonFile(event.target.files?.[0]);
@@ -64,6 +142,7 @@ function wireActions() {
       toast('Could not import JSON.', 'error');
     } finally {
       event.target.value = '';
+      closeMenus();
     }
   });
 }
@@ -101,11 +180,30 @@ function bind(id, handler) {
   });
 }
 
+function openEditor(mode) {
+  if (mode === 'quest' && !getActiveQuest()) addQuest();
+  if (mode === 'block' && !getActiveBlock()) addBlock('scene');
+
+  setText('editor-title', mode === 'file' ? 'Edit Quest File' : mode === 'quest' ? 'Edit Quest' : 'Edit Quest Block');
+  document.querySelectorAll('.editor-section').forEach((section) => section.classList.remove('is-active'));
+  byId(`${mode}-editor`)?.classList.add('is-active');
+  byId('editor-dialog')?.showModal();
+}
+
+function showHelp(title, html) {
+  setText('help-title', title);
+  const body = byId('help-body');
+  if (body) body.innerHTML = html;
+  byId('help-dialog')?.showModal();
+}
+
 function renderUI() {
   syncing = true;
   setValue('file-id-input', state.document.id);
   setValue('file-name-input', state.document.name);
   setValue('chronicle-id-input', state.document.defaultChronicleId);
+  setText('file-summary-name', state.document.name);
+  setText('file-summary-meta', state.document.defaultChronicleId);
 
   const quest = getActiveQuest();
   setValue('quest-name-input', quest?.name || '');
@@ -117,6 +215,7 @@ function renderUI() {
   setValue('quest-rewards-input', quest?.rewards?.join(', ') || '');
   setValue('quest-codice-input', quest?.codiceUpdates?.join(', ') || '');
   setValue('quest-notes-input', quest?.notes || '');
+  setText('calling-summary', quest?.callingText || 'Select a Quest to view its Calling.');
 
   const block = getActiveBlock();
   setValue('block-name-input', block?.name || '');
@@ -146,6 +245,7 @@ function renderQuestList() {
     item.className = `quest-item ${index === state.activeQuestIndex ? 'selected' : ''}`;
     item.innerHTML = `<strong>${escapeHtml(quest.name)}</strong><span>${escapeHtml(quest.chronicleId)} / ${escapeHtml(quest.type)}</span>`;
     item.addEventListener('click', () => selectQuest(index));
+    item.addEventListener('dblclick', () => openEditor('quest'));
     list.appendChild(item);
   });
 }
@@ -161,6 +261,7 @@ function renderBlockList() {
     item.className = `record-item ${index === state.activeBlockIndex ? 'selected' : ''}`;
     item.innerHTML = `<strong>${escapeHtml(block.name)}</strong><span>${escapeHtml(block.type)} / ${escapeHtml(block.sceneId || block.objectId || block.dialogueId || block.condition || 'unlinked')}</span>`;
     item.addEventListener('click', () => selectBlock(index));
+    item.addEventListener('dblclick', () => openEditor('block'));
     list.appendChild(item);
   });
 }
