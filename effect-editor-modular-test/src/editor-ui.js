@@ -12,6 +12,8 @@ import {
   onStateChange,
   resetComposition,
   selectLayer,
+  setLowPerformanceMode,
+  setModuleTheme,
   setPaused,
   setWorkspaceMode,
   setZoom,
@@ -19,8 +21,8 @@ import {
   toggleHelpers,
   updateActiveLayer
 } from './editor-state.js';
+import { resizeCanvas, takeSnapshot } from './editor-renderer.js';
 import { listBasePresets } from './presets/base-effects.js';
-import { takeSnapshot } from './editor-renderer.js';
 import { exportJSON, importJSONFromFile, saveToLocalStorage, showLocalFiles } from './editor-io.js';
 
 const ENGINE_OPTIONS = [
@@ -219,13 +221,18 @@ function rebuildTopMenus() {
     <div class="menu-section-title">Workspace Background</div>
     <button data-workspace-mode="dark" title="Use the dark preview background.">Background: Dark</button>
     <button data-workspace-mode="white" title="Use the white preview background.">Background: White</button>
-    <button class="is-placeholder" data-toast-message="Load an image/video underlay first, then use Background: Underlay." title="Show the loaded image/video underlay behind the effect.">Background: Underlay</button>
+    <button data-workspace-mode="underlay" title="Show the loaded image/video underlay behind the effect.">Background: Underlay</button>
     <div class="menu-divider"></div>
     <div class="menu-section-title">Guides</div>
     <button id="toggle-grid-button" title="Toggle the stage grid.">Toggle Grid</button>
     <button id="toggle-helpers-button" title="Toggle emitter and coordinate guides.">Toggle Guides</button>
     <button class="is-placeholder" data-toast-message="Load Underlay is available in the bottom View / Guides panel." title="Load an image/video underlay from the bottom View / Guides panel.">Load Underlay</button>
-    <button class="is-placeholder" data-toast-message="Low Performance Mode is scheduled for Step 2." title="Performance optimisation toggle is scheduled for Step 2.">Low Performance Mode</button>
+    <button id="low-performance-menu-button" title="Reduce render load by lowering particle count and update frequency.">Low Performance Mode: Off</button>
+    <div class="menu-divider"></div>
+    <div class="menu-section-title">Module Accent</div>
+    <button data-module-theme="effects" title="Use cyan/blue accent for the Effects editor.">Theme: Effects</button>
+    <button data-module-theme="archetype" title="Use red accent for the Archetype editor.">Theme: Archetype</button>
+    <button data-module-theme="project" title="Use gold/green accent for the Project editor.">Theme: Project</button>
     <div class="menu-divider"></div>
     <div class="menu-section-title">JSON / Boilerplate</div>
     <button class="is-placeholder" data-toast-message="View JSON is scheduled for Step 3." title="Open a read-only JSON view.">View JSON</button>
@@ -302,13 +309,24 @@ function setupButtons() {
   document.getElementById('import-json-input').addEventListener('change', importJSONFromFile);
   document.getElementById('toggle-grid-button').addEventListener('click', toggleGrid);
   document.getElementById('toggle-helpers-button').addEventListener('click', toggleHelpers);
+  document.getElementById('low-performance-menu-button').addEventListener('click', () => {
+    setLowPerformanceMode(!editorState.lowPerformanceMode);
+    resizeCanvas();
+    showToast(editorState.lowPerformanceMode ? 'Low Performance Mode enabled.' : 'Full Performance Mode enabled.', 'success');
+  });
+  document.querySelectorAll('[data-module-theme]').forEach((button) => {
+    button.addEventListener('click', () => {
+      setModuleTheme(button.dataset.moduleTheme);
+      showToast(`Module theme changed.`, 'success');
+    });
+  });
   document.getElementById('pause-button').addEventListener('click', () => setPaused(!editorState.isPaused));
   document.getElementById('snapshot-button').addEventListener('click', takeSnapshot);
   document.getElementById('zoom-in-button').addEventListener('click', () => setZoom(editorState.zoom + 0.1));
   document.getElementById('zoom-out-button').addEventListener('click', () => setZoom(editorState.zoom - 0.1));
   document.getElementById('zoom-reset-button').addEventListener('click', () => setZoom(1));
   document.getElementById('quick-start-button').addEventListener('click', () => showToast('Insert > Base Layer > Standard Particle, then adjust sliders.', 'info'));
-  document.getElementById('about-button').addEventListener('click', () => showToast('Artifex Effect Editor modular test build: layout polish active.', 'info'));
+  document.getElementById('about-button').addEventListener('click', () => showToast('Artifex Effect Editor modular test build: Step 2 workspace behaviour active.', 'info'));
 
   document.querySelectorAll('[data-workspace-mode]').forEach((button) => button.addEventListener('click', () => setWorkspaceMode(button.dataset.workspaceMode)));
   document.querySelectorAll('[data-quick-preset]').forEach((button) => button.addEventListener('click', () => applyQuickPreset(button.dataset.quickPreset)));
@@ -445,9 +463,17 @@ function syncControls() {
 }
 
 function updateStatus() {
+  const lowPerformanceButton = document.getElementById('low-performance-menu-button');
+  if (lowPerformanceButton) {
+    lowPerformanceButton.textContent = editorState.lowPerformanceMode ? 'Low Performance Mode: On' : 'Low Performance Mode: Off';
+    lowPerformanceButton.classList.toggle('is-accent', editorState.lowPerformanceMode);
+  }
+  document.querySelectorAll('[data-module-theme]').forEach((button) => {
+    button.classList.toggle('is-accent', button.dataset.moduleTheme === editorState.moduleTheme);
+  });
   document.getElementById('pause-button').textContent = editorState.isPaused ? 'Resume' : 'Pause';
   document.getElementById('zoom-readout').textContent = `${Math.round(editorState.zoom * 100)}%`;
-  document.getElementById('status-text').innerHTML = `FPS ${editorState.renderStats.fps}<br>Particles ${editorState.renderStats.particles}<br>Stage ${DESIGN_WIDTH}×${DESIGN_HEIGHT}`;
+  document.getElementById('status-text').innerHTML = `FPS ${editorState.renderStats.fps}<br>Particles ${editorState.renderStats.particles} / ${editorState.renderStats.particleCap}<br>Stage ${DESIGN_WIDTH}×${DESIGN_HEIGHT}<br>Performance ${editorState.renderStats.performanceMode}<br>Theme ${editorState.moduleTheme}`;
 }
 
 function restoreTooltips() {
@@ -461,7 +487,8 @@ function restoreTooltips() {
     'toggle-helpers-button': 'Toggle emitter and coordinate guides.',
     'open-library-button': 'Open the Effect Archetype Library.',
     'load-local-button': 'Load effects saved in this browser.',
-    'clear-particles-button-bottom': 'Clear visible preview particles.'
+    'clear-particles-button-bottom': 'Clear visible preview particles.',
+    'low-performance-menu-button': 'Reduce render load by lowering particle count and update frequency.'
   };
   for (const [id, title] of Object.entries(tooltipMap)) {
     const element = document.getElementById(id);
