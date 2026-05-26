@@ -19,6 +19,7 @@ let lastFrame = performance.now();
 let fpsSmoothing = 60;
 let referenceImage = null;
 let referenceImageSource = '';
+let lowPerfFrameSkip = false;
 
 export function initRenderer() {
   canvas = document.getElementById('fx-canvas');
@@ -38,9 +39,7 @@ export function initRenderer() {
 
   onStateChange(() => {
     const active = getActiveLayer();
-    if (active) {
-      syncCanvasCursor();
-    }
+    if (active) syncCanvasCursor();
     syncReferenceImage();
   });
 
@@ -50,7 +49,8 @@ export function initRenderer() {
 export function resizeCanvas() {
   if (!canvas || !workspace) return;
   const rect = workspace.getBoundingClientRect();
-  const ratio = window.devicePixelRatio || 1;
+  const deviceRatio = window.devicePixelRatio || 1;
+  const ratio = editorState.lowPerformanceMode ? Math.min(1.25, deviceRatio) : deviceRatio;
   canvas.width = Math.max(320, Math.floor(rect.width * ratio));
   canvas.height = Math.max(180, Math.floor(rect.height * ratio));
   ctx = canvas.getContext('2d', { alpha: false });
@@ -74,9 +74,16 @@ function tick(now) {
   const fps = 1000 / delta;
   fpsSmoothing = fpsSmoothing * 0.92 + fps * 0.08;
   editorState.renderStats.fps = Math.round(fpsSmoothing);
+  editorState.renderStats.performanceMode = editorState.lowPerformanceMode ? 'Low' : 'Full';
+  editorState.renderStats.particleCap = editorState.lowPerformanceMode ? 260 : 900;
 
   if (!editorState.isPaused) {
-    updateParticles();
+    if (editorState.lowPerformanceMode) {
+      lowPerfFrameSkip = !lowPerfFrameSkip;
+      if (!lowPerfFrameSkip) updateParticles();
+    } else {
+      updateParticles();
+    }
   }
 
   draw();
@@ -84,21 +91,23 @@ function tick(now) {
 }
 
 function updateParticles() {
+  const particleCap = editorState.lowPerformanceMode ? 260 : 900;
   for (const layer of editorState.composition.layers) {
-    if (layer.visible !== false) {
-      const spawned = spawnParticlesForLayer(layer);
+    if (layer.visible !== false && editorState.particles.length < particleCap) {
+      const spawned = spawnParticlesForLayer(layer, editorState.lowPerformanceMode ? 0.45 : 1);
       editorState.particles.push(...spawned.map((particle) => ({ particle, layerId: layer.id })));
     }
   }
 
   for (const item of editorState.particles) {
     const layer = editorState.composition.layers.find((candidate) => candidate.id === item.layerId);
-    if (layer) {
-      item.particle.update(layer);
-    }
+    if (layer) item.particle.update(layer);
   }
 
   editorState.particles = editorState.particles.filter((item) => item.particle.alive);
+  if (editorState.particles.length > particleCap) {
+    editorState.particles = editorState.particles.slice(-particleCap);
+  }
   editorState.renderStats.particles = editorState.particles.length;
 }
 
@@ -115,22 +124,16 @@ function draw() {
   ctx.scale(editorState.zoom, editorState.zoom);
 
   drawStageBackground(scale);
-  drawReferenceMedia(scale);
+  drawUnderlayMedia(scale);
 
-  if (editorState.showGrid) {
-    drawGrid(scale);
-  }
+  if (editorState.showGrid) drawGrid(scale);
 
   for (const item of editorState.particles) {
     const layer = editorState.composition.layers.find((candidate) => candidate.id === item.layerId);
-    if (layer?.visible !== false) {
-      drawParticle(ctx, item.particle, layer, scale);
-    }
+    if (layer?.visible !== false) drawParticle(ctx, item.particle, layer, scale);
   }
 
-  if (editorState.showHelpers) {
-    drawEmitterHelpers(scale);
-  }
+  if (editorState.showHelpers) drawEmitterHelpers(scale);
 
   ctx.restore();
 }
@@ -164,7 +167,7 @@ function drawStageBackground(scale) {
   ctx.strokeRect(0, 0, designWidth * scale, designHeight * scale);
 }
 
-function drawReferenceMedia(scale) {
+function drawUnderlayMedia(scale) {
   const reference = editorState.referenceMedia;
   if (!reference?.visible || !reference.dataUrl || !referenceImage) return;
   if (!referenceImage.complete) return;
@@ -175,11 +178,8 @@ function drawReferenceMedia(scale) {
   const stageRatio = stageW / stageH;
   let drawW = stageW;
   let drawH = stageH;
-  if (imageRatio > stageRatio) {
-    drawH = stageW / imageRatio;
-  } else {
-    drawW = stageH * imageRatio;
-  }
+  if (imageRatio > stageRatio) drawH = stageW / imageRatio;
+  else drawW = stageH * imageRatio;
   const drawX = (stageW - drawW) / 2;
   const drawY = (stageH - drawH) / 2;
 
@@ -213,9 +213,7 @@ function drawGrid(scale) {
     ctx.moveTo(x, 0);
     ctx.lineTo(x, designHeight * scale);
     ctx.stroke();
-    if (c < 16) {
-      ctx.fillText(String(c + 1), x + 6, 16);
-    }
+    if (c < 16) ctx.fillText(String(c + 1), x + 6, 16);
   }
 
   for (let r = 0; r <= 9; r++) {
@@ -224,9 +222,7 @@ function drawGrid(scale) {
     ctx.moveTo(0, y);
     ctx.lineTo(designWidth * scale, y);
     ctx.stroke();
-    if (r < 9) {
-      ctx.fillText(String.fromCharCode(65 + r), 6, y + 18);
-    }
+    if (r < 9) ctx.fillText(String.fromCharCode(65 + r), 6, y + 18);
   }
   ctx.restore();
 }
@@ -239,8 +235,8 @@ function drawEmitterHelpers(scale) {
   const y = active.emitterY * scale;
 
   ctx.save();
-  ctx.strokeStyle = '#00a1d7';
-  ctx.fillStyle = '#00a1d7';
+  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--module-accent-strong').trim() || '#00a1d7';
+  ctx.fillStyle = ctx.strokeStyle;
   ctx.lineWidth = Math.max(1, 2 * scale);
   ctx.beginPath();
   ctx.arc(x, y, 10 * scale, 0, Math.PI * 2);
