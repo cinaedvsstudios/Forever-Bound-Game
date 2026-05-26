@@ -4,13 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-store" />
-  <title>Artifex Quest Builder V1.0.4</title>
+  <title>Artifex Quest Builder V1.0.5</title>
   <style>
     * { box-sizing: border-box; }
     :root {
       --bg: #101112;
       --panel: #1b1d1e;
-      --panel-2: #222426;
+      --panel2: #222426;
       --border: #3a3c3f;
       --border-soft: rgba(255,255,255,.08);
       --gold: #e2cca7;
@@ -22,7 +22,6 @@
       --accent-glow: rgba(62,180,137,.22);
       --text: #f2eee9;
       --muted: #aaa09a;
-      --danger: #be3144;
     }
     html, body {
       margin: 0;
@@ -135,7 +134,7 @@
       position: absolute;
       left: 0;
       top: calc(100% + 9px);
-      width: 260px;
+      width: 270px;
       max-height: min(82vh, 680px);
       overflow: auto;
       padding: 8px;
@@ -147,7 +146,7 @@
     }
     .menu-panel.open { display: block; }
     .menu-panel.right { right: 0; left: auto; }
-    .menu-panel.wide { width: min(420px, calc(100vw - 24px)); }
+    .menu-panel.wide { width: min(440px, calc(100vw - 24px)); }
     .menu-panel button, .menu-panel .file-label {
       display: block;
       width: 100%;
@@ -189,6 +188,23 @@
       padding: 13px;
       border-right: 1px solid var(--border);
       box-shadow: 8px 0 24px rgba(0,0,0,.45);
+    }
+    #status-text {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: block;
+      margin: 0 0 13px;
+      padding: 10px 12px;
+      border: 1px solid rgba(127,240,189,.75);
+      border-radius: 14px;
+      background: var(--accent-strong);
+      color: #041008;
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      box-shadow: 0 8px 20px rgba(0,0,0,.42), 0 0 18px rgba(62,180,137,.28);
     }
     .workspace-column {
       min-width: 0;
@@ -243,27 +259,16 @@
       color: var(--gold-bright);
       font-weight: 700;
     }
-    #status-text {
-      position: absolute;
-      left: 22px;
-      top: 18px;
-      color: var(--accent-strong);
-      font-size: 12px;
-      white-space: nowrap;
-      z-index: 18;
-      padding: 8px 12px;
-      border: 1px solid rgba(226,204,167,.12);
-      border-radius: 999px;
-      background: rgba(16,17,18,.74);
-      backdrop-filter: blur(8px);
-    }
     .flow-window {
       position: absolute;
       left: 26px;
       top: 72px;
       width: min(860px, calc(100% - 52px));
-      min-width: 360px;
+      height: auto;
+      min-width: 340px;
+      min-height: 58px;
       max-width: calc(100% - 52px);
+      max-height: calc(100% - 36px);
       border: 1px solid rgba(226,204,167,.18);
       border-radius: 18px;
       background: rgba(21,22,23,.91);
@@ -271,7 +276,7 @@
       box-shadow: 0 18px 38px rgba(0,0,0,.72);
       overflow: hidden;
       z-index: 16;
-      resize: horizontal;
+      resize: both;
     }
     .flow-window.dragging {
       user-select: none;
@@ -287,6 +292,8 @@
       border-bottom: 1px solid var(--border-soft);
       cursor: grab;
       background: rgba(18,19,20,.96);
+      touch-action: none;
+      user-select: none;
     }
     .flow-window-header:active { cursor: grabbing; }
     .flow-title {
@@ -314,6 +321,8 @@
       padding: 5px 8px;
       border-radius: 10px;
       font-size: 12px;
+      min-width: 30px;
+      text-align: center;
     }
     .flow-strip {
       display: flex;
@@ -323,9 +332,21 @@
       overflow-y: hidden;
       padding: 10px 12px 12px;
       align-items: center;
+      max-height: calc(100vh - 190px);
+    }
+    .flow-window.vertical {
+      width: min(390px, calc(100% - 52px));
+      height: min(520px, calc(100% - 90px));
+    }
+    .flow-window.vertical .flow-strip {
+      flex-direction: column;
+      align-items: stretch;
+      overflow-x: hidden;
+      overflow-y: auto;
+      height: calc(100% - 42px);
     }
     .flow-window.collapsed .flow-strip { display: none; }
-    .flow-window.collapsed { width: 320px; min-width: 320px; }
+    .flow-window.collapsed { width: 340px; min-width: 340px; height: 44px; resize: none; }
     .card {
       border: 1px solid var(--border);
       border-radius: 18px;
@@ -379,13 +400,14 @@
       align-items: center;
       gap: 9px;
     }
+    .flow-window.vertical .record-item { width: 100%; flex: 0 0 auto; }
     .block-emoji {
       display: grid;
       place-items: center;
-      font-size: 24px;
+      font-size: 25px;
       line-height: 1;
-      width: 30px;
-      height: 30px;
+      width: 32px;
+      height: 32px;
     }
     .quest-item.selected, .record-item.selected {
       border-color: rgba(62,180,137,.78);
@@ -428,13 +450,13 @@
       box-shadow: inset 0 2px 6px rgba(0,0,0,.55);
     }
     textarea { resize: vertical; min-height: 72px; }
-    .editor-dialog, .json-dialog {
+    .editor-dialog, .json-dialog, .wizard-dialog {
       border: 1px solid var(--border);
       border-radius: 20px;
       background: rgba(24,25,26,.98);
       color: var(--text);
       box-shadow: 0 18px 46px rgba(0,0,0,.88);
-      width: min(760px, 92vw);
+      width: min(780px, 92vw);
       max-height: 88vh;
     }
     dialog::backdrop { background: rgba(0,0,0,.68); backdrop-filter: blur(4px); }
@@ -452,11 +474,14 @@
     .dialog-actions {
       display: flex;
       justify-content: flex-end;
+      gap: 8px;
       padding-top: 12px;
       border-top: 1px solid var(--border-soft);
       margin-top: 14px;
     }
     .dialog-body { color: var(--text); line-height: 1.55; }
+    .wizard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .wizard-full { grid-column: 1 / -1; }
     .block-type-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -507,6 +532,7 @@
       .app-shell { height: calc(100vh - 116px); grid-template-columns: 260px 1fr; }
       #module-canvas { width: min(100%, calc((100vh - 170px) * 1.7777778)); }
       .flow-window { top: 62px; width: min(720px, calc(100% - 42px)); }
+      .wizard-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -516,7 +542,7 @@
       <div class="brand-mark">✦</div>
       <div>
         <h1>ARTIFEX</h1>
-        <p>Quest Builder <span class="badge" id="version-badge">V1.0.4</span></p>
+        <p>Quest Builder <span class="badge" id="version-badge">V1.0.5</span></p>
       </div>
     </section>
 
@@ -524,6 +550,7 @@
       <div class="menu">
         <button class="menu-button" data-menu="file">File ▾</button>
         <div class="menu-panel" id="menu-file">
+          <button id="new-quest-wizard-button">New Quest Wizard</button>
           <button id="new-file-button">New Quest File</button>
           <label class="file-label">Import JSON<input id="import-json-input" type="file" accept=".json,application/json" hidden></label>
           <button id="export-json-button">Export JSON</button>
@@ -585,6 +612,7 @@
 
   <main class="app-shell">
     <aside class="side-panel">
+      <span id="status-text">Ready.</span>
       <section class="card">
         <header><h2>Quest File</h2></header>
         <p class="mini-label">File</p>
@@ -610,7 +638,6 @@
     <section class="workspace-column" id="workspace-column">
       <section class="workspace">
         <canvas id="module-canvas" width="1280" height="720"></canvas>
-        <span id="status-text">Ready.</span>
         <div class="viewport-controls" aria-label="Viewport controls">
           <button id="zoom-out-button">−</button>
           <span id="zoom-readout">100%</span>
@@ -628,6 +655,7 @@
           </div>
           <div class="flow-window-actions">
             <button id="add-flow-block-button" title="Add block">+</button>
+            <button id="toggle-flow-layout-button" title="Toggle horizontal / vertical layout">⇅</button>
             <button id="collapse-flow-button" title="Collapse Quest Flow">−</button>
           </div>
         </header>
@@ -638,10 +666,7 @@
 
   <dialog id="editor-dialog" class="editor-dialog">
     <form method="dialog">
-      <header class="dialog-header">
-        <h2 id="editor-title">Edit</h2>
-        <button value="close" class="dialog-close">×</button>
-      </header>
+      <header class="dialog-header"><h2 id="editor-title">Edit</h2><button value="close" class="dialog-close">×</button></header>
       <section id="file-editor" class="editor-section">
         <label>File ID<input id="file-id-input"></label>
         <label>File Name<input id="file-name-input"></label>
@@ -674,22 +699,32 @@
     </form>
   </dialog>
 
-  <dialog id="json-dialog" class="json-dialog">
+  <dialog id="wizard-dialog" class="wizard-dialog">
     <form method="dialog">
-      <header class="dialog-header"><h2>JSON Preview</h2><button value="close" class="dialog-close">×</button></header>
-      <pre id="json-preview"></pre>
+      <header class="dialog-header"><h2>New Quest Wizard</h2><button value="close" class="dialog-close">×</button></header>
+      <div class="wizard-grid">
+        <label>Quest Name<input id="wizard-name-input" value="New Quest"></label>
+        <label>Quest Type<select id="wizard-type-input"><option value="main">main</option><option value="side">side</option><option value="errand">errand</option><option value="tutorial">tutorial</option></select></label>
+        <label class="wizard-full">Calling Text<textarea id="wizard-calling-input" rows="3">Define what the player needs to do.</textarea></label>
+        <label>Starting Scene ID<input id="wizard-scene-input" placeholder="scene_forest"></label>
+        <label>Key Object / NPC ID<input id="wizard-object-input" placeholder="npc_vitus or relic_chalice"></label>
+        <label>Completion Flag<input id="wizard-flag-input" placeholder="quest_complete"></label>
+        <label>Starter Flow<select id="wizard-flow-input"><option value="simple">Scene → Interaction → Completion</option><option value="dialogue">Scene → Dialogue → Object → Completion</option><option value="puzzle">Scene → Clue → Condition → Capra → Completion</option><option value="combat">Scene → Combat → Reward → Completion</option></select></label>
+      </div>
+      <footer class="dialog-actions"><button id="create-wizard-quest-button" value="close" class="primary">Create Quest</button></footer>
     </form>
+  </dialog>
+
+  <dialog id="json-dialog" class="json-dialog">
+    <form method="dialog"><header class="dialog-header"><h2>JSON Preview</h2><button value="close" class="dialog-close">×</button></header><pre id="json-preview"></pre></form>
   </dialog>
 
   <dialog id="help-dialog" class="json-dialog">
-    <form method="dialog">
-      <header class="dialog-header"><h2 id="help-title">Help</h2><button value="close" class="dialog-close">×</button></header>
-      <div id="help-body" class="dialog-body"></div>
-    </form>
+    <form method="dialog"><header class="dialog-header"><h2 id="help-title">Help</h2><button value="close" class="dialog-close">×</button></header><div id="help-body" class="dialog-body"></div></form>
   </dialog>
 
   <script>
-    const VERSION = 'V1.0.4';
+    const VERSION = 'V1.0.5';
     const KEY = 'artifex_quest_builder_local_saves';
     const W = 1280;
     const H = 720;
@@ -717,18 +752,10 @@
     let zoom = 1;
     let flowPos = { x: 26, y: 72 };
     const doc = {
-      id: 'quest_file_demo',
-      name: 'Untitled Quest File',
-      moduleKind: 'quest-builder',
-      version: VERSION,
-      designWidth: W,
-      designHeight: H,
-      defaultChronicleId: 'chronicle_01',
+      id: 'quest_file_demo', name: 'Untitled Quest File', moduleKind: 'quest-builder', version: VERSION, designWidth: W, designHeight: H, defaultChronicleId: 'chronicle_01',
       quests: [{
-        id: 'quest_demo', name: 'Recover the Chalice', type: 'main', chronicleId: 'chronicle_01',
-        callingText: 'Find the true chalice and bring it to the altar.',
-        sceneIds: ['scene_church', 'scene_crypt'], objectIds: ['npc_vitus', 'relic_chalice', 'altar'],
-        completionFlag: 'chalice_delivered', rewards: ['silver:20', 'unlock:route_bridge'], codiceUpdates: ['codice_chalice_truth'], notes: '',
+        id: 'quest_demo', name: 'Recover the Chalice', type: 'main', chronicleId: 'chronicle_01', callingText: 'Find the true chalice and bring it to the altar.',
+        sceneIds: ['scene_church', 'scene_crypt'], objectIds: ['npc_vitus', 'relic_chalice', 'altar'], completionFlag: 'chalice_delivered', rewards: ['silver:20', 'unlock:route_bridge'], codiceUpdates: ['codice_chalice_truth'], notes: '',
         blocks: [
           { id: 'b1', name: 'Enter Church', type: 'scene', sceneId: 'scene_church', objectId: '', dialogueId: '', condition: '', action: 'set_flag:church_entered', uiOverlay: '', capraFeedback: '', notes: '' },
           { id: 'b2', name: 'Speak With Vitus', type: 'dialogue', sceneId: '', objectId: 'npc_vitus', dialogueId: 'ch01_q03_vitus_warning', condition: '', action: '', uiOverlay: '', capraFeedback: '', notes: '' },
@@ -745,6 +772,7 @@
     const list = (value) => Array.isArray(value) ? value : String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
     const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
     const meta = (type) => BLOCK_TYPES[type] || { name: titleCase(type || 'block'), emoji: '◇', hint: 'Custom Quest block.' };
+
     function boot() {
       fillBlockTypeMenus();
       wireMenus();
@@ -782,30 +810,37 @@
       let startY = 0;
       let baseX = 0;
       let baseY = 0;
-      handle.addEventListener('pointerdown', (event) => {
+      const start = (event) => {
         if (event.target.closest('button')) return;
+        event.preventDefault();
         dragging = true;
         startX = event.clientX;
         startY = event.clientY;
         baseX = flowPos.x;
         baseY = flowPos.y;
         win.classList.add('dragging');
-        handle.setPointerCapture(event.pointerId);
-      });
-      handle.addEventListener('pointermove', (event) => {
+        document.body.style.cursor = 'grabbing';
+      };
+      const move = (event) => {
         if (!dragging) return;
+        event.preventDefault();
         const bounds = $('workspace-column').getBoundingClientRect();
-        const nextX = baseX + event.clientX - startX;
-        const nextY = baseY + event.clientY - startY;
-        flowPos.x = Math.max(8, Math.min(nextX, bounds.width - 120));
-        flowPos.y = Math.max(8, Math.min(nextY, bounds.height - 52));
+        const maxX = Math.max(8, bounds.width - Math.min(win.offsetWidth, bounds.width - 16) - 8);
+        const maxY = Math.max(8, bounds.height - 58);
+        flowPos.x = Math.max(8, Math.min(baseX + event.clientX - startX, maxX));
+        flowPos.y = Math.max(8, Math.min(baseY + event.clientY - startY, maxY));
         applyFlowPosition();
-      });
-      handle.addEventListener('pointerup', (event) => {
+      };
+      const end = () => {
+        if (!dragging) return;
         dragging = false;
         win.classList.remove('dragging');
-        try { handle.releasePointerCapture(event.pointerId); } catch { /* ignore */ }
-      });
+        document.body.style.cursor = '';
+      };
+      handle.addEventListener('pointerdown', start);
+      window.addEventListener('pointermove', move, { passive: false });
+      window.addEventListener('pointerup', end);
+      window.addEventListener('pointercancel', end);
     }
     function applyFlowPosition() {
       const win = $('flow-window');
@@ -885,7 +920,32 @@
         if (quest() || id.startsWith('file')) { fn(event.target.value); render(); }
       });
     }
+    function wizardBlocks(flow, sceneId, objectId, completionFlag) {
+      const sceneBlock = { name: 'Start Scene', type: 'scene', sceneId };
+      const doneBlock = { name: 'Calling Fulfilled', type: 'completion', condition: completionFlag ? 'flag_true:' + completionFlag : '', uiOverlay: 'calling_fulfilled' };
+      if (flow === 'dialogue') return [sceneBlock, { name: 'Opening Dialogue', type: 'dialogue', objectId, dialogueId: '' }, { name: 'Key Interaction', type: 'object', objectId }, doneBlock];
+      if (flow === 'puzzle') return [sceneBlock, { name: 'Find Clue', type: 'information', sceneId }, { name: 'Check Requirement', type: 'condition' }, { name: 'Capra Hint', type: 'capra', uiOverlay: 'capra_popup' }, doneBlock];
+      if (flow === 'combat') return [sceneBlock, { name: 'Defeat Foe', type: 'combat', sceneId }, { name: 'Reward', type: 'reward' }, doneBlock];
+      return [sceneBlock, { name: 'Key Interaction', type: 'object', objectId }, doneBlock];
+    }
+    function createWizardQuest() {
+      const sceneId = $('wizard-scene-input').value.trim();
+      const objectId = $('wizard-object-input').value.trim();
+      const completionFlag = $('wizard-flag-input').value.trim();
+      addQuest({
+        name: $('wizard-name-input').value.trim() || 'New Quest',
+        type: $('wizard-type-input').value || 'main',
+        callingText: $('wizard-calling-input').value.trim() || 'Define what the player needs to do.',
+        sceneIds: list(sceneId),
+        objectIds: list(objectId),
+        completionFlag,
+        blocks: wizardBlocks($('wizard-flow-input').value, sceneId, objectId, completionFlag)
+      });
+      toast('Quest created from wizard.');
+    }
     function wireActions() {
+      $('new-quest-wizard-button').onclick = () => { closeMenus(); $('wizard-dialog').showModal(); };
+      $('create-wizard-quest-button').onclick = () => createWizardQuest();
       $('new-file-button').onclick = () => { doc.quests = []; doc.name = 'Untitled Quest File'; activeQuest = 0; activeBlock = 0; closeMenus(); render(); toast('New Quest file created.'); };
       $('save-local-button').onclick = () => { localStorage.setItem(KEY, JSON.stringify(doc)); closeMenus(); toast('Saved locally.'); };
       $('add-quest-button').onclick = $('side-add-quest-button').onclick = () => { addQuest(); closeMenus(); openEditor('quest'); toast('Quest added.'); };
@@ -903,7 +963,7 @@
       $('view-json-button').onclick = () => { $('json-preview').textContent = JSON.stringify(doc, null, 2); closeMenus(); $('json-dialog').showModal(); };
       $('block-types-button').onclick = () => { const rows = Object.entries(BLOCK_TYPES).map(([key, item]) => `<article class="block-type-card"><strong>${item.emoji} ${item.name}</strong><span>${key}: ${item.hint}</span></article>`).join(''); help('Quest Block Type List', `<div class="block-type-grid">${rows}</div>`); closeMenus(); };
       $('library-note-button').onclick = () => { help('Linked Libraries', '<p>Quest Builder references completed scenes, archetype objects, dialogue IDs, Capra popup templates, Codice entries, UI overlays, rewards, route unlocks, and completion flags. It should not own those libraries directly.</p>'); closeMenus(); };
-      $('quick-start-button').onclick = () => { help('Quick Start', '<p>Select a Quest on the left. Drag the Quest Flow window anywhere over the viewing panel. Select a block in that window, then double-click or use Edit to open the popup editor.</p>'); closeMenus(); };
+      $('quick-start-button').onclick = () => { help('Quick Start', '<p>Select a Quest on the left. Drag the Quest Flow window by its header. Use the ⇅ button to switch between horizontal and vertical block lists. Resize the window from its bottom-right corner.</p>'); closeMenus(); };
       $('about-button').onclick = () => { help('About Quest Builder', '<p>Quest Builder assembles scenes, archetype objects, dialogue, Capra feedback, Codice updates, UI overlays, rewards, map unlocks, and completion flags into playable Quest flow.</p>'); closeMenus(); };
       $('bg-dark-button').onclick = () => { mode = 'dark'; closeMenus(); draw(); };
       $('bg-light-button').onclick = () => { mode = 'light'; closeMenus(); draw(); };
@@ -911,7 +971,13 @@
       $('zoom-out-button').onclick = () => { zoom = Math.max(.7, zoom - .1); render(); };
       $('zoom-reset-button').onclick = () => { zoom = 1; render(); };
       $('collapse-flow-button').onclick = () => { $('flow-window').classList.toggle('collapsed'); $('collapse-flow-button').textContent = $('flow-window').classList.contains('collapsed') ? '+' : '−'; };
-      $('reset-flow-window-button').onclick = () => { flowPos = { x: 26, y: 72 }; applyFlowPosition(); $('flow-window').classList.remove('collapsed'); $('collapse-flow-button').textContent = '−'; closeMenus(); };
+      $('toggle-flow-layout-button').onclick = () => {
+        const win = $('flow-window');
+        win.classList.toggle('vertical');
+        $('toggle-flow-layout-button').textContent = win.classList.contains('vertical') ? '⇆' : '⇅';
+        win.style.height = win.classList.contains('vertical') ? 'min(520px, calc(100% - 90px))' : 'auto';
+      };
+      $('reset-flow-window-button').onclick = () => { const win = $('flow-window'); flowPos = { x: 26, y: 72 }; win.style.width = ''; win.style.height = ''; win.classList.remove('collapsed', 'vertical'); $('collapse-flow-button').textContent = '−'; $('toggle-flow-layout-button').textContent = '⇅'; applyFlowPosition(); closeMenus(); };
       $('import-json-input').onchange = async (event) => { const file = event.target.files[0]; if (!file) return; Object.assign(doc, JSON.parse(await file.text())); activeQuest = 0; activeBlock = 0; closeMenus(); render(); toast('JSON imported.'); };
       $('snapshot-button').onclick = () => { const link = document.createElement('a'); link.href = canvas.toDataURL('image/png'); link.download = 'quest-builder-snapshot.png'; link.click(); closeMenus(); };
     }
@@ -924,7 +990,7 @@
       txt('file-summary-meta', doc.defaultChronicleId);
       const q = quest();
       txt('calling-summary', q?.callingText || 'Select a Quest to view its Calling.');
-      txt('status-text', q ? 'Editing ' + q.name : 'Ready.');
+      txt('status-text', q ? 'Editing: ' + q.name : 'Ready.');
       txt('block-count', (q?.blocks?.length || 0) + ' blocks');
       txt('zoom-readout', Math.round(zoom * 100) + '%');
       $('quest-list').innerHTML = '';
