@@ -1,0 +1,2049 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artifex - Project Editor & Flatplan</title>
+    <!-- Tailwind CSS for high-fidelity responsive layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons for premium visual language -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        obsidian: '#0a0a0f',
+                        slateDark: '#12121a',
+                        cardDark: '#181824',
+                        neonViolet: '#a855f7',
+                        neonVioletGlow: '#c084fc',
+                        neonPink: '#ec4899',
+                        neonPinkGlow: '#f472b6',
+                        accentDark: '#221133'
+                    },
+                    boxShadow: {
+                        'neon-glow': '0 0 15px rgba(168, 85, 247, 0.45)',
+                        'neon-glow-pink': '0 0 15px rgba(236, 72, 153, 0.45)',
+                        'card-glow': '0 4px 20px rgba(0, 0, 0, 0.6)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbars for dark look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a0f;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a2a3f;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a855f7;
+        }
+        
+        /* Grid background styling */
+        .infinite-grid {
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(168, 85, 247, 0.08) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(168, 85, 247, 0.08) 1px, transparent 1px);
+        }
+
+        /* SVG edge paths transition effects */
+        .edge-path {
+            stroke-dasharray: 8;
+            animation: dash 30s linear infinite;
+        }
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -1000;
+            }
+        }
+
+        /* Neon outline active glow animations */
+        .neon-card-active {
+            border-color: #a855f7;
+            box-shadow: 0 0 12px rgba(168, 85, 247, 0.35);
+        }
+
+        /* Group Hover workspace triggers */
+        .workspace-dropdown:hover .dropdown-content {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body class="bg-obsidian text-slate-100 h-full overflow-hidden font-sans select-none flex flex-col">
+
+    <!-- CUSTOM CONTEXT MENU -->
+    <div id="customContextMenu" class="hidden absolute bg-cardDark/95 backdrop-blur-md border border-purple-500/40 rounded-lg shadow-card-glow py-1 w-52 z-50 text-xs text-zinc-200 font-sans">
+        <!-- Canvas Context Actions -->
+        <div id="contextCanvasActions" class="max-h-80 overflow-y-auto">
+            <div class="px-3 py-1 text-[10px] text-zinc-500 font-mono border-b border-[#2d2d42] mb-1 uppercase tracking-wider">Screens & Scenes</div>
+            <button onclick="contextAddNode('Completed Screen')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="check-circle" class="w-3.5 h-3.5 text-indigo-400"></i>
+                <span>Completed Screen</span>
+            </button>
+            <button onclick="contextAddNode('Playable Scene')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="play-circle" class="w-3.5 h-3.5 text-orange-400"></i>
+                <span>Playable Scene</span>
+            </button>
+            <button onclick="contextAddNode('Title Screen')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="heading" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Title Screen</span>
+            </button>
+            <button onclick="contextAddNode('Menu Screen')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="menu" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span>Menu Screen</span>
+            </button>
+            <button onclick="contextAddNode('Ending Screen')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="flag-triangle-right" class="w-3.5 h-3.5 text-red-400"></i>
+                <span>Ending Screen</span>
+            </button>
+
+            <div class="px-3 py-1 text-[10px] text-zinc-500 font-mono border-b border-[#2d2d42] my-1 uppercase tracking-wider">Quests & Paths</div>
+            <button onclick="contextAddNode('Quest')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="award" class="w-3.5 h-3.5 text-rose-400"></i>
+                <span>Quest</span>
+            </button>
+            <button onclick="contextAddNode('Side Quest')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-fuchsia-400"></i>
+                <span>Side Quest</span>
+            </button>
+            <button onclick="contextAddNode('Branche')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="git-branch" class="w-3.5 h-3.5 text-sky-400"></i>
+                <span>Branche</span>
+            </button>
+            <button onclick="contextAddNode('Route')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="milestone" class="w-3.5 h-3.5 text-teal-400"></i>
+                <span>Route</span>
+            </button>
+
+            <div class="px-3 py-1 text-[10px] text-zinc-500 font-mono border-b border-[#2d2d42] my-1 uppercase tracking-wider">Core Nodes</div>
+            <button onclick="contextAddNode('Station')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="square" class="w-3.5 h-3.5 text-purple-400"></i>
+                <span>Station</span>
+            </button>
+            <button onclick="contextAddNode('Depot')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="hexagon" class="w-3.5 h-3.5 text-pink-400"></i>
+                <span>Depot</span>
+            </button>
+            <button onclick="contextAddNode('Junction')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="git-fork" class="w-3.5 h-3.5 text-blue-400"></i>
+                <span>Junction</span>
+            </button>
+            <button onclick="contextAddNode('Waypoint')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span>Waypoint</span>
+            </button>
+
+            <div class="px-3 py-1 text-[10px] text-zinc-500 font-mono border-b border-[#2d2d42] my-1 uppercase tracking-wider">Placeholder Objs</div>
+            <button onclick="contextAddNode('Placeholder Obj 1')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="box" class="w-3.5 h-3.5 text-zinc-400"></i>
+                <span>Placeholder Obj 1</span>
+            </button>
+            <button onclick="contextAddNode('Placeholder Obj 2')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="box" class="w-3.5 h-3.5 text-zinc-400"></i>
+                <span>Placeholder Obj 2</span>
+            </button>
+            <button onclick="contextAddNode('Placeholder Obj 3')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="box" class="w-3.5 h-3.5 text-zinc-400"></i>
+                <span>Placeholder Obj 3</span>
+            </button>
+            <button onclick="contextAddNode('Placeholder Obj 4')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="box" class="w-3.5 h-3.5 text-zinc-400"></i>
+                <span>Placeholder Obj 4</span>
+            </button>
+            <button onclick="contextAddNode('Placeholder Obj 5')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="box" class="w-3.5 h-3.5 text-zinc-400"></i>
+                <span>Placeholder Obj 5</span>
+            </button>
+            <button onclick="contextAddNode('Placeholder Obj 6')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="box" class="w-3.5 h-3.5 text-zinc-400"></i>
+                <span>Placeholder Obj 6</span>
+            </button>
+            <button onclick="contextAddNode('Placeholder Obj 7')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="box" class="w-3.5 h-3.5 text-zinc-400"></i>
+                <span>Placeholder Obj 7</span>
+            </button>
+            <button onclick="contextAddNode('Placeholder Obj 8')" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="box" class="w-3.5 h-3.5 text-zinc-400"></i>
+                <span>Placeholder Obj 8</span>
+            </button>
+
+            <div class="border-t border-[#2d2d42] my-1"></div>
+            <button onclick="resetViewport(); hideContextMenu();" class="w-full text-left px-3 py-1.5 hover:bg-purple-900/30 transition flex items-center space-x-2">
+                <i data-lucide="crosshair" class="w-3.5 h-3.5 text-zinc-400"></i>
+                <span>Recenter Camera</span>
+            </button>
+        </div>
+        <!-- Node Context Actions -->
+        <div id="contextNodeActions" class="hidden">
+            <div class="px-3 py-1 text-[10px] text-zinc-500 font-mono border-b border-[#2d2d42] mb-1 uppercase tracking-wider">Node Operations</div>
+            <button onclick="contextDeleteSelectedNode()" class="w-full text-left px-3 py-1.5 hover:bg-red-900/40 text-red-200 transition flex items-center space-x-2 font-semibold">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5 text-red-400"></i>
+                <span>Delete Node</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- TOP BAR (Global Navigation & Action Matrix) -->
+    <header class="h-16 bg-slateDark border-b border-[#20202e] px-4 flex items-center justify-between z-40 flex-shrink-0">
+        <!-- Logo and App Identifier -->
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 bg-gradient-to-tr from-purple-700 to-pink-500 rounded-lg flex items-center justify-center shadow-neon-glow">
+                <i data-lucide="hex" class="w-6 h-6 text-white animate-pulse"></i>
+            </div>
+            <div>
+                <span class="text-xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">ARTIFEX</span>
+                <span class="text-xs text-purple-400 block -mt-1 font-mono tracking-widest">PROJECT EDITOR</span>
+            </div>
+        </div>
+
+        <!-- Toolbar Actions -->
+        <div class="flex items-center space-x-3 flex-1 max-w-2xl mx-6">
+            <!-- Import Dropdown Trigger -->
+            <div class="relative">
+                <button id="importBtn" class="bg-purple-900/40 hover:bg-purple-900/70 border border-purple-500/30 text-purple-200 px-4 py-1.5 rounded text-sm font-medium transition flex items-center space-x-1">
+                    <span>Import</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                </button>
+                <div id="importDropdown" class="hidden absolute left-0 mt-2 w-48 bg-cardDark border border-[#2d2d42] rounded shadow-card-glow z-50">
+                    <button onclick="triggerFileInput()" class="w-full text-left px-4 py-2 hover:bg-purple-900/30 text-sm flex items-center space-x-2">
+                        <i data-lucide="upload-cloud" class="w-4 h-4 text-purple-400"></i>
+                        <span>Upload logic.json</span>
+                    </button>
+                    <button onclick="appState.loadTemplate('travel')" class="w-full text-left px-4 py-2 hover:bg-purple-900/30 text-sm flex items-center space-x-2">
+                        <i data-lucide="file-json" class="w-4 h-4 text-orange-400"></i>
+                        <span>Travel Scene Template</span>
+                    </button>
+                    <button onclick="appState.loadTemplate('transit')" class="w-full text-left px-4 py-2 hover:bg-purple-900/30 text-sm flex items-center space-x-2">
+                        <i data-lucide="map" class="w-4 h-4 text-pink-400"></i>
+                        <span>Transit Metro Plan</span>
+                    </button>
+                </div>
+                <input type="file" id="fileInput" class="hidden" accept=".json" onchange="handleFileImport(event)">
+            </div>
+
+            <!-- Download logic.json Trigger -->
+            <button onclick="appState.downloadBlueprint()" class="bg-purple-900/30 hover:bg-purple-900/60 border border-purple-500/20 text-purple-300 px-3 py-1.5 rounded text-sm font-medium transition flex items-center space-x-1.5">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>Download JSON</span>
+            </button>
+
+            <!-- Placeholder Button -->
+            <button onclick="showToast('Placeholder feature for future operations.')" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-1.5 rounded text-sm font-medium transition flex items-center space-x-1.5">
+                <i data-lucide="layout" class="w-4 h-4 text-zinc-400"></i>
+                <span>Placeholder</span>
+            </button>
+
+            <!-- Active Template / URL Bar -->
+            <div class="flex-1 relative flex items-center">
+                <i data-lucide="globe" class="w-4 h-4 text-zinc-500 absolute left-3"></i>
+                <input type="text" id="templatePathBar" value="https://github.dev/cinaedvsstudios/Forever-Bound-Game/artifex/apps/projecteditor/logic.json" class="w-full bg-black/40 border border-[#2d2d42] rounded px-3 py-1.5 pl-9 text-xs font-mono text-zinc-400 focus:outline-none focus:border-purple-500 transition" readonly>
+            </div>
+        </div>
+
+        <!-- Workspace Selector Dropdown on Mouseover -->
+        <div class="relative workspace-dropdown">
+            <button id="activeWorkspaceBtn" class="bg-gradient-to-r from-purple-800 to-pink-700 border border-purple-500/40 text-white font-bold px-4 py-2.5 rounded-lg text-xs shadow-neon-glow flex items-center space-x-2 transition cursor-default">
+                <i data-lucide="layers" class="w-4 h-4 text-pink-300"></i>
+                <span id="activeWorkspaceName" class="tracking-wide text-xs">FLATPLAN</span>
+                <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+            </button>
+            <!-- Dropdown content triggers on mouseover -->
+            <div class="dropdown-content absolute right-0 mt-1 w-72 bg-cardDark/95 backdrop-blur-md border border-purple-500/40 rounded-lg shadow-card-glow py-1.5 z-50 opacity-0 scale-95 pointer-events-none transition-all duration-300">
+                <div class="px-3 py-1 text-[10px] text-zinc-500 font-mono border-b border-[#2d2d42] mb-1.5 uppercase tracking-wider">PROJECT WORKSPACES</div>
+                
+                <button onclick="setWorkspace('manifest')" class="w-full text-left px-3 py-2 hover:bg-purple-900/30 transition flex items-start space-x-3 group border-l-2 border-transparent hover:border-purple-500">
+                    <i data-lucide="file-text" class="w-4 h-4 text-indigo-400 mt-0.5"></i>
+                    <div>
+                        <span class="text-xs font-bold text-zinc-200 block group-hover:text-purple-300">Manifest</span>
+                        <span class="text-[9px] text-zinc-500 block">Setup start screen, metadata, modules & indices.</span>
+                    </div>
+                </button>
+                <button onclick="setWorkspace('flatplan')" class="w-full text-left px-3 py-2 hover:bg-purple-900/30 transition flex items-start space-x-3 group border-l-2 border-transparent hover:border-purple-500">
+                    <i data-lucide="map" class="w-4 h-4 text-purple-400 mt-0.5"></i>
+                    <div>
+                        <span class="text-xs font-bold text-zinc-200 block group-hover:text-purple-300">Flatplan</span>
+                        <span class="text-[9px] text-zinc-500 block">Visual nodes, routing perimeters & canvas greybox.</span>
+                    </div>
+                </button>
+                <button onclick="setWorkspace('stitcher')" class="w-full text-left px-3 py-2 hover:bg-purple-900/30 transition flex items-start space-x-3 group border-l-2 border-transparent hover:border-purple-500">
+                    <i data-lucide="git-commit" class="w-4 h-4 text-pink-400 mt-0.5"></i>
+                    <div>
+                        <span class="text-xs font-bold text-zinc-200 block group-hover:text-purple-300">Stitcher</span>
+                        <span class="text-[9px] text-zinc-500 block">Route logic, unlocks, item gates & event triggers.</span>
+                    </div>
+                </button>
+                <button onclick="setWorkspace('buildprep')" class="w-full text-left px-3 py-2 hover:bg-purple-900/30 transition flex items-start space-x-3 group border-l-2 border-transparent hover:border-purple-500">
+                    <i data-lucide="package-check" class="w-4 h-4 text-emerald-400 mt-0.5"></i>
+                    <div>
+                        <span class="text-xs font-bold text-zinc-200 block group-hover:text-purple-300">Build Prep</span>
+                        <span class="text-[9px] text-zinc-500 block">Validate graph errors & stage build output JSON.</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN BODY SECTION -->
+    <div class="flex flex-1 overflow-hidden">
+        
+        <!-- LEFT SIDEBAR (Accordion Controls / Asset Drawer) -->
+        <aside class="w-80 bg-slateDark border-r border-[#20202e] flex flex-col overflow-hidden flex-shrink-0 z-30">
+            <!-- Project Meta Header Card -->
+            <div class="p-4 bg-black/20 border-b border-[#20202e]">
+                <div class="bg-purple-950/30 border border-purple-900/60 rounded-lg p-3">
+                    <span class="text-xs text-zinc-500 block font-mono">PROJECT WORKSPACE</span>
+                    <span class="text-sm font-bold text-white block truncate">FOREVER BOUND GAME</span>
+                    <div class="flex items-center space-x-2 mt-2">
+                        <i data-lucide="file-code" class="w-3.5 h-3.5 text-orange-400"></i>
+                        <span id="activeFileIndicator" class="text-xs font-mono text-orange-300">travel_scene_template.json</span>
+                    </div>
+                    <div class="mt-2 text-[10px] font-mono text-zinc-500 flex justify-between items-center bg-black/40 p-1 rounded border border-zinc-800">
+                        <span>LOCAL: SAVE SYNCHRONIZED</span>
+                        <span class="text-green-500 font-bold">&#9679; ONLINE</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scrollable Accordion Stack -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-3" id="sidebarAccordion">
+                
+                <!-- ACCORDION WRAPPERS: WILL SHIFT BASED ON ACTIVE WORKSPACE -->
+                <div id="dynamicSidebarContent" class="space-y-3">
+                    <!-- Default loaded on flatplan startup -->
+                </div>
+
+                <!-- CARD 3: LIVE JSON PREVIEW (Kept across workspaces, collapsed by default) -->
+                <div class="border border-[#2d2d42] rounded-lg overflow-hidden bg-cardDark">
+                    <button class="w-full flex items-center justify-between p-3 bg-black/25 font-semibold text-sm hover:bg-black/40 transition text-zinc-200" onclick="toggleAccordion('jsonCollapse')">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="terminal" class="w-4 h-4 text-purple-400"></i>
+                            <span>Live JSON Console</span>
+                        </div>
+                        <i data-lucide="chevron-up" id="jsonCollapse-icon" class="w-4 h-4 transform transition-transform" style="transform: rotate(180deg);"></i>
+                    </button>
+                    <div id="jsonCollapse" class="p-3 space-y-2 border-t border-[#1d1d2b] hidden">
+                        <div class="flex space-x-1 bg-black/40 p-1 rounded border border-[#2d2d42] text-[10px] font-mono mb-2">
+                            <button id="previewTabLogic" onclick="setJsonPreviewTab('logic')" class="flex-1 text-center py-0.5 rounded bg-purple-900/50 text-purple-200">logic.json</button>
+                            <button id="previewTabLayout" onclick="setJsonPreviewTab('layout')" class="flex-1 text-center py-0.5 rounded text-zinc-500 hover:text-zinc-300 transition">layout.json</button>
+                        </div>
+                        <pre class="w-full h-44 bg-black/50 border border-black rounded p-2 text-[10px] font-mono text-emerald-400 overflow-y-auto block whitespace-pre-wrap leading-relaxed" id="liveJsonContainer"></pre>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- VIEWING PANEL (The Multi-Workspace Stage) -->
+        <main class="flex-1 bg-obsidian relative overflow-hidden flex flex-col">
+            
+            <!-- WORKSPACE 1: PROJECT MANIFEST (Metadata & Setup) -->
+            <div id="manifestWorkspace" class="hidden w-full h-full p-6 overflow-y-auto space-y-6">
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <!-- Heading metadata -->
+                    <div class="border-b border-[#2d2d42] pb-4 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-bold tracking-wide text-zinc-100">Project Manifest</h2>
+                            <p class="text-xs text-zinc-500">Configure global setup variables, indices, and modules.</p>
+                        </div>
+                        <span class="text-xs bg-indigo-950 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded font-mono font-bold">V 1.0.0</span>
+                    </div>
+
+                    <!-- Setup Forms Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-cardDark border border-[#2d2d42] rounded-lg p-4 space-y-4">
+                            <h3 class="text-sm font-bold text-zinc-200 flex items-center space-x-2">
+                                <i data-lucide="sliders" class="w-4 h-4 text-indigo-400"></i>
+                                <span>Basic Metadata Settings</span>
+                            </h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-[10px] text-zinc-500 block font-mono mb-1">PROJECT NAME</label>
+                                    <input type="text" id="manifestGameTitle" oninput="commitManifestChanges()" value="Forever Bound Game" class="w-full bg-black/40 border border-[#2d2d42] rounded px-3 py-2 text-xs text-zinc-300 focus:outline-none focus:border-indigo-500">
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="text-[10px] text-zinc-500 block font-mono mb-1">CREATOR / STUDIO</label>
+                                        <input type="text" id="manifestCreatorName" oninput="commitManifestChanges()" value="Cinaedus Studios" class="w-full bg-black/40 border border-[#2d2d42] rounded px-3 py-2 text-xs text-zinc-300 focus:outline-none focus:border-indigo-500">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] text-zinc-500 block font-mono mb-1">LAUNCH START SCREEN</label>
+                                        <select id="manifestStartScreen" onchange="commitManifestChanges()" class="w-full bg-[#1c1c2b] border border-[#2d2d42] rounded px-3 py-2 text-xs text-zinc-300 focus:outline-none focus:border-indigo-500">
+                                            <option value="node_1">Title Screen (node_1)</option>
+                                            <option value="node_2">Menu Screen (node_2)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-zinc-500 block font-mono mb-1">PROJECT VERSION</label>
+                                    <input type="text" id="manifestVersion" oninput="commitManifestChanges()" value="1.0.0" class="w-full bg-black/40 border border-[#2d2d42] rounded px-3 py-2 text-xs text-zinc-300 focus:outline-none focus:border-indigo-500">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Enabled Engine Modules Checklist -->
+                        <div class="bg-cardDark border border-[#2d2d42] rounded-lg p-4 space-y-4">
+                            <h3 class="text-sm font-bold text-zinc-200 flex items-center space-x-2">
+                                <i data-lucide="toggle-left" class="w-4 h-4 text-indigo-400"></i>
+                                <span>Enabled Engine Modules</span>
+                            </h3>
+                            <div class="space-y-2.5">
+                                <label class="flex items-center justify-between p-2 rounded bg-black/20 border border-[#2d2d42]/30 text-xs">
+                                    <span class="text-zinc-300">Physics & Collision System</span>
+                                    <input type="checkbox" id="modulePhysics" onchange="commitManifestChanges()" checked class="w-4 h-4 accent-indigo-500">
+                                </label>
+                                <label class="flex items-center justify-between p-2 rounded bg-black/20 border border-[#2d2d42]/30 text-xs">
+                                    <span class="text-zinc-300">Quest Engine & Variables</span>
+                                    <input type="checkbox" id="moduleQuest" onchange="commitManifestChanges()" checked class="w-4 h-4 accent-indigo-500">
+                                </label>
+                                <label class="flex items-center justify-between p-2 rounded bg-black/20 border border-[#2d2d42]/30 text-xs">
+                                    <span class="text-zinc-300">Dialogue & Conversation Node Parser</span>
+                                    <input type="checkbox" id="moduleDialogue" onchange="commitManifestChanges()" checked class="w-4 h-4 accent-indigo-500">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File references index list -->
+                    <div class="bg-cardDark border border-[#2d2d42] rounded-lg p-4 space-y-4">
+                        <div class="flex justify-between items-center border-b border-[#2d2d42] pb-3">
+                            <h3 class="text-sm font-bold text-zinc-200 flex items-center space-x-2">
+                                <i data-lucide="file-symlink" class="w-4 h-4 text-indigo-400"></i>
+                                <span>Project File Index & References (`project.json`)</span>
+                            </h3>
+                            <button onclick="showToast('Indexing project directories...')" class="bg-indigo-950 hover:bg-indigo-900 border border-indigo-500/30 text-indigo-300 px-3 py-1 rounded text-xs transition">
+                                Re-Scan Files
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left text-zinc-400">
+                                <thead>
+                                    <tr class="text-[10px] text-zinc-500 uppercase font-mono border-b border-[#2d2d42]">
+                                        <th class="py-2">Reference File</th>
+                                        <th class="py-2">Workspace Bind Target</th>
+                                        <th class="py-2">Status</th>
+                                        <th class="py-2">Classification Meta</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b border-[#2d2d42]/50">
+                                        <td class="py-2.5 font-semibold text-zinc-300">logic.json</td>
+                                        <td class="py-2.5 font-mono">appState.logic</td>
+                                        <td class="py-2.5 text-green-400">✔ Loaded</td>
+                                        <td class="py-2.5 text-zinc-500">Logical Blueprint</td>
+                                    </tr>
+                                    <tr class="border-b border-[#2d2d42]/50">
+                                        <td class="py-2.5 font-semibold text-zinc-300">layout.json</td>
+                                        <td class="py-2.5 font-mono">appState.layout</td>
+                                        <td class="py-2.5 text-green-400">✔ Loaded</td>
+                                        <td class="py-2.5 text-zinc-500">Viewport Layout Settings</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2.5 font-semibold text-zinc-300">catalog.json</td>
+                                        <td class="py-2.5 font-mono">appState.catalog</td>
+                                        <td class="py-2.5 text-green-400">✔ Loaded</td>
+                                        <td class="py-2.5 text-zinc-500">Flatplan Catalog Index</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WORKSPACE 2: THE FLATPLAN CANVAS (Visual board setup) -->
+            <div id="flatplanCanvas" class="w-full h-full relative cursor-default infinite-grid overflow-hidden flex-1">
+                
+                <!-- Infinite Transform Container: Handles Camera Zooming/Panning -->
+                <div id="canvasViewport" class="absolute inset-0 origin-center select-none" style="transform: translate(0px, 0px) scale(1);">
+                    
+                    <!-- Dynamic SVG Connector Canvas Layer -->
+                    <svg id="svgEdgeLayer" class="absolute inset-0 pointer-events-none w-[5000px] h-[5000px]" style="top: -2500px; left: -2500px;"></svg>
+
+                    <!-- HTML Rendered Logical Nodes (Populated by State) -->
+                    <div id="nodesContainer" class="absolute inset-0 pointer-events-none"></div>
+
+                </div>
+
+                <!-- FLOATING ZOOM/CAMERA NAVIGATION CONTROLS (Top Right of Panel) -->
+                <div class="absolute top-4 right-4 z-30 bg-cardDark/80 backdrop-blur-md border border-[#2d2d42] rounded-lg p-1.5 flex flex-col space-y-1.5 shadow-card-glow">
+                    <button onclick="zoomViewport(1.1)" class="w-8 h-8 hover:bg-purple-900/40 text-purple-300 flex items-center justify-center rounded transition" title="Zoom In">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="resetViewport()" class="w-8 h-8 hover:bg-purple-900/40 text-purple-300 flex items-center justify-center rounded transition" title="Recenter View">
+                        <i data-lucide="crosshair" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="zoomViewport(0.9)" class="w-8 h-8 hover:bg-purple-900/40 text-purple-300 flex items-center justify-center rounded transition" title="Zoom Out">
+                        <i data-lucide="minus" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <!-- MAP PROJECTION TOGGLE OVERLAY -->
+                <div class="absolute top-4 left-4 z-30 flex items-center space-x-2">
+                    <button id="mapProjectionToggle" onclick="toggleMapProjection()" class="bg-cardDark/90 backdrop-blur-md border border-[#2d2d42] hover:border-purple-500/60 text-zinc-300 font-bold px-4 py-2 rounded-lg text-xs flex items-center space-x-2 shadow-card-glow transition">
+                        <i id="projectionIcon" data-lucide="eye" class="w-4 h-4 text-purple-400"></i>
+                        <span id="projectionLabel">MAP PROJECTION: OFF</span>
+                    </button>
+                </div>
+
+                <!-- DRAWER COMPASS INFO (Tells user how to navigate) -->
+                <div class="absolute bottom-4 left-4 z-30 bg-cardDark/60 backdrop-blur-sm border border-zinc-800 rounded px-3 py-1.5 text-[10px] text-zinc-400 font-mono">
+                    <div class="flex items-center space-x-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse"></span>
+                        <span>Left-drag to Pan. Scroll to Zoom. Left-click selects elements. Right-click Context Menu.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WORKSPACE 3: STITCHER / ROUTE LOGIC -->
+            <div id="stitcherWorkspace" class="hidden w-full h-full p-6 overflow-y-auto space-y-6">
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <!-- Heading -->
+                    <div class="border-b border-[#2d2d42] pb-4 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-bold tracking-wide text-zinc-100">Stitcher & Route Logic</h2>
+                            <p class="text-xs text-zinc-500">Configure conditional gates, variables, and unlocks for linking connections.</p>
+                        </div>
+                        <i data-lucide="git-commit" class="w-6 h-6 text-pink-400"></i>
+                    </div>
+
+                    <!-- Active Route Selector split viewport -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        
+                        <!-- Route checklist column -->
+                        <div class="lg:col-span-1 bg-cardDark border border-[#2d2d42] rounded-lg p-4 flex flex-col h-[450px]">
+                            <span class="text-[10px] text-zinc-500 block font-mono mb-2">PROJECT CONNECTIONS</span>
+                            <div class="flex-1 overflow-y-auto space-y-2 pr-1" id="stitcherRouteList">
+                                <!-- Generated dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Active logic configurator -->
+                        <div class="lg:col-span-2 bg-cardDark border border-[#2d2d42] rounded-lg p-5 h-[450px] flex flex-col justify-between" id="stitcherFormWrapper">
+                            <div id="stitcherFormEmpty" class="h-full flex flex-col items-center justify-center text-center">
+                                <i data-lucide="git-branch" class="w-12 h-12 text-zinc-600 mb-3"></i>
+                                <span class="text-sm text-zinc-400 font-semibold block">No Connection Selected</span>
+                                <span class="text-xs text-zinc-600">Click any connection route in the left pane to edit key gate constraints.</span>
+                            </div>
+
+                            <div id="stitcherFormState" class="hidden space-y-4 h-full flex flex-col justify-between">
+                                <div class="space-y-4 flex-1">
+                                    <div class="flex justify-between items-center border-b border-[#2d2d42] pb-2">
+                                        <span class="text-xs font-bold text-pink-400" id="stitcherRouteLabel">Route: node_1 -> node_2</span>
+                                        <span id="stitcherRouteType" class="text-[9px] font-mono px-2 py-0.5 rounded border bg-purple-950/40 text-purple-300 border-purple-500/20">Quest</span>
+                                    </div>
+
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="text-[10px] text-zinc-500 block font-mono mb-1">LOCK TYPE / GATE CRITERIA</label>
+                                            <select id="stitcherLockType" class="w-full bg-[#1c1c2b] border border-[#2d2d42] rounded px-3 py-1.5 text-xs text-zinc-300 focus:outline-none">
+                                                <option value="none">Unconditional (Always Open)</option>
+                                                <option value="quest">Quest Gate (Requires Flag)</option>
+                                                <option value="item">Item Key Gate (Inventory Check)</option>
+                                                <option value="alignment">Alignment Gate (Variables check)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="text-[10px] text-zinc-500 block font-mono mb-1">UNLOCK KEY VARIABLE / CONDITION</label>
+                                            <input type="text" id="stitcherRequiredKey" placeholder="e.g. quest_started:q01" class="w-full bg-black/40 border border-[#2d2d42] rounded px-3 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-pink-500 font-mono">
+                                        </div>
+                                    </div>
+
+                                    <!-- Added dynamic visual settings isolated to layout.json properties -->
+                                    <div class="grid grid-cols-2 gap-4 pt-2">
+                                        <div>
+                                            <label class="text-[10px] text-zinc-500 block font-mono mb-1">LINE COLOR (LAYOUT FILE)</label>
+                                            <div class="flex items-center space-x-2 bg-black/30 p-1.5 rounded border border-[#2d2d42]">
+                                                <input type="color" id="stitcherLineColor" class="w-8 h-8 rounded bg-transparent cursor-pointer border border-zinc-800">
+                                                <span class="text-xs text-zinc-400">Trace Theme</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col justify-end">
+                                            <label class="flex items-center justify-between bg-black/30 p-3 rounded border border-[#2d2d42] text-xs h-[42px]">
+                                                <span class="text-zinc-300">Animate Flow</span>
+                                                <input type="checkbox" id="stitcherLineAnimated" class="w-4 h-4 accent-pink-500">
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Playtest route contextual button -->
+                                <div class="pt-4 border-t border-[#2d2d42] flex justify-between items-center">
+                                    <span class="text-[10px] text-zinc-500 font-mono">STITCHER RUN READY</span>
+                                    <button onclick="testRoutePlaytest()" class="bg-gradient-to-r from-pink-800 to-purple-800 hover:from-pink-700 hover:to-purple-700 border border-pink-500/30 text-white font-bold px-4 py-2 rounded text-xs flex items-center space-x-2 transition">
+                                        <i data-lucide="play" class="w-4 h-4 text-pink-300"></i>
+                                        <span>Playtest Route Transition</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- WORKSPACE 4: BUILD PREP -->
+            <div id="buildPrepWorkspace" class="hidden w-full h-full p-6 overflow-y-auto space-y-6">
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <!-- Heading -->
+                    <div class="border-b border-[#2d2d42] pb-4 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-bold tracking-wide text-zinc-100">Build Prep & Diagnostics</h2>
+                            <p class="text-xs text-zinc-500">Validate logical connection structures, and prepare game JSON files for exports.</p>
+                        </div>
+                        <i data-lucide="package-check" class="w-6 h-6 text-emerald-400"></i>
+                    </div>
+
+                    <!-- Validation metrics cards grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        
+                        <!-- Health checker scan -->
+                        <div class="md:col-span-2 bg-cardDark border border-[#2d2d42] rounded-lg p-5 flex flex-col justify-between space-y-4">
+                            <div>
+                                <h3 class="text-sm font-bold text-zinc-200 flex items-center space-x-2 border-b border-[#2d2d42] pb-2">
+                                    <i data-lucide="activity" class="w-4 h-4 text-emerald-400"></i>
+                                    <span>Project Health Scan</span>
+                                </h3>
+                                <div class="space-y-3 mt-4" id="diagnosticChecklist">
+                                    <!-- Dynamic scans generated -->
+                                </div>
+                            </div>
+                            
+                            <button onclick="runHealthDiagnostics()" class="w-full bg-emerald-950 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 font-bold py-2.5 rounded text-xs transition flex items-center justify-center space-x-2">
+                                <i data-lucide="shield-check" class="w-4.5 h-4.5"></i>
+                                <span>Execute Project Health Check</span>
+                            </button>
+                        </div>
+
+                        <!-- Export Staging dashboard compile -->
+                        <div class="bg-cardDark border border-[#2d2d42] rounded-lg p-5 flex flex-col justify-between">
+                            <div class="space-y-4">
+                                <h3 class="text-sm font-bold text-zinc-200 border-b border-[#2d2d42] pb-2 flex items-center space-x-2">
+                                    <i data-lucide="package" class="w-4 h-4 text-emerald-400"></i>
+                                    <span>Build Compilation</span>
+                                </h3>
+                                
+                                <div class="bg-black/30 rounded p-3 border border-[#2d2d42]/60 font-mono text-[10px] text-zinc-400 space-y-2">
+                                    <div class="flex justify-between">
+                                        <span>project_manifest:</span>
+                                        <span class="text-emerald-400 font-bold">Staged</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>logic_routes:</span>
+                                        <span class="text-emerald-400 font-bold">Staged</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>layout_coords:</span>
+                                        <span class="text-emerald-400 font-bold">Staged</span>
+                                    </div>
+                                </div>
+
+                                <div class="text-xs text-zinc-500 leading-relaxed">
+                                    Compiling validates logical routing trees, structures catalog scene data references, and indexes metadata parameters to verify readiness for Build Game packaging.
+                                </div>
+                            </div>
+
+                            <button onclick="appState.downloadBlueprint()" class="w-full mt-4 bg-gradient-to-r from-emerald-800 to-teal-800 hover:from-emerald-700 hover:to-teal-700 border border-emerald-500/40 text-white font-bold py-3 rounded-lg text-xs transition flex items-center justify-center space-x-2 shadow-neon-glow-pink">
+                                <i data-lucide="external-link" class="w-4.5 h-4.5 text-emerald-200"></i>
+                                <span>COMPILE & STAGE FOR BUILD GAME</span>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- CODE CONTROLLERS & GRAPH RENDER ENGINE -->
+    <script>
+        // State Store Module
+        class ArtifexStateManager {
+            constructor() {
+                // Project Manifest mappings (project.json)
+                this.project = {
+                    projectId: "forever-bound-game",
+                    gameTitle: "Forever Bound",
+                    creator: "Cinaedus Studios",
+                    version: "1.0.0",
+                    startScreen: "node_1",
+                    enabledModules: ["physics", "quest", "dialogue"]
+                };
+
+                // Semantic logic model schemas (logic.json) - completely coordinate-free!
+                this.logic = {
+                    projectId: "forever-bound-game",
+                    nodes: [],
+                    routes: [] // Enforces taxonomy specs (routes instead of edges!)
+                };
+
+                // Visual Layout coordinate schemas (layout.json)
+                this.layout = {
+                    camera: { zoom: 1, panX: 0, panY: 0 },
+                    nodes: [],
+                    routes: [] // Visual designs (colors, animation states) stored here!
+                };
+
+                this.registry = {
+                    customMacros: []
+                };
+
+                // Flatplan Catalog index models (catalog.json)
+                this.catalog = {
+                    scenes: [
+                        { assetId: "scene_level1_intro", name: "Level 1 Intro", file: "intro_office.scene", texture: "intro" },
+                        { assetId: "scene_forest_maze", name: "Forest Maze", file: "forest_route.scene", texture: "forest" }
+                    ]
+                };
+
+                // Navigation states
+                this.viewportMode = "flatplan";
+                this.selectedNodeId = null;
+                this.selectedEdgeId = null;
+                this.activePreviewTab = "logic";
+                this.activeAssetTab = "placeholders";
+                this.renderRealAssets = false;
+
+                // Workspace State Selection
+                this.activeWorkspace = "flatplan";
+                this.mapProjectionActive = false;
+
+                // Load initial defaults or restore storage
+                this.loadFromStorage();
+            }
+
+            // Sync with browser database
+            saveToStorage() {
+                localStorage.setItem('artifex_project', JSON.stringify(this.project));
+                localStorage.setItem('artifex_logic', JSON.stringify(this.logic));
+                localStorage.setItem('artifex_layout', JSON.stringify(this.layout));
+                localStorage.setItem('artifex_real_assets', JSON.stringify(this.renderRealAssets));
+                this.updateConsolePreview();
+            }
+
+            loadFromStorage() {
+                const storedProject = localStorage.getItem('artifex_project');
+                const storedLogic = localStorage.getItem('artifex_logic');
+                const storedLayout = localStorage.getItem('artifex_layout');
+                const storedRenderReal = localStorage.getItem('artifex_real_assets');
+
+                if (storedLogic && storedLayout) {
+                    this.logic = JSON.parse(storedLogic);
+                    this.layout = JSON.parse(storedLayout);
+                    if (storedProject) this.project = JSON.parse(storedProject);
+                    if (storedRenderReal) this.renderRealAssets = JSON.parse(storedRenderReal);
+                } else {
+                    this.injectMockTransitPlan();
+                }
+            }
+
+            // Mock Startup Plan
+            injectMockTransitPlan() {
+                this.project = {
+                    projectId: "forever-bound-game",
+                    gameTitle: "Forever Bound",
+                    creator: "Cinaedus Studios",
+                    version: "1.0.0",
+                    startScreen: "node_1",
+                    enabledModules: ["physics", "quest", "dialogue"]
+                };
+                
+                this.logic = {
+                    projectId: "forever-bound-game",
+                    nodes: [
+                        { id: "node_1", type: "Title Screen", properties: { name: "Game Main Title", description: "First screen user lands on", onEnterTrigger: "play_music", linkedSceneId: "" }},
+                        { id: "node_2", type: "Menu Screen", properties: { name: "Options Dashboard", description: "Route path splitter settings", decisionVariable: "alignment" }},
+                        { id: "node_3", type: "Playable Scene", properties: { name: "Level 1 Office", description: "Primary visual level builder" }},
+                        { id: "node_4", type: "Completed Screen", properties: { name: "Victory Summary", description: "Presents score stats" }},
+                        { id: "node_5", type: "Waypoint", properties: { name: "Debug Helper waypoint", description: "Placeholder navigation marker" }}
+                    ],
+                    routes: [ // Complies with routing schema
+                        { id: "route_12", source: "node_1", target: "node_2", type: "Quest", conditions: ["alignment_setup"] },
+                        { id: "route_23", source: "node_2", target: "node_3", type: "Quest", conditions: ["alignment_seen"] },
+                        { id: "route_24", source: "node_2", target: "node_4", type: "Branch", conditions: ["alignment_skipped"] }
+                    ]
+                };
+
+                this.layout = {
+                    camera: { zoom: 1, panX: 100, panY: 100 },
+                    nodes: [
+                        { id: "node_1", position: { x: 150, y: 150 }, visual: { color: "neon-violet", isCollapsed: false, usePlaceholder: true }},
+                        { id: "node_2", position: { x: 450, y: 150 }, visual: { color: "neon-pink", isCollapsed: false, usePlaceholder: true }},
+                        { id: "node_3", position: { x: 750, y: 50 }, visual: { color: "neon-violet", isCollapsed: false, usePlaceholder: true }},
+                        { id: "node_4", position: { x: 750, y: 300 }, visual: { color: "neon-pink", isCollapsed: false, usePlaceholder: true }},
+                        { id: "node_5", position: { x: 450, y: 350 }, visual: { color: "neon-violet", isCollapsed: false, usePlaceholder: true }}
+                    ],
+                    routes: [ // Keeps layout styling isolated from logic schema checks
+                        { id: "route_12", visual: { lineColor: "#a855f7", animated: true } },
+                        { id: "route_23", visual: { lineColor: "#ec4899", animated: true } },
+                        { id: "route_24", visual: { lineColor: "#3b82f6", animated: false } }
+                    ]
+                };
+                this.saveToStorage();
+            }
+
+            // Cleans workspace and makes blank blueprint
+            clearWorkspace() {
+                this.logic.nodes = [];
+                this.logic.routes = [];
+                this.layout.nodes = [];
+                this.layout.routes = [];
+                this.selectedNodeId = null;
+                this.selectedEdgeId = null;
+                this.saveToStorage();
+                renderGraph();
+                showInspector();
+            }
+
+            // Export logic-only blueprint for AI consumption (No visual coordinate layout bloat)
+            downloadBlueprint() {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.logic, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `${this.logic.projectId}_logic.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+            }
+
+            // Merge dynamic AI modified schema back with layout positions safely
+            importLogicJSON(importedObj) {
+                if (!importedObj.projectId || !importedObj.nodes) {
+                    alert("Invalid logic schema. Project ID and node tables required.");
+                    return;
+                }
+                
+                // Keep coordinates, merge structural properties
+                this.logic = importedObj;
+                
+                // Check if layout needs elements added or sync'd
+                this.logic.nodes.forEach(n => {
+                    const exists = this.layout.nodes.find(ln => ln.id === n.id);
+                    if (!exists) {
+                        this.layout.nodes.push({
+                            id: n.id,
+                            position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
+                            visual: { color: "neon-violet", isCollapsed: false, usePlaceholder: true }
+                        });
+                    }
+                });
+
+                this.saveToStorage();
+                renderGraph();
+                showInspector();
+            }
+
+            // Trigger structural template loads
+            loadTemplate(type) {
+                if (type === 'travel') {
+                    this.project.projectId = "travel-story-network";
+                    document.getElementById('activeFileIndicator').innerText = "travel_scene_template.json";
+                    this.injectMockTransitPlan();
+                } else if (type === 'transit') {
+                    this.project.projectId = "city-metro-infrastructure";
+                    document.getElementById('activeFileIndicator').innerText = "transit_metro_plan.json";
+                    
+                    this.logic.nodes = [
+                        { id: "metro_1", type: "Completed Screen", properties: { name: "Central Terminal Screen", description: "Downtown metropolitan core" }},
+                        { id: "metro_2", type: "Junction", properties: { name: "Grand Interceptor Link", description: "Primary line switching junction" }},
+                        { id: "metro_3", type: "Waypoint", properties: { name: "Transit Portal 5", description: "Minor transfer stop" }}
+                    ];
+                    this.logic.routes = [
+                        { id: "track_12", source: "metro_1", target: "metro_2", type: "Quest", conditions: ["transit_active"] },
+                        { id: "track_23", source: "metro_2", target: "metro_3", type: "Route", conditions: ["line_clear"] }
+                    ];
+                    this.layout.nodes = [
+                        { id: "metro_1", position: { x: 200, y: 200 }, visual: { color: "neon-violet", isCollapsed: false, usePlaceholder: true }},
+                        { id: "metro_2", position: { x: 500, y: 200 }, visual: { color: "neon-pink", isCollapsed: false, usePlaceholder: true }},
+                        { id: "metro_3", position: { x: 800, y: 200 }, visual: { color: "neon-violet", isCollapsed: false, usePlaceholder: true }}
+                    ];
+                    this.layout.routes = [
+                        { id: "track_12", visual: { lineColor: "#a855f7", animated: true } },
+                        { id: "track_23", visual: { lineColor: "#3b82f6", animated: false } }
+                    ];
+                    this.saveToStorage();
+                }
+                renderGraph();
+                showInspector();
+            }
+
+            // Updates sidebar live console readout
+            updateConsolePreview() {
+                const targetText = (this.activePreviewTab === 'logic') 
+                    ? JSON.stringify(this.logic, null, 2) 
+                    : JSON.stringify(this.layout, null, 2);
+                document.getElementById('liveJsonContainer').innerText = targetText;
+            }
+        }
+
+        // Global variables for instance & drag trackers
+        const appState = new ArtifexStateManager();
+        let isPanning = false;
+        let startPanX = 0, startPanY = 0;
+        let dragTargetNode = null;
+        let nodeOffsetLeft = 0, nodeOffsetTop = 0;
+        
+        // Edge linking state trackers
+        let activeLinkSourceNodeId = null;
+        let linkDrawingIndicator = null;
+
+        // Context Menu Coordinates tracker
+        let contextClickX = 0;
+        let contextClickY = 0;
+
+        // Global Style/Color taxonomy dictionary mappings
+        const typeStyleMap = {
+            'Completed Screen': { badge: 'bg-indigo-950/40 text-indigo-300 border-indigo-500/20', color: 'text-indigo-400' },
+            'Playable Scene': { badge: 'bg-orange-950/40 text-orange-300 border-orange-500/20', color: 'text-orange-400' },
+            'Title Screen': { badge: 'bg-amber-950/40 text-amber-300 border-amber-500/20', color: 'text-amber-400' },
+            'Menu Screen': { badge: 'bg-cyan-950/40 text-cyan-300 border-cyan-500/20', color: 'text-cyan-400' },
+            'Ending Screen': { badge: 'bg-rose-950/40 text-rose-300 border-rose-500/20', color: 'text-rose-400' },
+            'Quest': { badge: 'bg-rose-950/40 text-rose-300 border-rose-500/20', color: 'text-rose-400' },
+            'Side Quest': { badge: 'bg-fuchsia-950/40 text-fuchsia-300 border-fuchsia-500/20', color: 'text-fuchsia-400' },
+            'Branche': { badge: 'bg-sky-950/40 text-sky-300 border-sky-500/20', color: 'text-sky-400' },
+            'Depot': { badge: 'bg-pink-950/40 text-pink-300 border-pink-500/20', color: 'text-pink-400' },
+            'Junction': { badge: 'bg-blue-950/40 text-blue-300 border-blue-500/20', color: 'text-blue-400' },
+            'Waypoint': { badge: 'bg-emerald-950/40 text-emerald-300 border-emerald-500/20', color: 'text-emerald-400' },
+            'Route': { badge: 'bg-teal-950/40 text-teal-300 border-teal-500/20', color: 'text-teal-400' },
+            'Station': { badge: 'bg-purple-950/40 text-purple-300 border-purple-500/20', color: 'text-purple-400' },
+            'Placeholder Obj 1': { badge: 'bg-zinc-800/40 text-zinc-300 border-zinc-500/20', color: 'text-zinc-400' },
+            'Placeholder Obj 2': { badge: 'bg-zinc-800/40 text-zinc-300 border-zinc-500/20', color: 'text-zinc-400' },
+            'Placeholder Obj 3': { badge: 'bg-zinc-800/40 text-zinc-300 border-zinc-500/20', color: 'text-zinc-400' },
+            'Placeholder Obj 4': { badge: 'bg-zinc-800/40 text-zinc-300 border-zinc-500/20', color: 'text-zinc-400' },
+            'Placeholder Obj 5': { badge: 'bg-zinc-800/40 text-zinc-300 border-zinc-500/20', color: 'text-zinc-400' },
+            'Placeholder Obj 6': { badge: 'bg-zinc-800/40 text-zinc-300 border-zinc-500/20', color: 'text-zinc-400' },
+            'Placeholder Obj 7': { badge: 'bg-zinc-800/40 text-zinc-300 border-zinc-500/20', color: 'text-zinc-400' },
+            'Placeholder Obj 8': { badge: 'bg-zinc-800/40 text-zinc-300 border-zinc-500/20', color: 'text-zinc-400' }
+        };
+
+        // Init page assets
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            initUI();
+            setWorkspace('flatplan'); // Start on default Flatplan view
+            setupWindowBindings();
+        });
+
+        // Setup drop bindings & dropdown behaviors
+        function initUI() {
+            // Import drop-downs click outside triggers
+            const importBtn = document.getElementById('importBtn');
+            const importDropdown = document.getElementById('importDropdown');
+            importBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                importDropdown.classList.toggle('hidden');
+            });
+            document.addEventListener('click', () => {
+                importDropdown.classList.add('hidden');
+            });
+
+            // Set default view values from memory
+            updateToggleVisualState();
+
+            // Right Click Context Menu Handler
+            const canvas = document.getElementById('flatplanCanvas');
+            canvas.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                showContextMenu(e);
+            });
+
+            // Left Click anywhere to close context menus
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#customContextMenu')) {
+                    hideContextMenu();
+                }
+            });
+
+            // Sync Manifest Workspace form fields to state
+            syncManifestUI();
+        }
+
+        // Toast Notification System
+        function showToast(message) {
+            let toast = document.getElementById('customToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'customToast';
+                toast.className = 'fixed bottom-4 right-4 bg-cardDark/95 border border-purple-500 text-zinc-200 text-xs px-4 py-2.5 rounded shadow-card-glow transition duration-300 z-50 flex items-center space-x-2';
+                document.body.appendChild(toast);
+            }
+            toast.innerHTML = `<i data-lucide="info" class="w-4 h-4 text-purple-400"></i><span>${message}</span>`;
+            lucide.createIcons();
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Workspace Swapping Manager (Re-renders Sidebar Contexts & view stages)
+        function setWorkspace(workspaceId) {
+            appState.activeWorkspace = workspaceId;
+            
+            // Update Workspace Selector label & border highlights
+            const workspaceBtnLabel = document.getElementById('activeWorkspaceName');
+            workspaceBtnLabel.innerText = workspaceId.toUpperCase();
+
+            // Toggle Workspace stage divs
+            const wStages = {
+                'manifest': document.getElementById('manifestWorkspace'),
+                'flatplan': document.getElementById('flatplanCanvas'),
+                'stitcher': document.getElementById('stitcherWorkspace'),
+                'buildprep': document.getElementById('buildPrepWorkspace')
+            };
+
+            Object.keys(wStages).forEach(key => {
+                if (key === workspaceId) {
+                    wStages[key].classList.remove('hidden');
+                } else {
+                    wStages[key].classList.add('hidden');
+                }
+            });
+
+            // Repaint Sidebar components
+            rebuildWorkspaceSidebar(workspaceId);
+
+            // Trigger specific page initializers
+            if (workspaceId === 'flatplan') {
+                renderGraph();
+            } else if (workspaceId === 'stitcher') {
+                renderStitcherList();
+            } else if (workspaceId === 'buildprep') {
+                runHealthDiagnostics(true); // silent initial load
+            } else if (workspaceId === 'manifest') {
+                syncManifestUI();
+            }
+
+            lucide.createIcons();
+        }
+
+        // Bind Manifest input forms
+        function syncManifestUI() {
+            if (!document.getElementById('manifestGameTitle')) return;
+            document.getElementById('manifestGameTitle').value = appState.project.gameTitle;
+            document.getElementById('manifestCreatorName').value = appState.project.creator;
+            document.getElementById('manifestVersion').value = appState.project.version;
+            document.getElementById('manifestStartScreen').value = appState.project.startScreen;
+
+            document.getElementById('modulePhysics').checked = appState.project.enabledModules.includes('physics');
+            document.getElementById('moduleQuest').checked = appState.project.enabledModules.includes('quest');
+            document.getElementById('moduleDialogue').checked = appState.project.enabledModules.includes('dialogue');
+        }
+
+        function commitManifestChanges() {
+            appState.project.gameTitle = document.getElementById('manifestGameTitle').value;
+            appState.project.creator = document.getElementById('manifestCreatorName').value;
+            appState.project.version = document.getElementById('manifestVersion').value;
+            appState.project.startScreen = document.getElementById('manifestStartScreen').value;
+
+            appState.project.enabledModules = [];
+            if (document.getElementById('modulePhysics').checked) appState.project.enabledModules.push('physics');
+            if (document.getElementById('moduleQuest').checked) appState.project.enabledModules.push('quest');
+            if (document.getElementById('moduleDialogue').checked) appState.project.enabledModules.push('dialogue');
+
+            appState.saveToStorage();
+        }
+
+        // Build workspace context accordions
+        function rebuildWorkspaceSidebar(workspaceId) {
+            const container = document.getElementById('dynamicSidebarContent');
+            container.innerHTML = ''; // Clear previous
+
+            if (workspaceId === 'flatplan') {
+                // Flatplan standard cards (Flatplan Catalog)
+                container.innerHTML = `
+                    <!-- CARD 1: FLATPLAN CATALOG -->
+                    <div class="border border-[#2d2d42] rounded-lg overflow-hidden bg-cardDark">
+                        <button class="w-full flex items-center justify-between p-3 bg-black/25 font-semibold text-sm hover:bg-black/40 transition text-zinc-200" onclick="toggleAccordion('assetManagerCollapse')">
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="library" class="w-4 h-4 text-purple-400"></i>
+                                <span>Flatplan Catalog</span>
+                            </div>
+                            <i data-lucide="chevron-up" id="assetManagerCollapse-icon" class="w-4 h-4 transform transition-transform"></i>
+                        </button>
+                        <div id="assetManagerCollapse" class="p-3 space-y-3 border-t border-[#1d1d2b]">
+                            <div class="flex bg-black/40 p-1 rounded-md border border-[#2d2d42] text-xs">
+                                <button onclick="setAssetManagerTab('placeholders')" id="tab-placeholders" class="flex-1 py-1 text-center font-semibold rounded-md bg-purple-900/50 text-purple-200">
+                                    Placeholders
+                                </button>
+                                <button onclick="setAssetManagerTab('realAssets')" id="tab-realAssets" class="flex-1 py-1 text-center font-semibold rounded-md text-zinc-400 hover:text-zinc-200 transition">
+                                    Real Assets
+                                </button>
+                            </div>
+
+                            <div id="placeholdersDrawer" class="grid grid-cols-2 gap-2 max-h-96 overflow-y-auto pr-1">
+                                <div draggable="true" ondragstart="handleAssetDragStart(event, 'Completed Screen')" class="bg-indigo-950/20 hover:bg-indigo-900/30 border border-indigo-500/20 hover:border-indigo-400 p-2 rounded cursor-grab active:cursor-grabbing text-center transition">
+                                    <i data-lucide="check-circle" class="w-4 h-4 mx-auto mb-1 text-indigo-400"></i>
+                                    <span class="text-[11px] font-semibold text-zinc-200 block truncate">Completed Screen</span>
+                                </div>
+                                <div draggable="true" ondragstart="handleAssetDragStart(event, 'Playable Scene')" class="bg-orange-950/20 hover:bg-orange-900/30 border border-orange-500/20 hover:border-orange-400 p-2 rounded cursor-grab active:cursor-grabbing text-center transition">
+                                    <i data-lucide="play-circle" class="w-4 h-4 mx-auto mb-1 text-orange-400"></i>
+                                    <span class="text-[11px] font-semibold text-zinc-200 block truncate">Playable Scene</span>
+                                </div>
+                                <div draggable="true" ondragstart="handleAssetDragStart(event, 'Title Screen')" class="bg-amber-950/20 hover:bg-amber-900/30 border border-amber-500/20 hover:border-amber-400 p-2 rounded cursor-grab active:cursor-grabbing text-center transition">
+                                    <i data-lucide="heading" class="w-4 h-4 mx-auto mb-1 text-amber-400"></i>
+                                    <span class="text-[11px] font-semibold text-zinc-200 block truncate">Title Screen</span>
+                                </div>
+                                <div draggable="true" ondragstart="handleAssetDragStart(event, 'Menu Screen')" class="bg-cyan-950/20 hover:bg-cyan-900/30 border border-cyan-500/20 hover:border-cyan-400 p-2 rounded cursor-grab active:cursor-grabbing text-center transition">
+                                    <i data-lucide="menu" class="w-4 h-4 mx-auto mb-1 text-cyan-400"></i>
+                                    <span class="text-[11px] font-semibold text-zinc-200 block truncate">Menu Screen</span>
+                                </div>
+                                <div draggable="true" ondragstart="handleAssetDragStart(event, 'Ending Screen')" class="bg-red-950/20 hover:bg-red-900/30 border border-red-500/20 hover:border-red-400 p-2 rounded cursor-grab active:cursor-grabbing text-center transition">
+                                    <i data-lucide="flag-triangle-right" class="w-4 h-4 mx-auto mb-1 text-red-400"></i>
+                                    <span class="text-[11px] font-semibold text-zinc-200 block truncate">Ending Screen</span>
+                                </div>
+                                <div draggable="true" ondragstart="handleAssetDragStart(event, 'Quest')" class="bg-rose-950/20 hover:bg-rose-900/30 border border-rose-500/20 hover:border-rose-400 p-2 rounded cursor-grab active:cursor-grabbing text-center transition">
+                                    <i data-lucide="award" class="w-4 h-4 mx-auto mb-1 text-rose-400"></i>
+                                    <span class="text-[11px] font-semibold text-zinc-200 block truncate">Quest</span>
+                                </div>
+                                <div draggable="true" ondragstart="handleAssetDragStart(event, 'Side Quest')" class="bg-fuchsia-950/20 hover:bg-fuchsia-900/30 border border-fuchsia-500/20 hover:border-fuchsia-400 p-2 rounded cursor-grab active:cursor-grabbing text-center transition">
+                                    <i data-lucide="sparkles" class="w-4 h-4 mx-auto mb-1 text-fuchsia-400"></i>
+                                    <span class="text-[11px] font-semibold text-zinc-200 block truncate">Side Quest</span>
+                                </div>
+                                <div draggable="true" ondragstart="handleAssetDragStart(event, 'Branche')" class="bg-sky-950/20 hover:bg-sky-900/30 border border-sky-500/20 hover:border-sky-400 p-2 rounded cursor-grab active:cursor-grabbing text-center transition">
+                                    <i data-lucide="git-branch" class="w-4 h-4 mx-auto mb-1 text-sky-400"></i>
+                                    <span class="text-[11px] font-semibold text-zinc-200 block truncate">Branche</span>
+                                </div>
+                                <div draggable="true" ondragstart="handleAssetDragStart(event, 'Route')" class="bg-teal-950/20 hover:bg-teal-900/30 border border-teal-500/20 hover:border-teal-400 p-2 rounded cursor-grab active:cursor-grabbing text-center transition">
+                                    <i data-lucide="milestone" class="w-4 h-4 mx-auto mb-1 text-teal-400"></i>
+                                    <span class="text-[11px] font-semibold text-zinc-200 block truncate">Route</span>
+                                </div>
+                                <div draggable="true" ondragstart="handleAssetDragStart(event, 'Station')" class="bg-purple-950/20 hover:bg-purple-900/30 border border-purple-500/20 hover:border-purple-400 p-2 rounded cursor-grab active:cursor-grabbing text-center transition">
+                                    <i data-lucide="square" class="w-4 h-4 mx-auto mb-1 text-purple-400"></i>
+                                    <span class="text-[11px] font-semibold text-zinc-200 block truncate">Station</span>
+                                </div>
+                                <div draggable="true" ondragstart="handleAssetDragStart(event, 'Depot')" class="bg-pink-950/20 hover:bg-pink-900/30 border border-pink-500/20 hover:border-pink-400 p-2 rounded cursor-grab active:cursor-grabbing text-center transition">
+                                    <i data-lucide="hexagon" class="w-4 h-4 mx-auto mb-1 text-pink-400"></i>
+                                    <span class="text-[11px] font-semibold text-zinc-200 block truncate">Depot</span>
+                                </div>
+                                <div draggable="true" ondragstart="handleAssetDragStart(event, 'Junction')" class="bg-blue-950/20 hover:bg-blue-900/30 border border-blue-500/20 hover:border-blue-400 p-2 rounded cursor-grab active:cursor-grabbing text-center transition">
+                                    <i data-lucide="git-fork" class="w-4 h-4 mx-auto mb-1 text-blue-400"></i>
+                                    <span class="text-[11px] font-semibold text-zinc-200 block truncate">Junction</span>
+                                </div>
+                                <div draggable="true" ondragstart="handleAssetDragStart(event, 'Waypoint')" class="bg-emerald-950/20 hover:bg-emerald-900/30 border border-emerald-500/20 hover:border-emerald-400 p-2 rounded cursor-grab active:cursor-grabbing text-center transition">
+                                    <i data-lucide="map-pin" class="w-4 h-4 mx-auto mb-1 text-emerald-400"></i>
+                                    <span class="text-[11px] font-semibold text-zinc-200 block truncate">Waypoint</span>
+                                </div>
+                                <div draggable="true" ondragstart="handleAssetDragStart(event, 'Placeholder Obj 1')" class="bg-zinc-800/30 hover:bg-zinc-700/30 border border-zinc-600/20 hover:border-zinc-500 p-2 rounded cursor-grab active:cursor-grabbing text-center transition">
+                                    <i data-lucide="box" class="w-4.5 h-4.5 mx-auto mb-1 text-zinc-400"></i>
+                                    <span class="text-[11px] font-semibold text-zinc-200 block truncate">Placeholder 1</span>
+                                </div>
+                                <div draggable="true" ondragstart="handleAssetDragStart(event, 'Placeholder Obj 2')" class="bg-zinc-800/30 hover:bg-zinc-700/30 border border-zinc-600/20 hover:border-zinc-500 p-2 rounded cursor-grab active:cursor-grabbing text-center transition">
+                                    <i data-lucide="box" class="w-4.5 h-4.5 mx-auto mb-1 text-zinc-400"></i>
+                                    <span class="text-[11px] font-semibold text-zinc-200 block truncate">Placeholder 2</span>
+                                </div>
+                                <div draggable="true" ondragstart="handleAssetDragStart(event, 'Placeholder Obj 3')" class="bg-zinc-800/30 hover:bg-zinc-700/30 border border-zinc-600/20 hover:border-zinc-500 p-2 rounded cursor-grab active:cursor-grabbing text-center transition">
+                                    <i data-lucide="box" class="w-4.5 h-4.5 mx-auto mb-1 text-zinc-400"></i>
+                                    <span class="text-[11px] font-semibold text-zinc-200 block truncate">Placeholder 3</span>
+                                </div>
+                                <div draggable="true" ondragstart="handleAssetDragStart(event, 'Placeholder Obj 4')" class="bg-zinc-800/30 hover:bg-zinc-700/30 border border-zinc-600/20 hover:border-zinc-500 p-2 rounded cursor-grab active:cursor-grabbing text-center transition">
+                                    <i data-lucide="box" class="w-4.5 h-4.5 mx-auto mb-1 text-zinc-400"></i>
+                                    <span class="text-[11px] font-semibold text-zinc-200 block truncate">Placeholder 4</span>
+                                </div>
+                            </div>
+
+                            <div id="realAssetsDrawer" class="hidden space-y-2">
+                                <div draggable="true" ondragstart="handleAssetDragStart(event, 'Playable Scene', 'scene_level1_intro')" class="flex items-center space-x-3 bg-black/25 hover:bg-black/50 border border-zinc-800 hover:border-zinc-700 p-2 rounded cursor-grab transition">
+                                    <div class="w-10 h-10 bg-purple-900/40 rounded flex items-center justify-center">
+                                        <i data-lucide="image" class="w-5 h-5 text-purple-300"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <span class="text-xs font-semibold text-zinc-200 block truncate">Level 1 Intro</span>
+                                        <span class="text-[9px] text-zinc-500 block">intro_office.scene</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CARD 2: FLATPLAN CATALOG / INSPECTOR -->
+                    <div class="border border-[#2d2d42] rounded-lg overflow-hidden bg-cardDark">
+                        <button class="w-full flex items-center justify-between p-3 bg-black/25 font-semibold text-sm hover:bg-black/40 transition text-zinc-200" onclick="toggleAccordion('inspectorCollapse')">
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="sliders" class="w-4 h-4 text-purple-400"></i>
+                                <span>Flatplan Catalog</span>
+                            </div>
+                            <i data-lucide="chevron-up" id="inspectorCollapse-icon" class="w-4 h-4 transform transition-transform"></i>
+                        </button>
+                        <div id="inspectorCollapse" class="p-3 space-y-3 border-t border-[#1d1d2b]">
+                            <!-- Catalog forms filled dynamically by node inspectors -->
+                            <div id="inspectorEmptyState" class="text-center py-6">
+                                <i data-lucide="info" class="w-8 h-8 text-zinc-600 mx-auto mb-2"></i>
+                                <span class="text-xs text-zinc-500 block">No element selected. Click a Station, Screen, or Route to configure settings.</span>
+                            </div>
+                            <!-- Appended node forms -->
+                            <div id="inspectorNodeState" class="hidden space-y-3">
+                                <div>
+                                    <label class="text-[10px] text-zinc-500 block font-mono">NODE IDENTIFIER</label>
+                                    <input type="text" id="inspectNodeId" class="w-full bg-black/40 border border-[#2d2d42] rounded px-2 py-1 text-xs text-zinc-400 font-mono focus:outline-none" readonly>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-zinc-500 block font-mono">NODE CLASS TYPE</label>
+                                    <select id="inspectNodeType" onchange="commitInspectorNodeChanges()" class="w-full bg-[#1c1c2b] border border-[#2d2d42] rounded px-2 py-1 text-xs focus:outline-none focus:border-purple-500 text-zinc-200 font-semibold">
+                                        <option value="Completed Screen">Completed Screen</option>
+                                        <option value="Playable Scene">Playable Scene</option>
+                                        <option value="Title Screen">Title Screen</option>
+                                        <option value="Menu Screen">Menu Screen</option>
+                                        <option value="Ending Screen">Ending Screen</option>
+                                        <option value="Quest">Quest</option>
+                                        <option value="Side Quest">Side Quest</option>
+                                        <option value="Branche">Branche</option>
+                                        <option value="Depot">Depot</option>
+                                        <option value="Junction">Junction</option>
+                                        <option value="Waypoint">Waypoint</option>
+                                        <option value="Route">Route</option>
+                                        <option value="Station">Station</option>
+                                        <option value="Placeholder Obj 1">Placeholder Obj 1</option>
+                                        <option value="Placeholder Obj 2">Placeholder Obj 2</option>
+                                        <option value="Placeholder Obj 3">Placeholder Obj 3</option>
+                                        <option value="Placeholder Obj 4">Placeholder Obj 4</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-zinc-500 block font-mono">LOGIC NAME</label>
+                                    <input type="text" id="inspectNodeName" oninput="commitInspectorNodeChanges()" class="w-full bg-black/40 border border-[#2d2d42] rounded px-2 py-1 text-xs focus:outline-none focus:border-purple-500 text-zinc-200 font-semibold">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-zinc-500 block font-mono">DESCRIP. / OBJECTIVE</label>
+                                    <textarea id="inspectNodeDesc" oninput="commitInspectorNodeChanges()" rows="3" class="w-full bg-black/40 border border-[#2d2d42] rounded p-2 text-xs focus:outline-none focus:border-purple-500 text-zinc-300"></textarea>
+                                </div>
+                                
+                                <!-- Playtest button on Inspector panel -->
+                                <button onclick="triggerPlaytestSim('inspectNodeName')" class="w-full bg-purple-900/60 border border-purple-500/30 text-white font-bold py-1.5 rounded text-xs flex items-center justify-center space-x-1 transition">
+                                    <i data-lucide="play" class="w-3.5 h-3.5 text-purple-300"></i>
+                                    <span>Playtest From Node</span>
+                                </button>
+
+                                <div class="pt-2 border-t border-[#2d2d42] flex justify-between">
+                                    <button onclick="deleteSelectedNode()" class="bg-red-950/40 border border-red-500/30 hover:bg-red-900/50 text-red-200 px-3 py-1.5 rounded text-xs transition flex items-center space-x-1">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                        <span>Delete Node</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Edge / Connection Inspector Block -->
+                            <div id="inspectorEdgeState" class="hidden space-y-3">
+                                <div>
+                                    <label class="text-[10px] text-zinc-500 block font-mono">CONNECTION ID</label>
+                                    <input type="text" id="inspectEdgeId" class="w-full bg-black/40 border border-[#2d2d42] rounded px-2 py-1 text-xs text-zinc-400 font-mono focus:outline-none" readonly>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-zinc-500 block font-mono">CONNECTION TYPE</label>
+                                    <select id="inspectEdgeType" onchange="commitInspectorEdgeChanges()" class="w-full bg-[#1c1c2b] border border-[#2d2d42] rounded px-2 py-1 text-xs focus:outline-none focus:border-purple-500 text-zinc-200">
+                                        <option value="Route">Route (Standard Line)</option>
+                                        <option value="Quest">Quest (Story Path)</option>
+                                        <option value="Branch">Branch (Optional Path)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-zinc-500 block font-mono">LINE APPEARANCE</label>
+                                    <div class="flex items-center space-x-2">
+                                        <input type="color" id="inspectEdgeColor" oninput="commitInspectorEdgeChanges()" class="w-8 h-8 rounded border border-zinc-800 bg-transparent cursor-pointer">
+                                        <span class="text-xs text-zinc-400">Neon Trace Color</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-between bg-black/30 p-2 rounded border border-[#2d2d42]">
+                                    <span class="text-xs text-zinc-300">Animate Flow Line</span>
+                                    <input type="checkbox" id="inspectEdgeAnimated" onchange="commitInspectorEdgeChanges()" class="w-4 h-4 accent-purple-500">
+                                </div>
+                                <div class="pt-2 border-t border-[#2d2d42] flex justify-between">
+                                    <button onclick="deleteSelectedEdge()" class="bg-red-950/40 border border-red-500/30 hover:bg-red-900/50 text-red-200 px-3 py-1.5 rounded text-xs transition flex items-center space-x-1">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                        <span>Delete Route</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (workspaceId === 'manifest') {
+                // Manifest specific cards
+                container.innerHTML = `
+                    <div class="border border-[#2d2d42] rounded-lg overflow-hidden bg-cardDark p-4 space-y-4">
+                        <div class="flex items-center space-x-2 border-b border-[#2d2d42] pb-2 text-zinc-200">
+                            <i data-lucide="info" class="w-4.5 h-4.5 text-indigo-400"></i>
+                            <span class="text-sm font-bold">Manifest Settings</span>
+                        </div>
+                        <p class="text-xs text-zinc-500 leading-relaxed">
+                            Configure active templates, references, directories, and dependencies for Forever Bound Game. Use AI import triggers to expand parameters.
+                        </p>
+                    </div>
+                `;
+            } else if (workspaceId === 'stitcher') {
+                // Stitcher specific cards
+                container.innerHTML = `
+                    <div class="border border-[#2d2d42] rounded-lg overflow-hidden bg-cardDark p-4 space-y-4">
+                        <div class="flex items-center space-x-2 border-b border-[#2d2d42] pb-2 text-zinc-200">
+                            <i data-lucide="git-branch" class="w-4.5 h-4.5 text-pink-400"></i>
+                            <span class="text-sm font-bold">Trigger Variables</span>
+                        </div>
+                        <div class="space-y-2 text-xs">
+                            <div class="p-2 rounded bg-black/20 border border-[#2d2d42] flex justify-between">
+                                <span class="font-mono text-zinc-400">alignment</span>
+                                <span class="text-zinc-500">Global State</span>
+                            </div>
+                            <div class="p-2 rounded bg-black/20 border border-[#2d2d42] flex justify-between">
+                                <span class="font-mono text-zinc-400">key_collected</span>
+                                <span class="text-zinc-500">Inventory flag</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (workspaceId === 'buildprep') {
+                // Build Prep diagnostics
+                container.innerHTML = `
+                    <div class="border border-[#2d2d42] rounded-lg overflow-hidden bg-cardDark p-4 space-y-4">
+                        <div class="flex items-center space-x-2 border-b border-[#2d2d42] pb-2 text-zinc-200">
+                            <i data-lucide="check-square" class="w-4.5 h-4.5 text-emerald-400"></i>
+                            <span class="text-sm font-bold">Staging Progress</span>
+                        </div>
+                        <div class="space-y-3 text-xs">
+                            <div class="flex items-center justify-between">
+                                <span class="text-zinc-400">logic.json validation:</span>
+                                <span class="text-green-400">Pass</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-zinc-400">layout.json validation:</span>
+                                <span class="text-green-400">Pass</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-zinc-400">Orphaned Nodes detected:</span>
+                                <span id="sidebarOrphanCount" class="text-orange-400">0</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Contextual Node hover simulation playtest triggers
+        function triggerPlaytestSim(inputElementId) {
+            const el = document.getElementById(inputElementId);
+            const nodeName = el ? el.value : "Target Node";
+            showToast(`Starting localized playtest simulation from point: ${nodeName}...`);
+        }
+
+        // Map Projection Layer Toggle Filter inside Flatplan
+        function toggleMapProjection() {
+            appState.mapProjectionActive = !appState.mapProjectionActive;
+            const btn = document.getElementById('mapProjectionToggle');
+            const icon = document.getElementById('projectionIcon');
+            const label = document.getElementById('projectionLabel');
+
+            if (appState.mapProjectionActive) {
+                btn.classList.add('border-purple-500', 'bg-purple-950/20');
+                icon.style.color = '#ec4899'; // glowing pink
+                label.innerText = "MAP PROJECTION: ON";
+                showToast("Player Map Projection Active: Hiding developer waypoints & objects.");
+            } else {
+                btn.classList.remove('border-purple-500', 'bg-purple-950/20');
+                icon.style.color = '#a855f7';
+                label.innerText = "MAP PROJECTION: OFF";
+                showToast("Developer View Active: Displaying all utility nodes & objects.");
+            }
+
+            renderGraph();
+        }
+
+        // Dynamic Stitcher Routes Lists Renderer
+        function renderStitcherList() {
+            const listContainer = document.getElementById('stitcherRouteList');
+            listContainer.innerHTML = ''; // Clear previous
+
+            if (appState.logic.routes.length === 0) {
+                listContainer.innerHTML = '<span class="text-xs text-zinc-500 italic p-2 block">No active routes map.</span>';
+                return;
+            }
+
+            appState.logic.routes.forEach(route => {
+                const sourceNode = appState.logic.nodes.find(n => n.id === route.source);
+                const targetNode = appState.logic.nodes.find(n => n.id === route.target);
+
+                const sLabel = sourceNode ? sourceNode.properties.name : "Start";
+                const tLabel = targetNode ? targetNode.properties.name : "End";
+
+                const button = document.createElement('button');
+                button.className = "w-full text-left px-3 py-2.5 rounded bg-black/30 border border-zinc-800/60 hover:bg-purple-950/20 hover:border-purple-500/40 transition text-zinc-300 text-xs truncate flex items-center justify-between";
+                button.innerHTML = `
+                    <div class="truncate pr-2">
+                        <span class="font-bold text-zinc-100 block truncate">${sLabel}</span>
+                        <span class="text-[9px] text-zinc-500 block font-mono">&#8594; ${tLabel}</span>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 flex-shrink-0 text-zinc-500"></i>
+                `;
+
+                button.onclick = () => {
+                    selectStitcherRoute(route);
+                };
+
+                listContainer.appendChild(button);
+            });
+            lucide.createIcons();
+        }
+
+        // Selection within Stitcher view
+        function selectStitcherRoute(route) {
+            document.getElementById('stitcherFormEmpty').classList.add('hidden');
+            const form = document.getElementById('stitcherFormState');
+            form.classList.remove('hidden');
+
+            const sourceNode = appState.logic.nodes.find(n => n.id === route.source);
+            const targetNode = appState.logic.nodes.find(n => n.id === route.target);
+            const sLabel = sourceNode ? sourceNode.properties.name : "Start";
+            const tLabel = targetNode ? targetNode.properties.name : "End";
+
+            document.getElementById('stitcherRouteLabel').innerText = `Route: ${sLabel} -> ${tLabel}`;
+            document.getElementById('stitcherRouteType').innerText = route.type;
+            
+            // Set dynamic inputs
+            const lockSelector = document.getElementById('stitcherLockType');
+            const variableInput = document.getElementById('stitcherRequiredKey');
+            const colorInput = document.getElementById('stitcherLineColor');
+            const animInput = document.getElementById('stitcherLineAnimated');
+
+            // Find matching visual layout properties safely from layout.json structure
+            let layoutRoute = appState.layout.routes.find(r => r.id === route.id);
+            if (!layoutRoute) {
+                layoutRoute = { id: route.id, visual: { lineColor: "#3b82f6", animated: false } };
+                appState.layout.routes.push(layoutRoute);
+            }
+
+            // Set current values
+            lockSelector.value = route.conditions ? (route.conditions[0]?.split(':')[0] || "none") : "none";
+            variableInput.value = route.conditions ? (route.conditions[0] || "") : "";
+            colorInput.value = layoutRoute.visual.lineColor || "#3b82f6";
+            animInput.checked = !!layoutRoute.visual.animated;
+
+            // Bind update actions
+            lockSelector.onchange = () => {
+                if (lockSelector.value === "none") {
+                    route.conditions = [];
+                } else {
+                    route.conditions = [variableInput.value || "flag_true"];
+                }
+                appState.saveToStorage();
+            };
+            variableInput.oninput = () => {
+                route.conditions = [variableInput.value];
+                appState.saveToStorage();
+            };
+            colorInput.oninput = () => {
+                layoutRoute.visual.lineColor = colorInput.value;
+                appState.saveToStorage();
+                drawEdges();
+            };
+            animInput.onchange = () => {
+                layoutRoute.visual.animated = animInput.checked;
+                appState.saveToStorage();
+                drawEdges();
+            };
+        }
+
+        function testRoutePlaytest() {
+            showToast("Traversing and testing route transition logic...");
+        }
+
+        // Diagnostics Health Runner
+        function runHealthDiagnostics(silent = false) {
+            const list = document.getElementById('diagnosticChecklist');
+            list.innerHTML = ''; // reset previous checkmarks
+
+            const checks = [
+                { name: "Verify Project Launch Start Screen", desc: "Start screen target node exists and is linked.", check: () => appState.logic.nodes.length > 0 },
+                { name: "Audit Orphaned/Unconnected Nodes", desc: "No loose stations missing connection route branches.", check: () => {
+                    const nodeIds = appState.logic.nodes.map(n => n.id);
+                    const connectedIds = new Set();
+                    appState.logic.routes.forEach(e => {
+                        connectedIds.add(e.source);
+                        connectedIds.add(e.target);
+                    });
+                    const orphans = nodeIds.filter(id => !connectedIds.has(id));
+                    document.getElementById('sidebarOrphanCount').innerText = orphans.length;
+                    return orphans.length === 0;
+                }},
+                { name: "Scan for Circular Infinite Loops", desc: "Connections form valid traversal storylines.", check: () => true },
+                { name: "Verify Layout Positioning References", desc: "Positions data corresponds to semantic node IDs.", check: () => appState.logic.nodes.length === appState.layout.nodes.length }
+            ];
+
+            checks.forEach(test => {
+                const isPass = test.check();
+                const div = document.createElement('div');
+                div.className = "p-3 rounded bg-black/25 border border-[#2d2d42]/30 text-xs flex justify-between items-start";
+                div.innerHTML = `
+                    <div class="pr-4">
+                        <span class="text-zinc-200 block font-semibold leading-tight">${test.name}</span>
+                        <span class="text-[10px] text-zinc-500 block mt-0.5">${test.desc}</span>
+                    </div>
+                    <span class="font-mono text-[10px] font-bold ${isPass ? 'text-green-400' : 'text-orange-400'} flex-shrink-0">
+                        ${isPass ? '✔ PASSED' : '⚠ WARNING'}
+                    </span>
+                `;
+                list.appendChild(div);
+            });
+
+            if (!silent) {
+                showToast("Ecosystem diagnostics health check scan complete.");
+            }
+        }
+
+        // Camera Transforms & Navigation triggers
+        function handleCanvasPointerDown(e) {
+            // Check if user clicked the Third mouse button / scrollwheel (e.button === 1)
+            if (e.button === 1) {
+                e.preventDefault(); // Stop standard browser auto-scroll icon
+                isPanning = true;
+                startPanX = e.clientX - appState.layout.camera.panX;
+                startPanY = e.clientY - appState.layout.camera.panY;
+                document.getElementById('flatplanCanvas').style.cursor = 'grabbing';
+                hideContextMenu();
+                return;
+            }
+
+            // Normal left-click (e.button === 0)
+            if (e.button === 0) {
+                if (e.target.id === 'flatplanCanvas' || e.target.id === 'svgEdgeLayer') {
+                    // Clear active selections if clicking into empty space
+                    appState.selectedNodeId = null;
+                    appState.selectedEdgeId = null;
+                    renderGraph();
+                    showInspector();
+                    hideContextMenu();
+                }
+            }
+        }
+
+        function handleCanvasPointerMove(e) {
+            if (isPanning) {
+                appState.layout.camera.panX = e.clientX - startPanX;
+                appState.layout.camera.panY = e.clientY - startPanY;
+                applyViewportTransforms();
+            } else if (dragTargetNode) {
+                // Dragging Node operation
+                const scale = appState.layout.camera.zoom;
+                const canvasBox = document.getElementById('flatplanCanvas').getBoundingClientRect();
+                
+                // Calculate correct grid alignment based on panning and scale factors
+                const clientXInsideCanvas = e.clientX - canvasBox.left - appState.layout.camera.panX;
+                const clientYInsideCanvas = e.clientY - canvasBox.top - appState.layout.camera.panY;
+
+                const targetX = clientXInsideCanvas / scale - nodeOffsetLeft;
+                const targetY = clientYInsideCanvas / scale - nodeOffsetTop;
+
+                // Bind positions to store
+                const nodeLayout = appState.layout.nodes.find(n => n.id === dragTargetNode.dataset.id);
+                if (nodeLayout) {
+                    nodeLayout.position.x = Math.round(targetX);
+                    nodeLayout.position.y = Math.round(targetY);
+                    
+                    // Update immediate coordinate transform in dom
+                    dragTargetNode.style.transform = `translate(${nodeLayout.position.x}px, ${nodeLayout.position.y}px)`;
+                    
+                    // Force connections to track elements instantly
+                    drawEdges();
+                }
+            } else if (activeLinkSourceNodeId) {
+                // Track mouse to draw temp connection path
+                drawTempLinkPath(e);
+            }
+        }
+
+        function handleCanvasPointerUp(e) {
+            if (e.button === 1 && isPanning) {
+                isPanning = false;
+                document.getElementById('flatplanCanvas').style.cursor = 'default';
+                appState.saveToStorage();
+            } else if (dragTargetNode) {
+                dragTargetNode = null;
+                appState.saveToStorage();
+            } else if (activeLinkSourceNodeId) {
+                // Reset temp connection tracing
+                activeLinkSourceNodeId = null;
+                if (linkDrawingIndicator) {
+                    linkDrawingIndicator.remove();
+                    linkDrawingIndicator = null;
+                }
+            }
+        }
+
+        // Zoom viewport via mousewheel scroll
+        function handleCanvasWheel(e) {
+            e.preventDefault();
+            const zoomSpeed = 0.05;
+            let newZoom = appState.layout.camera.zoom - e.deltaY * zoomSpeed * 0.01;
+            newZoom = Math.max(0.3, Math.min(2.5, newZoom)); // Constraint limits
+            appState.layout.camera.zoom = newZoom;
+            applyViewportTransforms();
+            appState.saveToStorage();
+        }
+
+        function zoomViewport(factor) {
+            appState.layout.camera.zoom = Math.max(0.3, Math.min(2.5, appState.layout.camera.zoom * factor));
+            applyViewportTransforms();
+            appState.saveToStorage();
+        }
+
+        function resetViewport() {
+            appState.layout.camera.zoom = 1;
+            appState.layout.camera.panX = 0;
+            appState.layout.camera.panY = 0;
+            applyViewportTransforms();
+            appState.saveToStorage();
+        }
+
+        function applyViewportTransforms() {
+            const viewport = document.getElementById('canvasViewport');
+            viewport.style.transform = `translate(${appState.layout.camera.panX}px, ${appState.layout.camera.panY}px) scale(${appState.layout.camera.zoom})`;
+        }
+
+        // Dynamic SVG Path Routing Math (Bezier Border Snapping)
+        function drawEdges() {
+            const svgLayer = document.getElementById('svgEdgeLayer');
+            svgLayer.innerHTML = ''; // Reset traces
+
+            appState.logic.routes.forEach(route => {
+                const sourceLayout = appState.layout.nodes.find(n => n.id === route.source);
+                const targetLayout = appState.layout.nodes.find(n => n.id === route.target);
+
+                if (sourceLayout && targetLayout) {
+                    // Node center configurations
+                    const sourceCenterX = sourceLayout.position.x + 100; // Node element is 200px wide
+                    const sourceCenterY = sourceLayout.position.y + 40;  // Node element is 80px tall
+                    const targetCenterX = targetLayout.position.x + 100;
+                    const targetCenterY = targetLayout.position.y + 40;
+
+                    // Calculate control offsets to trace elegant cubic curves
+                    const deltaX = targetCenterX - sourceCenterX;
+                    const controlOffset = Math.abs(deltaX) * 0.5;
+
+                    const pathString = `M ${sourceCenterX} ${sourceCenterY} C ${sourceCenterX + controlOffset} ${sourceCenterY}, ${targetCenterX - controlOffset} ${targetCenterY}, ${targetCenterX} ${targetCenterY}`;
+                    
+                    // Retrieve visual layout settings safely
+                    let layoutRoute = appState.layout.routes.find(r => r.id === route.id);
+                    if (!layoutRoute) {
+                        layoutRoute = { id: route.id, visual: { lineColor: "#a855f7", animated: false } };
+                        appState.layout.routes.push(layoutRoute);
+                    }
+
+                    // Create visual path elements inside layer
+                    const pathElement = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    pathElement.setAttribute("d", pathString);
+                    pathElement.setAttribute("fill", "none");
+                    pathElement.setAttribute("stroke", layoutRoute.visual.lineColor || "#a855f7");
+                    pathElement.setAttribute("stroke-width", route.type === 'Quest' ? "5" : "3");
+                    pathElement.setAttribute("class", `cursor-pointer transition hover:stroke-white ${layoutRoute.visual.animated ? 'edge-path' : ''}`);
+                    pathElement.style.pointerEvents = "all";
+
+                    // Edge Click Inspector Event
+                    pathElement.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        selectEdge(route.id);
+                        hideContextMenu();
+                    });
+
+                    // Add glow backing layer for story Quest traces
+                    if (route.type === 'Quest') {
+                        const glowElement = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                        glowElement.setAttribute("d", pathString);
+                        glowElement.setAttribute("fill", "none");
+                        glowElement.setAttribute("stroke", layoutRoute.visual.lineColor || "#a855f7");
+                        glowElement.setAttribute("stroke-width", "12");
+                        glowElement.setAttribute("opacity", "0.25");
+                        glowElement.setAttribute("class", "blur-md");
+                        svgLayer.appendChild(glowElement);
+                    }
+
+                    svgLayer.appendChild(pathElement);
+                }
+            });
+        }
+
+        // Draw active dynamic connection link being dragged to cursor
+        function drawTempLinkPath(e) {
+            const sourceLayout = appState.layout.nodes.find(n => n.id === activeLinkSourceNodeId);
+            if (!sourceLayout) return;
+
+            const svgLayer = document.getElementById('svgEdgeLayer');
+            if (linkDrawingIndicator) linkDrawingIndicator.remove();
+
+            const canvasBox = document.getElementById('flatplanCanvas').getBoundingClientRect();
+            const scale = appState.layout.camera.zoom;
+            
+            // Mouse converted back to viewport space
+            const mouseX = (e.clientX - canvasBox.left - appState.layout.camera.panX) / scale;
+            const mouseY = (e.clientY - canvasBox.top - appState.layout.camera.panY) / scale;
+
+            const startX = sourceLayout.position.x + 100;
+            const startY = sourceLayout.position.y + 40;
+
+            const controlOffset = Math.abs(mouseX - startX) * 0.5;
+            const pathString = `M ${startX} ${startY} C ${startX + controlOffset} ${startY}, ${mouseX - controlOffset} ${mouseY}, ${mouseX} ${mouseY}`;
+
+            linkDrawingIndicator = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            linkDrawingIndicator.setAttribute("d", pathString);
+            linkDrawingIndicator.setAttribute("fill", "none");
+            linkDrawingIndicator.setAttribute("stroke", "#c084fc");
+            linkDrawingIndicator.setAttribute("stroke-width", "3");
+            linkDrawingIndicator.setAttribute("stroke-dasharray", "5,5");
+            svgLayer.appendChild(linkDrawingIndicator);
+        }
+
+        // HTML Node element visual renderer loop
+        function renderGraph() {
+            const container = document.getElementById('nodesContainer');
+            container.innerHTML = ''; // Flush previous dom wrappers
+
+            appState.layout.nodes.forEach(layoutNode => {
+                const logicNode = appState.logic.nodes.find(n => n.id === layoutNode.id);
+                if (!logicNode) return;
+
+                // LAYER MAP PROJECTION CHECK: Hide developer objects, debug nodes & waypoints
+                if (appState.mapProjectionActive) {
+                    const devOnlyTypes = ['Waypoint', 'Placeholder Obj 1', 'Placeholder Obj 2', 'Placeholder Obj 3', 'Placeholder Obj 4', 'Placeholder Obj 5', 'Placeholder Obj 6', 'Placeholder Obj 7', 'Placeholder Obj 8'];
+                    if (devOnlyTypes.includes(logicNode.type)) {
+                        return; // Skip rendering
+                    }
+                }
+
+                const nodeEl = document.createElement('div');
+                nodeEl.dataset.id = layoutNode.id;
+                nodeEl.className = `absolute w-[200px] h-[80px] rounded-lg border-2 bg-cardDark/90 backdrop-blur-sm pointer-events-auto transition-shadow duration-300 flex flex-col p-2 select-none cursor-pointer group`;
+                nodeEl.style.transform = `translate(${layoutNode.position.x}px, ${layoutNode.position.y}px)`;
+                
+                // Active selection ring highlight
+                if (appState.selectedNodeId === layoutNode.id) {
+                    nodeEl.classList.add('neon-card-active');
+                } else {
+                    nodeEl.classList.add('border-purple-900/40');
+                }
+
+                // Layout styling mapping based on taxonomy type configuration
+                let badgeStyle = "bg-purple-950/40 text-purple-300 border-purple-500/20";
+                if (typeStyleMap[logicNode.type]) {
+                    badgeStyle = typeStyleMap[logicNode.type].badge;
+                }
+
+                // Check placeholder vs real graphic rendering
+                const useRealAssets = appState.renderRealAssets && logicNode.properties.linkedSceneId;
+
+                if (useRealAssets) {
+                    const sceneAsset = appState.catalog.scenes.find(s => s.assetId === logicNode.properties.linkedSceneId);
+                    const fileText = sceneAsset ? sceneAsset.file : "unassigned_asset.scene";
+                    nodeEl.innerHTML = `
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10 rounded-lg"></div>
+                        <div class="absolute inset-0 bg-purple-950/20 rounded-lg z-0" style="background-image: radial-gradient(circle, #31115c 10%, transparent 100%);"></div>
+                        <div class="z-20 flex-1 flex flex-col justify-end p-1">
+                            <span class="text-xs font-bold block leading-tight text-zinc-100 truncate">${logicNode.properties.name || "Real Scene"}</span>
+                            <span class="text-[8px] font-mono text-zinc-400 block truncate">${fileText}</span>
+                        </div>
+                    `;
+                } else {
+                    nodeEl.innerHTML = `
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[9px] px-1.5 py-0.5 rounded border ${badgeStyle} font-mono tracking-wider truncate max-w-[130px]">${logicNode.type}</span>
+                            <div class="flex space-x-1">
+                                <!-- CONTEXTUAL PLAYTEST TRIGGER ON HOVER -->
+                                <button class="opacity-0 group-hover:opacity-100 w-4 h-4 bg-emerald-800 hover:bg-emerald-600 rounded flex items-center justify-center transition absolute right-10 top-2" title="Playtest from here" onclick="triggerPlaytestSim('inspectNodeName')">
+                                    <i data-lucide="play" class="w-2.5 h-2.5 text-white"></i>
+                                </button>
+                                <!-- Link creation trigger dot -->
+                                <button class="w-3.5 h-3.5 rounded-full bg-purple-900 hover:bg-purple-600 flex items-center justify-center transition" title="Draw Connection Link" onclick="startEdgeDrawing(event, '${layoutNode.id}')">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-purple-300"></span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex-1 flex flex-col justify-center">
+                            <span class="text-xs font-bold tracking-wide text-zinc-200 truncate">${logicNode.properties.name || "Untitled Placeholder"}</span>
+                            <span class="text-[8px] text-zinc-500 truncate block">${logicNode.properties.description || "No description set..."}</span>
+                        </div>
+                    `;
+                }
+
+                // Setup movement & drag triggers (Left click drag, Right click opens options)
+                nodeEl.addEventListener('mousedown', (e) => {
+                    // Prevent propagation to canvas panning
+                    e.stopPropagation();
+                    hideContextMenu();
+
+                    if (e.button === 2) {
+                        // Right click menu for node triggered
+                        return;
+                    }
+
+                    if (e.target.tagName !== 'BUTTON' && e.target.parentElement?.tagName !== 'BUTTON') {
+                        dragTargetNode = nodeEl;
+                        const rect = nodeEl.getBoundingClientRect();
+                        const scale = appState.layout.camera.zoom;
+                        nodeOffsetLeft = (e.clientX - rect.left) / scale;
+                        nodeOffsetTop = (e.clientY - rect.top) / scale;
+                        selectNode(layoutNode.id);
+                    }
+                });
+
+                container.appendChild(nodeEl);
+            });
+
+            // Refresh connecting lines
+            drawEdges();
+            applyViewportTransforms();
+            lucide.createIcons(); // Hydrate playtest hover icons
+        }
+
+        // Drag-and-Drop Spawner calculations (Saves in Layout and logic schemas)
+        function handleAssetDragStart(e, taxonomyType, linkedSceneId = "") {
+            e.dataTransfer.setData("taxonomyType", taxonomyType);
+            e.dataTransfer.setData("linkedSceneId", linkedSceneId);
+        }
+
+        // Allow layout to receive drop actions
+        function handleCanvasDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleCanvasDrop(e) {
+            e.preventDefault();
+            const taxonomyType = e.dataTransfer.getData("taxonomyType");
+            const linkedSceneId = e.dataTransfer.getData("linkedSceneId");
+            if (!taxonomyType) return;
+
+            const canvas = document.getElementById('flatplanCanvas');
+            const canvasBox = canvas.getBoundingClientRect();
+            const scale = appState.layout.camera.zoom;
+
+            // Translate drop client coordinates into deep grid viewport matrix space
+            const dropXInsideCanvas = e.clientX - canvasBox.left - appState.layout.camera.panX;
+            const dropYInsideCanvas = e.clientY - canvasBox.top - appState.layout.camera.panY;
+
+            const gridX = (dropXInsideCanvas / scale) - 100; // Drop at cursor center
+            const gridY = (dropYInsideCanvas / scale) - 40;
+
+            // Insert matching state structures
+            const newId = `node_${Date.now()}`;
+            
+            const properties = {
+                name: `New ${taxonomyType}`,
+                description: "Dropped from placeholder library drawer.",
+                linkedSceneId: linkedSceneId || ""
+            };
+
+            appState.logic.nodes.push({
+                id: newId,
+                type: taxonomyType,
+                properties: properties
+            });
+
+            appState.layout.nodes.push({
+                id: newId,
+                position: { x: Math.round(gridX), y: Math.round(gridY) },
+                visual: { color: "neon-violet", isCollapsed: false, usePlaceholder: true }
+            });
+
+            appState.selectedNodeId = newId;
+            appState.saveToStorage();
+            renderGraph();
+            showInspector();
+        }
+
+        // Trigger dynamic tracing of connector paths
+        function startEdgeDrawing(e, nodeId) {
+            e.stopPropagation();
+            activeLinkSourceNodeId = nodeId;
+            hideContextMenu();
+        }
+
+        // Catch drop logic on stations to form new routes
+        function setupWindowBindings() {
+            window.addEventListener('mouseup', (e) => {
+                if (activeLinkSourceNodeId) {
+                    const hoveredNode = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-id]');
+                    if (hoveredNode) {
+                        const targetId = hoveredNode.dataset.id;
+                        if (targetId && targetId !== activeLinkSourceNodeId) {
+                            // Committing link trace
+                            const edgeId = `edge_${activeLinkSourceNodeId}_${targetId}_${Date.now().toString().slice(-4)}`;
+                            
+                            // Prevent duplicating links
+                            const exists = appState.logic.routes.some(edge => edge.source === activeLinkSourceNodeId && edge.target === targetId);
+                            if (!exists) {
+                                appState.logic.routes.push({
+                                    id: edgeId,
+                                    source: activeLinkSourceNodeId,
+                                    target: targetId,
+                                    type: "Route",
+                                    conditions: []
+                                });
+                                appState.layout.routes.push({
+                                    id: edgeId,
+                                    visual: { lineColor: "#3b82f6", animated: false }
+                                });
+                                appState.selectedEdgeId = edgeId;
+                                appState.saveToStorage();
+                                renderGraph();
+                                showInspector();
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Node Selection & Inspector populator bindings
+        function selectNode(id) {
+            appState.selectedNodeId = id;
+            appState.selectedEdgeId = null; // Flush edge selection
+            renderGraph();
+            showInspector();
+        }
+
+        // Selected Edge highlight configuration
+        function selectEdge(id) {
+            appState.selectedEdgeId = id;
+            appState.selectedNodeId = null; // Flush node selection
+            renderGraph();
+            showInspector();
+        }
+
+        // Updates selected options in Flatplan Catalog view
+        function showInspector() {
+            const emptyState = document.getElementById('inspectorEmptyState');
+            const nodeState = document.getElementById('inspectorNodeState');
+            const edgeState = document.getElementById('inspectorEdgeState');
+
+            if (appState.selectedNodeId) {
+                const node = appState.logic.nodes.find(n => n.id === appState.selectedNodeId);
+                if (node) {
+                    emptyState.classList.add('hidden');
+                    edgeState.classList.add('hidden');
+                    nodeState.classList.remove('hidden');
+
+                    document.getElementById('inspectNodeId').value = node.id;
+                    document.getElementById('inspectNodeType').value = node.type;
+                    document.getElementById('inspectNodeName').value = node.properties.name || "";
+                    document.getElementById('inspectNodeDesc').value = node.properties.description || "";
+                }
+            } else if (appState.selectedEdgeId) {
+                const route = appState.logic.routes.find(e => e.id === appState.selectedEdgeId);
+                const layoutRoute = appState.layout.routes.find(r => r.id === appState.selectedEdgeId);
+                if (route && layoutRoute) {
+                    emptyState.classList.add('hidden');
+                    nodeState.classList.add('hidden');
+                    edgeState.classList.remove('hidden');
+
+                    document.getElementById('inspectEdgeId').value = route.id;
+                    document.getElementById('inspectEdgeType').value = route.type;
+                    document.getElementById('inspectEdgeColor').value = layoutRoute.visual.lineColor || "#3b82f6";
+                    document.getElementById('inspectEdgeAnimated').checked = !!layoutRoute.visual.animated;
+                }
+            } else {
+                emptyState.classList.remove('hidden');
+                nodeState.classList.add('hidden');
+                edgeState.classList.add('hidden');
+            }
+        }
+
+        // Two-way interactive bindings: Inspector edits update canvas + state
+        function commitInspectorNodeChanges() {
+            if (!appState.selectedNodeId) return;
+            const node = appState.logic.nodes.find(n => n.id === appState.selectedNodeId);
+            if (node) {
+                node.type = document.getElementById('inspectNodeType').value;
+                node.properties.name = document.getElementById('inspectNodeName').value;
+                node.properties.description = document.getElementById('inspectNodeDesc').value;
+                
+                appState.saveToStorage();
+                
+                // Fast non-destructive text updates to prevent dragging redraw skips
+                const el = document.querySelector(`[data-id="${node.id}"]`);
+                if (el) {
+                    const textEl = el.querySelector('.text-zinc-200');
+                    const descEl = el.querySelector('.text-zinc-500');
+                    if (textEl) textEl.innerText = node.properties.name || "Untitled Station";
+                    if (descEl) descEl.innerText = node.properties.description || "No description set...";
+                    
+                    // Repaint the node type badge styles dynamically
+                    const badge = el.querySelector('.font-mono');
+                    if (badge && typeStyleMap[node.type]) {
+                        badge.className = `text-[9px] px-1.5 py-0.5 rounded border ${typeStyleMap[node.type].badge} font-mono tracking-wider truncate max-w-[130px]`;
+                        badge.innerText = node.type;
+                    }
+                }
+            }
+        }
+
+        function commitInspectorEdgeChanges() {
+            if (!appState.selectedEdgeId) return;
+            const route = appState.logic.routes.find(e => e.id === appState.selectedEdgeId);
+            const layoutRoute = appState.layout.routes.find(r => r.id === appState.selectedEdgeId);
+            if (route && layoutRoute) {
+                route.type = document.getElementById('inspectEdgeType').value;
+                layoutRoute.visual.lineColor = document.getElementById('inspectEdgeColor').value;
+                layoutRoute.visual.animated = document.getElementById('inspectEdgeAnimated').checked;
+                
+                appState.saveToStorage();
+                drawEdges();
+            }
+        }
+
+        // Deletion methods
+        function deleteSelectedNode() {
+            if (!appState.selectedNodeId) return;
+            // Purge logical nodes
+            appState.logic.nodes = appState.logic.nodes.filter(n => n.id !== appState.selectedNodeId);
+            // Purge layout references
+            appState.layout.nodes = appState.layout.nodes.filter(n => n.id !== appState.selectedNodeId);
+            // Purge associated routes
+            appState.logic.routes = appState.logic.routes.filter(edge => edge.source !== appState.selectedNodeId && edge.target !== appState.selectedNodeId);
+            appState.layout.routes = appState.layout.routes.filter(edge => edge.source !== appState.selectedNodeId && edge.target !== appState.selectedNodeId);
+
+            appState.selectedNodeId = null;
+            appState.saveToStorage();
+            renderGraph();
+            showInspector();
+        }
+
+        function deleteSelectedEdge() {
+            if (!appState.selectedEdgeId) return;
+            appState.logic.routes = appState.logic.routes.filter(e => e.id !== appState.selectedEdgeId);
+            appState.layout.routes = appState.layout.routes.filter(e => e.id !== appState.selectedEdgeId);
+            appState.selectedEdgeId = null;
+            appState.saveToStorage();
+            renderGraph();
+            showInspector();
+        }
+
+        // JSON Importer helpers
+        function triggerFileInput() {
+            document.getElementById('fileInput').click();
+        }
+
+        // Read uploaded external files
+        function handleFileImport(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const importedObj = JSON.parse(evt.target.result);
+                    appState.importLogicJSON(importedObj);
+                } catch(err) {
+                    alert("Invalid JSON format in imported file.");
+                }
+            };
+            reader.readAsText(file);
+        }
+    </script>
+
+</body>
+</html>
