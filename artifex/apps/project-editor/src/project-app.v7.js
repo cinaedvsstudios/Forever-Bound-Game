@@ -1,11 +1,11 @@
-import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.10-inspector';
-import { createProjectEditorStateManager } from './project-state.js?v=0.1.10-inspector';
-import { createProjectCanvasController } from './project-canvas.js?v=0.1.10-inspector';
-import { createProjectRenderer } from './project-renderer.js?v=0.1.10-inspector';
-import { createProjectUI } from './project-ui.js?v=0.1.10-inspector';
-import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.10-inspector';
-import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.10-inspector';
-import { getTypeStyle } from './data/type-styles.js?v=0.1.10-inspector';
+import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.11-integration';
+import { createProjectEditorStateManager } from './project-state.js?v=0.1.11-integration';
+import { createProjectCanvasController } from './project-canvas.js?v=0.1.11-integration';
+import { createProjectRenderer } from './project-renderer.js?v=0.1.11-integration';
+import { createProjectUI } from './project-ui.js?v=0.1.11-integration';
+import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.11-integration';
+import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.11-integration';
+import { getTypeStyle } from './data/type-styles.js?v=0.1.11-integration';
 
 applyProjectTheme();
 
@@ -22,7 +22,7 @@ window.ProjectEditorStateManager = state;
 
 function setVersion() {
   document.querySelectorAll('#projectEditorVersionBadge, [data-project-version-badge]').forEach((el) => {
-    el.textContent = 'v0.1.10 INSPECTOR';
+    el.textContent = 'v0.1.11 INTEGRATION';
   });
 }
 
@@ -34,6 +34,8 @@ function refresh({ soft = false } = {}) {
   ui?.wireTopCanvasControls();
   if (!soft && state.activeWorkspace === 'stitcher') renderStitcher();
   if (!soft && state.activeWorkspace === 'buildprep') renderBuildPrep();
+  if (!soft && state.activeWorkspace === 'assetbrowser') ui?.renderAssetBrowser?.();
+  if (!soft && state.activeWorkspace === 'wizard') ui?.renderGettingStartedWizard?.();
   if (window.lucide) window.lucide.createIcons();
 }
 
@@ -104,7 +106,7 @@ function init() {
 
   ui.setWorkspace(state.activeWorkspace || 'flatplan');
   refresh();
-  console.info('[Artifex Project Editor] v0.1.10 INSPECTOR loaded', {
+  console.info('[Artifex Project Editor] v0.1.11 INTEGRATION loaded', {
     nodes: state.logic.nodes.length,
     routes: state.logic.routes.length
   });
