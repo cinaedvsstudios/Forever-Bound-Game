@@ -3,6 +3,7 @@ import { createProjectEditorStateManager } from './project-state.js?v=0.1.11-int
 import { createProjectCanvasController } from './project-canvas.js?v=0.1.11-integration';
 import { createProjectRenderer } from './project-renderer.js?v=0.1.11-integration';
 import { createProjectUI } from './project-ui.js?v=0.1.11-integration';
+import { enhanceProjectUI } from './project-integration-ui.js?v=0.1.11-integration';
 import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.11-integration';
 import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.11-integration';
 import { getTypeStyle } from './data/type-styles.js?v=0.1.11-integration';
@@ -93,15 +94,18 @@ function init() {
     onInteractionEnd: () => redrawGraphOnly()
   });
 
-  ui = createProjectUI({
-    stateManager: state,
-    getTypeStyle,
-    renderer,
-    canvasController: canvas,
-    onRefresh: () => refresh(),
-    onGraphChanged: () => redrawGraphOnly(),
-    renderStitcher,
-    renderBuildPrep
+  ui = enhanceProjectUI({
+    ui: createProjectUI({
+      stateManager: state,
+      getTypeStyle,
+      renderer,
+      canvasController: canvas,
+      onRefresh: () => refresh(),
+      onGraphChanged: () => redrawGraphOnly(),
+      renderStitcher,
+      renderBuildPrep
+    }),
+    stateManager: state
   });
 
   ui.setWorkspace(state.activeWorkspace || 'flatplan');
