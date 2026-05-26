@@ -1,10 +1,10 @@
 import './template-card-enhancements.js?v=1.08';
-import './object-creator-workflows.js?v=1.09';
+import './object-creator-workflows.js?v=1.10';
 import { initRenderer } from './editor-renderer.js';
 import { initUI, showToast } from './editor-ui.js';
 import { validateCurrentArchetype } from './editor-state.js';
 
-const VERSION_LABEL = 'V1.09';
+const VERSION_LABEL = 'V1.10';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
