@@ -1,0 +1,23 @@
+{
+  "iconFolder": "artifex/apps/archetype-object-creator/v1/icons/object-archetypes/",
+  "requiredFiles": [
+    { "id": "person_static", "file": "person_static.png", "label": "Static Background Person", "group": "people" },
+    { "id": "person_npc_basic", "file": "person_npc_basic.png", "label": "Basic NPC", "group": "people" },
+    { "id": "person_npc_moving", "file": "person_npc_moving.png", "label": "Moving NPC", "group": "people" },
+    { "id": "person_vendor_job", "file": "person_vendor_job.png", "label": "Vendor / Job NPC", "group": "people" },
+    { "id": "person_companion", "file": "person_companion.png", "label": "Major NPC / Companion", "group": "people" },
+    { "id": "person_player_full", "file": "person_player_full.png", "label": "Player / Mel-Type", "group": "hero" },
+    { "id": "person_foe_human", "file": "person_foe_human.png", "label": "Human Foe / Guard / Bandit", "group": "hostile-human" },
+    { "id": "person_thrall", "file": "person_thrall.png", "label": "Possessed NPC / Thrall", "group": "possessed" },
+    { "id": "person_caster", "file": "person_caster.png", "label": "Caster / Ritualist", "group": "caster" },
+    { "id": "creature_foe", "file": "creature_foe.png", "label": "Creature Foe", "group": "creature" },
+    { "id": "boss_bellator", "file": "boss_bellator.png", "label": "Boss / Bellator", "group": "boss" },
+    { "id": "static_prop", "file": "static_prop.png", "label": "Static Prop", "group": "prop" },
+    { "id": "door_exit", "file": "door_exit.png", "label": "Door / Exit", "group": "door" },
+    { "id": "pickup", "file": "pickup.png", "label": "Pickup Item", "group": "pickup" },
+    { "id": "searchable_cache", "file": "searchable_cache.png", "label": "Searchable Cache", "group": "cache" },
+    { "id": "throwable_object", "file": "throwable_object.png", "label": "Throwable Object", "group": "interactable" },
+    { "id": "marker", "file": "marker.png", "label": "Stone Marker / Map Marker", "group": "marker" },
+    { "id": "hazard", "file": "hazard.png", "label": "Hazard", "group": "hazard" }
+  ]
+}
