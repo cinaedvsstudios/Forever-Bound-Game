@@ -44,10 +44,12 @@ function ensureDynamicsControls() {
   const dynamicsCard = cards.find((card) => card.querySelector('h2')?.textContent?.trim() === 'Effect Layer Dynamics');
   if (!dynamicsCard || document.getElementById('emitter-width-input')) return;
 
+  wrapExistingDynamicsRows();
+
   dynamicsCard.insertAdjacentHTML('beforeend', `
     <div class="dynamics-actions">
-      <button id="set-origin-button" type="button">Center Origin</button>
-      <button id="point-target-button" type="button">Aim at Target</button>
+      <button id="set-origin-button" type="button" title="Move the origin point to the centre of the stage.">Center Origin</button>
+      <button id="point-target-button" type="button" title="Rotate this directional effect so it aims toward the target point.">Aim at Target</button>
     </div>
     <div class="dynamics-grid">
       <label>Spawn Width
@@ -96,6 +98,21 @@ function ensureDynamicsControls() {
     </div>
     <p class="dynamics-note">Dynamics controls are restored as modular state. Width, rotation, drag, lifetime range, Orbital Force, and noise grain are wired into the runtime.</p>
   `);
+}
+
+function wrapExistingDynamicsRows() {
+  wrapLabelPair('emitter-x-input', 'emitter-y-input', 'compact-row compact-row-origin');
+  wrapLabelPair('speed-min-input', 'speed-max-input', 'compact-row compact-row-speed');
+}
+
+function wrapLabelPair(firstId, secondId, className) {
+  const first = document.getElementById(firstId)?.closest('label');
+  const second = document.getElementById(secondId)?.closest('label');
+  if (!first || !second || first.parentElement?.classList.contains('compact-row')) return;
+  const wrapper = document.createElement('div');
+  wrapper.className = className;
+  first.before(wrapper);
+  wrapper.append(first, second);
 }
 
 function bindDynamicsControls(showToast) {
