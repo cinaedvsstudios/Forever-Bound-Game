@@ -1,4 +1,6 @@
-import { editorState, getActiveLayer, onStateChange, updateActiveLayer, updateSyncedLayers } from './editor-state.js';
+import { editorState, getActiveLayer, notifyChange, onStateChange, updateActiveLayer, updateSyncedLayers } from './editor-state.js';
+
+const DEFAULT_TEXT = 'Lorem ipsum dolor sit amet\nconsectetur adipiscing elit';
 
 const CONTROL_CONFIG = {
   'electric-arc': {
@@ -13,7 +15,7 @@ const CONTROL_CONFIG = {
     ]
   },
   shockwave: {
-    title: 'Shockwave Pulse Controls',
+    title: 'Shockwave / Ring Controls',
     fields: [
       ['shockwaveRadius', 'Ring Radius', 'range', 20, 650, 1],
       ['shockwaveStartRadius', 'Start Offset', 'range', 0, 220, 1],
@@ -28,14 +30,14 @@ const CONTROL_CONFIG = {
     title: 'Radial Burst Controls',
     fields: [
       ['pulseMode', 'Emission Mode', 'select', ['once', 'loop', 'continuous']],
-      ['pulseDelay', 'Pulse Delay', 'range', 10, 240, 1],
-      ['burstCount', 'Burst Count', 'range', 6, 180, 1],
+      ['pulseDelay', 'Delay Between Bursts', 'range', 10, 240, 1],
+      ['burstCount', 'Particles per Burst', 'range', 6, 180, 1],
       ['burstDuration', 'Burst Duration', 'range', 1, 40, 1]
     ]
   },
   heatdistortion: {
     title: 'Heat Distortion Controls',
-    notice: 'Current V3.12 version is still a visual heat-haze overlay. True image/video pixel warping needs the next renderer pass.',
+    notice: 'Current version is still a visual heat-haze overlay. True image/video pixel warping needs the next renderer pass.',
     fields: [
       ['distortionStrength', 'Warp Strength', 'range', 0, 48, 1],
       ['distortionScale', 'Warp Scale', 'range', 4, 96, 1]
@@ -43,7 +45,7 @@ const CONTROL_CONFIG = {
   },
   'true-lensflare': {
     title: 'True Lens Flare Controls',
-    notice: 'Overlays will auto-load from artifex/apps/effect-editor/overlays when image files are added there.',
+    notice: 'Overlays auto-load from artifex/apps/effect-editor/overlays when image files are added there.',
     fields: [
       ['flareStreakLength', 'Streak Length', 'range', 20, 1000, 1],
       ['flareGhosts', 'Ghost Orbs', 'range', 0, 8, 1],
@@ -55,7 +57,7 @@ const CONTROL_CONFIG = {
   text: {
     title: 'Text Effect Controls',
     fields: [
-      ['textContent', 'Text', 'text'],
+      ['textContent', 'Text', 'textarea'],
       ['textFont', 'Font', 'select', ['Cinzel, Georgia, serif', 'Georgia, serif', 'Garamond, serif', 'Arial, sans-serif', 'monospace']],
       ['textAlign', 'Align', 'select', ['left', 'center', 'right']],
       ['textWeight', 'Weight', 'select', ['400', '500', '700', '900']],
@@ -63,6 +65,8 @@ const CONTROL_CONFIG = {
       ['textStroke', 'Stroke', 'checkbox'],
       ['textStrokeWidth', 'Stroke Width', 'range', 0, 8, 0.5],
       ['textLetterSpacing', 'Letter Spacing', 'range', 0, 12, 1],
+      ['textLineSpacing', 'Line Spacing', 'range', 0.8, 2.4, 0.05],
+      ['textBlockWidth', 'Block Width', 'range', 0, 900, 10],
       ['textRotation', 'Text Rotation', 'range', -180, 180, 1],
       ['textSizeOverride', 'Text Size', 'range', 0, 140, 1]
     ]
@@ -87,29 +91,18 @@ function injectStyles() {
       box-shadow: 0 0 0 1px rgba(0, 174, 234, .18), 0 0 18px rgba(0, 174, 234, .22);
     }
     #effect-specific-controls-card.is-hidden { display: none !important; }
-    .effect-specific-note {
-      color: var(--gold-muted);
-      font-size: 10px;
-      line-height: 1.35;
-      margin: 4px 0 12px;
-    }
-    .effect-specific-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
+    .effect-specific-note { color: var(--gold-muted); font-size: 10px; line-height: 1.35; margin: 4px 0 12px; }
+    .effect-specific-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .effect-specific-grid label.wide { grid-column: 1 / -1; }
+    .effect-specific-grid textarea { min-height: 92px; resize: vertical; line-height: 1.35; }
     .effect-specific-grid select { font-size: 10px !important; font-weight: 400 !important; }
-    .sync-control-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      align-items: end;
-      margin-top: 12px;
-      padding-top: 11px;
-      border-top: 1px solid rgba(226,204,167,.14);
-    }
+    .effect-field-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; grid-column: 1 / -1; }
+    .effect-field-tools button { min-height: 34px; }
+    .sync-control-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; margin-top: 12px; padding-top: 11px; border-top: 1px solid rgba(226,204,167,.14); }
     .sync-control-row button { min-height: 38px; }
+    .sync-members-list { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .sync-member-pill { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 5px 7px; border: 1px solid rgba(0,174,234,.42); border-radius: 999px; color: var(--gold-muted); background: rgba(0,174,234,.08); font-size: 10px; }
+    .sync-member-pill button { min-width: 20px; min-height: 20px; padding: 0 5px; border-radius: 999px; color: #ffb4c0; }
   `;
   document.head.append(style);
 }
@@ -130,6 +123,7 @@ function ensurePanel() {
           <input id="effect-sync-group-input" type="text" placeholder="optional group name" title="Layers with the same sync group can receive shared control values." />
         </label>
         <button id="effect-sync-apply-button" type="button" title="Apply emitter/target/rotation controls to all layers in this sync group.">🔗</button>
+        <div id="sync-members-list" class="sync-members-list"></div>
       </div>
     </section>
   `);
@@ -172,19 +166,30 @@ function renderPanel() {
   const layer = getActiveLayer();
   const config = getConfigForLayer(layer);
   card.classList.toggle('is-hidden', !config);
-  if (!config) return;
+  if (!config) {
+    grid.dataset.renderKey = '';
+    return;
+  }
 
+  const configKey = `${layer.id}:${config.title}`;
   card.querySelector('h2').textContent = config.title || 'Effect Specific Controls';
   note.textContent = config.notice || 'Only appears when the selected layer has custom engine/shape controls.';
-  grid.innerHTML = config.fields.map((field) => renderField(field, layer)).join('');
+
+  if (grid.dataset.renderKey !== configKey) {
+    grid.dataset.renderKey = configKey;
+    grid.innerHTML = config.fields.map((field) => renderField(field, layer)).join('') + renderTextTools(config);
+    bindDynamicFields();
+  }
+
   const sync = document.getElementById('effect-sync-group-input');
-  if (sync) sync.value = layer.syncGroup || '';
-  bindDynamicFields(config);
+  if (sync && document.activeElement !== sync) sync.value = layer.syncGroup || '';
+  syncLiveValues(layer);
+  renderSyncMembers(layer);
 }
 
 function renderField(field, layer) {
   const [key, label, type, a, b, c] = field;
-  const value = layer?.[key];
+  const value = layer?.[key] ?? (key === 'textContent' ? DEFAULT_TEXT : '');
   if (type === 'range') {
     const display = Number.isFinite(Number(value)) ? Number(value) : Number(a || 0);
     return `<label>${label}<input data-effect-field="${key}" type="range" min="${a}" max="${b}" step="${c}" value="${display}" title="Adjust ${label}." /><output>${format(display)}</output></label>`;
@@ -195,7 +200,15 @@ function renderField(field, layer) {
   if (type === 'checkbox') {
     return `<label>${label}<button data-effect-field="${key}" data-checkbox="true" type="button" title="Toggle ${label}.">${value ? '✅' : '⬜'}</button></label>`;
   }
+  if (type === 'textarea') {
+    return `<label class="wide">${label}<textarea data-effect-field="${key}" title="Type one or more lines of effect text.">${escapeHtml(value || DEFAULT_TEXT)}</textarea></label>`;
+  }
   return `<label class="wide">${label}<input data-effect-field="${key}" type="text" value="${escapeHtml(value || '')}" title="Type ${label}." /></label>`;
+}
+
+function renderTextTools(config) {
+  if (config !== CONTROL_CONFIG.text) return '';
+  return `<div class="effect-field-tools"><button id="text-all-caps-button" type="button" title="Convert the active text to ALL CAPS.">ALL CAPS</button><button id="text-default-button" type="button" title="Reset the sample text block.">Sample Text</button></div>`;
 }
 
 function readableOption(value) {
@@ -210,7 +223,9 @@ function bindDynamicFields() {
     if (control.dataset.checkbox === 'true') {
       control.addEventListener('click', () => {
         const layer = getActiveLayer();
-        updateActiveLayer({ [key]: !Boolean(layer?.[key]) });
+        const next = !Boolean(layer?.[key]);
+        control.textContent = next ? '✅' : '⬜';
+        updateActiveLayer({ [key]: next });
       });
       return;
     }
@@ -219,6 +234,60 @@ function bindDynamicFields() {
       const output = control.parentElement?.querySelector('output');
       if (output) output.textContent = format(value);
       updateActiveLayer({ [key]: value });
+    });
+  });
+
+  document.getElementById('text-all-caps-button')?.addEventListener('click', () => {
+    const control = document.querySelector('[data-effect-field="textContent"]');
+    const next = String(getActiveLayer()?.textContent || DEFAULT_TEXT).toUpperCase();
+    if (control) control.value = next;
+    updateActiveLayer({ textContent: next });
+  });
+  document.getElementById('text-default-button')?.addEventListener('click', () => {
+    const control = document.querySelector('[data-effect-field="textContent"]');
+    if (control) control.value = DEFAULT_TEXT;
+    updateActiveLayer({ textContent: DEFAULT_TEXT });
+  });
+}
+
+function syncLiveValues(layer) {
+  document.querySelectorAll('[data-effect-field]').forEach((control) => {
+    const key = control.dataset.effectField;
+    if (document.activeElement === control) return;
+    const value = layer?.[key];
+    if (control.dataset.checkbox === 'true') {
+      control.textContent = value ? '✅' : '⬜';
+      return;
+    }
+    if (control.type === 'range') {
+      if (Number(control.value) !== Number(value)) control.value = Number.isFinite(Number(value)) ? value : control.value;
+      const output = control.parentElement?.querySelector('output');
+      if (output) output.textContent = format(control.value);
+      return;
+    }
+    if (value !== undefined && String(control.value) !== String(value)) control.value = value;
+  });
+}
+
+function renderSyncMembers(layer) {
+  const list = document.getElementById('sync-members-list');
+  if (!list) return;
+  const group = String(layer?.syncGroup || '').trim();
+  if (!group) {
+    list.innerHTML = '';
+    return;
+  }
+  const members = editorState.composition.layers
+    .map((candidate, index) => ({ layer: candidate, index }))
+    .filter((item) => item.layer.syncGroup === group);
+  list.innerHTML = members.map(({ layer: member, index }) => `<span class="sync-member-pill">${escapeHtml(member.name || `Layer ${index + 1}`)}<button type="button" data-remove-sync-index="${index}" title="Remove this layer from ${escapeHtml(group)}.">×</button></span>`).join('');
+  list.querySelectorAll('[data-remove-sync-index]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const index = Number(button.dataset.removeSyncIndex);
+      if (!editorState.composition.layers[index]) return;
+      editorState.composition.layers[index].syncGroup = '';
+      editorState.composition.updatedAt = new Date().toISOString();
+      notifyChange();
     });
   });
 }
