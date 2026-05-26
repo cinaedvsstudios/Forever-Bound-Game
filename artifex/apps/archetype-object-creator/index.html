@@ -20,6 +20,7 @@
       <div class="menu">
         <button class="menu-button" data-menu="file">File ▾</button>
         <div class="menu-panel" id="menu-file">
+          <button id="quickstart-wizard-button">Quick Start Wizard</button>
           <button id="new-archetype-button">New Object Archetype</button>
           <label class="menu-file-label">Import Object JSON<input id="import-json-input" type="file" accept=".json,application/json" hidden /></label>
           <button id="export-json-button">Export Object Archetype JSON</button>
@@ -57,6 +58,14 @@
             <h3>Objects</h3>
             <div id="object-template-list" class="insert-list"></div>
           </section>
+        </div>
+      </div>
+      <div class="menu">
+        <button class="menu-button" data-menu="library">Library ▾</button>
+        <div class="menu-panel right" id="menu-library">
+          <button id="open-object-library-button">Open Archetype Object Library</button>
+          <button id="clone-existing-button">Start From Existing Object</button>
+          <button id="open-template-library-button">Browse Template Library</button>
         </div>
       </div>
       <div class="menu">
@@ -155,6 +164,27 @@
     <form method="dialog">
       <header class="dialog-header"><h2>Local Object Archetypes</h2><button value="close">×</button></header>
       <div id="local-files-output" class="library-grid"></div>
+    </form>
+  </dialog>
+
+  <dialog id="object-library-dialog">
+    <form method="dialog">
+      <header class="dialog-header"><h2>Archetype Object Library</h2><button value="close">×</button></header>
+      <p class="hint">Templates are starter archetypes. Local objects are saved browser copies that can be loaded or cloned as a new version.</p>
+      <div id="object-library-content" class="library-sections"></div>
+    </form>
+  </dialog>
+
+  <dialog id="quickstart-dialog" class="wizard-dialog">
+    <form method="dialog">
+      <header class="dialog-header">
+        <div>
+          <h2 id="quickstart-title">Quick Start Wizard</h2>
+          <p id="quickstart-step-label" class="wizard-step-label">Choose a starting point</p>
+        </div>
+        <button value="close">×</button>
+      </header>
+      <div id="quickstart-content" class="wizard-content"></div>
     </form>
   </dialog>
 
