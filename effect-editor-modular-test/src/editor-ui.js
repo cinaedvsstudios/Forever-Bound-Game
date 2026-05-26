@@ -23,7 +23,14 @@ import {
 } from './editor-state.js';
 import { resizeCanvas, takeSnapshot } from './editor-renderer.js';
 import { listBasePresets } from './presets/base-effects.js';
-import { exportJSON, importJSONFromFile, saveToLocalStorage, showLocalFiles } from './editor-io.js';
+import {
+  exportBoilerplate,
+  exportJSON,
+  importJSONFromFile,
+  saveToLocalStorage,
+  showJSONPanel,
+  showLocalFiles
+} from './editor-io.js';
 
 const ENGINE_OPTIONS = [
   ['particles', 'Standard Particle Engine'],
@@ -33,6 +40,57 @@ const ENGINE_OPTIONS = [
   ['projectile', 'Projectile / Trail Engine'],
   ['gas', 'Gas / Smoke / Dust Engine']
 ];
+
+const QUICK_PRESETS = {
+  fire: {
+    label: 'Fire',
+    patch: {
+      appearanceStops: [
+        { position: 0, color: '#fff1a8', opacity: 1, size: 24, glow: 34 },
+        { position: 0.5, color: '#ff8a00', opacity: 0.8, size: 18, glow: 24 },
+        { position: 1, color: '#ff2600', opacity: 0, size: 5, glow: 0 }
+      ],
+      gravity: 0.04,
+      blendMode: 'lighter'
+    }
+  },
+  ice: {
+    label: 'Ice',
+    patch: {
+      appearanceStops: [
+        { position: 0, color: '#ffffff', opacity: 0.95, size: 18, glow: 22 },
+        { position: 0.5, color: '#99f2ff', opacity: 0.7, size: 14, glow: 16 },
+        { position: 1, color: '#00a1d7', opacity: 0, size: 2, glow: 0 }
+      ],
+      gravity: -0.01,
+      blendMode: 'screen'
+    }
+  },
+  goodMagic: {
+    label: 'Good Magic',
+    patch: {
+      appearanceStops: [
+        { position: 0, color: '#fff7cf', opacity: 1, size: 18, glow: 30 },
+        { position: 0.5, color: '#d65cff', opacity: 0.85, size: 22, glow: 34 },
+        { position: 1, color: '#5e8cff', opacity: 0, size: 8, glow: 0 }
+      ],
+      gravity: -0.008,
+      blendMode: 'lighter'
+    }
+  },
+  darkMagic: {
+    label: 'Dark Magic',
+    patch: {
+      appearanceStops: [
+        { position: 0, color: '#7cff00', opacity: 0.9, size: 20, glow: 20 },
+        { position: 0.4, color: '#5b148c', opacity: 0.75, size: 24, glow: 18 },
+        { position: 1, color: '#07100a', opacity: 0, size: 6, glow: 0 }
+      ],
+      gravity: 0.015,
+      blendMode: 'lighter'
+    }
+  }
+};
 
 const bindings = [
   ['layer-name-input', 'name', 'text'],
@@ -61,6 +119,7 @@ export function initUI() {
   setupButtons();
   populateEngineSelect();
   bindLayerControls();
+  restoreSavedLayout();
   restoreTooltips();
   onStateChange(syncUI);
   syncUI();
@@ -235,10 +294,10 @@ function rebuildTopMenus() {
     <button data-module-theme="project" title="Use gold/green accent for the Project editor.">Theme: Project</button>
     <div class="menu-divider"></div>
     <div class="menu-section-title">JSON / Boilerplate</div>
-    <button class="is-placeholder" data-toast-message="View JSON is scheduled for Step 3." title="Open a read-only JSON view.">View JSON</button>
-    <button class="is-placeholder" data-toast-message="Edit JSON is scheduled for Step 3." title="Open an editable JSON panel.">Edit JSON</button>
-    <button class="is-placeholder" data-toast-message="View Boilerplate is scheduled for Step 3." title="Open generated boilerplate text.">View Boilerplate</button>
-    <button class="is-placeholder" data-toast-message="Export Boilerplate is scheduled for Step 3." title="Download generated boilerplate text.">Export Boilerplate</button>
+    <button id="view-json-button" title="Open a read-only JSON view.">View JSON</button>
+    <button id="edit-json-button" title="Open an editable JSON panel.">Edit JSON</button>
+    <button id="view-boilerplate-button" title="Open generated boilerplate text.">View Boilerplate</button>
+    <button id="export-boilerplate-button" title="Download generated boilerplate text.">Export Boilerplate</button>
   `, 'parity-wide');
 
   setPanelHTML('menu-help', `
@@ -309,6 +368,10 @@ function setupButtons() {
   document.getElementById('import-json-input').addEventListener('change', importJSONFromFile);
   document.getElementById('toggle-grid-button').addEventListener('click', toggleGrid);
   document.getElementById('toggle-helpers-button').addEventListener('click', toggleHelpers);
+  document.getElementById('view-json-button').addEventListener('click', () => showJSONPanel('view'));
+  document.getElementById('edit-json-button').addEventListener('click', () => showJSONPanel('edit'));
+  document.getElementById('view-boilerplate-button').addEventListener('click', () => showJSONPanel('boilerplate'));
+  document.getElementById('export-boilerplate-button').addEventListener('click', exportBoilerplate);
   document.getElementById('low-performance-menu-button').addEventListener('click', () => {
     setLowPerformanceMode(!editorState.lowPerformanceMode);
     resizeCanvas();
@@ -326,7 +389,7 @@ function setupButtons() {
   document.getElementById('zoom-out-button').addEventListener('click', () => setZoom(editorState.zoom - 0.1));
   document.getElementById('zoom-reset-button').addEventListener('click', () => setZoom(1));
   document.getElementById('quick-start-button').addEventListener('click', () => showToast('Insert > Base Layer > Standard Particle, then adjust sliders.', 'info'));
-  document.getElementById('about-button').addEventListener('click', () => showToast('Artifex Effect Editor modular test build: Step 2 workspace behaviour active.', 'info'));
+  document.getElementById('about-button').addEventListener('click', () => showToast('Artifex Effect Editor modular test build: Step 3 presets and saving active.', 'info'));
 
   document.querySelectorAll('[data-workspace-mode]').forEach((button) => button.addEventListener('click', () => setWorkspaceMode(button.dataset.workspaceMode)));
   document.querySelectorAll('[data-quick-preset]').forEach((button) => button.addEventListener('click', () => applyQuickPreset(button.dataset.quickPreset)));
@@ -346,10 +409,12 @@ function setupPanelResizers() {
     const move = (moveEvent) => {
       const width = Math.min(560, Math.max(245, startWidth + moveEvent.clientX - startX));
       leftPanel.style.width = `${width}px`;
+      saveLayoutState();
     };
     const up = () => {
       sideResizer.removeEventListener('pointermove', move);
       sideResizer.removeEventListener('pointerup', up);
+      saveLayoutState();
     };
     sideResizer.addEventListener('pointermove', move);
     sideResizer.addEventListener('pointerup', up);
@@ -362,10 +427,12 @@ function setupPanelResizers() {
     const move = (moveEvent) => {
       const height = Math.min(420, Math.max(130, startHeight - (moveEvent.clientY - startY)));
       bottomPanel.style.height = `${height}px`;
+      saveLayoutState();
     };
     const up = () => {
       bottomResizer.removeEventListener('pointermove', move);
       bottomResizer.removeEventListener('pointerup', up);
+      saveLayoutState();
     };
     bottomResizer.addEventListener('pointermove', move);
     bottomResizer.addEventListener('pointerup', up);
@@ -488,7 +555,11 @@ function restoreTooltips() {
     'open-library-button': 'Open the Effect Archetype Library.',
     'load-local-button': 'Load effects saved in this browser.',
     'clear-particles-button-bottom': 'Clear visible preview particles.',
-    'low-performance-menu-button': 'Reduce render load by lowering particle count and update frequency.'
+    'low-performance-menu-button': 'Reduce render load by lowering particle count and update frequency.',
+    'view-json-button': 'Open a read-only JSON view.',
+    'edit-json-button': 'Edit and apply current composition JSON.',
+    'view-boilerplate-button': 'Open generated boilerplate text.',
+    'export-boilerplate-button': 'Download generated boilerplate text.'
   };
   for (const [id, title] of Object.entries(tooltipMap)) {
     const element = document.getElementById(id);
@@ -497,14 +568,30 @@ function restoreTooltips() {
 }
 
 function applyQuickPreset(name) {
-  const presets = {
-    fire: { colorA: '#fff1a8', colorB: '#ff2d00', glow: 28, gravity: 0.04 },
-    ice: { colorA: '#ffffff', colorB: '#00a1d7', glow: 22, gravity: -0.01 },
-    goodMagic: { colorA: '#d65cff', colorB: '#5e8cff', glow: 34, gravity: -0.008 },
-    darkMagic: { colorA: '#7cff00', colorB: '#07100a', glow: 18, gravity: 0.015 }
+  const preset = QUICK_PRESETS[name];
+  if (!preset) return;
+  updateActiveLayer(preset.patch);
+  showToast(`${preset.label} appearance ramp applied.`, 'success');
+}
+
+function saveLayoutState() {
+  const leftPanel = document.getElementById('left-panel');
+  const bottomPanel = document.getElementById('bottom-panel');
+  const state = {
+    leftWidth: leftPanel?.style.width || '',
+    bottomHeight: bottomPanel?.style.height || ''
   };
-  updateActiveLayer(presets[name]);
-  showToast(`${name} colours applied.`, 'success');
+  localStorage.setItem('artifex-effect-editor-layout', JSON.stringify(state));
+}
+
+function restoreSavedLayout() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('artifex-effect-editor-layout') || '{}');
+    if (saved.leftWidth) document.getElementById('left-panel').style.width = saved.leftWidth;
+    if (saved.bottomHeight) document.getElementById('bottom-panel').style.height = saved.bottomHeight;
+  } catch {
+    localStorage.removeItem('artifex-effect-editor-layout');
+  }
 }
 
 export function addPresetLayer(preset) {
