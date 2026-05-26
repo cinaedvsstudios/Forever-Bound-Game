@@ -11,7 +11,7 @@ import { initResolutionParity } from './resolution-parity.js';
 import { initLayerOrderParity } from './layer-order-parity.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'v2.3.18 STEP-5-PARITY';
+const VERSION_LABEL = 'V3.0';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
@@ -37,5 +37,5 @@ window.addEventListener('DOMContentLoaded', () => {
     addLayer(preset.config);
   }
 
-  showToast(`${VERSION_LABEL} loaded. Final modular parity pass is active.`, 'success');
+  showToast(`${VERSION_LABEL} loaded.`, 'success');
 });
