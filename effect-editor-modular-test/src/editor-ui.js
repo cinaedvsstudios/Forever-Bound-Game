@@ -53,11 +53,13 @@ const bindings = [
 
 export function initUI() {
   setupHeaderAndMenuParity();
+  setupBottomPanelLayout();
   setupMenus();
   setupPanelResizers();
   setupButtons();
   populateEngineSelect();
   bindLayerControls();
+  restoreTooltips();
   onStateChange(syncUI);
   syncUI();
 }
@@ -77,6 +79,46 @@ function setupHeaderAndMenuParity() {
   rebuildTopMenus();
 }
 
+function setupBottomPanelLayout() {
+  const toolbar = document.querySelector('.workspace-toolbar');
+  const bottomPanel = document.getElementById('bottom-panel');
+  if (!toolbar || !bottomPanel || document.getElementById('bottom-panel-grid')) return;
+
+  toolbar.classList.add('compact-toolbar');
+  toolbar.innerHTML = '<span class="workspace-toolbar-note">Workspace controls moved to the bottom control panel.</span>';
+
+  bottomPanel.innerHTML = `
+    <div id="bottom-panel-grid" class="bottom-panel-grid">
+      <section class="bottom-tool-card bottom-layer-card">
+        <header><h2>Layers</h2><span id="layer-count">0 layers</span></header>
+        <div id="layer-list" class="layer-list"></div>
+      </section>
+      <section class="bottom-tool-card">
+        <header><h2>Playback / Export</h2></header>
+        <div class="bottom-control-buttons">
+          <button id="pause-button" title="Pause or resume the particle preview.">Pause</button>
+          <button id="snapshot-button" title="Export the current canvas preview as a PNG snapshot.">Snapshot</button>
+          <button id="clear-particles-button-bottom" title="Clear the currently visible preview particles.">Clear Particles</button>
+        </div>
+      </section>
+      <section class="bottom-tool-card">
+        <header><h2>View / Guides</h2></header>
+        <div class="bottom-control-buttons bottom-zoom-grid">
+          <button id="zoom-out-button" title="Zoom out.">−</button>
+          <span id="zoom-readout">100%</span>
+          <button id="zoom-in-button" title="Zoom in.">+</button>
+          <button id="zoom-reset-button" title="Reset zoom to 100%.">Reset Zoom</button>
+        </div>
+        <div id="bottom-workspace-controls" class="bottom-control-buttons"></div>
+      </section>
+      <section class="bottom-tool-card">
+        <header><h2>Diagnostics</h2></header>
+        <div id="status-text" class="diagnostic-readout">Ready.</div>
+      </section>
+    </div>
+  `;
+}
+
 function injectHeaderMenuStyles() {
   if (document.getElementById('header-menu-parity-style')) return;
   const style = document.createElement('style');
@@ -93,6 +135,21 @@ function injectHeaderMenuStyles() {
     .menu-panel button.is-placeholder { color: var(--muted); opacity: .9; }
     .menu-panel button.is-danger { color: #ffb4c0; }
     .menu-panel button.is-accent { color: white; border-color: var(--module-accent); background: linear-gradient(180deg, rgba(0,174,234,.35) 0%, #18272d 100%); }
+    .workspace-toolbar.compact-toolbar { min-height: 24px; height: 24px; padding: 2px 10px; }
+    .workspace-toolbar-note { color: var(--gold-muted); font-size: 11px; letter-spacing: .04em; }
+    .bottom-panel-grid { display: grid; grid-template-columns: minmax(220px, 1.2fr) minmax(160px, .8fr) minmax(220px, 1fr) minmax(180px, .85fr); gap: 12px; min-height: 100%; }
+    .bottom-tool-card { border-left: 1px solid rgba(56,42,33,.75); padding-left: 12px; min-width: 0; }
+    .bottom-tool-card:first-child { border-left: 0; padding-left: 0; }
+    .bottom-tool-card header { min-height: 22px; margin-bottom: 8px; }
+    .bottom-control-buttons { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .bottom-control-buttons button, .bottom-control-buttons .reference-file-label { min-height: 34px; padding: 6px 10px; font-size: 12px; white-space: nowrap; }
+    .bottom-zoom-grid { display: grid; grid-template-columns: auto 54px auto 1fr; gap: 8px; margin-bottom: 8px; }
+    .bottom-zoom-grid button { text-align: center; }
+    .diagnostic-readout { color: var(--module-accent-strong); font-size: 12px; line-height: 1.55; font-family: 'Fira Code', monospace; }
+    .compact-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .compact-row label { margin: 0; }
+    .compact-row input[type='number'] { min-width: 0; }
+    @media (max-width: 1100px) { .bottom-panel-grid { grid-template-columns: 1fr 1fr; } }
   `;
   document.head.append(style);
 }
@@ -131,56 +188,56 @@ function applyBrandAssets() {
 function rebuildTopMenus() {
   setPanelHTML('menu-file', `
     <div class="menu-section-title">New / Import</div>
-    <button id="new-effect-button">New Effect Archetype</button>
-    <label class="menu-file-label">Import FX JSON<input id="import-json-input" type="file" accept=".json,application/json" hidden /></label>
-    <button class="is-placeholder" data-toast-message="Effekseer Draft import is reserved for a later compatibility pass.">Import Effekseer Draft</button>
+    <button id="new-effect-button" title="Start a new blank effect archetype.">New Effect Archetype</button>
+    <label class="menu-file-label" title="Import an Artifex FX JSON file.">Import FX JSON<input id="import-json-input" type="file" accept=".json,application/json" hidden /></label>
+    <button class="is-placeholder" data-toast-message="Effekseer Draft import is reserved for a later compatibility pass." title="Reserved for a later Effekseer compatibility pass.">Import Effekseer Draft</button>
     <div class="menu-divider"></div>
     <div class="menu-section-title">Export Archetype</div>
-    <button id="export-json-button">Export Raw Composition JSON</button>
-    <button class="is-placeholder" data-toast-message="Editor Project export is wired by the IO parity module.">Export Editor Project JSON</button>
-    <button class="is-placeholder" data-toast-message="Effect Archetype export is wired by the IO parity module.">Export Effect Archetype JSON</button>
-    <button class="is-placeholder" data-toast-message="Scene FX Instance export is wired by the IO parity module.">Export Scene FX Instance JSON</button>
+    <button id="export-json-button" title="Download the raw layer composition JSON.">Export Raw Composition JSON</button>
+    <button class="is-placeholder" data-toast-message="Editor Project export is wired by the IO parity module." title="Export the full editor project JSON.">Export Editor Project JSON</button>
+    <button class="is-placeholder" data-toast-message="Effect Archetype export is wired by the IO parity module." title="Export the effect archetype asset JSON.">Export Effect Archetype JSON</button>
+    <button class="is-placeholder" data-toast-message="Scene FX Instance export is wired by the IO parity module." title="Export a scene-ready FX instance JSON.">Export Scene FX Instance JSON</button>
     <div class="menu-divider"></div>
     <div class="menu-section-title">Local Files</div>
-    <button id="save-local-button">Save Locally in Browser</button>
-    <button id="view-local-button">Manage Local Effects</button>
-    <button class="is-placeholder" data-toast-message="Scene / FX Resolution settings are available lower in this File menu.">Settings</button>
+    <button id="save-local-button" title="Save the effect in this browser's local storage.">Save Locally in Browser</button>
+    <button id="view-local-button" title="Open saved local effects.">Manage Local Effects</button>
+    <button class="is-placeholder" data-toast-message="Scene / FX Resolution settings are available lower in this File menu." title="Scene and FX resolution settings are available in this menu.">Settings</button>
   `, 'parity-wide');
 
   setPanelHTML('menu-edit', `
     <div class="menu-section-title">Layer Actions</div>
-    <button id="duplicate-layer-button">Duplicate Layer</button>
-    <button id="delete-layer-button" class="is-danger">Delete Layer</button>
-    <button id="clear-particles-button">Clear All Particles</button>
+    <button id="duplicate-layer-button" title="Duplicate the active layer.">Duplicate Layer</button>
+    <button id="delete-layer-button" class="is-danger" title="Delete the active layer.">Delete Layer</button>
+    <button id="clear-particles-button" title="Clear all preview particles.">Clear All Particles</button>
     <div class="menu-divider"></div>
     <div class="menu-section-title">Emitter</div>
-    <button id="center-emitter-button">Center Origin</button>
-    <button class="is-placeholder" data-toast-message="Bring Forward / Send Back will be restored with layer ordering controls.">Bring Forward / Send Back</button>
+    <button id="center-emitter-button" title="Move the origin point to the centre of the stage.">Center Origin</button>
+    <button class="is-placeholder" data-toast-message="Bring Forward / Send Back will be restored with layer ordering controls." title="Layer ordering controls are scheduled for later.">Bring Forward / Send Back</button>
   `, 'parity-wide');
 
   setPanelHTML('menu-view', `
     <div class="menu-section-title">Workspace Background</div>
-    <button data-workspace-mode="dark">Background: Dark</button>
-    <button data-workspace-mode="white">Background: White</button>
-    <button class="is-placeholder" data-toast-message="Load an image/video underlay from the toolbar, then use Background: Underlay.">Background: Underlay</button>
+    <button data-workspace-mode="dark" title="Use the dark preview background.">Background: Dark</button>
+    <button data-workspace-mode="white" title="Use the white preview background.">Background: White</button>
+    <button class="is-placeholder" data-toast-message="Load an image/video underlay first, then use Background: Underlay." title="Show the loaded image/video underlay behind the effect.">Background: Underlay</button>
     <div class="menu-divider"></div>
     <div class="menu-section-title">Guides</div>
-    <button id="toggle-grid-button">Toggle Grid</button>
-    <button id="toggle-helpers-button">Toggle Guides</button>
-    <button class="is-placeholder" data-toast-message="Load Underlay is available in the workspace toolbar.">Load Underlay</button>
-    <button class="is-placeholder" data-toast-message="Low Performance Mode is scheduled for Step 2.">Low Performance Mode</button>
+    <button id="toggle-grid-button" title="Toggle the stage grid.">Toggle Grid</button>
+    <button id="toggle-helpers-button" title="Toggle emitter and coordinate guides.">Toggle Guides</button>
+    <button class="is-placeholder" data-toast-message="Load Underlay is available in the bottom View / Guides panel." title="Load an image/video underlay from the bottom View / Guides panel.">Load Underlay</button>
+    <button class="is-placeholder" data-toast-message="Low Performance Mode is scheduled for Step 2." title="Performance optimisation toggle is scheduled for Step 2.">Low Performance Mode</button>
     <div class="menu-divider"></div>
     <div class="menu-section-title">JSON / Boilerplate</div>
-    <button class="is-placeholder" data-toast-message="View JSON is scheduled for Step 3.">View JSON</button>
-    <button class="is-placeholder" data-toast-message="Edit JSON is scheduled for Step 3.">Edit JSON</button>
-    <button class="is-placeholder" data-toast-message="View Boilerplate is scheduled for Step 3.">View Boilerplate</button>
-    <button class="is-placeholder" data-toast-message="Export Boilerplate is scheduled for Step 3.">Export Boilerplate</button>
+    <button class="is-placeholder" data-toast-message="View JSON is scheduled for Step 3." title="Open a read-only JSON view.">View JSON</button>
+    <button class="is-placeholder" data-toast-message="Edit JSON is scheduled for Step 3." title="Open an editable JSON panel.">Edit JSON</button>
+    <button class="is-placeholder" data-toast-message="View Boilerplate is scheduled for Step 3." title="Open generated boilerplate text.">View Boilerplate</button>
+    <button class="is-placeholder" data-toast-message="Export Boilerplate is scheduled for Step 3." title="Download generated boilerplate text.">Export Boilerplate</button>
   `, 'parity-wide');
 
   setPanelHTML('menu-help', `
-    <button id="quick-start-button">Quick Start Guide</button>
-    <button class="is-placeholder" data-toast-message="Terminology guide links will be restored after menu parity is confirmed.">Terminology / Guide Links</button>
-    <button id="about-button">About Artifex Studio</button>
+    <button id="quick-start-button" title="Show a quick start hint.">Quick Start Guide</button>
+    <button class="is-placeholder" data-toast-message="Terminology guide links will be restored after menu parity is confirmed." title="Terminology links are scheduled for later.">Terminology / Guide Links</button>
+    <button id="about-button" title="Show build information.">About Artifex Studio</button>
   `, 'right');
 }
 
@@ -230,6 +287,10 @@ function setupButtons() {
     clearParticles();
     showToast('Particles cleared.', 'success');
   });
+  document.getElementById('clear-particles-button-bottom').addEventListener('click', () => {
+    clearParticles();
+    showToast('Particles cleared.', 'success');
+  });
   document.getElementById('center-emitter-button').addEventListener('click', () => {
     centerActiveEmitter();
     showToast('Origin centered.', 'success');
@@ -241,31 +302,17 @@ function setupButtons() {
   document.getElementById('import-json-input').addEventListener('change', importJSONFromFile);
   document.getElementById('toggle-grid-button').addEventListener('click', toggleGrid);
   document.getElementById('toggle-helpers-button').addEventListener('click', toggleHelpers);
-  document.getElementById('pause-button').addEventListener('click', () => {
-    setPaused(!editorState.isPaused);
-  });
+  document.getElementById('pause-button').addEventListener('click', () => setPaused(!editorState.isPaused));
   document.getElementById('snapshot-button').addEventListener('click', takeSnapshot);
   document.getElementById('zoom-in-button').addEventListener('click', () => setZoom(editorState.zoom + 0.1));
   document.getElementById('zoom-out-button').addEventListener('click', () => setZoom(editorState.zoom - 0.1));
   document.getElementById('zoom-reset-button').addEventListener('click', () => setZoom(1));
-  document.getElementById('quick-start-button').addEventListener('click', () => {
-    showToast('Insert > Base Layer > Standard Particle, then adjust sliders.', 'info');
-  });
-  document.getElementById('about-button').addEventListener('click', () => {
-    showToast('Artifex Effect Editor modular test build: Step 1 polish active.', 'info');
-  });
+  document.getElementById('quick-start-button').addEventListener('click', () => showToast('Insert > Base Layer > Standard Particle, then adjust sliders.', 'info'));
+  document.getElementById('about-button').addEventListener('click', () => showToast('Artifex Effect Editor modular test build: layout polish active.', 'info'));
 
-  document.querySelectorAll('[data-workspace-mode]').forEach((button) => {
-    button.addEventListener('click', () => setWorkspaceMode(button.dataset.workspaceMode));
-  });
-
-  document.querySelectorAll('[data-quick-preset]').forEach((button) => {
-    button.addEventListener('click', () => applyQuickPreset(button.dataset.quickPreset));
-  });
-
-  document.querySelectorAll('[data-toast-message]').forEach((button) => {
-    button.addEventListener('click', () => showToast(button.dataset.toastMessage, 'info'));
-  });
+  document.querySelectorAll('[data-workspace-mode]').forEach((button) => button.addEventListener('click', () => setWorkspaceMode(button.dataset.workspaceMode)));
+  document.querySelectorAll('[data-quick-preset]').forEach((button) => button.addEventListener('click', () => applyQuickPreset(button.dataset.quickPreset)));
+  document.querySelectorAll('[data-toast-message]').forEach((button) => button.addEventListener('click', () => showToast(button.dataset.toastMessage, 'info')));
 }
 
 function setupPanelResizers() {
@@ -278,7 +325,6 @@ function setupPanelResizers() {
     sideResizer.setPointerCapture(event.pointerId);
     const startX = event.clientX;
     const startWidth = leftPanel.getBoundingClientRect().width;
-
     const move = (moveEvent) => {
       const width = Math.min(560, Math.max(245, startWidth + moveEvent.clientX - startX));
       leftPanel.style.width = `${width}px`;
@@ -287,7 +333,6 @@ function setupPanelResizers() {
       sideResizer.removeEventListener('pointermove', move);
       sideResizer.removeEventListener('pointerup', up);
     };
-
     sideResizer.addEventListener('pointermove', move);
     sideResizer.addEventListener('pointerup', up);
   });
@@ -296,16 +341,14 @@ function setupPanelResizers() {
     bottomResizer.setPointerCapture(event.pointerId);
     const startY = event.clientY;
     const startHeight = bottomPanel.getBoundingClientRect().height;
-
     const move = (moveEvent) => {
-      const height = Math.min(420, Math.max(86, startHeight - (moveEvent.clientY - startY)));
+      const height = Math.min(420, Math.max(130, startHeight - (moveEvent.clientY - startY)));
       bottomPanel.style.height = `${height}px`;
     };
     const up = () => {
       bottomResizer.removeEventListener('pointermove', move);
       bottomResizer.removeEventListener('pointerup', up);
     };
-
     bottomResizer.addEventListener('pointermove', move);
     bottomResizer.addEventListener('pointerup', up);
   });
@@ -342,9 +385,7 @@ function ensureEngineOption(value) {
   if (!select.options.length) populateEngineSelect();
   if (!value) return;
   const exists = Array.from(select.options).some((option) => option.value === value);
-  if (!exists) {
-    select.append(new Option(labelForEngine(value), value));
-  }
+  if (!exists) select.append(new Option(labelForEngine(value), value));
 }
 
 function labelForEngine(value) {
@@ -363,12 +404,10 @@ function renderLayerList() {
   const list = document.getElementById('layer-list');
   const layers = editorState.composition.layers;
   document.getElementById('layer-count').textContent = `${layers.length} layer${layers.length === 1 ? '' : 's'}`;
-
   if (!layers.length) {
     list.innerHTML = '<div class="layer-item"><strong>No layers yet</strong><span>Use Insert > Base Layer.</span></div>';
     return;
   }
-
   list.innerHTML = '';
   layers.forEach((layer, index) => {
     const item = document.createElement('div');
@@ -382,31 +421,23 @@ function renderLayerList() {
 function syncControls() {
   const layer = getActiveLayer();
   const disabled = !layer;
-
   for (const [elementId, property] of bindings) {
     const element = document.getElementById(elementId);
     element.disabled = disabled;
-
     if (layer) {
-      if (elementId === 'engine-select') {
-        ensureEngineOption(layer[property]);
-      }
-      if (String(element.value) !== String(layer[property])) {
-        element.value = layer[property];
-      }
+      if (elementId === 'engine-select') ensureEngineOption(layer[property]);
+      if (String(element.value) !== String(layer[property])) element.value = layer[property];
       if (elementId === 'engine-select') {
         element.title = labelForEngine(layer[property]);
         element.dataset.selectedLabel = labelForEngine(layer[property]);
       }
     }
-
     const output = document.getElementById(elementId.replace('-input', '-output'));
     if (output && layer) output.textContent = String(layer[property]);
   }
 
   document.getElementById('emitter-x-input').disabled = disabled;
   document.getElementById('emitter-y-input').disabled = disabled;
-
   if (layer) {
     document.getElementById('emitter-x-input').value = Math.round(layer.emitterX);
     document.getElementById('emitter-y-input').value = Math.round(layer.emitterY);
@@ -416,7 +447,26 @@ function syncControls() {
 function updateStatus() {
   document.getElementById('pause-button').textContent = editorState.isPaused ? 'Resume' : 'Pause';
   document.getElementById('zoom-readout').textContent = `${Math.round(editorState.zoom * 100)}%`;
-  document.getElementById('status-text').textContent = `FPS ${editorState.renderStats.fps} · particles ${editorState.renderStats.particles} · stage ${DESIGN_WIDTH}×${DESIGN_HEIGHT}`;
+  document.getElementById('status-text').innerHTML = `FPS ${editorState.renderStats.fps}<br>Particles ${editorState.renderStats.particles}<br>Stage ${DESIGN_WIDTH}×${DESIGN_HEIGHT}`;
+}
+
+function restoreTooltips() {
+  const tooltipMap = {
+    'pause-button': 'Pause or resume the particle preview.',
+    'snapshot-button': 'Export the current canvas preview as a PNG snapshot.',
+    'zoom-out-button': 'Zoom out.',
+    'zoom-in-button': 'Zoom in.',
+    'zoom-reset-button': 'Reset zoom to 100%.',
+    'toggle-grid-button': 'Toggle the stage grid.',
+    'toggle-helpers-button': 'Toggle emitter and coordinate guides.',
+    'open-library-button': 'Open the Effect Archetype Library.',
+    'load-local-button': 'Load effects saved in this browser.',
+    'clear-particles-button-bottom': 'Clear visible preview particles.'
+  };
+  for (const [id, title] of Object.entries(tooltipMap)) {
+    const element = document.getElementById(id);
+    if (element && !element.title) element.title = title;
+  }
 }
 
 function applyQuickPreset(name) {
@@ -440,11 +490,5 @@ export function getAvailableBasePresets() {
 }
 
 function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, (char) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  }[char]));
+  return String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 }
