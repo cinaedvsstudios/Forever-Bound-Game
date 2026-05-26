@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Artifex Archetype Object Creator V1.0</title>
   <link rel="stylesheet" href="./v1/styles.css" />
+  <link rel="stylesheet" href="./v1/right-panel-layout.css" />
 </head>
 <body>
   <header class="topbar">
@@ -78,8 +79,8 @@
     </nav>
   </header>
 
-  <main class="app-shell">
-    <aside id="left-panel" class="side-panel">
+  <main class="app-shell object-creator-shell">
+    <aside id="left-panel" class="side-panel compact-left-panel">
       <section class="card">
         <header><h2>Object Identity</h2></header>
         <label>Archetype ID<input id="archetype-id-input" /></label>
@@ -109,16 +110,11 @@
         <label>Hitbox Height<input id="hitbox-height-input" type="number" min="0" /></label>
         <label>Interaction Radius<input id="interaction-radius-input" type="number" min="0" /></label>
       </section>
-
-      <section class="card">
-        <header><h2>Runtime Behaviour</h2></header>
-        <div id="flag-list" class="check-grid"></div>
-      </section>
     </aside>
 
     <div id="side-resizer" class="side-resizer" title="Drag to resize side panel"></div>
 
-    <section class="workspace-column">
+    <section class="workspace-column object-workspace-column">
       <section class="workspace-toolbar">
         <button id="zoom-out-button">−</button>
         <span id="zoom-readout">100%</span>
@@ -132,32 +128,52 @@
         <canvas id="object-canvas" width="1280" height="720"></canvas>
         <div id="toast-area" aria-live="polite"></div>
       </section>
-
-      <div id="bottom-resizer" class="bottom-resizer" title="Drag to resize action panel"></div>
-
-      <section id="bottom-panel" class="bottom-panel">
-        <header>
-          <h2>Action Profile</h2>
-          <span id="action-count">0 gameplay actions</span>
-        </header>
-        <div class="action-layout">
-          <section>
-            <h3>Gameplay Sprite Actions</h3>
-            <p class="hint">Full-body gameplay actions only. Dialogue/talk lives in portrait actions below.</p>
-            <div id="gameplay-action-list" class="chip-list"></div>
-          </section>
-          <section>
-            <h3>Dialogue Portrait Actions</h3>
-            <p class="hint">Close-up portrait expressions and mouth loops. These are not body sprite rows.</p>
-            <div id="portrait-action-list" class="chip-list"></div>
-          </section>
-          <section>
-            <h3>Validation</h3>
-            <pre id="validation-output">No validation yet.</pre>
-          </section>
-        </div>
-      </section>
     </section>
+
+    <aside id="right-panel" class="right-panel">
+      <header class="right-panel-header">
+        <h2>Object Controls</h2>
+        <span id="action-count">0 gameplay actions</span>
+      </header>
+
+      <input class="right-tab-input" type="radio" name="right-panel-tabs" id="right-tab-actions" checked />
+      <input class="right-tab-input" type="radio" name="right-panel-tabs" id="right-tab-portraits" />
+      <input class="right-tab-input" type="radio" name="right-panel-tabs" id="right-tab-flags" />
+      <input class="right-tab-input" type="radio" name="right-panel-tabs" id="right-tab-validation" />
+
+      <nav class="right-tabbar" aria-label="Object control tabs">
+        <label for="right-tab-actions">Gameplay Actions</label>
+        <label for="right-tab-portraits">Portrait Actions</label>
+        <label for="right-tab-flags">Runtime Flags</label>
+        <label for="right-tab-validation">Validation</label>
+      </nav>
+
+      <div class="right-panel-body">
+        <section class="right-tab-panel" data-right-panel="actions">
+          <h3>Gameplay Sprite Actions</h3>
+          <p class="hint">Full-body gameplay actions only. Dialogue/talk lives in portrait actions.</p>
+          <div id="gameplay-action-list" class="chip-list vertical-chip-list"></div>
+        </section>
+
+        <section class="right-tab-panel" data-right-panel="portraits">
+          <h3>Dialogue Portrait Actions</h3>
+          <p class="hint">Close-up portrait expressions and mouth loops. These are not body sprite rows.</p>
+          <div id="portrait-action-list" class="chip-list vertical-chip-list"></div>
+        </section>
+
+        <section class="right-tab-panel" data-right-panel="flags">
+          <h3>Runtime Behaviour</h3>
+          <p class="hint">Scene placement, interaction, movement, collision, quest, and combat flags.</p>
+          <div id="flag-list" class="check-grid"></div>
+        </section>
+
+        <section class="right-tab-panel" data-right-panel="validation">
+          <h3>Validation</h3>
+          <p class="hint">Checks the current archetype for missing or inconsistent values.</p>
+          <pre id="validation-output">No validation yet.</pre>
+        </section>
+      </div>
+    </aside>
   </main>
 
   <dialog id="local-dialog">
