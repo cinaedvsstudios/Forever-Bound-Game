@@ -2,15 +2,221 @@
 
 ## Purpose
 
-The Creation Guide is the Artifex wizard, assignment planner, milestone tracker, checklist surface, progress dashboard, and health-check module.
+The Creation Guide is the Artifex project onboarding screen, Project Overview, assignment planner, milestone tracker, checklist surface, progress dashboard, and health-check module.
 
-It helps a creator start a new Artifex Adventure project from the starter template, then track what still needs to be changed, confirmed, built, tested, reviewed, blocked, or fixed.
+It helps a creator create or open an Artifex project, define the minimum required project structure, create/export the starter project files, register the project in the Project Library, set the active project for the whole Artifex hub, and then track production work.
 
-The Creation Guide should function as production mission control. It does not replace the individual Artifex tools. It tells the creator what needs to be done next and which tool owns the work.
+The Creation Guide should function as production mission control. It does not replace the individual Artifex tools. It tells the creator what project is active, what needs to be done next, which setup gates are blocking production, and which tool owns each assignment.
+
+## App Startup Behaviour
+
+When the user clicks New Project, Open Project, or opens Creation Guide with no active project, the right viewing panel should start on **Project Overview**.
+
+The left side panel should start collapsed or mostly collapsed.
+
+The Assignment Board should not be permanently visible on the main screen. It should open as a popup/window from the 📋 Assignments icon or menu.
+
+## Hub / Active Project Flow
+
+The Hub should eventually use its centre button as **Change Project**.
+
+The active project name should display somewhere on the Hub.
+
+All Artifex apps should read the same active project value when they start.
+
+Suggested shared browser storage keys:
+
+```text
+artifex.projectLibrary
+artifex.activeProjectId
+```
+
+`artifex.projectLibrary` stores known projects.
+
+`artifex.activeProjectId` stores the currently selected project ID.
+
+Scene Editor, Project Editor, Quest Builder, Object Creator, Effect Editor, Object Library, and Asset Library should all open into the active project automatically.
+
+## Project Overview Fields
+
+The Project Overview should show:
+
+- project name
+- project status
+- overall setup percentage spinner/ring
+- project ID / slug
+- local project path
+- online project path or repository path
+- deployed URL if available
+- primary index file path
+- manifest file path
+- flatplan file path
+- active Chronicle / Quest target
+- enabled modules
+- readiness warnings
+- setup gate buttons
+
+## Setup Gates
+
+Before the creator can properly make scenes, characters, quests, objects, or effects, the project needs a minimum structure.
+
+The Project Overview should show these as large setup gate buttons/cards:
+
+1. Define Project Identity.
+2. Choose Project Storage.
+3. Create Primary Project Index.
+4. Create Folder Structure.
+5. Create Manifest Shell.
+6. Create Flatplan Shell.
+7. Create Index Files.
+8. Choose Enabled Modules.
+9. Set Active Project.
+10. Run Project Readiness Check.
+
+## Recommended Project File Hierarchy
+
+```text
+project-root/
+  artifex-project.json
+  manifest.json
+  flatplan.json
+  README.md
+
+  data/
+    indexes/
+      scene-index.json
+      quest-index.json
+      object-index.json
+      effect-index.json
+      asset-index.json
+      assignment-index.json
+
+    chronicles/
+      ch00/
+        chronicle.json
+
+    quests/
+      ch00/
+        q00/
+          quest.json
+          callings.json
+          objectives.json
+          conditions.json
+
+    scenes/
+      ch00/
+        q00/
+          scene-title.json
+          scene-start.json
+
+    maps/
+      map-index.json
+      routes.json
+      nodes.json
+
+    objects/
+      object-index.json
+      archetypes/
+      instances/
+
+    effects/
+      effect-index.json
+      presets/
+      instances/
+
+    dialogue/
+      dialogue-index.json
+      ch00/
+
+    assignments/
+      assignment-index.json
+      creation-guide.json
+
+  assets/
+    images/
+      backgrounds/
+      characters/
+      props/
+      ui/
+
+    sprites/
+      characters/
+      objects/
+      fx/
+
+    audio/
+      music/
+      sfx/
+      voice/
+
+    fonts/
+    video/
+
+  exports/
+    json/
+    images/
+    builds/
+
+  builds/
+    web/
+    android/
+    archive/
+
+  docs/
+    design/
+    notes/
+    changelog/
+
+  tests/
+    playtest-notes/
+    validation-reports/
+```
+
+## Primary Project Index
+
+The top-level project pointer file should be named:
+
+```text
+artifex-project.json
+```
+
+Suggested starter shape:
+
+```json
+{
+  "projectId": "forever-bound",
+  "projectName": "Forever Bound",
+  "projectKind": "artifex-adventure",
+  "schemaVersion": "1.0.0",
+  "status": "setup",
+  "paths": {
+    "manifest": "manifest.json",
+    "flatplan": "flatplan.json",
+    "dataRoot": "data/",
+    "assetRoot": "assets/",
+    "exportRoot": "exports/",
+    "buildRoot": "builds/",
+    "indexes": "data/indexes/"
+  },
+  "indexes": {
+    "scenes": "data/indexes/scene-index.json",
+    "quests": "data/indexes/quest-index.json",
+    "objects": "data/indexes/object-index.json",
+    "effects": "data/indexes/effect-index.json",
+    "assets": "data/indexes/asset-index.json",
+    "assignments": "data/indexes/assignment-index.json"
+  },
+  "activeTargets": {
+    "chronicleId": "ch00",
+    "questId": "q00",
+    "startSceneId": "scene-start"
+  }
+}
+```
 
 ## Core Object: Assignment
 
-The main production object is an Assignment.
+After a project exists, the main production object is an Assignment.
 
 An Assignment is a concrete unit of work such as:
 
@@ -75,6 +281,7 @@ Scene Editor - violet
 Project Editor - yellow
 Quest Builder - green
 Object Creator - red
+Unassigned / General - grey-brown
 ```
 
 Module colour means which tool owns the work.
@@ -111,52 +318,19 @@ Assignment cards should show:
 - last touched date
 - blocked or snoozing indicator when relevant
 
-Example:
-
-```text
-[violet stripe] Create First Forest Scene
-Scene Editor · Chronicle 0 · Forest Route · Priority 4 · Effort 3 · 5/7 subtasks
-```
-
 ## Assignment Detail Popup
 
 Clicking an Assignment opens a detail popup.
 
 The popup uses the Assignment primary module accent colour in the header, border, action buttons, and progress bar.
 
-The popup should contain:
-
-- title
-- icon
-- description
-- owning module
-- related modules
-- workflow state
-- owner
-- priority default and override
-- effort default and override
-- milestone
-- Chronicle
-- Quest
-- Calling
-- zone
-- scene
-- screen
-- linked JSON file
-- linked assets
-- subtasks
-- blockers
-- notes
-- created date
-- updated date
-- last touched date
-- open in relevant Artifex module buttons
-
 ## Dashboard Views
 
 The dashboard should answer:
 
 ```text
+What project is active?
+Is the project ready to build content?
 What should I do next?
 What is blocked?
 What is almost complete?
@@ -179,24 +353,18 @@ The To Do area should be orderable by:
 - by Chronicle
 - by Quest
 
-## Main Views
-
-Planned views:
-
-1. Dashboard
-2. Assignment Board
-3. Assignment List
-4. Zone / Scene / Screen View
-5. Milestone View
-6. Archive View
-
 ## V1 Scope
 
 This first version is intentionally practical and small. It adapts the Artifex Blank Module Boilerplate into a real Creation Guide module with:
 
+- Project Overview startup screen
 - project setup fields
+- Project Library entry model
+- active project selection model
+- setup gates
+- exportable primary project files
 - enabled module selection
-- starter production timeline
+- assignment popup/window
 - editable assignments
 - editable milestones
 - editable subtasks
@@ -212,13 +380,13 @@ This first version is intentionally practical and small. It adapts the Artifex B
 
 ## What It Does Not Do Yet
 
-V1 does not directly write to GitHub, create real project folders, edit Flatplans, open JSON files directly, or validate live asset paths from the repository.
+V1 does not silently write to GitHub, create real project folders without user action, edit Flatplans directly, open JSON files directly, or validate every live asset path from the repository.
 
 Those features belong to later versions after the core workflow is proven.
 
 ## Relationship To Other Modules
 
-Creation Guide points the creator to the correct tool. It does not replace them.
+Creation Guide creates/selects the active project and points the creator to the correct tool. It does not replace them.
 
 - Project Editor owns the Manifest, Flatplan, routes, catalog, Stitcher, and map projection.
 - Scene Editor builds scene JSON and visual layout.
@@ -229,15 +397,18 @@ Creation Guide points the creator to the correct tool. It does not replace them.
 
 ## Data Model
 
-The module exports one Creation Guide JSON document:
+The module exports one Creation Guide JSON document linked to a project:
 
 ```json
 {
   "id": "creation_xxxxx",
+  "projectId": "forever-bound",
   "name": "Artifex Adventure Creation Guide",
   "moduleKind": "creation-guide",
   "version": "V1.0",
   "setup": {},
+  "projectLibraryEntry": {},
+  "setupGates": [],
   "assignments": [],
   "milestones": [],
   "notes": "",
@@ -245,44 +416,8 @@ The module exports one Creation Guide JSON document:
 }
 ```
 
-Suggested Assignment object:
-
-```json
-{
-  "id": "assignment_xxxxx",
-  "title": "Create First Forest Scene",
-  "icon": "scene",
-  "description": "Build the first playable forest scene shell.",
-  "state": "started",
-  "owner": "Chris",
-  "primaryModule": "scene-editor",
-  "relatedModules": ["project-editor", "quest-builder"],
-  "moduleAccent": "violet",
-  "priorityDefault": 4,
-  "priorityOverride": null,
-  "effortDefault": 3,
-  "effortOverride": null,
-  "milestoneId": "milestone_first_playable",
-  "chronicleId": "ch00",
-  "questId": "q00",
-  "callingId": "calling_first_route",
-  "zoneId": "forest",
-  "sceneId": "ch00_q00_forest_route",
-  "screenId": "scene_forest_route",
-  "linkedFile": "data/scenes/ch00/ch00_q00_forest_route_scene.json",
-  "linkedAssets": [],
-  "tags": ["scene", "travel", "prototype"],
-  "subtasks": [],
-  "blockers": [],
-  "createdAt": "",
-  "updatedAt": "",
-  "lastTouchedAt": "",
-  "archived": false
-}
-```
-
 ## First Version Rule
 
 This module should first prove one working guide document before it becomes a full project creation system.
 
-The first reliable version should focus on Assignments, workflow states, subtasks, priority, effort, module colours, and dashboard filtering.
+The first reliable version should focus on Project Overview, Project Library, active project selection, setup gates, Assignments, workflow states, subtasks, priority, effort, module colours, and dashboard filtering.
