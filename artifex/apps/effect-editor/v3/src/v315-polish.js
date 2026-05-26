@@ -14,11 +14,13 @@ export function initV315Polish() {
   injectStyles();
   tidyWorkspaceNote();
   applyCardIcons();
+  installFloatingWorkspaceControls();
   repairDisplayPanel();
   decorateInsertMenu();
   onStateChange(() => {
     tidyWorkspaceNote();
     applyCardIcons();
+    installFloatingWorkspaceControls();
     repairDisplayPanel();
     decorateInsertMenu();
   });
@@ -31,6 +33,43 @@ function injectStyles() {
   style.textContent = `
     .workspace-toolbar-note { display: none !important; }
     .workspace-toolbar.compact-toolbar { min-height: 0 !important; height: 0 !important; padding: 0 !important; border: 0 !important; overflow: hidden !important; }
+    #workspace { position: relative; }
+    .workspace-floating-controls {
+      position: absolute;
+      top: 10px;
+      z-index: 12;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px;
+      border: 1px solid rgba(226,204,167,.18);
+      border-radius: 16px;
+      background: rgba(9, 7, 7, .78);
+      box-shadow: 0 12px 24px rgba(0,0,0,.56), 0 0 16px rgba(0,174,234,.12);
+      backdrop-filter: blur(8px);
+      pointer-events: auto;
+    }
+    .workspace-floating-controls button,
+    .workspace-floating-controls span {
+      min-width: 42px;
+      min-height: 36px;
+      display: grid;
+      place-items: center;
+      padding: 6px 10px;
+      border-radius: 13px;
+      white-space: nowrap;
+    }
+    .workspace-floating-left { left: 12px; }
+    .workspace-floating-right { right: 12px; }
+    .workspace-floating-right #zoom-readout {
+      min-width: 70px;
+      color: var(--gold-bright);
+      font-size: 17px;
+      font-weight: 800;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+    }
     #left-card-jumpbar button[data-v315-icon] { font-size: 16px; }
     #left-panel .card h2 .card-heading-emoji { margin-right: 7px; }
 
@@ -66,54 +105,69 @@ function injectStyles() {
     .insert-label-v315 { overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 
     .bottom-panel-grid.v315-display-grid {
-      grid-template-columns: minmax(250px, 1.1fr) minmax(330px, 1.2fr) minmax(220px, .9fr) !important;
+      grid-template-columns: minmax(250px, 1.25fr) minmax(210px, .72fr) minmax(240px, .9fr) !important;
+      gap: 10px !important;
     }
     .v315-display-grid .bottom-tool-card.v314-hidden-card { display: none !important; }
-    .v315-display-grid .bottom-tool-card.v314-combined-display { min-width: 0; }
+    .v315-display-grid .bottom-tool-card.v314-combined-display { min-width: 0; max-width: 100%; overflow: hidden; }
     .v315-display-grid .bottom-tool-card.v314-combined-display .bottom-control-buttons {
       display: grid !important;
-      grid-template-columns: repeat(4, 54px);
-      grid-auto-rows: 44px;
-      gap: 8px;
+      grid-template-columns: repeat(4, minmax(40px, 48px));
+      grid-auto-rows: 40px;
+      gap: 7px;
       align-items: stretch;
       justify-content: start;
+      max-width: 100%;
+      overflow: hidden;
     }
     .v315-display-grid .bottom-tool-card.v314-combined-display .bottom-control-buttons > button,
     .v315-display-grid .bottom-tool-card.v314-combined-display .bottom-control-buttons > .reference-file-label,
     .v315-display-grid .bottom-tool-card.v314-combined-display .bottom-control-buttons > span {
       min-width: 0 !important;
-      width: 54px !important;
-      min-height: 44px !important;
-      height: 44px !important;
-      padding: 6px !important;
+      width: 48px !important;
+      min-height: 40px !important;
+      height: 40px !important;
+      padding: 5px !important;
       display: grid;
       place-items: center;
       text-align: center;
       overflow: hidden;
     }
-    .v315-display-grid .bottom-tool-card.v314-combined-display #zoom-readout {
-      width: 82px !important;
-      font-size: 17px;
-      color: var(--gold-bright);
-      background: transparent;
-      border: 0;
-    }
+    .v315-display-grid .bottom-tool-card.v314-combined-display #zoom-readout,
+    .v315-display-grid .bottom-tool-card.v314-combined-display #pause-button,
+    .v315-display-grid .bottom-tool-card.v314-combined-display #snapshot-button,
+    .v315-display-grid .bottom-tool-card.v314-combined-display #zoom-out-button,
+    .v315-display-grid .bottom-tool-card.v314-combined-display #zoom-in-button,
+    .v315-display-grid .bottom-tool-card.v314-combined-display #zoom-reset-button { display: none !important; }
     .v315-display-grid .bottom-tool-card.v314-combined-display .v314-row-2 {
       grid-column: 1 / -1;
       display: grid !important;
-      grid-template-columns: repeat(6, 54px) minmax(92px, 1fr);
-      gap: 8px;
+      grid-template-columns: repeat(4, minmax(40px, 48px));
+      grid-auto-rows: 40px;
+      gap: 7px;
       align-items: center;
+      max-width: 100%;
     }
     .v315-display-grid .v314-underlay-scale {
-      width: auto !important;
-      min-width: 120px;
-      height: 44px;
+      grid-column: span 2;
+      width: 103px !important;
+      min-width: 103px !important;
+      height: 40px !important;
+      display: grid !important;
       grid-template-columns: auto 1fr;
+      gap: 5px;
+      padding: 4px 6px !important;
+      overflow: hidden;
     }
-    .v315-display-grid .v314-underlay-scale input { width: 72px; }
+    .v315-display-grid .v314-underlay-scale span { font-size: 9px; }
+    .v315-display-grid .v314-underlay-scale input { width: 56px; }
     .v315-display-grid #save-archetype-bottom-button { grid-column: auto !important; }
     .v315-display-grid #status-text { position: relative; z-index: 1; }
+    @media (max-width: 1180px) {
+      .bottom-panel-grid.v315-display-grid { grid-template-columns: 1fr 220px 220px !important; }
+      .v315-display-grid .bottom-tool-card.v314-combined-display .bottom-control-buttons,
+      .v315-display-grid .bottom-tool-card.v314-combined-display .v314-row-2 { grid-template-columns: repeat(3, minmax(38px, 46px)); }
+    }
   `;
   document.head.append(style);
 }
@@ -149,6 +203,44 @@ function findCard(title) {
   });
 }
 
+function installFloatingWorkspaceControls() {
+  const workspace = document.getElementById('workspace');
+  if (!workspace) return;
+  let left = document.getElementById('workspace-floating-left-v316');
+  let right = document.getElementById('workspace-floating-right-v316');
+  if (!left) {
+    left = document.createElement('div');
+    left.id = 'workspace-floating-left-v316';
+    left.className = 'workspace-floating-controls workspace-floating-left';
+    workspace.append(left);
+  }
+  if (!right) {
+    right = document.createElement('div');
+    right.id = 'workspace-floating-right-v316';
+    right.className = 'workspace-floating-controls workspace-floating-right';
+    workspace.append(right);
+  }
+
+  moveInto(left, 'pause-button');
+  moveInto(left, 'snapshot-button');
+  moveInto(right, 'zoom-out-button');
+  moveInto(right, 'zoom-readout');
+  moveInto(right, 'zoom-in-button');
+  moveInto(right, 'zoom-reset-button');
+
+  const pause = document.getElementById('pause-button');
+  if (pause) pause.title = 'Pause or resume the particle preview.';
+  const snapshot = document.getElementById('snapshot-button');
+  if (snapshot) snapshot.title = 'Export the current canvas preview as a PNG snapshot.';
+  const reset = document.getElementById('zoom-reset-button');
+  if (reset) reset.textContent = '🎯';
+}
+
+function moveInto(host, id) {
+  const element = document.getElementById(id);
+  if (element && element.parentElement !== host) host.append(element);
+}
+
 function repairDisplayPanel() {
   const grid = document.getElementById('bottom-panel-grid');
   if (grid) grid.classList.add('v315-display-grid');
@@ -161,13 +253,10 @@ function repairDisplayPanel() {
   if (rowTwo && rowTwo.parentElement !== buttons) buttons.append(rowTwo);
 
   const firstRow = [
-    'pause-button',
-    'zoom-out-button',
-    'zoom-readout',
-    'zoom-in-button',
     'undo-bottom-button-v312',
     'redo-bottom-button-v312',
-    'helper-cycle-button'
+    'helper-cycle-button',
+    'clear-particles-button-bottom'
   ];
   firstRow.forEach((id) => {
     const element = document.getElementById(id);
@@ -175,11 +264,10 @@ function repairDisplayPanel() {
   });
 
   const secondRow = [
-    'snapshot-button',
-    'clear-particles-button-bottom',
     'low-performance-button-playback',
     'save-archetype-bottom-button',
-    'workspace-mode-cycle-button'
+    'workspace-mode-cycle-button',
+    'toggle-reference-button'
   ];
   if (rowTwo) {
     secondRow.forEach((id) => {
@@ -194,8 +282,20 @@ function repairDisplayPanel() {
 
   const save = document.getElementById('save-archetype-bottom-button');
   if (save) save.textContent = '💾';
-  const snapshot = document.getElementById('snapshot-button');
-  if (snapshot) snapshot.textContent = '📸';
+  const clear = document.getElementById('clear-particles-button-bottom');
+  if (clear) clear.textContent = '🧹';
+  const bg = document.getElementById('workspace-mode-cycle-button');
+  if (bg) bg.textContent = 'BG';
+  const guides = document.getElementById('helper-cycle-button');
+  if (guides) guides.textContent = 'Guides';
+  const underlayToggle = document.getElementById('toggle-reference-button');
+  if (underlayToggle) underlayToggle.textContent = '🖼️';
+  const underlayLabel = document.querySelector('.reference-file-label');
+  if (underlayLabel) {
+    underlayLabel.childNodes.forEach((node) => {
+      if (node.nodeType === Node.TEXT_NODE) node.textContent = '🖼️';
+    });
+  }
 }
 
 function decorateInsertMenu() {
