@@ -1,0 +1,3 @@
+Trigger GitHub Pages rebuild for Artifex updates.
+
+Reason: Quest Builder layout hotfix was pushed, but live GitHub Pages output appeared stale across multiple pages.
