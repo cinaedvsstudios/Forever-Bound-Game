@@ -17,15 +17,17 @@ import { initWorkflowPolish } from './workflow-polish.js';
 import { initUIPolishV2 } from './ui-polish-v2.js';
 import { initV312Polish } from './v312-polish.js';
 import { initV314Polish } from './v314-polish.js';
+import { initV315Polish } from './v315-polish.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'V3.14';
+const VERSION_LABEL = 'V3.15';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
 });
 
 window.addEventListener('DOMContentLoaded', () => {
+  document.title = `Artifex Effect Editor ${VERSION_LABEL}`;
   const versionBadge = document.getElementById('version-badge');
   if (versionBadge) versionBadge.textContent = VERSION_LABEL;
 
@@ -47,6 +49,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initUIPolishV2(showToast);
   initV312Polish(showToast);
   initV314Polish(showToast);
+  initV315Polish(showToast);
 
   const preset = cloneBasePreset('base', 'standard-particle');
   if (preset) {
