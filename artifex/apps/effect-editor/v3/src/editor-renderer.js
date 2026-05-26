@@ -25,6 +25,7 @@ let referenceImageSource = '';
 let lowPerfFrameSkip = false;
 let lowPerfRedrawSkip = false;
 let renderTime = 0;
+let targetPickCallback = null;
 
 export function initRenderer() {
   canvas = document.getElementById('fx-canvas');
@@ -39,7 +40,7 @@ export function initRenderer() {
   window.addEventListener('resize', resizeCanvas);
   canvas.addEventListener('pointerdown', handlePointer);
   canvas.addEventListener('pointermove', (event) => {
-    if (event.buttons === 1) handlePointer(event);
+    if (event.buttons === 1 && !targetPickCallback) handlePointer(event);
   });
 
   onStateChange(() => {
@@ -49,6 +50,11 @@ export function initRenderer() {
   });
 
   animationId = requestAnimationFrame(tick);
+}
+
+export function beginTargetPick(callback) {
+  targetPickCallback = typeof callback === 'function' ? callback : null;
+  syncCanvasCursor();
 }
 
 export function resizeCanvas() {
@@ -294,6 +300,13 @@ function handlePointer(event) {
   const worldY = ((canvasY - offset.y) / editorState.zoom) / scale;
 
   if (worldX >= 0 && worldX <= getDesignWidth() && worldY >= 0 && worldY <= getDesignHeight()) {
+    if (targetPickCallback) {
+      const callback = targetPickCallback;
+      targetPickCallback = null;
+      callback({ x: worldX, y: worldY });
+      syncCanvasCursor();
+      return;
+    }
     moveActiveEmitter(worldX, worldY);
   }
 }
@@ -310,5 +323,6 @@ function getOffset(scale) {
 }
 
 function syncCanvasCursor() {
-  canvas.style.cursor = 'crosshair';
+  if (!canvas) return;
+  canvas.style.cursor = targetPickCallback ? 'copy' : 'crosshair';
 }
