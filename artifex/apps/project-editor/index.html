@@ -3,29 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Artifex Project Editor v0.1.8 HOTFIX-3 - Flatplan</title>
+  <title>Artifex Project Editor v0.1.9 MENU - Flatplan</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="stylesheet" href="./src/project-theme-overrides.css?v=0.1.8-hotfix3">
+  <link rel="stylesheet" href="./src/project-theme-overrides.css?v=0.1.9-menu">
+  <style>
+    .project-menu summary::-webkit-details-marker { display: none; }
+    .project-menu details[open] summary { color: #f4c76a; background: rgba(90, 58, 18, 0.42); }
+  </style>
   <script>
     tailwind.config = { theme: { extend: { colors: { obsidian: '#0a0a0f', slateDark: '#12121a', cardDark: '#181824', projectGold: '#d6a24c', projectGoldGlow: '#f4c76a', projectGreen: '#9fba5a', projectParchment: '#f8f0c8', accentDark: '#5a3a12' }, boxShadow: { 'project-glow': '0 0 15px rgba(214, 162, 76, 0.45)', 'card-glow': '0 4px 20px rgba(0, 0, 0, 0.6)' } } } };
   </script>
 </head>
 <body class="bg-obsidian text-slate-100 h-full overflow-hidden font-sans select-none flex flex-col">
-  <header class="h-16 bg-slateDark border-b border-[#20202e] px-4 flex items-center justify-between z-40 flex-shrink-0">
-    <div class="flex items-center space-x-3">
+  <header class="h-16 bg-slateDark border-b border-[#20202e] px-4 flex items-center justify-between z-40 flex-shrink-0 gap-4">
+    <div class="flex items-center space-x-3 flex-shrink-0">
       <div class="w-9 h-9 bg-gradient-to-tr from-accentDark to-projectGold rounded-lg flex items-center justify-center shadow-project-glow"><i data-lucide="hexagon" class="w-6 h-6 text-projectParchment"></i></div>
       <div><span class="text-xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-projectGoldGlow to-projectGold">ARTIFEX</span><span class="text-xs text-projectGoldGlow block -mt-1 font-mono tracking-widest">PROJECT EDITOR</span></div>
     </div>
-    <div class="flex items-center gap-2">
-      <span id="projectEditorVersionBadge" data-project-version-badge class="text-[10px] font-mono border border-projectGold/40 text-projectGoldGlow px-2 py-1 rounded bg-accentDark/40">v0.1.8 HOTFIX-3</span>
+
+    <nav class="project-menu flex-1 flex items-center gap-1 min-w-0 text-xs text-zinc-300">
+      <details class="relative"><summary class="cursor-pointer px-2 py-1.5 rounded hover:bg-accentDark/50">File ▾</summary><div class="absolute left-0 top-8 z-50 w-48 bg-cardDark border border-projectGold/30 rounded-lg shadow-card-glow p-1"><button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">New Project</button><button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">Open / Import</button><button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">Export JSON</button></div></details>
+      <details class="relative"><summary class="cursor-pointer px-2 py-1.5 rounded hover:bg-accentDark/50">Edit ▾</summary><div class="absolute left-0 top-8 z-50 w-48 bg-cardDark border border-projectGold/30 rounded-lg shadow-card-glow p-1"><button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">Undo</button><button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">Redo</button><button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">Duplicate Selection</button></div></details>
+      <details class="relative"><summary class="cursor-pointer px-2 py-1.5 rounded hover:bg-accentDark/50">View ▾</summary><div class="absolute left-0 top-8 z-50 w-56 bg-cardDark border border-projectGold/30 rounded-lg shadow-card-glow p-1"><button id="toggleSplitStatePreview" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Show Split State Preview</button><button data-workspace-target="manifest" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Manifest Workspace</button><button data-workspace-target="flatplan" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Flatplan Workspace</button><button data-workspace-target="stitcher" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Stitcher Workspace</button><button data-workspace-target="buildprep" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Build Prep Workspace</button></div></details>
+      <details class="relative"><summary class="cursor-pointer px-2 py-1.5 rounded hover:bg-accentDark/50">Templates ▾</summary><div class="absolute left-0 top-8 z-50 w-48 bg-cardDark border border-projectGold/30 rounded-lg shadow-card-glow p-1"><button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">Starter Flatplan</button><button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">Quest Chain</button></div></details>
+      <details class="relative"><summary class="cursor-pointer px-2 py-1.5 rounded hover:bg-accentDark/50">Libraries ▾</summary><div class="absolute left-0 top-8 z-50 w-48 bg-cardDark border border-projectGold/30 rounded-lg shadow-card-glow p-1"><button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">Scene Library</button><button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">Asset Library</button></div></details>
+      <details class="relative"><summary class="cursor-pointer px-2 py-1.5 rounded hover:bg-accentDark/50">Help ▾</summary><div class="absolute left-0 top-8 z-50 w-48 bg-cardDark border border-projectGold/30 rounded-lg shadow-card-glow p-1"><button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">Project Editor Help</button><button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">Keyboard Shortcuts</button></div></details>
+    </nav>
+
+    <div class="flex items-center gap-2 flex-shrink-0">
+      <span id="projectEditorVersionBadge" data-project-version-badge class="text-[10px] font-mono border border-projectGold/40 text-projectGoldGlow px-2 py-1 rounded bg-accentDark/40">v0.1.9 MENU</span>
       <button id="zoomInBtn" class="w-8 h-8 hover:bg-accentDark/50 text-projectGoldGlow border border-projectGold/30 flex items-center justify-center rounded transition" title="Zoom In"><i data-lucide="plus" class="w-4 h-4"></i></button>
       <button id="resetViewportBtn" class="w-8 h-8 hover:bg-accentDark/50 text-projectGoldGlow border border-projectGold/30 flex items-center justify-center rounded transition" title="Recenter View"><i data-lucide="crosshair" class="w-4 h-4"></i></button>
       <button id="zoomOutBtn" class="w-8 h-8 hover:bg-accentDark/50 text-projectGoldGlow border border-projectGold/30 flex items-center justify-center rounded transition" title="Zoom Out"><i data-lucide="minus" class="w-4 h-4"></i></button>
-      <button data-workspace-target="manifest" class="px-3 py-2 rounded border border-projectGold/30 text-xs text-projectGoldGlow hover:bg-accentDark/50 transition">Manifest</button>
       <button data-workspace-target="flatplan" id="activeWorkspaceBtn" class="bg-gradient-to-r from-accentDark to-projectGold border border-projectGold/60 text-white font-bold px-4 py-2 rounded-lg text-xs shadow-project-glow flex items-center space-x-2 transition"><i data-lucide="layers" class="w-4 h-4 text-projectParchment"></i><span id="activeWorkspaceName" class="tracking-wide text-xs">FLATPLAN</span></button>
-      <button data-workspace-target="stitcher" class="px-3 py-2 rounded border border-projectGold/30 text-xs text-projectGoldGlow hover:bg-accentDark/50 transition">Stitcher</button>
-      <button data-workspace-target="buildprep" class="px-3 py-2 rounded border border-projectGold/30 text-xs text-projectGoldGlow hover:bg-accentDark/50 transition">Build Prep</button>
     </div>
   </header>
   <div class="flex flex-1 overflow-hidden">
@@ -43,7 +54,7 @@
       </div>
     </main>
   </div>
-  <script type="module" src="./src/project-app.v7.js?v=0.1.8-hotfix3"></script>
+  <script type="module" src="./src/project-app.v7.js?v=0.1.9-menu"></script>
   <script>window.addEventListener('DOMContentLoaded', () => { if (window.lucide) window.lucide.createIcons(); });</script>
 </body>
 </html>
