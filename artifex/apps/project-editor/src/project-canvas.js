@@ -2,8 +2,8 @@
 // Step 5 of the Project Editor real split.
 //
 // This module owns canvas-level interaction behaviour for the split shell:
-// node dragging, middle/empty-space panning, mouse-wheel zooming, viewport
-// transform application, and camera reset.
+// node dragging, third-button / scrollwheel-click panning, mouse-wheel zooming,
+// viewport transform application, and camera reset.
 
 export function createProjectCanvasController({
   stateManager,
@@ -20,7 +20,8 @@ export function createProjectCanvasController({
 
   const state = {
     activeDrag: null,
-    activePan: null
+    activePan: null,
+    canvasBindingsAttached: false
   };
 
   function getCanvasPoint(event) {
@@ -53,12 +54,13 @@ export function createProjectCanvasController({
     };
     const worldBefore = screenToWorld(origin);
     const nextZoom = Math.max(0.3, Math.min(2.5, camera.zoom * factor));
-    const nextPan = {
+
+    stateManager.updateCamera({
+      zoom: nextZoom,
       panX: origin.x - worldBefore.x * nextZoom,
-      panY: origin.y - worldBefore.y * nextZoom,
-      zoom: nextZoom
-    };
-    stateManager.updateCamera(nextPan);
+      panY: origin.y - worldBefore.y * nextZoom
+    });
+
     applyViewportTransform();
     onCameraChanged?.(stateManager.camera);
   }
@@ -70,15 +72,31 @@ export function createProjectCanvasController({
   }
 
   function attachCanvasPanAndZoom() {
-    if (!canvasElement) return;
+    if (!canvasElement || state.canvasBindingsAttached) return;
+    state.canvasBindingsAttached = true;
+
+    canvasElement.addEventListener('mousedown', (event) => {
+      if (event.button === 1) event.preventDefault();
+    }, { capture: true });
+
+    canvasElement.addEventListener('auxclick', (event) => {
+      if (event.button === 1) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    }, { capture: true });
 
     canvasElement.addEventListener('pointerdown', (event) => {
       const clickedNode = event.target.closest?.('[data-node-id]');
       const clickedPanel = event.target.closest?.('#splitInspectorPreview, #splitDataPreview');
       if (clickedNode || clickedPanel) return;
-      if (event.button !== 0 && event.button !== 1) return;
+
+      // Canvas pan is intentionally only the third mouse button / scrollwheel click.
+      if (event.button !== 1) return;
 
       event.preventDefault();
+      event.stopPropagation();
+
       const camera = stateManager.camera;
       state.activePan = {
         pointerId: event.pointerId,
@@ -91,13 +109,15 @@ export function createProjectCanvasController({
       };
       canvasElement.setPointerCapture?.(event.pointerId);
       canvasElement.classList.add('cursor-grabbing');
-    });
+    }, { capture: true });
 
     canvasElement.addEventListener('pointermove', (event) => {
       const active = state.activePan;
       if (!active || active.pointerId !== event.pointerId) return;
 
       event.preventDefault();
+      event.stopPropagation();
+
       const point = getCanvasPoint(event);
       stateManager.updateCamera({
         zoom: active.startCamera.zoom,
@@ -106,22 +126,26 @@ export function createProjectCanvasController({
       }, { persist: false });
       applyViewportTransform();
       onCameraChanged?.(stateManager.camera);
-    });
+    }, { capture: true });
 
-    canvasElement.addEventListener('pointerup', (event) => endPan(event));
-    canvasElement.addEventListener('pointercancel', (event) => endPan(event));
+    canvasElement.addEventListener('pointerup', (event) => endPan(event), { capture: true });
+    canvasElement.addEventListener('pointercancel', (event) => endPan(event), { capture: true });
 
     canvasElement.addEventListener('wheel', (event) => {
+      if (event.target.closest?.('#splitInspectorPreview, #splitDataPreview')) return;
       event.preventDefault();
+      event.stopPropagation();
       const factor = event.deltaY < 0 ? 1.08 : 0.92;
       zoomByFactor(factor, getCanvasPoint(event));
-    }, { passive: false });
+    }, { passive: false, capture: true });
   }
 
   function endPan(event) {
     const active = state.activePan;
     if (!active || active.pointerId !== event.pointerId) return;
 
+    event.preventDefault?.();
+    event.stopPropagation?.();
     canvasElement?.releasePointerCapture?.(event.pointerId);
     canvasElement?.classList.remove('cursor-grabbing');
     state.activePan = null;
@@ -166,6 +190,8 @@ export function createProjectCanvasController({
       if (!active || active.nodeId !== nodeId || active.pointerId !== event.pointerId) return;
 
       event.preventDefault();
+      event.stopPropagation();
+
       const point = screenToWorld(getCanvasPoint(event));
       const nextPosition = {
         x: active.startPosition.x + (point.x - active.startPointer.x),
