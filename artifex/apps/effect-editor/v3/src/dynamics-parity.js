@@ -1,4 +1,5 @@
 import { DESIGN_WIDTH, DESIGN_HEIGHT, getActiveLayer, onStateChange, updateActiveLayer } from './editor-state.js';
+import { beginTargetPick } from './editor-renderer.js';
 
 const controlIds = [
   'emitter-width-input',
@@ -35,6 +36,7 @@ function injectDynamicsStyles() {
     .dynamics-note { color: var(--muted); font-size: 11px; line-height: 1.35; margin: 8px 0 0; }
     .dynamics-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0; color: var(--gold-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .12em; font-weight: 800; }
     .dynamics-toggle-row input { width: auto; accent-color: var(--purple2); }
+    #point-target-button.is-target-pick { border-color: var(--module-accent); box-shadow: 0 0 14px var(--module-glow); color: white; }
   `;
   document.head.append(style);
 }
@@ -49,7 +51,7 @@ function ensureDynamicsControls() {
   dynamicsCard.insertAdjacentHTML('beforeend', `
     <div class="dynamics-actions">
       <button id="set-origin-button" type="button" title="Move the origin point to the centre of the stage.">Center Origin</button>
-      <button id="point-target-button" type="button" title="Rotate this directional effect so it aims toward the target point.">Aim at Target</button>
+      <button id="point-target-button" type="button" title="Click this, then click the canvas point this effect should aim toward.">Aim at Target</button>
     </div>
     <div class="dynamics-grid">
       <label>Spawn Width
@@ -96,7 +98,7 @@ function ensureDynamicsControls() {
         <input id="reverse-near-target-toggle" type="checkbox" />
       </label>
     </div>
-    <p class="dynamics-note">Dynamics controls are restored as modular state. Width, rotation, drag, lifetime range, Orbital Force, and noise grain are wired into the runtime.</p>
+    <p class="dynamics-note">Use Aim at Target, then click the canvas. The editor stores target X/Y and rotates the active layer to shoot toward that point.</p>
   `);
 }
 
@@ -143,9 +145,14 @@ function bindDynamicsControls(showToast) {
   document.getElementById('point-target-button')?.addEventListener('click', () => {
     const layer = getActiveLayer();
     if (!layer) return;
-    const angle = Math.atan2((layer.targetY ?? DESIGN_HEIGHT / 2) - layer.emitterY, (layer.targetX ?? DESIGN_WIDTH / 2) - layer.emitterX) * 180 / Math.PI;
-    updateActiveLayer({ angle: Math.round(angle) });
-    showToast('Layer aimed at target point.', 'success');
+    document.getElementById('point-target-button')?.classList.add('is-target-pick');
+    beginTargetPick((point) => {
+      const angle = Math.atan2(point.y - layer.emitterY, point.x - layer.emitterX) * 180 / Math.PI;
+      updateActiveLayer({ targetX: Math.round(point.x), targetY: Math.round(point.y), angle: Math.round(angle), rotation: Math.round(angle), rotationMode: 'fixed' });
+      document.getElementById('point-target-button')?.classList.remove('is-target-pick');
+      showToast(`Aimed at ${Math.round(point.x)}, ${Math.round(point.y)}.`, 'success');
+    });
+    showToast('Click the canvas target point.', 'info');
   });
 
   for (const id of controlIds) {
