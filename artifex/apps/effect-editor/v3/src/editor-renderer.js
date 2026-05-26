@@ -210,6 +210,9 @@ function drawUnderlayMedia(scale) {
   let drawH = stageH;
   if (imageRatio > stageRatio) drawH = stageW / imageRatio;
   else drawW = stageH * imageRatio;
+  const underlayScale = Math.max(0.25, Math.min(2, Number(reference.scale) || 1));
+  drawW *= underlayScale;
+  drawH *= underlayScale;
   const drawX = (stageW - drawW) / 2;
   const drawY = (stageH - drawH) / 2;
 
