@@ -1,11 +1,11 @@
-import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.7';
-import { createProjectEditorStateManager } from './project-state.js?v=0.1.7';
-import { createProjectCanvasController } from './project-canvas.js?v=0.1.7';
-import { createProjectRenderer } from './project-renderer.js?v=0.1.7';
-import { createProjectUI } from './project-ui.js?v=0.1.7';
-import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.7';
-import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.7';
-import { getTypeStyle } from './data/type-styles.js?v=0.1.7';
+import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.8-hotfix3';
+import { createProjectEditorStateManager } from './project-state.js?v=0.1.8-hotfix3';
+import { createProjectCanvasController } from './project-canvas.js?v=0.1.8-hotfix3';
+import { createProjectRenderer } from './project-renderer.js?v=0.1.8-hotfix3';
+import { createProjectUI } from './project-ui.js?v=0.1.8-hotfix3';
+import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.8-hotfix3';
+import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.8-hotfix3';
+import { getTypeStyle } from './data/type-styles.js?v=0.1.8-hotfix3';
 
 applyProjectTheme();
 
@@ -22,7 +22,7 @@ window.ProjectEditorStateManager = state;
 
 function setVersion() {
   document.querySelectorAll('#projectEditorVersionBadge, [data-project-version-badge]').forEach((el) => {
-    el.textContent = 'v0.1.7 SPLIT-UI';
+    el.textContent = 'v0.1.8 HOTFIX-3';
   });
 }
 
@@ -104,7 +104,7 @@ function init() {
 
   ui.setWorkspace(state.activeWorkspace || 'flatplan');
   refresh();
-  console.info('[Artifex Project Editor] v0.1.7 SPLIT-UI loaded', {
+  console.info('[Artifex Project Editor] v0.1.8 HOTFIX-3 loaded', {
     nodes: state.logic.nodes.length,
     routes: state.logic.routes.length
   });
