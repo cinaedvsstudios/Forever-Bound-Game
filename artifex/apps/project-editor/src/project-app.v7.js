@@ -1,11 +1,11 @@
-import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js';
-import { createProjectEditorStateManager } from './project-state.js';
-import { createProjectCanvasController } from './project-canvas.js';
-import { createProjectRenderer } from './project-renderer.js';
-import { createProjectUI } from './project-ui.js';
-import { renderStitcherWorkspace } from './project-stitcher.js';
-import { renderBuildPrepWorkspace } from './project-buildprep.js';
-import { getTypeStyle } from './data/type-styles.js';
+import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.7';
+import { createProjectEditorStateManager } from './project-state.js?v=0.1.7';
+import { createProjectCanvasController } from './project-canvas.js?v=0.1.7';
+import { createProjectRenderer } from './project-renderer.js?v=0.1.7';
+import { createProjectUI } from './project-ui.js?v=0.1.7';
+import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.7';
+import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.7';
+import { getTypeStyle } from './data/type-styles.js?v=0.1.7';
 
 applyProjectTheme();
 
