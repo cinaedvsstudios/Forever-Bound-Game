@@ -120,6 +120,7 @@ export function normalizeLayer(layer) {
     id: layer.id || `layer_${cryptoRandom()}`,
     name: layer.name || 'Effect Layer',
     visible: layer.visible !== false,
+    locked: Boolean(layer.locked),
     engine: layer.engine || 'particles',
     colorA: firstStop?.color || layer.colorA || '#ffcc66',
     colorB: lastStop?.color || layer.colorB || '#ff6600',
@@ -196,13 +197,90 @@ export function selectLayer(index) {
 
 export function updateActiveLayer(patch) {
   const layer = getActiveLayer();
-  if (!layer) return;
+  if (!layer || layer.locked) return;
   Object.assign(layer, patch);
   if (patch.appearanceStops) {
     layer.appearanceStops = normalizeAppearanceStops(patch.appearanceStops, layer);
     layer.activeAppearanceStopIndex = clamp(Math.round(finiteNumber(layer.activeAppearanceStopIndex, 0)), 0, Math.max(0, layer.appearanceStops.length - 1));
     syncLegacyAppearanceFields(layer);
   }
+  editorState.composition.updatedAt = new Date().toISOString();
+  notifyChange();
+}
+
+export function setLayerVisibility(index, visible) {
+  const layer = editorState.composition.layers[index];
+  if (!layer) return;
+  layer.visible = Boolean(visible);
+  editorState.composition.updatedAt = new Date().toISOString();
+  notifyChange();
+}
+
+export function toggleLayerVisibility(index = editorState.activeLayerIndex) {
+  const layer = editorState.composition.layers[index];
+  if (!layer) return;
+  layer.visible = layer.visible === false;
+  editorState.composition.updatedAt = new Date().toISOString();
+  notifyChange();
+}
+
+export function toggleLayerLock(index = editorState.activeLayerIndex) {
+  const layer = editorState.composition.layers[index];
+  if (!layer) return;
+  layer.locked = !layer.locked;
+  editorState.composition.updatedAt = new Date().toISOString();
+  notifyChange();
+}
+
+export function showAllLayers() {
+  for (const layer of editorState.composition.layers) layer.visible = true;
+  editorState.composition.updatedAt = new Date().toISOString();
+  notifyChange();
+}
+
+export function soloLayer(index = editorState.activeLayerIndex) {
+  const layers = editorState.composition.layers;
+  if (index < 0 || index >= layers.length) return;
+  const alreadySolo = layers.every((layer, layerIndex) => layer.visible === (layerIndex === index));
+  if (alreadySolo) {
+    for (const layer of layers) layer.visible = true;
+  } else {
+    layers.forEach((layer, layerIndex) => {
+      layer.visible = layerIndex === index;
+    });
+    editorState.activeLayerIndex = index;
+  }
+  editorState.composition.updatedAt = new Date().toISOString();
+  notifyChange();
+}
+
+export function moveLayer(fromIndex, toIndex) {
+  const layers = editorState.composition.layers;
+  if (fromIndex < 0 || fromIndex >= layers.length) return;
+  const nextIndex = clamp(Math.round(toIndex), 0, layers.length - 1);
+  if (nextIndex === fromIndex) return;
+  const [layer] = layers.splice(fromIndex, 1);
+  layers.splice(nextIndex, 0, layer);
+  if (editorState.activeLayerIndex === fromIndex) {
+    editorState.activeLayerIndex = nextIndex;
+  } else if (editorState.activeLayerIndex > fromIndex && editorState.activeLayerIndex <= nextIndex) {
+    editorState.activeLayerIndex -= 1;
+  } else if (editorState.activeLayerIndex < fromIndex && editorState.activeLayerIndex >= nextIndex) {
+    editorState.activeLayerIndex += 1;
+  }
+  editorState.composition.updatedAt = new Date().toISOString();
+  notifyChange();
+}
+
+export function moveActiveLayer(delta) {
+  moveLayer(editorState.activeLayerIndex, editorState.activeLayerIndex + delta);
+}
+
+export function renameLayer(index, name) {
+  const layer = editorState.composition.layers[index];
+  const nextName = String(name || '').trim();
+  if (!layer || !nextName || layer.locked) return;
+  layer.name = nextName;
   editorState.composition.updatedAt = new Date().toISOString();
   notifyChange();
 }
@@ -255,6 +333,7 @@ export function duplicateActiveLayer() {
   const clone = normalizeLayer(JSON.parse(JSON.stringify(layer)));
   clone.id = `layer_${cryptoRandom()}`;
   clone.name = `${layer.name} Copy`;
+  clone.locked = false;
   editorState.composition.layers.splice(editorState.activeLayerIndex + 1, 0, clone);
   editorState.activeLayerIndex += 1;
   notifyChange();
@@ -265,6 +344,8 @@ export function centerActiveEmitter() {
 }
 
 export function moveActiveEmitter(x, y) {
+  const layer = getActiveLayer();
+  if (layer?.locked) return;
   updateActiveLayer({
     emitterX: clamp(Number(x), 0, getDesignWidth()),
     emitterY: clamp(Number(y), 0, getDesignHeight())
