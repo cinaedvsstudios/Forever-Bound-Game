@@ -1,4 +1,5 @@
 import './template-card-patch.js';
+import './right-panel-layout-patch.js';
 import { initRenderer } from './editor-renderer.js';
 import { initUI, showToast } from './editor-ui.js';
 import { validateCurrentArchetype } from './editor-state.js';
