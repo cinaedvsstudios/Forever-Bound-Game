@@ -8,9 +8,10 @@ import { initDynamicsParity } from './dynamics-parity.js';
 import { initIOParity } from './io-parity.js';
 import { initWorkspaceParity } from './workspace-parity.js';
 import { initResolutionParity } from './resolution-parity.js';
+import { initLayerOrderParity } from './layer-order-parity.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'v2.3.16 STEP-3-SAVE-LIBRARY';
+const VERSION_LABEL = 'v2.3.17 STEP-4-LAYERS';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
@@ -29,11 +30,12 @@ window.addEventListener('DOMContentLoaded', () => {
   initIOParity(showToast);
   initWorkspaceParity(showToast);
   initResolutionParity(showToast);
+  initLayerOrderParity(showToast);
 
   const preset = cloneBasePreset('base', 'standard-particle');
   if (preset) {
     addLayer(preset.config);
   }
 
-  showToast(`${VERSION_LABEL} loaded. Step 3 presets, saving, local management, and library tools are active.`, 'success');
+  showToast(`${VERSION_LABEL} loaded. Step 4 layer stack tools are active.`, 'success');
 });
