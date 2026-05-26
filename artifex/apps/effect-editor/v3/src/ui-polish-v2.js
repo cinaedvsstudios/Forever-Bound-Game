@@ -8,7 +8,7 @@ export function initUIPolishV2(showToast = () => {}) {
   removeThemeControls();
   compactWorkspaceButtons();
   iconizeLayerToolbar();
-  installHelperCards(showToast);
+  installHelperPresetsInsideQuickCard(showToast);
   installLeftCardCollapseButtons();
   installBottomPanelCollapseButton();
   normalizeLeftPanelText();
@@ -27,12 +27,14 @@ function injectStyles() {
   style.textContent = `
     #module-theme-select, #menu-view [data-module-theme] { display: none !important; }
     #left-panel .card h2, #left-panel .brush-library-panel h3, #left-panel label, #left-panel button, #left-panel input, #left-panel select, #left-panel output, #left-panel .render-choice-status, #left-panel .brush-library-note, #left-panel .appearance-stop-buttons span { font-size: 11px; line-height: 1.25; }
-    #left-panel .card h2, #left-panel .helper-card h2 { font-size: 13px; letter-spacing: .16em; }
-    #left-panel button { min-height: 34px; }
-    .helper-card-title-dot { display:inline-block; width:9px; height:9px; margin-right:9px; border-radius:50%; background:var(--module-accent); box-shadow:0 0 12px var(--module-glow); vertical-align:middle; }
-    .helper-info-button { margin-left:auto; min-width:24px; min-height:24px; padding:1px 6px; border-radius:5px; background:linear-gradient(180deg,#58a0ff 0%,#1d4f99 100%); color:white; font-size:11px; }
-    .helper-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px 10px; margin-top:11px; }
-    .helper-grid button { border-color:rgba(0,174,234,.25); background:linear-gradient(180deg,#252b31 0%,#1d2227 100%); }
+    #left-panel .card h2 { font-size: 13px; letter-spacing: .16em; }
+    #left-panel button { min-height: 34px; border-radius: 11px; }
+    .quick-helper-section { margin-top: 12px; border-top: 1px solid rgba(226,204,167,.13); padding-top: 10px; }
+    .quick-helper-title { display:flex; align-items:center; gap:8px; margin:0 0 9px; color:var(--gold-muted); font-size:11px; letter-spacing:.16em; text-transform:uppercase; }
+    .quick-helper-title-dot { display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--module-accent); box-shadow:0 0 12px var(--module-glow); }
+    .quick-helper-info-button { margin-left:auto; min-width:24px; min-height:24px !important; padding:1px 6px; border-radius:5px !important; background:linear-gradient(180deg,#58a0ff 0%,#1d4f99 100%); color:white; font-size:11px !important; }
+    .quick-helper-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px 10px; }
+    .quick-helper-grid button { border-color:rgba(0,174,234,.25); background:linear-gradient(180deg,#252b31 0%,#1d2227 100%); }
     .layer-stack-toolbar button { width:32px; min-width:32px; padding-left:0; padding-right:0; font-size:14px; }
     .layer-stack-toolbar .layer-stack-hint { font-size:9px; }
     .card-collapse-button, .bottom-panel-collapse-button { margin-left:auto; min-width:32px; min-height:27px; padding:2px 7px; border-radius:8px; font-size:14px; text-align:center; }
@@ -121,20 +123,30 @@ function iconizeLayerToolbar() {
   });
 }
 
-function installHelperCards(showToast) {
-  if (document.getElementById('appearance-helper-card')) return;
-  const quickCard = Array.from(document.querySelectorAll('#left-panel .card')).find((card) => card.querySelector('h2')?.textContent?.trim() === 'Quick Edit Presets');
-  if (!quickCard) return;
-  quickCard.insertAdjacentHTML('afterend', `${cardHtml('appearance-helper-card','Appearance Helpers','appearance',['Soft Glow','Sharp Sparks','Fade In/Out','Bright Add','White Fog','Sooty Smoke'])}${cardHtml('colour-helper-card','Colour Helpers','colour',['Fire','Ice','Water','Dark Magic','Good Magic','Evil'])}${cardHtml('dynamics-helper-card','Dynamics Helpers','dynamics',['Slow Drift','Burst Out','Rise Up','Tight Trail'])}`);
+function installHelperPresetsInsideQuickCard(showToast) {
+  document.getElementById('appearance-helper-card')?.remove();
+  document.getElementById('colour-helper-card')?.remove();
+  document.getElementById('dynamics-helper-card')?.remove();
+  const quickCard = Array.from(document.querySelectorAll('#left-panel .card')).find((card) => card.querySelector('h2')?.textContent?.trim() === 'Quick Edit Presets' || card.querySelector('h2')?.textContent?.trim() === 'Quick Edit Helpers');
+  if (!quickCard || document.getElementById('quick-helper-sections')) return;
+  const title = quickCard.querySelector('h2');
+  if (title) title.textContent = 'Quick Edit Helpers';
+  quickCard.insertAdjacentHTML('beforeend', `
+    <div id="quick-helper-sections">
+      ${sectionHtml('Appearance Helpers', 'appearance', ['Soft Glow','Sharp Sparks','Fade In/Out','Bright Add','White Fog','Sooty Smoke'])}
+      ${sectionHtml('Colour Helpers', 'colour', ['Fire','Ice','Water','Dark Magic','Good Magic','Evil'])}
+      ${sectionHtml('Dynamics Helpers', 'dynamics', ['Slow Drift','Burst Out','Rise Up','Tight Trail'])}
+    </div>
+  `);
   document.querySelectorAll('[data-helper-preset]').forEach((button) => button.addEventListener('click', () => {
     applyHelper(button.dataset.helperPreset);
     showToast(`${button.textContent.trim()} helper applied.`, 'success');
   }));
-  document.querySelectorAll('.helper-info-button').forEach((button) => button.addEventListener('click', () => showToast(button.title, 'info')));
+  document.querySelectorAll('.quick-helper-info-button').forEach((button) => button.addEventListener('click', () => showToast(button.title, 'info')));
 }
 
-function cardHtml(id, title, group, labels) {
-  return `<section id="${id}" class="card helper-card collapsible-card"><header><h2><span class="helper-card-title-dot"></span>${title}</h2><button class="helper-info-button" type="button" title="${title} quickly applies common effect settings.">i</button></header><div class="helper-grid">${labels.map((label) => `<button type="button" data-helper-preset="${group}:${slug(label)}">${label}</button>`).join('')}</div></section>`;
+function sectionHtml(title, group, labels) {
+  return `<section class="quick-helper-section"><div class="quick-helper-title"><span class="quick-helper-title-dot"></span><span>${title}</span><button class="quick-helper-info-button" type="button" title="${title} quickly applies common effect settings.">i</button></div><div class="quick-helper-grid">${labels.map((label) => `<button type="button" title="Apply ${label} helper preset." data-helper-preset="${group}:${slug(label)}">${label}</button>`).join('')}</div></section>`;
 }
 
 function slug(label) { return label.toLowerCase().replace(/[^a-z0-9]+/g, '-'); }
