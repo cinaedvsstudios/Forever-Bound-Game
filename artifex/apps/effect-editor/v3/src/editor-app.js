@@ -7,6 +7,7 @@ import { initAppearanceParity } from './appearance-parity.js';
 import { initBrushAssetLibrary } from './brush-asset-library.js';
 import { initBrushRenderControls } from './brush-render-controls.js';
 import { initDynamicsParity } from './dynamics-parity.js';
+import { initEffectSpecificControls } from './effect-specific-controls.js';
 import { initIOParity } from './io-parity.js';
 import { initWorkspaceParity } from './workspace-parity.js';
 import { initResolutionParity } from './resolution-parity.js';
@@ -16,7 +17,7 @@ import { initWorkflowPolish } from './workflow-polish.js';
 import { initUIPolishV2 } from './ui-polish-v2.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'V3.0';
+const VERSION_LABEL = 'V3.11';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
@@ -34,6 +35,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initBrushAssetLibrary(showToast);
   initBrushRenderControls(showToast);
   initDynamicsParity(showToast);
+  initEffectSpecificControls(showToast);
   initIOParity(showToast);
   initWorkspaceParity(showToast);
   initResolutionParity(showToast);

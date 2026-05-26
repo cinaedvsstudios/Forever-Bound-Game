@@ -14,6 +14,10 @@ export function initLibrary() {
   });
 }
 
+function closeOpenMenus() {
+  document.querySelectorAll('.menu-panel.open').forEach((panel) => panel.classList.remove('open'));
+}
+
 function populateBaseLayerMenu() {
   const list = document.getElementById('base-layer-list');
   list.innerHTML = '';
@@ -24,6 +28,7 @@ function populateBaseLayerMenu() {
     button.title = preset.description;
     button.addEventListener('click', () => {
       addLayer(preset.config);
+      closeOpenMenus();
       showToast(`${preset.label} inserted.`, 'success');
     });
     list.append(button);

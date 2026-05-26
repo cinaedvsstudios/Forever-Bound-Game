@@ -1,6 +1,7 @@
 import { ROLE_TEMPLATES } from './templates.js';
 
-const ICON_ATLAS_PATH = './v1/icons/object-archetypes/icons1.png';
+const PATCH_VERSION = '1.02';
+const ICON_ATLAS_PATH = `./v1/icons/object-archetypes/icons1.png?v=${PATCH_VERSION}`;
 const ATLAS_COLUMNS = 6;
 const ATLAS_ROWS = 3;
 const ATLAS_ICON_CROP_RATIO = 0.78;
@@ -137,6 +138,8 @@ const GROUP_THEME_CSS = `
 `;
 
 let atlasImagePromise = null;
+let observer = null;
+let decorateQueued = false;
 const croppedIconCache = new Map();
 
 function injectTemplateCardStyles() {
@@ -147,43 +150,62 @@ function injectTemplateCardStyles() {
   document.head.appendChild(style);
 }
 
-function decorateTemplateCards() {
-  document.querySelectorAll('.template-card, .library-card').forEach((card) => {
-    const templateId = readTemplateId(card);
-    if (!templateId || !ROLE_TEMPLATES[templateId]) return;
-
-    card.dataset.templateId = templateId;
-    card.dataset.templateGroup = TEMPLATE_COLOUR_GROUPS[templateId] || 'default';
-    card.classList.add('object-template-card');
-
-    let visual = card.querySelector('.template-visual, .library-card-preview, .template-icon');
-    if (!visual) {
-      visual = document.createElement('div');
-      visual.className = 'template-visual';
-      card.prepend(visual);
-    }
-
-    visual.dataset.templateGroup = TEMPLATE_COLOUR_GROUPS[templateId] || 'default';
-    visual.innerHTML = '';
-    renderAtlasIcon(visual, templateId);
+function scheduleDecorateTemplateCards() {
+  if (decorateQueued) return;
+  decorateQueued = true;
+  window.requestAnimationFrame(() => {
+    decorateQueued = false;
+    decorateTemplateCards();
   });
 }
 
-function renderAtlasIcon(visual, templateId) {
+function decorateTemplateCards() {
+  document.querySelectorAll('.template-card, .library-card').forEach((card) => decorateTemplateCard(card));
+}
+
+function decorateTemplateCard(card) {
+  const templateId = readTemplateId(card);
+  if (!templateId || !ROLE_TEMPLATES[templateId]) return;
+
+  const existingVisual = card.querySelector(':scope > .template-visual');
+  if (card.dataset.templateIconReady === templateId && existingVisual?.dataset.iconFor === templateId) return;
+
+  card.dataset.templateId = templateId;
+  card.dataset.templateGroup = TEMPLATE_COLOUR_GROUPS[templateId] || 'default';
+  card.dataset.templateIconReady = templateId;
+  card.classList.add('object-template-card');
+
+  let visual = existingVisual || card.querySelector('.template-visual, .library-card-preview, .template-icon');
+  if (!visual) {
+    visual = document.createElement('div');
+    visual.className = 'template-visual';
+    card.prepend(visual);
+  }
+
+  visual.classList.add('template-visual');
+  visual.dataset.templateGroup = TEMPLATE_COLOUR_GROUPS[templateId] || 'default';
+  visual.dataset.iconFor = templateId;
+  showFallbackIcon(visual, templateId);
+  renderAtlasIcon(visual, templateId);
+}
+
+function showFallbackIcon(visual, templateId) {
+  visual.replaceChildren();
   const fallback = document.createElement('span');
   fallback.className = 'template-icon-fallback';
   fallback.textContent = FALLBACK_SYMBOLS[templateId] || '⬡';
   visual.appendChild(fallback);
+}
 
+function renderAtlasIcon(visual, templateId) {
   cropIconFromAtlas(templateId)
     .then((dataUrl) => {
-      if (!dataUrl) return;
+      if (!dataUrl || visual.dataset.iconFor !== templateId) return;
       const image = document.createElement('img');
       image.className = 'template-icon-img';
       image.alt = `${ROLE_TEMPLATES[templateId].label} icon`;
       image.src = dataUrl;
-      visual.innerHTML = '';
-      visual.appendChild(image);
+      visual.replaceChildren(image);
     })
     .catch(() => {
       // Keep the fallback symbol if the icon sheet is missing or cannot be cropped.
@@ -208,6 +230,7 @@ function cropIconFromAtlas(templateId) {
     canvas.width = 256;
     canvas.height = 256;
     const context = canvas.getContext('2d');
+    if (!context) return '';
     context.clearRect(0, 0, canvas.width, canvas.height);
 
     const padding = 10;
@@ -247,10 +270,17 @@ function readTemplateId(card) {
   return Object.entries(ROLE_TEMPLATES).find(([, template]) => text.includes(String(template.label).toLowerCase()))?.[0] || '';
 }
 
-const observer = new MutationObserver(() => decorateTemplateCards());
+function startTemplateCardObserver() {
+  if (observer) return;
+  observer = new MutationObserver((mutations) => {
+    const shouldScan = mutations.some((mutation) => Array.from(mutation.addedNodes).some((node) => node.nodeType === Node.ELEMENT_NODE));
+    if (shouldScan) scheduleDecorateTemplateCards();
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+}
 
 window.addEventListener('DOMContentLoaded', () => {
   injectTemplateCardStyles();
   decorateTemplateCards();
-  observer.observe(document.body, { childList: true, subtree: true });
+  startTemplateCardObserver();
 });
