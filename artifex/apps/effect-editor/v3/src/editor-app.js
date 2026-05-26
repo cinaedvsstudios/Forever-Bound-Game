@@ -12,6 +12,7 @@ import { initWorkspaceParity } from './workspace-parity.js';
 import { initResolutionParity } from './resolution-parity.js';
 import { initLayerOrderParity } from './layer-order-parity.js';
 import { initMenuCleanupParity } from './menu-cleanup-parity.js';
+import { initWorkflowPolish } from './workflow-polish.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
 const VERSION_LABEL = 'V3.0';
@@ -37,6 +38,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initResolutionParity(showToast);
   initLayerOrderParity(showToast);
   initMenuCleanupParity(showToast);
+  initWorkflowPolish(showToast);
 
   const preset = cloneBasePreset('base', 'standard-particle');
   if (preset) {
