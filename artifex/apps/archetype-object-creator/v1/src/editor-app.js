@@ -1,12 +1,13 @@
 import './template-card-patch.js?v=1.02';
 import './right-panel-layout-patch.js?v=1.02';
 import './square-icon-cards-patch.js?v=1.05';
-import './icon-atlas-crop-patch.js?v=1.04';
+import './icon-atlas-crop-patch.js?v=1.06';
+import './object-build-checklist-wizard-patch.js?v=1.06';
 import { initRenderer } from './editor-renderer.js';
 import { initUI, showToast } from './editor-ui.js';
 import { validateCurrentArchetype } from './editor-state.js';
 
-const VERSION_LABEL = 'V1.05';
+const VERSION_LABEL = 'V1.06';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
