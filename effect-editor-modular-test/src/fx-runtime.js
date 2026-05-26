@@ -79,13 +79,12 @@ export function spawnParticlesForLayer(layer) {
 
 export function drawParticle(ctx, particle, layer, scale) {
   const t = Math.min(1, particle.age / particle.life);
-  const alpha = lerp(layer.alphaStart, layer.alphaEnd, easeOut(t)) * finite(layer.textureAlpha, 1);
+  const ramp = sampleAppearanceRamp(layer, easeOut(t));
+  const alpha = ramp.opacity * finite(layer.textureAlpha, 1);
   if (alpha <= 0.005) return;
 
-  const size = Math.max(0.5, lerp(layer.sizeStart, layer.sizeEnd, easeOut(t))) * scale;
-  const fromColor = layer.reverseColor ? layer.colorB : layer.colorA;
-  const toColor = layer.reverseColor ? layer.colorA : layer.colorB;
-  const color = mixHex(fromColor, toColor, t, alpha);
+  const size = Math.max(0.5, ramp.size) * scale;
+  const color = rgbaFromHex(ramp.color, alpha);
   const x = particle.x * scale;
   const y = particle.y * scale;
   const rotation = particle.rotation + degreesToRadians(finite(layer.rotation, 0));
@@ -94,9 +93,9 @@ export function drawParticle(ctx, particle, layer, scale) {
   ctx.globalCompositeOperation = layer.blendMode || defaultBlendMode(layer.engine);
   ctx.globalAlpha = alpha;
 
-  if (layer.glow > 0) {
-    ctx.shadowBlur = layer.glow * scale;
-    ctx.shadowColor = fromColor;
+  if (ramp.glow > 0) {
+    ctx.shadowBlur = ramp.glow * scale;
+    ctx.shadowColor = ramp.color;
   }
   if (layer.edgeBlur > 0) {
     ctx.filter = `blur(${Math.min(30, layer.edgeBlur) * scale}px)`;
@@ -121,6 +120,47 @@ export function drawParticle(ctx, particle, layer, scale) {
   }
 
   ctx.restore();
+}
+
+function sampleAppearanceRamp(layer, t) {
+  const stops = getAppearanceStops(layer);
+  if (stops.length === 1) return stops[0];
+  const sampleT = layer.reverseColor ? 1 - t : t;
+  let left = stops[0];
+  let right = stops[stops.length - 1];
+  for (let index = 0; index < stops.length - 1; index += 1) {
+    if (sampleT >= stops[index].position && sampleT <= stops[index + 1].position) {
+      left = stops[index];
+      right = stops[index + 1];
+      break;
+    }
+  }
+  const span = Math.max(0.0001, right.position - left.position);
+  const localT = Math.min(1, Math.max(0, (sampleT - left.position) / span));
+  return {
+    color: mixHexRaw(left.color, right.color, localT),
+    opacity: lerp(left.opacity, right.opacity, localT),
+    size: lerp(left.size, right.size, localT),
+    glow: lerp(left.glow, right.glow, localT)
+  };
+}
+
+function getAppearanceStops(layer) {
+  if (Array.isArray(layer.appearanceStops) && layer.appearanceStops.length) {
+    return layer.appearanceStops
+      .map((stop, index) => ({
+        position: Math.min(1, Math.max(0, finite(stop.position, index))),
+        color: normalizeHex(stop.color || layer.colorA || '#ffcc66'),
+        opacity: Math.min(1, Math.max(0, finite(stop.opacity, index === 0 ? layer.alphaStart : layer.alphaEnd))),
+        size: Math.max(0.5, finite(stop.size, index === 0 ? layer.sizeStart : layer.sizeEnd)),
+        glow: Math.max(0, finite(stop.glow, index === 0 ? layer.glow : 0))
+      }))
+      .sort((a, b) => a.position - b.position);
+  }
+  return [
+    { position: 0, color: layer.colorA || '#ffcc66', opacity: finite(layer.alphaStart, 1), size: finite(layer.sizeStart, 20), glow: finite(layer.glow, 12) },
+    { position: 1, color: layer.colorB || '#ff6600', opacity: finite(layer.alphaEnd, 0), size: finite(layer.sizeEnd, 4), glow: 0 }
+  ];
 }
 
 function drawTextureParticle(ctx, x, y, size, color, rotation, layer) {
@@ -326,20 +366,39 @@ function drawRefractionDraft(ctx, x, y, size, color, rotation) {
 }
 
 export function mixHex(a, b, t, alpha = 1) {
+  return rgbaFromHex(mixHexRaw(a, b, t), alpha);
+}
+
+function mixHexRaw(a, b, t) {
   const ca = hexToRgb(a);
   const cb = hexToRgb(b);
   const r = Math.round(lerp(ca.r, cb.r, t));
   const g = Math.round(lerp(ca.g, cb.g, t));
   const blue = Math.round(lerp(ca.b, cb.b, t));
-  return `rgba(${r}, ${g}, ${blue}, ${alpha})`;
+  return `#${toHex(r)}${toHex(g)}${toHex(blue)}`;
+}
+
+function rgbaFromHex(hex, alpha = 1) {
+  const rgb = hexToRgb(hex);
+  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+}
+
+function toHex(value) {
+  return Math.max(0, Math.min(255, value)).toString(16).padStart(2, '0');
+}
+
+function normalizeHex(value) {
+  const string = String(value || '').trim();
+  if (/^#[0-9a-f]{6}$/iu.test(string)) return string;
+  if (/^#[0-9a-f]{3}$/iu.test(string)) {
+    return `#${string.slice(1).split('').map((char) => char + char).join('')}`;
+  }
+  return '#ffcc66';
 }
 
 function hexToRgb(hex) {
-  const normalized = hex.replace('#', '').trim();
-  const value = normalized.length === 3
-    ? normalized.split('').map((char) => char + char).join('')
-    : normalized;
-  const number = Number.parseInt(value, 16);
+  const normalized = normalizeHex(hex).replace('#', '').trim();
+  const number = Number.parseInt(normalized, 16);
   return {
     r: (number >> 16) & 255,
     g: (number >> 8) & 255,
