@@ -1,39 +1,174 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Artifex Creation Guide V1</title>
-<style>
-:root{--bg:#0f0c0b;--panel:#171210;--border:#382a21;--gold:#e2cca7;--bright:#fff0ce;--muted:#9f8a78;--text:#f2eee9;--accent:#c37cff;--soft:rgba(195,124,255,.18);--ok:#3eb489;--warn:#d9a441}*{box-sizing:border-box}body{margin:0;height:100vh;overflow:hidden;background:radial-gradient(circle,#241825,#0f0c0b 70%);color:var(--text);font-family:system-ui,Segoe UI,sans-serif}button,input,select,textarea,a,label.file{font:inherit;border:1px solid var(--border);border-radius:12px;background:#17100e;color:var(--gold);padding:8px 10px}button,a,label.file{cursor:pointer;text-decoration:none}button:hover,a:hover,label.file:hover{border-color:var(--accent);color:white}.top{height:66px;display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:#171210f7;border-bottom:1px solid var(--border)}.brand{display:flex;align-items:center;gap:12px}.mark{width:46px;height:46px;display:grid;place-items:center;border:1px solid var(--border);border-radius:14px;color:var(--bright);box-shadow:0 0 18px rgba(195,124,255,.45)}h1{margin:0;font-family:Georgia,serif;letter-spacing:.12em;font-size:22px;color:var(--bright)}.sub{margin:2px 0 0;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.1em}.menus{display:flex;gap:8px}.menu{position:relative}.primary{background:var(--soft);border-color:var(--accent);color:white}.panel{display:none;position:absolute;right:0;top:calc(100% + 8px);width:245px;padding:8px;background:#171210fc;border:1px solid var(--border);border-radius:16px;box-shadow:0 18px 38px #000e;z-index:50}.panel.open{display:block}.panel>*{display:block;width:100%;margin-bottom:6px;text-align:left}.shell{height:calc(100vh - 66px);display:grid;grid-template-columns:360px 1fr}.side{overflow:auto;padding:14px;background:#171210e8;border-right:1px solid var(--border)}.card{background:#171210eb;border:1px solid var(--border);border-radius:18px;padding:13px;margin-bottom:13px}.card h2,.box h2{margin:0 0 12px;color:var(--bright);font-family:Georgia,serif;font-size:14px;text-transform:uppercase;letter-spacing:.08em}.field{display:grid;gap:5px;margin:10px 0;color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase}input,select,textarea{width:100%;background:#0f0c0b;color:var(--text)}textarea{min-height:82px}.check{display:flex;gap:8px;align-items:center;margin:6px 0;background:#0f0c0bcc;border:1px solid #e2cca724;border-radius:12px;padding:8px;color:var(--gold);font-size:13px}.check input{width:auto}.main{display:grid;grid-template-rows:1fr 235px;min-width:0;min-height:0}.dash{padding:22px;overflow:auto}.board{display:grid;grid-template-columns:250px 1fr;gap:20px;max-width:1100px;margin:auto}.box{background:#171210d9;border:1px solid #e2cca733;border-radius:22px;padding:22px}.ring{width:180px;height:180px;margin:0 auto 16px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--accent) calc(var(--p)*1%),#e2cca722 0)}.ring b{width:136px;height:136px;border-radius:50%;display:grid;place-items:center;background:#100c0b;font:700 34px Georgia;color:var(--bright)}.stagegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px}.stage{background:#0f0c0bcc;border:1px solid #e2cca724;border-radius:15px;padding:12px}.bar,.mini{height:8px;border-radius:99px;background:#e2cca722;overflow:hidden;margin-top:8px}.bar i,.mini i{display:block;height:100%;background:var(--accent)}.bottom{overflow:auto;padding:12px;background:#171210f7;border-top:1px solid var(--border)}.tabs{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.tabs button.active{border-color:var(--accent);background:var(--soft);color:white}.count{margin-left:auto;color:#e3bcff;font-size:12px}.list{display:flex;flex-wrap:wrap;gap:9px;margin-top:11px}.item{min-width:195px;max-width:280px;background:#17100e;border:1px solid var(--border);border-radius:14px;padding:10px;text-align:left}.item.active{border-color:var(--accent);box-shadow:0 0 18px rgba(195,124,255,.35)}.item strong{display:block;color:white}.item span{display:block;color:var(--muted);font-size:11px;margin-top:3px}.rows{display:grid;gap:8px;margin-top:11px}.row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0f0c0bcc;border:1px solid var(--border);border-radius:14px;padding:10px}.row.pass,.row.complete,.row.confirmed{border-color:var(--ok)}.row.warn,.row.blocked{border-color:var(--warn)}.acts{display:flex;gap:5px;flex-wrap:wrap}.acts button{font-size:11px;padding:6px}.hide{display:none}.toast{position:fixed;right:14px;bottom:14px;background:#171210;border:1px solid var(--ok);padding:10px 14px;border-radius:13px;box-shadow:0 12px 28px #000c}dialog{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:16px;max-width:720px;width:min(720px,92vw)}pre{white-space:pre-wrap;background:#0f0c0b;border:1px solid var(--border);border-radius:12px;padding:12px;max-height:55vh;overflow:auto}@media(max-width:900px){.top{height:auto;align-items:flex-start;flex-direction:column}.shell{height:calc(100vh - 116px);grid-template-columns:300px 1fr}.board{grid-template-columns:1fr}}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Artifex Creation Guide V1.0</title>
+  <link rel="stylesheet" href="./v1/styles.css" />
 </head>
 <body>
-<header class="top"><div class="brand"><div class="mark">✦</div><div><h1>ARTIFEX</h1><p class="sub">Creation Guide V1.0</p></div></div><nav class="menus"><div class="menu"><button data-menu="file">File ▾</button><div class="panel" id="menu-file"><button id="newEmpty">New Empty Guide</button><label class="file">Import JSON<input id="importFile" type="file" accept="application/json,.json" hidden></label><button id="exportJson">Export JSON</button><button id="saveLocal">Save Locally</button><button id="showLocal">Manage Local Saves</button></div></div><div class="menu"><button class="primary" data-menu="guide">Guide ▾</button><div class="panel" id="menu-guide"><button id="addM">Add Milestone</button><button id="resetStarter">Reset Starter Timeline</button><button id="runHealth">Run Health Check</button><button id="markDone">Mark Selected Complete</button></div></div><div class="menu"><button data-menu="open">Open ▾</button><div class="panel" id="menu-open"><a href="../scene-editor/">Scene Editor</a><a href="../module-boilerplate/">Blank Module Boilerplate</a><a href="../../index.html">Artifex Portal</a></div></div><div class="menu"><button data-menu="help">Help ▾</button><div class="panel" id="menu-help"><button id="quick">Quick Start</button><button id="about">About</button></div></div></nav></header>
-<main class="shell"><aside class="side"><section class="card"><h2>Project Setup <span id="setupP">0%</span></h2><label class="field">Game Title<input id="gameTitle"></label><label class="field">Creator / Studio<input id="creator"></label><label class="field">Project Folder<input id="folder"></label><label class="field">Starting Character<input id="hero"></label><label class="field">Visual Style<select id="style"><option>storybook-cinematic</option><option>retro-adventure</option><option>dark-fantasy</option><option>custom</option></select></label><label class="field">Aspect Ratio<select id="ratio"><option>16:9</option><option>4:3</option><option>21:9</option><option>custom</option></select></label></section><section class="card"><h2>Enabled Modules</h2><div id="mods"></div></section><section class="card"><h2>Selected Milestone</h2><label class="field">Title<input id="mTitle"></label><label class="field">Stage<input id="mStage"></label><label class="field">Status<select id="mStatus"></select></label><label class="field">Priority<select id="mPriority"><option>low</option><option>normal</option><option>high</option><option>critical</option></select></label><label class="field">Linked File / Tool<input id="mLink"></label><label class="field">Notes<textarea id="mNotes"></textarea></label></section><section class="card"><h2>Checklist</h2><label class="field">New Item<input id="newCheck" placeholder="Test in browser"></label><button id="addCheck">Add Checklist Item</button><button id="confirmDefault">Confirm Template Default</button></section></aside><section class="main"><section class="dash"><div class="board"><div class="box"><div class="ring" id="ring"><b id="overall">0%</b></div><h2>Creation Guide</h2><p id="summary"></p></div><div class="box"><h2>Production Timeline</h2><div id="stages" class="stagegrid"></div></div></div></section><section class="bottom"><div class="tabs"><button data-tab="milestones" class="active">Milestones</button><button data-tab="checklist">Checklist</button><button data-tab="health">Health Check</button><span id="count" class="count"></span></div><div id="milestones" class="list"></div><div id="checklist" class="rows hide"></div><div id="health" class="rows hide"></div></section></section></main>
-<dialog id="dlg"><form method="dialog"><h2 id="dlgTitle"></h2><div id="dlgBody"></div><button value="close">Close</button></form></dialog><dialog id="localDlg"><form method="dialog"><h2>Local Saves</h2><pre id="localOut"></pre><button value="close">Close</button></form></dialog>
-<script>
-const STAT=['Not Started','Planning','In Progress','Needs Review','Blocked','Ready for Test','Complete'],MODS=['Project Editor','Scene Editor','Quest Builder','Object Library','Asset Library','FX Library','Map Editor','Dialogue Editor','Build Game'];
-const starter=[['Project Setup','Project Setup',['Set game title','Set project folder name','Choose enabled modules']],['Branding','Branding',['Review title screen','Confirm start button','Confirm options placeholder']],['Hero Setup','Hero Setup',['Set starting character','Link hero sprite or placeholder','Review start position']],['First Scene','First Scene',['Create first scene','Set background or placeholder','Add one exit']],['First Interaction','First Interaction',['Place one interactable','Test Invoke response','Add feedback message']],['First Item','First Item',['Define one item','Choose item category','Test pickup or inventory entry']],['First Enemy','First Enemy',['Define one Foe or hazard','Set damage rule','Test reset behaviour']],['First Quest','First Quest',['Write Calling text','Confirm completion condition','Plan Calling Fulfilled screen']],['First Route','First Route',['Create start node','Create endpoint','Test route']],['First Playtest','First Playtest',['Load game in browser','Play start-to-end path','Log bugs and blockers']]];
-let state={doc:newDoc(true),active:0,tab:'milestones',health:[]};
-function rid(p){return p+'_'+Math.random().toString(36).slice(2,9)}
-function newDoc(seed){return{id:rid('creation'),name:'Artifex Adventure Creation Guide',moduleKind:'creation-guide',version:'V1.0',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),setup:{gameTitle:'Untitled Artifex Adventure',creatorName:'',projectFolder:'',startingCharacter:'Hero',visualStyle:'storybook-cinematic',aspectRatio:'16:9',enabledModules:MODS.slice(0,6)},milestones:seed?starter.map(makeM):[],notes:'',projectTree:[]}}
-function makeM(r){return{id:rid('milestone'),title:r[0]||'New Milestone',stage:r[1]||'Planning',status:'Not Started',priority:'normal',required:true,confirmedTemplateDefault:false,linkedFile:'',notes:'',checklist:(r[2]||[]).map(t=>({id:rid('check'),text:t,status:'open',required:true,notes:''}))}}
-function active(){return state.doc.milestones[state.active]||null}function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
-function pctM(m){if(!m)return 0;if(m.status==='Complete')return 100;let c=m.checklist||[],a=c.filter(x=>x.required!==false);if(!a.length)a=c;if(!a.length)return m.confirmedTemplateDefault?100:{'Not Started':0,Planning:15,'In Progress':45,'Needs Review':70,Blocked:30,'Ready for Test':85,Complete:100}[m.status]||0;return Math.round(a.filter(x=>['complete','confirmed','not-needed'].includes(x.status)).length/a.length*100)}
-function pctAll(){let m=state.doc.milestones||[],a=m.filter(x=>x.required!==false);if(!a.length)a=m;if(!a.length)return 0;return Math.round(a.reduce((s,x)=>s+pctM(x),0)/a.length)}
-function pctSetup(){let s=state.doc.setup,c=[s.gameTitle&&s.gameTitle!=='Untitled Artifex Adventure',s.creatorName,s.projectFolder,s.startingCharacter&&s.startingCharacter!=='Hero',s.visualStyle,s.aspectRatio,s.enabledModules?.length];return Math.round(c.filter(Boolean).length/c.length*100)}
-function healthCheck(){let r=[],s=state.doc.setup,m=state.doc.milestones;add(r,s.gameTitle&&s.gameTitle!=='Untitled Artifex Adventure','Project title changed.','Project title is missing or unchanged.','Project Setup');add(r,s.projectFolder,'Project folder set.','Project folder missing.','Project Setup');add(r,s.startingCharacter&&s.startingCharacter!=='Hero','Starting character reviewed.','Starting character still generic Hero.','Hero Setup');add(r,m.some(x=>/first scene/i.test(x.title)&&pctM(x)>0),'First scene has started.','First scene not started.','First Scene');add(r,m.some(x=>/quest|calling/i.test(x.title)&&(x.checklist||[]).some(c=>/completion condition/i.test(c.text)&&['complete','confirmed'].includes(c.status))),'Quest completion condition confirmed.','No Quest completion condition confirmed.','First Quest');let b=m.filter(x=>x.status==='Blocked').length;add(r,!b,'No blocked milestones.',b+' milestone(s) blocked.','Blockers');let u=m.filter(x=>x.required!==false&&!x.confirmedTemplateDefault&&pctM(x)===0).length;add(r,!u,'All required milestones started or confirmed.',u+' required milestone(s) untouched.','Template Defaults');state.health=r;return r}function add(a,ok,pass,fail,cat){a.push({status:ok?'pass':'warn',message:ok?pass:fail,category:cat})}
-function touch(){state.doc.updatedAt=new Date().toISOString();healthCheck();render()}function toast(t){let d=document.createElement('div');d.className='toast';d.textContent=t;document.body.append(d);setTimeout(()=>d.remove(),2500)}
-function render(){sync();modsRender();dashRender();listsRender()}
-function sync(){let s=state.doc.setup,m=active();gameTitle.value=s.gameTitle;creator.value=s.creatorName;folder.value=s.projectFolder;hero.value=s.startingCharacter;style.value=s.visualStyle;ratio.value=s.aspectRatio;setupP.textContent=pctSetup()+'%';mTitle.value=m?.title||'';mStage.value=m?.stage||'';mStatus.value=m?.status||'Not Started';mPriority.value=m?.priority||'normal';mLink.value=m?.linkedFile||'';mNotes.value=m?.notes||'';[mTitle,mStage,mStatus,mPriority,mLink,mNotes,newCheck,addCheck,confirmDefault,markDone].forEach(e=>e.disabled=!m)}
-function modsRender(){mods.innerHTML='';let en=new Set(state.doc.setup.enabledModules||[]);MODS.forEach(n=>{let l=document.createElement('label');l.className='check';let i=document.createElement('input');i.type='checkbox';i.checked=en.has(n);i.onchange=()=>{en.has(n)?en.delete(n):en.add(n);state.doc.setup.enabledModules=[...en];touch()};l.append(i,document.createTextNode(n));mods.append(l)})}
-function dashRender(){let p=pctAll();ring.style.setProperty('--p',p);overall.textContent=p+'%';summary.textContent=`${state.doc.milestones.length} milestones • ${pctSetup()}% setup • ${state.health.filter(h=>h.status==='warn').length} warning(s)`;let g={};state.doc.milestones.forEach(m=>(g[m.stage]??=[]).push(m));stages.innerHTML='';Object.entries(g).forEach(([k,v])=>{let p=Math.round(v.reduce((s,m)=>s+pctM(m),0)/v.length);let d=document.createElement('article');d.className='stage';d.innerHTML=`<strong>${esc(k)}</strong><div class="bar"><i style="width:${p}%"></i></div><span>${v.length} milestone(s) • ${p}%</span>`;stages.append(d)})}
-function listsRender(){document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===state.tab));milestones.classList.toggle('hide',state.tab!=='milestones');checklist.classList.toggle('hide',state.tab!=='checklist');health.classList.toggle('hide',state.tab!=='health');count.textContent=`${state.doc.milestones.length} milestones • ${pctAll()}% complete`;milestones.innerHTML='';state.doc.milestones.forEach((m,i)=>{let p=pctM(m),b=document.createElement('button');b.className='item '+(i===state.active?'active':'');b.innerHTML=`<strong>${esc(m.title)}</strong><span>${esc(m.stage)} / ${esc(m.status)} / ${p}%</span><div class="mini"><i style="width:${p}%"></i></div>`;b.onclick=()=>{state.active=i;render()};milestones.append(b)});checklist.innerHTML='';let m=active();if(m)(m.checklist||[]).forEach(c=>{let d=document.createElement('article');d.className='row '+c.status;d.innerHTML=`<div><strong>${esc(c.text)}</strong><span>${esc(c.status)}</span></div><div class="acts"></div>`;let a=d.querySelector('.acts');[['open','Open'],['confirmed','Confirm'],['complete','Done'],['blocked','Block'],['not-needed','Skip']].forEach(([st,lab])=>{let bt=document.createElement('button');bt.textContent=lab;bt.onclick=()=>{c.status=st;touch()};a.append(bt)});checklist.append(d)});health.innerHTML='';state.health.forEach(h=>{let d=document.createElement('article');d.className='row '+h.status;d.innerHTML=`<div><strong>${esc(h.category)}</strong><span>${esc(h.message)}</span></div>`;health.append(d)})}
-function bind(id,fn){document.getElementById(id).addEventListener('input',e=>{fn(e.target.value);touch()})}
-STAT.forEach(s=>mStatus.append(new Option(s,s)));bind('gameTitle',v=>state.doc.setup.gameTitle=v);bind('creator',v=>state.doc.setup.creatorName=v);bind('folder',v=>state.doc.setup.projectFolder=v);bind('hero',v=>state.doc.setup.startingCharacter=v);bind('style',v=>state.doc.setup.visualStyle=v);bind('ratio',v=>state.doc.setup.aspectRatio=v);bind('mTitle',v=>active().title=v);bind('mStage',v=>active().stage=v);bind('mStatus',v=>active().status=v);bind('mPriority',v=>active().priority=v);bind('mLink',v=>active().linkedFile=v);bind('mNotes',v=>active().notes=v);
-document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=e=>{e.stopPropagation();let p=document.getElementById('menu-'+b.dataset.menu),o=p.classList.contains('open');document.querySelectorAll('.panel.open').forEach(x=>x.classList.remove('open'));if(!o)p.classList.add('open')});document.addEventListener('click',()=>document.querySelectorAll('.panel.open').forEach(x=>x.classList.remove('open')));
-document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab;render()});addM.onclick=()=>{state.doc.milestones.push(makeM(['New Milestone','Planning',[]]));state.active=state.doc.milestones.length-1;touch();toast('Milestone added')};resetStarter.onclick=()=>{state.doc.milestones=starter.map(makeM);state.active=0;touch();toast('Starter timeline reset')};newEmpty.onclick=()=>{state.doc=newDoc(false);state.active=-1;touch();toast('Empty guide created')};runHealth.onclick=()=>{healthCheck();state.tab='health';render();toast('Health check complete')};markDone.onclick=()=>{let m=active();if(m){m.status='Complete';m.checklist.forEach(c=>c.status=c.status==='not-needed'?c.status:'complete');touch()}};confirmDefault.onclick=()=>{let m=active();if(m){m.confirmedTemplateDefault=true;m.checklist.forEach(c=>{if(c.status==='open')c.status='confirmed'});touch()}};addCheck.onclick=()=>{let m=active();if(m&&newCheck.value.trim()){m.checklist.push({id:rid('check'),text:newCheck.value.trim(),status:'open',required:true,notes:''});newCheck.value='';state.tab='checklist';touch()}};
-exportJson.onclick=()=>{let blob=new Blob([JSON.stringify(state.doc,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(state.doc.setup.gameTitle||'creation-guide').toLowerCase().replace(/[^a-z0-9]+/g,'-')+'.json';a.click();URL.revokeObjectURL(a.href)};importFile.onchange=async e=>{let f=e.target.files[0];if(!f)return;try{state.doc=JSON.parse(await f.text());state.active=state.doc.milestones?.length?0:-1;touch()}catch{toast('Import failed')}};saveLocal.onclick=()=>{let s=JSON.parse(localStorage.getItem('artifex.creationGuide.localSaves')||'{}');s[state.doc.id]={savedAt:new Date().toISOString(),name:state.doc.setup.gameTitle||state.doc.name,data:state.doc};localStorage.setItem('artifex.creationGuide.localSaves',JSON.stringify(s));toast('Saved locally')};showLocal.onclick=()=>{let s=JSON.parse(localStorage.getItem('artifex.creationGuide.localSaves')||'{}');localOut.textContent=Object.entries(s).map(([id,x],i)=>`${i+1}. ${x.name}\n   id: ${id}\n   saved: ${x.savedAt}`).join('\n\n')||'No local saves found.';localDlg.showModal()};quick.onclick=()=>{dlgTitle.textContent='Quick Start';dlgBody.innerHTML='<p>Fill Project Setup, then work through Milestones. Use Checklist to mark exact tasks. Run Health Check to catch missing title, generic hero, untouched milestones, blocked work, and missing Quest completion conditions.</p>';dlg.showModal()};about.onclick=()=>{dlgTitle.textContent='About Creation Guide';dlgBody.innerHTML='<p>Creation Guide is the wizard, timeline, checklist, dashboard, and health-check module. It points to Scene Editor, Project Editor, Quest Builder, Object Library, and other tools without replacing them.</p>';dlg.showModal()};healthCheck();render();toast('Creation Guide V1 loaded');
-</script>
+  <header class="topbar">
+    <section class="brand">
+      <div class="brand-mark" id="brand-mark">✦</div>
+      <div>
+        <h1>ARTIFEX</h1>
+        <p><span id="module-label">Creation Guide</span> <span id="version-badge">V1.0</span></p>
+      </div>
+    </section>
+
+    <nav class="menu-bar" aria-label="Creation Guide menus">
+      <div class="menu">
+        <button class="menu-button" data-menu="file">File ▾</button>
+        <div class="menu-panel" id="menu-file">
+          <button id="new-guide-button">New Creation Guide</button>
+          <label class="menu-file-label">Import JSON<input id="import-json-input" type="file" accept=".json,application/json" hidden /></label>
+          <button id="export-json-button">Export JSON</button>
+          <button id="save-local-button">Save Locally in Browser</button>
+          <button id="view-local-button">Manage Local Saves</button>
+        </div>
+      </div>
+
+      <div class="menu">
+        <button class="menu-button" data-menu="edit">Edit ▾</button>
+        <div class="menu-panel" id="menu-edit">
+          <button id="duplicate-assignment-button">Duplicate Selected Assignment</button>
+          <button id="delete-assignment-button">Delete Selected Assignment</button>
+          <button id="open-detail-button">Open Assignment Detail</button>
+        </div>
+      </div>
+
+      <div class="menu">
+        <button class="menu-button" data-menu="view">View ▾</button>
+        <div class="menu-panel" id="menu-view">
+          <button data-workspace-mode="dark">Background: Dark</button>
+          <button data-workspace-mode="white">Background: White</button>
+          <button id="toggle-grid-button">Toggle Grid</button>
+          <button id="toggle-helpers-button">Toggle Guides</button>
+        </div>
+      </div>
+
+      <div class="menu">
+        <button class="menu-button primary" data-menu="insert">Insert ▾</button>
+        <div class="menu-panel wide" id="menu-insert">
+          <section class="insert-section">
+            <h3>Assignments</h3>
+            <button id="add-assignment-button">Add Blank Assignment</button>
+          </section>
+          <section class="insert-section">
+            <h3>Starter Assignment Templates</h3>
+            <div id="template-list" class="insert-list"></div>
+          </section>
+        </div>
+      </div>
+
+      <div class="menu">
+        <button class="menu-button" data-menu="open">Open ▾</button>
+        <div class="menu-panel right" id="menu-open">
+          <a href="../../index.html">Artifex Portal</a>
+          <a href="../scene-editor/">Scene Editor</a>
+          <a href="../module-boilerplate/">Blank Module Boilerplate</a>
+        </div>
+      </div>
+
+      <div class="menu">
+        <button class="menu-button" data-menu="help">Help ▾</button>
+        <div class="menu-panel right" id="menu-help">
+          <button id="quick-start-button">Quick Start Guide</button>
+          <button id="about-button">About Creation Guide</button>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <main class="app-shell">
+    <aside id="left-panel" class="side-panel">
+      <section class="card">
+        <header><h2>Project Setup</h2><span id="setup-percent">0%</span></header>
+        <label>Game Title<input id="game-title-input" /></label>
+        <label>Creator / Studio<input id="creator-input" /></label>
+        <label>Project Folder<input id="project-folder-input" /></label>
+        <label>Starting Character<input id="starting-character-input" /></label>
+        <label>Build Target<select id="build-target-input"><option>Chronicle 0</option><option>Quest 0.5</option><option>Chronicle 1</option><option>Custom</option></select></label>
+      </section>
+
+      <section class="card">
+        <header><h2>Selected Assignment</h2><span id="assignment-percent">0%</span></header>
+        <label>Title<input id="assignment-title-input" placeholder="Select or add an assignment" /></label>
+        <label>Primary Module<select id="assignment-module-input"></select></label>
+        <label>Workflow State<select id="assignment-state-input"></select></label>
+        <label>Owner<input id="assignment-owner-input" placeholder="Unassigned" /></label>
+        <div class="split-fields">
+          <label>Priority<input id="assignment-priority-input" type="number" min="1" max="5" /></label>
+          <label>Effort<input id="assignment-effort-input" type="number" min="1" max="5" /></label>
+        </div>
+        <label>Milestone<input id="assignment-milestone-input" /></label>
+        <label>Zone / Scene<input id="assignment-zone-input" /></label>
+        <label>Notes<textarea id="assignment-notes-input" rows="5"></textarea></label>
+      </section>
+
+      <section class="card">
+        <header><h2>Subtasks</h2></header>
+        <label>New Subtask<input id="subtask-text-input" placeholder="Add background art" /></label>
+        <button id="add-subtask-button">Add Subtask</button>
+        <div id="subtask-list" class="subtask-list"></div>
+      </section>
+    </aside>
+
+    <div id="side-resizer" class="side-resizer" title="Drag to resize side panel"></div>
+
+    <section class="workspace-column">
+      <section class="workspace-toolbar">
+        <button id="snapshot-button">Snapshot</button>
+        <button id="zoom-out-button">−</button>
+        <span id="zoom-readout">100%</span>
+        <button id="zoom-in-button">+</button>
+        <button id="zoom-reset-button">Reset Zoom</button>
+        <select id="todo-sort-input" title="Dashboard sort">
+          <option value="easy-wins">Easy Wins</option>
+          <option value="most-important">Most Important</option>
+          <option value="not-touched">Not Touched</option>
+          <option value="almost-complete">Almost Complete</option>
+          <option value="by-module">By Module</option>
+        </select>
+        <span id="status-text">Ready.</span>
+      </section>
+
+      <section id="workspace" class="workspace">
+        <canvas id="module-canvas" width="1280" height="720"></canvas>
+        <div id="toast-area" aria-live="polite"></div>
+      </section>
+
+      <div id="bottom-resizer" class="bottom-resizer" title="Drag to resize assignment panel"></div>
+
+      <section id="bottom-panel" class="bottom-panel">
+        <header><h2>Assignments</h2><span id="assignment-count">0 assignments</span></header>
+        <div class="assignment-tabs" id="assignment-tabs"></div>
+        <div id="assignment-list" class="assignment-list"></div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="assignment-dialog">
+    <form method="dialog">
+      <header class="dialog-header accent-dialog-header"><h2 id="assignment-dialog-title">Assignment Detail</h2><button value="close">×</button></header>
+      <div id="assignment-dialog-body" class="dialog-body"></div>
+    </form>
+  </dialog>
+
+  <dialog id="local-dialog">
+    <form method="dialog">
+      <header class="dialog-header"><h2>Local Saves</h2><button value="close">×</button></header>
+      <pre id="local-files-output"></pre>
+    </form>
+  </dialog>
+
+  <dialog id="help-dialog">
+    <form method="dialog">
+      <header class="dialog-header"><h2 id="help-dialog-title">Help</h2><button value="close">×</button></header>
+      <div id="help-dialog-body" class="dialog-body"></div>
+    </form>
+  </dialog>
+
+  <script type="module" src="./v1/src/module-app.js"></script>
 </body>
 </html>
