@@ -1,9 +1,24 @@
 import { getActiveLayer, onStateChange, updateActiveLayer } from './editor-state.js';
 
+const SHAPE_CHOICES = [
+  ['circle', 'Circle / Soft Orb'],
+  ['square', 'Square'],
+  ['diamond', 'Diamond'],
+  ['star', 'Star Spark'],
+  ['slash', 'Slash Stroke']
+];
+
+const BRUSH_CHOICES = [
+  ['spark', 'Spark'],
+  ['soft-dot', 'Soft Dot'],
+  ['smoke-puff', 'Smoke Puff'],
+  ['slash', 'Slash Stroke'],
+  ['flare', 'Flare Cross']
+];
+
 const controlIds = [
   'appearance-mode-select',
-  'particle-shape-select',
-  'brush-select',
+  'render-choice-button',
   'blend-mode-select',
   'tint-mode-select',
   'texture-fit-select',
@@ -52,12 +67,15 @@ function injectAppearanceStyles() {
     .appearance-stop-fields input[type='color'] { min-height: 44px; }
     .appearance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .appearance-grid label { margin: 0; }
-    .appearance-wide { grid-column: 1 / -1; }
+    .render-choice-button { width: 100%; min-height: 40px; text-align: left; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .render-choice-button::after { content: '▾'; color: var(--gold-muted); }
+    .render-choice-button.is-file::after { content: '↥'; color: var(--module-accent-strong); }
+    .render-choice-status { margin-top: 6px; color: var(--muted); font-size: 11px; text-transform: none; letter-spacing: .02em; font-weight: 500; }
+    .render-choice-status[hidden] { display: none; }
     .inline-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 11px 0; color: var(--gold-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .12em; font-weight: 800; }
     .inline-toggle-row input { width: auto; accent-color: var(--purple2); }
-    .texture-file-label { border: 1px dashed rgba(226,204,167,.24); border-radius: 12px; padding: 10px; background: rgba(15,12,11,.5); cursor: pointer; }
-    .texture-file-label input { display: none; }
-    .texture-status { margin-top: 7px; color: var(--muted); font-size: 11px; text-transform: none; letter-spacing: .02em; font-weight: 500; }
+    .appearance-choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 10px; padding-top: 12px; }
+    .appearance-choice-grid button { min-height: 44px; text-align: center; }
   `;
   document.head.append(style);
 }
@@ -81,8 +99,8 @@ function ensureAppearanceControls() {
       </div>
       <div class="appearance-stop-buttons">
         <span id="selected-stop-readout">Stop 1 · 0%</span>
-        <button id="add-stop-button" type="button">+</button>
-        <button id="delete-stop-button" type="button">🗑</button>
+        <button id="add-stop-button" type="button" title="Add appearance marker">+</button>
+        <button id="delete-stop-button" type="button" title="Delete selected appearance marker">🗑</button>
       </div>
       <div class="appearance-stop-fields">
         <label class="appearance-wide">Colour
@@ -106,30 +124,17 @@ function ensureAppearanceControls() {
 
   appearanceCard.insertAdjacentHTML('beforeend', `
     <div class="appearance-grid">
-      <label class="appearance-wide">Particle Render Mode
+      <label>Particle Render Mode
         <select id="appearance-mode-select">
           <option value="shape">Shape</option>
           <option value="brush">Built-in Brush</option>
           <option value="custom">Custom Image Brush</option>
         </select>
       </label>
-      <label>Shape
-        <select id="particle-shape-select">
-          <option value="circle">Circle / Soft Orb</option>
-          <option value="square">Square</option>
-          <option value="diamond">Diamond</option>
-          <option value="star">Star Spark</option>
-          <option value="slash">Slash Stroke</option>
-        </select>
-      </label>
-      <label>Built-in Brush
-        <select id="brush-select">
-          <option value="spark">Spark</option>
-          <option value="soft-dot">Soft Dot</option>
-          <option value="smoke-puff">Smoke Puff</option>
-          <option value="slash">Slash Stroke</option>
-          <option value="flare">Flare Cross</option>
-        </select>
+      <label id="render-choice-label"><span id="render-choice-title">Shape</span>
+        <button id="render-choice-button" class="render-choice-button" type="button">Circle / Soft Orb</button>
+        <input id="custom-texture-input" type="file" accept="image/png,image/webp,image/jpeg" hidden />
+        <span id="texture-status" class="render-choice-status" hidden>No custom texture loaded</span>
       </label>
       <label>Blend Mode
         <select id="blend-mode-select">
@@ -161,20 +166,29 @@ function ensureAppearanceControls() {
         <input id="edge-blur-input" type="range" min="0" max="5" step="0.1" value="0" />
         <output id="edge-blur-output">0</output>
       </label>
-      <label class="appearance-wide">Texture Opacity
+      <label>Texture Opacity
         <input id="texture-alpha-input" type="range" min="0" max="1" step="0.01" value="1" />
         <output id="texture-alpha-output">1</output>
       </label>
     </div>
-    <label class="texture-file-label">Custom Image Brush
-      <input id="custom-texture-input" type="file" accept="image/png,image/webp,image/jpeg" />
-      <span>Choose a transparent PNG/WebP/JPG brush texture</span>
-      <div id="texture-status" class="texture-status">No custom texture loaded</div>
-    </label>
     <label class="inline-toggle-row">Reverse Colour Gradient
       <input id="reverse-toggle" type="checkbox" />
     </label>
   `);
+
+  if (!document.getElementById('appearance-choice-dialog')) {
+    document.body.insertAdjacentHTML('beforeend', `
+      <dialog id="appearance-choice-dialog">
+        <form method="dialog">
+          <header class="dialog-header">
+            <h2 id="appearance-choice-title">Choose Shape</h2>
+            <button value="close" title="Close chooser">×</button>
+          </header>
+          <div id="appearance-choice-list" class="appearance-choice-grid"></div>
+        </form>
+      </dialog>
+    `);
+  }
 }
 
 function markLegacyAppearanceControls() {
@@ -195,24 +209,19 @@ function bindAppearanceControls(showToast) {
   document.getElementById('appearance-mode-select')?.addEventListener('change', (event) => {
     updateActiveLayer({ appearanceMode: event.target.value });
   });
-  document.getElementById('particle-shape-select')?.addEventListener('change', (event) => {
-    updateActiveLayer({ particleShape: event.target.value });
+  document.getElementById('render-choice-button')?.addEventListener('click', () => {
+    const layer = getActiveLayer();
+    if (!layer) return;
+    if ((layer.appearanceMode || 'shape') === 'custom') {
+      document.getElementById('custom-texture-input')?.click();
+      return;
+    }
+    openChoiceDialog(layer);
   });
-  document.getElementById('brush-select')?.addEventListener('change', (event) => {
-    updateActiveLayer({ builtInBrush: event.target.value, appearanceMode: 'brush' });
-  });
-  document.getElementById('blend-mode-select')?.addEventListener('change', (event) => {
-    updateActiveLayer({ blendMode: event.target.value });
-  });
-  document.getElementById('tint-mode-select')?.addEventListener('change', (event) => {
-    updateActiveLayer({ tintMode: event.target.value });
-  });
-  document.getElementById('texture-fit-select')?.addEventListener('change', (event) => {
-    updateActiveLayer({ textureFit: event.target.value });
-  });
-  document.getElementById('reverse-toggle')?.addEventListener('change', (event) => {
-    updateActiveLayer({ reverseColor: event.target.checked });
-  });
+  document.getElementById('blend-mode-select')?.addEventListener('change', (event) => updateActiveLayer({ blendMode: event.target.value }));
+  document.getElementById('tint-mode-select')?.addEventListener('change', (event) => updateActiveLayer({ tintMode: event.target.value }));
+  document.getElementById('texture-fit-select')?.addEventListener('change', (event) => updateActiveLayer({ textureFit: event.target.value }));
+  document.getElementById('reverse-toggle')?.addEventListener('change', (event) => updateActiveLayer({ reverseColor: event.target.checked }));
   bindNumberRange('rotation-input', 'rotation-output', 'rotation');
   bindNumberRange('edge-blur-input', 'edge-blur-output', 'edgeBlur');
   bindNumberRange('texture-alpha-input', 'texture-alpha-output', 'textureAlpha');
@@ -229,15 +238,37 @@ function bindAppearanceControls(showToast) {
     if (!file) return;
     const reader = new FileReader();
     reader.addEventListener('load', () => {
-      updateActiveLayer({
-        appearanceMode: 'custom',
-        textureName: file.name,
-        textureDataUrl: String(reader.result || '')
-      });
+      updateActiveLayer({ appearanceMode: 'custom', textureName: file.name, textureDataUrl: String(reader.result || '') });
       showToast(`Custom texture loaded: ${file.name}`, 'success');
     });
     reader.readAsDataURL(file);
   });
+}
+
+function openChoiceDialog(layer) {
+  const mode = layer.appearanceMode || 'shape';
+  const choices = mode === 'brush' ? BRUSH_CHOICES : SHAPE_CHOICES;
+  const property = mode === 'brush' ? 'builtInBrush' : 'particleShape';
+  const dialog = document.getElementById('appearance-choice-dialog');
+  const title = document.getElementById('appearance-choice-title');
+  const list = document.getElementById('appearance-choice-list');
+  if (!dialog || !title || !list) return;
+  title.textContent = mode === 'brush' ? 'Choose Brush' : 'Choose Shape';
+  list.innerHTML = '';
+  choices.forEach(([value, label]) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = label;
+    button.title = `Use ${label}`;
+    if (layer[property] === value) button.classList.add('is-accent');
+    button.addEventListener('click', () => {
+      updateActiveLayer({ [property]: value, appearanceMode: mode });
+      dialog.close();
+    });
+    list.append(button);
+  });
+  if (typeof dialog.showModal === 'function') dialog.showModal();
+  else dialog.setAttribute('open', '');
 }
 
 function bindNumberRange(inputId, outputId, property) {
@@ -269,17 +300,7 @@ function addAppearanceStop(showToast) {
   }
   const active = stops[clampIndex(layer.activeAppearanceStopIndex || 0, stops)] || stops[0];
   const open = findOpenStopPosition(stops);
-  const nextStops = sanitizeStops([
-    ...stops,
-    {
-      id: `stop_${Date.now().toString(36)}`,
-      position: open,
-      color: active.color,
-      opacity: active.opacity,
-      size: active.size,
-      glow: active.glow
-    }
-  ]);
+  const nextStops = sanitizeStops([...stops, { id: `stop_${Date.now().toString(36)}`, position: open, color: active.color, opacity: active.opacity, size: active.size, glow: active.glow }]);
   const index = nextStops.findIndex((stop) => stop.position === open);
   updateActiveLayer({ appearanceStops: nextStops, activeAppearanceStopIndex: Math.max(0, index) });
   showToast('Appearance marker added.', 'success');
@@ -309,19 +330,15 @@ function syncAppearanceControls() {
     const element = byId(id);
     if (element) element.disabled = disabled;
   }
-
   if (!layer) return;
 
   const stops = getStops(layer);
-  if (!Array.isArray(layer.appearanceStops) || !layer.appearanceStops.length) {
-    layer.appearanceStops = stops;
-  }
+  if (!Array.isArray(layer.appearanceStops) || !layer.appearanceStops.length) layer.appearanceStops = stops;
   renderStopTrack(layer, stops);
   syncStopEditor(layer, stops);
 
   setValue('appearance-mode-select', layer.appearanceMode || 'shape');
-  setValue('particle-shape-select', layer.particleShape || 'circle');
-  setValue('brush-select', layer.builtInBrush || 'spark');
+  syncRenderChoice(layer);
   setValue('blend-mode-select', layer.blendMode || defaultBlendMode(layer.engine));
   setValue('tint-mode-select', layer.tintMode || 'tint');
   setValue('texture-fit-select', layer.textureFit || 'contain');
@@ -331,14 +348,35 @@ function syncAppearanceControls() {
 
   const reverseToggle = byId('reverse-toggle');
   if (reverseToggle) reverseToggle.checked = Boolean(layer.reverseColor);
-
   byId('rotation-output').textContent = String(finite(layer.rotation, 0));
   byId('edge-blur-output').textContent = String(finite(layer.edgeBlur, 0));
   byId('texture-alpha-output').textContent = String(finite(layer.textureAlpha, 1));
 
   const textureStatus = byId('texture-status');
   if (textureStatus) {
+    textureStatus.hidden = (layer.appearanceMode || 'shape') !== 'custom';
     textureStatus.textContent = layer.textureName ? `Loaded: ${layer.textureName}` : 'No custom texture loaded';
+  }
+}
+
+function syncRenderChoice(layer) {
+  const mode = layer.appearanceMode || 'shape';
+  const title = document.getElementById('render-choice-title');
+  const button = document.getElementById('render-choice-button');
+  if (!button || !title) return;
+  button.classList.toggle('is-file', mode === 'custom');
+  if (mode === 'brush') {
+    title.textContent = 'Brush';
+    button.textContent = labelForChoice(BRUSH_CHOICES, layer.builtInBrush || 'spark');
+    button.title = 'Choose a built-in brush from the brush library.';
+  } else if (mode === 'custom') {
+    title.textContent = 'Image Brush';
+    button.textContent = layer.textureName || 'Choose Image Brush';
+    button.title = 'Choose a custom transparent PNG/WebP/JPG brush texture.';
+  } else {
+    title.textContent = 'Shape';
+    button.textContent = labelForChoice(SHAPE_CHOICES, layer.particleShape || 'circle');
+    button.title = 'Choose a particle shape from the shape library.';
   }
 }
 
@@ -381,13 +419,11 @@ function startMarkerDrag(event, index) {
     const nextIndex = sanitized.findIndex((stop) => stop.id === selectedStopId);
     updateActiveLayer({ appearanceStops: sanitized, activeAppearanceStopIndex: Math.max(0, nextIndex) });
   };
-
   const stopDrag = () => {
     marker.removeEventListener('pointermove', updateFromEvent);
     marker.removeEventListener('pointerup', stopDrag);
     marker.removeEventListener('pointercancel', stopDrag);
   };
-
   marker.addEventListener('pointermove', updateFromEvent);
   marker.addEventListener('pointerup', stopDrag);
   marker.addEventListener('pointercancel', stopDrag);
@@ -430,22 +466,16 @@ function sanitizeStops(stops) {
     size: clamp(Number(stop.size), 0, 180),
     glow: clamp(Number(stop.glow), 0, 80)
   })).sort((a, b) => a.position - b.position);
-
-  if (!mapped.length) {
-    return [{ id: `stop_${Date.now().toString(36)}`, position: 0, color: '#ffcc66', opacity: 1, size: 20, glow: 12 }];
-  }
-
+  if (!mapped.length) return [{ id: `stop_${Date.now().toString(36)}`, position: 0, color: '#ffcc66', opacity: 1, size: 20, glow: 12 }];
   if (mapped.length > 1) {
     mapped[0].position = 0;
     mapped[mapped.length - 1].position = 1;
   }
-
   for (let index = 1; index < mapped.length; index += 1) {
     if (mapped[index].position <= mapped[index - 1].position) {
       mapped[index].position = Math.min(1, Math.round((mapped[index - 1].position + 0.1) * 10) / 10);
     }
   }
-
   return mapped;
 }
 
@@ -453,48 +483,21 @@ function rampGradient(stops) {
   if (stops.length === 1) return stops[0].color;
   return `linear-gradient(to right, ${stops.map((stop) => `${stop.color} ${Math.round(stop.position * 100)}%`).join(', ')})`;
 }
-
 function findOpenStopPosition(stops) {
   const used = new Set(stops.map((stop) => Math.round(stop.position * 10)));
-  for (const candidate of [5, 3, 7, 2, 4, 6, 8, 1, 9]) {
-    if (!used.has(candidate)) return candidate / 10;
-  }
+  for (const candidate of [5, 3, 7, 2, 4, 6, 8, 1, 9]) if (!used.has(candidate)) return candidate / 10;
   return 0.5;
 }
-
-function setValue(id, value) {
-  const element = document.getElementById(id);
-  if (element && String(element.value) !== String(value)) element.value = value;
-}
-
-function setText(id, value) {
-  const element = document.getElementById(id);
-  if (element) element.textContent = String(value);
-}
-
+function labelForChoice(choices, value) { return choices.find(([choice]) => choice === value)?.[1] || choices[0][1]; }
+function setValue(id, value) { const element = document.getElementById(id); if (element && String(element.value) !== String(value)) element.value = value; }
+function setText(id, value) { const element = document.getElementById(id); if (element) element.textContent = String(value); }
 function normalizeHex(value) {
   const string = String(value || '').trim();
   if (/^#[0-9a-f]{6}$/iu.test(string)) return string;
-  if (/^#[0-9a-f]{3}$/iu.test(string)) {
-    return `#${string.slice(1).split('').map((char) => char + char).join('')}`;
-  }
+  if (/^#[0-9a-f]{3}$/iu.test(string)) return `#${string.slice(1).split('').map((char) => char + char).join('')}`;
   return '#ffcc66';
 }
-
-function clampIndex(value, stops) {
-  return Math.min(Math.max(0, Math.round(Number(value) || 0)), Math.max(0, stops.length - 1));
-}
-
-function clamp(value, min, max) {
-  const number = Number.isFinite(Number(value)) ? Number(value) : min;
-  return Math.min(max, Math.max(min, number));
-}
-
-function defaultBlendMode(engine) {
-  return engine === 'gas' || engine === 'refraction' ? 'source-over' : 'lighter';
-}
-
-function finite(value, fallback) {
-  const number = Number(value);
-  return Number.isFinite(number) ? number : fallback;
-}
+function clampIndex(value, stops) { return Math.min(Math.max(0, Math.round(Number(value) || 0)), Math.max(0, stops.length - 1)); }
+function clamp(value, min, max) { const number = Number.isFinite(Number(value)) ? Number(value) : min; return Math.min(max, Math.max(min, number)); }
+function defaultBlendMode(engine) { return engine === 'gas' || engine === 'refraction' ? 'source-over' : 'lighter'; }
+function finite(value, fallback) { const number = Number(value); return Number.isFinite(number) ? number : fallback; }
