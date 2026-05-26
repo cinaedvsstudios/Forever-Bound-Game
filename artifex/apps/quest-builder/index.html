@@ -8,32 +8,148 @@
 </head>
 <body>
   <header class="topbar">
-    <section class="brand"><div class="brand-mark">✦</div><div><h1>ARTIFEX</h1><p>Quest Builder <span id="version-badge">V1.0</span></p></div></section>
-    <nav class="menu-bar">
-      <button id="new-file-button">New</button>
-      <label class="menu-file-label">Import JSON<input id="import-json-input" type="file" accept=".json,application/json" hidden></label>
-      <button id="export-json-button">Export JSON</button>
-      <button id="add-quest-button" class="primary">Add Quest</button>
-      <button id="add-block-button" class="primary">Add Block</button>
+    <section class="brand">
+      <div class="brand-mark">✦</div>
+      <div>
+        <h1>ARTIFEX</h1>
+        <p>Quest Builder <span id="version-badge">V1.0</span></p>
+      </div>
+    </section>
+
+    <nav class="menu-bar" aria-label="Quest Builder menus">
+      <div class="menu">
+        <button class="menu-button" data-menu="file">File ▾</button>
+        <div class="menu-panel" id="menu-file">
+          <button id="new-file-button">New Quest File</button>
+          <label class="menu-file-label">Import JSON<input id="import-json-input" type="file" accept=".json,application/json" hidden></label>
+          <button id="export-json-button">Export JSON</button>
+          <button id="save-local-button">Save Locally in Browser</button>
+        </div>
+      </div>
+
+      <div class="menu">
+        <button class="menu-button" data-menu="edit">Edit ▾</button>
+        <div class="menu-panel" id="menu-edit">
+          <button id="add-quest-button">Add Quest</button>
+          <button id="edit-quest-button">Edit Selected Quest</button>
+          <button id="delete-quest-button">Delete Selected Quest</button>
+          <button id="edit-block-button">Edit Selected Block</button>
+          <button id="delete-block-button">Delete Selected Block</button>
+        </div>
+      </div>
+
+      <div class="menu">
+        <button class="menu-button" data-menu="view">View ▾</button>
+        <div class="menu-panel" id="menu-view">
+          <button data-workspace-mode="dark">Background: Charcoal</button>
+          <button data-workspace-mode="white">Background: Light</button>
+          <button id="snapshot-button">Snapshot Canvas</button>
+        </div>
+      </div>
+
+      <div class="menu">
+        <button class="menu-button primary" data-menu="templates">Templates ▾</button>
+        <div class="menu-panel wide" id="menu-templates">
+          <section class="insert-section">
+            <h3>Quest Starters</h3>
+            <button id="template-main-quest-button">Main Quest Template</button>
+            <button id="template-side-quest-button">Side Quest / Errand Template</button>
+          </section>
+          <section class="insert-section">
+            <h3>Quest Blocks</h3>
+            <button data-add-block="scene">Scene Block</button>
+            <button data-add-block="dialogue">Dialogue Block</button>
+            <button data-add-block="object">Object Interaction Block</button>
+            <button data-add-block="condition">Condition Block</button>
+            <button data-add-block="capra">Capra Popup Block</button>
+            <button data-add-block="codice">Codice Update Block</button>
+            <button data-add-block="completion">Completion Block</button>
+          </section>
+        </div>
+      </div>
+
+      <div class="menu">
+        <button class="menu-button" data-menu="library">Library ▾</button>
+        <div class="menu-panel" id="menu-library">
+          <button id="view-json-button">View JSON Preview</button>
+          <button id="library-note-button">Linked Libraries Note</button>
+        </div>
+      </div>
+
+      <div class="menu">
+        <button class="menu-button" data-menu="help">Help ▾</button>
+        <div class="menu-panel right" id="menu-help">
+          <button id="quick-start-button">Quick Start Guide</button>
+          <button id="about-button">About Quest Builder</button>
+        </div>
+      </div>
     </nav>
   </header>
 
   <main class="app-shell">
     <aside class="side-panel">
-      <section class="card">
+      <section class="card compact-card">
         <header><h2>Quest File</h2></header>
+        <p class="mini-label">File</p>
+        <strong id="file-summary-name">Untitled Quest File</strong>
+        <p class="mini-copy" id="file-summary-meta">chronicle_01</p>
+        <button id="edit-file-button" class="small-button">Edit File Info</button>
+      </section>
+
+      <section class="card grow-card">
+        <header><h2>Quests</h2><button id="side-add-quest-button" class="small-button">+</button></header>
+        <div id="quest-list" class="stack-list"></div>
+      </section>
+
+      <section class="card compact-card">
+        <header><h2>Selected</h2></header>
+        <p class="mini-label">Calling</p>
+        <p id="calling-summary" class="summary-copy">Select a Quest to view its Calling.</p>
+        <div class="button-row">
+          <button id="side-edit-quest-button">Edit Quest</button>
+          <button id="side-add-block-button">Add Block</button>
+        </div>
+      </section>
+    </aside>
+
+    <section class="workspace-column">
+      <section class="flow-strip-shell">
+        <div class="flow-strip-header">
+          <h2>Quest Flow</h2>
+          <span id="block-count">0 blocks</span>
+        </div>
+        <div id="block-list" class="flow-strip"></div>
+      </section>
+
+      <section class="workspace-toolbar">
+        <button id="zoom-out-button">−</button>
+        <span id="zoom-readout">100%</span>
+        <button id="zoom-in-button">+</button>
+        <button id="zoom-reset-button">Reset Zoom</button>
+        <span id="status-text">Ready.</span>
+      </section>
+
+      <section class="workspace">
+        <canvas id="module-canvas" width="1280" height="720"></canvas>
+        <div id="toast-area"></div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="editor-dialog" class="editor-dialog">
+    <form method="dialog">
+      <header class="dialog-header">
+        <h2 id="editor-title">Edit</h2>
+        <button value="close" class="dialog-close">×</button>
+      </header>
+
+      <section id="file-editor" class="editor-section">
         <label>File ID<input id="file-id-input"></label>
         <label>File Name<input id="file-name-input"></label>
         <label>Default Chronicle ID<input id="chronicle-id-input" placeholder="chronicle_01"></label>
       </section>
 
-      <section class="card">
-        <header><h2>Quests</h2></header>
-        <div id="quest-list" class="stack-list"></div>
-      </section>
-
-      <section class="card">
-        <header><h2>Selected Quest</h2></header>
+      <section id="quest-editor" class="editor-section">
         <label>Quest Name<input id="quest-name-input"></label>
         <label>Quest Type<select id="quest-type-input"><option value="main">main</option><option value="side">side</option><option value="errand">errand</option><option value="tutorial">tutorial</option></select></label>
         <label>Calling Text<textarea id="calling-text-input" rows="3"></textarea></label>
@@ -44,17 +160,8 @@
         <label>Codice Updates<input id="quest-codice-input" placeholder="codice_chalice_truth"></label>
         <label>Notes<textarea id="quest-notes-input" rows="4"></textarea></label>
       </section>
-    </aside>
 
-    <section class="workspace-column">
-      <section class="workspace-toolbar"><button id="delete-quest-button">Delete Quest</button><button id="delete-block-button">Delete Block</button><span id="status-text">Ready.</span></section>
-      <section class="workspace"><canvas id="module-canvas" width="1280" height="720"></canvas><div id="toast-area"></div></section>
-      <section class="bottom-panel"><header><h2>Quest Flow Blocks</h2><span id="block-count">0 blocks</span></header><div id="block-list" class="record-list"></div></section>
-    </section>
-
-    <aside class="right-panel">
-      <section class="card">
-        <header><h2>Selected Block</h2></header>
+      <section id="block-editor" class="editor-section">
         <label>Block Name<input id="block-name-input"></label>
         <label>Block Type<select id="block-type-input"><option value="scene">scene</option><option value="dialogue">dialogue</option><option value="object">object</option><option value="condition">condition</option><option value="capra">capra</option><option value="codice">codice</option><option value="reward">reward</option><option value="route">route</option><option value="ui">ui</option><option value="completion">completion</option></select></label>
         <label>Scene ID<input id="block-scene-input"></label>
@@ -66,9 +173,26 @@
         <label>Capra Feedback<textarea id="block-capra-input" rows="3"></textarea></label>
         <label>Notes<textarea id="block-notes-input" rows="4"></textarea></label>
       </section>
-      <section class="card"><header><h2>JSON Preview</h2></header><pre id="json-preview"></pre></section>
-    </aside>
-  </main>
+
+      <footer class="dialog-actions">
+        <button id="save-editor-button" value="close" class="primary">Save</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="json-dialog" class="json-dialog">
+    <form method="dialog">
+      <header class="dialog-header"><h2>JSON Preview</h2><button value="close" class="dialog-close">×</button></header>
+      <pre id="json-preview"></pre>
+    </form>
+  </dialog>
+
+  <dialog id="help-dialog" class="json-dialog">
+    <form method="dialog">
+      <header class="dialog-header"><h2 id="help-title">Help</h2><button value="close" class="dialog-close">×</button></header>
+      <div id="help-body" class="dialog-body"></div>
+    </form>
+  </dialog>
 
   <script type="module" src="./v1/src/module-app.js"></script>
 </body>
