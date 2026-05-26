@@ -113,7 +113,7 @@ function ensureThumbnailPanel(showToast) {
         <img id="thumbnail-preview-img" alt="Captured effect thumbnail" />
         <span>No thumbnail captured yet</span>
       </div>
-      <p class="thumbnail-hint">Capture a JPG preview for the current archetype. Default filename uses the Archetype ID.</p>
+      <p class="thumbnail-hint">Capture once to use this JPG for local saves and exports. If you do not capture, exports use the current canvas automatically.</p>
       <div class="thumbnail-actions">
         <button id="capture-thumbnail-button" type="button">Capture JPG</button>
         <button id="save-thumbnail-button" type="button">Save JPG</button>
@@ -157,13 +157,14 @@ function captureThumbnailPreview(showToast) {
     return;
   }
   currentThumbnailDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+  globalThis.ArtifexCapturedThumbnailDataUrl = currentThumbnailDataUrl;
   const img = document.getElementById('thumbnail-preview-img');
   const frame = document.getElementById('thumbnail-frame');
   if (img && frame) {
     img.src = currentThumbnailDataUrl;
     frame.classList.add('has-image');
   }
-  showToast('Thumbnail JPG captured from current canvas view.', 'success');
+  showToast('Thumbnail JPG captured. Local saves and exports will use this preview.', 'success');
 }
 
 function saveThumbnailJPG(showToast) {
