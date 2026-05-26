@@ -1,19 +1,20 @@
 import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js';
 import { createProjectEditorStateManager } from './project-state.js';
 import { createProjectCanvasController } from './project-canvas.js';
+import { createProjectRenderer } from './project-renderer.js';
 import { getTypeStyle } from './data/type-styles.js';
 
 // Project Editor app bootstrap.
 //
-// Step 5 split note:
-// Canvas interaction now supports node dragging, empty-canvas panning,
-// mouse-wheel zoom, explicit zoom buttons, and recentering. Camera state is
-// persisted through ProjectEditorStateManager.
+// Step 6 split note:
+// The Flatplan renderer has been extracted to project-renderer.js. This app
+// file still owns temporary catalog, inspector, and JSON preview orchestration.
 
 applyProjectTheme();
 
 const appState = createProjectEditorStateManager();
 let canvasController = null;
+let projectRenderer = null;
 
 window.ArtifexProjectTheme = PROJECT_THEME;
 window.applyProjectTheme = applyProjectTheme;
@@ -28,7 +29,7 @@ const versionTargets = [
 
 for (const selector of versionTargets) {
   const el = document.querySelector(selector);
-  if (el) el.textContent = 'v0.1.5 SPLIT-CANVAS';
+  if (el) el.textContent = 'v0.1.6 SPLIT-RENDERER';
 }
 
 function escapeHtml(value) {
@@ -50,7 +51,11 @@ function refreshSplitShell() {
 }
 
 function redrawGraphOnly() {
-  drawRoutes();
+  if (projectRenderer) {
+    projectRenderer.drawRoutes();
+  } else {
+    drawRoutes();
+  }
   renderJsonPreview();
   renderInspectorPreview();
   if (window.lucide) window.lucide.createIcons();
@@ -159,53 +164,9 @@ function drawRoutes() {
 }
 
 function renderGraphPreview() {
-  const nodesContainer = document.getElementById('nodesContainer');
-  const canvas = document.getElementById('flatplanCanvas');
-  const viewport = document.getElementById('canvasViewport');
-  if (!nodesContainer || !canvas || !viewport) return;
-
-  nodesContainer.innerHTML = '';
-  drawRoutes();
-
-  canvasController = createProjectCanvasController({
-    stateManager: appState,
-    canvasElement: canvas,
-    viewportElement: viewport,
-    onNodeMoved: () => redrawGraphOnly(),
-    onNodeSelected: () => renderInspectorPreview(),
-    onInteractionEnd: () => redrawGraphOnly(),
-    onCameraChanged: () => renderJsonPreview()
-  });
-
-  const layoutNodes = appState.layout.nodes;
-  const logicNodes = appState.logic.nodes;
-
-  for (const layoutNode of layoutNodes) {
-    const logicNode = logicNodes.find((node) => node.id === layoutNode.id);
-    if (!logicNode) continue;
-    const style = getTypeStyle(logicNode.type);
-    const selected = appState.selectedNodeId === logicNode.id;
-    const nodeEl = document.createElement('div');
-    nodeEl.dataset.nodeId = logicNode.id;
-    nodeEl.className = `absolute w-[200px] h-[80px] rounded-lg border-2 ${selected ? 'neon-card-active' : 'border-projectGold/40'} bg-cardDark/90 backdrop-blur-sm pointer-events-auto transition-shadow duration-300 flex flex-col p-2 select-none shadow-card-glow cursor-grab active:cursor-grabbing touch-none`;
-    nodeEl.style.transform = `translate(${layoutNode.position.x}px, ${layoutNode.position.y}px)`;
-    nodeEl.innerHTML = `
-      <div class="flex items-center justify-between mb-1 pointer-events-none">
-        <span class="text-[9px] px-1.5 py-0.5 rounded border ${style.badge} font-mono tracking-wider truncate max-w-[130px]">${escapeHtml(logicNode.type)}</span>
-        <i data-lucide="${escapeHtml(style.icon)}" class="w-3.5 h-3.5 ${escapeHtml(style.color)}"></i>
-      </div>
-      <div class="flex-1 flex flex-col justify-center pointer-events-none">
-        <span class="text-xs font-bold tracking-wide text-zinc-200 truncate">${escapeHtml(logicNode.properties.name)}</span>
-        <span class="text-[8px] text-zinc-500 truncate block">${escapeHtml(logicNode.properties.description)}</span>
-      </div>
-    `;
-    nodeEl.addEventListener('click', () => {
-      if (canvasController?.isDragging?.()) return;
-      appState.selectNode(logicNode.id);
-      refreshSplitShell();
-    });
-    canvasController.attachNodeDrag(nodeEl, logicNode.id);
-    nodesContainer.appendChild(nodeEl);
+  if (projectRenderer) {
+    projectRenderer.renderGraph();
+    return;
   }
 }
 
@@ -278,13 +239,15 @@ function renderInspectorPreview() {
     canvas.appendChild(panel);
     panel.querySelector('#splitNodeNameInput')?.addEventListener('input', (event) => {
       appState.updateNode(selectedNode.id, { properties: { name: event.target.value } });
-      renderGraphPreview();
+      projectRenderer?.renderGraph();
       renderJsonPreview();
+      if (window.lucide) window.lucide.createIcons();
     });
     panel.querySelector('#splitNodeDescInput')?.addEventListener('input', (event) => {
       appState.updateNode(selectedNode.id, { properties: { description: event.target.value } });
-      renderGraphPreview();
+      projectRenderer?.renderGraph();
       renderJsonPreview();
+      if (window.lucide) window.lucide.createIcons();
     });
     panel.querySelector('#deleteSplitNodeBtn')?.addEventListener('click', () => {
       appState.deleteNode(selectedNode.id);
@@ -308,14 +271,41 @@ function renderInspectorPreview() {
 
   panel.innerHTML = `
     <div class="px-3 py-2 border-b border-[#2d2d42] text-xs font-bold text-projectGoldGlow">Inspector</div>
-    <div class="p-3 text-xs text-zinc-500 leading-relaxed">Click or drag a node. Drag empty canvas to pan. Mouse-wheel zooms. Click a catalog placeholder to create a new node.</div>
+    <div class="p-3 text-xs text-zinc-500 leading-relaxed">Click or drag a node. Scrollwheel-click / third mouse button drag pans the canvas. Mousewheel zooms. Click a catalog placeholder to create a new node.</div>
   `;
   canvas.appendChild(panel);
 }
 
 function initProjectEditorSplitShell() {
+  const canvas = document.getElementById('flatplanCanvas');
+  const viewport = document.getElementById('canvasViewport');
+  const nodesContainer = document.getElementById('nodesContainer');
+  const svgLayer = document.getElementById('svgEdgeLayer');
+
+  canvasController = createProjectCanvasController({
+    stateManager: appState,
+    canvasElement: canvas,
+    viewportElement: viewport,
+    onNodeMoved: () => redrawGraphOnly(),
+    onNodeSelected: () => renderInspectorPreview(),
+    onInteractionEnd: () => redrawGraphOnly(),
+    onCameraChanged: () => renderJsonPreview()
+  });
+
+  projectRenderer = createProjectRenderer({
+    stateManager: appState,
+    theme: PROJECT_THEME,
+    getTypeStyle,
+    canvasController,
+    nodesContainer,
+    svgLayer,
+    onSelectionChanged: () => refreshSplitShell(),
+    onNodeMoved: () => redrawGraphOnly(),
+    onInteractionEnd: () => redrawGraphOnly()
+  });
+
   refreshSplitShell();
-  console.info('[Artifex Project Editor] Split canvas pan/zoom loaded:', {
+  console.info('[Artifex Project Editor] Split renderer loaded:', {
     nodes: appState.logic.nodes.length,
     routes: appState.logic.routes.length,
     catalog: appState.catalog.placeholders.length + appState.catalog.realAssets.length
