@@ -1,23 +1,26 @@
 // Artifex Project Editor canvas interaction controller
-// Step 4 of the Project Editor real split.
+// Step 5 of the Project Editor real split.
 //
-// This module owns canvas-level interaction behaviour for the split shell.
-// For this step it wires node dragging, selection-safe movement, and route
-// redraw callbacks. Pan/zoom and route drawing can be expanded here next.
+// This module owns canvas-level interaction behaviour for the split shell:
+// node dragging, middle/empty-space panning, mouse-wheel zooming, viewport
+// transform application, and camera reset.
 
 export function createProjectCanvasController({
   stateManager,
   canvasElement,
+  viewportElement,
   onNodeMoved,
   onNodeSelected,
-  onInteractionEnd
+  onInteractionEnd,
+  onCameraChanged
 }) {
   if (!stateManager) {
     throw new Error('createProjectCanvasController requires a stateManager.');
   }
 
   const state = {
-    activeDrag: null
+    activeDrag: null,
+    activePan: null
   };
 
   function getCanvasPoint(event) {
@@ -26,6 +29,104 @@ export function createProjectCanvasController({
       x: event.clientX - canvasBox.left,
       y: event.clientY - canvasBox.top
     };
+  }
+
+  function screenToWorld(point) {
+    const camera = stateManager.camera;
+    return {
+      x: (point.x - camera.panX) / camera.zoom,
+      y: (point.y - camera.panY) / camera.zoom
+    };
+  }
+
+  function applyViewportTransform() {
+    if (!viewportElement) return;
+    const camera = stateManager.camera;
+    viewportElement.style.transform = `translate(${camera.panX}px, ${camera.panY}px) scale(${camera.zoom})`;
+  }
+
+  function zoomByFactor(factor, originPoint = null) {
+    const camera = stateManager.camera;
+    const origin = originPoint ?? {
+      x: canvasElement.clientWidth / 2,
+      y: canvasElement.clientHeight / 2
+    };
+    const worldBefore = screenToWorld(origin);
+    const nextZoom = Math.max(0.3, Math.min(2.5, camera.zoom * factor));
+    const nextPan = {
+      panX: origin.x - worldBefore.x * nextZoom,
+      panY: origin.y - worldBefore.y * nextZoom,
+      zoom: nextZoom
+    };
+    stateManager.updateCamera(nextPan);
+    applyViewportTransform();
+    onCameraChanged?.(stateManager.camera);
+  }
+
+  function resetViewport() {
+    stateManager.resetCamera();
+    applyViewportTransform();
+    onCameraChanged?.(stateManager.camera);
+  }
+
+  function attachCanvasPanAndZoom() {
+    if (!canvasElement) return;
+
+    canvasElement.addEventListener('pointerdown', (event) => {
+      const clickedNode = event.target.closest?.('[data-node-id]');
+      const clickedPanel = event.target.closest?.('#splitInspectorPreview, #splitDataPreview');
+      if (clickedNode || clickedPanel) return;
+      if (event.button !== 0 && event.button !== 1) return;
+
+      event.preventDefault();
+      const camera = stateManager.camera;
+      state.activePan = {
+        pointerId: event.pointerId,
+        startPointer: getCanvasPoint(event),
+        startCamera: {
+          panX: camera.panX,
+          panY: camera.panY,
+          zoom: camera.zoom
+        }
+      };
+      canvasElement.setPointerCapture?.(event.pointerId);
+      canvasElement.classList.add('cursor-grabbing');
+    });
+
+    canvasElement.addEventListener('pointermove', (event) => {
+      const active = state.activePan;
+      if (!active || active.pointerId !== event.pointerId) return;
+
+      event.preventDefault();
+      const point = getCanvasPoint(event);
+      stateManager.updateCamera({
+        zoom: active.startCamera.zoom,
+        panX: active.startCamera.panX + (point.x - active.startPointer.x),
+        panY: active.startCamera.panY + (point.y - active.startPointer.y)
+      }, { persist: false });
+      applyViewportTransform();
+      onCameraChanged?.(stateManager.camera);
+    });
+
+    canvasElement.addEventListener('pointerup', (event) => endPan(event));
+    canvasElement.addEventListener('pointercancel', (event) => endPan(event));
+
+    canvasElement.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      const factor = event.deltaY < 0 ? 1.08 : 0.92;
+      zoomByFactor(factor, getCanvasPoint(event));
+    }, { passive: false });
+  }
+
+  function endPan(event) {
+    const active = state.activePan;
+    if (!active || active.pointerId !== event.pointerId) return;
+
+    canvasElement?.releasePointerCapture?.(event.pointerId);
+    canvasElement?.classList.remove('cursor-grabbing');
+    state.activePan = null;
+    stateManager.saveToStorage();
+    onInteractionEnd?.(active);
   }
 
   function attachNodeDrag(nodeElement, nodeId) {
@@ -41,7 +142,7 @@ export function createProjectCanvasController({
       event.preventDefault();
       event.stopPropagation();
 
-      const point = getCanvasPoint(event);
+      const point = screenToWorld(getCanvasPoint(event));
       state.activeDrag = {
         nodeId,
         pointerId: event.pointerId,
@@ -65,7 +166,7 @@ export function createProjectCanvasController({
       if (!active || active.nodeId !== nodeId || active.pointerId !== event.pointerId) return;
 
       event.preventDefault();
-      const point = getCanvasPoint(event);
+      const point = screenToWorld(getCanvasPoint(event));
       const nextPosition = {
         x: active.startPosition.x + (point.x - active.startPointer.x),
         y: active.startPosition.y + (point.y - active.startPointer.y)
@@ -100,8 +201,19 @@ export function createProjectCanvasController({
     return Boolean(state.activeDrag);
   }
 
+  function isPanning() {
+    return Boolean(state.activePan);
+  }
+
+  applyViewportTransform();
+  attachCanvasPanAndZoom();
+
   return {
     attachNodeDrag,
-    isDragging
+    applyViewportTransform,
+    zoomByFactor,
+    resetViewport,
+    isDragging,
+    isPanning
   };
 }
