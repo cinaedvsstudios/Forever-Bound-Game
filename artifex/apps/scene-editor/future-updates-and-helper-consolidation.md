@@ -16,6 +16,27 @@ A helper must not stay in place for more than two update cycles. After one or tw
 
 Do not add helpers that patch other helpers. Do not keep short-loop or mutation-based interface patches unless they are emergency fixes.
 
+### Hard two-patch integration limit
+
+At any one time, the Scene Editor must never have more than two temporary patches, hotfixes, helper files, or patch-style CSS/JS files running without integration.
+
+Before creating a third temporary patch, the oldest temporary patch must be merged into its owning real file, converted into a clearly named permanent module, removed from `index.html`, or deleted.
+
+This rule applies to both JavaScript and CSS. It also applies to loader-only workaround files, DOM-patching helper files, visual patch stylesheets, and quick bugfix files.
+
+If two temporary patches are already active, the next Scene Editor change must be consolidation work. Do not create another patch layer over them.
+
+The preferred workflow is:
+
+1. create a temporary patch only when needed,
+2. test it once or twice,
+3. integrate the stable behaviour into the owning file,
+4. remove the temporary loader entry,
+5. delete the obsolete patch file,
+6. then continue feature work.
+
+Do not allow patches upon patches to become the normal development style again.
+
 ### Hard prevention rule
 
 This situation must not happen again.
