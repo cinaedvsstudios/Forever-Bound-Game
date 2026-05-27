@@ -1,4 +1,4 @@
-/* Quest Builder V1.1.0
+/* Quest Builder V1.1.1
    Styling entry point only. Behaviour is split into v1/src modules.
    The visual rules are currently carried forward from the V1.0.8 stylesheet until the next visual pass. */
-@import url("./quest-builder-v108.css?v=1.1.0-base");
+@import url("./quest-builder-v108.css?v=1.1.1-base");
