@@ -1,5 +1,6 @@
 import { DESIGN_WIDTH, DESIGN_HEIGHT, getActiveLayer, onStateChange, updateActiveLayer } from './editor-state.js';
 import { beginTargetPick } from './editor-renderer.js';
+import { describeGravityScale, fromGravityControlValue, toGravityControlValue } from './physics-scale.js';
 
 const controlIds = [
   'emitter-width-input',
@@ -18,6 +19,7 @@ const controlIds = [
 export function initDynamicsParity(showToast = () => {}) {
   injectDynamicsStyles();
   ensureDynamicsControls();
+  normalizeMainPhysicsControls();
   bindDynamicsControls(showToast);
   syncDynamicsControls();
   onStateChange(syncDynamicsControls);
@@ -39,6 +41,30 @@ function injectDynamicsStyles() {
     #point-target-button.is-target-pick { border-color: var(--module-accent); box-shadow: 0 0 14px var(--module-glow); color: white; }
   `;
   document.head.append(style);
+}
+
+function normalizeMainPhysicsControls() {
+  const speedMin = document.getElementById('speed-min-input');
+  const speedMax = document.getElementById('speed-max-input');
+  const gravity = document.getElementById('gravity-input');
+  if (speedMin) {
+    speedMin.min = '0';
+    speedMin.max = '30';
+    speedMin.step = '0.1';
+    speedMin.title = 'User-facing motion speed. Runtime movement is scaled so low values stay visibly slow.';
+  }
+  if (speedMax) {
+    speedMax.min = '0';
+    speedMax.max = '30';
+    speedMax.step = '0.1';
+    speedMax.title = 'User-facing motion speed. Runtime movement is scaled so low values stay visibly slow.';
+  }
+  if (gravity) {
+    gravity.min = '-200';
+    gravity.max = '200';
+    gravity.step = '1';
+    gravity.title = 'Readable gravity scale: 0 neutral, 100 earth/down, negative values rise.';
+  }
 }
 
 function ensureDynamicsControls() {
@@ -126,6 +152,16 @@ function bindDynamicsControls(showToast) {
   bindNumberRange('orbital-force-input', 'orbital-force-output', 'orbitalForce');
   bindNumberRange('noise-grain-input', 'noise-grain-output', 'noiseGrain');
 
+  const gravity = document.getElementById('gravity-input');
+  if (gravity && gravity.dataset.v321Bound !== 'true') {
+    gravity.dataset.v321Bound = 'true';
+    gravity.addEventListener('input', (event) => {
+      const controlValue = fromGravityControlValue(event.target.value);
+      document.getElementById('gravity-output').textContent = describeGravityScale(controlValue);
+      updateActiveLayer({ gravity: controlValue });
+    }, true);
+  }
+
   document.getElementById('emitter-width-unit-select')?.addEventListener('change', (event) => {
     updateActiveLayer({ emitterWidthUnit: event.target.value });
   });
@@ -172,6 +208,7 @@ function bindNumberRange(inputId, outputId, property) {
 }
 
 function syncDynamicsControls() {
+  normalizeMainPhysicsControls();
   const layer = getActiveLayer();
   const disabled = !layer;
   for (const id of controlIds) {
@@ -192,6 +229,7 @@ function syncDynamicsControls() {
   setValue('lifetime-max-input', finite(layer.lifetimeMax, Math.max(4, finite(layer.lifetime, 80) * 1.25)));
   setValue('orbital-force-input', finite(layer.orbitalForce, 0));
   setValue('noise-grain-input', finite(layer.noiseGrain, 0));
+  setValue('gravity-input', toGravityControlValue(layer.gravity));
 
   setText('emitter-width-output', finite(layer.emitterWidth, 0));
   setText('emitter-rotation-output', finite(layer.emitterRotation, 0));
@@ -200,6 +238,7 @@ function syncDynamicsControls() {
   setText('lifetime-max-output', finite(layer.lifetimeMax, Math.max(4, finite(layer.lifetime, 80) * 1.25)));
   setText('orbital-force-output', finite(layer.orbitalForce, 0));
   setText('noise-grain-output', finite(layer.noiseGrain, 0));
+  setText('gravity-output', describeGravityScale(layer.gravity));
 
   const reverse = document.getElementById('reverse-near-target-toggle');
   if (reverse) reverse.checked = Boolean(layer.reverseNearTarget);
