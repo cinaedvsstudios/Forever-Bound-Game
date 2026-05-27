@@ -22,7 +22,7 @@ import { initV317Polish } from './v317-polish.js';
 import { initV320FileMenu } from './v320-file-menu.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'V3.20';
+const VERSION_LABEL = 'V3.21';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
