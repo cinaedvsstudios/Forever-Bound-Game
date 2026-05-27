@@ -5,10 +5,12 @@
 // seed data used by the split shell. It intentionally contains no DOM code.
 
 export const DEFAULT_PROJECT = Object.freeze({
+  schemaVersion: 'artifex.project.v1',
   projectId: 'forever-bound-game',
   gameTitle: 'Forever Bound',
   creator: 'Cinaedus Studios',
   version: '1.0.0',
+  projectRootPath: 'projects/forever-bound-game',
   startScreen: 'node_1',
   enabledModules: ['physics', 'quest', 'dialogue']
 });
