@@ -4,16 +4,42 @@ This file tracks work that belongs specifically to Archetype Object Creator. Pla
 
 ## Open
 
-### Test V1.19 Step 5 wizard and export contract polish
+### Continue integrating current overlay code into normal module files
 
 Status: open  
 Priority: high  
-Source: V1.18 / V1.19 implementation pass
+Source: project file contracts / patch-layer rule
 
-Verify in the live app that Step 5 and the object export contract now work as intended:
+The app currently stays within the two-active-overlay limit, but `template-card-enhancements.js` has grown into a large live overlay. Fold the stable Step 5 wizard, icon-card, ZIP export, frame correction, sound-event, and reference-panel logic into normal Object Creator module files now that the Step 5 layout is confirmed.
+
+Progress:
+
+- Done in V1.22: extracted the Step 5 left/right column wrapper into `object-wizard-step5-layout.js` and made `editor-app.js` thin again for that responsibility.
+
+Remaining suggested split:
+
+- `object-template-icons.js`
+- `object-wizard-step5.js`
+- `object-wizard-frame-correction.js`
+- `object-wizard-asset-package.js`
+- `object-wizard-reference-panel.js`
+
+After the split, keep `editor-app.js` as a thin entry file and remove any no-longer-needed overlay import.
+
+## Done
+
+### Test V1.21 Step 5 wizard and export contract polish
+
+Status: done  
+Completed in: V1.21  
+Source: V1.18 / V1.19 / V1.21 implementation pass
+
+Confirmed live behaviour:
 
 - Selected action title sits above the right-side control boxes.
 - Preview window is pulled up and play/frame buttons are closer to the preview.
+- Left column contains preview, play/frame controls, Frame Fix, and Reference.
+- Right column contains title, asset fields, Action Behaviour, Sound Events, and Notes.
 - Reference box appears below the preview controls, has fixed height, and scrolls.
 - Reference box does not invent fake scene links; it waits for a real shared reference index.
 - Frame Fix popup title shows `Frame Correction – Frame XX`.
@@ -25,25 +51,18 @@ Verify in the live app that Step 5 and the object export contract now work as in
 - New object archetypes use the canonical `archobj_` ID prefix.
 - Exported object files are named for individual files under `archetypes/objects/` and declare `archetypes/object-index.json` as the index target.
 
-### Integrate current overlay code into normal module files
+### Start overlay integration cleanup
 
-Status: open  
-Priority: high  
-Source: project file contracts / patch-layer rule
+Status: done  
+Completed in: V1.22  
+Source: docs/artifex/19-project-file-contracts.md
 
-The app currently stays within the two-active-overlay limit, but `template-card-enhancements.js` has grown into a large live overlay. Fold the stable Step 5 wizard, icon-card, ZIP export, frame correction, sound-event, and reference-panel logic into normal Object Creator module files when the layout is confirmed.
+Completed changes:
 
-Suggested split:
-
-- `object-template-icons.js`
-- `object-wizard-step5.js`
-- `object-wizard-frame-correction.js`
-- `object-wizard-asset-package.js`
-- `object-wizard-reference-panel.js`
-
-After the split, keep `editor-app.js` as a thin entry file and remove any no-longer-needed overlay import.
-
-## Done
+- Created `object-wizard-step5-layout.js`.
+- Moved Step 5 two-column layout observer, wrapper creation, and layout-specific injected CSS out of `editor-app.js`.
+- Updated `editor-app.js` to import and initialise the layout module.
+- Bumped the app to V1.22.
 
 ### Align object archetype exports with project file contracts
 
