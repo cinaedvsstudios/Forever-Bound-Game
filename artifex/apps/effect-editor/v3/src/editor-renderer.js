@@ -11,6 +11,7 @@ import {
   drawParticle,
   spawnParticlesForLayer
 } from './fx-runtime.js';
+import { toRuntimeLayer } from './physics-scale.js';
 
 let canvas;
 let ctx;
@@ -129,14 +130,15 @@ function updateParticles() {
   const particleCap = editorState.lowPerformanceMode ? 260 : 900;
   for (const layer of editorState.composition.layers) {
     if (layer.visible !== false && editorState.particles.length < particleCap) {
-      const spawned = spawnParticlesForLayer(layer, editorState.lowPerformanceMode ? 0.45 : 1);
+      const runtimeLayer = toRuntimeLayer(layer);
+      const spawned = spawnParticlesForLayer(runtimeLayer, editorState.lowPerformanceMode ? 0.45 : 1);
       editorState.particles.push(...spawned.map((particle) => ({ particle, layerId: layer.id })));
     }
   }
 
   for (const item of editorState.particles) {
     const layer = editorState.composition.layers.find((candidate) => candidate.id === item.layerId);
-    if (layer) item.particle.update(layer);
+    if (layer) item.particle.update(toRuntimeLayer(layer));
   }
 
   editorState.particles = editorState.particles.filter((item) => item.particle.alive);
@@ -162,14 +164,14 @@ function draw() {
   drawUnderlayMedia(scale);
 
   for (const layer of editorState.composition.layers) {
-    drawHeatDistortionLayer(ctx, layer, scale, renderTime);
+    drawHeatDistortionLayer(ctx, toRuntimeLayer(layer), scale, renderTime);
   }
 
   if (editorState.showGrid) drawGrid(scale);
 
   for (const item of editorState.particles) {
     const layer = editorState.composition.layers.find((candidate) => candidate.id === item.layerId);
-    if (layer?.visible !== false) drawParticle(ctx, item.particle, layer, scale);
+    if (layer?.visible !== false) drawParticle(ctx, item.particle, toRuntimeLayer(layer), scale);
   }
 
   if (editorState.showHelpers) drawEmitterHelpers(scale);
