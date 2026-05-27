@@ -10,13 +10,14 @@ docs/artifex/19-project-file-contracts.md
 artifex/shared/todo-guide/README.md
 artifex/shared/todo-guide/all-apps-todos.json
 artifex/apps/quest-builder/docs/structure.md
+artifex/apps/quest-builder/docs/block-taxonomy.md
 ```
 
 Use the global all-apps to-do list for changes that affect every Artifex app. Use this file only for Quest Builder-specific work.
 
 ## Current live status
 
-Current Quest Builder version: `V1.1.4`
+Current Quest Builder version: `V1.1.5`
 
 Current live app files:
 
@@ -63,7 +64,6 @@ Status: complete.
 
 Status: complete.
 
-- Page title, visible version badge, CSS cache key, JS module cache key, and module config were updated.
 - `File ▾ → Module ▸` remains a side flyout, not a flat list inside File.
 - The flyout includes only the core modules: Hub, Creation Guide, Project Manager, Scene Editor, Quest Builder, Puzzle Creator, Effect Editor, Archetype Object Creator.
 - Utility tools such as Sprite Wizard, Font Packer, Frame Extractor, and Onda are not included.
@@ -86,13 +86,10 @@ Status: complete.
 
 Status: complete.
 
-- Left panel remains one main `Selected Quest` card with thumbnail, inline quest name, quest type, Calling, info fields, actions, and Quest List.
 - Added title tooltips to important left-panel inputs and actions.
 - Preserved resizable left panel behaviour.
-- Added small CSS refinements for the selected quest card, quest list rows, and locked state.
 - Stabilised inline editing so render refreshes do not overwrite the active input while the user is typing.
 - Quest and block list rows now include tooltip text for selection/edit actions.
-- Removed the open `todo_quest_builder_left_panel_typing_stability` task from the specific-app open list.
 
 ### V1.1.3 — Contextual inspector and status actions
 
@@ -103,8 +100,7 @@ Status: complete.
 - Clicking a flow card in the viewing canvas selects that block for the left inspector.
 - The inspector switches between Quest fields and Block fields depending on what is selected.
 - The green status strip now contains emoji action buttons for New Quest Wizard, Add Quest, Add Block, and Save Locally.
-- The older side-panel Add Quest/Add Block row and Quest List section are hidden from the main panel chrome.
-- Canvas renderer now creates hit zones for the quest header, Calling pill, and flow cards.
+- Canvas renderer creates hit zones for the quest header, Calling pill, and flow cards.
 - Canvas click hit-testing accounts for zoom and pan.
 
 ### V1.1.4 — Viewing panel warnings and flow card polish
@@ -118,7 +114,21 @@ Status: complete.
 - START and END nodes now include small helper text so they stay readable as flow anchors.
 - Flow connector arrows are more explicit between cards.
 - Canvas still uses the existing hit zones, zoom, and pan support.
-- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.4` / `1.1.4`.
+
+### V1.1.5 — Block taxonomy and validation pass
+
+Status: complete.
+
+- Added `docs/block-taxonomy.md` as the human-readable block taxonomy contract.
+- Locked each block type with category, source module, primary field, linked fields, required fields, colour, emoji, and hint.
+- The inspector now uses each block type's `primaryField` instead of guessing the primary quick-edit field.
+- The inspector now displays taxonomy metadata: block category, primary field, and required fields.
+- Block type dropdowns are now populated for both the popup editor and the left contextual inspector.
+- Template blocks now include required fields so new template blocks do not immediately show false warnings.
+- Export validation now catches missing block type, missing Calling text, required fields, completion requirements, and dialogue/action misuse hints.
+- The Block Type List now shows category, primary field, required fields, and hint.
+- Removed the open `todo_quest_builder_block_taxonomy_validation` task from the specific-app open list.
+- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.5` / `1.1.5`.
 
 ## Ownership boundary
 
@@ -170,35 +180,9 @@ Every Quest Builder edit should increase the visible version by `0.01` and updat
 Next versions:
 
 ```text
-V1.1.5  block taxonomy and validation pass
 V1.1.6  editor popup redesign
 V1.1.7  export JSON and validation
 ```
-
-## V1.1.5 — Block taxonomy and validation pass
-
-Goal: stop block names being vague and separate gameplay actions from linked content.
-
-Core block distinction:
-
-- `action` = what the player does.
-- `scene` = where it happens.
-- `dialogue` = linked text/audio asset.
-- `object` = object-specific interaction.
-- `condition` = logic gate.
-- `ui` / `capra` = feedback overlays.
-- `reward`, `codice`, `route` = outcomes/unlocks.
-
-Example rule:
-
-`Speak With Vitus` should be a `Player Action` block with optional linked dialogue/audio fields, not only a Dialogue block.
-
-Acceptance checks:
-
-- Block type list includes required fields per type.
-- Cards show warnings for missing required references.
-- Existing demo data uses `action` for `Speak With Vitus`.
-- Dialogue/audio are linked content, not confused with the player action itself.
 
 ## V1.1.6 — Better editor popup
 
@@ -260,17 +244,6 @@ Validation should catch:
     "priority": 5,
     "effort": 4,
     "source": "project-file-contracts",
-    "fixOwner": "quest-builder"
-  },
-  {
-    "taskId": "todo_quest_builder_block_taxonomy_validation",
-    "scope": "specific-app",
-    "owningModule": "quest-builder",
-    "title": "Lock block taxonomy and validation rules",
-    "status": "open",
-    "priority": 4,
-    "effort": 4,
-    "source": "quest-builder-ui-pass",
     "fixOwner": "quest-builder"
   }
 ]
