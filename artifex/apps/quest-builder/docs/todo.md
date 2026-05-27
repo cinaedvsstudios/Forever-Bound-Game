@@ -9,21 +9,62 @@ docs/artifex/18-color-and-display-rules.md
 docs/artifex/19-project-file-contracts.md
 artifex/shared/todo-guide/README.md
 artifex/shared/todo-guide/all-apps-todos.json
+artifex/apps/quest-builder/docs/structure.md
 ```
 
 Use the global all-apps to-do list for changes that affect every Artifex app. Use this file only for Quest Builder-specific work.
 
 ## Current live status
 
-Current Quest Builder version: `V1.0.8`
+Current Quest Builder version: `V1.0.9`
 
 Current live app files:
 
 ```text
 artifex/apps/quest-builder/index.html
+artifex/apps/quest-builder/v1/quest-builder.css
+artifex/apps/quest-builder/v1/src/quest-builder-app.js
+artifex/apps/quest-builder/v1/src/module-config.js
+artifex/apps/quest-builder/v1/src/block-types.js
+artifex/apps/quest-builder/v1/src/quest-schema.js
+artifex/apps/quest-builder/v1/src/layout-state.js
+artifex/apps/quest-builder/v1/src/ui-bindings.js
+artifex/apps/quest-builder/v1/src/canvas-renderer.js
+artifex/apps/quest-builder/v1/src/dialog-editors.js
+artifex/apps/quest-builder/v1/src/export-json.js
+```
+
+Older V1.0.8 files remain in the repo for reference but should not be loaded by the live app:
+
+```text
 artifex/apps/quest-builder/v1/quest-builder-v108.css
 artifex/apps/quest-builder/v1/quest-builder-v108.js
 ```
+
+## Completed
+
+### V1.0.9 — Structure cleanup only
+
+Status: complete.
+
+Completed changes:
+
+- `index.html` now loads `v1/quest-builder.css?v=1.0.9` and `v1/src/quest-builder-app.js?v=1.0.9`.
+- App behaviour has been split into responsibility-based modules.
+- `docs/structure.md` now defines what belongs in each Quest Builder file.
+- Version was raised to `V1.0.9` in page title, visible version badge, CSS cache key, script cache key, module config, and loaded toast.
+- Export helpers and validation helpers were moved into `export-json.js`.
+- Block taxonomy was moved into `block-types.js`.
+- Demo data and schema helpers were moved into `quest-schema.js`.
+- Layout persistence was moved into `layout-state.js`.
+- Canvas drawing was moved into `canvas-renderer.js`.
+- Dialog/wizard behaviour was moved into `dialog-editors.js`.
+- UI wiring was moved into `ui-bindings.js`.
+
+Follow-up check needed:
+
+- Test the live GitHub Pages URL after deployment to make sure all ES module imports load correctly.
+- If any runtime error appears, fix only the split/import issue before starting the next feature phase.
 
 ## Ownership boundary
 
@@ -75,8 +116,7 @@ Every Quest Builder edit should increase the visible version by `0.01` and updat
 Next versions:
 
 ```text
-V1.0.9  structure cleanup only
-V1.1.0  module menu/shared shell alignment if still needed
+V1.1.0  module menu/shared shell alignment check
 V1.1.1  left panel refinement
 V1.1.2  viewing panel and flow card refinement
 V1.1.3  block taxonomy and validation pass
@@ -84,47 +124,9 @@ V1.1.4  editor popup redesign
 V1.1.5  export JSON and validation
 ```
 
-## V1.0.9 — Structure cleanup only
-
-No new UI features.
-
-Goal: stop Quest Builder from becoming another giant mixed file.
-
-Split the current script into responsibility-based modules:
-
-```text
-index.html                         shell only
-v1/quest-builder.css               layout and styling only
-v1/src/quest-builder-app.js         bootstrap/orchestration
-v1/src/module-config.js             version, paths, app constants, core module list
-v1/src/block-types.js               block taxonomy, colours, icons, required fields
-v1/src/quest-schema.js              default quest file, quest, and block shapes
-v1/src/layout-state.js              localStorage layout preferences
-v1/src/ui-bindings.js               menu/buttons/inline editing/collapse/lock controls
-v1/src/canvas-renderer.js           viewing panel renderer only
-v1/src/dialog-editors.js            quest/block editor and wizard
-v1/src/export-json.js               export shape and validation warnings
-```
-
-Add or update:
-
-```text
-artifex/apps/quest-builder/docs/structure.md
-```
-
-That file must define what belongs in each module so future edits do not scatter logic randomly.
-
-Acceptance checks:
-
-- `index.html` stays thin.
-- No file mixes renderer, schema, localStorage, dialogs, and export all together.
-- Live app still loads after split.
-- Version becomes `V1.0.9` everywhere.
-- No feature behaviour should change in this pass except bugs caused by the split.
-
 ## V1.1.0 — Module menu / shared shell alignment
 
-Quest Builder already has `File ▾ → Module ▸`, but it needs to be checked against the global app standard.
+Quest Builder already has `File ▾ → Module ▸`, but it needs to be checked against the global app standard after the V1.0.9 split.
 
 Required Module flyout order:
 
@@ -147,6 +149,7 @@ Acceptance checks:
 - Links use correct relative paths.
 - Header follows the shared Artifex rule: logo/app title → version pill → divider → main menu.
 - Quest Builder keeps green accent but does not let green overpower the dark bronze/gold Artifex base.
+- Any remaining module-menu constants live in `module-config.js`, not inside random UI files.
 
 ## V1.1.1 — Left panel refinement
 
@@ -327,14 +330,14 @@ Acceptance checks:
 ```json
 [
   {
-    "taskId": "todo_quest_builder_split_v109_modules",
+    "taskId": "todo_quest_builder_live_v109_import_test",
     "scope": "specific-app",
     "owningModule": "quest-builder",
-    "title": "Split Quest Builder V1.0.8 into structured modules",
+    "title": "Test V1.0.9 module import split on GitHub Pages",
     "status": "open",
     "priority": 5,
-    "effort": 5,
-    "source": "project-file-contracts",
+    "effort": 2,
+    "source": "quest-builder-structure-pass",
     "fixOwner": "quest-builder"
   },
   {
