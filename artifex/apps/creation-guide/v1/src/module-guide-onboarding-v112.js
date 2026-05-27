@@ -1,5 +1,6 @@
-const ONBOARDING_VERSION = 'V1.1.2';
-let tourMode = 'modules';
+const ONBOARDING_VERSION = 'V1.1.5';
+const MODULE_INTRO_DISABLED_KEY = 'artifex.creationGuide.hideModuleIntro';
+let tourMode = localStorage.getItem(MODULE_INTRO_DISABLED_KEY) === 'true' ? 'setup' : 'modules';
 let moduleStep = 0;
 let setupStep = 0;
 let expandedDetails = false;
@@ -33,6 +34,13 @@ const setupSteps = [
   { title: 'Project setup ready', ids: ['open-assignments-toolbar-button'], text: () => 'Next, open Assignments to track production work. Assignments can be sorted by priority, effort, module, milestone, and status.', done: () => true }
 ];
 
+window.openCreationGuideModuleIntro = function openCreationGuideModuleIntro() {
+  tourMode = 'modules';
+  expandedDetails = false;
+  lastModulePopupHtml = '';
+  queueOnboarding();
+};
+
 function queueOnboarding() {
   if (onboardingQueued) return;
   onboardingQueued = true;
@@ -60,10 +68,10 @@ function moveInstructionBoxIntoHero() {
   const hero = document.querySelector('.project-hero');
   const box = document.querySelector('.overview-instructions');
   const ring = document.querySelector('.setup-ring');
-  if (hero && box && ring && box.parentElement !== hero) {
-    box.classList.add('in-hero', 'guided-onboarding');
-    hero.insertBefore(box, ring);
-  }
+  if (!hero || !box || !ring) return;
+  box.classList.add('in-hero', 'guided-onboarding');
+  if (box.parentElement !== hero) hero.insertBefore(box, ring.nextSibling);
+  if (ring.nextElementSibling !== box) hero.insertBefore(ring, box);
 }
 
 function renderHeroIntroStub() {
@@ -121,6 +129,7 @@ function hideModulePopup() {
 function moduleTourHtml() {
   const module = artifexModules[moduleStep];
   const isLastModule = moduleStep >= artifexModules.length - 1;
+  const hideIntro = localStorage.getItem(MODULE_INTRO_DISABLED_KEY) === 'true';
   const circles = artifexModules.map((item, index) => `<button type="button" class="module-dot ${index === moduleStep ? 'active' : ''}" data-module-step="${index}" style="--dot:${item.accent}" title="${safe(item.title)}"><span>${item.icon}</span></button>`).join('');
   return `
     <div class="floating-guide-header">
@@ -137,6 +146,10 @@ function moduleTourHtml() {
       <p>${safe(module.short)} You can always access Artifex modules through the Hub or from the File/Open menu.</p>
       ${expandedDetails ? `<div class="module-more module-more-scroll"><strong>More detail</strong><p>${safe(module.detail)}</p></div>` : ''}
     </article>
+    <div class="module-tour-preferences">
+      <label><input type="checkbox" id="module-dont-show-input" ${hideIntro ? 'checked' : ''} /> Don’t show this module intro again</label>
+      <small>You can reopen this from Help → What are the modules?</small>
+    </div>
     <div class="guide-actions floating-actions">
       <button type="button" id="module-back-button" ${moduleStep === 0 ? 'disabled' : ''}>Back</button>
       <button type="button" id="module-expand-button">${expandedDetails ? 'Less detail' : 'More detail'}</button>
@@ -168,6 +181,11 @@ function wireOnboardingButtons() {
   document.getElementById('module-skip-button')?.addEventListener('click', startSetupGuide);
   document.getElementById('module-skip-top-button')?.addEventListener('click', startSetupGuide);
   document.getElementById('module-expand-button')?.addEventListener('click', () => { expandedDetails = !expandedDetails; queueOnboarding(); });
+  document.getElementById('module-dont-show-input')?.addEventListener('change', (event) => {
+    if (event.target.checked) localStorage.setItem(MODULE_INTRO_DISABLED_KEY, 'true');
+    else localStorage.removeItem(MODULE_INTRO_DISABLED_KEY);
+    queueOnboarding();
+  });
   document.getElementById('setup-back-button')?.addEventListener('click', () => moveSetup(-1));
   document.getElementById('setup-next-button')?.addEventListener('click', () => moveSetup(1));
   document.getElementById('setup-show-button')?.addEventListener('click', () => focusSetupTarget(true));
@@ -219,6 +237,7 @@ function installOnboardingEvents() {
     if (stepById.has(id)) { tourMode = 'setup'; setupStep = stepById.get(id); }
     queueOnboarding();
   }));
+  document.getElementById('open-module-intro-button')?.addEventListener('click', () => window.openCreationGuideModuleIntro());
   const panel = document.getElementById('project-overview-panel');
   if (panel) new MutationObserver(() => queueOnboarding()).observe(panel, { childList: true, subtree: true });
 }
@@ -240,6 +259,8 @@ function injectOnboardingStyles() {
   style.textContent = `
     .project-hero .overview-instructions.in-hero { margin-top: 0; flex: 1 1 390px; max-width: 590px; min-width: 300px; align-self: stretch; display: flex; flex-direction: column; justify-content: center; }
     .project-hero .overview-instructions.intro-stub { max-width: 420px; min-width: 260px; opacity: .92; }
+    .project-hero .setup-ring { order: 2; flex: 0 0 auto; }
+    .project-hero .overview-instructions.in-hero { order: 3; }
     .module-tour-popup { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(760px, calc(100vw - 38px)); max-height: min(82vh, 780px); overflow: hidden; z-index: 160; padding: 22px 24px; border: 1px solid rgba(143,109,255,.46); border-radius: 28px; color: #f2eee9; background: linear-gradient(145deg, rgba(32,23,34,.98), rgba(14,10,9,.98)); box-shadow: 0 24px 80px rgba(0,0,0,.88), 0 0 0 9999px rgba(0,0,0,.38), 0 0 44px rgba(143,109,255,.36); display: flex; flex-direction: column; }
     .module-tour-popup.hidden { display: none; }
     .floating-guide-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; margin-bottom: 14px; flex: 0 0 auto; }
@@ -253,6 +274,10 @@ function injectOnboardingStyles() {
     .module-title-icon { display: inline-grid; place-items: center; width: 34px; height: 34px; margin-right: 10px; border-radius: 999px; color: var(--dot); border: 1px solid currentColor; background: rgba(15,12,11,.65); }
     .floating-module-card h3 { margin: 0 0 12px; color: #fff0ce; font-family: Cinzel, Georgia, serif; letter-spacing: .08em; flex: 0 0 auto; }
     .floating-module-card > p { margin: 0; color: #f2eee9; line-height: 1.58; flex: 0 0 auto; }
+    .module-tour-preferences { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; padding: 9px 10px; border: 1px solid rgba(226,204,167,.15); border-radius: 14px; background: rgba(15,12,11,.36); flex: 0 0 auto; }
+    .module-tour-preferences label { display: inline-flex; align-items: center; gap: 8px; color: #fff0ce; font-size: 12px; font-weight: 800; }
+    .module-tour-preferences input { width: auto; }
+    .module-tour-preferences small { color: #a98f72; font-size: 11px; }
     .guide-card-topline { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 8px; flex: 0 0 auto; }
     .guide-step-pill, .guide-state { display: inline-flex; align-items: center; min-height: 24px; padding: 3px 9px; border: 1px solid rgba(226,204,167,.24); border-radius: 999px; color: #c7b8ff; background: rgba(15,12,11,.55); font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
     .guide-state.complete { color: #9af0ff; border-color: rgba(62,180,137,.65); }
