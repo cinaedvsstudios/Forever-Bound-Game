@@ -8,6 +8,23 @@ It was created after reviewing the current Artifex module docs and live app stru
 
 The goal is to make the Project Manager / Project Editor work with the rest of Artifex through stable files, stable IDs, and clear ownership rules.
 
+## Required Companion Docs
+
+Every app should inspect this contract together with:
+
+```text
+docs/artifex/18-color-and-display-rules.md
+artifex/shared/todo-guide/README.md
+```
+
+The project file contract defines data ownership, file layout, IDs, and module boundaries.
+
+The colour/display rules define the shared Artifex visual language, module accents, typography, control sizing, tooltip rules, and the fallback app logo rule.
+
+The to-do guide defines how Project Manager, all-app, and specific-app tasks should be separated.
+
+Do not update an app against this contract while ignoring the style doc. A module can be structurally correct but still non-compliant if its shell, menus, labels, logo, or controls ignore the shared Artifex display rules.
+
 ## Core Rule
 
 Each Artifex app owns the files for its own job.
@@ -407,6 +424,7 @@ Build Game should display final package/export health.
 8. Health checks must move toward the shared `artifex/shared/health-guide/` source.
 9. The exported project must stay split into individual files so AI or a human can edit broken files directly.
 10. Any new app made from module boilerplate must follow this contract before being linked from the hub.
+11. Every Artifex app must also follow `docs/artifex/18-color-and-display-rules.md`, including shared logo/fallback-logo, typography, display, tooltip, and module-accent rules.
 
 ## Current Conformance Summary
 
@@ -427,3 +445,4 @@ Needs updates:
 - Effect Editor still needs its Artifex FX schema/export helper completed.
 - Quest Builder and Puzzle Builder/Library need real app contracts when implemented.
 - App READMEs should be updated gradually to include ownership/contract sections.
+- Existing apps should be audited against `docs/artifex/18-color-and-display-rules.md` as well as this contract.
