@@ -1,18 +1,19 @@
-import { renderProjectShell } from './project-shell.js?v=0.1.21-link';
-import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.21-link';
-import { createProjectEditorStateManager } from './project-state.js?v=0.1.21-link';
-import { createProjectCanvasController } from './project-canvas.js?v=0.1.21-link';
-import { createProjectRenderer } from './project-renderer.js?v=0.1.21-link';
-import { createProjectUI } from './project-ui.js?v=0.1.21-link';
-import { enhanceProjectUI } from './project-integration-ui.js?v=0.1.21-link';
-import { enhanceProjectHealthUI } from './project-health-ui.js?v=0.1.21-link';
-import { enhanceProjectIO } from './project-io.js?v=0.1.21-link';
-import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.21-link';
-import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.21-link';
-import { getTypeStyle } from './data/type-styles.js?v=0.1.21-link';
+import { renderProjectShell } from './project-shell.js?v=0.1.22-inspector-links';
+import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.22-inspector-links';
+import { createProjectEditorStateManager } from './project-state.js?v=0.1.22-inspector-links';
+import { createProjectCanvasController } from './project-canvas.js?v=0.1.22-inspector-links';
+import { createProjectRenderer } from './project-renderer.js?v=0.1.22-inspector-links';
+import { createProjectUI } from './project-ui.js?v=0.1.22-inspector-links';
+import { enhanceProjectUI } from './project-integration-ui.js?v=0.1.22-inspector-links';
+import { enhanceNodeLinkInspector } from './project-node-links-ui.js?v=0.1.22-inspector-links';
+import { enhanceProjectHealthUI } from './project-health-ui.js?v=0.1.22-inspector-links';
+import { enhanceProjectIO } from './project-io.js?v=0.1.22-inspector-links';
+import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.22-inspector-links';
+import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.22-inspector-links';
+import { getTypeStyle } from './data/type-styles.js?v=0.1.22-inspector-links';
 
 applyProjectTheme();
-renderProjectShell({ version: 'v0.1.21 LINK' });
+renderProjectShell({ version: 'v0.1.22 INSPECTOR LINKS' });
 
 const state = createProjectEditorStateManager();
 let canvas = null;
@@ -27,7 +28,7 @@ window.ProjectEditorStateManager = state;
 
 function setVersion() {
   document.querySelectorAll('#projectEditorVersionBadge, [data-project-version-badge]').forEach((el) => {
-    el.textContent = 'v0.1.21 LINK';
+    el.textContent = 'v0.1.22 INSPECTOR LINKS';
   });
 }
 
@@ -101,15 +102,18 @@ function init() {
   ui = enhanceProjectIO({
     ui: enhanceProjectHealthUI({
       ui: enhanceProjectUI({
-        ui: createProjectUI({
-          stateManager: state,
-          getTypeStyle,
-          renderer,
-          canvasController: canvas,
-          onRefresh: () => refresh(),
-          onGraphChanged: () => redrawGraphOnly(),
-          renderStitcher,
-          renderBuildPrep
+        ui: enhanceNodeLinkInspector({
+          ui: createProjectUI({
+            stateManager: state,
+            getTypeStyle,
+            renderer,
+            canvasController: canvas,
+            onRefresh: () => refresh(),
+            onGraphChanged: () => redrawGraphOnly(),
+            renderStitcher,
+            renderBuildPrep
+          }),
+          stateManager: state
         }),
         stateManager: state
       }),
@@ -121,7 +125,7 @@ function init() {
 
   ui.setWorkspace(state.activeWorkspace || 'flatplan');
   refresh();
-  console.info('[Artifex Project Editor] v0.1.21 LINK loaded', {
+  console.info('[Artifex Project Editor] v0.1.22 INSPECTOR LINKS loaded', {
     nodes: state.logic.nodes.length,
     routes: state.logic.routes.length
   });
