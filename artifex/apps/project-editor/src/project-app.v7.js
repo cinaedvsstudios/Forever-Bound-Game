@@ -1,13 +1,14 @@
-import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.14-health';
-import { createProjectEditorStateManager } from './project-state.js?v=0.1.14-health';
-import { createProjectCanvasController } from './project-canvas.js?v=0.1.14-health';
-import { createProjectRenderer } from './project-renderer.js?v=0.1.14-health';
-import { createProjectUI } from './project-ui.js?v=0.1.14-health';
-import { enhanceProjectUI } from './project-integration-ui.js?v=0.1.14-health';
-import { enhanceProjectHealthUI } from './project-health-ui.js?v=0.1.14-health';
-import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.14-health';
-import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.14-health';
-import { getTypeStyle } from './data/type-styles.js?v=0.1.14-health';
+import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.15-io';
+import { createProjectEditorStateManager } from './project-state.js?v=0.1.15-io';
+import { createProjectCanvasController } from './project-canvas.js?v=0.1.15-io';
+import { createProjectRenderer } from './project-renderer.js?v=0.1.15-io';
+import { createProjectUI } from './project-ui.js?v=0.1.15-io';
+import { enhanceProjectUI } from './project-integration-ui.js?v=0.1.15-io';
+import { enhanceProjectHealthUI } from './project-health-ui.js?v=0.1.15-io';
+import { enhanceProjectIO } from './project-io.js?v=0.1.15-io';
+import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.15-io';
+import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.15-io';
+import { getTypeStyle } from './data/type-styles.js?v=0.1.15-io';
 
 applyProjectTheme();
 
@@ -24,7 +25,7 @@ window.ProjectEditorStateManager = state;
 
 function setVersion() {
   document.querySelectorAll('#projectEditorVersionBadge, [data-project-version-badge]').forEach((el) => {
-    el.textContent = 'v0.1.14 HEALTH';
+    el.textContent = 'v0.1.15 IO';
   });
 }
 
@@ -95,26 +96,30 @@ function init() {
     onInteractionEnd: () => redrawGraphOnly()
   });
 
-  ui = enhanceProjectHealthUI({
-    ui: enhanceProjectUI({
-      ui: createProjectUI({
-        stateManager: state,
-        getTypeStyle,
-        renderer,
-        canvasController: canvas,
-        onRefresh: () => refresh(),
-        onGraphChanged: () => redrawGraphOnly(),
-        renderStitcher,
-        renderBuildPrep
+  ui = enhanceProjectIO({
+    ui: enhanceProjectHealthUI({
+      ui: enhanceProjectUI({
+        ui: createProjectUI({
+          stateManager: state,
+          getTypeStyle,
+          renderer,
+          canvasController: canvas,
+          onRefresh: () => refresh(),
+          onGraphChanged: () => redrawGraphOnly(),
+          renderStitcher,
+          renderBuildPrep
+        }),
+        stateManager: state
       }),
       stateManager: state
     }),
-    stateManager: state
+    stateManager: state,
+    onRefresh: () => refresh()
   });
 
   ui.setWorkspace(state.activeWorkspace || 'flatplan');
   refresh();
-  console.info('[Artifex Project Editor] v0.1.14 HEALTH loaded', {
+  console.info('[Artifex Project Editor] v0.1.15 IO loaded', {
     nodes: state.logic.nodes.length,
     routes: state.logic.routes.length
   });
