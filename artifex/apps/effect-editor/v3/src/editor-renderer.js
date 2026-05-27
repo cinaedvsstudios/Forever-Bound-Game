@@ -26,6 +26,8 @@ let lowPerfFrameSkip = false;
 let lowPerfRedrawSkip = false;
 let renderTime = 0;
 let targetPickCallback = null;
+let isWorkspacePanning = false;
+let lastPanPoint = null;
 
 export function initRenderer() {
   canvas = document.getElementById('fx-canvas');
@@ -38,9 +40,16 @@ export function initRenderer() {
   resizeCanvas();
 
   window.addEventListener('resize', resizeCanvas);
-  canvas.addEventListener('pointerdown', handlePointer);
+  canvas.addEventListener('pointerdown', handlePointerDown);
   canvas.addEventListener('pointermove', (event) => {
+    if (isWorkspacePanning) return;
     if (event.buttons === 1 && !targetPickCallback) handlePointer(event);
+  });
+  canvas.addEventListener('auxclick', (event) => {
+    if (event.button === 1) event.preventDefault();
+  });
+  canvas.addEventListener('contextmenu', (event) => {
+    if (isWorkspacePanning) event.preventDefault();
   });
 
   onStateChange(() => {
@@ -287,20 +296,55 @@ function drawEmitterHelpers(scale) {
   ctx.restore();
 }
 
+function handlePointerDown(event) {
+  if (event.button === 1 || event.buttons === 4) {
+    beginWorkspacePan(event);
+    return;
+  }
+  handlePointer(event);
+}
+
+function beginWorkspacePan(event) {
+  if (!canvas) return;
+  event.preventDefault();
+  event.stopPropagation();
+  isWorkspacePanning = true;
+  lastPanPoint = getCanvasPoint(event);
+  canvas.setPointerCapture?.(event.pointerId);
+  window.addEventListener('pointermove', handleWorkspacePanMove, true);
+  window.addEventListener('pointerup', endWorkspacePan, true);
+  window.addEventListener('pointercancel', endWorkspacePan, true);
+  syncCanvasCursor();
+}
+
+function handleWorkspacePanMove(event) {
+  if (!isWorkspacePanning || !lastPanPoint) return;
+  event.preventDefault();
+  const nextPoint = getCanvasPoint(event);
+  editorState.viewportPanX = Number(editorState.viewportPanX || 0) + (nextPoint.x - lastPanPoint.x);
+  editorState.viewportPanY = Number(editorState.viewportPanY || 0) + (nextPoint.y - lastPanPoint.y);
+  lastPanPoint = nextPoint;
+}
+
+function endWorkspacePan(event) {
+  if (event) event.preventDefault();
+  isWorkspacePanning = false;
+  lastPanPoint = null;
+  window.removeEventListener('pointermove', handleWorkspacePanMove, true);
+  window.removeEventListener('pointerup', endWorkspacePan, true);
+  window.removeEventListener('pointercancel', endWorkspacePan, true);
+  syncCanvasCursor();
+}
+
 function handlePointer(event) {
   const active = getActiveLayer();
   if (!active) return;
-  const rect = canvas.getBoundingClientRect();
-  const ratioX = canvas.width / rect.width;
-  const ratioY = canvas.height / rect.height;
   const scale = getScale();
   const offset = getOffset(scale);
+  const point = getCanvasPoint(event);
 
-  const canvasX = (event.clientX - rect.left) * ratioX;
-  const canvasY = (event.clientY - rect.top) * ratioY;
-
-  const worldX = ((canvasX - offset.x) / editorState.zoom) / scale;
-  const worldY = ((canvasY - offset.y) / editorState.zoom) / scale;
+  const worldX = ((point.x - offset.x) / editorState.zoom) / scale;
+  const worldY = ((point.y - offset.y) / editorState.zoom) / scale;
 
   if (worldX >= 0 && worldX <= getDesignWidth() && worldY >= 0 && worldY <= getDesignHeight()) {
     if (targetPickCallback) {
@@ -314,18 +358,29 @@ function handlePointer(event) {
   }
 }
 
+function getCanvasPoint(event) {
+  const rect = canvas.getBoundingClientRect();
+  const ratioX = canvas.width / rect.width;
+  const ratioY = canvas.height / rect.height;
+  return {
+    x: (event.clientX - rect.left) * ratioX,
+    y: (event.clientY - rect.top) * ratioY
+  };
+}
+
 function getScale() {
   return Math.min(canvas.width / getDesignWidth(), canvas.height / getDesignHeight());
 }
 
 function getOffset(scale) {
   return {
-    x: (canvas.width - getDesignWidth() * scale * editorState.zoom) / 2,
-    y: (canvas.height - getDesignHeight() * scale * editorState.zoom) / 2
+    x: (canvas.width - getDesignWidth() * scale * editorState.zoom) / 2 + Number(editorState.viewportPanX || 0),
+    y: (canvas.height - getDesignHeight() * scale * editorState.zoom) / 2 + Number(editorState.viewportPanY || 0)
   };
 }
 
 function syncCanvasCursor() {
   if (!canvas) return;
-  canvas.style.cursor = targetPickCallback ? 'copy' : 'crosshair';
+  if (isWorkspacePanning) canvas.style.cursor = 'grabbing';
+  else canvas.style.cursor = targetPickCallback ? 'copy' : 'crosshair';
 }
