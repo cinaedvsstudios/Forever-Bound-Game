@@ -1,7 +1,13 @@
 {
   "schemaVersion": "artifex.todos.v1",
   "scope": "all-apps",
-  "updatedBy": "project-manager-contract-pass",
+  "updatedBy": "quest-builder-standardization-pass",
+  "importantReferenceFiles": {
+    "brandingAndDisplayRules": "docs/artifex/18-color-and-display-rules.md",
+    "projectFileContracts": "docs/artifex/19-project-file-contracts.md",
+    "globalTodoGuide": "artifex/shared/todo-guide/README.md",
+    "machineReadableAllAppsTodos": "artifex/shared/todo-guide/all-apps-todos.json"
+  },
   "tasks": [
     {
       "taskId": "todo_all_apps_module_split_audit",
@@ -77,6 +83,181 @@
       "appFile": "docs/artifex/18-color-and-display-rules.md",
       "fixOwner": "each-app-owner",
       "tags": ["all-apps", "branding", "navigation"]
+    },
+    {
+      "taskId": "todo_all_apps_required_reference_files_before_edits",
+      "scope": "all-apps",
+      "owningModule": "all-artifex-apps",
+      "relatedModules": [
+        "hub",
+        "creation-guide",
+        "project-manager",
+        "scene-editor",
+        "quest-builder",
+        "puzzle-creator",
+        "effect-editor",
+        "archetype-object-creator"
+      ],
+      "title": "Check required reference files before app edits",
+      "description": "Before changing any Artifex app, inspect docs/artifex/18-color-and-display-rules.md for branding/display rules, docs/artifex/19-project-file-contracts.md for file hierarchy and ownership contracts, and artifex/shared/todo-guide/README.md plus all-apps-todos.json for global platform tasks.",
+      "status": "open",
+      "priority": 5,
+      "effort": 2,
+      "source": "user-global-rule",
+      "projectFile": null,
+      "appFile": "artifex/shared/todo-guide/README.md",
+      "fixOwner": "each-app-owner",
+      "tags": ["all-apps", "required-reading", "contracts", "branding"]
+    },
+    {
+      "taskId": "todo_all_apps_module_flyout_not_flat_file_menu",
+      "scope": "all-apps",
+      "owningModule": "all-artifex-apps",
+      "relatedModules": [
+        "hub",
+        "creation-guide",
+        "project-manager",
+        "scene-editor",
+        "quest-builder",
+        "puzzle-creator",
+        "effect-editor",
+        "archetype-object-creator"
+      ],
+      "title": "Use Module as a File menu flyout",
+      "description": "The File menu should not list every module inline. It should contain a Module item that opens a side flyout listing only core modules: Hub, Creation Guide, Project Manager, Scene Editor, Quest Builder, Puzzle Creator, Effect Editor, Archetype Object Creator. Utility tools must not appear in this core module flyout.",
+      "status": "open",
+      "priority": 4,
+      "effort": 3,
+      "source": "quest-builder-ui-pass",
+      "projectFile": null,
+      "appFile": "docs/artifex/18-color-and-display-rules.md",
+      "fixOwner": "each-app-owner",
+      "tags": ["all-apps", "module-menu", "navigation", "core-modules"]
+    },
+    {
+      "taskId": "todo_all_apps_version_and_cache_key_standard",
+      "scope": "all-apps",
+      "owningModule": "all-artifex-apps",
+      "relatedModules": [
+        "hub",
+        "creation-guide",
+        "project-manager",
+        "scene-editor",
+        "quest-builder",
+        "puzzle-creator",
+        "effect-editor",
+        "archetype-object-creator"
+      ],
+      "title": "Standardize version and cache keys",
+      "description": "Every app should show a visible version number beside the title and increment it by 0.01 per edit. The same version must be reflected in the page title, visible badge, stylesheet cache key, script/module cache key, and loaded/fallback text where present.",
+      "status": "open",
+      "priority": 4,
+      "effort": 3,
+      "source": "quest-builder-ui-pass",
+      "projectFile": null,
+      "appFile": "docs/artifex/18-color-and-display-rules.md",
+      "fixOwner": "each-app-owner",
+      "tags": ["all-apps", "versioning", "cache-keys", "deployment"]
+    },
+    {
+      "taskId": "todo_all_apps_layout_memory_standard",
+      "scope": "all-apps",
+      "owningModule": "all-artifex-apps",
+      "relatedModules": [
+        "hub",
+        "creation-guide",
+        "project-manager",
+        "scene-editor",
+        "quest-builder",
+        "puzzle-creator",
+        "effect-editor",
+        "archetype-object-creator"
+      ],
+      "title": "Standardize remembered editor layout state",
+      "description": "Apps with draggable windows, resizable panels, zoom/pan controls, collapsible cards, or horizontal/vertical view toggles should persist those layout preferences in localStorage using an app-specific key. Each app should also expose a Reset Saved Layout command in View where relevant.",
+      "status": "open",
+      "priority": 3,
+      "effort": 4,
+      "source": "quest-builder-ui-pass",
+      "projectFile": null,
+      "appFile": "docs/artifex/18-color-and-display-rules.md",
+      "fixOwner": "each-app-owner",
+      "tags": ["all-apps", "layout-state", "localstorage", "editor-ui"]
+    },
+    {
+      "taskId": "todo_all_apps_shared_shell_and_file_structure_standard",
+      "scope": "all-apps",
+      "owningModule": "all-artifex-apps",
+      "relatedModules": [
+        "hub",
+        "creation-guide",
+        "project-manager",
+        "scene-editor",
+        "quest-builder",
+        "puzzle-creator",
+        "effect-editor",
+        "archetype-object-creator"
+      ],
+      "title": "Define shared app shell file structure",
+      "description": "Each core app should keep index.html as a shell and split behaviour into clear files such as module config, schema/contracts, block/type definitions, layout state, UI bindings, renderer/view logic, dialogs, validation, and export. Avoid one giant script or random feature logic in unrelated files.",
+      "status": "open",
+      "priority": 5,
+      "effort": 5,
+      "source": "quest-builder-structure-pass",
+      "projectFile": null,
+      "appFile": "docs/artifex/19-project-file-contracts.md",
+      "fixOwner": "each-app-owner",
+      "tags": ["all-apps", "file-structure", "maintainability", "contracts"]
+    },
+    {
+      "taskId": "todo_all_apps_branding_color_contract_audit",
+      "scope": "all-apps",
+      "owningModule": "all-artifex-apps",
+      "relatedModules": [
+        "hub",
+        "creation-guide",
+        "project-manager",
+        "scene-editor",
+        "quest-builder",
+        "puzzle-creator",
+        "effect-editor",
+        "archetype-object-creator"
+      ],
+      "title": "Audit app colours against branding/display rules",
+      "description": "Every app should be checked against docs/artifex/18-color-and-display-rules.md before UI changes. App accent colours should not overwhelm the dark charcoal base, and shared visual elements should remain consistent across the Artifex suite.",
+      "status": "open",
+      "priority": 4,
+      "effort": 4,
+      "source": "color-and-display-rules",
+      "projectFile": null,
+      "appFile": "docs/artifex/18-color-and-display-rules.md",
+      "fixOwner": "each-app-owner",
+      "tags": ["all-apps", "branding", "color", "display-rules"]
+    },
+    {
+      "taskId": "todo_all_apps_project_file_contract_audit",
+      "scope": "all-apps",
+      "owningModule": "all-artifex-apps",
+      "relatedModules": [
+        "hub",
+        "creation-guide",
+        "project-manager",
+        "scene-editor",
+        "quest-builder",
+        "puzzle-creator",
+        "effect-editor",
+        "archetype-object-creator"
+      ],
+      "title": "Audit app exports against project file contracts",
+      "description": "Every app export/import path should be checked against docs/artifex/19-project-file-contracts.md. Each app must clearly declare what files it owns, reads, exports, and must not own.",
+      "status": "open",
+      "priority": 5,
+      "effort": 5,
+      "source": "project-file-contracts",
+      "projectFile": null,
+      "appFile": "docs/artifex/19-project-file-contracts.md",
+      "fixOwner": "each-app-owner",
+      "tags": ["all-apps", "project-files", "contracts", "import-export"]
     }
   ]
 }
