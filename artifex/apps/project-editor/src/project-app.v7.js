@@ -1,12 +1,12 @@
-import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.11-integration';
-import { createProjectEditorStateManager } from './project-state.js?v=0.1.11-integration';
-import { createProjectCanvasController } from './project-canvas.js?v=0.1.11-integration';
-import { createProjectRenderer } from './project-renderer.js?v=0.1.11-integration';
-import { createProjectUI } from './project-ui.js?v=0.1.11-integration';
-import { enhanceProjectUI } from './project-integration-ui.js?v=0.1.11-integration';
-import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.11-integration';
-import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.11-integration';
-import { getTypeStyle } from './data/type-styles.js?v=0.1.11-integration';
+import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.13-style';
+import { createProjectEditorStateManager } from './project-state.js?v=0.1.13-style';
+import { createProjectCanvasController } from './project-canvas.js?v=0.1.13-style';
+import { createProjectRenderer } from './project-renderer.js?v=0.1.13-style';
+import { createProjectUI } from './project-ui.js?v=0.1.13-style';
+import { enhanceProjectUI } from './project-integration-ui.js?v=0.1.13-style';
+import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.13-style';
+import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.13-style';
+import { getTypeStyle } from './data/type-styles.js?v=0.1.13-style';
 
 applyProjectTheme();
 
@@ -23,7 +23,7 @@ window.ProjectEditorStateManager = state;
 
 function setVersion() {
   document.querySelectorAll('#projectEditorVersionBadge, [data-project-version-badge]').forEach((el) => {
-    el.textContent = 'v0.1.11 INTEGRATION';
+    el.textContent = 'v0.1.13 STYLE';
   });
 }
 
@@ -110,7 +110,7 @@ function init() {
 
   ui.setWorkspace(state.activeWorkspace || 'flatplan');
   refresh();
-  console.info('[Artifex Project Editor] v0.1.11 INTEGRATION loaded', {
+  console.info('[Artifex Project Editor] v0.1.13 STYLE loaded', {
     nodes: state.logic.nodes.length,
     routes: state.logic.routes.length
   });
