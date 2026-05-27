@@ -31,6 +31,7 @@ function injectStyles() {
 function installTextControls() {
   const layer = getActiveLayer();
   const grid = document.getElementById('effect-specific-grid');
+  removeLegacyTextTools();
   if (!grid || !isTextLayer(layer)) return;
   if (document.getElementById('text-extra-controls-v322')) {
     syncTextControls(layer);
@@ -41,6 +42,13 @@ function installTextControls() {
   controls.id = 'text-extra-controls-v322';
   controls.className = 'text-extra-controls-v322';
   controls.innerHTML = `
+    <label>Emission
+      <select id="text-emission-mode-v322" title="Choose whether this text emits once, loops in bursts, or streams continuously.">
+        <option value="once">Once</option>
+        <option value="loop">Loop</option>
+        <option value="continuous">Continuous</option>
+      </select>
+    </label>
     <label>Direction
       <select id="text-direction-v322" title="Choose whether the spawned text rises, falls, stays still, or drifts.">
         <option value="rise">Rise</option>
@@ -77,12 +85,14 @@ function installTextControls() {
 }
 
 function bindControls() {
+  const emission = document.getElementById('text-emission-mode-v322');
   const direction = document.getElementById('text-direction-v322');
   const reveal = document.getElementById('text-reveal-v322');
   const scatter = document.getElementById('text-scatter-v322');
   const bias = document.getElementById('text-lifetime-bias-v322');
   const keep = document.getElementById('text-keep-block-v322');
 
+  emission?.addEventListener('change', () => updateActiveLayer({ textEmissionMode: emission.value }));
   direction?.addEventListener('change', () => updateActiveLayer({ textDirection: direction.value }));
   reveal?.addEventListener('change', () => updateActiveLayer({ textRevealMode: reveal.value }));
   scatter?.addEventListener('input', () => {
@@ -99,6 +109,7 @@ function bindControls() {
 }
 
 function syncTextControls(layer) {
+  setValue('text-emission-mode-v322', layer.textEmissionMode || 'loop');
   setValue('text-direction-v322', layer.textDirection || 'rise');
   setValue('text-reveal-v322', layer.textRevealMode || 'all');
   setValue('text-scatter-v322', Number(layer.textScatter || 0));
@@ -116,6 +127,11 @@ function setValue(id, value) {
 function setTextForOutput(id, value) {
   const output = document.getElementById(id)?.parentElement?.querySelector('output');
   if (output) output.textContent = String(value);
+}
+
+function removeLegacyTextTools() {
+  const legacy = document.getElementById('text-tools-v314');
+  if (legacy) legacy.remove();
 }
 
 function isTextLayer(layer) {
