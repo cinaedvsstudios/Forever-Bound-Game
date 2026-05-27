@@ -6,7 +6,7 @@ This document defines how Artifex apps should exchange project data without swal
 
 It was created after reviewing the current Artifex module docs and live app structures for Project Editor, Creation Guide, Scene Editor, Archetype Object Creator, Effect Editor, and the module boilerplate.
 
-The goal is to make the Project Manager / Project Editor work with the rest of Artifex through stable files, stable IDs, and clear ownership rules.
+The goal is to make the Project Manager / Project Editor work with the rest of Artifex through stable files, stable IDs, clear ownership rules, and app modules that stay easy to edit.
 
 ## Required Companion Docs
 
@@ -17,13 +17,13 @@ docs/artifex/18-color-and-display-rules.md
 artifex/shared/todo-guide/README.md
 ```
 
-The project file contract defines data ownership, file layout, IDs, and module boundaries.
+The project file contract defines data ownership, file layout, IDs, module boundaries, app splitting, and patch integration rules.
 
-The colour/display rules define the shared Artifex visual language, module accents, typography, control sizing, tooltip rules, and the fallback app logo rule.
+The colour/display rules define the shared Artifex visual language, module accents, typography, control sizing, tooltip rules, header layout, and fallback app logo rule.
 
 The to-do guide defines how Project Manager, all-app, and specific-app tasks should be separated.
 
-Do not update an app against this contract while ignoring the style doc. A module can be structurally correct but still non-compliant if its shell, menus, labels, logo, or controls ignore the shared Artifex display rules.
+Do not update an app against this contract while ignoring the style doc. A module can be structurally correct but still non-compliant if its shell, menus, labels, logo, version pill, or controls ignore the shared Artifex display rules.
 
 ## Core Rule
 
@@ -32,6 +32,95 @@ Each Artifex app owns the files for its own job.
 The Project Manager / Project Editor assembles and validates an existing project package. It must not create a brand-new project from nothing. New project creation belongs to the Creation Guide.
 
 The Project Manager can open, inspect, link, route, validate, and export project structure files. It should not become the full authoring tool for scenes, quests, object archetypes, FX archetypes, or raw assets.
+
+## Module Code Split Contract
+
+Every Artifex app must be split into editable modules. Do not keep growing one huge `index.html`, one huge `app.js`, or one huge patch file until it becomes risky to edit.
+
+The active entry file should be thin. It should load the shell, import modules, create state/controllers, wire the main app, and start the app. It should not contain the full UI, data model, renderer, library browser, health checker, import/export logic, and patch fixes all in one place.
+
+Recommended module split for each app:
+
+```text
+index.html                         thin shell only
+v*/src/<app>-app.js                main orchestrator / bootstrap
+v*/src/<app>-state.js              state model and mutations
+v*/src/<app>-ui.js                 main UI rendering and events
+v*/src/<app>-renderer.js           canvas/SVG/WebGL/rendering layer, if needed
+v*/src/<app>-io.js                 import/export/save/load helpers
+v*/src/<app>-library.js            library/index browsing helpers, if needed
+v*/src/<app>-health.js             app-local checks, if not yet shared
+v*/src/data/*.js                   static data, catalog definitions, defaults
+v*/src/shared/*.js                 small shared helpers used only inside the app
+```
+
+Apps may use different names when the meaning is clearer, but the split must remain obvious.
+
+### File Size Rule
+
+As a practical target, keep source files small enough that an AI assistant or human can edit one responsibility without reading an entire app.
+
+Guideline:
+
+- Under 300 lines: usually fine.
+- 300–500 lines: acceptable if the file has one clear responsibility.
+- Over 500 lines: should be reviewed for splitting before more features are added.
+- Over 800 lines: should be treated as a refactor risk unless there is a documented reason.
+
+This is not about arbitrary line counts. The point is that one edit should not require touching unrelated systems.
+
+### Split Before Adding More
+
+If a file already mixes unrelated responsibilities, split it before adding a new feature. For example, do not add Asset Browser, health checks, module navigation, and setup wizard logic into the same UI file if they can be separate modules.
+
+Good pattern:
+
+```text
+project-ui.js                 existing core UI
+project-integration-ui.js     asset browser, setup wizard, module integration shell
+project-health.js             health checks / diagnostics
+```
+
+Bad pattern:
+
+```text
+project-ui.js                 every screen, every modal, every wizard, every patch, every health check
+```
+
+## Patch Integration Contract
+
+Temporary patches are allowed, but they must stay temporary.
+
+A patch is any file, script, or layer that sits over the top of the normal app code to correct behaviour without being integrated into the owning module. Examples include appearance patches, hotfix scripts, override files, extra imported patch layers, monkeypatch scripts, or version-specific fix files that replace behaviour after the app loads.
+
+### Maximum Active Patch Layers
+
+No Artifex app should have more than two active patch layers running over the top of its normal code at once.
+
+If an app already has two active patch layers, the next work item must be integration cleanup, not another patch.
+
+### Patch Lifecycle
+
+Every patch must have one of these outcomes:
+
+1. Integrated into the correct module file.
+2. Converted into a normal shared helper or app module.
+3. Removed because the base app no longer needs it.
+4. Archived as historical reference but not loaded by the live app.
+
+Do not build permanent patch stacks. Do not add patch over patch over patch.
+
+### Patch Audit Requirement
+
+When inspecting any app, check:
+
+- how many patch/override files are currently loaded by `index.html` or the main entry script;
+- whether those patches are still needed;
+- which owning module should absorb each patch;
+- whether cache keys make it clear which version is live;
+- whether old patch files remain in the repo but are not loaded.
+
+This is an ongoing all-apps cleanup task and should be tracked through `artifex/shared/todo-guide/README.md` and `artifex/shared/todo-guide/all-apps-todos.json`.
 
 ## Current App Audit
 
@@ -56,6 +145,7 @@ Needed changes:
 - File menu may offer Open Project Package, Import Project Files, Save Current Project, Export Project Package, Getting Started / Missing Setup Wizard, and Reset Local Editor Cache.
 - Build Prep diagnostics should move to a shared health guide module so Creation Guide can display the same checks.
 - Asset Browser should be a shared browser window, not six separate library windows.
+- Continue splitting integration, health, browser, and wizard logic into separate modules instead of growing one UI file.
 
 ### Creation Guide
 
@@ -77,6 +167,7 @@ Needed changes:
 - Creation Guide should import the shared health guide checks.
 - Creation Guide should not own Flatplan graph editing or route logic.
 - Creation Guide may show Project Manager health results, but should frame them as setup/milestone progress.
+- Creation Guide should generate starter `input-map.json` for gameplay action/button mapping.
 
 ### Scene Editor
 
@@ -141,6 +232,7 @@ Needed changes:
 - Export reusable FX archetypes into `archetypes/effect-index.json` plus individual files under `archetypes/effects/`.
 - Keep editor project files separate from final reusable FX archetype files.
 - Scene Editor and Project Manager should reference FX archetypes by ID, not copy full FX editor state into scene/project graph files.
+- Existing FX patches must be audited and integrated so no more than two patch layers are active.
 
 ### Module Boilerplate
 
@@ -159,6 +251,7 @@ Needed changes:
 - New modules should include a contract section in their README declaring what files they own, read, and reference.
 - New modules should not hardcode project-specific data into the app shell.
 - New modules should not mix runtime data with Asset Library or Scene Editor data.
+- New modules should follow the module split contract from the start.
 
 ### Quest Builder
 
@@ -181,13 +274,13 @@ Needed changes:
 - Export `quests/quest-index.json` and `sidequests/sidequest-index.json`.
 - Project Manager should reference quest/side quest IDs, not author quest internals directly.
 
-### Puzzle Library / Puzzle Builder
+### Puzzle Creator
 
 Current status: planned from project conversations, but no active app contract found in the current scan.
 
 Needed changes:
 
-- Define Puzzle Builder or Puzzle Library as a real module.
+- Define Puzzle Creator as a real module.
 - Export `puzzles/puzzle-index.json` and individual puzzle files under `puzzles/`.
 - Use canonical `puzzle_` IDs.
 - Project Manager should reference puzzles as route gates, node requirements, scene overlays, or side activity links.
@@ -205,6 +298,7 @@ projects/<project-id>/
   layout.json
   registry.json
   library-links.json
+  input-map.json
   health-report.json
 
   scenes/
@@ -242,6 +336,9 @@ projects/<project-id>/
 
   health/
     latest-health-report.json
+
+  todos/
+    project-manager-todos.json
 ```
 
 ## Required Top-Level Files
@@ -265,6 +362,12 @@ Required fields:
   "fileRefs": {}
 }
 ```
+
+### `input-map.json`
+
+Owned by Creation Guide at project creation time, then inspectable/validatable by Project Manager.
+
+Contains gameplay action/button mapping. Project Manager should validate required actions and references, but detailed remapping can later belong to a Project Settings or Controls Editor.
 
 ### `logic.json`
 
@@ -314,6 +417,7 @@ branch_        Quest/route branch
 flag_          Progression flag
 condition_     Condition expression/rule
 puzzle_        Puzzle definition
+action_        Gameplay/input action mapping
 archobj_       Archetype Object Creator object archetype
 objinst_       Scene instance of an object archetype
 archeffect_    Effect Editor reusable effect archetype
@@ -325,6 +429,23 @@ health_        Health check/report item
 assignment_    Creation Guide work assignment
 milestone_     Creation Guide milestone
 ```
+
+## Shared Module Menu Names
+
+Every Artifex app should use the same Module menu order:
+
+```text
+Hub
+Creation Guide
+Project Manager
+Scene Editor
+Quest Builder
+Puzzle Creator
+Effect Editor
+Archetype Object Creator
+```
+
+Unavailable modules may be disabled, but the order and labels should remain stable.
 
 ## Library Menu Names
 
@@ -402,11 +523,11 @@ Build Game should display final package/export health.
 
 | Module | Owns | Reads | Must not own |
 |---|---|---|---|
-| Creation Guide | new project creation, assignments, milestones, setup health | shared health reports, project package summary | Flatplan graph internals |
-| Project Manager | project manifest inspection, Flatplan, routes, library links, structure validation | all module index files | scene art, quest internals, object/FX archetype authoring |
+| Creation Guide | new project creation, assignments, milestones, setup health, starter input map | shared health reports, project package summary | Flatplan graph internals |
+| Project Manager | project manifest inspection, Flatplan, routes, library links, structure validation | all module index files, input-map.json | scene art, quest internals, object/FX archetype authoring |
 | Scene Editor | scenes, screens, visual layout, object/effect instances | asset index, object archetype index, effect archetype index | Project graph/routes |
 | Quest Builder | quests, side quests, branches, flags, conditions, rewards | scene/screen IDs, puzzle IDs, object IDs | visual scene layout |
-| Puzzle Builder / Library | puzzle definitions and puzzle index | scene IDs, asset IDs, object IDs | project route graph |
+| Puzzle Creator | puzzle definitions and puzzle index | scene IDs, asset IDs, object IDs | project route graph |
 | Archetype Object Creator | reusable non-FX object archetypes | asset IDs | scene instances, FX archetypes |
 | Effect Editor | reusable FX archetypes and FX editor projects | asset IDs | object archetypes, scene placement |
 | Asset Library | raw asset metadata and asset groups | file paths | gameplay behaviour |
@@ -425,6 +546,10 @@ Build Game should display final package/export health.
 9. The exported project must stay split into individual files so AI or a human can edit broken files directly.
 10. Any new app made from module boilerplate must follow this contract before being linked from the hub.
 11. Every Artifex app must also follow `docs/artifex/18-color-and-display-rules.md`, including shared logo/fallback-logo, typography, display, tooltip, and module-accent rules.
+12. Every app must follow the Module Code Split Contract so files remain editable and responsibilities stay separate.
+13. No app should run more than two active patch layers over the top of its normal code.
+14. Existing patches must be integrated into the owning module, converted to normal helpers, removed, or archived as non-live historical reference.
+15. Before adding a new patch, check whether the app already has two patch layers; if yes, do integration cleanup first.
 
 ## Current Conformance Summary
 
@@ -443,6 +568,7 @@ Needs updates:
 - Project Manager Asset Browser shell should use this doc's browser modes.
 - Project Manager Build Prep and Creation Guide health should share `artifex/shared/health-guide/`.
 - Effect Editor still needs its Artifex FX schema/export helper completed.
-- Quest Builder and Puzzle Builder/Library need real app contracts when implemented.
+- Quest Builder and Puzzle Creator need real app contracts when implemented.
 - App READMEs should be updated gradually to include ownership/contract sections.
 - Existing apps should be audited against `docs/artifex/18-color-and-display-rules.md` as well as this contract.
+- Existing apps should be audited for large files, monoliths, stale patch layers, and old patch files that remain loaded.
