@@ -16,7 +16,7 @@ Use the global all-apps to-do list for changes that affect every Artifex app. Us
 
 ## Current live status
 
-Current Quest Builder version: `V1.0.9`
+Current Quest Builder version: `V1.1.0`
 
 Current live app files:
 
@@ -49,10 +49,9 @@ Status: complete.
 
 Completed changes:
 
-- `index.html` now loads `v1/quest-builder.css?v=1.0.9` and `v1/src/quest-builder-app.js?v=1.0.9`.
+- `index.html` loads the split module entry instead of the old single script.
 - App behaviour has been split into responsibility-based modules.
-- `docs/structure.md` now defines what belongs in each Quest Builder file.
-- Version was raised to `V1.0.9` in page title, visible version badge, CSS cache key, script cache key, module config, and loaded toast.
+- `docs/structure.md` defines what belongs in each Quest Builder file.
 - Export helpers and validation helpers were moved into `export-json.js`.
 - Block taxonomy was moved into `block-types.js`.
 - Demo data and schema helpers were moved into `quest-schema.js`.
@@ -60,11 +59,21 @@ Completed changes:
 - Canvas drawing was moved into `canvas-renderer.js`.
 - Dialog/wizard behaviour was moved into `dialog-editors.js`.
 - UI wiring was moved into `ui-bindings.js`.
+- Live GitHub Pages import test passed: user confirmed the V1.0.9 split loaded and looked fine.
 
-Follow-up check needed:
+### V1.1.0 — Module menu / shared shell alignment
 
-- Test the live GitHub Pages URL after deployment to make sure all ES module imports load correctly.
-- If any runtime error appears, fix only the split/import issue before starting the next feature phase.
+Status: complete.
+
+Completed changes/checks:
+
+- Page title, visible version badge, CSS cache key, JS module cache key, and module config now use `V1.1.0` / `1.1.0`.
+- `File ▾ → Module ▸` remains a side flyout, not a flat list inside File.
+- The flyout includes only the core modules: Hub, Creation Guide, Project Manager, Scene Editor, Quest Builder, Puzzle Creator, Effect Editor, Archetype Object Creator.
+- Utility tools such as Sprite Wizard, Font Packer, Frame Extractor, and Onda are not included.
+- The module list is also stored in `v1/src/module-config.js`, so future standardisation can read from one config source instead of scattering the order randomly.
+- The header remains aligned with the shared Artifex rule: logo/app title area, version pill, divider/menu area, compact pill menu buttons.
+- Quest Builder keeps green as the module accent while retaining the dark Artifex shell.
 
 ## Ownership boundary
 
@@ -116,40 +125,12 @@ Every Quest Builder edit should increase the visible version by `0.01` and updat
 Next versions:
 
 ```text
-V1.1.0  module menu/shared shell alignment check
 V1.1.1  left panel refinement
 V1.1.2  viewing panel and flow card refinement
 V1.1.3  block taxonomy and validation pass
 V1.1.4  editor popup redesign
 V1.1.5  export JSON and validation
 ```
-
-## V1.1.0 — Module menu / shared shell alignment
-
-Quest Builder already has `File ▾ → Module ▸`, but it needs to be checked against the global app standard after the V1.0.9 split.
-
-Required Module flyout order:
-
-```text
-Hub
-Creation Guide
-Project Manager
-Scene Editor
-Quest Builder
-Puzzle Creator
-Effect Editor
-Archetype Object Creator
-```
-
-Do not include utility tools such as Sprite Wizard, Font Packer, Frame Extractor, or Onda.
-
-Acceptance checks:
-
-- Module list is a side flyout, not a flat list inside File.
-- Links use correct relative paths.
-- Header follows the shared Artifex rule: logo/app title → version pill → divider → main menu.
-- Quest Builder keeps green accent but does not let green overpower the dark bronze/gold Artifex base.
-- Any remaining module-menu constants live in `module-config.js`, not inside random UI files.
 
 ## V1.1.1 — Left panel refinement
 
@@ -182,6 +163,7 @@ Acceptance checks:
 - Remove old `Edit File Info` button pattern from the main side panel.
 - Quest list rows include edit icons.
 - Inline fields update the current quest state.
+- Inline field updates should not fight with render refreshes while typing.
 
 ## V1.1.2 — Viewing panel and flow card refinement
 
@@ -330,17 +312,6 @@ Acceptance checks:
 ```json
 [
   {
-    "taskId": "todo_quest_builder_live_v109_import_test",
-    "scope": "specific-app",
-    "owningModule": "quest-builder",
-    "title": "Test V1.0.9 module import split on GitHub Pages",
-    "status": "open",
-    "priority": 5,
-    "effort": 2,
-    "source": "quest-builder-structure-pass",
-    "fixOwner": "quest-builder"
-  },
-  {
     "taskId": "todo_quest_builder_define_export_contract",
     "scope": "specific-app",
     "owningModule": "quest-builder",
@@ -360,6 +331,17 @@ Acceptance checks:
     "priority": 4,
     "effort": 4,
     "source": "quest-builder-ui-pass",
+    "fixOwner": "quest-builder"
+  },
+  {
+    "taskId": "todo_quest_builder_left_panel_typing_stability",
+    "scope": "specific-app",
+    "owningModule": "quest-builder",
+    "title": "Make inline left-panel editing stable while typing",
+    "status": "open",
+    "priority": 4,
+    "effort": 3,
+    "source": "left-panel-refinement",
     "fixOwner": "quest-builder"
   }
 ]
