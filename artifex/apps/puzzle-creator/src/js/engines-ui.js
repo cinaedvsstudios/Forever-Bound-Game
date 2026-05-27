@@ -1,6 +1,14 @@
 import { puzzleEngines, getPuzzleEngine } from './engines/index.js';
 
 const $ = (id) => document.getElementById(id);
+const shortLabels = {
+  'maze-labyrinth': 'Maze',
+  'arena-trial': 'Arena',
+  'obstacle-course': 'Course',
+  'symbol-assembly': 'Symbol',
+  'item-order-puzzle': 'Order',
+  'hazard-puzzle': 'Hazard'
+};
 let activeEngine = getPuzzleEngine('maze-labyrinth');
 const engineValues = {};
 
@@ -20,8 +28,8 @@ function buildEngineButtons() {
     button.type = 'button';
     button.className = 'engine-button';
     button.dataset.engine = engine.id;
-    button.title = engine.purpose;
-    button.innerHTML = `<span class="engine-icon">${engine.icon}</span><span>${engine.label}</span>`;
+    button.title = `${engine.label}: ${engine.purpose}`;
+    button.innerHTML = `<span class="engine-icon">${engine.icon}</span><span>${shortLabels[engine.id] || engine.label}</span>`;
     button.addEventListener('click', () => setActiveEngine(engine.id));
     host.appendChild(button);
   });
