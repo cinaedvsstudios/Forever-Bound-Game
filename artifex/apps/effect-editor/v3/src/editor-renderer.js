@@ -12,6 +12,7 @@ import {
   spawnParticlesForLayer
 } from './fx-runtime.js';
 import { toRuntimeLayer } from './physics-scale.js';
+import { drawTextParticle, isTextLayer, spawnTextParticlesForLayer } from './text-runtime.js';
 
 let canvas;
 let ctx;
@@ -131,8 +132,10 @@ function updateParticles() {
   for (const layer of editorState.composition.layers) {
     if (layer.visible !== false && editorState.particles.length < particleCap) {
       const runtimeLayer = toRuntimeLayer(layer);
-      const spawned = spawnParticlesForLayer(runtimeLayer, editorState.lowPerformanceMode ? 0.45 : 1);
-      editorState.particles.push(...spawned.map((particle) => ({ particle, layerId: layer.id })));
+      const spawned = isTextLayer(runtimeLayer)
+        ? spawnTextParticlesForLayer(runtimeLayer, editorState.lowPerformanceMode ? 0.45 : 1)
+        : spawnParticlesForLayer(runtimeLayer, editorState.lowPerformanceMode ? 0.45 : 1);
+      editorState.particles.push(...spawned.map((particle) => ({ particle, layerId: layer.id, isTextParticle: isTextLayer(runtimeLayer) })));
     }
   }
 
@@ -171,7 +174,11 @@ function draw() {
 
   for (const item of editorState.particles) {
     const layer = editorState.composition.layers.find((candidate) => candidate.id === item.layerId);
-    if (layer?.visible !== false) drawParticle(ctx, item.particle, toRuntimeLayer(layer), scale);
+    if (layer?.visible !== false) {
+      const runtimeLayer = toRuntimeLayer(layer);
+      if (item.isTextParticle || isTextLayer(runtimeLayer)) drawTextParticle(ctx, item.particle, runtimeLayer, scale);
+      else drawParticle(ctx, item.particle, runtimeLayer, scale);
+    }
   }
 
   if (editorState.showHelpers) drawEmitterHelpers(scale);
