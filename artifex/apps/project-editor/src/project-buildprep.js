@@ -1,6 +1,6 @@
+import { createHealthReport } from '../../../shared/health-guide/health-checks.js?v=0.1.24-build-health';
+
 // Artifex Project Editor Build Prep workspace
-// Step 7 of the Project Editor real split.
-//
 // Owns diagnostics and build-readiness checks for the split Project Editor shell.
 
 function escapeHtml(value) {
@@ -12,74 +12,40 @@ function escapeHtml(value) {
     .replaceAll("'", '&#039;');
 }
 
+function getStatusLabel(check) {
+  if (check.pass) return '✔ PASSED';
+  if (check.severity === 'failed') return '✖ FAILED';
+  if (check.severity === 'missing') return '⚠ MISSING';
+  return '⚠ WARNING';
+}
+
+function getStatusClass(check) {
+  if (check.pass) return 'text-projectGreen';
+  if (check.severity === 'failed') return 'text-red-300';
+  return 'text-orange-400';
+}
+
 export function runProjectDiagnostics(stateManager) {
-  const nodeIds = new Set(stateManager.logic.nodes.map((node) => node.id));
-  const layoutIds = new Set(stateManager.layout.nodes.map((node) => node.id));
-  const connectedIds = new Set();
-  const invalidRoutes = [];
-
-  for (const route of stateManager.logic.routes) {
-    if (!nodeIds.has(route.source) || !nodeIds.has(route.target)) invalidRoutes.push(route.id);
-    connectedIds.add(route.source);
-    connectedIds.add(route.target);
-  }
-
-  const orphanedNodes = stateManager.logic.nodes
-    .filter((node) => !connectedIds.has(node.id))
-    .map((node) => node.id);
-
-  const missingLayout = stateManager.logic.nodes
-    .filter((node) => !layoutIds.has(node.id))
-    .map((node) => node.id);
-
-  const startScreenExists = nodeIds.has(stateManager.project.startScreen);
-
-  return [
-    {
-      id: 'start-screen',
-      name: 'Verify Project Launch Start Screen',
-      desc: 'Start screen target node exists and can be used as the launch point.',
-      pass: startScreenExists,
-      detail: startScreenExists ? stateManager.project.startScreen : `Missing ${stateManager.project.startScreen}`
-    },
-    {
-      id: 'orphaned-nodes',
-      name: 'Audit Orphaned / Unconnected Nodes',
-      desc: 'Loose nodes are allowed during drafting but should be reviewed before build.',
-      pass: orphanedNodes.length === 0,
-      detail: orphanedNodes.length ? orphanedNodes.join(', ') : 'No orphaned nodes'
-    },
-    {
-      id: 'invalid-routes',
-      name: 'Validate Route Endpoints',
-      desc: 'Each route source and target must resolve to an existing node.',
-      pass: invalidRoutes.length === 0,
-      detail: invalidRoutes.length ? invalidRoutes.join(', ') : 'All routes resolve'
-    },
-    {
-      id: 'layout-sync',
-      name: 'Verify Layout Positioning References',
-      desc: 'Every logic node should have a matching layout node record.',
-      pass: missingLayout.length === 0,
-      detail: missingLayout.length ? missingLayout.join(', ') : 'Layout is synced'
-    }
-  ];
+  return createHealthReport({ stateManager, scope: 'project-manager-build-prep' }).checks;
 }
 
 export function renderBuildPrepWorkspace({ stateManager, container, onRun }) {
   if (!container || !stateManager) return;
 
-  const checks = runProjectDiagnostics(stateManager);
-  const passCount = checks.filter((check) => check.pass).length;
-  const warningCount = checks.length - passCount;
+  const report = createHealthReport({ stateManager, scope: 'project-manager-build-prep' });
+  const checks = report.checks;
+  const summary = report.summary;
+  const passCount = summary.passed;
+  const warningCount = summary.warnings;
+  const failedCount = summary.hardFailures;
 
   container.innerHTML = `
     <div class="h-full overflow-y-auto p-6 space-y-6">
-      <div class="max-w-5xl mx-auto space-y-6">
+      <div class="max-w-6xl mx-auto space-y-6">
         <div class="border-b border-[#2d2d42] pb-4 flex items-center justify-between">
           <div>
-            <h2 class="text-xl font-bold tracking-wide text-zinc-100">Build Prep & Diagnostics</h2>
-            <p class="text-xs text-zinc-500">Validate graph structure and stage Project Editor output readiness.</p>
+            <h2 class="text-xl font-bold tracking-wide text-zinc-100">Build Prep & Shared Health Guide</h2>
+            <p class="text-xs text-zinc-500">Validates project structure, route logic, linked libraries, setup files, and export readiness using the shared Artifex Health Guide.</p>
           </div>
           <i data-lucide="package-check" class="w-6 h-6 text-projectGreen"></i>
         </div>
@@ -94,19 +60,19 @@ export function renderBuildPrepWorkspace({ stateManager, container, onRun }) {
               ${checks.map((check) => `
                 <div class="p-3 rounded bg-black/25 border border-[#2d2d42]/30 text-xs flex justify-between items-start gap-4">
                   <div>
-                    <span class="text-zinc-200 block font-semibold leading-tight">${escapeHtml(check.name)}</span>
-                    <span class="text-[10px] text-zinc-500 block mt-0.5">${escapeHtml(check.desc)}</span>
+                    <span class="text-zinc-200 block font-semibold leading-tight">${escapeHtml(check.label)}</span>
+                    <span class="text-[10px] text-zinc-500 block mt-0.5">${escapeHtml(check.owner || check.fixOwner || 'Project Manager')}</span>
                     <span class="text-[9px] text-zinc-600 block mt-1 font-mono">${escapeHtml(check.detail)}</span>
                   </div>
-                  <span class="font-mono text-[10px] font-bold ${check.pass ? 'text-projectGreen' : 'text-orange-400'} flex-shrink-0">
-                    ${check.pass ? '✔ PASSED' : '⚠ WARNING'}
+                  <span class="font-mono text-[10px] font-bold ${getStatusClass(check)} flex-shrink-0">
+                    ${escapeHtml(getStatusLabel(check))}
                   </span>
                 </div>
               `).join('')}
             </div>
             <button id="runBuildPrepBtn" class="w-full bg-emerald-950 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 font-bold py-2.5 rounded text-xs transition flex items-center justify-center space-x-2">
               <i data-lucide="shield-check" class="w-4 h-4"></i>
-              <span>Execute Project Health Check</span>
+              <span>Refresh Shared Health Check</span>
             </button>
           </div>
 
@@ -121,14 +87,16 @@ export function renderBuildPrepWorkspace({ stateManager, container, onRun }) {
                 <div class="flex justify-between"><span>routes:</span><span class="text-projectGoldGlow font-bold">${stateManager.logic.routes.length}</span></div>
                 <div class="flex justify-between"><span>checks:</span><span class="text-projectGreen font-bold">${passCount}/${checks.length}</span></div>
                 <div class="flex justify-between"><span>warnings:</span><span class="${warningCount ? 'text-orange-400' : 'text-projectGreen'} font-bold">${warningCount}</span></div>
+                <div class="flex justify-between"><span>failures:</span><span class="${failedCount ? 'text-red-300' : 'text-projectGreen'} font-bold">${failedCount}</span></div>
+                <div class="flex justify-between"><span>status:</span><span class="${summary.status === 'failed' ? 'text-red-300' : summary.status === 'warning' ? 'text-orange-400' : 'text-projectGreen'} font-bold">${escapeHtml(summary.status)}</span></div>
               </div>
               <div class="text-xs text-zinc-500 leading-relaxed">
-                This step validates structure only. Final export and build staging are handled by the IO/build step.
+                This view now reads from <span class="font-mono text-projectGoldGlow">artifex/shared/health-guide/health-checks.js</span>, so Creation Guide and Build Game can reuse the same checks.
               </div>
             </div>
             <button id="stageBuildBtn" class="w-full mt-4 bg-gradient-to-r from-accentDark to-projectGold hover:brightness-110 border border-projectGold/40 text-white font-bold py-3 rounded-lg text-xs transition flex items-center justify-center space-x-2 shadow-project-glow">
               <i data-lucide="external-link" class="w-4 h-4 text-projectParchment"></i>
-              <span>STAGE BUILD SNAPSHOT</span>
+              <span>LOG HEALTH REPORT</span>
             </button>
           </div>
         </div>
@@ -138,7 +106,7 @@ export function renderBuildPrepWorkspace({ stateManager, container, onRun }) {
 
   container.querySelector('#runBuildPrepBtn')?.addEventListener('click', () => onRun?.());
   container.querySelector('#stageBuildBtn')?.addEventListener('click', () => {
-    console.info('[Project Editor Build Prep] Snapshot', stateManager.exportSnapshot());
-    alert('Build snapshot staged in console for this split step.');
+    console.info('[Project Editor Build Prep] Shared Health Report', report);
+    alert('Shared health report logged in console for this split step.');
   });
 }
