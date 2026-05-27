@@ -16,7 +16,7 @@ Use the global all-apps to-do list for changes that affect every Artifex app. Us
 
 ## Current live status
 
-Current Quest Builder version: `V1.1.0`
+Current Quest Builder version: `V1.1.1`
 
 Current live app files:
 
@@ -75,6 +75,21 @@ Completed changes/checks:
 - The header remains aligned with the shared Artifex rule: logo/app title area, version pill, divider/menu area, compact pill menu buttons.
 - Quest Builder keeps green as the module accent while retaining the dark Artifex shell.
 
+### V1.1.1 — File menu simplification
+
+Status: complete.
+
+Completed changes:
+
+- File menu now groups actions into short flyouts instead of showing a long flat list.
+- `File ▾ → New ▸` contains `New Quest Wizard` and `New Quest`.
+- `File ▾ → Save ▸` contains `Export JSON` and `Save Locally in Browser`.
+- `Import JSON` remains directly in File because it is a single immediate file action.
+- `File ▾ → Module ▸` remains the core-module side flyout.
+- Removed the confusing `New Quest File` item from the File menu.
+- Updated action wiring so `New Quest` creates a quest instead of resetting the whole quest file.
+- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.1` / `1.1.1`.
+
 ## Ownership boundary
 
 Quest Builder owns:
@@ -125,14 +140,14 @@ Every Quest Builder edit should increase the visible version by `0.01` and updat
 Next versions:
 
 ```text
-V1.1.1  left panel refinement
-V1.1.2  viewing panel and flow card refinement
-V1.1.3  block taxonomy and validation pass
-V1.1.4  editor popup redesign
-V1.1.5  export JSON and validation
+V1.1.2  left panel refinement
+V1.1.3  viewing panel and flow card refinement
+V1.1.4  block taxonomy and validation pass
+V1.1.5  editor popup redesign
+V1.1.6  export JSON and validation
 ```
 
-## V1.1.1 — Left panel refinement
+## V1.1.2 — Left panel refinement
 
 Goal: make the left panel a proper Quest control surface, not repeated cards.
 
@@ -165,7 +180,7 @@ Acceptance checks:
 - Inline fields update the current quest state.
 - Inline field updates should not fight with render refreshes while typing.
 
-## V1.1.2 — Viewing panel and flow card refinement
+## V1.1.3 — Viewing panel and flow card refinement
 
 Goal: make the canvas read like a quest flow, not a generic builder diagram.
 
@@ -197,7 +212,7 @@ Acceptance checks:
 - Blocks reflow between START and END.
 - Canvas still supports zoom and pan.
 
-## V1.1.3 — Block taxonomy and validation pass
+## V1.1.4 — Block taxonomy and validation pass
 
 Goal: stop block names being vague and separate gameplay actions from linked content.
 
@@ -238,7 +253,7 @@ Acceptance checks:
 - Existing demo data uses `action` for `Speak With Vitus`.
 - Dialogue/audio are linked content, not confused with the player action itself.
 
-## V1.1.4 — Better editor popup
+## V1.1.5 — Better editor popup
 
 Goal: replace the giant field list with a proper editor layout.
 
@@ -275,7 +290,7 @@ Acceptance checks:
 - Optional fields are grouped logically.
 - Thumbnail/icon is saved into the block data.
 
-## V1.1.5 — Export JSON and validation
+## V1.1.6 — Export JSON and validation
 
 Goal: produce stable game-readable JSON, not only local editor state.
 
