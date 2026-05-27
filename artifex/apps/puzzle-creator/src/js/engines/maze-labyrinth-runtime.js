@@ -14,17 +14,20 @@ const textureLibrary = [
 ];
 
 const palette = ['#24513a', '#7b5a32', '#8b3f2f', '#b37a37', '#7fd2cf', '#684b8f', '#2b3341', '#e1c073'];
+const SIZE_MAP = { 1: 11, 2: 15, 3: 20, 4: 25, 5: 30 };
+const SHAPES = ['Triangle', 'Square', 'Pentagon', 'Hexagon', 'Circle'];
 const $ = (id) => document.getElementById(id);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
 const state = {
-  gridSize: 31,
+  sizeLevel: 3,
+  gridSize: 20,
   threshold: 50,
   invert: false,
   matrix: [],
   cellStyles: [],
   start: { x: 1, y: 0 },
-  exit: { x: 29, y: 30 },
+  exit: { x: 18, y: 19 },
   solution: [],
   sourceImage: null,
   tool: 'camera',
@@ -33,9 +36,12 @@ const state = {
   wallHeight: 1.5,
   gap: 0.98,
   layout: 1,
+  stretchX: 100,
+  stretchY: 100,
   warp: 0,
   edge: 0,
   difficulty: 3,
+  blankStarted: false,
   selectedTarget: 'walls',
   style: {
     walls: { color: '#24513a', texture: null },
@@ -53,7 +59,6 @@ const state = {
 };
 
 const labels = {
-  layout: ['Triangle', 'Square', 'Circle'],
   edge: ['Sharp', 'Rough', 'Smooth'],
   difficulty: ['', '1 · Easy', '2 · Gentle', '3 · Balanced', '4 · Hard', '5 · Brutal']
 };
@@ -73,14 +78,16 @@ function boot() {
 
 function bindUi() {
   $$('.panel-nav-button').forEach((button) => button.addEventListener('click', () => showPanel(button.dataset.panel)));
-  $('btn-random')?.addEventListener('click', () => { snapshot(); buildRandom(); renderAll(); });
-  $('btn-load-reference')?.addEventListener('click', () => { snapshot(); buildReference(); renderAll(); });
+  $('btn-random')?.addEventListener('click', () => { snapshot(); state.blankStarted = false; buildRandom(); renderAll(); });
+  $('btn-start-blank')?.addEventListener('click', () => { snapshot(); startBlank(); renderAll(); });
+  $('btn-load-reference')?.addEventListener('click', () => { snapshot(); state.blankStarted = false; buildReference(); renderAll(); });
   $('btn-reparse')?.addEventListener('click', () => { snapshot(); state.sourceImage ? parseImage(state.sourceImage) : buildReference(); renderAll(); });
   $('btn-solve')?.addEventListener('click', () => { solve(); renderAll(); });
-  $('btn-apply-difficulty')?.addEventListener('click', () => { snapshot(); applyDifficulty(); renderAll(); });
+  $('btn-apply-difficulty')?.addEventListener('click', () => { analyseDifficulty(); });
   $('btn-export-json')?.addEventListener('click', downloadJson);
   $('btn-copy-json')?.addEventListener('click', copyJson);
   $('btn-clear-paint')?.addEventListener('click', () => { snapshot(); state.cellStyles = blankStyles(); renderAll(); });
+  $('btn-import-json-proxy')?.addEventListener('click', () => $('json-import')?.click());
   $('image-upload')?.addEventListener('change', (event) => loadImage(event.target.files?.[0]));
   $('json-import')?.addEventListener('change', (event) => importJson(event.target.files?.[0]));
 
@@ -110,13 +117,15 @@ function bindUi() {
   $('target-color-picker')?.addEventListener('input', (event) => { applyColor(event.target.value); });
   $('btn-apply-target-color')?.addEventListener('click', () => applyColor($('target-color-picker')?.value || state.style[state.selectedTarget].color));
 
-  bindSlider('grid-slider', (v) => { state.gridSize = v; syncLabels(); }, () => { snapshot(); buildRandom(); renderAll(); });
+  bindSlider('grid-slider', (v) => { state.sizeLevel = v; state.gridSize = SIZE_MAP[v]; syncLabels(); }, () => { snapshot(); resizeForCurrentSize(); renderAll(); });
   bindSlider('threshold-slider', (v) => { state.threshold = v; syncLabels(); }, () => { if (state.sourceImage) { snapshot(); parseImage(state.sourceImage); renderAll(); } });
   $('invert-checkbox')?.addEventListener('change', (event) => { snapshot(); state.invert = event.target.checked; state.sourceImage ? parseImage(state.sourceImage) : invertMatrix(); renderAll(); });
   bindSlider('wall-height-slider', (v) => { state.wallHeight = v; syncLabels(); drawPreview(); }, null, parseFloat);
   bindSlider('gap-slider', (v) => { state.gap = v; syncLabels(); drawPreview(); }, null, parseFloat);
-  bindSlider('layout-style-slider', (v) => { state.layout = v; syncLabels(); drawPreview(); });
-  bindSlider('warp-slider', (v) => { state.warp = v; syncLabels(); drawPreview(); });
+  bindSlider('layout-style-slider', (v) => { snapshot(); state.layout = v; regenerateEndpointsOnly(); syncLabels(); drawMatrix(); drawPreview(); updateChecks(); });
+  bindSlider('stretch-x-slider', (v) => { state.stretchX = v; syncLabels(); drawPreview(); updateChecks(); });
+  bindSlider('stretch-y-slider', (v) => { state.stretchY = v; syncLabels(); drawPreview(); updateChecks(); });
+  bindSlider('warp-slider', (v) => { if (isAdvancedLocked()) { $('warp-slider').value = 0; state.warp = 0; return; } state.warp = v; syncLabels(); drawPreview(); });
   bindSlider('edge-style-slider', (v) => { state.edge = v; syncLabels(); drawPreview(); });
   bindSlider('difficulty-slider', (v) => { state.difficulty = v; syncLabels(); });
 
@@ -172,6 +181,7 @@ function setView(view) {
   $('view-mode-fps')?.classList.toggle('is-active', view === 'fps');
   $('virtual-dpad')?.classList.toggle('is-hidden', view !== 'fps');
   setText('player-status-indicator', view === 'fps' ? 'Walk Test · WASD/arrows' : 'Diorama camera');
+  if (view === 'fps') $('threejs-container')?.focus?.();
   drawPreview();
 }
 
@@ -185,23 +195,27 @@ function setKey(key, value) {
 }
 
 function syncLabels() {
-  setText('grid-val', `${state.gridSize} × ${state.gridSize}`);
+  setText('grid-val', `${state.sizeLevel} · ${state.gridSize}`);
   setText('threshold-val', `${state.threshold}%`);
   setText('wall-height-val', state.wallHeight.toFixed(1));
   setText('gap-val', state.gap.toFixed(2));
-  setText('layout-style-val', labels.layout[state.layout]);
+  setText('layout-style-val', SHAPES[state.layout]);
+  setText('stretch-x-val', `${state.stretchX}%`);
+  setText('stretch-y-val', `${state.stretchY}%`);
   setText('warp-val', `${state.warp}%`);
   setText('edge-style-val', labels.edge[state.edge]);
   setText('difficulty-val', labels.difficulty[state.difficulty]);
 }
 
 function syncControls() {
-  setValue('grid-slider', state.gridSize);
+  setValue('grid-slider', state.sizeLevel);
   setValue('threshold-slider', state.threshold);
   if ($('invert-checkbox')) $('invert-checkbox').checked = state.invert;
   setValue('wall-height-slider', state.wallHeight);
   setValue('gap-slider', state.gap);
   setValue('layout-style-slider', state.layout);
+  setValue('stretch-x-slider', state.stretchX);
+  setValue('stretch-y-slider', state.stretchY);
   setValue('warp-slider', state.warp);
   setValue('edge-style-slider', state.edge);
   setValue('difficulty-slider', state.difficulty);
@@ -314,30 +328,33 @@ function preloadTextures() {
 }
 
 function snapshot() {
-  state.undo.push(JSON.stringify({ matrix: state.matrix, cellStyles: state.cellStyles, start: state.start, exit: state.exit, solution: state.solution, style: state.style }));
+  state.undo.push(JSON.stringify({ matrix: state.matrix, cellStyles: state.cellStyles, start: state.start, exit: state.exit, solution: state.solution, style: state.style, gridSize: state.gridSize, sizeLevel: state.sizeLevel, layout: state.layout, stretchX: state.stretchX, stretchY: state.stretchY, blankStarted: state.blankStarted }));
   if (state.undo.length > 40) state.undo.shift();
   state.redo = [];
 }
 
 function restore(serialized) {
   const data = JSON.parse(serialized);
-  state.matrix = data.matrix;
-  state.gridSize = data.matrix.length;
-  state.cellStyles = data.cellStyles || blankStyles();
-  state.start = data.start;
-  state.exit = data.exit;
-  state.solution = data.solution || [];
-  state.style = data.style || state.style;
+  Object.assign(state, data);
   syncControls();
   renderAll();
 }
 
-function undo() { if (!state.undo.length) return; state.redo.push(JSON.stringify({ matrix: state.matrix, cellStyles: state.cellStyles, start: state.start, exit: state.exit, solution: state.solution, style: state.style })); restore(state.undo.pop()); }
-function redo() { if (!state.redo.length) return; state.undo.push(JSON.stringify({ matrix: state.matrix, cellStyles: state.cellStyles, start: state.start, exit: state.exit, solution: state.solution, style: state.style })); restore(state.redo.pop()); }
+function undo() { if (!state.undo.length) return; state.redo.push(JSON.stringify({ matrix: state.matrix, cellStyles: state.cellStyles, start: state.start, exit: state.exit, solution: state.solution, style: state.style, gridSize: state.gridSize, sizeLevel: state.sizeLevel, layout: state.layout, stretchX: state.stretchX, stretchY: state.stretchY, blankStarted: state.blankStarted })); restore(state.undo.pop()); }
+function redo() { if (!state.redo.length) return; state.undo.push(JSON.stringify({ matrix: state.matrix, cellStyles: state.cellStyles, start: state.start, exit: state.exit, solution: state.solution, style: state.style, gridSize: state.gridSize, sizeLevel: state.sizeLevel, layout: state.layout, stretchX: state.stretchX, stretchY: state.stretchY, blankStarted: state.blankStarted })); restore(state.redo.pop()); }
 
 function blankStyles() { return Array.from({ length: state.gridSize }, () => Array(state.gridSize).fill(null)); }
-function buildReference() { state.matrix = makeMaze(state.gridSize, 42); state.cellStyles = blankStyles(); state.sourceImage = null; locateEnds(); }
-function buildRandom() { state.matrix = makeMaze(state.gridSize, Date.now() % 99999); state.cellStyles = blankStyles(); state.sourceImage = null; locateEnds(); }
+function shapeMask() { return Array.from({ length: state.gridSize }, (_, y) => Array.from({ length: state.gridSize }, (_, x) => isVisibleShapeCell(x, y, state.gridSize))); }
+
+function resizeForCurrentSize() {
+  state.gridSize = SIZE_MAP[state.sizeLevel];
+  state.blankStarted ? startBlank() : buildRandom();
+}
+
+function buildReference() { state.matrix = makeMaze(state.gridSize, 42); applyShapeMaskToMatrix(); state.cellStyles = blankStyles(); state.sourceImage = null; locateEnds(); }
+function buildRandom() { state.matrix = makeMaze(state.gridSize, Date.now() % 99999); applyShapeMaskToMatrix(); state.cellStyles = blankStyles(); state.sourceImage = null; locateEnds(); }
+function startBlank() { state.blankStarted = true; const mask = shapeMask(); state.matrix = mask.map((row) => row.map((inside) => inside ? 0 : 1)); state.cellStyles = blankStyles(); locateEnds(); }
+function regenerateEndpointsOnly() { if (!state.matrix.length) return; applyShapeMaskToMatrix(); locateEnds(); }
 
 function makeMaze(size, seed) {
   const grid = Array.from({ length: size }, () => Array(size).fill(1));
@@ -355,33 +372,67 @@ function makeMaze(size, seed) {
     });
   }
   carve(1, 1);
-  grid[0][1] = 0;
-  grid[size - 1][size - 2] = 0;
   return grid;
 }
 
+function applyShapeMaskToMatrix() {
+  const mask = shapeMask();
+  state.matrix = state.matrix.map((row, y) => row.map((cell, x) => mask[y][x] ? cell : 1));
+}
+
 function locateEnds() {
-  const n = state.matrix.length;
-  const openings = [];
-  for (let c = 0; c < n; c++) { if (!state.matrix[0][c]) openings.push({ x: c, y: 0 }); if (!state.matrix[n - 1][c]) openings.push({ x: c, y: n - 1 }); }
-  for (let r = 1; r < n - 1; r++) { if (!state.matrix[r][0]) openings.push({ x: 0, y: r }); if (!state.matrix[r][n - 1]) openings.push({ x: n - 1, y: r }); }
-  state.start = openings[0] || { x: 1, y: 1 };
-  state.exit = openings[openings.length - 1] || { x: n - 2, y: n - 2 };
+  const edges = validEdgePathCells();
+  const n = state.gridSize;
+  const topLeft = edges[0] || nearestOpenCell({ x: 1, y: 1 });
+  const bottomRight = edges[edges.length - 1] || nearestOpenCell({ x: n - 2, y: n - 2 });
+  state.start = topLeft;
+  state.exit = bottomRight;
+  state.matrix[state.start.y][state.start.x] = 0;
+  state.matrix[state.exit.y][state.exit.x] = 0;
   state.player = { x: state.start.x + 0.5, y: state.start.y + 0.5 };
   state.solution = [];
 }
 
-function invertMatrix() { state.matrix = state.matrix.map((row) => row.map((cell) => cell ? 0 : 1)); locateEnds(); }
+function validEdgePathCells() {
+  const n = state.gridSize;
+  const cells = [];
+  for (let x = 0; x < n; x++) { if (isVisibleShapeCell(x, 0, n) && !state.matrix[0][x]) cells.push({ x, y: 0 }); if (isVisibleShapeCell(x, n - 1, n) && !state.matrix[n - 1][x]) cells.push({ x, y: n - 1 }); }
+  for (let y = 1; y < n - 1; y++) { if (isVisibleShapeCell(0, y, n) && !state.matrix[y][0]) cells.push({ x: 0, y }); if (isVisibleShapeCell(n - 1, y, n) && !state.matrix[y][n - 1]) cells.push({ x: n - 1, y }); }
+  if (!cells.length) {
+    const top = nearestOpenCell({ x: Math.floor(n / 2), y: 0 });
+    const bottom = nearestOpenCell({ x: Math.floor(n / 2), y: n - 1 });
+    cells.push(top, bottom);
+  }
+  return cells.filter(Boolean);
+}
+
+function nearestOpenCell(target) {
+  const n = state.gridSize;
+  let best = null;
+  let bestScore = Infinity;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    if (!isVisibleShapeCell(x, y, n)) continue;
+    if (state.matrix[y]?.[x]) continue;
+    const edgePenalty = (x === 0 || y === 0 || x === n - 1 || y === n - 1) ? 0 : 100;
+    const score = Math.abs(x - target.x) + Math.abs(y - target.y) + edgePenalty;
+    if (score < bestScore) { best = { x, y }; bestScore = score; }
+  }
+  if (!best) best = { x: Math.max(0, Math.min(n - 1, target.x)), y: Math.max(0, Math.min(n - 1, target.y)) };
+  return best;
+}
+
+function invertMatrix() { state.matrix = state.matrix.map((row, y) => row.map((cell, x) => isVisibleShapeCell(x, y, state.gridSize) ? (cell ? 0 : 1) : 1)); locateEnds(); }
 
 function loadImage(file) {
   if (!file) return;
   snapshot();
+  setText('image-file-status', file.name);
   const group = $('image-contrast-group');
   if (group) group.hidden = false;
   const reader = new FileReader();
   reader.onload = () => {
     const image = new Image();
-    image.onload = () => { state.sourceImage = image; parseImage(image); renderAll(); };
+    image.onload = () => { state.sourceImage = image; state.blankStarted = false; parseImage(image); renderAll(); };
     image.src = reader.result;
   };
   reader.readAsDataURL(file);
@@ -402,8 +453,9 @@ function parseImage(image) {
   const cut = min + (max - min) * state.threshold / 100;
   state.matrix = Array.from({ length: n }, (_, y) => Array.from({ length: n }, (_, x) => {
     const wall = values[y * n + x] < cut;
-    return (state.invert ? !wall : wall) ? 1 : 0;
+    return isVisibleShapeCell(x, y, n) && ((state.invert ? !wall : wall) ? 1 : 0);
   }));
+  applyShapeMaskToMatrix();
   state.cellStyles = blankStyles();
   locateEnds();
 }
@@ -433,15 +485,17 @@ function drawMatrix() {
   canvas.width = 420;
   canvas.height = 420;
   const cell = canvas.width / n;
-  fillWithStyle(ctx, 0, 0, canvas.width, canvas.height, state.style.floor);
+  ctx.fillStyle = '#031009';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    if (!isVisibleShapeCell(x, y, n)) continue;
     if (state.matrix[y][x]) fillWithStyle(ctx, x * cell, y * cell, Math.ceil(cell), Math.ceil(cell), styleForTarget('walls', state.cellStyles[y]?.[x]));
-    else { ctx.fillStyle = state.style.floor.color; ctx.fillRect(x * cell, y * cell, Math.ceil(cell), Math.ceil(cell)); }
+    else fillWithStyle(ctx, x * cell, y * cell, Math.ceil(cell), Math.ceil(cell), state.style.floor);
   }
   drawSolution(ctx, cell, false);
   drawNode(ctx, state.start, cell, '#d65f55');
   drawNode(ctx, state.exit, cell, '#8ee6dc');
-  setText('matrix-summary', `${n} × ${n} · ${state.matrix.flat().filter(Boolean).length} walls`);
+  setText('matrix-summary', `${SHAPES[state.layout]} · ${n} · ${state.matrix.flat().filter(Boolean).length} walls`);
 }
 
 function drawPreview() {
@@ -460,9 +514,10 @@ function drawPreview() {
   const w = rect.width;
   const h = rect.height;
   const n = state.matrix.length;
-  const cell = Math.min(w / (n + 11), h / (n + 9)) * state.zoom;
-  const ox = w / 2 - (n * cell) / 2;
-  const oy = h / 2 - (n * cell) / 2 + 18;
+  const stretchMax = Math.max(state.stretchX, state.stretchY) / 100;
+  const cell = Math.min(w / (n * stretchMax + 10), h / (n * stretchMax + 8)) * state.zoom;
+  const ox = w / 2 - (n * cell * state.stretchX / 100) / 2;
+  const oy = h / 2 - (n * cell * state.stretchY / 100) / 2 + 18;
   fillWithStyle(ctx, 0, 0, w, h, state.style.roof);
   ctx.save();
   ctx.translate(ox, oy);
@@ -488,25 +543,43 @@ function drawNode(ctx, p, cell, color) { ctx.fillStyle = color; ctx.beginPath();
 function drawMarker(ctx, p, cell, color) { const pos = layoutPoint(p.x, p.y, cell); ctx.fillStyle = color; ctx.beginPath(); ctx.arc(pos.x + cell / 2, pos.y + cell / 2, cell * 0.38, 0, Math.PI * 2); ctx.fill(); }
 
 function isVisibleShapeCell(x, y, n) {
-  if (state.layout === 0) return y >= Math.abs(x - (n - 1) / 2) * 0.82;
-  if (state.layout === 2) { const cx = (n - 1) / 2; const cy = (n - 1) / 2; return Math.hypot(x - cx, y - cy) <= n * 0.51; }
-  return true;
+  const cx = (n - 1) / 2;
+  const cy = (n - 1) / 2;
+  const nx = (x - cx) / (n / 2);
+  const ny = (y - cy) / (n / 2);
+  if (state.layout === 0) return y >= Math.abs(x - cx) * 1.05 && y <= n - 1;
+  if (state.layout === 1) return true;
+  if (state.layout === 4) return Math.hypot(nx, ny) <= 1.02;
+  const sides = state.layout === 2 ? 5 : 6;
+  return pointInRegularPolygon(nx, ny, sides, -Math.PI / 2);
+}
+
+function pointInRegularPolygon(x, y, sides, rotation) {
+  const pts = [];
+  for (let i = 0; i < sides; i++) pts.push([Math.cos(rotation + i * Math.PI * 2 / sides), Math.sin(rotation + i * Math.PI * 2 / sides)]);
+  let inside = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const xi = pts[i][0], yi = pts[i][1], xj = pts[j][0], yj = pts[j][1];
+    const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / ((yj - yi) || 0.0001) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
 }
 
 function drawShapeBackdrop(ctx, n, cell) {
-  ctx.save(); ctx.strokeStyle = state.style.border.color; ctx.lineWidth = Math.max(3, cell * 0.35); ctx.beginPath();
+  ctx.save(); ctx.scale(state.stretchX / 100, state.stretchY / 100); ctx.strokeStyle = state.style.border.color; ctx.lineWidth = Math.max(3, cell * 0.35); ctx.beginPath();
   if (state.layout === 0) { ctx.moveTo(n * cell / 2, 0); ctx.lineTo(n * cell, n * cell); ctx.lineTo(0, n * cell); ctx.closePath(); }
-  else if (state.layout === 2) ctx.arc(n * cell / 2, n * cell / 2, n * cell / 2, 0, Math.PI * 2);
+  else if (state.layout === 4) ctx.arc(n * cell / 2, n * cell / 2, n * cell / 2, 0, Math.PI * 2);
+  else if (state.layout === 2 || state.layout === 3) drawPolygonPath(ctx, n * cell / 2, n * cell / 2, n * cell / 2, state.layout === 2 ? 5 : 6, -Math.PI / 2);
   else ctx.rect(0, 0, n * cell, n * cell);
   ctx.stroke(); ctx.restore();
 }
 
+function drawPolygonPath(ctx, cx, cy, r, sides, rotation) { for (let i = 0; i < sides; i++) { const x = cx + Math.cos(rotation + i * Math.PI * 2 / sides) * r; const y = cy + Math.sin(rotation + i * Math.PI * 2 / sides) * r; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.closePath(); }
+
 function layoutPoint(x, y, cell) {
-  const n = state.matrix.length;
-  let px = x * cell;
-  let py = y * cell;
-  if (state.layout === 0) { const taper = 1 - (y / Math.max(1, n - 1)) * 0.42; px = (x - n / 2) * cell * taper + n * cell / 2; }
-  if (state.layout === 2) { const cx = (n - 1) / 2; const cy = (n - 1) / 2; const dx = x - cx; const dy = y - cy; const dist = Math.hypot(dx, dy) / (n / 2); const scale = dist > 0 ? Math.min(1.08, 0.78 + dist * 0.24) : 1; px = (cx + dx * scale) * cell; py = (cy + dy * scale) * cell; }
+  let px = x * cell * state.stretchX / 100;
+  let py = y * cell * state.stretchY / 100;
   const warp = state.warp / 100;
   if (warp) { px += Math.sin(y * 1.37 + x * 0.31) * cell * 0.45 * warp; py += Math.cos(x * 1.21 + y * 0.27) * cell * 0.45 * warp; }
   return { x: px, y: py };
@@ -538,7 +611,7 @@ function editFromEvent(event, first) {
   const rect = $('analysis-canvas').getBoundingClientRect();
   const col = Math.floor(((touch ? touch.clientX : event.clientX) - rect.left) / rect.width * state.gridSize);
   const row = Math.floor(((touch ? touch.clientY : event.clientY) - rect.top) / rect.height * state.gridSize);
-  if (row < 0 || col < 0 || row >= state.gridSize || col >= state.gridSize) return;
+  if (row < 0 || col < 0 || row >= state.gridSize || col >= state.gridSize || !isVisibleShapeCell(col, row, state.gridSize)) return;
   if (first) snapshot();
   if (state.tool === 'paint' && state.matrix[row][col]) state.cellStyles[row][col] = { ...state.style[state.selectedTarget] };
   if (state.tool === 'paintSection') paintSection(row, col);
@@ -569,7 +642,7 @@ function movePlayer() {
   if (!dx && !dy) return;
   const nx = state.player.x + dx; const ny = state.player.y + dy;
   const c = Math.floor(nx); const r = Math.floor(ny);
-  if (r >= 0 && c >= 0 && r < state.gridSize && c < state.gridSize && !state.matrix[r][c]) { state.player.x = nx; state.player.y = ny; drawPreview(); }
+  if (r >= 0 && c >= 0 && r < state.gridSize && c < state.gridSize && !state.matrix[r][c] && isVisibleShapeCell(c, r, state.gridSize)) { state.player.x = nx; state.player.y = ny; drawPreview(); }
 }
 
 function solve() {
@@ -583,39 +656,29 @@ function solve() {
     [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => {
       const next = { x: p.x + dx, y: p.y + dy };
       const key = `${next.x},${next.y}`;
-      if (next.x >= 0 && next.y >= 0 && next.x < n && next.y < n && !seen.has(key) && !state.matrix[next.y][next.x]) { seen.add(key); queue.push([...path, next]); }
+      if (next.x >= 0 && next.y >= 0 && next.x < n && next.y < n && !seen.has(key) && !state.matrix[next.y][next.x] && isVisibleShapeCell(next.x, next.y, n)) { seen.add(key); queue.push([...path, next]); }
     });
   }
   state.solution = [];
   return [];
 }
 
-function applyDifficulty() {
-  buildRandom();
-  if (state.difficulty <= 2) {
-    solve();
-    state.solution.forEach((p, i) => {
-      if (i % (state.difficulty === 1 ? 1 : 2)) return;
-      [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => {
-        const x = p.x + dx; const y = p.y + dy;
-        if (x > 0 && y > 0 && x < state.gridSize - 1 && y < state.gridSize - 1) state.matrix[y][x] = 0;
-      });
-    });
-  }
-  if (state.difficulty >= 4) {
-    solve();
-    const keep = new Set(state.solution.map((p) => `${p.x},${p.y}`));
-    for (let y = 1; y < state.gridSize - 1; y++) for (let x = 1; x < state.gridSize - 1; x++) if (!state.matrix[y][x] && !keep.has(`${x},${y}`) && Math.random() < (state.difficulty === 5 ? 0.65 : 0.38)) state.matrix[y][x] = 1;
-  }
-  if (!solve().length) buildReference();
-  state.cellStyles = blankStyles();
-  solve();
+function hasValidRoute() { return !!solve().length; }
+function isAdvancedLocked() { return state.blankStarted && !hasValidRoute(); }
+
+function analyseDifficulty() {
+  const valid = solve().length;
+  const target = 6 - state.difficulty;
+  const message = valid ? `Difficulty analysis placeholder:\n\nTarget difficulty ${state.difficulty} expects ${target} meaningful route(s).\n\nCurrent quick check: at least 1 entrance-to-exit route exists.\n\nThe full meaningful-route report/fix tool is the next pass.` : 'No valid entrance-to-exit route exists yet. Draw or open a path before difficulty can be analysed.';
+  alert(message);
+  renderAll();
 }
 
 function applyTemplate(template) {
   snapshot();
+  state.blankStarted = false;
   buildRandom();
-  if (template === 'training') { state.difficulty = 1; applyDifficulty(); }
+  if (template === 'training') { state.difficulty = 1; }
   if (template === 'stone') { selectTarget('walls'); applyTexture('cobblestone'); selectTarget('floor'); applyTexture('marble'); }
   if (template === 'underworld') { selectTarget('floor'); applyColor('#050706'); selectTarget('walls'); applyColor('#0b1110'); }
   syncControls();
@@ -638,7 +701,7 @@ function exportObj() {
       exit: { ...state.exit, grid: 'matrix' }
     },
     grid: { cols: state.gridSize, rows: state.gridSize, cellSize: 1, origin: 'top_left', wallValue: 1, pathValue: 0, matrix: state.matrix },
-    renderHints: { wallHeight: state.wallHeight, gap: state.gap, layoutShape: labels.layout[state.layout], warp: state.warp, edgeStyle: labels.edge[state.edge], styleTargets: state.style, cellStyles: state.cellStyles },
+    renderHints: { sizeLevel: state.sizeLevel, shape: SHAPES[state.layout], stretchX: state.stretchX, stretchY: state.stretchY, wallHeight: state.wallHeight, gap: state.gap, warp: state.warp, edgeStyle: labels.edge[state.edge], styleTargets: state.style, cellStyles: state.cellStyles },
     solution: { generated: !!state.solution.length, path: state.solution }
   };
   return window.__artifexAugmentPuzzlePayload ? window.__artifexAugmentPuzzlePayload(base) : base;
@@ -664,6 +727,7 @@ async function pasteJson() {
 
 function importJson(file) {
   if (!file) return;
+  setText('json-file-status', file.name);
   const reader = new FileReader();
   reader.onload = () => { try { importObject(JSON.parse(reader.result)); renderAll(); } catch { alert('Import failed.'); } };
   reader.readAsText(file);
@@ -674,6 +738,7 @@ function importObject(data) {
   if (!data.grid?.matrix) throw new Error('Missing grid.matrix');
   state.matrix = data.grid.matrix;
   state.gridSize = data.grid.rows || data.grid.matrix.length;
+  state.sizeLevel = Number(Object.keys(SIZE_MAP).find((key) => SIZE_MAP[key] === state.gridSize)) || 3;
   state.cellStyles = data.renderHints?.cellStyles || blankStyles();
   state.start = data.puzzle?.start || { x: 1, y: 0 };
   state.exit = data.puzzle?.exit || { x: state.gridSize - 2, y: state.gridSize - 1 };
@@ -682,6 +747,10 @@ function importObject(data) {
   state.wallHeight = data.renderHints?.wallHeight || state.wallHeight;
   state.gap = data.renderHints?.gap || state.gap;
   state.warp = data.renderHints?.warp || 0;
+  state.layout = Math.max(0, SHAPES.indexOf(data.renderHints?.shape));
+  if (state.layout < 0) state.layout = 1;
+  state.stretchX = data.renderHints?.stretchX || 100;
+  state.stretchY = data.renderHints?.stretchY || 100;
   state.style = data.renderHints?.styleTargets || state.style;
   if ($('module-id')) $('module-id').value = data.moduleId || '';
   syncControls();
@@ -717,6 +786,9 @@ function placeOverview() {
 function toggleOverview() { state.overview.visible = !state.overview.visible; placeOverview(); }
 
 function updateChecks() {
+  const locked = isAdvancedLocked();
+  $('warp-slider') && ($('warp-slider').disabled = locked);
+  $('warp-row')?.classList.toggle('is-advanced-locked', locked);
   setCheck('build', state.matrix.length ? 'green' : 'red');
   setCheck('display', 'green');
   setCheck('logic', $('module-id')?.value && $('completion-flag')?.value && $('calling-text')?.value ? 'green' : 'yellow');
