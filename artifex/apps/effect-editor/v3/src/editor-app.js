@@ -23,7 +23,7 @@ import { initV320FileMenu } from './v320-file-menu.js';
 import { initV322TextControls } from './v322-text-controls.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'V3.24';
+const VERSION_LABEL = 'V3.25';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
