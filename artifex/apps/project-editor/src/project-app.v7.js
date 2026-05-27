@@ -1,14 +1,14 @@
-import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.16-zip';
-import { createProjectEditorStateManager } from './project-state.js?v=0.1.16-zip';
-import { createProjectCanvasController } from './project-canvas.js?v=0.1.16-zip';
-import { createProjectRenderer } from './project-renderer.js?v=0.1.16-zip';
-import { createProjectUI } from './project-ui.js?v=0.1.16-zip';
-import { enhanceProjectUI } from './project-integration-ui.js?v=0.1.16-zip';
-import { enhanceProjectHealthUI } from './project-health-ui.js?v=0.1.16-zip';
-import { enhanceProjectIO } from './project-io.js?v=0.1.16-zip';
-import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.16-zip';
-import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.16-zip';
-import { getTypeStyle } from './data/type-styles.js?v=0.1.16-zip';
+import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.17-path';
+import { createProjectEditorStateManager } from './project-state.js?v=0.1.17-path';
+import { createProjectCanvasController } from './project-canvas.js?v=0.1.17-path';
+import { createProjectRenderer } from './project-renderer.js?v=0.1.17-path';
+import { createProjectUI } from './project-ui.js?v=0.1.17-path';
+import { enhanceProjectUI } from './project-integration-ui.js?v=0.1.17-path';
+import { enhanceProjectHealthUI } from './project-health-ui.js?v=0.1.17-path';
+import { enhanceProjectIO } from './project-io.js?v=0.1.17-path';
+import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.17-path';
+import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.17-path';
+import { getTypeStyle } from './data/type-styles.js?v=0.1.17-path';
 
 applyProjectTheme();
 
@@ -25,7 +25,7 @@ window.ProjectEditorStateManager = state;
 
 function setVersion() {
   document.querySelectorAll('#projectEditorVersionBadge, [data-project-version-badge]').forEach((el) => {
-    el.textContent = 'v0.1.16 ZIP';
+    el.textContent = 'v0.1.17 PATH';
   });
 }
 
@@ -119,7 +119,7 @@ function init() {
 
   ui.setWorkspace(state.activeWorkspace || 'flatplan');
   refresh();
-  console.info('[Artifex Project Editor] v0.1.16 ZIP loaded', {
+  console.info('[Artifex Project Editor] v0.1.17 PATH loaded', {
     nodes: state.logic.nodes.length,
     routes: state.logic.routes.length
   });
