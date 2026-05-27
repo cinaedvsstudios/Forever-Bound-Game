@@ -21,9 +21,10 @@ import { initV315Polish } from './v315-polish.js';
 import { initV317Polish } from './v317-polish.js';
 import { initV320FileMenu } from './v320-file-menu.js';
 import { initV322TextControls } from './v322-text-controls.js';
+import { initV326LeftPanelSearch } from './v326-left-panel-search.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'V3.25';
+const VERSION_LABEL = 'V3.26';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
@@ -56,6 +57,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initV317Polish(showToast);
   initV320FileMenu(showToast);
   initV322TextControls(showToast);
+  initV326LeftPanelSearch();
 
   const preset = cloneBasePreset('base', 'standard-particle');
   if (preset) {
