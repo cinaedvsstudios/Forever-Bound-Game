@@ -166,6 +166,97 @@
   display: none !important;
 }
 
+/* V1.20 quick start wizard density pass.
+   This overrides the live Step 5 overlay spacing without adding another JS patch layer. */
+#quickstart-dialog .wizard-build-detail-panel {
+  grid-template-columns: minmax(300px, 0.74fr) minmax(360px, 1.26fr) !important;
+  row-gap: 6px !important;
+  column-gap: 14px !important;
+  align-items: start !important;
+}
+
+#quickstart-dialog .wizard-build-detail-panel > h3 {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  margin: 0 0 4px !important;
+  align-self: start !important;
+}
+
+#quickstart-dialog .wizard-right-stack {
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+  margin-top: 0 !important;
+  align-self: start !important;
+  gap: 8px !important;
+}
+
+#quickstart-dialog .wizard-action-info-text {
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+  align-self: start !important;
+  margin: 0 !important;
+}
+
+#quickstart-dialog .wizard-preview-stage,
+#quickstart-dialog [data-preview-stage] {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  align-self: start !important;
+  width: 100% !important;
+  max-width: 390px !important;
+  height: 320px !important;
+  min-height: 320px !important;
+  max-height: 320px !important;
+  margin: 0 !important;
+}
+
+#quickstart-dialog .wizard-preview-stage > *,
+#quickstart-dialog [data-preview-stage] > * {
+  max-height: 100% !important;
+}
+
+#quickstart-dialog .wizard-preview-controls {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  align-self: start !important;
+  margin: 8px 0 0 !important;
+  position: relative !important;
+}
+
+#quickstart-dialog .wizard-reference-panel {
+  grid-column: 1 !important;
+  grid-row: 3 !important;
+  margin-top: 8px !important;
+  padding-top: 8px !important;
+}
+
+#quickstart-dialog .wizard-frame-strip {
+  grid-column: 1 / -1 !important;
+  grid-row: 4 !important;
+  margin-top: 4px !important;
+}
+
+#quickstart-dialog .wizard-build-actions {
+  grid-column: 1 / -1 !important;
+  grid-row: 5 !important;
+  margin-top: 0 !important;
+}
+
+#quickstart-dialog .wizard-frame-file-table-wrap {
+  grid-column: 1 / -1 !important;
+  grid-row: 6 !important;
+}
+
+#quickstart-dialog .wizard-action-behaviour-panel {
+  margin-top: 0 !important;
+}
+
+#quickstart-dialog .wizard-sound-list,
+#quickstart-dialog .wizard-action-behaviour-panel,
+#quickstart-dialog .wizard-notes-field {
+  margin-top: 0 !important;
+}
+
 @media (max-width: 1180px) {
   .object-creator-shell {
     grid-template-columns: 270px 7px minmax(360px, 1fr) 320px;
@@ -201,5 +292,19 @@
   .right-panel {
     min-height: 360px;
     border-top: 1px solid var(--border);
+  }
+
+  #quickstart-dialog .wizard-build-detail-panel,
+  #quickstart-dialog .wizard-build-detail-panel > h3,
+  #quickstart-dialog .wizard-right-stack,
+  #quickstart-dialog .wizard-preview-stage,
+  #quickstart-dialog [data-preview-stage],
+  #quickstart-dialog .wizard-preview-controls,
+  #quickstart-dialog .wizard-reference-panel,
+  #quickstart-dialog .wizard-frame-strip,
+  #quickstart-dialog .wizard-build-actions,
+  #quickstart-dialog .wizard-frame-file-table-wrap {
+    grid-column: 1 !important;
+    grid-row: auto !important;
   }
 }
