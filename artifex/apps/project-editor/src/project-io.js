@@ -1,4 +1,4 @@
-import { createHealthReport } from '../../../shared/health-guide/health-checks.js?v=0.1.16-zip';
+import { createHealthReport } from '../../../shared/health-guide/health-checks.js?v=0.1.17-path';
 
 const PROJECT_IO_VERSION = 'artifex.projectPackage.v1';
 const JSZIP_CDN = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
@@ -22,10 +22,6 @@ function normalizeFilename(name = '') {
   return String(name).replaceAll('\\', '/').split('/').pop().toLowerCase();
 }
 
-function getPathKey(file) {
-  return String(file.webkitRelativePath || file.name || '').replaceAll('\\', '/').toLowerCase();
-}
-
 function prettyJSON(value) {
   return JSON.stringify(value, null, 2);
 }
@@ -36,6 +32,44 @@ function makeSafeProjectSlug(projectId = 'artifex-project') {
     .toLowerCase()
     .replace(/[^a-z0-9_-]+/g, '-')
     .replace(/^-+|-+$/g, '') || 'artifex-project';
+}
+
+function normalizeZipPath(path = '') {
+  return String(path || '')
+    .replaceAll('\\', '/')
+    .replace(/^[a-zA-Z]:\//, '')
+    .replace(/^\/+/, '')
+    .replace(/\/\.\//g, '/')
+    .replace(/\/+/g, '/')
+    .trim();
+}
+
+function getProjectRootPath(project = {}) {
+  const explicitPath = project.projectRootPath
+    || project.localProjectPath
+    || project.localPath
+    || project.projectPath
+    || project.folderPath
+    || project.fileRefs?.projectRootPath
+    || project.fileRefs?.localProjectPath
+    || '';
+
+  const normalized = normalizeZipPath(explicitPath);
+  if (normalized) {
+    const projectMarker = normalized.match(/(?:^|\/)(projects\/[^/]+)(?:\/)?$/i);
+    if (projectMarker?.[1]) return projectMarker[1];
+
+    const repoMarker = normalized.match(/(?:^|\/)(artifex\/projects\/[^/]+)(?:\/)?$/i);
+    if (repoMarker?.[1]) return repoMarker[1];
+
+    return normalized;
+  }
+
+  return `projects/${makeSafeProjectSlug(project.projectId || project.gameTitle || 'artifex-project')}`;
+}
+
+function joinZipPath(rootPath, relativePath) {
+  return `${normalizeZipPath(rootPath).replace(/\/$/, '')}/${normalizeZipPath(relativePath)}`;
 }
 
 function makeDefaultLibraryLinks(stateManager) {
@@ -95,8 +129,14 @@ function makeProjectManagerTodos(healthReport) {
 
 export function buildProjectPackage(stateManager) {
   const healthReport = createHealthReport({ stateManager, scope: 'project-manager-export' });
+  const projectRootPath = getProjectRootPath(stateManager.project || {});
+  const project = {
+    ...clone(stateManager.project),
+    projectRootPath
+  };
+
   const files = {
-    'project.json': clone(stateManager.project),
+    'project.json': project,
     'logic.json': clone(stateManager.logic),
     'layout.json': clone(stateManager.layout),
     'registry.json': clone(stateManager.registry),
@@ -109,6 +149,7 @@ export function buildProjectPackage(stateManager) {
   return {
     schemaVersion: PROJECT_IO_VERSION,
     generatedAt: new Date().toISOString(),
+    projectRootPath,
     files
   };
 }
@@ -147,15 +188,17 @@ function downloadBlob(filename, blob) {
 async function downloadPackageAsZip(projectPackage, stateManager) {
   const JSZip = await loadJSZip();
   const zip = new JSZip();
+  const rootPath = projectPackage.projectRootPath || getProjectRootPath(stateManager.project || {});
 
   Object.entries(projectPackage.files).forEach(([path, value]) => {
-    zip.file(path, prettyJSON(value));
+    zip.file(joinZipPath(rootPath, path), prettyJSON(value));
   });
 
-  zip.file('project-package-manifest.json', prettyJSON({
+  zip.file(joinZipPath(rootPath, 'project-package-manifest.json'), prettyJSON({
     schemaVersion: PROJECT_IO_VERSION,
     generatedAt: projectPackage.generatedAt,
-    files: PROJECT_PACKAGE_FILES
+    projectRootPath: rootPath,
+    files: PROJECT_PACKAGE_FILES.map((path) => joinZipPath(rootPath, path))
   }));
 
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
@@ -214,10 +257,11 @@ function applyProjectPackageData({ stateManager, parsedFiles }) {
 
 function assignParsedFileByPath(parsedFiles, path, json) {
   const basename = normalizeFilename(path);
-  const pathKey = String(path || '').replaceAll('\\', '/').toLowerCase();
+  const pathKey = normalizeZipPath(path).toLowerCase();
 
   if (json?.schemaVersion === PROJECT_IO_VERSION && json.files) {
     Object.entries(json.files).forEach(([nestedPath, value]) => assignParsedFileByPath(parsedFiles, nestedPath, value));
+    if (json.projectRootPath) parsedFiles.projectRootPath = json.projectRootPath;
     return;
   }
 
@@ -285,6 +329,7 @@ async function importProjectFiles({ stateManager, onRefresh }) {
         return;
       }
 
+      if (parsedFiles.projectRootPath && parsedFiles.project) parsedFiles.project.projectRootPath = parsedFiles.projectRootPath;
       applyProjectPackageData({ stateManager, parsedFiles });
       onRefresh?.();
       showIOToast(`Imported ${Object.keys(parsedFiles).length} project file section(s).`);
@@ -301,7 +346,7 @@ async function exportProjectPackage({ stateManager }) {
 
   try {
     await downloadPackageAsZip(projectPackage, stateManager);
-    showIOToast('Exported project package as a ZIP file.');
+    showIOToast(`Exported ZIP using root path: ${projectPackage.projectRootPath}`);
   } catch (error) {
     console.error('[ProjectIO] ZIP export failed.', error);
     showIOToast(`ZIP export failed: ${error.message}`, 'error');
