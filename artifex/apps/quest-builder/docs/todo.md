@@ -16,7 +16,7 @@ Use the global all-apps to-do list for changes that affect every Artifex app. Us
 
 ## Current live status
 
-Current Quest Builder version: `V1.1.2`
+Current Quest Builder version: `V1.1.3`
 
 Current live app files:
 
@@ -105,6 +105,22 @@ Completed changes:
 - Removed the open `todo_quest_builder_left_panel_typing_stability` task from the specific-app open list.
 - Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.2` / `1.1.2`.
 
+### V1.1.3 — Contextual inspector and status actions
+
+Status: complete.
+
+Completed changes:
+
+- Left panel is now treated as a contextual status/inspector panel, not a duplicate quest summary.
+- Clicking the quest header or Calling pill in the viewing canvas selects the quest for the left inspector.
+- Clicking a flow card in the viewing canvas selects that block for the left inspector.
+- The inspector switches between Quest fields and Block fields depending on what is selected.
+- The green status strip now contains emoji action buttons for New Quest Wizard, Add Quest, Add Block, and Save Locally.
+- The older side-panel Add Quest/Add Block row and Quest List section are hidden from the main panel chrome.
+- Canvas renderer now creates hit zones for the quest header, Calling pill, and flow cards.
+- Canvas click hit-testing accounts for zoom and pan.
+- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.3` / `1.1.3`.
+
 ## Ownership boundary
 
 Quest Builder owns:
@@ -155,45 +171,25 @@ Every Quest Builder edit should increase the visible version by `0.01` and updat
 Next versions:
 
 ```text
-V1.1.3  viewing panel and flow card refinement
-V1.1.4  block taxonomy and validation pass
-V1.1.5  editor popup redesign
-V1.1.6  export JSON and validation
+V1.1.4  viewing panel warnings and flow card polish
+V1.1.5  block taxonomy and validation pass
+V1.1.6  editor popup redesign
+V1.1.7  export JSON and validation
 ```
 
-## V1.1.3 — Viewing panel and flow card refinement
+## V1.1.4 — Viewing panel warnings and flow card polish
 
-Goal: make the canvas read like a quest flow, not a generic builder diagram.
+Goal: finish the remaining viewing panel behaviours after the contextual inspector change.
 
-Viewing panel should show:
+Required:
 
-- Quest thumbnail.
-- Quest name.
-- Chronicle/type/block-count metadata.
-- Calling pill with edit icon.
-- START card.
-- Flow cards.
-- END card.
-
-Each flow card should show:
-
-- Thumbnail/icon.
-- Block name.
-- Block type.
-- Edit icon.
-- Linked ID summary.
-- Missing-data warning if required fields are missing.
-- Border colour based on block type/source.
-
-Acceptance checks:
-
-- No leftover generic `QUEST BUILDER` title inside the canvas.
-- START is visually top-left.
-- END is visually bottom-right.
-- Blocks reflow between START and END.
+- Selected card should remain visually obvious after clicking the canvas.
+- Flow cards should show missing-data warnings where required fields are missing.
+- Flow cards should show linked ID summaries more clearly.
+- START and END should remain readable even when blocks wrap.
 - Canvas still supports zoom and pan.
 
-## V1.1.4 — Block taxonomy and validation pass
+## V1.1.5 — Block taxonomy and validation pass
 
 Goal: stop block names being vague and separate gameplay actions from linked content.
 
@@ -234,7 +230,7 @@ Acceptance checks:
 - Existing demo data uses `action` for `Speak With Vitus`.
 - Dialogue/audio are linked content, not confused with the player action itself.
 
-## V1.1.5 — Better editor popup
+## V1.1.6 — Better editor popup
 
 Goal: replace the giant field list with a proper editor layout.
 
@@ -271,7 +267,7 @@ Acceptance checks:
 - Optional fields are grouped logically.
 - Thumbnail/icon is saved into the block data.
 
-## V1.1.6 — Export JSON and validation
+## V1.1.7 — Export JSON and validation
 
 Goal: produce stable game-readable JSON, not only local editor state.
 
