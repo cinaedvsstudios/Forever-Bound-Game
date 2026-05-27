@@ -1,11 +1,13 @@
 import mazeLabyrinth from './maze-labyrinth.js';
-import obstacleCourse from './flight-course.js';
+import arenaTrial from './arena-trial.js';
+import obstacleCourse from './obstacle-course.js';
 import symbolAssembly from './symbol-assembly.js';
-import itemOrderPuzzle from './recipe-sequence.js';
-import hazardPuzzle from './corruption-flow.js';
+import itemOrderPuzzle from './item-order-puzzle.js';
+import hazardPuzzle from './hazard-puzzle.js';
 
 export const puzzleEngines = [
   mazeLabyrinth,
+  arenaTrial,
   obstacleCourse,
   symbolAssembly,
   itemOrderPuzzle,
