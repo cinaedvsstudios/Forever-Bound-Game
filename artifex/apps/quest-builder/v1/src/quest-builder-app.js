@@ -180,15 +180,16 @@ function renderQuestInspector(q) {
 
 function renderBlockInspector(b) {
   const blockType = getBlockType(b.type);
+  const primaryField = blockType.primaryField || 'action';
   text('inspector-title', 'Block Status');
-  text('inspector-kicker', blockType.name.toUpperCase());
-  text('inspector-note', 'Editing the selected flow card from the viewing area. Use the popup editor for full details.');
+  text('inspector-kicker', `${blockType.name.toUpperCase()} · ${blockType.category || 'custom'}`);
+  text('inspector-note', `Primary field: ${primaryField}. Required: ${(blockType.requiredFields || []).join(', ') || 'none'}.`);
   showQuestFields(false);
   showBlockFields(true);
   if (document.activeElement !== $('block-thumb-button')) $('block-thumb-button').textContent = b.thumbnail || blockType.emoji;
   set('selected-block-name', b.name || blockType.name);
   set('selected-block-type', b.type || 'scene');
-  set('selected-block-primary', b.sceneId || b.objectId || b.dialogueId || b.condition || b.action || '');
+  set('selected-block-primary', b[primaryField] || '');
   set('selected-block-action', b.action || '');
   set('selected-block-condition', b.condition || '');
   set('selected-block-overlay', b.uiOverlay || '');
@@ -224,7 +225,7 @@ function renderBlockList() {
     const button = document.createElement('button');
     button.className = 'record-item border-' + escapeHtml(item.type) + ' ' + (index === state.activeBlock && state.inspectorTarget === 'block' ? 'selected' : '');
     button.title = 'Select block: ' + (item.name || blockType.name);
-    button.innerHTML = `<span class="block-emoji">${item.thumbnail || blockType.emoji}</span><span><strong>${escapeHtml(item.name || blockType.name)}</strong><span>${escapeHtml(blockType.name)} / ${escapeHtml(item.sceneId || item.objectId || item.dialogueId || item.condition || 'unlinked')}</span></span><span class="edit-mini" title="Edit this block">✎</span>`;
+    button.innerHTML = `<span class="block-emoji">${item.thumbnail || blockType.emoji}</span><span><strong>${escapeHtml(item.name || blockType.name)}</strong><span>${escapeHtml(blockType.name)} / ${escapeHtml(item.sceneId || item.objectId || item.dialogueId || item.condition || item.action || 'unlinked')}</span></span><span class="edit-mini" title="Edit this block">✎</span>`;
     button.onclick = () => selectBlock(index);
     button.querySelector('.edit-mini').onclick = (event) => { event.stopPropagation(); state.activeBlock = index; state.inspectorTarget = 'block'; document.dispatchEvent(new CustomEvent('quest-builder-edit-block')); };
     button.ondblclick = () => document.dispatchEvent(new CustomEvent('quest-builder-edit-block'));
