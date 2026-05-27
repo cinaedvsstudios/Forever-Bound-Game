@@ -1,4 +1,14 @@
-/* Quest Builder V1.1.1
+/* Quest Builder V1.1.2
    Styling entry point only. Behaviour is split into v1/src modules.
    The visual rules are currently carried forward from the V1.0.8 stylesheet until the next visual pass. */
-@import url("./quest-builder-v108.css?v=1.1.1-base");
+@import url("./quest-builder-v108.css?v=1.1.2-base");
+
+/* V1.1.2 left panel refinement */
+#selected-card .card-body { display: grid; gap: 11px; }
+#selected-card .quest-hero { margin-bottom: 0; }
+#selected-card .button-row button { min-height: 38px; }
+#selected-card.locked .inline-field,
+#selected-card.locked .inline-select,
+#selected-card.locked .calling-edit { cursor: default; }
+#quest-list .quest-item { min-height: 58px; }
+#quest-list .quest-item .edit-mini { opacity: .9; }
