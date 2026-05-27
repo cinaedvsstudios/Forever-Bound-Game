@@ -1,7 +1,7 @@
 import { THUMBNAILS } from './module-config.js';
 import { BLOCK_TYPES } from './block-types.js';
 import { parseList, escapeHtml } from './quest-schema.js';
-import { openEditor, createWizardQuest } from './dialog-editors.js';
+import { openEditor, createWizardQuest, wireEditorTabs } from './dialog-editors.js';
 import { exportQuestFile, downloadJson, slugify } from './export-json.js';
 import { clamp } from './layout-state.js';
 
@@ -159,6 +159,7 @@ export function wireWorkspacePan(app) {
 }
 
 export function wireInputs(app) {
+  wireEditorTabs();
   bind(app, 'selected-quest-name', (value) => { app.quest().name = value || 'New Quest'; });
   bind(app, 'selected-quest-type', (value) => { app.quest().type = value || 'main'; });
   bind(app, 'selected-calling', (value) => { app.quest().callingText = value; });
@@ -180,6 +181,7 @@ export function wireInputs(app) {
   bind(app, 'file-id-input', (value) => { app.doc.id = value; });
   bind(app, 'file-name-input', (value) => { app.doc.name = value || 'Untitled Quest File'; });
   bind(app, 'chronicle-id-input', (value) => { app.doc.defaultChronicleId = value || 'chronicle_01'; });
+  bind(app, 'quest-thumb-input', (value) => { app.quest().thumbnail = value || '📜'; });
   bind(app, 'quest-name-input', (value) => { app.quest().name = value || 'New Quest'; });
   bind(app, 'quest-type-input', (value) => { app.quest().type = value || 'main'; });
   bind(app, 'calling-text-input', (value) => { app.quest().callingText = value; });
@@ -189,6 +191,7 @@ export function wireInputs(app) {
   bind(app, 'quest-rewards-input', (value) => { app.quest().rewards = parseList(value); });
   bind(app, 'quest-codice-input', (value) => { app.quest().codiceUpdates = parseList(value); });
   bind(app, 'quest-notes-input', (value) => { app.quest().notes = value; });
+  bind(app, 'block-thumb-input', (value) => { app.block().thumbnail = value || app.meta(app.block().type).emoji; });
   bind(app, 'block-name-input', (value) => { app.block().name = value || app.meta(app.block().type).name; });
   bind(app, 'block-type-input', (value) => {
     const block = app.block();
