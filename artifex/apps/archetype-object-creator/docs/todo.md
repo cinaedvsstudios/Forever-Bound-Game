@@ -10,7 +10,7 @@ Status: open
 Priority: high  
 Source: project file contracts / patch-layer rule
 
-The app currently stays within the two-active-overlay limit, but `template-card-enhancements.js` has grown into a large live overlay. Fold the stable Step 5 wizard, ZIP export, frame correction, and sound-event logic into normal Object Creator module files now that the Step 5 layout is confirmed.
+The app currently stays within the two-active-overlay limit, but `template-card-enhancements.js` has grown into a large live overlay. Fold the stable Step 5 wizard, ZIP export, and sound-event logic into normal Object Creator module files now that the Step 5 layout is confirmed.
 
 Progress:
 
@@ -19,16 +19,29 @@ Progress:
 - Done in V1.24: tightened template card density by reducing card width, outer padding, icon-box padding, icon display scale, text size, button height, and card gaps.
 - Done in V1.25: tightened template icon padding further with smaller cards, lower icon-box padding, smaller grid gaps, and tighter labels/buttons.
 - Done in V1.26: extracted the wizard Reference panel into `object-wizard-reference-panel.js`.
+- Done in V1.27: extracted the wizard Frame Correction popup and per-frame correction logic into `object-wizard-frame-correction.js`.
 
 Remaining suggested split:
 
 - `object-wizard-step5.js`
-- `object-wizard-frame-correction.js`
 - `object-wizard-asset-package.js`
 
 After the split, keep `editor-app.js` as a thin entry file and remove any no-longer-needed overlay import.
 
 ## Done
+
+### Extract wizard Frame Correction module
+
+Status: done  
+Completed in: V1.27  
+Source: docs/artifex/19-project-file-contracts.md
+
+Completed changes:
+
+- Created `object-wizard-frame-correction.js`.
+- Moved Frame Fix popup setup, brightness slider setup, numeric step controls, selected-frame correction loading, reset logic, preview/thumb correction application, and brightness matching into the new module.
+- Updated `editor-app.js` to initialise the Frame Correction module.
+- Bumped the app to V1.27.
 
 ### Extract wizard Reference panel module
 
