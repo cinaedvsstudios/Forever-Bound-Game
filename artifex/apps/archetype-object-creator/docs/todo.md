@@ -10,15 +10,15 @@ Status: open
 Priority: high  
 Source: project file contracts / patch-layer rule
 
-The app currently stays within the two-active-overlay limit, but `template-card-enhancements.js` has grown into a large live overlay. Fold the stable Step 5 wizard, icon-card, ZIP export, frame correction, sound-event, and reference-panel logic into normal Object Creator module files now that the Step 5 layout is confirmed.
+The app currently stays within the two-active-overlay limit, but `template-card-enhancements.js` has grown into a large live overlay. Fold the stable Step 5 wizard, ZIP export, frame correction, sound-event, and reference-panel logic into normal Object Creator module files now that the Step 5 layout is confirmed.
 
 Progress:
 
 - Done in V1.22: extracted the Step 5 left/right column wrapper into `object-wizard-step5-layout.js` and made `editor-app.js` thin again for that responsibility.
+- Done in V1.23: extracted template card icon atlas cropping, template-card colour grouping, fallback icons, and card styling into `object-template-icons.js`.
 
 Remaining suggested split:
 
-- `object-template-icons.js`
 - `object-wizard-step5.js`
 - `object-wizard-frame-correction.js`
 - `object-wizard-asset-package.js`
@@ -27,6 +27,19 @@ Remaining suggested split:
 After the split, keep `editor-app.js` as a thin entry file and remove any no-longer-needed overlay import.
 
 ## Done
+
+### Extract object template icon module
+
+Status: done  
+Completed in: V1.23  
+Source: docs/artifex/19-project-file-contracts.md
+
+Completed changes:
+
+- Created `object-template-icons.js`.
+- Moved the object template icon atlas paths, sheet crop settings, group colour codes, fallback icon glyphs, icon card CSS, image loading, crop caching, and template-card decoration observer into that module.
+- Updated `editor-app.js` to initialise the icon module.
+- Bumped the app to V1.23.
 
 ### Test V1.21 Step 5 wizard and export contract polish
 
