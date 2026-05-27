@@ -1,6 +1,6 @@
 import { ROLE_TEMPLATES } from './templates.js';
 
-const VERSION = '1.23';
+const VERSION = '1.24';
 const ICON_PATHS = [
   `./v1/icons/object-archetypes/icons1.png?v=${VERSION}`,
   `./v1/icons/object-archetypes/icons2.png?v=${VERSION}`,
@@ -80,8 +80,8 @@ const CSS = `
   --template-accent:#e2cca7;
   --template-soft:rgba(226,204,167,.16);
   --template-glow:rgba(226,204,167,.28);
-  max-width:186px!important;
-  padding:10px!important;
+  max-width:166px!important;
+  padding:7px!important;
   border-color:color-mix(in srgb,var(--template-accent),#382a21 58%)!important;
   background:radial-gradient(circle at 50% 14%,var(--template-soft),transparent 44%),linear-gradient(180deg,rgba(34,25,20,.98),rgba(16,12,10,.98))!important;
   box-shadow:0 10px 22px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,240,206,.03)!important;
@@ -105,10 +105,10 @@ const CSS = `
 .object-template-card[data-template-group='marker']{--template-accent:#c6d967;--template-soft:rgba(198,217,103,.18);--template-glow:rgba(198,217,103,.36)}
 .object-template-card[data-template-group='hazard']{--template-accent:#ff7b3d;--template-soft:rgba(255,123,61,.22);--template-glow:rgba(255,123,61,.42)}
 .template-card-grid,.wizard-template-grid,.wizard-existing-grid{
-  grid-template-columns:repeat(auto-fill,minmax(174px,186px))!important;
+  grid-template-columns:repeat(auto-fill,minmax(154px,166px))!important;
   justify-content:start!important;
   align-items:start!important;
-  gap:14px!important;
+  gap:12px!important;
 }
 .template-visual{
   width:100%!important;
@@ -118,36 +118,36 @@ const CSS = `
   display:grid!important;
   place-items:center!important;
   overflow:hidden!important;
-  margin:0 0 10px!important;
-  padding:8px!important;
+  margin:0 0 7px!important;
+  padding:4px!important;
   border:1px solid color-mix(in srgb,var(--template-accent),#382a21 52%)!important;
-  border-radius:16px!important;
+  border-radius:14px!important;
   background:radial-gradient(circle at 50% 42%,var(--template-soft),transparent 48%),linear-gradient(180deg,rgba(35,26,21,.92),rgba(14,10,9,.95))!important;
   box-shadow:inset 0 0 0 1px rgba(255,240,206,.04)!important;
 }
 .template-icon-img{
-  width:62%!important;
-  height:62%!important;
+  width:50%!important;
+  height:50%!important;
   max-width:none!important;
   max-height:none!important;
   object-fit:contain!important;
   filter:drop-shadow(0 0 12px var(--template-glow))!important;
 }
 .template-icon-fallback{
-  width:40%!important;
-  height:40%!important;
+  width:32%!important;
+  height:32%!important;
   display:grid!important;
   place-items:center!important;
   border-radius:999px!important;
   color:#fff0ce!important;
   background:var(--template-soft)!important;
   box-shadow:0 0 18px var(--template-glow)!important;
-  font-size:clamp(28px,4vw,46px)!important;
+  font-size:clamp(22px,3.2vw,38px)!important;
   line-height:1!important;
 }
-.object-template-card h4{font-size:13px!important;line-height:1.2!important;margin-bottom:5px!important}
-.object-template-card p{font-size:11px!important;line-height:1.25!important}
-.object-template-card button{width:100%!important;min-height:38px!important;padding:8px 10px!important;font-size:13px!important}
+.object-template-card h4{font-size:12px!important;line-height:1.18!important;margin-bottom:4px!important}
+.object-template-card p{font-size:10.5px!important;line-height:1.2!important}
+.object-template-card button{width:100%!important;min-height:34px!important;padding:7px 9px!important;font-size:12px!important}
 `;
 
 const imagePromises = new Map();
