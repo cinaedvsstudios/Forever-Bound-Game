@@ -4,13 +4,13 @@ This file tracks work that belongs specifically to Archetype Object Creator. Pla
 
 ## Open
 
-### Test V1.18 Step 5 wizard polish
+### Test V1.19 Step 5 wizard and export contract polish
 
 Status: open  
 Priority: high  
-Source: V1.18 implementation pass
+Source: V1.18 / V1.19 implementation pass
 
-Verify in the live app that Step 5 now works as intended:
+Verify in the live app that Step 5 and the object export contract now work as intended:
 
 - Selected action title sits above the right-side control boxes.
 - Preview window is pulled up and play/frame buttons are closer to the preview.
@@ -22,6 +22,8 @@ Verify in the live app that Step 5 now works as intended:
 - Match brightness across frames stores per-frame brightness values and shows them in the brightness control.
 - Frame corrections apply live to preview and frame thumbnails.
 - Bottom controls clearly distinguish `Add Images` from `Add Empty Frame Slot`.
+- New object archetypes use the canonical `archobj_` ID prefix.
+- Exported object files are named for individual files under `archetypes/objects/` and declare `archetypes/object-index.json` as the index target.
 
 ### Integrate current overlay code into normal module files
 
@@ -41,17 +43,23 @@ Suggested split:
 
 After the split, keep `editor-app.js` as a thin entry file and remove any no-longer-needed overlay import.
 
+## Done
+
 ### Align object archetype exports with project file contracts
 
-Status: open  
-Priority: high  
+Status: done  
+Completed in: V1.19  
 Source: docs/artifex/19-project-file-contracts.md
 
-Confirm export targets and IDs:
+Completed changes:
 
-- Reusable object archetypes should export to `archetypes/object-index.json` plus individual files under `archetypes/objects/`.
-- Object archetype IDs should use the canonical `archobj_` prefix.
-- Scene Editor should place object instances that reference object archetype IDs, not loose image paths.
+- New object archetype IDs now use the canonical `archobj_` prefix.
+- Older imported/local `object_` IDs are normalised to `archobj_` IDs.
+- Reusable object archetypes now declare `archetypes/object-index.json` as the object index target.
+- Individual object export paths now resolve to `archetypes/objects/<archobj_id>.json`.
+- Exported JSON includes `exportPaths.objectIndex` and `exportPaths.objectFile` for Project Manager / build tooling.
+
+Scene Editor still needs to consume object archetype IDs when placing instances, but that belongs to Scene Editor / shared project integration rather than this app-local export task.
 
 ## Blocked by all-apps work
 
