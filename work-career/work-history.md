@@ -38,6 +38,8 @@ The user currently works in an operations role at Zalando in Berlin. Work histor
 
 Two 2025 resume files were reviewed in chat and should be treated as source material for future CV rewrites, LinkedIn/career summaries, and professional self-confidence grounding. Do not store the full resume transcript here; use the extracted career context below.
 
+## MARCO
+
 ## Key Facts
 
 - User's current role is at Zalando in Berlin, in operations work involving purchase orders, data accuracy, supplier/buyer coordination, workflow improvement, automation, and process improvement.
