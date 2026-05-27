@@ -1,7 +1,7 @@
 import { puzzleEngines, getPuzzleEngine } from './engines/index.js';
 
 const $ = (id) => document.getElementById(id);
-let activeEngine = getPuzzleEngine('arena-trial');
+let activeEngine = getPuzzleEngine('maze-labyrinth');
 const engineValues = {};
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -31,16 +31,13 @@ function setActiveEngine(engineId) {
   activeEngine = getPuzzleEngine(engineId);
   window.__artifexActivePuzzleEngine = activeEngine;
   window.__artifexPuzzleEngineValues = engineValues;
-
   document.querySelectorAll('.engine-button').forEach((button) => button.classList.toggle('is-active', button.dataset.engine === activeEngine.id));
   if ($('active-engine-title')) $('active-engine-title').textContent = activeEngine.label;
   if ($('active-engine-purpose')) $('active-engine-purpose').textContent = activeEngine.purpose;
   if ($('playable-label')) $('playable-label').textContent = `${activeEngine.label} Preview`;
-
   if ($('module-id')) $('module-id').value = activeEngine.defaultModuleId;
   if ($('calling-text')) $('calling-text').value = activeEngine.callingText;
   if ($('gameplay-mode')) $('gameplay-mode').value = activeEngine.mode;
-
   renderFields(activeEngine);
   drawEnginePreviewBadge(activeEngine);
 }
@@ -94,47 +91,36 @@ function bindImageContrastVisibility() {
 }
 
 function drawEnginePreviewBadge(engine) {
-  const canvas = $('maze-preview-canvas');
-  if (!canvas) return;
   setTimeout(() => {
+    const canvas = $('maze-preview-canvas');
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const r = canvas.getBoundingClientRect();
-    const ratio = canvas.width / Math.max(1, r.width);
+    const rect = canvas.getBoundingClientRect();
+    const ratio = canvas.width / Math.max(1, rect.width);
     ctx.save();
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     ctx.fillStyle = 'rgba(2, 10, 5, .74)';
     ctx.strokeStyle = engine.preview?.accent || '#9ee6a4';
     ctx.lineWidth = 1;
-    rounded(ctx, 18, 18, 220, 58, 14);
+    rounded(ctx, 18, 18, 240, 58, 14);
     ctx.fill();
     ctx.stroke();
     ctx.fillStyle = '#e9dcc1';
     ctx.font = '700 15px Inter, sans-serif';
-    ctx.fillText(engine.label, 54, 41);
+    ctx.fillText(engine.label, 58, 41);
     ctx.fillStyle = engine.preview?.accent || '#9ee6a4';
     ctx.font = '700 26px Inter, sans-serif';
     ctx.fillText(engine.icon, 29, 45);
     ctx.restore();
-  }, 20);
+  }, 30);
 }
 
 function rounded(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r); ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
 }
 
 function patchExportPayload() {
-  const downloadButton = $('btn-export-json');
-  const copyButton = $('btn-copy-json');
-  const augment = (payload) => ({
+  window.__artifexAugmentPuzzlePayload = (payload) => ({
     ...payload,
     engine: {
       id: activeEngine.id,
@@ -144,9 +130,4 @@ function patchExportPayload() {
       values: engineValues[activeEngine.id] || {}
     }
   });
-  window.__artifexAugmentPuzzlePayload = augment;
-  [downloadButton, copyButton].forEach((button) => button?.addEventListener('click', () => {
-    window.__artifexActivePuzzleEngine = activeEngine;
-    window.__artifexPuzzleEngineValues = engineValues;
-  }, true));
 }
