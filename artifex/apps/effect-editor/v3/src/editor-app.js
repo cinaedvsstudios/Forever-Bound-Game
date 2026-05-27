@@ -18,9 +18,10 @@ import { initUIPolishV2 } from './ui-polish-v2.js';
 import { initV312Polish } from './v312-polish.js';
 import { initV314Polish } from './v314-polish.js';
 import { initV315Polish } from './v315-polish.js';
+import { initV317Polish } from './v317-polish.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'V3.16';
+const VERSION_LABEL = 'V3.17';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
@@ -50,6 +51,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initV312Polish(showToast);
   initV314Polish(showToast);
   initV315Polish(showToast);
+  initV317Polish(showToast);
 
   const preset = cloneBasePreset('base', 'standard-particle');
   if (preset) {
