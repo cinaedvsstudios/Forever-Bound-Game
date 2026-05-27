@@ -1,15 +1,15 @@
-import arenaTrial from './arena-trial.js';
-import flightCourse from './flight-course.js';
+import mazeLabyrinth from './maze-labyrinth.js';
+import obstacleCourse from './flight-course.js';
 import symbolAssembly from './symbol-assembly.js';
-import recipeSequence from './recipe-sequence.js';
-import corruptionFlow from './corruption-flow.js';
+import itemOrderPuzzle from './recipe-sequence.js';
+import hazardPuzzle from './corruption-flow.js';
 
 export const puzzleEngines = [
-  arenaTrial,
-  flightCourse,
+  mazeLabyrinth,
+  obstacleCourse,
   symbolAssembly,
-  recipeSequence,
-  corruptionFlow
+  itemOrderPuzzle,
+  hazardPuzzle
 ];
 
 export const getPuzzleEngine = (id) => puzzleEngines.find((engine) => engine.id === id) || puzzleEngines[0];
