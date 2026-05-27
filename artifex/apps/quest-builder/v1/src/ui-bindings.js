@@ -25,9 +25,16 @@ export function closeMenus() {
 
 export function fillBlockTypeMenus(app) {
   const menu = app.$('block-type-menu');
-  const select = app.$('block-type-input');
-  if (menu) menu.innerHTML = Object.entries(BLOCK_TYPES).map(([key, item]) => `<button type="button" data-add-block="${key}" title="${escapeHtml(item.hint)}">${item.emoji} ${item.name}<small>${item.hint}</small></button>`).join('');
-  if (select) select.innerHTML = Object.entries(BLOCK_TYPES).map(([key, item]) => `<option value="${key}">${item.emoji} ${item.name}</option>`).join('');
+  const popupSelect = app.$('block-type-input');
+  const inspectorSelect = app.$('selected-block-type');
+  const options = Object.entries(BLOCK_TYPES).map(([key, item]) => `<option value="${key}">${item.emoji} ${item.name}</option>`).join('');
+  if (menu) {
+    menu.innerHTML = Object.entries(BLOCK_TYPES)
+      .map(([key, item]) => `<button type="button" data-add-block="${key}" title="${escapeHtml(item.hint)}">${item.emoji} ${item.name}<small>${item.hint}</small></button>`)
+      .join('');
+  }
+  if (popupSelect) popupSelect.innerHTML = options;
+  if (inspectorSelect) inspectorSelect.innerHTML = options;
 }
 
 export function wirePanelResize(app) {
@@ -165,14 +172,7 @@ export function wireInputs(app) {
     block.type = value;
     if (!block.thumbnail) block.thumbnail = app.meta(value).emoji;
   });
-  bind(app, 'selected-block-primary', (value) => {
-    const block = app.block();
-    if (block.type === 'scene') block.sceneId = value;
-    else if (block.type === 'dialogue') block.dialogueId = value;
-    else if (block.type === 'condition' || block.type === 'completion') block.condition = value;
-    else if (block.type === 'action') block.action = value;
-    else block.objectId = value;
-  });
+  bind(app, 'selected-block-primary', (value) => setPrimaryField(app.block(), app.meta(app.block().type).primaryField, value));
   bind(app, 'selected-block-action', (value) => { app.block().action = value; });
   bind(app, 'selected-block-condition', (value) => { app.block().condition = value; });
   bind(app, 'selected-block-overlay', (value) => { app.block().uiOverlay = value; });
@@ -205,6 +205,11 @@ export function wireInputs(app) {
   bind(app, 'block-overlay-input', (value) => { app.block().uiOverlay = value; });
   bind(app, 'block-capra-input', (value) => { app.block().capraFeedback = value; });
   bind(app, 'block-notes-input', (value) => { app.block().notes = value; });
+}
+
+function setPrimaryField(block, field, value) {
+  if (!block) return;
+  block[field || 'action'] = value;
 }
 
 function bind(app, id, fn) {
@@ -258,11 +263,15 @@ export function wireActions(app) {
   document.querySelectorAll('[data-add-block]').forEach((button) => {
     button.onclick = () => { app.addBlock(button.dataset.addBlock); closeMenus(); openEditor(app, 'block'); };
   });
-  app.$('template-main-quest-button').onclick = () => { app.addQuest({ name: 'New Main Quest', thumbnail: '📜', callingText: 'Define the main Calling for this Quest.', blocks: [{ name: 'Start Scene', type: 'scene', thumbnail: '🖼️' }, { name: 'Key Interaction', type: 'object', thumbnail: '🧩' }, { name: 'Calling Fulfilled', type: 'completion', thumbnail: '✅', uiOverlay: 'calling_fulfilled' }] }); closeMenus(); };
-  app.$('template-side-quest-button').onclick = () => { app.addQuest({ name: 'New Side Quest', thumbnail: '🗝️', type: 'side', callingText: 'Define the optional objective or Errand.', blocks: [{ name: 'Optional Trigger', type: 'condition', thumbnail: '🔀' }, { name: 'Reward', type: 'reward', thumbnail: '🎁' }] }); closeMenus(); };
+  app.$('template-main-quest-button').onclick = () => { app.addQuest({ name: 'New Main Quest', thumbnail: '📜', callingText: 'Define the main Calling for this Quest.', blocks: [{ name: 'Start Scene', type: 'scene', thumbnail: '🖼️' }, { name: 'Key Interaction', type: 'object', thumbnail: '🧩', action: 'interact:key_object' }, { name: 'Calling Fulfilled', type: 'completion', thumbnail: '✅', uiOverlay: 'calling_fulfilled', condition: 'flag_true:quest_complete' }] }); closeMenus(); };
+  app.$('template-side-quest-button').onclick = () => { app.addQuest({ name: 'New Side Quest', thumbnail: '🗝️', type: 'side', callingText: 'Define the optional objective or Errand.', blocks: [{ name: 'Optional Trigger', type: 'condition', thumbnail: '🔀', condition: 'flag_true:sidequest_available' }, { name: 'Reward', type: 'reward', thumbnail: '🎁', action: 'grant_reward:silver' }] }); closeMenus(); };
   app.$('export-json-button').onclick = () => { downloadJson(slugify(app.doc.name) + '.json', exportQuestFile(app.doc)); closeMenus(); app.toast('JSON exported.'); };
   app.$('view-json-button').onclick = () => { app.$('json-preview').textContent = exportQuestFile(app.doc); closeMenus(); app.$('json-dialog').showModal(); };
-  app.$('block-types-button').onclick = () => { const rows = Object.entries(BLOCK_TYPES).map(([key, item]) => `<article class="block-type-card"><strong>${item.emoji} ${item.name}</strong><span>${key}: ${item.hint}</span></article>`).join(''); app.help('Quest Block Type List', `<div class="block-type-grid">${rows}</div>`); closeMenus(); };
+  app.$('block-types-button').onclick = () => {
+    const rows = Object.entries(BLOCK_TYPES).map(([key, item]) => `<article class="block-type-card"><strong>${item.emoji} ${item.name}</strong><span>${key} / ${item.category} / primary: ${item.primaryField}</span><span>required: ${(item.requiredFields || []).join(', ') || 'none'}</span><span>${item.hint}</span></article>`).join('');
+    app.help('Quest Block Type List', `<div class="block-type-grid">${rows}</div>`);
+    closeMenus();
+  };
   app.$('library-note-button').onclick = () => { app.help('Linked Libraries', '<p>Quest Builder references completed scenes, archetype objects, dialogue IDs, audio IDs, Capra popup templates, Codice entries, UI overlays, rewards, route unlocks, and completion flags. It should not own those libraries directly.</p>'); closeMenus(); };
   app.$('quick-start-button').onclick = () => { app.help('Quick Start', '<p>Click the quest header, Calling pill, or any flow card in the viewing area to inspect it on the left. Use the green status strip buttons for wizard, add quest, add block, and local save.</p>'); closeMenus(); };
   app.$('about-button').onclick = () => { app.help('About Quest Builder', '<p>Quest Builder assembles scenes, actions, linked dialogue/audio, objects, Capra feedback, Codice updates, UI overlays, rewards, map unlocks, and completion flags into playable Quest flow.</p>'); closeMenus(); };
