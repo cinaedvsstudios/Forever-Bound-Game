@@ -9,11 +9,27 @@ This document records the agreed update plan for the Maze / Labyrinth engine ins
 
 ## Progress log
 
+### V1.08 quick fix
+
+Completed in V1.08:
+
+- Changed the Puzzles selector from a horizontal title-bar bank into a dropdown menu placed before File.
+- Kept puzzle options as one-word entries: Maze, Arena, Course, Symbol, Order, Hazard.
+- Reduced header layout pressure so the title bar should not push controls off screen.
+- Fixed the image reference upload layout so selecting a file should not create a blank space at the bottom of the page.
+- Moved the image filename status outside the upload button so the button height stays stable.
+
+Still needs live check:
+
+- Confirm Puzzles dropdown opens cleanly and all six modes still switch correctly.
+- Confirm Use image as map reference opens the file picker without adding blank bottom space.
+- Confirm the Construction, Display, Logic, and Visuals buttons remain visible after upload.
+
 ### V1.07 started
 
 Completed or started in V1.07:
 
-- Moved the puzzle engine buttons into a labelled Puzzles bank beside the title/menu area.
+- Moved the puzzle engine buttons into a labelled Puzzles bank beside the title/menu area. **Revised in V1.08: now a dropdown before File.**
 - Changed puzzle engine buttons to one-word labels: Maze, Arena, Course, Symbol, Order, Hazard.
 - Removed Route Style from the Maze / Labyrinth engine fields.
 - Removed Entrances from the Maze / Labyrinth engine fields.
@@ -26,7 +42,7 @@ Completed or started in V1.07:
 - Added basic Start Blank advanced-lock behaviour for Warp until a valid entrance-to-exit route exists.
 - Added initial shape masking for Triangle, Square, Pentagon, Hexagon, and Circle.
 - Added entrance/exit regeneration after size and shape changes.
-- Hid ugly native file inputs behind styled buttons/labels for image and JSON import.
+- Hid ugly native file inputs behind styled buttons/labels for image and JSON import. **Revised in V1.08 after upload layout issue.**
 - Changed Apply Difficulty to Analyse Difficulty so it does not silently mutate the maze.
 - Added a placeholder difficulty analysis alert explaining that the full meaningful-route report/fix tool is a later pass.
 
@@ -37,7 +53,7 @@ Still needs follow-up/testing from Pass 1:
 - Verify Start Blank + Draw creates valid manual mazes correctly.
 - Verify entrance and exit placement is sensible for every shape.
 - Move shape-generation logic into a dedicated `maze-shape-generator.js` file instead of keeping it inside the runtime.
-- Confirm V1.07 loads from GitHub Pages without a syntax/runtime error.
+- Confirm V1.08 loads from GitHub Pages without a syntax/runtime error.
 
 ## Confirmed design corrections
 
@@ -51,7 +67,7 @@ Still needs follow-up/testing from Pass 1:
 
 ## Pass 1 · Maze shell and basic construction cleanup
 
-Status: mostly started/completed in V1.07; testing and file split still needed.
+Status: mostly started/completed in V1.07; V1.08 fixed header/dropdown and upload layout regressions; testing and file split still needed.
 
 Completed:
 
@@ -80,6 +96,8 @@ Completed:
 8. Add Start Blank.
 9. When Start Blank is used, lock advanced options until there is a valid entrance-to-exit route.
 10. Regenerate entrance and exit whenever Size, Shape, Stretch X, or Stretch Y changes.
+11. Move Puzzles into a dropdown before File.
+12. Hide native file inputs behind stable styled controls.
 
 Remaining Pass 1 cleanup:
 
@@ -87,6 +105,7 @@ Remaining Pass 1 cleanup:
 2. Confirm route validation and Start Blank lock behave correctly after manual drawing.
 3. Move shape/mask code out of `maze-labyrinth-runtime.js` into `maze-shape-generator.js`.
 4. Confirm Shape, Stretch X/Y, and Warp export cleanly and reload from JSON.
+5. Confirm the image reference file picker does not create layout gaps or hide buttons.
 
 ## Pass 2 · Walk Test and player movement
 
