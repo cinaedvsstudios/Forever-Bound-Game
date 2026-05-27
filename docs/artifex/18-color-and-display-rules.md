@@ -47,7 +47,7 @@ Default design frame:
 
 ## Artifex Tool UI Branding Rules
 
-These rules apply to Artifex editor tools, including the Effect Editor, Scene Editor, Sprite Wizard, Archetype tools, and future mini-apps.
+These rules apply to Artifex editor tools, including Project Manager, Creation Guide, Scene Editor, Quest Builder, Puzzle Creator, Effect Editor, Archetype Object Creator, Sprite Wizard, and future mini-apps.
 
 ### Global app mark / fallback logo
 
@@ -71,20 +71,41 @@ Recommended CSS pattern:
 
 The fallback mark belongs to the whole Artifex app shell. Module-specific icons may still be used beside menus, cards, libraries, or tool labels, but they should not replace the shared Artifex logo mark.
 
+### Standard app header layout
+
+Every Artifex app should use the same header order:
+
+```text
+Logo / app title → version pill → vertical divider → main menu
+```
+
+The version must always appear as a compact pill immediately after the app title, before the divider and before the main menu. Do not place the version badge at the far right, in the footer, or inside a settings panel.
+
+The main menu should use compact pill-style menu buttons where space allows.
+
 ### Overall UI tone
 
 - The UI should feel ancient, magical, crafted, and slightly arcane, not flat or generic.
 - Panels should use dark brown / near-black surfaces with parchment, bronze, copper, and soft gold text.
 - The default editor chrome should remain dark and warm: black, deep brown, bronze, gold, parchment, and muted cream.
-- Module-specific accent colours may be used to identify the current tool family, but they must not become a user-facing theme picker unless that is explicitly required.
+- Module-specific accent colours identify the current tool family. They must not become a user-facing theme picker unless that is explicitly required.
 
 ### Module accent colours
 
-Use accent colours to tell the user which Artifex module they are in:
+Use these exact module accent meanings:
 
-- Effects / FX Editor: cyan-blue accent and glow.
-- Archetype / Object tools: red accent and glow.
-- Project / Library tools: gold-green accent and glow.
+```text
+Project Manager / Project Editor: yellow-gold accent
+Creation Guide / creator setup tools: grey / neutral accent
+Scene Editor: purple accent
+Quest Builder: green accent
+Puzzle Creator: green accent
+Effect Editor: cyan-blue accent
+Archetype Object Creator: red accent
+Hub / global shell: bronze / copper Artifex accent unless a specific hub treatment is defined
+```
+
+The earlier phrase “Project / Library tools: gold-green accent” should not be used because it is ambiguous. Project Manager is yellow/gold. Quest and Puzzle tools are green. Shared library surfaces inside Project Manager may use the Project Manager gold chrome while showing green status/details for quest or puzzle content where useful.
 
 Accent colour should appear on active states, selected borders, glowing indicators, helper dots, and key module identity details. It should not replace the base bronze/gold Artifex look.
 
@@ -111,7 +132,7 @@ Accent colour should appear on active states, selected borders, glowing indicato
 - Tiny utility buttons may use around 8px radius.
 - Buttons should use dark bronze/brown gradients by default.
 - Active buttons should glow using the current module accent colour.
-- Selected cards, active objects, chosen layers, selected brush thumbnails, active ramp handles, focused inputs, and chosen controls should use a cyan/blue border/glow in the Effects module.
+- Selected cards, active objects, chosen layers, selected brush thumbnails, active ramp handles, focused inputs, and chosen controls should use the current module accent border/glow.
 - Destructive buttons may use red/pink text or border accents but should still fit the Artifex theme.
 
 ### Emoji / minimal text rule
