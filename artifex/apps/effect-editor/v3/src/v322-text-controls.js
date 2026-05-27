@@ -33,6 +33,7 @@ function installTextControls() {
   const layer = getActiveLayer();
   const grid = document.getElementById('effect-specific-grid');
   removeLegacyTextTools();
+  repairCustomControlsPanel();
   if (!grid || !isTextLayer(layer)) return;
   if (document.getElementById('text-extra-controls-v322')) {
     syncTextControls(layer);
@@ -144,6 +145,7 @@ function bindRange(input, update) {
 }
 
 function syncTextControls(layer) {
+  repairCustomControlsPanel();
   const reveal = layer.textRevealMode || 'all';
   setValue('text-density-input-v322', Number(layer.textDensity || layer.spawnRate || 4));
   setTextForOutput('text-density-input-v322', format(Number(layer.textDensity || layer.spawnRate || 4)));
@@ -164,6 +166,29 @@ function syncTextControls(layer) {
   setConditionalDelayVisibility(reveal);
   const keep = document.getElementById('text-keep-block-v322');
   if (keep) keep.textContent = layer.textKeepBlockTogether === false ? '⬜' : '✅';
+}
+
+function repairCustomControlsPanel() {
+  const card = document.getElementById('effect-specific-controls-card');
+  const heading = card?.querySelector('h2');
+  if (card && !card.classList.contains('is-hidden') && heading) heading.textContent = 'Custom Controls';
+
+  const jumpButton = getCustomControlsJumpButton();
+  if (!jumpButton || jumpButton.dataset.customControlsJumpBound === 'true') return;
+  jumpButton.dataset.customControlsJumpBound = 'true';
+  jumpButton.title = 'Jump to Custom Controls.';
+  jumpButton.addEventListener('click', () => {
+    const panel = document.getElementById('effect-specific-controls-card');
+    if (!panel || panel.classList.contains('is-hidden')) return;
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    panel.classList.add('is-cyan-selected');
+    setTimeout(() => panel.classList.remove('is-cyan-selected'), 900);
+  });
+}
+
+function getCustomControlsJumpButton() {
+  const buttons = Array.from(document.querySelectorAll('#left-card-jumpbar button'));
+  return buttons[buttons.length - 1] || null;
 }
 
 function setValue(id, value) {
