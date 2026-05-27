@@ -1,4 +1,4 @@
-const VERSION = 'V1.0.5';
+const VERSION = 'V1.0.6';
 const PROJECT_LIBRARY_KEY = 'artifex.projectLibrary';
 const ACTIVE_PROJECT_KEY = 'artifex.activeProjectId';
 
@@ -13,6 +13,7 @@ const MODULES = {
 
 const STATES = ['unassigned', 'assigned', 'started', 'snoozing', 'blocked', 'review', 'done', 'archived'];
 const FILTERS = ['undone', 'all', ...STATES];
+const STRUCTURAL_GATES = ['project-index', 'folders', 'manifest', 'flatplan', 'indexes'];
 
 const SETUP_GATES = [
   { id: 'identity', icon: '🪪', title: 'Define Project Identity', description: 'Project name, ID, creator, version, template, and description.' },
@@ -96,9 +97,33 @@ function createProject(patch = {}) {
 }
 
 function slug(value) { return String(value || 'untitled-artifex-adventure').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'untitled-artifex-adventure'; }
-function projectCompletion() { return Math.round(SETUP_GATES.filter((gate) => state.project.gates?.[gate.id]).length / SETUP_GATES.length * 100); }
 function activeAssignment() { return state.assignments[state.active] || null; }
 function completion(item) { if (!item) return 0; if (item.state === 'done') return 100; if (!item.subtasks.length) return item.state === 'started' ? 25 : item.state === 'review' ? 85 : 0; return Math.round(item.subtasks.filter((task) => ['complete', 'confirmed', 'not-needed'].includes(task.status)).length / item.subtasks.length * 100); }
+
+function isRealProjectName() { return Boolean(state.project.projectName && state.project.projectName !== 'Untitled Artifex Adventure'); }
+function hasIdentity() { return Boolean(isRealProjectName() && state.project.projectId && state.project.creatorName); }
+function hasStorage() { return Boolean(state.project.localProjectPath || state.project.onlineProjectPath || state.project.deployedUrl); }
+function hasModules() { return Array.isArray(state.project.enabledModules) && state.project.enabledModules.length > 0; }
+function isActiveProjectSaved() {
+  const activeId = localStorage.getItem(ACTIVE_PROJECT_KEY);
+  const library = readProjectLibrary();
+  return Boolean(activeId && activeId === state.project.projectId && library[state.project.projectId]);
+}
+function requiredGatesWithoutReadinessComplete() { return SETUP_GATES.filter((gate) => gate.id !== 'readiness').every((gate) => gateStatus(gate.id).complete); }
+
+function gateStatus(id) {
+  const manual = Boolean(state.project.gates?.[id]);
+  if (id === 'identity') return { complete: hasIdentity(), source: 'auto', text: hasIdentity() ? 'Auto-complete: project name, ID, and creator are set.' : 'Needs project name, project ID, and creator.' };
+  if (id === 'storage') return { complete: hasStorage(), source: 'auto', text: hasStorage() ? 'Auto-complete: project storage path is set.' : 'Needs a local path, online path, or deployed URL.' };
+  if (id === 'modules') return { complete: hasModules(), source: 'auto', text: hasModules() ? 'Auto-complete: enabled modules are defined.' : 'Needs at least one enabled module.' };
+  if (id === 'active-project') return { complete: isActiveProjectSaved(), source: 'auto', text: isActiveProjectSaved() ? 'Active project is saved in Project Library.' : 'Click Set Active Project to save this project.' };
+  if (id === 'readiness') return { complete: manual || requiredGatesWithoutReadinessComplete(), source: manual ? 'manual' : 'auto', text: (manual || requiredGatesWithoutReadinessComplete()) ? 'Readiness check passed.' : `Needs: ${missingGateLabels().join(', ') || 'nothing'}.` };
+  return { complete: manual, source: 'manual', text: manual ? 'Marked created/exported.' : 'Click when created, or use Export Project Files.' };
+}
+
+function missingGateLabels() { return SETUP_GATES.filter((gate) => gate.id !== 'readiness' && !gateStatus(gate.id).complete).map((gate) => gate.title.replace(/^Create |^Choose |^Define |^Set /, '')); }
+function projectCompletion() { return Math.round(SETUP_GATES.filter((gate) => gateStatus(gate.id).complete).length / SETUP_GATES.length * 100); }
+function updateProjectStatusFromGates() { state.project.status = projectCompletion() >= 100 ? 'ready' : projectCompletion() >= 70 ? 'setup-review' : 'setup'; }
 
 function readProjectLibrary() { try { return JSON.parse(localStorage.getItem(PROJECT_LIBRARY_KEY) || '{}') || {}; } catch { return {}; } }
 function writeProjectLibrary(library) { localStorage.setItem(PROJECT_LIBRARY_KEY, JSON.stringify(library, null, 2)); }
@@ -106,18 +131,17 @@ function saveProjectToLibrary(setActive = true) {
   const library = readProjectLibrary();
   state.project.updatedAt = new Date().toISOString();
   state.project.lastOpenedAt = state.project.updatedAt;
-  state.project.status = projectCompletion() >= 90 ? 'ready' : 'setup';
+  if (setActive) {
+    state.project.gates['active-project'] = true;
+    localStorage.setItem(ACTIVE_PROJECT_KEY, state.project.projectId);
+  }
+  updateProjectStatusFromGates();
   library[state.project.projectId] = { ...state.project };
   writeProjectLibrary(library);
-  if (setActive) localStorage.setItem(ACTIVE_PROJECT_KEY, state.project.projectId);
   toast(setActive ? 'Saved and set as active project.' : 'Saved to Project Library.');
   render();
 }
-function loadActiveProject() {
-  const activeId = localStorage.getItem(ACTIVE_PROJECT_KEY);
-  const library = readProjectLibrary();
-  if (activeId && library[activeId]) state.project = createProject(library[activeId]);
-}
+function loadActiveProject() { const activeId = localStorage.getItem(ACTIVE_PROJECT_KEY); const library = readProjectLibrary(); if (activeId && library[activeId]) state.project = createProject(library[activeId]); }
 
 function addAssignment(template = {}) {
   const module = MODULES[template.primaryModule] || MODULES.unassigned;
@@ -152,6 +176,7 @@ function visibleAssignments() {
 }
 
 function render() {
+  updateProjectStatusFromGates();
   syncInputs();
   renderProjectOverview();
   renderTabs();
@@ -189,7 +214,7 @@ function renderProjectOverview() {
   const target = byId('project-overview-panel');
   if (!target) return;
   const pct = projectCompletion();
-  const gatesDone = SETUP_GATES.filter((gate) => state.project.gates?.[gate.id]).length;
+  const gatesDone = SETUP_GATES.filter((gate) => gateStatus(gate.id).complete).length;
   target.innerHTML = `
     <section class="project-hero">
       <div>
@@ -207,31 +232,49 @@ function renderProjectOverview() {
       ${fact('Flatplan', state.project.flatplanFile)}
       ${fact('Active target', `${state.project.activeChronicleId} / ${state.project.activeQuestId}`)}
     </section>
-    <section class="setup-gates-header"><h3>Setup gates</h3><p>${gatesDone}/${SETUP_GATES.length} complete. Finish these before building scenes, characters, quests, objects, or effects.</p></section>
+    <section class="setup-gates-header"><h3>Setup gates</h3><p>${gatesDone}/${SETUP_GATES.length} complete. Identity, storage, modules, active project, and readiness can now complete automatically.</p></section>
     <section class="setup-gates">
-      ${SETUP_GATES.map((gate) => `<button type="button" class="setup-gate ${state.project.gates?.[gate.id] ? 'complete' : ''}" data-gate="${gate.id}"><span>${gate.icon}</span><strong>${gate.title}</strong><em>${gate.description}</em></button>`).join('')}
+      ${SETUP_GATES.map((gate) => {
+        const status = gateStatus(gate.id);
+        return `<button type="button" class="setup-gate ${status.complete ? 'complete' : ''} ${status.source}" data-gate="${gate.id}"><span>${gate.icon}</span><strong>${gate.title}</strong><em>${gate.description}<br><small>${escapeHtml(status.text)}</small></em></button>`;
+      }).join('')}
     </section>
   `;
-  target.querySelectorAll('[data-gate]').forEach((button) => button.addEventListener('click', () => {
-    const id = button.dataset.gate;
-    state.project.gates[id] = !state.project.gates[id];
-    if (id === 'active-project' && state.project.gates[id]) saveProjectToLibrary(true);
-    render();
-  }));
+  target.querySelectorAll('[data-gate]').forEach((button) => button.addEventListener('click', () => handleGateClick(button.dataset.gate)));
 }
-
 function fact(label, value) { return `<article><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></article>`; }
+
+function handleGateClick(id) {
+  if (STRUCTURAL_GATES.includes(id)) {
+    state.project.gates[id] = !state.project.gates[id];
+    toast(state.project.gates[id] ? 'Setup gate marked created.' : 'Setup gate reopened.', state.project.gates[id] ? 'success' : 'warn');
+  } else if (id === 'active-project') {
+    saveProjectToLibrary(true);
+    return;
+  } else if (id === 'readiness') {
+    if (requiredGatesWithoutReadinessComplete()) {
+      state.project.gates.readiness = true;
+      toast('Project readiness check passed.');
+    } else {
+      state.project.gates.readiness = false;
+      toast(`Readiness blocked: ${missingGateLabels().join(', ')}`, 'warn');
+    }
+  } else {
+    if (!gateStatus(id).complete) byId('left-panel')?.classList.remove('collapsed');
+    toast(gateStatus(id).text, gateStatus(id).complete ? 'success' : 'warn');
+  }
+  render();
+}
 
 function renderTabs() { const target = byId('assignment-tabs'); if (!target) return; target.innerHTML = FILTERS.map((filter) => `<button type="button" data-filter="${filter}" class="${filter === state.filter ? 'active' : ''}">${filter}</button>`).join(''); target.querySelectorAll('[data-filter]').forEach((button) => button.addEventListener('click', () => { state.filter = button.dataset.filter; render(); })); }
 function renderTemplates() { const target = byId('template-list'); if (!target || target.dataset.ready) return; target.dataset.ready = 'true'; target.innerHTML = TEMPLATES.map((template, index) => `<button type="button" data-template="${index}"><strong>${escapeHtml(MODULES[template.primaryModule].label)}</strong><br><small>${escapeHtml(template.title)}</small></button>`).join(''); target.querySelectorAll('[data-template]').forEach((button) => button.addEventListener('click', () => { addAssignment(TEMPLATES[Number(button.dataset.template)]); closeMenus(); render(); toast('Template assignment added.'); showAssignments(); })); }
 function renderList() { const target = byId('assignment-list'); if (!target) return; target.innerHTML = ''; visibleAssignments().forEach((item) => { const realIndex = state.assignments.indexOf(item); const module = MODULES[item.primaryModule] || MODULES.unassigned; const button = document.createElement('button'); button.type = 'button'; button.className = `assignment-item ${realIndex === state.active ? 'selected' : ''}`; button.style.setProperty('--assignment-accent', module.color); button.style.setProperty('--assignment-accent-soft', module.soft); button.innerHTML = `<span class="assignment-icon">${escapeHtml(item.icon)}</span><span class="assignment-main"><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(module.label)} · ${escapeHtml(item.state)} · P${item.priority} · E${item.effort}</span></span><span class="assignment-progress">${completion(item)}%</span>`; button.addEventListener('click', () => { state.active = realIndex; render(); }); button.addEventListener('dblclick', showDetail); target.appendChild(button); }); }
 function renderSubtasks() { const target = byId('subtask-list'); const item = activeAssignment(); if (!target) return; if (!item) { target.innerHTML = '<p class="empty-note">Select an assignment to edit subtasks.</p>'; return; } if (!item.subtasks.length) { target.innerHTML = '<p class="empty-note">No subtasks yet.</p>'; return; } target.innerHTML = ''; item.subtasks.forEach((task) => { const row = document.createElement('article'); row.className = `subtask-row ${task.status}`; row.innerHTML = `<div><strong>${escapeHtml(task.text)}</strong><span>${escapeHtml(task.status)}</span></div><div class="subtask-actions"></div>`; const actions = row.querySelector('.subtask-actions'); ['open', 'complete', 'confirmed', 'blocked', 'not-needed'].forEach((status) => { const btn = document.createElement('button'); btn.type = 'button'; btn.textContent = status === 'not-needed' ? 'skip' : status; btn.addEventListener('click', () => { task.status = status; item.updatedAt = new Date().toISOString(); render(); }); actions.appendChild(btn); }); target.appendChild(row); }); }
-
 function renderCanvas() { const canvas = byId('module-canvas'); if (!canvas) return; const ctx = canvas.getContext('2d'); const w = canvas.width; const h = canvas.height; ctx.clearRect(0, 0, w, h); ctx.fillStyle = '#050405'; ctx.fillRect(0, 0, w, h); ctx.fillStyle = '#15100e'; for (let i=0;i<12;i++){ctx.fillRect(i*120,0,1,h);ctx.fillRect(0,i*80,w,1);} }
 function populateSelects() { const moduleInput = byId('assignment-module-input'); if (moduleInput) moduleInput.innerHTML = Object.entries(MODULES).map(([key, module]) => `<option value="${key}">${module.label}</option>`).join(''); const stateInput = byId('assignment-state-input'); if (stateInput) stateInput.innerHTML = STATES.map((item) => `<option value="${item}">${item}</option>`).join(''); }
 
 function wireInputs() {
-  bind('game-title-input', (value) => { state.project.projectName = value || 'Untitled Artifex Adventure'; if (!byId('project-id-input')?.value) state.project.projectId = slug(value); });
+  bind('game-title-input', (value) => { if (!state.project.projectId || state.project.projectId === 'untitled-artifex-adventure') state.project.projectId = slug(value); state.project.projectName = value || 'Untitled Artifex Adventure'; });
   bind('project-id-input', (value) => state.project.projectId = slug(value));
   bind('creator-input', (value) => state.project.creatorName = value);
   bind('project-folder-input', (value) => state.project.localProjectPath = value);
@@ -270,11 +313,18 @@ function wireActions() {
   byId('add-subtask-button')?.addEventListener('click', () => { const input = byId('subtask-text-input'); const item = activeAssignment(); if (input?.value.trim() && item) { item.subtasks.push({ id: `subtask_${Math.random().toString(36).slice(2, 9)}`, text: input.value.trim(), status: 'open' }); input.value = ''; render(); } });
   byId('todo-sort-input')?.addEventListener('change', (event) => { state.sort = event.target.value; render(); });
   byId('snapshot-button')?.addEventListener('click', () => { const canvas = byId('module-canvas'); const link = document.createElement('a'); link.href = canvas.toDataURL('image/png'); link.download = 'creation-guide-snapshot.png'; link.click(); });
-  byId('quick-start-button')?.addEventListener('click', () => showHelp('Quick Start Guide', '<p>Start on Project Overview, finish the setup gates, then save and set the project as active. Other Artifex apps will later read that active project automatically.</p>'));
+  byId('quick-start-button')?.addEventListener('click', () => showHelp('Quick Start Guide', '<p>Start on Project Overview. Identity, storage, enabled modules, active project, and readiness now update automatically when the project data supports them.</p><p>Use Export Project Files to mark the starter project-index, folder, manifest, flatplan, and index gates as created.</p>'));
   byId('about-button')?.addEventListener('click', () => showHelp('About Creation Guide', '<p>Creation Guide creates/selects the active project, tracks setup gates, and then manages assignments for production.</p>'));
 }
 
-function exportProjectFiles() { const pack = { 'artifex-project.json': buildProjectIndex(), 'manifest.json': buildManifest(), 'flatplan.json': buildFlatplan(), 'data/assignments/creation-guide.json': { project: state.project, assignments: state.assignments } }; download(`${state.project.projectId}-project-files.json`, JSON.stringify(pack, null, 2), 'application/json'); toast('Project files JSON exported.'); }
+function exportProjectFiles() {
+  STRUCTURAL_GATES.forEach((gateId) => state.project.gates[gateId] = true);
+  updateProjectStatusFromGates();
+  const pack = { 'artifex-project.json': buildProjectIndex(), 'manifest.json': buildManifest(), 'flatplan.json': buildFlatplan(), 'data/assignments/creation-guide.json': { project: state.project, assignments: state.assignments } };
+  download(`${state.project.projectId}-project-files.json`, JSON.stringify(pack, null, 2), 'application/json');
+  toast('Project files JSON exported and structural gates marked created.');
+  render();
+}
 function buildProjectIndex() { return { projectId: state.project.projectId, projectName: state.project.projectName, projectKind: 'artifex-adventure', schemaVersion: '1.0.0', status: state.project.status, paths: { manifest: state.project.manifestFile, flatplan: state.project.flatplanFile, dataRoot: state.project.dataRoot, assetRoot: state.project.assetRoot, exportRoot: state.project.exportRoot, buildRoot: state.project.buildRoot, indexes: 'data/indexes/' }, indexes: { scenes: 'data/indexes/scene-index.json', quests: 'data/indexes/quest-index.json', objects: 'data/indexes/object-index.json', effects: 'data/indexes/effect-index.json', assets: 'data/indexes/asset-index.json', assignments: 'data/indexes/assignment-index.json' }, activeTargets: { chronicleId: state.project.activeChronicleId, questId: state.project.activeQuestId, startSceneId: state.project.startSceneId } }; }
 function buildManifest() { return { projectId: state.project.projectId, projectName: state.project.projectName, runtime: { aspectRatio: '16:9', defaultResolution: [1280, 720], startScreenId: state.project.startSceneId }, enabledModules: state.project.enabledModules, roots: { scenes: 'data/scenes/', quests: 'data/quests/', objects: 'data/objects/', effects: 'data/effects/', dialogue: 'data/dialogue/', assets: 'assets/' } }; }
 function buildFlatplan() { return { projectId: state.project.projectId, flatplanId: 'flatplan-main', nodes: [{ id: 'scene-title', type: 'title-screen', label: 'Title Screen' }, { id: state.project.startSceneId, type: 'scene', label: 'Start Scene' }, { id: 'endpoint-demo', type: 'endpoint', label: 'Demo Endpoint' }], routes: [{ from: 'scene-title', to: state.project.startSceneId }, { from: state.project.startSceneId, to: 'endpoint-demo' }] }; }
@@ -287,7 +337,7 @@ function toggleLeftPanel() { byId('left-panel')?.classList.toggle('collapsed'); 
 function wireMenus() { document.querySelectorAll('.menu-button').forEach((button) => button.addEventListener('click', (event) => { event.stopPropagation(); const panel = byId(`menu-${button.dataset.menu}`); const open = panel?.classList.contains('open'); closeMenus(); if (panel && !open) panel.classList.add('open'); })); document.addEventListener('click', closeMenus); document.querySelectorAll('.menu-panel').forEach((panel) => panel.addEventListener('click', (event) => event.stopPropagation())); }
 function bind(id, handler) { byId(id)?.addEventListener('input', (event) => { handler(event.target.value); state.project.updatedAt = new Date().toISOString(); activeAssignment() && (activeAssignment().updatedAt = new Date().toISOString()); render(); }); }
 function closeMenus() { document.querySelectorAll('.menu-panel.open').forEach((panel) => panel.classList.remove('open')); }
-function injectFallbackStyles() { const style = document.createElement('style'); style.textContent = `body{background:#0f0c0b!important;color:#f2eee9!important}.boot-error{padding:20px;background:#171210;color:#fff0ce}.menu-panel:not(.open){display:none}`; document.head.appendChild(style); }
+function injectFallbackStyles() { const style = document.createElement('style'); style.textContent = `body{background:#0f0c0b!important;color:#f2eee9!important}.boot-error{padding:20px;background:#171210;color:#fff0ce}.menu-panel:not(.open){display:none}.setup-gate small{display:block;margin-top:6px;color:#c7b8ff;font-size:11px;line-height:1.35}.setup-gate.auto.complete small{color:#9af0ff}.setup-gate.manual.complete small{color:#a3f7b9}`; document.head.appendChild(style); }
 function toast(message, type = 'success') { const area = byId('toast-area'); if (!area) return; const div = document.createElement('div'); div.className = `toast ${type}`; div.textContent = message; area.appendChild(div); setTimeout(() => div.remove(), 2600); }
 function download(filename, content, type) { const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([content], { type })); link.download = filename; link.click(); URL.revokeObjectURL(link.href); }
 function byId(id) { return document.getElementById(id); }
