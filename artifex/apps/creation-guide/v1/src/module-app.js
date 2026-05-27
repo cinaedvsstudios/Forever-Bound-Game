@@ -1,4 +1,4 @@
-const VERSION = 'V1.0.6';
+const VERSION = 'V1.0.7';
 const PROJECT_LIBRARY_KEY = 'artifex.projectLibrary';
 const ACTIVE_PROJECT_KEY = 'artifex.activeProjectId';
 
@@ -77,6 +77,8 @@ function createProject(patch = {}) {
     localProjectPath: '',
     onlineProjectPath: '',
     deployedUrl: '',
+    useGithub: false,
+    githubUsername: '',
     primaryIndexFile: 'artifex-project.json',
     manifestFile: 'manifest.json',
     flatplanFile: 'flatplan.json',
@@ -97,6 +99,8 @@ function createProject(patch = {}) {
 }
 
 function slug(value) { return String(value || 'untitled-artifex-adventure').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'untitled-artifex-adventure'; }
+function suggestedSlug() { return slug(state.project.projectName); }
+function suggestedGithubUrl() { return state.project.githubUsername ? `https://github.com/${state.project.githubUsername}/${state.project.projectId}` : `https://github.com/new`; }
 function activeAssignment() { return state.assignments[state.active] || null; }
 function completion(item) { if (!item) return 0; if (item.state === 'done') return 100; if (!item.subtasks.length) return item.state === 'started' ? 25 : item.state === 'review' ? 85 : 0; return Math.round(item.subtasks.filter((task) => ['complete', 'confirmed', 'not-needed'].includes(task.status)).length / item.subtasks.length * 100); }
 
@@ -104,11 +108,7 @@ function isRealProjectName() { return Boolean(state.project.projectName && state
 function hasIdentity() { return Boolean(isRealProjectName() && state.project.projectId && state.project.creatorName); }
 function hasStorage() { return Boolean(state.project.localProjectPath || state.project.onlineProjectPath || state.project.deployedUrl); }
 function hasModules() { return Array.isArray(state.project.enabledModules) && state.project.enabledModules.length > 0; }
-function isActiveProjectSaved() {
-  const activeId = localStorage.getItem(ACTIVE_PROJECT_KEY);
-  const library = readProjectLibrary();
-  return Boolean(activeId && activeId === state.project.projectId && library[state.project.projectId]);
-}
+function isActiveProjectSaved() { const activeId = localStorage.getItem(ACTIVE_PROJECT_KEY); const library = readProjectLibrary(); return Boolean(activeId && activeId === state.project.projectId && library[state.project.projectId]); }
 function requiredGatesWithoutReadinessComplete() { return SETUP_GATES.filter((gate) => gate.id !== 'readiness').every((gate) => gateStatus(gate.id).complete); }
 
 function gateStatus(id) {
@@ -118,7 +118,7 @@ function gateStatus(id) {
   if (id === 'modules') return { complete: hasModules(), source: 'auto', text: hasModules() ? 'Auto-complete: enabled modules are defined.' : 'Needs at least one enabled module.' };
   if (id === 'active-project') return { complete: isActiveProjectSaved(), source: 'auto', text: isActiveProjectSaved() ? 'Active project is saved in Project Library.' : 'Click Set Active Project to save this project.' };
   if (id === 'readiness') return { complete: manual || requiredGatesWithoutReadinessComplete(), source: manual ? 'manual' : 'auto', text: (manual || requiredGatesWithoutReadinessComplete()) ? 'Readiness check passed.' : `Needs: ${missingGateLabels().join(', ') || 'nothing'}.` };
-  return { complete: manual, source: 'manual', text: manual ? 'Marked created/exported.' : 'Click when created, or use Export Project Files.' };
+  return { complete: manual, source: 'manual', text: manual ? 'Marked created/exported.' : 'Click when created, or use Export Project Folder ZIP.' };
 }
 
 function missingGateLabels() { return SETUP_GATES.filter((gate) => gate.id !== 'readiness' && !gateStatus(gate.id).complete).map((gate) => gate.title.replace(/^Create |^Choose |^Define |^Set /, '')); }
@@ -178,6 +178,7 @@ function visibleAssignments() {
 function render() {
   updateProjectStatusFromGates();
   syncInputs();
+  updateFieldStatuses();
   renderProjectOverview();
   renderTabs();
   renderTemplates();
@@ -196,7 +197,11 @@ function syncInputs() {
   setValue('project-folder-input', state.project.localProjectPath);
   setValue('online-path-input', state.project.onlineProjectPath);
   setValue('deployed-url-input', state.project.deployedUrl);
+  setValue('github-username-input', state.project.githubUsername || '');
+  const useGithub = byId('use-github-input');
+  if (useGithub) useGithub.checked = Boolean(state.project.useGithub);
   setValue('build-target-input', state.project.activeChronicleId === 'ch00' ? 'Chronicle 0' : state.project.activeChronicleId);
+  setText('slug-suggestion-text', isRealProjectName() ? `Suggested slug: ${suggestedSlug()}` : 'Suggested slug appears after you type a project name.');
   const item = activeAssignment();
   setText('assignment-percent', `${completion(item)}%`);
   setValue('assignment-title-input', item?.title || '');
@@ -208,6 +213,25 @@ function syncInputs() {
   setValue('assignment-milestone-input', item?.milestone || '');
   setValue('assignment-zone-input', item?.zone || '');
   setValue('assignment-notes-input', item?.notes || '');
+}
+
+function fieldState(value, validator = Boolean) {
+  if (!value) return { icon: '⭕', cls: 'empty' };
+  return validator(value) ? { icon: '✅', cls: 'valid' } : { icon: '⚠️', cls: 'warn' };
+}
+function setStatus(id, status) { const el = byId(id); if (!el) return; el.textContent = status.icon; el.className = `field-status ${status.cls}`; }
+function validSlug(value) { return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(String(value || '')); }
+function validUrl(value) { try { const url = new URL(value); return url.protocol === 'https:' || url.protocol === 'http:'; } catch { return false; } }
+function validGithubUsername(value) { return /^[a-zA-Z0-9-]{1,39}$/.test(String(value || '')) && !String(value).startsWith('-') && !String(value).endsWith('-'); }
+function validLocalPath(value) { return Boolean(String(value || '').trim()); }
+function updateFieldStatuses() {
+  setStatus('project-name-status', fieldState(isRealProjectName() ? state.project.projectName : '', Boolean));
+  setStatus('project-id-status', fieldState(state.project.projectId, validSlug));
+  setStatus('creator-status', fieldState(state.project.creatorName, Boolean));
+  setStatus('local-path-status', fieldState(state.project.localProjectPath, validLocalPath));
+  setStatus('github-username-status', fieldState(state.project.githubUsername, validGithubUsername));
+  setStatus('online-path-status', fieldState(state.project.onlineProjectPath, validUrl));
+  setStatus('deployed-url-status', fieldState(state.project.deployedUrl, validUrl));
 }
 
 function renderProjectOverview() {
@@ -224,6 +248,10 @@ function renderProjectOverview() {
       </div>
       <div class="setup-ring" style="--p:${pct}"><strong>${pct}%</strong><span>setup</span></div>
     </section>
+    <section class="overview-instructions">
+      <h3>What this screen is doing</h3>
+      <p>First, define the project identity and where it lives. Then click <strong>Export Project Folder ZIP</strong>. That download contains the starter folder structure plus <strong>artifex-project.json</strong>, <strong>manifest.json</strong>, <strong>flatplan.json</strong>, and the first index files. Unzip it into your project folder, then click <strong>Set Active Project</strong> so the Hub and other Artifex apps know which project to open.</p>
+    </section>
     <section class="project-facts">
       ${fact('Local file path', state.project.localProjectPath || 'Not set')}
       ${fact('Online file path', state.project.onlineProjectPath || 'Not set')}
@@ -232,7 +260,7 @@ function renderProjectOverview() {
       ${fact('Flatplan', state.project.flatplanFile)}
       ${fact('Active target', `${state.project.activeChronicleId} / ${state.project.activeQuestId}`)}
     </section>
-    <section class="setup-gates-header"><h3>Setup gates</h3><p>${gatesDone}/${SETUP_GATES.length} complete. Identity, storage, modules, active project, and readiness can now complete automatically.</p></section>
+    <section class="setup-gates-header"><h3>Setup gates</h3><p>${gatesDone}/${SETUP_GATES.length} complete. Identity, storage, modules, active project, and readiness can complete automatically.</p></section>
     <section class="setup-gates">
       ${SETUP_GATES.map((gate) => {
         const status = gateStatus(gate.id);
@@ -273,13 +301,17 @@ function renderSubtasks() { const target = byId('subtask-list'); const item = ac
 function renderCanvas() { const canvas = byId('module-canvas'); if (!canvas) return; const ctx = canvas.getContext('2d'); const w = canvas.width; const h = canvas.height; ctx.clearRect(0, 0, w, h); ctx.fillStyle = '#050405'; ctx.fillRect(0, 0, w, h); ctx.fillStyle = '#15100e'; for (let i=0;i<12;i++){ctx.fillRect(i*120,0,1,h);ctx.fillRect(0,i*80,w,1);} }
 function populateSelects() { const moduleInput = byId('assignment-module-input'); if (moduleInput) moduleInput.innerHTML = Object.entries(MODULES).map(([key, module]) => `<option value="${key}">${module.label}</option>`).join(''); const stateInput = byId('assignment-state-input'); if (stateInput) stateInput.innerHTML = STATES.map((item) => `<option value="${item}">${item}</option>`).join(''); }
 
+function maybeAutoGithubUrl() { if (state.project.useGithub && state.project.githubUsername && state.project.projectId) state.project.onlineProjectPath = `https://github.com/${state.project.githubUsername}/${state.project.projectId}`; }
+
 function wireInputs() {
-  bind('game-title-input', (value) => { if (!state.project.projectId || state.project.projectId === 'untitled-artifex-adventure') state.project.projectId = slug(value); state.project.projectName = value || 'Untitled Artifex Adventure'; });
-  bind('project-id-input', (value) => state.project.projectId = slug(value));
+  bind('game-title-input', (value) => { state.project.projectName = value || 'Untitled Artifex Adventure'; if (!byId('project-id-input')?.value || state.project.projectId === 'untitled-artifex-adventure') state.project.projectId = suggestedSlug(); maybeAutoGithubUrl(); });
+  bind('project-id-input', (value) => { state.project.projectId = slug(value); maybeAutoGithubUrl(); });
   bind('creator-input', (value) => state.project.creatorName = value);
   bind('project-folder-input', (value) => state.project.localProjectPath = value);
   bind('online-path-input', (value) => state.project.onlineProjectPath = value);
   bind('deployed-url-input', (value) => state.project.deployedUrl = value);
+  bind('github-username-input', (value) => { state.project.githubUsername = value.trim(); maybeAutoGithubUrl(); });
+  byId('use-github-input')?.addEventListener('change', (event) => { state.project.useGithub = event.target.checked; maybeAutoGithubUrl(); render(); });
   bind('build-target-input', (value) => state.project.activeChronicleId = value === 'Chronicle 0' ? 'ch00' : value);
   bind('assignment-title-input', (value) => activeAssignment() && (activeAssignment().title = value || 'New Assignment'));
   bind('assignment-module-input', (value) => { const item = activeAssignment(); if (item) { item.primaryModule = value; item.icon = MODULES[value].icon; } });
@@ -294,6 +326,11 @@ function wireInputs() {
 
 function wireActions() {
   byId('new-guide-button')?.addEventListener('click', () => { state.project = createProject(); state.assignments = []; addAssignment(TEMPLATES[0]); closeMenus(); render(); toast('New project overview created.'); });
+  byId('use-suggested-slug-button')?.addEventListener('click', () => { state.project.projectId = suggestedSlug(); maybeAutoGithubUrl(); render(); });
+  byId('choose-local-folder-button')?.addEventListener('click', async () => chooseLocalFolder());
+  byId('local-folder-picker')?.addEventListener('change', (event) => { const first = event.target.files?.[0]; const root = first?.webkitRelativePath?.split('/')?.[0] || first?.name || ''; if (root) { state.project.localProjectPath = root; render(); toast('Folder selected. Browser only provides the folder name here.'); } });
+  byId('open-online-path-button')?.addEventListener('click', () => window.open(state.project.onlineProjectPath || suggestedGithubUrl(), '_blank', 'noopener'));
+  byId('check-deployed-url-button')?.addEventListener('click', () => { if (validUrl(state.project.deployedUrl)) window.open(state.project.deployedUrl, '_blank', 'noopener'); else toast('Enter a deployed URL first.', 'warn'); });
   byId('save-local-button')?.addEventListener('click', () => { saveProjectToLibrary(true); closeMenus(); });
   byId('set-active-project-button')?.addEventListener('click', () => saveProjectToLibrary(true));
   byId('export-project-files-button')?.addEventListener('click', exportProjectFiles);
@@ -313,18 +350,64 @@ function wireActions() {
   byId('add-subtask-button')?.addEventListener('click', () => { const input = byId('subtask-text-input'); const item = activeAssignment(); if (input?.value.trim() && item) { item.subtasks.push({ id: `subtask_${Math.random().toString(36).slice(2, 9)}`, text: input.value.trim(), status: 'open' }); input.value = ''; render(); } });
   byId('todo-sort-input')?.addEventListener('change', (event) => { state.sort = event.target.value; render(); });
   byId('snapshot-button')?.addEventListener('click', () => { const canvas = byId('module-canvas'); const link = document.createElement('a'); link.href = canvas.toDataURL('image/png'); link.download = 'creation-guide-snapshot.png'; link.click(); });
-  byId('quick-start-button')?.addEventListener('click', () => showHelp('Quick Start Guide', '<p>Start on Project Overview. Identity, storage, enabled modules, active project, and readiness now update automatically when the project data supports them.</p><p>Use Export Project Files to mark the starter project-index, folder, manifest, flatplan, and index gates as created.</p>'));
+  byId('quick-start-button')?.addEventListener('click', () => showHelp('Quick Start Guide', '<p>Type a project name, use the suggested slug, choose a local folder, and optionally tick Use GitHub to auto-fill the repo URL. Then export the project folder ZIP, unzip it into your project folder, and set the project active.</p>'));
   byId('about-button')?.addEventListener('click', () => showHelp('About Creation Guide', '<p>Creation Guide creates/selects the active project, tracks setup gates, and then manages assignments for production.</p>'));
+}
+
+async function chooseLocalFolder() {
+  if ('showDirectoryPicker' in window) {
+    try {
+      const handle = await window.showDirectoryPicker();
+      state.project.localProjectPath = handle.name;
+      render();
+      toast('Folder selected. Browser security exposes the folder name, not the full path.');
+      return;
+    } catch (error) {
+      if (error?.name !== 'AbortError') toast('Could not open folder picker.', 'warn');
+      return;
+    }
+  }
+  byId('local-folder-picker')?.click();
 }
 
 function exportProjectFiles() {
   STRUCTURAL_GATES.forEach((gateId) => state.project.gates[gateId] = true);
   updateProjectStatusFromGates();
-  const pack = { 'artifex-project.json': buildProjectIndex(), 'manifest.json': buildManifest(), 'flatplan.json': buildFlatplan(), 'data/assignments/creation-guide.json': { project: state.project, assignments: state.assignments } };
-  download(`${state.project.projectId}-project-files.json`, JSON.stringify(pack, null, 2), 'application/json');
-  toast('Project files JSON exported and structural gates marked created.');
+  const files = {
+    'artifex-project.json': JSON.stringify(buildProjectIndex(), null, 2),
+    'manifest.json': JSON.stringify(buildManifest(), null, 2),
+    'flatplan.json': JSON.stringify(buildFlatplan(), null, 2),
+    'README.md': `# ${state.project.projectName}\n\nCreated by Artifex Creation Guide.\n`,
+    'data/indexes/scene-index.json': '[]',
+    'data/indexes/quest-index.json': '[]',
+    'data/indexes/object-index.json': '[]',
+    'data/indexes/effect-index.json': '[]',
+    'data/indexes/asset-index.json': '[]',
+    'data/indexes/assignment-index.json': '[]',
+    'data/assignments/creation-guide.json': JSON.stringify({ project: state.project, assignments: state.assignments }, null, 2),
+    'data/chronicles/ch00/chronicle.json': JSON.stringify({ chronicleId: 'ch00', title: 'Chronicle 0', quests: ['q00'] }, null, 2),
+    'data/quests/ch00/q00/quest.json': JSON.stringify({ questId: 'q00', chronicleId: 'ch00', title: 'Starter Quest', status: 'placeholder' }, null, 2),
+    'data/scenes/ch00/q00/scene-title.json': JSON.stringify({ sceneId: 'scene-title', type: 'title-screen', title: state.project.projectName }, null, 2),
+    'data/scenes/ch00/q00/scene-start.json': JSON.stringify({ sceneId: 'scene-start', type: 'scene', title: 'Start Scene' }, null, 2)
+  };
+  if (window.JSZip) exportZipWithLibrary(files);
+  else exportZipFallback(files);
+  toast('Project folder export created and structural gates marked complete.');
   render();
 }
+
+function exportZipFallback(files) {
+  const pack = { instructions: 'ZIP support was unavailable, so this is a packed JSON. Save/extract these files into your project folder manually.', files };
+  download(`${state.project.projectId}-project-files.json`, JSON.stringify(pack, null, 2), 'application/json');
+}
+
+async function exportZipWithLibrary(files) {
+  const zip = new JSZip();
+  Object.entries(files).forEach(([path, content]) => zip.file(path, content));
+  const blob = await zip.generateAsync({ type: 'blob' });
+  downloadBlob(`${state.project.projectId}-project-folder.zip`, blob);
+}
+
 function buildProjectIndex() { return { projectId: state.project.projectId, projectName: state.project.projectName, projectKind: 'artifex-adventure', schemaVersion: '1.0.0', status: state.project.status, paths: { manifest: state.project.manifestFile, flatplan: state.project.flatplanFile, dataRoot: state.project.dataRoot, assetRoot: state.project.assetRoot, exportRoot: state.project.exportRoot, buildRoot: state.project.buildRoot, indexes: 'data/indexes/' }, indexes: { scenes: 'data/indexes/scene-index.json', quests: 'data/indexes/quest-index.json', objects: 'data/indexes/object-index.json', effects: 'data/indexes/effect-index.json', assets: 'data/indexes/asset-index.json', assignments: 'data/indexes/assignment-index.json' }, activeTargets: { chronicleId: state.project.activeChronicleId, questId: state.project.activeQuestId, startSceneId: state.project.startSceneId } }; }
 function buildManifest() { return { projectId: state.project.projectId, projectName: state.project.projectName, runtime: { aspectRatio: '16:9', defaultResolution: [1280, 720], startScreenId: state.project.startSceneId }, enabledModules: state.project.enabledModules, roots: { scenes: 'data/scenes/', quests: 'data/quests/', objects: 'data/objects/', effects: 'data/effects/', dialogue: 'data/dialogue/', assets: 'assets/' } }; }
 function buildFlatplan() { return { projectId: state.project.projectId, flatplanId: 'flatplan-main', nodes: [{ id: 'scene-title', type: 'title-screen', label: 'Title Screen' }, { id: state.project.startSceneId, type: 'scene', label: 'Start Scene' }, { id: 'endpoint-demo', type: 'endpoint', label: 'Demo Endpoint' }], routes: [{ from: 'scene-title', to: state.project.startSceneId }, { from: state.project.startSceneId, to: 'endpoint-demo' }] }; }
@@ -337,9 +420,10 @@ function toggleLeftPanel() { byId('left-panel')?.classList.toggle('collapsed'); 
 function wireMenus() { document.querySelectorAll('.menu-button').forEach((button) => button.addEventListener('click', (event) => { event.stopPropagation(); const panel = byId(`menu-${button.dataset.menu}`); const open = panel?.classList.contains('open'); closeMenus(); if (panel && !open) panel.classList.add('open'); })); document.addEventListener('click', closeMenus); document.querySelectorAll('.menu-panel').forEach((panel) => panel.addEventListener('click', (event) => event.stopPropagation())); }
 function bind(id, handler) { byId(id)?.addEventListener('input', (event) => { handler(event.target.value); state.project.updatedAt = new Date().toISOString(); activeAssignment() && (activeAssignment().updatedAt = new Date().toISOString()); render(); }); }
 function closeMenus() { document.querySelectorAll('.menu-panel.open').forEach((panel) => panel.classList.remove('open')); }
-function injectFallbackStyles() { const style = document.createElement('style'); style.textContent = `body{background:#0f0c0b!important;color:#f2eee9!important}.boot-error{padding:20px;background:#171210;color:#fff0ce}.menu-panel:not(.open){display:none}.setup-gate small{display:block;margin-top:6px;color:#c7b8ff;font-size:11px;line-height:1.35}.setup-gate.auto.complete small{color:#9af0ff}.setup-gate.manual.complete small{color:#a3f7b9}`; document.head.appendChild(style); }
+function injectFallbackStyles() { const style = document.createElement('style'); style.textContent = `body{background:#0f0c0b!important;color:#f2eee9!important}.boot-error{padding:20px;background:#171210;color:#fff0ce}.menu-panel:not(.open){display:none}`; document.head.appendChild(style); }
 function toast(message, type = 'success') { const area = byId('toast-area'); if (!area) return; const div = document.createElement('div'); div.className = `toast ${type}`; div.textContent = message; area.appendChild(div); setTimeout(() => div.remove(), 2600); }
 function download(filename, content, type) { const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([content], { type })); link.download = filename; link.click(); URL.revokeObjectURL(link.href); }
+function downloadBlob(filename, blob) { const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = filename; link.click(); URL.revokeObjectURL(link.href); }
 function byId(id) { return document.getElementById(id); }
 function setText(id, value) { const el = byId(id); if (el) el.textContent = value; }
 function setValue(id, value) { const el = byId(id); if (el && el.value !== String(value ?? '')) el.value = value ?? ''; }
