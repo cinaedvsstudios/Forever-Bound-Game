@@ -159,6 +159,24 @@ export function wireInputs(app) {
   bind(app, 'selected-completion', (value) => { app.quest().completionFlag = value; });
   bind(app, 'selected-scenes', (value) => { app.quest().sceneIds = parseList(value); });
   bind(app, 'selected-objects', (value) => { app.quest().objectIds = parseList(value); });
+  bind(app, 'selected-block-name', (value) => { app.block().name = value || app.meta(app.block().type).name; });
+  bind(app, 'selected-block-type', (value) => {
+    const block = app.block();
+    block.type = value;
+    if (!block.thumbnail) block.thumbnail = app.meta(value).emoji;
+  });
+  bind(app, 'selected-block-primary', (value) => {
+    const block = app.block();
+    if (block.type === 'scene') block.sceneId = value;
+    else if (block.type === 'dialogue') block.dialogueId = value;
+    else if (block.type === 'condition' || block.type === 'completion') block.condition = value;
+    else if (block.type === 'action') block.action = value;
+    else block.objectId = value;
+  });
+  bind(app, 'selected-block-action', (value) => { app.block().action = value; });
+  bind(app, 'selected-block-condition', (value) => { app.block().condition = value; });
+  bind(app, 'selected-block-overlay', (value) => { app.block().uiOverlay = value; });
+  bind(app, 'selected-block-notes', (value) => { app.block().notes = value; });
   bind(app, 'file-id-input', (value) => { app.doc.id = value; });
   bind(app, 'file-name-input', (value) => { app.doc.name = value || 'Untitled Quest File'; });
   bind(app, 'chronicle-id-input', (value) => { app.doc.defaultChronicleId = value || 'chronicle_01'; });
@@ -200,11 +218,16 @@ function bind(app, id, fn) {
 
 export function wireActions(app) {
   const addQuestFromMenu = () => { app.addQuest(); closeMenus(); app.toast('Quest added.'); };
+  const addBlockFromMenu = () => { app.addBlock(); app.toast('Block added.'); };
   app.$('new-quest-wizard-button').onclick = () => { closeMenus(); app.$('wizard-dialog').showModal(); };
   app.$('new-quest-button').onclick = addQuestFromMenu;
   app.$('create-wizard-quest-button').onclick = () => createWizardQuest(app);
   app.$('save-local-button').onclick = () => { localStorage.setItem(app.storageKey, JSON.stringify(app.doc)); closeMenus(); app.toast('Saved locally.'); };
   app.$('add-quest-button').onclick = app.$('side-add-quest-button').onclick = addQuestFromMenu;
+  app.$('status-wizard-button').onclick = () => app.$('wizard-dialog').showModal();
+  app.$('status-add-quest-button').onclick = addQuestFromMenu;
+  app.$('status-add-block-button').onclick = addBlockFromMenu;
+  app.$('status-save-button').onclick = () => { localStorage.setItem(app.storageKey, JSON.stringify(app.doc)); app.toast('Saved locally.'); };
   app.$('edit-quest-button').onclick = () => { closeMenus(); openEditor(app, 'quest'); };
   app.$('delete-quest-button').onclick = () => { app.removeQuest(); closeMenus(); app.toast('Quest deleted.'); };
   app.$('side-add-block-button').onclick = app.$('add-flow-block-button').onclick = () => { app.addBlock(); openEditor(app, 'block'); };
@@ -215,6 +238,12 @@ export function wireActions(app) {
     const quest = app.quest();
     const index = (THUMBNAILS.indexOf(quest.thumbnail || '🏆') + 1) % THUMBNAILS.length;
     quest.thumbnail = THUMBNAILS[index];
+    app.render();
+  };
+  app.$('block-thumb-button').onclick = () => {
+    const block = app.block();
+    const index = (THUMBNAILS.indexOf(block.thumbnail || app.meta(block.type).emoji) + 1) % THUMBNAILS.length;
+    block.thumbnail = THUMBNAILS[index];
     app.render();
   };
   app.$('lock-selected-button').onclick = () => {
@@ -235,7 +264,7 @@ export function wireActions(app) {
   app.$('view-json-button').onclick = () => { app.$('json-preview').textContent = exportQuestFile(app.doc); closeMenus(); app.$('json-dialog').showModal(); };
   app.$('block-types-button').onclick = () => { const rows = Object.entries(BLOCK_TYPES).map(([key, item]) => `<article class="block-type-card"><strong>${item.emoji} ${item.name}</strong><span>${key}: ${item.hint}</span></article>`).join(''); app.help('Quest Block Type List', `<div class="block-type-grid">${rows}</div>`); closeMenus(); };
   app.$('library-note-button').onclick = () => { app.help('Linked Libraries', '<p>Quest Builder references completed scenes, archetype objects, dialogue IDs, audio IDs, Capra popup templates, Codice entries, UI overlays, rewards, route unlocks, and completion flags. It should not own those libraries directly.</p>'); closeMenus(); };
-  app.$('quick-start-button').onclick = () => { app.help('Quick Start', '<p>Use File → Module to open the side flyout module switcher. Edit the selected quest in the left panel. Drag the Quest Flow window by its header and resize it from the corner.</p>'); closeMenus(); };
+  app.$('quick-start-button').onclick = () => { app.help('Quick Start', '<p>Click the quest header, Calling pill, or any flow card in the viewing area to inspect it on the left. Use the green status strip buttons for wizard, add quest, add block, and local save.</p>'); closeMenus(); };
   app.$('about-button').onclick = () => { app.help('About Quest Builder', '<p>Quest Builder assembles scenes, actions, linked dialogue/audio, objects, Capra feedback, Codice updates, UI overlays, rewards, map unlocks, and completion flags into playable Quest flow.</p>'); closeMenus(); };
   app.$('bg-dark-button').onclick = () => { app.state.mode = 'dark'; closeMenus(); app.draw(); };
   app.$('bg-light-button').onclick = () => { app.state.mode = 'light'; closeMenus(); app.draw(); };
@@ -246,6 +275,6 @@ export function wireActions(app) {
   app.$('collapse-flow-button').onclick = () => { const next = !app.layout().flowCollapsed; app.patchLayout({ flowCollapsed: next, flowW: next ? app.layout().flowW : Math.max(app.layout().flowW, 220), flowH: next ? app.layout().flowH : Math.max(app.layout().flowH, 90) }); app.saveLayout(); app.applyLayout(); };
   app.$('toggle-flow-layout-button').onclick = () => { const vertical = !app.layout().flowVertical; app.patchLayout({ flowVertical: vertical, flowW: vertical ? Math.min(app.layout().flowW, 390) : Math.max(app.layout().flowW, 720), flowH: vertical ? Math.max(app.layout().flowH, 420) : 116 }); app.saveLayout(); app.applyLayout(); };
   app.$('reset-layout-button').onclick = () => { app.resetLayout(); closeMenus(); app.toast('Layout reset.'); };
-  app.$('import-json-input').onchange = async (event) => { const file = event.target.files[0]; if (!file) return; Object.assign(app.doc, JSON.parse(await file.text())); app.state.activeQuest = 0; app.state.activeBlock = 0; closeMenus(); app.render(); app.toast('JSON imported.'); };
+  app.$('import-json-input').onchange = async (event) => { const file = event.target.files[0]; if (!file) return; Object.assign(app.doc, JSON.parse(await file.text())); app.state.activeQuest = 0; app.state.activeBlock = 0; app.state.inspectorTarget = 'quest'; closeMenus(); app.render(); app.toast('JSON imported.'); };
   app.$('snapshot-button').onclick = () => { const link = document.createElement('a'); link.href = app.canvas.toDataURL('image/png'); link.download = 'quest-builder-snapshot.png'; link.click(); closeMenus(); };
 }
