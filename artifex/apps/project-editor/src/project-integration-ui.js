@@ -1,4 +1,4 @@
-import { getLibraryBrowserData } from './project-library-indexes.js?v=0.1.18-indexes';
+import { getLibraryBrowserData } from './project-library-indexes.js?v=0.1.21-link';
 
 // Artifex Project Manager integration UI shell
 // Adds shared-project integration surfaces without bloating project-ui.js.
@@ -16,6 +16,16 @@ const LIBRARY_MODES = Object.freeze([
   { id: 'archetype-effects', label: 'Archetype Effect Library', icon: 'sparkles', file: 'archetypes/effect-index.json', owner: 'Effect Editor' },
   { id: 'assets', label: 'Asset Browser', icon: 'image', file: 'assets/asset-index.json', owner: 'Asset Library' }
 ]);
+
+const NODE_LINK_KEYS_BY_MODE = Object.freeze({
+  quests: { idKey: 'linkedQuestId', labelKey: 'linkedQuestName' },
+  sidequests: { idKey: 'linkedSideQuestId', labelKey: 'linkedSideQuestName' },
+  'scenes-screens': { idKey: 'linkedSceneId', labelKey: 'linkedSceneName' },
+  puzzles: { idKey: 'linkedPuzzleId', labelKey: 'linkedPuzzleName' },
+  'archetype-objects': { idKey: 'linkedArchetypeObjectId', labelKey: 'linkedArchetypeObjectName' },
+  'archetype-effects': { idKey: 'linkedArchetypeEffectId', labelKey: 'linkedArchetypeEffectName' },
+  assets: { idKey: 'linkedAssetId', labelKey: 'linkedAssetName' }
+});
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -70,6 +80,61 @@ function wireMenuBehaviourOnce() {
   });
 }
 
+function getSelectedNode(stateManager) {
+  return stateManager.selectedNodeId ? stateManager.getNode?.(stateManager.selectedNodeId) : null;
+}
+
+function getLinkConfig(modeId) {
+  return NODE_LINK_KEYS_BY_MODE[modeId] || NODE_LINK_KEYS_BY_MODE.assets;
+}
+
+function ensureNodeLinks(node) {
+  node.properties ||= {};
+  if (!Array.isArray(node.properties.libraryLinks)) node.properties.libraryLinks = [];
+  return node.properties.libraryLinks;
+}
+
+function linkItemToSelectedNode({ stateManager, item, modeId }) {
+  const node = getSelectedNode(stateManager);
+  if (!node || !item) return { ok: false, message: 'Select a Flatplan node first, then return here to link this item.' };
+
+  const linkConfig = getLinkConfig(modeId);
+  const links = ensureNodeLinks(node);
+  const linkRecord = {
+    modeId,
+    itemId: item.id,
+    itemName: item.name,
+    itemType: item.type,
+    sourceModule: item.sourceModule,
+    file: item.file,
+    linkedAt: new Date().toISOString()
+  };
+
+  const existingIndex = links.findIndex((link) => link.modeId === modeId && link.itemId === item.id);
+  if (existingIndex >= 0) links[existingIndex] = linkRecord;
+  else links.push(linkRecord);
+
+  stateManager.updateNode?.(node.id, {
+    properties: {
+      [linkConfig.idKey]: item.id,
+      [linkConfig.labelKey]: item.name,
+      [`${modeId}LinkFile`]: item.file,
+      libraryLinks: links
+    }
+  });
+
+  return { ok: true, message: `Linked ${item.name} to ${node.properties?.name || node.id}.` };
+}
+
+function renderSelectedNodeBadge(stateManager) {
+  const selectedNode = getSelectedNode(stateManager);
+  if (!selectedNode) {
+    return `<span class="text-zinc-600">No Flatplan node selected</span>`;
+  }
+
+  return `<span class="text-projectGoldGlow">Selected node: ${escapeHtml(selectedNode.properties?.name || selectedNode.id)}</span>`;
+}
+
 function renderResultCard(item, activeMode) {
   return `
     <button data-library-item-id="${escapeHtml(item.id)}" class="text-left rounded-xl border border-[#2d2d42] bg-black/25 p-3 hover:border-projectGold/45 hover:bg-accentDark/20 transition">
@@ -103,6 +168,35 @@ function renderEmptyCards(activeMode, browserData) {
   `;
 }
 
+function renderPreview({ preview, item, activeMode, stateManager }) {
+  const selectedNode = getSelectedNode(stateManager);
+  preview.innerHTML = `
+    <h3 class="text-sm font-bold text-projectGoldGlow mb-2">${escapeHtml(item.name)}</h3>
+    <div class="rounded-lg border border-[#2d2d42] bg-black/30 p-3 text-[10px] font-mono text-zinc-500 space-y-1">
+      <div>id: ${escapeHtml(item.id)}</div>
+      <div>type: ${escapeHtml(item.type)}</div>
+      <div>source: ${escapeHtml(item.sourceModule)}</div>
+      <div>file: ${escapeHtml(item.file)}</div>
+      <div>status: ${escapeHtml(item.status)}</div>
+      <div>${selectedNode ? `target node: ${escapeHtml(selectedNode.properties?.name || selectedNode.id)}` : 'target node: none selected'}</div>
+    </div>
+    <p class="mt-3 text-xs text-zinc-500 leading-relaxed">${escapeHtml(item.description || 'No description available.')}</p>
+    <button data-link-selected-item="${escapeHtml(item.id)}" class="mt-4 w-full px-3 py-2 rounded-lg border ${selectedNode ? 'border-projectGold/40 text-projectGoldGlow hover:bg-accentDark/50' : 'border-zinc-800 text-zinc-600 cursor-not-allowed'} text-xs transition" ${selectedNode ? '' : 'disabled'}>
+      ${selectedNode ? `Link to selected node` : `Select a Flatplan node first`}
+    </button>
+    <p id="assetBrowserLinkStatus" class="mt-3 text-[10px] text-zinc-500 leading-relaxed"></p>
+  `;
+
+  preview.querySelector('[data-link-selected-item]')?.addEventListener('click', () => {
+    const result = linkItemToSelectedNode({ stateManager, item, modeId: activeMode.id });
+    const status = preview.querySelector('#assetBrowserLinkStatus');
+    if (status) {
+      status.textContent = result.message;
+      status.className = `mt-3 text-[10px] leading-relaxed ${result.ok ? 'text-projectGoldGlow' : 'text-red-300'}`;
+    }
+  });
+}
+
 function renderAssetBrowser({ stateManager, ui }) {
   const container = document.getElementById('assetBrowserWorkspace');
   if (!container) return;
@@ -128,6 +222,7 @@ function renderAssetBrowser({ stateManager, ui }) {
             <div>
               <h2 class="text-lg font-bold text-zinc-100 tracking-wide">${escapeHtml(activeMode.label)}</h2>
               <p class="text-xs text-zinc-500">Owner: ${escapeHtml(activeMode.owner)} · Loaded: <span class="font-mono text-projectGoldGlow">${browserData.loadedPaths.length || 0}</span> / Expected: <span class="font-mono text-projectGoldGlow">${escapeHtml(browserData.expectedPaths.join(', '))}</span></p>
+              <p class="mt-1 text-[10px] font-mono">${renderSelectedNodeBadge(stateManager)}</p>
             </div>
             <button data-return-flatplan class="px-3 py-2 rounded-lg border border-projectGold/30 text-xs text-projectGoldGlow hover:bg-accentDark/50 transition">Return to Flatplan</button>
           </div>
@@ -146,7 +241,7 @@ function renderAssetBrowser({ stateManager, ui }) {
             </div>
             <aside id="assetBrowserPreview" class="border-l border-[#2d2d42] bg-black/20 p-4 overflow-y-auto">
               <h3 class="text-sm font-bold text-projectGoldGlow mb-2">Preview / Details</h3>
-              <p class="text-xs text-zinc-500 leading-relaxed">Select an imported item to preview its metadata. Linking to selected Flatplan node is the next Project Manager task.</p>
+              <p class="text-xs text-zinc-500 leading-relaxed">Select an imported item to preview its metadata. To link it, first select a Flatplan node, then return to this browser.</p>
               <div class="mt-4 rounded-lg border border-[#2d2d42] bg-black/30 p-3 text-[10px] font-mono text-zinc-500 space-y-1">
                 <div>mode: ${escapeHtml(activeMode.id)}</div>
                 <div>owner: ${escapeHtml(activeMode.owner)}</div>
@@ -174,18 +269,7 @@ function renderAssetBrowser({ stateManager, ui }) {
       const item = items.find((candidate) => candidate.id === button.dataset.libraryItemId);
       const preview = container.querySelector('#assetBrowserPreview');
       if (!item || !preview) return;
-      preview.innerHTML = `
-        <h3 class="text-sm font-bold text-projectGoldGlow mb-2">${escapeHtml(item.name)}</h3>
-        <div class="rounded-lg border border-[#2d2d42] bg-black/30 p-3 text-[10px] font-mono text-zinc-500 space-y-1">
-          <div>id: ${escapeHtml(item.id)}</div>
-          <div>type: ${escapeHtml(item.type)}</div>
-          <div>source: ${escapeHtml(item.sourceModule)}</div>
-          <div>file: ${escapeHtml(item.file)}</div>
-          <div>status: ${escapeHtml(item.status)}</div>
-        </div>
-        <p class="mt-3 text-xs text-zinc-500 leading-relaxed">${escapeHtml(item.description || 'No description available.')}</p>
-        <button class="mt-4 w-full px-3 py-2 rounded-lg border border-projectGold/30 text-xs text-zinc-500 cursor-default">Link to selected node — next task</button>
-      `;
+      renderPreview({ preview, item, activeMode, stateManager });
     });
   });
 
