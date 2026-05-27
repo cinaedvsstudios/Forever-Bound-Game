@@ -1,6 +1,6 @@
 import { editorState, updateArchetype } from './editor-state.js';
 
-const VERSION = '1.27';
+const VERSION = '1.28';
 let correctionObserver = null;
 let correctionQueued = false;
 
@@ -18,12 +18,13 @@ function injectFrameCorrectionStyles() {
     #quickstart-dialog .wizard-correction-popover {
       position: relative;
       z-index: 4;
+      width: min(100%, 620px);
+      max-width: 620px;
       border: 1px solid rgba(226, 204, 167, 0.22);
       border-radius: 16px;
       background: rgba(18, 13, 11, 0.98);
       box-shadow: 0 14px 32px rgba(0, 0, 0, 0.55);
       padding: 10px;
-      min-width: min(100%, 460px);
     }
 
     #quickstart-dialog .wizard-correction-head {
@@ -45,28 +46,66 @@ function injectFrameCorrectionStyles() {
       font-size: 11px !important;
     }
 
+    #quickstart-dialog .wizard-correction-grid {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 10px 12px !important;
+      align-items: start !important;
+      border-radius: 14px !important;
+      padding: 10px !important;
+    }
+
+    #quickstart-dialog .wizard-correction-grid label {
+      min-width: 0 !important;
+      margin: 0 !important;
+      display: block !important;
+    }
+
+    #quickstart-dialog .wizard-correction-grid input[type="range"] {
+      width: 100% !important;
+      max-width: 100% !important;
+      margin-top: 6px !important;
+    }
+
+    #quickstart-dialog .wizard-correction-grid button[data-match-brightness] {
+      grid-column: 1 / -1 !important;
+      width: 100% !important;
+      min-height: 34px !important;
+      margin-top: 2px !important;
+    }
+
     #quickstart-dialog .wizard-correction-control {
       display: grid;
-      grid-template-columns: 28px minmax(40px, 1fr) 28px;
+      grid-template-columns: 28px 52px 28px;
       gap: 6px;
       align-items: center;
-      margin-top: 5px;
+      justify-content: center;
+      width: max-content;
+      max-width: 100%;
+      margin: 6px auto 0;
     }
 
     #quickstart-dialog .wizard-correction-control button {
       min-height: 25px !important;
+      width: 28px !important;
       padding: 2px 6px !important;
       font-size: 13px !important;
     }
 
     #quickstart-dialog .wizard-correction-control output {
-      min-width: 42px;
+      min-width: 52px;
       text-align: center;
       color: #fff0ce;
       border: 1px solid rgba(226, 204, 167, 0.18);
       border-radius: 999px;
       padding: 3px 7px;
       background: rgba(0, 0, 0, 0.22);
+    }
+
+    @media (max-width: 720px) {
+      #quickstart-dialog .wizard-correction-grid {
+        grid-template-columns: 1fr !important;
+      }
     }
   `;
   document.head.appendChild(style);
