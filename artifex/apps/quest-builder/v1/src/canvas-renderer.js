@@ -4,6 +4,7 @@ import { getBlockType } from './block-types.js';
 export function drawCanvas(app) {
   const { canvas, ctx, state } = app;
   const layout = app.layoutState.get();
+  app.hitZones = [];
   applyCanvasTransform(canvas, layout);
   canvas.width = W;
   canvas.height = H;
@@ -28,7 +29,9 @@ export function drawCanvas(app) {
   }
 
   drawHeaderBox(ctx, 54, 42, q.thumbnail || '📜', q.name, `${q.chronicleId} / ${q.type} / ${(q.blocks || []).length} blocks`);
+  app.hitZones.push({ kind: 'quest', x: 54, y: 42, w: 560, h: 70, index: state.activeQuest });
   drawCallingPill(ctx, 54, 124, q.callingText || 'No Calling text set');
+  app.hitZones.push({ kind: 'quest', x: 54, y: 124, w: 720, h: 38, index: state.activeQuest });
   drawNode(ctx, 60, 190, 170, 96, 'START', '◇', typeColor('neutral'));
 
   let x = 270;
@@ -43,6 +46,7 @@ export function drawCanvas(app) {
       y += cardH + 54;
     }
     drawFlowCard(ctx, x, y, cardW, cardH, item, index === state.activeBlock);
+    app.hitZones.push({ kind: 'block', x, y, w: cardW, h: cardH, index });
     if (index < q.blocks.length - 1) {
       ctx.strokeStyle = 'rgba(62,180,137,.55)';
       ctx.lineWidth = 2;
@@ -52,6 +56,16 @@ export function drawCanvas(app) {
   });
 
   drawNode(ctx, W - 230, H - 145, 170, 96, 'END', '✓', typeColor('neutral'));
+}
+
+export function getCanvasHit(app, event) {
+  const rect = app.canvas.getBoundingClientRect();
+  const layout = app.layoutState.get();
+  const renderedScaleX = rect.width / app.canvas.width;
+  const renderedScaleY = rect.height / app.canvas.height;
+  const x = (event.clientX - rect.left - layout.panX * renderedScaleX) / (renderedScaleX * layout.zoom);
+  const y = (event.clientY - rect.top - layout.panY * renderedScaleY) / (renderedScaleY * layout.zoom);
+  return [...(app.hitZones || [])].reverse().find((zone) => x >= zone.x && x <= zone.x + zone.w && y >= zone.y && y <= zone.y + zone.h) || null;
 }
 
 export function applyCanvasTransform(canvas, layout) {
