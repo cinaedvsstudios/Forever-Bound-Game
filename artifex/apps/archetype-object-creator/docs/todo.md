@@ -10,24 +10,52 @@ Status: open
 Priority: high  
 Source: project file contracts / patch-layer rule
 
-The app currently stays within the two-active-overlay limit, but `template-card-enhancements.js` has grown into a large live overlay. Fold the stable Step 5 wizard, ZIP export, frame correction, sound-event, and reference-panel logic into normal Object Creator module files now that the Step 5 layout is confirmed.
+The app currently stays within the two-active-overlay limit, but `template-card-enhancements.js` has grown into a large live overlay. Fold the stable Step 5 wizard, ZIP export, frame correction, and sound-event logic into normal Object Creator module files now that the Step 5 layout is confirmed.
 
 Progress:
 
 - Done in V1.22: extracted the Step 5 left/right column wrapper into `object-wizard-step5-layout.js` and made `editor-app.js` thin again for that responsibility.
 - Done in V1.23: extracted template card icon atlas cropping, template-card colour grouping, fallback icons, and card styling into `object-template-icons.js`.
 - Done in V1.24: tightened template card density by reducing card width, outer padding, icon-box padding, icon display scale, text size, button height, and card gaps.
+- Done in V1.25: tightened template icon padding further with smaller cards, lower icon-box padding, smaller grid gaps, and tighter labels/buttons.
+- Done in V1.26: extracted the wizard Reference panel into `object-wizard-reference-panel.js`.
 
 Remaining suggested split:
 
 - `object-wizard-step5.js`
 - `object-wizard-frame-correction.js`
 - `object-wizard-asset-package.js`
-- `object-wizard-reference-panel.js`
 
 After the split, keep `editor-app.js` as a thin entry file and remove any no-longer-needed overlay import.
 
 ## Done
+
+### Extract wizard Reference panel module
+
+Status: done  
+Completed in: V1.26  
+Source: docs/artifex/19-project-file-contracts.md
+
+Completed changes:
+
+- Created `object-wizard-reference-panel.js`.
+- Moved the Reference panel creation, refresh observer, reference index lookup, localStorage fallback, and safe reference-list rendering into the new module.
+- Updated `editor-app.js` to initialise the Reference panel module.
+- Bumped the app to V1.26.
+
+### Further tighten object template icon padding
+
+Status: done  
+Completed in: V1.25  
+Source: template wizard visual review
+
+Completed changes:
+
+- Reduced template card maximum width again.
+- Reduced outer card padding again.
+- Reduced square icon-box padding to nearly flush.
+- Reduced icon card grid gaps.
+- Tightened template title, subtext, and button sizing.
 
 ### Tighten object template card density
 
