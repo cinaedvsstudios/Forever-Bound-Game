@@ -9,6 +9,7 @@ const SAFE_FONTS = new Map([
   ['monospace', 'Consolas, Menlo, monospace']
 ]);
 const EMISSION_MODES = new Set(['once', 'loop', 'continuous']);
+const REVEAL_MODES = new Set(['all', 'line', 'character']);
 
 export function isTextLayer(layer) {
   return Boolean(layer && ((layer.appearanceMode === 'shape' && layer.particleShape === 'text') || layer.engine === 'text'));
@@ -18,23 +19,22 @@ export function spawnTextParticlesForLayer(layer, densityScale = 1) {
   if (!layer?.visible) return [];
   const state = getTextRuntimeState(layer);
   const emissionMode = normalizeEmissionMode(layer.textEmissionMode);
-  syncRuntimeMode(state, emissionMode);
+  const reveal = normalizeRevealMode(layer.textRevealMode);
+  syncRuntimeKeys(state, layer, emissionMode, reveal);
   state.frame = (state.frame || 0) + 1;
 
-  const interval = getEmissionInterval(layer, emissionMode);
-  if (emissionMode === 'once') {
-    if (state.hasEmittedOnce) return [];
-    state.hasEmittedOnce = true;
-  } else if (state.frame % interval !== 1) {
-    return [];
-  }
+  if (emissionMode === 'once' && state.onceCompleted) return [];
+  if (state.nextEmissionFrame && state.frame < state.nextEmissionFrame) return [];
 
   const density = Math.max(0, Math.min(10, finite(layer.textDensity, finite(layer.spawnRate, 4)))) * Math.max(0, densityScale);
-  const count = emissionMode === 'continuous' ? getContinuousTextCount(density) : getBurstTextCount(density);
+  const token = chooseTextToken(layer, state, reveal);
+  const count = getTextParticleCount(density, emissionMode, reveal);
   const particles = [];
   for (let index = 0; index < count; index += 1) {
-    particles.push(createTextParticle(layer, state));
+    particles.push(createTextParticle(layer, state, token.text));
   }
+
+  scheduleNextEmission(layer, state, emissionMode, reveal, token.completedCycle);
   return particles;
 }
 
@@ -91,12 +91,11 @@ export function drawTextParticle(ctx, particle, layer, scale) {
   ctx.restore();
 }
 
-function createTextParticle(layer, state) {
+function createTextParticle(layer, state, textToken) {
   const particle = new Particle(applyTextMotionProfile(layer));
   const scatter = Math.max(0, finite(layer.textScatter, 0));
   const keepTogether = layer.textKeepBlockTogether !== false;
   const direction = layer.textDirection || 'rise';
-  const reveal = layer.textRevealMode || 'all';
 
   if (!keepTogether && scatter > 0) {
     particle.x += randomRange(-scatter, scatter);
@@ -115,10 +114,14 @@ function createTextParticle(layer, state) {
     particle.vy += randomRange(-0.12, 0.12);
   }
 
+  const speed = getTextGeneralSpeed(layer);
+  particle.vx *= speed;
+  particle.vy *= speed;
+
   const bias = layer.textLifetimeBias || 'normal';
   const lifetimeMultiplier = bias === 'short' ? 0.62 : bias === 'long' ? 1.65 : 1;
-  particle.life = Math.max(10, particle.life * lifetimeMultiplier);
-  particle.textToken = chooseTextToken(layer, state, reveal);
+  particle.life = Math.max(10, (particle.life * lifetimeMultiplier) / Math.sqrt(speed));
+  particle.textToken = textToken;
   return particle;
 }
 
@@ -143,19 +146,21 @@ function chooseTextToken(layer, state, reveal) {
   const text = String(layer.textContent || 'AETHERA').slice(0, 600);
   if (reveal === 'line') {
     const lines = text.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean);
-    if (!lines.length) return text;
-    const index = state.nextLineIndex || 0;
-    state.nextLineIndex = (index + 1) % lines.length;
-    return lines[index];
+    if (!lines.length) return { text, completedCycle: true };
+    const index = Math.min(lines.length - 1, state.nextLineIndex || 0);
+    const completedCycle = index >= lines.length - 1;
+    state.nextLineIndex = completedCycle ? 0 : index + 1;
+    return { text: lines[index], completedCycle };
   }
   if (reveal === 'character') {
     const chars = Array.from(text.replace(/\s+/gu, ' ').trim()).filter((char) => char !== ' ');
-    if (!chars.length) return text;
-    const index = state.nextCharIndex || 0;
-    state.nextCharIndex = (index + 1) % chars.length;
-    return chars[index];
+    if (!chars.length) return { text, completedCycle: true };
+    const index = Math.min(chars.length - 1, state.nextCharIndex || 0);
+    const completedCycle = index >= chars.length - 1;
+    state.nextCharIndex = completedCycle ? 0 : index + 1;
+    return { text: chars[index], completedCycle };
   }
-  return text;
+  return { text, completedCycle: true };
 }
 
 function normalizeEmissionMode(value) {
@@ -163,19 +168,52 @@ function normalizeEmissionMode(value) {
   return EMISSION_MODES.has(mode) ? mode : 'loop';
 }
 
-function syncRuntimeMode(state, mode) {
-  if (state.emissionMode === mode) return;
+function normalizeRevealMode(value) {
+  const reveal = String(value || '').trim().toLowerCase();
+  return REVEAL_MODES.has(reveal) ? reveal : 'all';
+}
+
+function syncRuntimeKeys(state, layer, mode, reveal) {
+  const signature = `${mode}|${reveal}|${String(layer.textContent || '').slice(0, 600)}`;
+  if (state.signature === signature) return;
+  state.signature = signature;
   state.emissionMode = mode;
+  state.reveal = reveal;
   state.frame = 0;
-  state.hasEmittedOnce = false;
+  state.nextEmissionFrame = 0;
+  state.onceCompleted = false;
   state.nextLineIndex = 0;
   state.nextCharIndex = 0;
 }
 
-function getEmissionInterval(layer, mode) {
-  const configuredDelay = Math.max(0, Math.round(finite(layer.textSpawnDelay, 0)));
-  if (mode === 'continuous') return Math.max(4, configuredDelay || 8);
-  return Math.max(1, configuredDelay || 48);
+function scheduleNextEmission(layer, state, mode, reveal, completedCycle) {
+  if (mode === 'once' && completedCycle) {
+    state.onceCompleted = true;
+    return;
+  }
+  const delay = getDelayForNextEmission(layer, reveal, completedCycle);
+  state.nextEmissionFrame = (state.frame || 0) + delay;
+}
+
+function getDelayForNextEmission(layer, reveal, completedCycle) {
+  if (completedCycle) return getFrameDelay(layer.textBlockDelay, 48, 1, 240);
+  if (reveal === 'line') return getFrameDelay(layer.textLineDelay, 6, 1, 120);
+  if (reveal === 'character') return getFrameDelay(layer.textCharacterDelay, 2, 1, 90);
+  return getFrameDelay(layer.textBlockDelay, 48, 1, 240);
+}
+
+function getFrameDelay(value, fallback, min, max) {
+  return Math.max(min, Math.min(max, Math.round(finite(value, fallback))));
+}
+
+function getTextParticleCount(density, mode, reveal) {
+  if (reveal === 'line' || reveal === 'character') return 1;
+  if (mode === 'continuous') return getContinuousTextCount(density);
+  return getBurstTextCount(density);
+}
+
+function getTextGeneralSpeed(layer) {
+  return Math.max(0.25, Math.min(3, finite(layer.textGeneralSpeed, 1)));
 }
 
 function getBurstTextCount(density) {
