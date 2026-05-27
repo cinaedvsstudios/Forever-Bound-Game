@@ -16,6 +16,7 @@ Progress:
 
 - Done in V1.22: extracted the Step 5 left/right column wrapper into `object-wizard-step5-layout.js` and made `editor-app.js` thin again for that responsibility.
 - Done in V1.23: extracted template card icon atlas cropping, template-card colour grouping, fallback icons, and card styling into `object-template-icons.js`.
+- Done in V1.24: tightened template card density by reducing card width, outer padding, icon-box padding, icon display scale, text size, button height, and card gaps.
 
 Remaining suggested split:
 
@@ -27,6 +28,20 @@ Remaining suggested split:
 After the split, keep `editor-app.js` as a thin entry file and remove any no-longer-needed overlay import.
 
 ## Done
+
+### Tighten object template card density
+
+Status: done  
+Completed in: V1.24  
+Source: template wizard visual review
+
+Completed changes:
+
+- Reduced template card maximum width.
+- Reduced card padding and grid gaps.
+- Reduced icon display box padding.
+- Reduced displayed icon image size by roughly 20% from the V1.23 version.
+- Tightened text and button sizing to match the smaller card layout.
 
 ### Extract object template icon module
 
