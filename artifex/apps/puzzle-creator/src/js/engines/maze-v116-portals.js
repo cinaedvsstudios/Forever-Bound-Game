@@ -1,0 +1,377 @@
+import { SHAPES, isInsideShape } from './maze-shape-generator.js';
+
+const $ = (id) => document.getElementById(id);
+
+const portalState = {
+  pairs: [],
+  selectedId: null,
+  placementMode: null,
+  teleportCooldownUntil: 0
+};
+
+window.addEventListener('DOMContentLoaded', () => {
+  injectPortalStyles();
+  injectPortalBuilder();
+  bindPortalUi();
+  bindOverviewPlacement();
+  bindTeleportLoop();
+  bindPortalMarkerRefresh();
+  patchExportPayload();
+});
+
+function state() {
+  return window.__artifexMazeRuntime?.state || null;
+}
+
+function injectPortalBuilder() {
+  if ($('portal-builder')) return;
+  const logicPanel = document.querySelector('[data-panel-content="logic"]');
+  const completionBuilder = $('completion-rule-builder');
+  const anchor = completionBuilder || $('btn-copy-json') || logicPanel?.lastElementChild;
+  if (!logicPanel || !anchor) return;
+
+  const box = document.createElement('section');
+  box.id = 'portal-builder';
+  box.className = 'portal-builder';
+  box.innerHTML = `
+    <div class="portal-builder-head">
+      <div>
+        <strong>Portals</strong>
+        <small>Pair special doors or passages. Click Entry or Exit, then click a path cell in the Overview.</small>
+      </div>
+      <span id="portal-builder-status" class="portal-status-pill is-empty">0 pairs</span>
+    </div>
+    <div class="portal-action-row">
+      <button id="btn-add-portal" type="button">➕ Add Pair</button>
+      <button id="btn-place-portal-entry" type="button">🚪 Entry</button>
+      <button id="btn-place-portal-exit" type="button">✨ Exit</button>
+      <button id="btn-delete-portal" type="button">🗑 Delete</button>
+    </div>
+    <div class="portal-editor-row">
+      <label><span>Label</span><input id="portal-label-input" type="text" maxlength="12" value="A" /></label>
+      <label><span>Type</span><select id="portal-type-select"><option value="door">Door</option><option value="hidden_passage">Hidden passage</option><option value="magic_portal">Magic portal</option></select></label>
+      <label class="portal-toggle"><input id="portal-two-way" type="checkbox" checked /> Two-way</label>
+      <label class="portal-toggle"><input id="portal-required" type="checkbox" /> Required</label>
+    </div>
+    <label class="portal-hint-row"><span>Capra hint</span><input id="portal-hint-input" type="text" placeholder="Optional hint text" /></label>
+    <div id="portal-placement-note" class="portal-placement-note">No portal pair selected yet.</div>
+    <div id="portal-pair-list" class="portal-pair-list"></div>
+  `;
+
+  anchor.insertAdjacentElement(completionBuilder ? 'afterend' : 'beforebegin', box);
+}
+
+function bindPortalUi() {
+  $('btn-add-portal')?.addEventListener('click', addPair);
+  $('btn-place-portal-entry')?.addEventListener('click', () => setPlacementMode('entry'));
+  $('btn-place-portal-exit')?.addEventListener('click', () => setPlacementMode('exit'));
+  $('btn-delete-portal')?.addEventListener('click', deleteSelectedPair);
+  $('portal-label-input')?.addEventListener('input', syncSelectedFromInputs);
+  $('portal-type-select')?.addEventListener('change', syncSelectedFromInputs);
+  $('portal-two-way')?.addEventListener('change', syncSelectedFromInputs);
+  $('portal-required')?.addEventListener('change', syncSelectedFromInputs);
+  $('portal-hint-input')?.addEventListener('input', syncSelectedFromInputs);
+  renderPortalUi();
+}
+
+function addPair() {
+  const id = `portal_${Date.now().toString(36)}`;
+  const label = nextLabel();
+  portalState.pairs.push({
+    id,
+    label,
+    entry: null,
+    exit: null,
+    type: 'door',
+    twoWay: true,
+    required: false,
+    hint: ''
+  });
+  portalState.selectedId = id;
+  portalState.placementMode = 'entry';
+  renderPortalUi();
+}
+
+function nextLabel() {
+  const used = new Set(portalState.pairs.map((pair) => pair.label));
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  for (const letter of letters) if (!used.has(letter)) return letter;
+  return String(portalState.pairs.length + 1);
+}
+
+function selectedPair() {
+  return portalState.pairs.find((pair) => pair.id === portalState.selectedId) || null;
+}
+
+function setPlacementMode(mode) {
+  if (!selectedPair()) addPair();
+  portalState.placementMode = mode;
+  renderPortalUi();
+}
+
+function syncSelectedFromInputs() {
+  const pair = selectedPair();
+  if (!pair) return;
+  pair.label = $('portal-label-input')?.value.trim() || pair.label;
+  pair.type = $('portal-type-select')?.value || 'door';
+  pair.twoWay = !!$('portal-two-way')?.checked;
+  pair.required = !!$('portal-required')?.checked;
+  pair.hint = $('portal-hint-input')?.value || '';
+  renderPortalUi(false);
+}
+
+function deleteSelectedPair() {
+  if (!portalState.selectedId) return;
+  portalState.pairs = portalState.pairs.filter((pair) => pair.id !== portalState.selectedId);
+  portalState.selectedId = portalState.pairs[0]?.id || null;
+  portalState.placementMode = null;
+  renderPortalUi();
+}
+
+function bindOverviewPlacement() {
+  const canvas = $('analysis-canvas');
+  if (!canvas) return;
+  canvas.addEventListener('click', (event) => {
+    if (!portalState.placementMode || !selectedPair()) return;
+    const cell = canvasEventToCell(event);
+    const s = state();
+    if (!cell || !s || !isOpenCell(s, cell.x, cell.y)) {
+      setPlacementNote('Choose a path cell inside the maze. Walls and outside-shape cells cannot hold portals.', 'is-warning');
+      return;
+    }
+    const pair = selectedPair();
+    pair[portalState.placementMode] = cell;
+    portalState.placementMode = portalState.placementMode === 'entry' && !pair.exit ? 'exit' : null;
+    renderPortalUi();
+    drawPortalMarkersSoon();
+  }, true);
+}
+
+function canvasEventToCell(event) {
+  const s = state();
+  const canvas = $('analysis-canvas');
+  if (!s || !canvas) return null;
+  const rect = canvas.getBoundingClientRect();
+  const px = (event.clientX - rect.left) * (canvas.width / rect.width);
+  const py = (event.clientY - rect.top) * (canvas.height / rect.height);
+  const dims = overviewDimensions(canvas.width, canvas.height);
+  const x = Math.floor((px - dims.ox) / dims.cellW);
+  const y = Math.floor((py - dims.oy) / dims.cellH);
+  if (x < 0 || y < 0 || x >= s.gridSize || y >= s.gridSize) return null;
+  return { x, y };
+}
+
+function overviewDimensions(width, height) {
+  const s = state();
+  const scaleX = Math.max(0.6, (s?.stretchX || 100) / 100);
+  const scaleY = Math.max(0.6, (s?.stretchY || 100) / 100);
+  const base = Math.min(width / ((s?.gridSize || 20) * scaleX + 3), height / ((s?.gridSize || 20) * scaleY + 3));
+  const cellW = base * scaleX;
+  const cellH = base * scaleY;
+  return {
+    cellW,
+    cellH,
+    ox: width / 2 - ((s?.gridSize || 20) * cellW) / 2,
+    oy: height / 2 - ((s?.gridSize || 20) * cellH) / 2
+  };
+}
+
+function bindTeleportLoop() {
+  setInterval(() => {
+    const s = state();
+    if (!s || s.view !== 'walktest' || Date.now() < portalState.teleportCooldownUntil) return;
+    const player = { x: Math.floor(s.player?.x || 0), y: Math.floor(s.player?.y || 0) };
+    for (const pair of portalState.pairs) {
+      if (sameCell(player, pair.entry) && pair.exit) return teleportTo(pair.exit, pair.label);
+      if (pair.twoWay && sameCell(player, pair.exit) && pair.entry) return teleportTo(pair.entry, pair.label);
+    }
+  }, 80);
+}
+
+function teleportTo(cell, label) {
+  const s = state();
+  if (!s) return;
+  s.player = { x: cell.x + 0.5, y: cell.y + 0.5 };
+  portalState.teleportCooldownUntil = Date.now() + 700;
+  const status = $('player-status-indicator');
+  if (status) status.textContent = `Portal ${label} used`;
+}
+
+function sameCell(a, b) {
+  return !!a && !!b && a.x === b.x && a.y === b.y;
+}
+
+function isOpenCell(s, x, y) {
+  return x >= 0 && y >= 0 && x < s.gridSize && y < s.gridSize && s.matrix[y]?.[x] === 0 && isInsideShape(x, y, s.gridSize, s.layout, s.stretchX, s.stretchY);
+}
+
+function bindPortalMarkerRefresh() {
+  ['click', 'input', 'change'].forEach((eventName) => document.addEventListener(eventName, drawPortalMarkersSoon, true));
+  setInterval(drawPortalMarkers, 1200);
+}
+
+function drawPortalMarkersSoon() {
+  requestAnimationFrame(() => setTimeout(drawPortalMarkers, 40));
+}
+
+function drawPortalMarkers() {
+  drawOverviewPortalMarkers();
+}
+
+function drawOverviewPortalMarkers() {
+  const s = state();
+  const canvas = $('analysis-canvas');
+  if (!s || !canvas || !portalState.pairs.length) return;
+  const ctx = canvas.getContext('2d');
+  const dims = overviewDimensions(canvas.width, canvas.height);
+  portalState.pairs.forEach((pair) => {
+    if (pair.entry) drawMarker(ctx, dims, pair.entry, pair.label, '#f1cf75', 'E');
+    if (pair.exit) drawMarker(ctx, dims, pair.exit, pair.label, '#b58cff', 'X');
+  });
+}
+
+function drawMarker(ctx, dims, cell, label, color, suffix) {
+  const x = dims.ox + cell.x * dims.cellW + dims.cellW / 2;
+  const y = dims.oy + cell.y * dims.cellH + dims.cellH / 2;
+  const r = Math.max(7, Math.min(dims.cellW, dims.cellH) * 0.45);
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.strokeStyle = '#06140b';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = '#06140b';
+  ctx.font = `900 ${Math.max(9, r * 0.9)}px Inter, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`${label}${suffix}`, x, y + 0.5);
+  ctx.restore();
+}
+
+function renderPortalUi(syncInputs = true) {
+  const pair = selectedPair();
+  if (syncInputs) {
+    if ($('portal-label-input')) $('portal-label-input').value = pair?.label || nextLabel();
+    if ($('portal-type-select')) $('portal-type-select').value = pair?.type || 'door';
+    if ($('portal-two-way')) $('portal-two-way').checked = pair?.twoWay !== false;
+    if ($('portal-required')) $('portal-required').checked = !!pair?.required;
+    if ($('portal-hint-input')) $('portal-hint-input').value = pair?.hint || '';
+  }
+
+  const status = $('portal-builder-status');
+  if (status) {
+    const incomplete = portalState.pairs.filter((item) => !item.entry || !item.exit).length;
+    status.textContent = `${portalState.pairs.length} pair${portalState.pairs.length === 1 ? '' : 's'}`;
+    status.className = `portal-status-pill ${portalState.pairs.length ? (incomplete ? 'is-warning' : 'is-good') : 'is-empty'}`;
+  }
+
+  if (portalState.placementMode && pair) {
+    setPlacementNote(`Click the Overview to place Portal ${pair.label} ${portalState.placementMode}.`, 'is-active');
+  } else if (pair) {
+    setPlacementNote(pair.entry && pair.exit ? `Portal ${pair.label} is placed.` : `Portal ${pair.label} needs ${pair.entry ? 'an exit' : 'an entry'}.`, pair.entry && pair.exit ? 'is-good' : 'is-warning');
+  } else {
+    setPlacementNote('No portal pair selected yet.', '');
+  }
+
+  const list = $('portal-pair-list');
+  if (list) {
+    list.innerHTML = portalState.pairs.length ? portalState.pairs.map(pairToHtml).join('') : '<p class="portal-empty-note">No portal pairs yet. Add a pair to begin.</p>';
+    list.querySelectorAll('[data-select-portal]').forEach((button) => button.addEventListener('click', () => {
+      portalState.selectedId = button.dataset.selectPortal;
+      portalState.placementMode = null;
+      renderPortalUi();
+    }));
+  }
+  drawPortalMarkersSoon();
+}
+
+function pairToHtml(pair) {
+  const selected = pair.id === portalState.selectedId ? ' is-selected' : '';
+  const placed = pair.entry && pair.exit ? 'Ready' : 'Needs placement';
+  const entry = pair.entry ? `${pair.entry.x},${pair.entry.y}` : '—';
+  const exit = pair.exit ? `${pair.exit.x},${pair.exit.y}` : '—';
+  const required = pair.required ? ' · Required' : '';
+  return `<button type="button" class="portal-pair-item${selected}" data-select-portal="${pair.id}"><strong>${escapeHtml(pair.label)}</strong><span>${escapeHtml(placed)}${required}</span><small>Entry ${entry} → Exit ${exit}</small></button>`;
+}
+
+function setPlacementNote(text, klass) {
+  const note = $('portal-placement-note');
+  if (!note) return;
+  note.textContent = text;
+  note.className = `portal-placement-note ${klass || ''}`.trim();
+}
+
+function patchExportPayload() {
+  setTimeout(() => {
+    const previous = window.__artifexAugmentPuzzlePayload;
+    window.__artifexAugmentPuzzlePayload = (payload) => {
+      const base = typeof previous === 'function' ? previous(payload) : payload;
+      return {
+        ...base,
+        puzzle: {
+          ...base.puzzle,
+          portals: exportPortals()
+        }
+      };
+    };
+  }, 0);
+}
+
+function exportPortals() {
+  return {
+    schemaVersion: 'artifex.mazePortals.v1',
+    status: portalState.pairs.length && portalState.pairs.some((pair) => !pair.entry || !pair.exit) ? 'needs_placement' : 'ready',
+    pairs: portalState.pairs.map((pair) => ({
+      id: pair.id,
+      label: pair.label,
+      type: pair.type,
+      entry: pair.entry,
+      exit: pair.exit,
+      twoWay: pair.twoWay,
+      required: pair.required,
+      capraHint: pair.hint || ''
+    }))
+  };
+}
+
+function injectPortalStyles() {
+  if ($('maze-v116-portals-style')) return;
+  const style = document.createElement('style');
+  style.id = 'maze-v116-portals-style';
+  style.textContent = `
+    .portal-builder{margin:10px 0 14px;padding:13px;border:1px solid rgba(181,140,255,.28);border-radius:18px;background:linear-gradient(180deg,rgba(18,18,44,.42),rgba(5,18,11,.94));box-shadow:inset 0 0 0 1px rgba(255,255,255,.025);}
+    .portal-builder-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;}
+    .portal-builder-head strong{display:block;color:var(--cream,#eadfc6);font-weight:900;}
+    .portal-builder-head small{display:block;color:#a9b59e;font-size:.74rem;line-height:1.3;margin-top:2px;}
+    .portal-status-pill{display:inline-flex;align-items:center;white-space:nowrap;border-radius:999px;padding:5px 8px;font-size:.68rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em;}
+    .portal-status-pill.is-empty{background:rgba(255,255,255,.06);color:#b9c5a5;border:1px solid rgba(255,255,255,.12);}
+    .portal-status-pill.is-good{background:rgba(122,220,139,.16);color:#a8e8a3;border:1px solid rgba(122,220,139,.34);}
+    .portal-status-pill.is-warning{background:rgba(238,196,89,.13);color:#f1cf75;border:1px solid rgba(238,196,89,.3);}
+    .portal-action-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px;}
+    .portal-action-row button{min-height:38px;border-radius:12px;border:1px solid rgba(158,230,164,.24);background:rgba(12,54,28,.75);color:#eadfc6;font-weight:900;cursor:pointer;}
+    .portal-editor-row{display:grid;grid-template-columns:1fr 1.15fr .8fr .8fr;gap:8px;margin:8px 0;}
+    .portal-editor-row label,.portal-hint-row{display:grid;gap:4px;color:#d8d0ba;font-size:.76rem;}
+    .portal-editor-row input,.portal-editor-row select,.portal-hint-row input{min-height:34px;border-radius:10px;border:1px solid rgba(158,230,164,.24);background:rgba(0,0,0,.22);color:#e8f5de;padding:5px 8px;}
+    .portal-toggle{display:flex!important;align-items:center;gap:7px;align-self:end;min-height:34px;border:1px solid rgba(158,230,164,.16);border-radius:10px;padding:5px 8px;background:rgba(0,0,0,.14);}
+    .portal-toggle input{min-height:auto;accent-color:#9ee6a4;}
+    .portal-placement-note{margin:10px 0 8px;padding:9px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.18);color:#b9c5a5;font-size:.78rem;line-height:1.3;}
+    .portal-placement-note.is-active{color:#f1cf75;border-color:rgba(238,196,89,.3);box-shadow:0 0 16px rgba(238,196,89,.08);}
+    .portal-placement-note.is-warning{color:#f1cf75;border-color:rgba(238,196,89,.3);}
+    .portal-placement-note.is-good{color:#a8e8a3;border-color:rgba(122,220,139,.3);}
+    .portal-pair-list{display:grid;gap:7px;margin-top:8px;}
+    .portal-pair-item{text-align:left;border-radius:13px;border:1px solid rgba(158,230,164,.18);background:rgba(0,0,0,.18);color:#eadfc6;padding:9px 10px;cursor:pointer;}
+    .portal-pair-item.is-selected{border-color:rgba(181,140,255,.68);box-shadow:0 0 18px rgba(181,140,255,.12);}
+    .portal-pair-item strong{display:block;font-size:.88rem;}
+    .portal-pair-item span{display:block;color:#d8d0ba;font-size:.73rem;margin-top:2px;}
+    .portal-pair-item small{display:block;color:#a9b59e;font-size:.7rem;margin-top:2px;}
+    .portal-empty-note{margin:0;color:#a9b59e;font-size:.78rem;}
+    @media(max-width:520px){.portal-action-row,.portal-editor-row{grid-template-columns:1fr 1fr;}}
+  `;
+  document.head.appendChild(style);
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
+}
