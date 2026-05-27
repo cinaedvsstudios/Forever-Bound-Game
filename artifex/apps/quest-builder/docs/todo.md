@@ -17,7 +17,7 @@ Use the global all-apps to-do list for changes that affect every Artifex app. Us
 
 ## Current live status
 
-Current Quest Builder version: `V1.1.6`
+Current Quest Builder version: `V1.1.7`
 
 Current live app files:
 
@@ -142,6 +142,25 @@ Status: complete.
 - Dialog styling now has tab buttons, active panel styling, helper text, and compact thumbnail/name/type layout.
 - Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.6` / `1.1.6`.
 
+### V1.1.7 — Export JSON and validation
+
+Status: complete.
+
+- Export now produces a game-readable `artifex.questExportBundle.v1` bundle instead of only dumping local editor state.
+- Export bundle includes virtual project package files for:
+  - `quests/quest-index.json`
+  - `quests/quest_<slug>.json`
+  - `sidequests/sidequest-index.json`
+  - `sidequests/sidequest_<slug>.json`
+- Runtime quest files now separate metadata, links, flow blocks, gameplay actions, conditions, feedback, and validation warnings.
+- Main quests and side quests are separated by quest type.
+- Quest index files include stable IDs, slugs, file paths, thumbnails, chronicles, calling text, completion flags, linked scenes/objects, block counts, and validation status.
+- Runtime blocks now separate refs, gameplay, feedback, source module, category, required fields, linked fields, and notes.
+- Validation now catches missing quest IDs, duplicate quest IDs, missing names, missing Calling text, empty quest flow, missing block IDs, duplicate block IDs, missing block type, unknown/custom block types, missing required fields, completion requirements, and unresolved Project Manager references.
+- `View JSON Preview` and `Export JSON` now use the same runtime export bundle shape.
+- Removed the open `todo_quest_builder_define_export_contract` task from the specific-app open list.
+- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.7` / `1.1.7`.
+
 ## Ownership boundary
 
 Quest Builder owns:
@@ -168,7 +187,7 @@ Quest Builder does not own:
 
 ## Export target
 
-Quest Builder should eventually export:
+Quest Builder exports a bundle that represents these project package targets:
 
 ```text
 projects/<project-id>/quests/quest-index.json
@@ -192,48 +211,23 @@ Every Quest Builder edit should increase the visible version by `0.01` and updat
 Next version:
 
 ```text
-V1.1.7  export JSON and validation
+V1.1.8  post-export verification / bugfix pass
 ```
 
-## V1.1.7 — Export JSON and validation
+## V1.1.8 — Post-export verification / bugfix pass
 
-Goal: produce stable game-readable JSON, not only local editor state.
+Goal: test the V1.1.7 export pass in the browser and fix any runtime errors before starting new features.
 
-Export should separate:
+Checks:
 
-- Quest metadata.
-- Editor layout data.
-- Quest flow blocks.
-- Gameplay actions.
-- Linked scene/object/dialogue/audio references.
-- Conditions and flags.
-- UI overlays.
-- Rewards and unlocks.
-- Validation warnings.
-
-Validation should catch:
-
-- Missing scene ID on scene block.
-- Missing object/NPC ID on action/object block where required.
-- Dialogue block without dialogue ID.
-- Action block without action/outcome.
-- Completion block without condition or completion flag.
-- Missing linked IDs that Project Manager will need to resolve.
+- App loads as V1.1.7.
+- `View JSON Preview` opens and shows `artifex.questExportBundle.v1`.
+- `Export JSON` downloads the same bundle shape.
+- The exported bundle contains `files` entries for quest and sidequest indexes.
+- No red console errors appear when opening the app, opening JSON Preview, or exporting.
 
 ## Specific-app tasks
 
 ```json
-[
-  {
-    "taskId": "todo_quest_builder_define_export_contract",
-    "scope": "specific-app",
-    "owningModule": "quest-builder",
-    "title": "Define Quest Builder export contract",
-    "status": "open",
-    "priority": 5,
-    "effort": 4,
-    "source": "project-file-contracts",
-    "fixOwner": "quest-builder"
-  }
-]
+[]
 ```
