@@ -10,8 +10,24 @@ export function buildQuestExportBundle(doc) {
   const sideQuests = quests.filter(isSideQuest);
   const validationWarnings = validateQuestFile(doc);
   const questFiles = quests.map((quest) => buildRuntimeQuestFile(quest, doc, validationWarnings));
-
-  return {
+  const files = [
+    {
+      path: 'quests/quest-index.json',
+      role: 'quest-index',
+      content: buildIndexFile(mainQuests, 'quest')
+    },
+    {
+      path: 'sidequests/sidequest-index.json',
+      role: 'sidequest-index',
+      content: buildIndexFile(sideQuests, 'sidequest')
+    },
+    ...questFiles.map((file) => ({
+      path: runtimeQuestPath(file),
+      role: file.type === 'side' || file.type === 'errand' ? 'sidequest-runtime' : 'quest-runtime',
+      content: file
+    }))
+  ];
+  const bundle = {
     schemaVersion: 'artifex.questExportBundle.v1',
     generatedBy: 'quest-builder',
     sourceFileId: doc.id || 'quest_file',
@@ -24,25 +40,13 @@ export function buildQuestExportBundle(doc) {
       'projects/<project-id>/sidequests/sidequest-index.json',
       'projects/<project-id>/sidequests/sidequest_<slug>.json'
     ],
-    files: [
-      {
-        path: 'quests/quest-index.json',
-        role: 'quest-index',
-        content: buildIndexFile(mainQuests, 'quest')
-      },
-      {
-        path: 'sidequests/sidequest-index.json',
-        role: 'sidequest-index',
-        content: buildIndexFile(sideQuests, 'sidequest')
-      },
-      ...questFiles.map((file) => ({
-        path: runtimeQuestPath(file),
-        role: file.type === 'side' || file.type === 'errand' ? 'sidequest-runtime' : 'quest-runtime',
-        content: file
-      }))
-    ],
+    files,
     validationSummary: summariseWarnings(validationWarnings),
     validationWarnings
+  };
+  return {
+    ...bundle,
+    exportSelfCheck: verifyExportBundleShape(bundle)
   };
 }
 
@@ -166,14 +170,17 @@ export function validateQuestFile(doc) {
       if (block.type === 'action' && block.dialogueId && !block.objectId) {
         addWarning(warnings, 'info', blockTarget, 'Player Action links dialogue but has no object/NPC ID.', questTarget);
       }
+      if (block.type === 'action' && /^(speak|talk|give|use|inspect|collect|interact):/.test(block.action || '') && !block.objectId) {
+        addWarning(warnings, 'warning', blockTarget, 'Player Action appears to target an object/NPC but objectId is empty.', questTarget);
+      }
       if (block.type === 'dialogue' && (block.action || block.condition)) {
         addWarning(warnings, 'info', blockTarget, 'Dialogue block should usually be a linked content asset; use Player Action for the player task.', questTarget);
       }
       if (block.type === 'completion' && !block.condition && !quest.completionFlag) {
         addWarning(warnings, 'warning', blockTarget, 'Completion block needs a condition or quest completion flag.', questTarget);
       }
-      if (needsProjectResolution(block) && !hasAnyReference(block)) {
-        addWarning(warnings, 'warning', blockTarget, 'Block has no linked ID for Project Manager to resolve.', questTarget);
+      if (needsProjectResolution(block) && !hasProjectResolvableReference(block)) {
+        addWarning(warnings, 'warning', blockTarget, 'Block has no Project Manager-resolvable scene/object/dialogue/audio ID.', questTarget);
       }
     });
   });
@@ -193,6 +200,26 @@ export function collectQuestLinks(quest) {
     capraFeedback: unique(blocks.map((block) => block.capraFeedback)),
     codiceUpdates: quest.codiceUpdates || [],
     rewards: quest.rewards || []
+  };
+}
+
+export function verifyExportBundleShape(bundle) {
+  const checks = [];
+  const pass = (id, ok, message) => checks.push({ id, ok, message });
+  pass('bundle-schema', bundle.schemaVersion === 'artifex.questExportBundle.v1', 'Bundle schema is artifex.questExportBundle.v1.');
+  pass('files-array', Array.isArray(bundle.files), 'Bundle includes files array.');
+  pass('quest-index', hasFile(bundle, 'quests/quest-index.json'), 'Bundle includes quest index file.');
+  pass('sidequest-index', hasFile(bundle, 'sidequests/sidequest-index.json'), 'Bundle includes sidequest index file.');
+  pass('warnings-array', Array.isArray(bundle.validationWarnings), 'Bundle includes validationWarnings array.');
+  pass('summary-counts', ['error', 'warning', 'info'].every((key) => Number.isInteger(bundle.validationSummary?.[key])), 'Bundle includes validation summary counts.');
+  (bundle.files || []).filter((file) => file.role === 'quest-runtime' || file.role === 'sidequest-runtime').forEach((file) => {
+    pass(`runtime-${file.content?.id || file.path}`, Boolean(file.content?.flow && Array.isArray(file.content.flow.blocks)), `${file.path} includes runtime flow blocks.`);
+    pass(`links-${file.content?.id || file.path}`, Boolean(file.content?.links), `${file.path} includes resolved links bucket.`);
+  });
+  return {
+    status: checks.every((check) => check.ok) ? 'pass' : 'fail',
+    checkedAt: new Date().toISOString(),
+    checks
   };
 }
 
@@ -247,6 +274,10 @@ function needsProjectResolution(block) {
   return ['scene', 'action', 'object', 'dialogue', 'travel', 'route', 'combat', 'companion'].includes(block.type);
 }
 
-function hasAnyReference(block) {
-  return Boolean(block.sceneId || block.objectId || block.dialogueId || block.audioId || block.action || block.condition || block.uiOverlay);
+function hasProjectResolvableReference(block) {
+  return Boolean(block.sceneId || block.objectId || block.dialogueId || block.audioId);
+}
+
+function hasFile(bundle, path) {
+  return (bundle.files || []).some((file) => file.path === path);
 }
