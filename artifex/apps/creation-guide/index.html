@@ -33,7 +33,7 @@
             <button id="export-json-button">Export Project Folder ZIP</button>
             <button id="save-local-button">Save + Set Active Project</button>
             <button id="view-local-button">Project Library</button>
-            <button id="clear-project-data-button">Clear Project Test Data</button>
+            <button id="clear-project-data-button" onclick="if(confirm('Clear Artifex project test data from this browser?')){localStorage.removeItem('artifex.projectLibrary');localStorage.removeItem('artifex.activeProjectId');location.reload();}">Clear Project Test Data</button>
           </div>
         </div>
 
@@ -171,7 +171,7 @@
         <button id="set-active-project-button">Set Active Project</button>
         <button id="export-project-files-button">Export Project Folder ZIP</button>
         <button id="open-assignments-toolbar-button">📋 Assignments</button>
-        <button id="clear-project-data-toolbar-button">Clear Project Test Data</button>
+        <button id="clear-project-data-toolbar-button" onclick="if(confirm('Clear Artifex project test data from this browser?')){localStorage.removeItem('artifex.projectLibrary');localStorage.removeItem('artifex.activeProjectId');location.reload();}">Clear Project Test Data</button>
         <select id="todo-sort-input" title="Dashboard sort">
           <option value="easy-wins">Easy Wins</option>
           <option value="most-important">Most Important</option>
