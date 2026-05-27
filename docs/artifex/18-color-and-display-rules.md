@@ -49,6 +49,28 @@ Default design frame:
 
 These rules apply to Artifex editor tools, including the Effect Editor, Scene Editor, Sprite Wizard, Archetype tools, and future mini-apps.
 
+### Global app mark / fallback logo
+
+The shared Artifex app logo is the rune `ᚠ` displayed at a 45 degree angle.
+
+Use the proper image logo when a module has a valid Artifex logo asset available. If no image logo is available, use the rotated `ᚠ` mark as the fallback logo instead of inventing a new symbol or leaving the logo space blank.
+
+Recommended CSS pattern:
+
+```css
+.artifex-logo-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(45deg);
+  font-family: serif;
+  font-weight: 700;
+  line-height: 1;
+}
+```
+
+The fallback mark belongs to the whole Artifex app shell. Module-specific icons may still be used beside menus, cards, libraries, or tool labels, but they should not replace the shared Artifex logo mark.
+
 ### Overall UI tone
 
 - The UI should feel ancient, magical, crafted, and slightly arcane, not flat or generic.
