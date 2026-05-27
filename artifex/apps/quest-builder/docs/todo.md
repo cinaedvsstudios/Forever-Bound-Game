@@ -17,7 +17,7 @@ Use the global all-apps to-do list for changes that affect every Artifex app. Us
 
 ## Current live status
 
-Current Quest Builder version: `V1.1.5`
+Current Quest Builder version: `V1.1.6`
 
 Current live app files:
 
@@ -128,7 +128,19 @@ Status: complete.
 - Export validation now catches missing block type, missing Calling text, required fields, completion requirements, and dialogue/action misuse hints.
 - The Block Type List now shows category, primary field, required fields, and hint.
 - Removed the open `todo_quest_builder_block_taxonomy_validation` task from the specific-app open list.
-- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.5` / `1.1.5`.
+
+### V1.1.6 — Better editor popup
+
+Status: complete.
+
+- Replaced the giant single field stack with tabbed editor sections.
+- Quest editing now has grouped panels for Quest Basics, Quest Links, Rewards / Unlocks, and Notes.
+- Block editing now has grouped panels for Basics, Links, Dialogue / Audio, Conditions & Actions, UI / Capra / Rewards, and Notes.
+- Added thumbnail/icon inputs for quests and blocks.
+- Thumbnail/icon input values are now saved back into quest and block data.
+- Editor tabs are wired from `dialog-editors.js` and initial tab selection is context-aware when editing a quest or block.
+- Dialog styling now has tab buttons, active panel styling, helper text, and compact thumbnail/name/type layout.
+- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.6` / `1.1.6`.
 
 ## Ownership boundary
 
@@ -177,34 +189,11 @@ Every Quest Builder edit should increase the visible version by `0.01` and updat
 - JS/module cache key
 - Loaded/fallback text where present
 
-Next versions:
+Next version:
 
 ```text
-V1.1.6  editor popup redesign
 V1.1.7  export JSON and validation
 ```
-
-## V1.1.6 — Better editor popup
-
-Goal: replace the giant field list with a proper editor layout.
-
-Suggested sections/tabs:
-
-```text
-Basics
-Links
-Dialogue / Audio
-Conditions & Actions
-UI / Capra / Rewards
-Notes / JSON
-```
-
-Acceptance checks:
-
-- Dialog is not one endless field stack.
-- Required fields are visually clear.
-- Optional fields are grouped logically.
-- Thumbnail/icon is saved into the block data.
 
 ## V1.1.7 — Export JSON and validation
 
