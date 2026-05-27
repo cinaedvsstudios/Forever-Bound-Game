@@ -1,4 +1,5 @@
-import { createHealthReport } from '../../../shared/health-guide/health-checks.js?v=0.1.24-build-health';
+import { createHealthReport } from '../../../shared/health-guide/health-checks.js?v=0.1.25-todos';
+import { createProjectManagerTodoOutput, downloadJSONFile } from '../../../shared/health-guide/todo-output.js?v=0.1.25-todos';
 
 // Artifex Project Editor Build Prep workspace
 // Owns diagnostics and build-readiness checks for the split Project Editor shell.
@@ -33,6 +34,7 @@ export function renderBuildPrepWorkspace({ stateManager, container, onRun }) {
   if (!container || !stateManager) return;
 
   const report = createHealthReport({ stateManager, scope: 'project-manager-build-prep' });
+  const todoOutput = createProjectManagerTodoOutput(report);
   const checks = report.checks;
   const summary = report.summary;
   const passCount = summary.passed;
@@ -88,16 +90,23 @@ export function renderBuildPrepWorkspace({ stateManager, container, onRun }) {
                 <div class="flex justify-between"><span>checks:</span><span class="text-projectGreen font-bold">${passCount}/${checks.length}</span></div>
                 <div class="flex justify-between"><span>warnings:</span><span class="${warningCount ? 'text-orange-400' : 'text-projectGreen'} font-bold">${warningCount}</span></div>
                 <div class="flex justify-between"><span>failures:</span><span class="${failedCount ? 'text-red-300' : 'text-projectGreen'} font-bold">${failedCount}</span></div>
+                <div class="flex justify-between"><span>todo tasks:</span><span class="${todoOutput.tasks.length ? 'text-orange-400' : 'text-projectGreen'} font-bold">${todoOutput.tasks.length}</span></div>
                 <div class="flex justify-between"><span>status:</span><span class="${summary.status === 'failed' ? 'text-red-300' : summary.status === 'warning' ? 'text-orange-400' : 'text-projectGreen'} font-bold">${escapeHtml(summary.status)}</span></div>
               </div>
               <div class="text-xs text-zinc-500 leading-relaxed">
-                This view now reads from <span class="font-mono text-projectGoldGlow">artifex/shared/health-guide/health-checks.js</span>, so Creation Guide and Build Game can reuse the same checks.
+                This view now reads from <span class="font-mono text-projectGoldGlow">artifex/shared/health-guide/health-checks.js</span> and can export <span class="font-mono text-projectGoldGlow">todos/project-manager-todos.json</span>.
               </div>
             </div>
-            <button id="stageBuildBtn" class="w-full mt-4 bg-gradient-to-r from-accentDark to-projectGold hover:brightness-110 border border-projectGold/40 text-white font-bold py-3 rounded-lg text-xs transition flex items-center justify-center space-x-2 shadow-project-glow">
-              <i data-lucide="external-link" class="w-4 h-4 text-projectParchment"></i>
-              <span>LOG HEALTH REPORT</span>
-            </button>
+            <div class="space-y-2 mt-4">
+              <button id="exportProjectTodosBtn" class="w-full bg-black/30 hover:bg-accentDark/40 border border-projectGold/30 text-projectGoldGlow font-bold py-2.5 rounded-lg text-xs transition flex items-center justify-center space-x-2">
+                <i data-lucide="list-checks" class="w-4 h-4"></i>
+                <span>EXPORT PROJECT MANAGER TODOS</span>
+              </button>
+              <button id="stageBuildBtn" class="w-full bg-gradient-to-r from-accentDark to-projectGold hover:brightness-110 border border-projectGold/40 text-white font-bold py-3 rounded-lg text-xs transition flex items-center justify-center space-x-2 shadow-project-glow">
+                <i data-lucide="external-link" class="w-4 h-4 text-projectParchment"></i>
+                <span>LOG HEALTH REPORT</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -105,8 +114,14 @@ export function renderBuildPrepWorkspace({ stateManager, container, onRun }) {
   `;
 
   container.querySelector('#runBuildPrepBtn')?.addEventListener('click', () => onRun?.());
+  container.querySelector('#exportProjectTodosBtn')?.addEventListener('click', () => {
+    stateManager.state.projectTodos = todoOutput;
+    stateManager.saveToStorage?.();
+    downloadJSONFile('project-manager-todos.json', todoOutput);
+  });
   container.querySelector('#stageBuildBtn')?.addEventListener('click', () => {
     console.info('[Project Editor Build Prep] Shared Health Report', report);
-    alert('Shared health report logged in console for this split step.');
+    console.info('[Project Editor Build Prep] Project Manager Todos', todoOutput);
+    alert('Shared health report and Project Manager todos logged in console for this split step.');
   });
 }
