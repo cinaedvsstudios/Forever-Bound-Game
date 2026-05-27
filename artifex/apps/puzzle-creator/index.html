@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Artifex Puzzle Creator V1.04 · Forever Bound</title>
+  <title>Artifex Puzzle Creator V1.06 · Forever Bound</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="src/css/artifex-theme.css?v=1.04" />
+  <link rel="stylesheet" href="src/css/artifex-theme.css?v=1.06" />
+  <style>.engine-switcher{grid-template-columns:repeat(6,minmax(0,1fr));}.engine-button{font-size:.7rem;gap:5px;}.engine-button .engine-icon{font-size:1.05rem;}@media(max-width:1240px){.engine-switcher{grid-template-columns:repeat(3,minmax(0,1fr));}}@media(max-width:780px){.engine-switcher{grid-template-columns:repeat(2,minmax(0,1fr));}}</style>
 </head>
 <body>
   <div class="app-shell">
@@ -16,7 +17,7 @@
         <div class="brand-sigil" aria-hidden="true"><span class="brand-rune">ᚠ</span></div>
         <div class="brand-title-block">
           <p class="eyebrow">Artifex Quest Builder Module</p>
-          <div class="title-row"><h1>Puzzle Creator</h1><span class="version-pill">V1.04</span><span class="title-divider"></span></div>
+          <div class="title-row"><h1>Puzzle Creator</h1><span class="version-pill">V1.06</span><span class="title-divider"></span></div>
         </div>
       </div>
       <nav class="app-menu" aria-label="Puzzle Creator menu">
@@ -43,7 +44,6 @@
     </main>
   </div>
   <div class="overview-window" id="overview-window"><div class="overview-titlebar" id="overview-titlebar"><strong>Overview</strong><span id="matrix-summary">No cells yet</span><button id="overview-close" type="button" aria-label="Hide overview">×</button></div><div class="canvas-frame matrix-canvas-frame"><canvas id="analysis-canvas" width="300" height="300"></canvas></div><div class="legend-row compact-legend"><span><i class="legend wall"></i>Wall</span><span><i class="legend path"></i>Path</span><span><i class="legend start"></i>Start</span><span><i class="legend end"></i>Exit</span></div></div>
-  <script type="module" src="src/js/main.js?v=1.04"></script>
-  <script type="module" src="src/js/engines-ui.js?v=1.04"></script>
+  <script type="module" src="src/js/main.js?v=1.06"></script>
 </body>
 </html>
