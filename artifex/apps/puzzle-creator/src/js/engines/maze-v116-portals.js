@@ -6,8 +6,11 @@ const portalState = {
   pairs: [],
   selectedId: null,
   placementMode: null,
-  teleportCooldownUntil: 0
+  teleportCooldownUntil: 0,
+  lastTeleportLabel: ''
 };
+
+window.__artifexMazePortals = portalState;
 
 window.addEventListener('DOMContentLoaded', () => {
   injectPortalStyles();
@@ -42,10 +45,10 @@ function injectPortalBuilder() {
       <span id="portal-builder-status" class="portal-status-pill is-empty">0 pairs</span>
     </div>
     <div class="portal-action-row">
-      <button id="btn-add-portal" type="button">➕ Add Pair</button>
-      <button id="btn-place-portal-entry" type="button">🚪 Entry</button>
-      <button id="btn-place-portal-exit" type="button">✨ Exit</button>
-      <button id="btn-delete-portal" type="button">🗑 Delete</button>
+      <button id="btn-add-portal" type="button" title="Create a new portal pair">➕ Add Pair</button>
+      <button id="btn-place-portal-entry" type="button" title="Place the portal entry on the Overview">🚪 Entry</button>
+      <button id="btn-place-portal-exit" type="button" title="Place the portal exit on the Overview">✨ Exit</button>
+      <button id="btn-delete-portal" type="button" title="Delete the selected portal pair">🗑 Delete</button>
     </div>
     <div class="portal-editor-row">
       <label><span>Label</span><input id="portal-label-input" type="text" maxlength="12" value="A" /></label>
@@ -176,25 +179,58 @@ function overviewDimensions(width, height) {
   };
 }
 
+function previewDimensions(width, height) {
+  const s = state();
+  const scaleX = Math.max(0.6, (s?.stretchX || 100) / 100);
+  const scaleY = Math.max(0.6, (s?.stretchY || 100) / 100);
+  const base = Math.min(width / ((s?.gridSize || 20) * scaleX + 3), height / ((s?.gridSize || 20) * scaleY + 3)) * (s?.zoom || 1);
+  const cellW = base * scaleX;
+  const cellH = base * scaleY;
+  return {
+    cellW,
+    cellH,
+    ox: width / 2 - ((s?.gridSize || 20) * cellW) / 2,
+    oy: height / 2 - ((s?.gridSize || 20) * cellH) / 2
+  };
+}
+
 function bindTeleportLoop() {
   setInterval(() => {
     const s = state();
     if (!s || s.view !== 'walktest' || Date.now() < portalState.teleportCooldownUntil) return;
-    const player = { x: Math.floor(s.player?.x || 0), y: Math.floor(s.player?.y || 0) };
     for (const pair of portalState.pairs) {
-      if (sameCell(player, pair.entry) && pair.exit) return teleportTo(pair.exit, pair.label);
-      if (pair.twoWay && sameCell(player, pair.exit) && pair.entry) return teleportTo(pair.entry, pair.label);
+      if (pair.entry && pair.exit && playerTouchesPortal(s.player, pair.entry)) return teleportTo(pair.exit, pair.label);
+      if (pair.twoWay && pair.entry && pair.exit && playerTouchesPortal(s.player, pair.exit)) return teleportTo(pair.entry, pair.label);
     }
-  }, 80);
+  }, 40);
+}
+
+function playerTouchesPortal(player, portalCell) {
+  if (!player || !portalCell) return false;
+  const exactFloor = { x: Math.floor(player.x), y: Math.floor(player.y) };
+  const exactCenter = { x: Math.round(player.x - 0.5), y: Math.round(player.y - 0.5) };
+  if (sameCell(exactFloor, portalCell) || sameCell(exactCenter, portalCell)) return true;
+  const dx = player.x - (portalCell.x + 0.5);
+  const dy = player.y - (portalCell.y + 0.5);
+  return Math.hypot(dx, dy) <= 0.58;
 }
 
 function teleportTo(cell, label) {
   const s = state();
   if (!s) return;
   s.player = { x: cell.x + 0.5, y: cell.y + 0.5 };
-  portalState.teleportCooldownUntil = Date.now() + 700;
-  const status = $('player-status-indicator');
-  if (status) status.textContent = `Portal ${label} used`;
+  portalState.teleportCooldownUntil = Date.now() + 750;
+  portalState.lastTeleportLabel = label;
+  setStatus(`Portal ${label} used`);
+  forceWalkTestRepaint(label);
+}
+
+function forceWalkTestRepaint(label) {
+  requestAnimationFrame(() => {
+    $('view-mode-fps')?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    setStatus(`Portal ${label} used`);
+    drawPortalMarkersSoon();
+  });
 }
 
 function sameCell(a, b) {
@@ -206,16 +242,17 @@ function isOpenCell(s, x, y) {
 }
 
 function bindPortalMarkerRefresh() {
-  ['click', 'input', 'change'].forEach((eventName) => document.addEventListener(eventName, drawPortalMarkersSoon, true));
-  setInterval(drawPortalMarkers, 1200);
+  ['click', 'input', 'change', 'keydown', 'keyup'].forEach((eventName) => document.addEventListener(eventName, drawPortalMarkersSoon, true));
+  setInterval(drawPortalMarkers, 160);
 }
 
 function drawPortalMarkersSoon() {
-  requestAnimationFrame(() => setTimeout(drawPortalMarkers, 40));
+  requestAnimationFrame(() => setTimeout(drawPortalMarkers, 25));
 }
 
 function drawPortalMarkers() {
   drawOverviewPortalMarkers();
+  drawPreviewPortalMarkers();
 }
 
 function drawOverviewPortalMarkers() {
@@ -228,6 +265,24 @@ function drawOverviewPortalMarkers() {
     if (pair.entry) drawMarker(ctx, dims, pair.entry, pair.label, '#f1cf75', 'E');
     if (pair.exit) drawMarker(ctx, dims, pair.exit, pair.label, '#b58cff', 'X');
   });
+}
+
+function drawPreviewPortalMarkers() {
+  const s = state();
+  const canvas = $('maze-preview-canvas');
+  if (!s || !canvas || s.view === '3d' || !portalState.pairs.length) return;
+  const rect = canvas.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  const ratio = window.devicePixelRatio || 1;
+  const ctx = canvas.getContext('2d');
+  ctx.save();
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  const dims = previewDimensions(rect.width, rect.height);
+  portalState.pairs.forEach((pair) => {
+    if (pair.entry) drawMarker(ctx, dims, pair.entry, pair.label, '#f1cf75', 'E');
+    if (pair.exit) drawMarker(ctx, dims, pair.exit, pair.label, '#b58cff', 'X');
+  });
+  ctx.restore();
 }
 
 function drawMarker(ctx, dims, cell, label, color, suffix) {
@@ -270,7 +325,7 @@ function renderPortalUi(syncInputs = true) {
   if (portalState.placementMode && pair) {
     setPlacementNote(`Click the Overview to place Portal ${pair.label} ${portalState.placementMode}.`, 'is-active');
   } else if (pair) {
-    setPlacementNote(pair.entry && pair.exit ? `Portal ${pair.label} is placed.` : `Portal ${pair.label} needs ${pair.entry ? 'an exit' : 'an entry'}.`, pair.entry && pair.exit ? 'is-good' : 'is-warning');
+    setPlacementNote(pair.entry && pair.exit ? `Portal ${pair.label} is placed. Walk Test will teleport when the player steps onto ${pair.label}E.` : `Portal ${pair.label} needs ${pair.entry ? 'an exit' : 'an entry'}.`, pair.entry && pair.exit ? 'is-good' : 'is-warning');
   } else {
     setPlacementNote('No portal pair selected yet.', '');
   }
@@ -301,6 +356,11 @@ function setPlacementNote(text, klass) {
   if (!note) return;
   note.textContent = text;
   note.className = `portal-placement-note ${klass || ''}`.trim();
+}
+
+function setStatus(text) {
+  const status = $('player-status-indicator');
+  if (status) status.textContent = text;
 }
 
 function patchExportPayload() {
