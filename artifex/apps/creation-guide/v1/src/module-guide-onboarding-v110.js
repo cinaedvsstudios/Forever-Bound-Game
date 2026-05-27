@@ -1,4 +1,4 @@
-const ONBOARDING_VERSION = 'V1.1.0';
+const ONBOARDING_VERSION = 'V1.1.1';
 let tourMode = 'modules';
 let moduleStep = 0;
 let setupStep = 0;
@@ -6,6 +6,7 @@ let expandedDetails = false;
 let onboardingQueued = false;
 let onboardingReady = false;
 let lastOnboardingHtml = '';
+let lastModulePopupHtml = '';
 
 const artifexModules = [
   { key: 'hub', icon: '⌂', title: 'Artifex Hub', accent: '#e2cca7', short: 'The launch screen for choosing the active project and opening tools.', detail: 'The Hub is where the creator changes the active project, sees the project name, and opens the Artifex tools. Later, every app should read the active project chosen here.' },
@@ -44,7 +45,13 @@ function patchOnboarding() {
   if (document.title) document.title = `Artifex Creation Guide ${ONBOARDING_VERSION}`;
   moveInstructionBoxIntoHero();
   injectOnboardingStyles();
-  renderOnboardingBox();
+  if (tourMode === 'modules') {
+    renderModulePopup();
+    renderHeroIntroStub();
+  } else {
+    hideModulePopup();
+    renderSetupGuideBox();
+  }
   applyOnboardingHighlights();
   installOnboardingEvents();
 }
@@ -59,14 +66,56 @@ function moveInstructionBoxIntoHero() {
   }
 }
 
-function renderOnboardingBox() {
+function renderHeroIntroStub() {
   const box = document.querySelector('.overview-instructions');
   if (!box) return;
-  const html = tourMode === 'modules' ? moduleTourHtml() : setupGuideHtml();
+  box.classList.add('intro-stub');
+  const module = artifexModules[moduleStep];
+  const html = `
+    <div class="guide-card-topline"><span class="guide-step-pill">Module intro</span><span class="guide-state complete">Popup open</span></div>
+    <h3>Learn the Artifex modules first</h3>
+    <p>The floating guide is explaining <strong>${safe(module.title)}</strong>. Use it to step through each module, or skip straight to project setup.</p>`;
+  if (html !== lastOnboardingHtml) {
+    lastOnboardingHtml = html;
+    box.innerHTML = html;
+  }
+}
+
+function renderSetupGuideBox() {
+  const box = document.querySelector('.overview-instructions');
+  if (!box) return;
+  box.classList.remove('intro-stub');
+  const html = setupGuideHtml();
   if (html === lastOnboardingHtml) return;
   lastOnboardingHtml = html;
   box.innerHTML = html;
   wireOnboardingButtons();
+}
+
+function ensureModulePopup() {
+  let popup = document.getElementById('module-tour-popup');
+  if (popup) return popup;
+  popup = document.createElement('section');
+  popup.id = 'module-tour-popup';
+  popup.className = 'module-tour-popup';
+  popup.setAttribute('aria-live', 'polite');
+  document.body.appendChild(popup);
+  return popup;
+}
+
+function renderModulePopup() {
+  const popup = ensureModulePopup();
+  popup.classList.remove('hidden');
+  const html = moduleTourHtml();
+  if (html === lastModulePopupHtml) return;
+  lastModulePopupHtml = html;
+  popup.innerHTML = html;
+  wireOnboardingButtons();
+}
+
+function hideModulePopup() {
+  const popup = document.getElementById('module-tour-popup');
+  if (popup) popup.classList.add('hidden');
 }
 
 function moduleTourHtml() {
@@ -74,12 +123,21 @@ function moduleTourHtml() {
   const isLastModule = moduleStep >= artifexModules.length - 1;
   const circles = artifexModules.map((item, index) => `<button type="button" class="module-dot ${index === moduleStep ? 'active' : ''}" data-module-step="${index}" style="--dot:${item.accent}" title="${safe(item.title)}"><span>${item.icon}</span></button>`).join('');
   return `
+    <div class="floating-guide-header">
+      <div>
+        <p class="floating-eyebrow">Creation Guide intro</p>
+        <h2>What are the Artifex modules?</h2>
+      </div>
+      <button type="button" id="module-skip-top-button" class="floating-close">Skip</button>
+    </div>
     <div class="module-tour-dots">${circles}</div>
     <div class="guide-card-topline"><span class="guide-step-pill">Module ${moduleStep + 1}/${artifexModules.length}</span><span class="guide-state complete">Intro</span></div>
-    <h3><span class="module-title-icon" style="--dot:${module.accent}">${module.icon}</span>${safe(module.title)}</h3>
-    <p>${safe(module.short)} You can always access Artifex modules through the Hub or from the File/Open menu.</p>
-    ${expandedDetails ? `<div class="module-more"><strong>More detail</strong><p>${safe(module.detail)}</p></div>` : ''}
-    <div class="guide-actions">
+    <article class="floating-module-card" style="--dot:${module.accent}">
+      <h3><span class="module-title-icon" style="--dot:${module.accent}">${module.icon}</span>${safe(module.title)}</h3>
+      <p>${safe(module.short)} You can always access Artifex modules through the Hub or from the File/Open menu.</p>
+      ${expandedDetails ? `<div class="module-more"><strong>More detail</strong><p>${safe(module.detail)}</p></div>` : ''}
+    </article>
+    <div class="guide-actions floating-actions">
       <button type="button" id="module-back-button" ${moduleStep === 0 ? 'disabled' : ''}>Back</button>
       <button type="button" id="module-expand-button">${expandedDetails ? 'Less detail' : 'More detail'}</button>
       <button type="button" id="module-skip-button">Skip intro</button>
@@ -108,6 +166,7 @@ function wireOnboardingButtons() {
   document.getElementById('module-back-button')?.addEventListener('click', () => { moduleStep = Math.max(0, moduleStep - 1); expandedDetails = false; queueOnboarding(); });
   document.getElementById('module-next-button')?.addEventListener('click', () => { if (moduleStep >= artifexModules.length - 1) startSetupGuide(); else { moduleStep += 1; expandedDetails = false; queueOnboarding(); } });
   document.getElementById('module-skip-button')?.addEventListener('click', startSetupGuide);
+  document.getElementById('module-skip-top-button')?.addEventListener('click', startSetupGuide);
   document.getElementById('module-expand-button')?.addEventListener('click', () => { expandedDetails = !expandedDetails; queueOnboarding(); });
   document.getElementById('setup-back-button')?.addEventListener('click', () => moveSetup(-1));
   document.getElementById('setup-next-button')?.addEventListener('click', () => moveSetup(1));
@@ -180,10 +239,20 @@ function injectOnboardingStyles() {
   style.id = 'creation-guide-onboarding-style';
   style.textContent = `
     .project-hero .overview-instructions.in-hero { margin-top: 0; flex: 1 1 390px; max-width: 590px; min-width: 300px; align-self: stretch; display: flex; flex-direction: column; justify-content: center; }
-    .module-tour-dots { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 10px; }
-    .module-dot { width: 34px; height: 34px; padding: 0; border-radius: 999px; display: grid; place-items: center; border-color: color-mix(in srgb, var(--dot) 45%, #382a21); color: var(--dot); background: rgba(15,12,11,.62); }
+    .project-hero .overview-instructions.intro-stub { max-width: 420px; min-width: 260px; opacity: .92; }
+    .module-tour-popup { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(760px, calc(100vw - 38px)); max-height: min(82vh, 780px); overflow: auto; z-index: 160; padding: 22px 24px; border: 1px solid rgba(143,109,255,.46); border-radius: 28px; color: #f2eee9; background: linear-gradient(145deg, rgba(32,23,34,.98), rgba(14,10,9,.98)); box-shadow: 0 24px 80px rgba(0,0,0,.88), 0 0 0 9999px rgba(0,0,0,.38), 0 0 44px rgba(143,109,255,.36); }
+    .module-tour-popup.hidden { display: none; }
+    .floating-guide-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; margin-bottom: 14px; }
+    .floating-guide-header h2 { margin: 3px 0 0; color: #fff0ce; font-family: Cinzel, Georgia, serif; font-size: clamp(22px, 3vw, 34px); letter-spacing: .06em; }
+    .floating-eyebrow { margin: 0; color: #c7b8ff; font-size: 10px; text-transform: uppercase; letter-spacing: .16em; font-weight: 900; }
+    .floating-close { border-radius: 999px; padding: 8px 13px; }
+    .module-tour-dots { display: flex; flex-wrap: wrap; gap: 9px; margin: 10px 0 16px; }
+    .module-dot { width: 38px; height: 38px; padding: 0; border-radius: 999px; display: grid; place-items: center; border-color: color-mix(in srgb, var(--dot) 45%, #382a21); color: var(--dot); background: rgba(15,12,11,.62); }
     .module-dot.active { color: #fff; background: color-mix(in srgb, var(--dot) 38%, #171210); box-shadow: 0 0 0 2px color-mix(in srgb, var(--dot) 75%, transparent), 0 0 24px color-mix(in srgb, var(--dot) 62%, transparent); }
-    .module-title-icon { display: inline-grid; place-items: center; width: 30px; height: 30px; margin-right: 9px; border-radius: 999px; color: var(--dot); border: 1px solid currentColor; background: rgba(15,12,11,.65); }
+    .floating-module-card { padding: 18px; border: 1px solid color-mix(in srgb, var(--dot) 45%, rgba(226,204,167,.18)); border-radius: 22px; background: rgba(15,12,11,.50); box-shadow: inset 0 0 30px color-mix(in srgb, var(--dot) 12%, transparent); }
+    .module-title-icon { display: inline-grid; place-items: center; width: 34px; height: 34px; margin-right: 10px; border-radius: 999px; color: var(--dot); border: 1px solid currentColor; background: rgba(15,12,11,.65); }
+    .floating-module-card h3 { margin: 0 0 12px; color: #fff0ce; font-family: Cinzel, Georgia, serif; letter-spacing: .08em; }
+    .floating-module-card p { margin: 0; color: #f2eee9; line-height: 1.58; }
     .guide-card-topline { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
     .guide-step-pill, .guide-state { display: inline-flex; align-items: center; min-height: 24px; padding: 3px 9px; border: 1px solid rgba(226,204,167,.24); border-radius: 999px; color: #c7b8ff; background: rgba(15,12,11,.55); font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
     .guide-state.complete { color: #9af0ff; border-color: rgba(62,180,137,.65); }
@@ -191,11 +260,13 @@ function injectOnboardingStyles() {
     .guide-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
     .guide-actions button { padding: 7px 11px; font-size: 11px; border-radius: 999px; }
     .guide-actions button:disabled { opacity: .4; cursor: not-allowed; }
-    .module-more { margin-top: 10px; padding: 10px; border: 1px solid rgba(226,204,167,.18); border-radius: 14px; background: rgba(15,12,11,.46); }
+    .floating-actions { justify-content: flex-end; }
+    .module-more { margin-top: 12px; padding: 12px; border: 1px solid rgba(226,204,167,.18); border-radius: 14px; background: rgba(15,12,11,.46); }
     .module-more strong { color: #fff0ce; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; }
     .module-more p { margin: 5px 0 0; }
     .guide-highlight { outline: 2px solid #c7b8ff !important; outline-offset: 3px !important; box-shadow: 0 0 0 4px rgba(143,109,255,.22), 0 0 22px rgba(143,109,255,.55) !important; border-radius: 14px; animation: guidePulse 1.4s ease-in-out infinite alternate; }
     label.guide-highlight { padding: 7px; margin-left: -7px; margin-right: -7px; background: rgba(143,109,255,.10); border-radius: 15px; }
+    @media (max-width: 720px) { .module-tour-popup { top: 54%; width: calc(100vw - 18px); max-height: 88vh; padding: 16px; } .floating-guide-header { flex-direction: column; } .floating-actions { justify-content: flex-start; } }
     @keyframes guidePulse { from { box-shadow: 0 0 0 4px rgba(143,109,255,.18), 0 0 16px rgba(143,109,255,.42); } to { box-shadow: 0 0 0 4px rgba(143,109,255,.30), 0 0 30px rgba(143,109,255,.72); } }
   `;
   document.head.appendChild(style);
