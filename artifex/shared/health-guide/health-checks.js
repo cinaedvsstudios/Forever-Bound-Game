@@ -1,6 +1,19 @@
 // Artifex shared project health checks
 // Shared by Project Manager, Creation Guide, and later Build Game.
 
+const VALID_ROUTE_TYPES = Object.freeze([
+  'simple',
+  'branch',
+  'quest-gated',
+  'puzzle-gated',
+  'item-gated',
+  'flag-condition',
+  'completed-state',
+  'Route',
+  'Quest',
+  'Branch'
+]);
+
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
@@ -36,6 +49,10 @@ function makeCheck({
   };
 }
 
+function getRouteType(route = {}) {
+  return route.routeMeta?.routeTypeId || route.type || 'simple';
+}
+
 export function buildProjectSetupChecks(stateManagerOrState = {}) {
   const state = stateManagerOrState.state || stateManagerOrState;
   const project = stateManagerOrState.project || state.project || {};
@@ -44,7 +61,11 @@ export function buildProjectSetupChecks(stateManagerOrState = {}) {
 
   const nodes = safeArray(logic.nodes);
   const routes = safeArray(logic.routes);
+  const layoutNodes = safeArray(layout.nodes);
+  const layoutRoutes = safeArray(layout.routes);
   const nodeIds = new Set(nodes.map((node) => node.id));
+  const layoutNodeIds = new Set(layoutNodes.map((node) => node.id));
+  const layoutRouteIds = new Set(layoutRoutes.map((route) => route.id));
   const connectedIds = new Set();
   const invalidRoutes = [];
 
@@ -56,9 +77,19 @@ export function buildProjectSetupChecks(stateManagerOrState = {}) {
 
   const startTarget = getProjectField(project, 'startScreenId', 'startScreen', 'startNodeId');
   const hasStartScreen = Boolean(startTarget);
+  const startScreenExists = hasStartScreen && nodeIds.has(startTarget);
   const orphanedNodes = nodes.filter((node) => !connectedIds.has(node.id));
-  const linkedScenes = nodes.filter((node) => node.properties?.linkedSceneId || node.properties?.linkedScreenId || node.linkedSceneId || node.linkedScreenId);
-  const hasLibraryLinks = Boolean(state.libraryLinks || stateManagerOrState.libraryLinks || project.fileRefs?.libraryLinks);
+  const linkedScenes = nodes.filter((node) => node.properties?.linkedSceneId || node.properties?.linkedScreenId || node.nodeLinks?.sceneId || node.linkedSceneId || node.linkedScreenId);
+  const missingLayoutNodes = nodes.filter((node) => !layoutNodeIds.has(node.id));
+  const missingLayoutRoutes = routes.filter((route) => !layoutRouteIds.has(route.id));
+  const unknownRouteTypes = routes.filter((route) => !VALID_ROUTE_TYPES.includes(getRouteType(route)));
+  const gatedRoutesMissingConditions = routes.filter((route) => {
+    const type = getRouteType(route);
+    const isGated = ['quest-gated', 'puzzle-gated', 'item-gated', 'flag-condition', 'completed-state'].includes(type);
+    return isGated && safeArray(route.conditions).length === 0 && !route.routeMeta?.gateId && !route.routeMeta?.flagKey;
+  });
+  const nodesWithLibraryLinks = nodes.filter((node) => safeArray(node.properties?.libraryLinks).length > 0);
+  const hasLibraryLinks = Boolean(state.libraryLinks || stateManagerOrState.libraryLinks || project.fileRefs?.libraryLinks || nodesWithLibraryLinks.length);
   const hasInputMap = Boolean(state.inputMap || stateManagerOrState.inputMap || project.fileRefs?.inputMap);
 
   return [
@@ -82,6 +113,16 @@ export function buildProjectSetupChecks(stateManagerOrState = {}) {
       tags: ['setup', 'start-screen']
     }),
     makeCheck({
+      checkId: 'health_start_screen_resolves',
+      label: 'Start screen resolves',
+      detail: startScreenExists ? `Start node exists: ${startTarget}` : hasStartScreen ? `Start node does not exist: ${startTarget}` : 'No start target to resolve.',
+      pass: startScreenExists,
+      owner: 'Project Manager',
+      fixOwner: 'project-manager',
+      severity: startScreenExists ? 'pass' : 'failed',
+      tags: ['setup', 'start-screen', 'flatplan']
+    }),
+    makeCheck({
       checkId: 'health_input_map_expected',
       label: 'Input map expected',
       detail: hasInputMap ? 'input-map.json is referenced or loaded.' : 'Creation Guide should create input-map.json; Project Manager validates action mappings.',
@@ -94,7 +135,7 @@ export function buildProjectSetupChecks(stateManagerOrState = {}) {
     makeCheck({
       checkId: 'health_library_links_expected',
       label: 'Library links expected',
-      detail: hasLibraryLinks ? 'library-links.json is referenced or loaded.' : 'library-links.json should normalize links to scenes, quests, puzzles, archetypes, FX, and assets.',
+      detail: hasLibraryLinks ? `${nodesWithLibraryLinks.length} node(s) have node-level library links or library-links.json is loaded.` : 'library-links.json should normalize links to scenes, quests, puzzles, archetypes, FX, and assets.',
       pass: hasLibraryLinks,
       owner: 'Project Manager',
       fixOwner: 'project-manager',
@@ -118,6 +159,46 @@ export function buildProjectSetupChecks(stateManagerOrState = {}) {
       fixOwner: 'project-manager',
       severity: invalidRoutes.length ? 'failed' : 'pass',
       tags: ['flatplan', 'routes', 'stitcher']
+    }),
+    makeCheck({
+      checkId: 'health_layout_nodes_resolve',
+      label: 'Layout nodes resolve',
+      detail: missingLayoutNodes.length ? `Missing layout records: ${missingLayoutNodes.map((node) => node.id).join(', ')}` : 'Every logic node has a layout record.',
+      pass: missingLayoutNodes.length === 0,
+      owner: 'Project Manager',
+      fixOwner: 'project-manager',
+      severity: missingLayoutNodes.length ? 'failed' : 'pass',
+      tags: ['flatplan', 'layout', 'nodes']
+    }),
+    makeCheck({
+      checkId: 'health_layout_routes_resolve',
+      label: 'Layout routes resolve',
+      detail: missingLayoutRoutes.length ? `Missing visual route records: ${missingLayoutRoutes.map((route) => route.id).join(', ')}` : 'Every logic route has a visual route record.',
+      pass: missingLayoutRoutes.length === 0,
+      owner: 'Project Manager / Stitcher',
+      fixOwner: 'project-manager',
+      severity: missingLayoutRoutes.length ? 'warning' : 'pass',
+      tags: ['flatplan', 'layout', 'routes']
+    }),
+    makeCheck({
+      checkId: 'health_route_types_known',
+      label: 'Route types are known',
+      detail: unknownRouteTypes.length ? `Unknown route type(s): ${unknownRouteTypes.map((route) => `${route.id}:${getRouteType(route)}`).join(', ')}` : 'All routes use known route types.',
+      pass: unknownRouteTypes.length === 0,
+      owner: 'Project Manager / Stitcher',
+      fixOwner: 'project-manager',
+      severity: unknownRouteTypes.length ? 'warning' : 'pass',
+      tags: ['routes', 'stitcher', 'route-types']
+    }),
+    makeCheck({
+      checkId: 'health_gated_routes_have_conditions',
+      label: 'Gated routes have conditions',
+      detail: gatedRoutesMissingConditions.length ? `Missing gates: ${gatedRoutesMissingConditions.map((route) => route.id).join(', ')}` : 'All gated routes have a condition, gate ID, or flag key.',
+      pass: gatedRoutesMissingConditions.length === 0,
+      owner: 'Project Manager / Stitcher',
+      fixOwner: 'project-manager',
+      severity: gatedRoutesMissingConditions.length ? 'warning' : 'pass',
+      tags: ['routes', 'stitcher', 'conditions']
     }),
     makeCheck({
       checkId: 'health_nodes_link_to_scenes_screens',
@@ -146,13 +227,17 @@ export function buildHealthSummary(checks = []) {
   const passed = checks.filter((check) => check.pass).length;
   const failed = checks.filter((check) => !check.pass).length;
   const needsCreationGuide = checks.some((check) => !check.pass && check.creationGuideAction);
+  const hardFailures = checks.filter((check) => !check.pass && check.severity === 'failed').length;
+  const warnings = checks.filter((check) => !check.pass && check.severity !== 'failed').length;
 
   return {
     total,
     passed,
     failed,
+    hardFailures,
+    warnings,
     needsCreationGuide,
-    status: failed === 0 ? 'passed' : 'warning'
+    status: hardFailures ? 'failed' : failed === 0 ? 'passed' : 'warning'
   };
 }
 
