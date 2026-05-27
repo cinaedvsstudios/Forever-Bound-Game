@@ -1,9 +1,10 @@
-import { createHealthReport } from '../../../shared/health-guide/health-checks.js?v=0.1.17-path';
+import { createHealthReport } from '../../../shared/health-guide/health-checks.js?v=0.1.18-indexes';
+import { LIBRARY_INDEX_PATHS, createEmptyIndex } from './project-library-indexes.js?v=0.1.18-indexes';
 
 const PROJECT_IO_VERSION = 'artifex.projectPackage.v1';
 const JSZIP_CDN = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
 
-const PROJECT_PACKAGE_FILES = Object.freeze([
+const CORE_PROJECT_FILES = Object.freeze([
   'project.json',
   'logic.json',
   'layout.json',
@@ -12,6 +13,11 @@ const PROJECT_PACKAGE_FILES = Object.freeze([
   'input-map.json',
   'health/latest-health-report.json',
   'todos/project-manager-todos.json'
+]);
+
+const PROJECT_PACKAGE_FILES = Object.freeze([
+  ...CORE_PROJECT_FILES,
+  ...Object.values(LIBRARY_INDEX_PATHS).flat()
 ]);
 
 function clone(value) {
@@ -127,6 +133,16 @@ function makeProjectManagerTodos(healthReport) {
   };
 }
 
+function addLibraryIndexesToPackage(files, stateManager) {
+  const indexStore = stateManager.state?.libraryIndexes || {};
+  const projectId = stateManager.project?.projectId || 'project_unknown';
+
+  Object.values(LIBRARY_INDEX_PATHS).flat().forEach((path) => {
+    const normalizedPath = normalizeZipPath(path).toLowerCase();
+    files[path] = clone(indexStore[normalizedPath] || indexStore[path]) || createEmptyIndex(path, projectId);
+  });
+}
+
 export function buildProjectPackage(stateManager) {
   const healthReport = createHealthReport({ stateManager, scope: 'project-manager-export' });
   const projectRootPath = getProjectRootPath(stateManager.project || {});
@@ -145,6 +161,8 @@ export function buildProjectPackage(stateManager) {
     'health/latest-health-report.json': healthReport,
     'todos/project-manager-todos.json': makeProjectManagerTodos(healthReport)
   };
+
+  addLibraryIndexesToPackage(files, stateManager);
 
   return {
     schemaVersion: PROJECT_IO_VERSION,
@@ -247,6 +265,7 @@ function applyProjectPackageData({ stateManager, parsedFiles }) {
   if (parsedFiles.inputMap) stateManager.state.inputMap = parsedFiles.inputMap;
   if (parsedFiles.healthReport) stateManager.state.healthReport = parsedFiles.healthReport;
   if (parsedFiles.projectTodos) stateManager.state.projectTodos = parsedFiles.projectTodos;
+  if (parsedFiles.libraryIndexes) stateManager.state.libraryIndexes = parsedFiles.libraryIndexes;
 
   stateManager.state.catalog = currentCatalog;
   stateManager.selectedNodeId = null;
@@ -273,6 +292,14 @@ function assignParsedFileByPath(parsedFiles, path, json) {
   else if (basename === 'input-map.json') parsedFiles.inputMap = json;
   else if (basename === 'latest-health-report.json' || pathKey.endsWith('health/latest-health-report.json')) parsedFiles.healthReport = json;
   else if (basename === 'project-manager-todos.json' || pathKey.endsWith('todos/project-manager-todos.json')) parsedFiles.projectTodos = json;
+
+  Object.values(LIBRARY_INDEX_PATHS).flat().forEach((indexPath) => {
+    const normalizedIndexPath = normalizeZipPath(indexPath).toLowerCase();
+    if (pathKey.endsWith(normalizedIndexPath)) {
+      parsedFiles.libraryIndexes ||= {};
+      parsedFiles.libraryIndexes[normalizedIndexPath] = json;
+    }
+  });
 }
 
 async function parseZipProjectFile(file, parsedFiles) {
