@@ -1,6 +1,7 @@
-import { createHealthReport } from '../../../shared/health-guide/health-checks.js?v=0.1.15-io';
+import { createHealthReport } from '../../../shared/health-guide/health-checks.js?v=0.1.16-zip';
 
 const PROJECT_IO_VERSION = 'artifex.projectPackage.v1';
+const JSZIP_CDN = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
 
 const PROJECT_PACKAGE_FILES = Object.freeze([
   'project.json',
@@ -27,6 +28,14 @@ function getPathKey(file) {
 
 function prettyJSON(value) {
   return JSON.stringify(value, null, 2);
+}
+
+function makeSafeProjectSlug(projectId = 'artifex-project') {
+  return String(projectId || 'artifex-project')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'artifex-project';
 }
 
 function makeDefaultLibraryLinks(stateManager) {
@@ -104,30 +113,27 @@ export function buildProjectPackage(stateManager) {
   };
 }
 
-async function writePackageToDirectory(projectPackage) {
-  if (!globalThis.showDirectoryPicker) return false;
-  const directoryHandle = await globalThis.showDirectoryPicker({ mode: 'readwrite' });
+function loadJSZip() {
+  if (globalThis.JSZip) return Promise.resolve(globalThis.JSZip);
 
-  for (const [path, value] of Object.entries(projectPackage.files)) {
-    const parts = path.split('/');
-    const filename = parts.pop();
-    let currentDir = directoryHandle;
-
-    for (const part of parts) {
-      currentDir = await currentDir.getDirectoryHandle(part, { create: true });
+  return new Promise((resolve, reject) => {
+    const existingScript = document.querySelector(`script[src="${JSZIP_CDN}"]`);
+    if (existingScript) {
+      existingScript.addEventListener('load', () => resolve(globalThis.JSZip), { once: true });
+      existingScript.addEventListener('error', () => reject(new Error('Could not load JSZip.')), { once: true });
+      return;
     }
 
-    const fileHandle = await currentDir.getFileHandle(filename, { create: true });
-    const writable = await fileHandle.createWritable();
-    await writable.write(prettyJSON(value));
-    await writable.close();
-  }
-
-  return true;
+    const script = document.createElement('script');
+    script.src = JSZIP_CDN;
+    script.async = true;
+    script.onload = () => globalThis.JSZip ? resolve(globalThis.JSZip) : reject(new Error('JSZip loaded but was not available.'));
+    script.onerror = () => reject(new Error('Could not load JSZip.'));
+    document.head.appendChild(script);
+  });
 }
 
-function downloadTextFile(filename, text) {
-  const blob = new Blob([text], { type: 'application/json' });
+function downloadBlob(filename, blob) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -138,11 +144,23 @@ function downloadTextFile(filename, text) {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-function downloadPackageAsLooseFiles(projectPackage) {
-  Object.entries(projectPackage.files).forEach(([path, value], index) => {
-    const filename = path.replaceAll('/', '__');
-    window.setTimeout(() => downloadTextFile(filename, prettyJSON(value)), index * 150);
+async function downloadPackageAsZip(projectPackage, stateManager) {
+  const JSZip = await loadJSZip();
+  const zip = new JSZip();
+
+  Object.entries(projectPackage.files).forEach(([path, value]) => {
+    zip.file(path, prettyJSON(value));
   });
+
+  zip.file('project-package-manifest.json', prettyJSON({
+    schemaVersion: PROJECT_IO_VERSION,
+    generatedAt: projectPackage.generatedAt,
+    files: PROJECT_PACKAGE_FILES
+  }));
+
+  const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+  const filename = `${makeSafeProjectSlug(stateManager.project?.projectId || stateManager.project?.gameTitle)}-project-package.zip`;
+  downloadBlob(filename, blob);
 }
 
 function showIOToast(message, tone = 'info') {
@@ -166,6 +184,15 @@ async function readFileText(file) {
   });
 }
 
+async function readFileArrayBuffer(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error(`Could not read ${file.name}`));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
 function applyProjectPackageData({ stateManager, parsedFiles }) {
   const currentCatalog = stateManager.state.catalog;
 
@@ -185,40 +212,53 @@ function applyProjectPackageData({ stateManager, parsedFiles }) {
   stateManager.saveToStorage?.();
 }
 
+function assignParsedFileByPath(parsedFiles, path, json) {
+  const basename = normalizeFilename(path);
+  const pathKey = String(path || '').replaceAll('\\', '/').toLowerCase();
+
+  if (json?.schemaVersion === PROJECT_IO_VERSION && json.files) {
+    Object.entries(json.files).forEach(([nestedPath, value]) => assignParsedFileByPath(parsedFiles, nestedPath, value));
+    return;
+  }
+
+  if (basename === 'project.json') parsedFiles.project = json;
+  else if (basename === 'logic.json') parsedFiles.logic = json;
+  else if (basename === 'layout.json') parsedFiles.layout = json;
+  else if (basename === 'registry.json') parsedFiles.registry = json;
+  else if (basename === 'library-links.json') parsedFiles.libraryLinks = json;
+  else if (basename === 'input-map.json') parsedFiles.inputMap = json;
+  else if (basename === 'latest-health-report.json' || pathKey.endsWith('health/latest-health-report.json')) parsedFiles.healthReport = json;
+  else if (basename === 'project-manager-todos.json' || pathKey.endsWith('todos/project-manager-todos.json')) parsedFiles.projectTodos = json;
+}
+
+async function parseZipProjectFile(file, parsedFiles) {
+  const JSZip = await loadJSZip();
+  const arrayBuffer = await readFileArrayBuffer(file);
+  const zip = await JSZip.loadAsync(arrayBuffer);
+  const entries = Object.values(zip.files).filter((entry) => !entry.dir && entry.name.toLowerCase().endsWith('.json'));
+
+  for (const entry of entries) {
+    const text = await entry.async('string');
+    const json = JSON.parse(text);
+    assignParsedFileByPath(parsedFiles, entry.name, json);
+  }
+}
+
 async function parseImportedProjectFiles(fileList) {
   const parsedFiles = {};
   const fileErrors = [];
 
   for (const file of Array.from(fileList || [])) {
     try {
-      const text = await readFileText(file);
-      const json = JSON.parse(text);
       const basename = normalizeFilename(file.name);
-      const pathKey = getPathKey(file);
-
-      if (json?.schemaVersion === PROJECT_IO_VERSION && json.files) {
-        Object.entries(json.files).forEach(([path, value]) => {
-          const key = normalizeFilename(path);
-          if (key === 'project.json') parsedFiles.project = value;
-          if (key === 'logic.json') parsedFiles.logic = value;
-          if (key === 'layout.json') parsedFiles.layout = value;
-          if (key === 'registry.json') parsedFiles.registry = value;
-          if (key === 'library-links.json') parsedFiles.libraryLinks = value;
-          if (key === 'input-map.json') parsedFiles.inputMap = value;
-          if (path.toLowerCase().endsWith('latest-health-report.json')) parsedFiles.healthReport = value;
-          if (path.toLowerCase().endsWith('project-manager-todos.json')) parsedFiles.projectTodos = value;
-        });
+      if (basename.endsWith('.zip')) {
+        await parseZipProjectFile(file, parsedFiles);
         continue;
       }
 
-      if (basename === 'project.json') parsedFiles.project = json;
-      else if (basename === 'logic.json') parsedFiles.logic = json;
-      else if (basename === 'layout.json') parsedFiles.layout = json;
-      else if (basename === 'registry.json') parsedFiles.registry = json;
-      else if (basename === 'library-links.json' || basename === 'library-links__json') parsedFiles.libraryLinks = json;
-      else if (basename === 'input-map.json') parsedFiles.inputMap = json;
-      else if (basename === 'latest-health-report.json' || pathKey.endsWith('health/latest-health-report.json')) parsedFiles.healthReport = json;
-      else if (basename === 'project-manager-todos.json' || pathKey.endsWith('todos/project-manager-todos.json')) parsedFiles.projectTodos = json;
+      const text = await readFileText(file);
+      const json = JSON.parse(text);
+      assignParsedFileByPath(parsedFiles, file.webkitRelativePath || file.name, json);
     } catch (error) {
       fileErrors.push(`${file.name}: ${error.message}`);
     }
@@ -230,7 +270,7 @@ async function parseImportedProjectFiles(fileList) {
 async function importProjectFiles({ stateManager, onRefresh }) {
   const input = document.createElement('input');
   input.type = 'file';
-  input.accept = 'application/json,.json';
+  input.accept = 'application/json,.json,.zip,application/zip';
   input.multiple = true;
 
   input.addEventListener('change', async () => {
@@ -260,18 +300,12 @@ async function exportProjectPackage({ stateManager }) {
   const projectPackage = buildProjectPackage(stateManager);
 
   try {
-    const wroteDirectory = await writePackageToDirectory(projectPackage);
-    if (wroteDirectory) {
-      showIOToast('Exported split project package to selected folder.');
-      return;
-    }
+    await downloadPackageAsZip(projectPackage, stateManager);
+    showIOToast('Exported project package as a ZIP file.');
   } catch (error) {
-    if (error.name === 'AbortError') return;
-    console.warn('[ProjectIO] Folder export failed, falling back to loose downloads.', error);
+    console.error('[ProjectIO] ZIP export failed.', error);
+    showIOToast(`ZIP export failed: ${error.message}`, 'error');
   }
-
-  downloadPackageAsLooseFiles(projectPackage);
-  showIOToast('Exported split project files as separate downloads.');
 }
 
 function saveCurrentProject({ stateManager }) {
