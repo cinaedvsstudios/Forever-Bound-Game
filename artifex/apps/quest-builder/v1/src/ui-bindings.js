@@ -199,11 +199,12 @@ function bind(app, id, fn) {
 }
 
 export function wireActions(app) {
+  const addQuestFromMenu = () => { app.addQuest(); closeMenus(); app.toast('Quest added.'); };
   app.$('new-quest-wizard-button').onclick = () => { closeMenus(); app.$('wizard-dialog').showModal(); };
+  app.$('new-quest-button').onclick = addQuestFromMenu;
   app.$('create-wizard-quest-button').onclick = () => createWizardQuest(app);
-  app.$('new-file-button').onclick = () => { app.doc.quests = []; app.doc.name = 'Untitled Quest File'; app.state.activeQuest = 0; app.state.activeBlock = 0; closeMenus(); app.render(); app.toast('New Quest file created.'); };
   app.$('save-local-button').onclick = () => { localStorage.setItem(app.storageKey, JSON.stringify(app.doc)); closeMenus(); app.toast('Saved locally.'); };
-  app.$('add-quest-button').onclick = app.$('side-add-quest-button').onclick = () => { app.addQuest(); closeMenus(); app.toast('Quest added.'); };
+  app.$('add-quest-button').onclick = app.$('side-add-quest-button').onclick = addQuestFromMenu;
   app.$('edit-quest-button').onclick = () => { closeMenus(); openEditor(app, 'quest'); };
   app.$('delete-quest-button').onclick = () => { app.removeQuest(); closeMenus(); app.toast('Quest deleted.'); };
   app.$('side-add-block-button').onclick = app.$('add-flow-block-button').onclick = () => { app.addBlock(); openEditor(app, 'block'); };
