@@ -9,6 +9,33 @@ This document records the agreed update plan for the Maze / Labyrinth engine ins
 
 ## Progress log
 
+### V1.10 practical fixes after visual testing
+
+Completed or started in V1.10:
+
+- Added `maze-v110-fixes.js` as a stronger temporary patch over the current runtime while the larger runtime split is still pending.
+- Added a Clear All button on the Construction card.
+- Reworked generated maze creation in the patch so generated mazes use the selected shape and enforce a border wall ring with entrance/exit openings.
+- Reworked blank generation so Start Blank / Clear All create a clean selected shape with border walls and entrance/exit openings.
+- Reworked Plot Solution Path in the patch so it calculates a route through the currently patched matrix instead of relying only on the older runtime solver.
+- Added middle/right mouse drag support on the preview workspace for pan-style movement, with Fit resetting pan.
+- Simplified the 3D View placeholder so it is less visually misleading and clearly says the real first-person/tunnel renderer is queued for a later dedicated runtime pass.
+- Added generated-map handling for stretch/shape changes so generated layouts are rebuilt, while hand-drawn blank layouts are preserved and reshaped more cautiously.
+
+Still needs live check from V1.10:
+
+- Confirm middle mouse drag works on the preview workspace. If the browser or mouse blocks middle-drag, try right mouse drag as the fallback.
+- Confirm Triangle now has a proper border wall ring and is less broken visually.
+- Confirm Regenerate produces a playable route in Triangle, Square, Pentagon, Hexagon, and Circle.
+- Confirm Plot Solution Path now draws a path after regeneration.
+- Confirm Clear All creates a clean editable shape with border walls and entrance/exit openings.
+- Confirm Stretch X/Y no longer merely creates visible gaps between the current blocks.
+- Confirm 3D View is acceptable as a placeholder or decide to hide it until the real renderer exists.
+
+Known remaining issue:
+
+- The proper long-term fix is still to merge this patch behaviour into the real runtime and remove stacked patch files. The current V1.10 approach is intentionally temporary so testing can continue without rewriting the full runtime in one risky pass.
+
 ### V1.09 display and regeneration clarification
 
 Completed or started in V1.09:
@@ -75,7 +102,7 @@ Still needs follow-up/testing from Pass 1:
 - Verify Start Blank + Draw creates valid manual mazes correctly.
 - Verify entrance and exit placement is sensible for every shape.
 - Move shape-generation logic into a dedicated `maze-shape-generator.js` file instead of keeping it inside the runtime. **Started in V1.09, not fully wired into runtime yet.**
-- Confirm V1.09 loads from GitHub Pages without a syntax/runtime error.
+- Confirm V1.10 loads from GitHub Pages without a syntax/runtime error.
 
 ## Confirmed design corrections
 
@@ -99,7 +126,7 @@ Walk Test is not the full 3D simulation. It is a practical editor validation mod
 
 ## Pass 1 · Maze shell and basic construction cleanup
 
-Status: mostly started/completed in V1.07; V1.08 fixed header/dropdown and upload layout regressions; V1.09 added regeneration controls and display mode clarification; testing and deeper file split still needed.
+Status: mostly started/completed in V1.07; V1.08 fixed header/dropdown and upload layout regressions; V1.09 added regeneration controls and display mode clarification; V1.10 added practical patch fixes for border, clear all, pan, and solution path; testing and deeper file split still needed.
 
 Completed:
 
@@ -133,6 +160,9 @@ Completed:
 13. Add Force Regenerate buttons to main cards.
 14. Add active settings summary to the Overview legend.
 15. Add a third 3D View display mode placeholder.
+16. Add Clear All button.
+17. Add temporary generated-shape border ring and patched route solving.
+18. Add preview pan by middle/right mouse drag.
 
 Remaining Pass 1 cleanup:
 
@@ -142,7 +172,7 @@ Remaining Pass 1 cleanup:
 4. Confirm Shape, Stretch X/Y, and Warp export cleanly and reload from JSON.
 5. Confirm the image reference file picker does not create layout gaps or hide buttons.
 6. Rework the main runtime so Shape and Stretch regenerate the logical map natively, not through a patch module.
-7. Add a true solid border/wall ring around the selected shape in the generated matrix.
+7. Replace temporary V1.09/V1.10 patch files with integrated runtime modules after behaviour is confirmed.
 
 ## Pass 2 · Walk Test and player movement
 
@@ -154,7 +184,7 @@ Remaining Pass 1 cleanup:
 6. Highlight the matching on-screen D-pad key when the physical keyboard key is pressed. **Partially present before V1.07; needs live test.**
 7. Reset player position to the entrance when the maze is regenerated or the shape changes. **Updated in V1.07; needs live test.**
 8. Keep Walk Test as editor logic validation, not 3D simulation.
-9. Add/replace with a dedicated 3D View runtime for simulated first-person/3D preview in a later runtime pass. **Placeholder added in V1.09.**
+9. Add/replace with a dedicated 3D View runtime for simulated first-person/3D preview in a later runtime pass. **Placeholder added in V1.09, simplified in V1.10.**
 
 ## Pass 3 · Difficulty analysis and report-based fixing
 
