@@ -1,0 +1,143 @@
+// Artifex Project Manager shell renderer
+// Keeps index.html small and leaves behaviour in focused modules.
+
+export function renderProjectShell({ version = 'v0.1.19 SHELL' } = {}) {
+  document.body.innerHTML = `
+    <header class="h-16 bg-slateDark border-b border-[#20202e] px-4 grid grid-cols-[auto_1fr_auto] items-center z-40 flex-shrink-0 gap-4">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-9 h-9 bg-gradient-to-tr from-accentDark to-projectGold rounded-lg flex items-center justify-center shadow-project-glow flex-shrink-0">
+          <i data-lucide="hexagon" class="w-6 h-6 text-projectParchment"></i>
+        </div>
+        <div class="min-w-0">
+          <span class="text-xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-projectGoldGlow to-projectGold">ARTIFEX</span>
+          <span class="text-xs text-projectGoldGlow block -mt-1 font-mono tracking-widest">PROJECT EDITOR</span>
+        </div>
+        <span id="projectEditorVersionBadge" data-project-version-badge class="text-[10px] font-mono border border-projectGold/40 text-projectGoldGlow px-2 py-1 rounded-full bg-accentDark/40 whitespace-nowrap">${version}</span>
+        <div class="h-8 w-px bg-projectGold/30"></div>
+      </div>
+
+      <nav class="project-menu flex items-center justify-center gap-2 min-w-0 text-xs text-zinc-300">
+        <details class="relative" data-project-menu>
+          <summary class="cursor-pointer px-3 py-1.5 rounded-full border border-projectGold/20 hover:bg-accentDark/50 hover:border-projectGold/50 transition">File ▾</summary>
+          <div class="absolute left-1/2 -translate-x-1/2 top-9 z-50 w-56 bg-cardDark border border-projectGold/30 rounded-xl shadow-card-glow p-1">
+            <button data-workspace-target="wizard" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Getting Started / Missing Setup</button>
+            <button data-project-io-action="import" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Open / Import Project Files</button>
+            <button data-project-io-action="save-local" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Save Current Project</button>
+            <button data-project-io-action="export-package" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Export Project Package</button>
+            <div class="my-1 border-t border-[#2d2d42]"></div>
+            <a href="../creation-guide/" class="block w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-projectGoldGlow">Create New Project in Creation Guide</a>
+          </div>
+        </details>
+
+        <details class="relative" data-project-menu>
+          <summary class="cursor-pointer px-3 py-1.5 rounded-full border border-projectGold/20 hover:bg-accentDark/50 hover:border-projectGold/50 transition">Module ▾</summary>
+          <div class="absolute left-1/2 -translate-x-1/2 top-9 z-50 w-64 bg-cardDark border border-projectGold/30 rounded-xl shadow-card-glow p-1">
+            <a href="../../index.html" class="block w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-projectGoldGlow font-semibold">Hub</a>
+            <div class="my-1 border-t border-[#2d2d42]"></div>
+            <a href="../creation-guide/" class="block w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Creation Guide</a>
+            <a href="../project-editor/" class="block w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Project Manager</a>
+            <a href="../scene-editor/" class="block w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Scene Editor</a>
+            <button class="w-full text-left px-3 py-2 rounded text-zinc-600 cursor-default">Quest Builder</button>
+            <button class="w-full text-left px-3 py-2 rounded text-zinc-600 cursor-default">Puzzle Creator</button>
+            <a href="../effect-editor/" class="block w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Effect Editor</a>
+            <a href="../archetype-object-creator/" class="block w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Archetype Object Creator</a>
+          </div>
+        </details>
+
+        <details class="relative" data-project-menu>
+          <summary class="cursor-pointer px-3 py-1.5 rounded-full border border-projectGold/20 hover:bg-accentDark/50 hover:border-projectGold/50 transition">Edit ▾</summary>
+          <div class="absolute left-1/2 -translate-x-1/2 top-9 z-50 w-48 bg-cardDark border border-projectGold/30 rounded-xl shadow-card-glow p-1">
+            <button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">Undo</button>
+            <button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">Redo</button>
+            <button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">Duplicate Selection</button>
+          </div>
+        </details>
+
+        <details class="relative" data-project-menu>
+          <summary class="cursor-pointer px-3 py-1.5 rounded-full border border-projectGold/20 hover:bg-accentDark/50 hover:border-projectGold/50 transition">View ▾</summary>
+          <div class="absolute left-1/2 -translate-x-1/2 top-9 z-50 w-56 bg-cardDark border border-projectGold/30 rounded-xl shadow-card-glow p-1">
+            <button id="toggleSplitStatePreview" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Show Split State Preview</button>
+            <button data-workspace-target="manifest" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Manifest Workspace</button>
+            <button data-workspace-target="flatplan" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Flatplan Workspace</button>
+            <button data-workspace-target="stitcher" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Stitcher Workspace</button>
+            <button data-workspace-target="buildprep" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Build Prep Workspace</button>
+            <button data-workspace-target="assetbrowser" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Asset Browser</button>
+          </div>
+        </details>
+
+        <details class="relative" data-project-menu>
+          <summary class="cursor-pointer px-3 py-1.5 rounded-full border border-projectGold/20 hover:bg-accentDark/50 hover:border-projectGold/50 transition">Templates ▾</summary>
+          <div class="absolute left-1/2 -translate-x-1/2 top-9 z-50 w-52 bg-cardDark border border-projectGold/30 rounded-xl shadow-card-glow p-1">
+            <button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">Empty Structure</button>
+            <button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">Starter Flatplan</button>
+            <button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">Quest Chain</button>
+            <button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">Puzzle Sequence</button>
+          </div>
+        </details>
+
+        <details class="relative" data-project-menu>
+          <summary class="cursor-pointer px-3 py-1.5 rounded-full border border-projectGold/20 hover:bg-accentDark/50 hover:border-projectGold/50 transition">Libraries ▾</summary>
+          <div class="absolute left-1/2 -translate-x-1/2 top-9 z-50 w-64 bg-cardDark border border-projectGold/30 rounded-xl shadow-card-glow p-1">
+            <button data-library-target="quests" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Quest Library</button>
+            <button data-library-target="sidequests" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Side Quest Library</button>
+            <button data-library-target="scenes-screens" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Scenes/Screens Library</button>
+            <button data-library-target="puzzles" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Puzzle Library</button>
+            <button data-library-target="archetype-objects" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Archetype Object Library</button>
+            <button data-library-target="archetype-effects" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Archetype Effect Library</button>
+            <div class="my-1 border-t border-[#2d2d42]"></div>
+            <button data-library-target="assets" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-projectGoldGlow">Asset Browser</button>
+          </div>
+        </details>
+
+        <details class="relative" data-project-menu>
+          <summary class="cursor-pointer px-3 py-1.5 rounded-full border border-projectGold/20 hover:bg-accentDark/50 hover:border-projectGold/50 transition">Help ▾</summary>
+          <div class="absolute left-1/2 -translate-x-1/2 top-9 z-50 w-56 bg-cardDark border border-projectGold/30 rounded-xl shadow-card-glow p-1">
+            <button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">Project Editor Help</button>
+            <button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">Keyboard Shortcuts</button>
+            <button class="w-full text-left px-3 py-2 rounded text-zinc-500 cursor-default">File Contracts</button>
+          </div>
+        </details>
+      </nav>
+
+      <div class="flex items-center gap-2 justify-end">
+        <button id="zoomInBtn" class="w-8 h-8 hover:bg-accentDark/50 text-projectGoldGlow border border-projectGold/30 flex items-center justify-center rounded transition" title="Zoom In"><i data-lucide="plus" class="w-4 h-4"></i></button>
+        <button id="resetViewportBtn" class="w-8 h-8 hover:bg-accentDark/50 text-projectGoldGlow border border-projectGold/30 flex items-center justify-center rounded transition" title="Recenter View"><i data-lucide="crosshair" class="w-4 h-4"></i></button>
+        <button id="zoomOutBtn" class="w-8 h-8 hover:bg-accentDark/50 text-projectGoldGlow border border-projectGold/30 flex items-center justify-center rounded transition" title="Zoom Out"><i data-lucide="minus" class="w-4 h-4"></i></button>
+        <button data-workspace-target="flatplan" id="activeWorkspaceBtn" class="bg-gradient-to-r from-accentDark to-projectGold border border-projectGold/60 text-white font-bold px-4 py-2 rounded-lg text-xs shadow-project-glow flex items-center space-x-2 transition"><i data-lucide="layers" class="w-4 h-4 text-projectParchment"></i><span id="activeWorkspaceName" class="tracking-wide text-xs">FLATPLAN</span></button>
+      </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+      <aside class="w-80 bg-slateDark border-r border-[#20202e] flex flex-col overflow-hidden flex-shrink-0 z-30">
+        <div class="p-4 bg-black/20 border-b border-[#20202e]">
+          <div class="bg-accentDark/30 border border-projectGold/50 rounded-lg p-3">
+            <span class="text-xs text-zinc-500 block font-mono">PROJECT WORKSPACE</span>
+            <span class="text-sm font-bold text-white block truncate">FOREVER BOUND GAME</span>
+            <div class="flex items-center space-x-2 mt-2">
+              <i data-lucide="file-code" class="w-3.5 h-3.5 text-projectGoldGlow"></i>
+              <span id="activeFileIndicator" class="text-xs font-mono text-projectGoldGlow">project-editor split shell</span>
+            </div>
+            <div class="mt-2 text-[10px] font-mono text-zinc-500 flex justify-between items-center bg-black/40 p-1 rounded border border-zinc-800">
+              <span>LOCAL: SPLIT BUILD</span><span class="text-projectGreen font-bold">&#9679; ONLINE</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 space-y-3" id="sidebarAccordion"></div>
+      </aside>
+
+      <main class="flex-1 bg-obsidian relative overflow-hidden flex flex-col">
+        <div id="manifestWorkspace" class="hidden absolute inset-0 bg-obsidian z-20"></div>
+        <div id="stitcherWorkspace" class="hidden absolute inset-0 bg-obsidian z-20"></div>
+        <div id="buildPrepWorkspace" class="hidden absolute inset-0 bg-obsidian z-20"></div>
+        <div id="assetBrowserWorkspace" class="hidden absolute inset-0 bg-obsidian z-20"></div>
+        <div id="wizardWorkspace" class="hidden absolute inset-0 bg-obsidian z-20"></div>
+        <div id="flatplanCanvas" class="w-full h-full relative cursor-default infinite-grid overflow-hidden flex-1 touch-none">
+          <div id="canvasViewport" class="absolute inset-0 origin-top-left select-none will-change-transform" style="transform: translate(0px, 0px) scale(1);">
+            <svg id="svgEdgeLayer" class="absolute inset-0 pointer-events-none w-[5000px] h-[5000px]"></svg>
+            <div id="nodesContainer" class="absolute inset-0 pointer-events-none"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+  `;
+}
