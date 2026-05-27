@@ -1,12 +1,14 @@
-import { STORAGE_PREFIX, editorState, loadArchetype, serializeArchetype } from './editor-state.js';
+import { STORAGE_PREFIX, editorState, loadArchetype, serializeArchetype, objectExportTarget } from './editor-state.js';
 
 export function downloadCurrentArchetype() {
   const json = serializeArchetype();
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
+  const id = editorState.archetype.id || 'archobj_object_archetype';
   link.href = url;
-  link.download = `${editorState.archetype.id || 'object_archetype'}.json`;
+  link.download = `${id}.json`;
+  link.title = `Exports for ${objectExportTarget(id)}. Add/update this file in archetypes/object-index.json.`;
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -64,7 +66,7 @@ export function deleteLocalArchetype(key) {
 
 export function captureCanvasSnapshot(canvas) {
   const link = document.createElement('a');
-  link.download = `${editorState.archetype.id || 'object_archetype'}_preview.png`;
+  link.download = `${editorState.archetype.id || 'archobj_object_archetype'}_preview.png`;
   link.href = canvas.toDataURL('image/png');
   document.body.appendChild(link);
   link.click();
