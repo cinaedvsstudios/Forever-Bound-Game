@@ -16,7 +16,7 @@ Use the global all-apps to-do list for changes that affect every Artifex app. Us
 
 ## Current live status
 
-Current Quest Builder version: `V1.1.1`
+Current Quest Builder version: `V1.1.2`
 
 Current live app files:
 
@@ -90,6 +90,21 @@ Completed changes:
 - Updated action wiring so `New Quest` creates a quest instead of resetting the whole quest file.
 - Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.1` / `1.1.1`.
 
+### V1.1.2 — Left panel refinement
+
+Status: complete.
+
+Completed changes:
+
+- Left panel remains one main `Selected Quest` card with thumbnail, inline quest name, quest type, Calling, info fields, actions, and Quest List.
+- Added title tooltips to important left-panel inputs and actions.
+- Preserved resizable left panel behaviour.
+- Added small CSS refinements for the selected quest card, quest list rows, and locked state.
+- Stabilised inline editing so render refreshes do not overwrite the active input while the user is typing.
+- Quest and block list rows now include tooltip text for selection/edit actions.
+- Removed the open `todo_quest_builder_left_panel_typing_stability` task from the specific-app open list.
+- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.2` / `1.1.2`.
+
 ## Ownership boundary
 
 Quest Builder owns:
@@ -140,45 +155,11 @@ Every Quest Builder edit should increase the visible version by `0.01` and updat
 Next versions:
 
 ```text
-V1.1.2  left panel refinement
 V1.1.3  viewing panel and flow card refinement
 V1.1.4  block taxonomy and validation pass
 V1.1.5  editor popup redesign
 V1.1.6  export JSON and validation
 ```
-
-## V1.1.2 — Left panel refinement
-
-Goal: make the left panel a proper Quest control surface, not repeated cards.
-
-Required layout:
-
-- Sticky status strip at top.
-- One main `Selected Quest` card.
-- Thumbnail/icon.
-- Inline editable quest name.
-- Quest type.
-- Chronicle ID.
-- Calling text.
-- Info fields.
-- Quest list underneath.
-- Add Quest / Add Block actions.
-
-Required controls:
-
-- Collapse button on long cards.
-- Lock/unlock button.
-- Text editable only when unlocked.
-- Locked state should make fields display-only.
-- Left panel width remains resizable and remembered.
-
-Acceptance checks:
-
-- Remove any old duplicated `Quest File`, `Quests`, and `Selected` cards if still present.
-- Remove old `Edit File Info` button pattern from the main side panel.
-- Quest list rows include edit icons.
-- Inline fields update the current quest state.
-- Inline field updates should not fight with render refreshes while typing.
 
 ## V1.1.3 — Viewing panel and flow card refinement
 
@@ -346,17 +327,6 @@ Acceptance checks:
     "priority": 4,
     "effort": 4,
     "source": "quest-builder-ui-pass",
-    "fixOwner": "quest-builder"
-  },
-  {
-    "taskId": "todo_quest_builder_left_panel_typing_stability",
-    "scope": "specific-app",
-    "owningModule": "quest-builder",
-    "title": "Make inline left-panel editing stable while typing",
-    "status": "open",
-    "priority": 4,
-    "effort": 3,
-    "source": "left-panel-refinement",
     "fixOwner": "quest-builder"
   }
 ]
