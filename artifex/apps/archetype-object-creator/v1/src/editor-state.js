@@ -3,6 +3,8 @@ import { ROLE_TEMPLATES } from './templates.js';
 export const DESIGN_WIDTH = 1280;
 export const DESIGN_HEIGHT = 720;
 export const STORAGE_PREFIX = 'artifex.objectArchetype.';
+export const OBJECT_ARCHETYPE_PREFIX = 'archobj_';
+export const OBJECT_INDEX_TARGET = 'archetypes/object-index.json';
 
 export const editorState = {
   archetype: createEmptyArchetype(),
@@ -18,9 +20,10 @@ let listeners = [];
 
 export function createEmptyArchetype() {
   const template = ROLE_TEMPLATES.person_npc_basic;
+  const id = makeObjectArchetypeId();
   return normalizeArchetype({
     schemaVersion: 'artifex.objectArchetype.v1',
-    id: `object_${Date.now().toString(36)}`,
+    id,
     name: 'Untitled Object Archetype',
     category: template.category,
     role: 'person_npc_basic',
@@ -50,10 +53,11 @@ export function createEmptyArchetype() {
       defaultFacing: 'right'
     },
     productionAssets: {
-      version: '1.09',
+      version: '1.19',
       requirements: {}
     },
-    exportTarget: 'projects/<project-id>/library/objects.json',
+    exportTarget: objectExportTarget(id),
+    exportPaths: createExportPaths(id),
     notes: ''
   });
 }
@@ -65,10 +69,11 @@ export function normalizeArchetype(input = {}) {
   const collision = input.collision || template.collision;
   const behaviour = input.behaviour || {};
   const animationProfile = input.animationProfile || {};
+  const id = normalizeObjectArchetypeId(input.id || makeObjectArchetypeId());
 
   return {
     schemaVersion: 'artifex.objectArchetype.v1',
-    id: safeId(input.id || `object_${Date.now().toString(36)}`),
+    id,
     name: String(input.name || template.label || 'Object Archetype'),
     category: input.category || template.category,
     role,
@@ -110,7 +115,8 @@ export function normalizeArchetype(input = {}) {
       defaultFacing: input.placement?.defaultFacing || 'right'
     },
     productionAssets: normalizeProductionAssets(input.productionAssets),
-    exportTarget: input.exportTarget || 'projects/<project-id>/library/objects.json',
+    exportTarget: objectExportTarget(id),
+    exportPaths: createExportPaths(id),
     notes: String(input.notes || ''),
     createdAt: input.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -155,7 +161,7 @@ export function applyRoleTemplate(roleId) {
       portraitActions: [...template.portraitActions]
     },
     productionAssets: {
-      version: '1.09',
+      version: '1.19',
       requirements: {}
     }
   });
@@ -171,7 +177,7 @@ export function updateArchetype(patch) {
 
 export function updateIdentity(fields) {
   const next = { ...editorState.archetype, ...fields };
-  if (fields.id) next.id = safeId(fields.id);
+  if (fields.id) next.id = normalizeObjectArchetypeId(fields.id);
   if (fields.tags !== undefined) next.tags = normalizeTags(fields.tags);
   editorState.archetype = normalizeArchetype(next);
   validateCurrentArchetype();
@@ -254,6 +260,8 @@ export function validateCurrentArchetype() {
   const item = editorState.archetype;
   const warnings = [];
   if (!item.id) warnings.push({ type: 'error', message: 'Missing archetype ID.' });
+  if (!item.id.startsWith(OBJECT_ARCHETYPE_PREFIX)) warnings.push({ type: 'error', message: `Object archetype IDs must start with ${OBJECT_ARCHETYPE_PREFIX}.` });
+  if (item.exportTarget !== objectExportTarget(item.id)) warnings.push({ type: 'warn', message: 'Export target was normalised to the canonical archetypes/objects/ path.' });
   if (!item.name) warnings.push({ type: 'error', message: 'Missing display name.' });
   if (!item.category) warnings.push({ type: 'error', message: 'Missing category.' });
   if (item.animationProfile.gameplayActions.includes('talk')) {
@@ -297,6 +305,29 @@ export function notifyChange() {
   for (const listener of listeners) listener(editorState);
 }
 
+export function objectExportTarget(id) {
+  return `archetypes/objects/${normalizeObjectArchetypeId(id)}.json`;
+}
+
+export function createExportPaths(id) {
+  const normalizedId = normalizeObjectArchetypeId(id);
+  return {
+    objectIndex: OBJECT_INDEX_TARGET,
+    objectFile: objectExportTarget(normalizedId)
+  };
+}
+
+export function makeObjectArchetypeId(seed = Date.now().toString(36)) {
+  return `${OBJECT_ARCHETYPE_PREFIX}${safeId(seed)}`;
+}
+
+export function normalizeObjectArchetypeId(value) {
+  const safe = safeId(value || makeObjectArchetypeId());
+  if (safe.startsWith(OBJECT_ARCHETYPE_PREFIX)) return safe;
+  if (safe.startsWith('object_')) return `${OBJECT_ARCHETYPE_PREFIX}${safe.slice('object_'.length)}`;
+  return `${OBJECT_ARCHETYPE_PREFIX}${safe}`;
+}
+
 function normalizeTags(tags) {
   if (Array.isArray(tags)) return tags.map((tag) => String(tag).trim()).filter(Boolean);
   return String(tags || '').split(',').map((tag) => tag.trim()).filter(Boolean);
@@ -310,7 +341,7 @@ function normalizeProductionAssets(value) {
   const source = value && typeof value === 'object' ? value : {};
   const requirements = source.requirements && typeof source.requirements === 'object' ? source.requirements : {};
   return {
-    version: String(source.version || '1.09'),
+    version: String(source.version || '1.19'),
     requirements: { ...requirements }
   };
 }
