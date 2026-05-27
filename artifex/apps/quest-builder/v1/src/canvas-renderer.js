@@ -24,20 +24,21 @@ export function drawCanvas(app) {
 
   const q = app.quest();
   if (!q) {
-    drawHeaderBox(ctx, 60, 50, '📜', 'No Quest Selected', 'Create or import a Quest to begin.');
+    drawHeaderBox(ctx, 60, 50, '📜', 'No Quest Selected', 'Create or import a Quest to begin.', false);
     return;
   }
 
-  drawHeaderBox(ctx, 54, 42, q.thumbnail || '📜', q.name, `${q.chronicleId} / ${q.type} / ${(q.blocks || []).length} blocks`);
+  drawHeaderBox(ctx, 54, 42, q.thumbnail || '📜', q.name, `${q.chronicleId} / ${q.type} / ${(q.blocks || []).length} blocks`, state.inspectorTarget === 'quest');
   app.hitZones.push({ kind: 'quest', x: 54, y: 42, w: 560, h: 70, index: state.activeQuest });
-  drawCallingPill(ctx, 54, 124, q.callingText || 'No Calling text set');
+  drawCallingPill(ctx, 54, 124, q.callingText || 'No Calling text set', state.inspectorTarget === 'quest');
   app.hitZones.push({ kind: 'quest', x: 54, y: 124, w: 720, h: 38, index: state.activeQuest });
+
   drawNode(ctx, 60, 190, 170, 96, 'START', '◇', typeColor('neutral'));
 
   let x = 270;
   let y = 190;
   const cardW = 250;
-  const cardH = 118;
+  const cardH = 124;
   const gap = 34;
 
   (q.blocks || []).forEach((item, index) => {
@@ -45,12 +46,16 @@ export function drawCanvas(app) {
       x = 90;
       y += cardH + 54;
     }
-    drawFlowCard(ctx, x, y, cardW, cardH, item, index === state.activeBlock);
+    const selected = state.inspectorTarget === 'block' && index === state.activeBlock;
+    drawFlowCard(ctx, x, y, cardW, cardH, item, selected);
     app.hitZones.push({ kind: 'block', x, y, w: cardW, h: cardH, index });
     if (index < q.blocks.length - 1) {
       ctx.strokeStyle = 'rgba(62,180,137,.55)';
       ctx.lineWidth = 2;
       line(ctx, x + cardW, y + cardH / 2, x + cardW + gap, y + cardH / 2);
+      ctx.fillStyle = 'rgba(127,240,189,.8)';
+      ctx.font = '14px Arial';
+      ctx.fillText('→', x + cardW + 10, y + cardH / 2 + 5);
     }
     x += cardW + gap;
   });
@@ -72,8 +77,8 @@ export function applyCanvasTransform(canvas, layout) {
   canvas.style.transform = `translate(${layout.panX}px, ${layout.panY}px) scale(${layout.zoom})`;
 }
 
-function drawHeaderBox(ctx, x, y, thumb, title, meta) {
-  box(ctx, x, y, 560, 70, 18, 'rgba(17,26,20,.88)', 'rgba(226,204,167,.26)');
+function drawHeaderBox(ctx, x, y, thumb, title, meta, selected) {
+  box(ctx, x, y, 560, 70, 18, selected ? 'rgba(62,180,137,.2)' : 'rgba(17,26,20,.88)', selected ? '#7ff0bd' : 'rgba(226,204,167,.26)', selected ? 3 : 1);
   ctx.fillStyle = 'rgba(62,180,137,.16)';
   round(ctx, x + 14, y + 13, 44, 44, 14);
   ctx.fill();
@@ -88,8 +93,8 @@ function drawHeaderBox(ctx, x, y, thumb, title, meta) {
   ctx.fillText(short(meta, 58), x + 72, y + 54);
 }
 
-function drawCallingPill(ctx, x, y, text) {
-  box(ctx, x, y, 720, 38, 19, 'rgba(62,180,137,.14)', 'rgba(62,180,137,.45)');
+function drawCallingPill(ctx, x, y, text, selected) {
+  box(ctx, x, y, 720, 38, 19, selected ? 'rgba(62,180,137,.22)' : 'rgba(62,180,137,.14)', selected ? '#7ff0bd' : 'rgba(62,180,137,.45)', selected ? 2 : 1);
   ctx.fillStyle = '#7ff0bd';
   ctx.font = '700 13px Arial';
   ctx.fillText('Calling', x + 18, y + 24);
@@ -104,7 +109,11 @@ function drawCallingPill(ctx, x, y, text) {
 function drawFlowCard(ctx, x, y, w, h, item, selected) {
   const blockType = getBlockType(item.type);
   const color = typeColor(item.type);
-  box(ctx, x, y, w, h, 18, selected ? 'rgba(62,180,137,.18)' : 'rgba(17,26,20,.86)', selected ? '#3eb489' : color);
+  const missing = missingFields(item, blockType);
+  const summary = linkedSummary(item);
+  const stroke = selected ? '#7ff0bd' : missing.length ? '#f59e0b' : color;
+
+  box(ctx, x, y, w, h, 18, selected ? 'rgba(62,180,137,.22)' : 'rgba(17,26,20,.86)', stroke, selected ? 3 : 1.5);
   ctx.fillStyle = '#fff0ce';
   ctx.font = '25px Arial';
   ctx.fillText(item.thumbnail || blockType.emoji, x + 18, y + 40);
@@ -114,25 +123,55 @@ function drawFlowCard(ctx, x, y, w, h, item, selected) {
   ctx.fillStyle = color;
   ctx.font = '700 12px Arial';
   ctx.fillText(blockType.name, x + 60, y + 52);
-  ctx.fillStyle = 'rgba(226,204,167,.78)';
+
+  ctx.fillStyle = summary === 'unlinked' ? 'rgba(245,158,11,.9)' : 'rgba(226,204,167,.78)';
   ctx.font = '500 11px Arial';
-  ctx.fillText(short(item.sceneId || item.objectId || item.dialogueId || item.condition || item.action || 'unlinked', 32), x + 60, y + 76);
+  ctx.fillText(short(summary, 34), x + 60, y + 76);
+
+  if (missing.length) {
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = '700 11px Arial';
+    ctx.fillText('⚠ missing ' + short(missing.join(', '), 21), x + 60, y + 98);
+  } else if (item.audioId) {
+    ctx.fillStyle = 'rgba(127,240,189,.82)';
+    ctx.font = '600 11px Arial';
+    ctx.fillText(short('audio: ' + item.audioId, 30), x + 60, y + 98);
+  } else {
+    ctx.fillStyle = 'rgba(127,240,189,.72)';
+    ctx.font = '600 11px Arial';
+    ctx.fillText('ready', x + 60, y + 98);
+  }
+
   ctx.fillStyle = '#fff0ce';
   ctx.font = '15px Arial';
   ctx.fillText('✎', x + w - 28, y + 28);
-  if (item.audioId) {
-    ctx.fillStyle = 'rgba(127,240,189,.82)';
-    ctx.fillText(short('audio: ' + item.audioId, 30), x + 60, y + 98);
-  }
 }
 
 function drawNode(ctx, x, y, w, h, title, thumb, color) {
-  box(ctx, x, y, w, h, 18, 'rgba(17,26,20,.72)', color);
+  box(ctx, x, y, w, h, 18, 'rgba(17,26,20,.72)', color, 1.5);
   ctx.fillStyle = '#fff0ce';
   ctx.font = '24px Arial';
   ctx.fillText(thumb, x + 20, y + 42);
   ctx.font = '700 18px Georgia';
   ctx.fillText(title, x + 60, y + 42);
+  ctx.fillStyle = 'rgba(226,204,167,.64)';
+  ctx.font = '600 11px Arial';
+  ctx.fillText(title === 'START' ? 'quest begins' : 'quest resolves', x + 20, y + 68);
+}
+
+function missingFields(item, blockType) {
+  return (blockType.requiredFields || []).filter((field) => !String(item[field] || '').trim());
+}
+
+function linkedSummary(item) {
+  const parts = [];
+  if (item.sceneId) parts.push('scene:' + item.sceneId);
+  if (item.objectId) parts.push('object:' + item.objectId);
+  if (item.dialogueId) parts.push('dialogue:' + item.dialogueId);
+  if (item.condition) parts.push('if ' + item.condition);
+  if (item.action) parts.push('do ' + item.action);
+  if (item.uiOverlay) parts.push('ui:' + item.uiOverlay);
+  return parts.length ? parts.join(' · ') : 'unlinked';
 }
 
 export function typeColor(type) {
@@ -171,12 +210,14 @@ function round(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-function box(ctx, x, y, w, h, r, fill, stroke = 'rgba(226,204,167,.25)') {
+function box(ctx, x, y, w, h, r, fill, stroke = 'rgba(226,204,167,.25)', width = 1) {
   round(ctx, x, y, w, h, r);
   ctx.fillStyle = fill;
   ctx.fill();
   ctx.strokeStyle = stroke;
+  ctx.lineWidth = width;
   ctx.stroke();
+  ctx.lineWidth = 1;
 }
 
 function short(value, max) {
