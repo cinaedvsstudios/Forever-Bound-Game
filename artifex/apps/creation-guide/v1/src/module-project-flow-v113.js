@@ -1,6 +1,7 @@
-const PROJECT_FLOW_VERSION = 'V1.1.7';
+const PROJECT_FLOW_VERSION = 'V1.1.9';
 const PROJECT_LIBRARY_KEY_FLOW = 'artifex.projectLibrary';
 const ACTIVE_PROJECT_KEY_FLOW = 'artifex.activeProjectId';
+const HEALTH_ACTIONS_KEY_PREFIX = 'artifex.creationGuide.healthAssignmentsCreated.';
 let projectFlowBypassNativeNew = false;
 let currentProjectFlowTab = 'new';
 let healthRenderQueued = false;
@@ -262,7 +263,7 @@ function openProjectFromFlow(projectId) {
   localStorage.setItem(ACTIVE_PROJECT_KEY_FLOW, projectId);
   library[projectId].lastOpenedAt = new Date().toISOString();
   localStorage.setItem(PROJECT_LIBRARY_KEY_FLOW, JSON.stringify(library, null, 2));
-  window.location.href = `${window.location.pathname}?fresh=creation-guide-1.1.7-open-${Date.now()}`;
+  window.location.href = `${window.location.pathname}?fresh=creation-guide-1.1.9-open-${Date.now()}`;
 }
 
 function setFlowField(id, value) {
@@ -326,6 +327,11 @@ function renderProjectHealthPanel() {
       <div class="project-health-grid">
         ${checks.map(renderHealthCheckCard).join('')}
       </div>
+      <div class="project-health-actions">
+        <button type="button" id="health-create-assignments-button">📋 Create Fix Assignments</button>
+        <button type="button" id="health-export-report-button">⬇️ Export Health JSON</button>
+        <button type="button" id="health-refresh-button">🔄 Refresh</button>
+      </div>
       <footer class="project-health-footer">
         This panel is a Creation Guide readiness view. The deeper cross-app project loading work is now tracked globally in <code>todo_all_apps_active_project_runtime_integration</code>.
       </footer>
@@ -341,6 +347,16 @@ function renderProjectHealthPanel() {
     lastHealthHtml = html;
     existing.outerHTML = html;
   }
+  wireHealthActionButtons();
+}
+
+function wireHealthActionButtons() {
+  document.getElementById('health-create-assignments-button')?.addEventListener('click', createHealthAssignments);
+  document.getElementById('health-export-report-button')?.addEventListener('click', exportHealthReport);
+  document.getElementById('health-refresh-button')?.addEventListener('click', () => {
+    queueHealthRender();
+    setHealthActionStatus('Health check refreshed.');
+  });
 }
 
 function renderHealthCheckCard(check) {
@@ -434,10 +450,116 @@ function getProjectHealthChecks() {
   ];
 }
 
+function createHealthAssignments() {
+  const checks = getProjectHealthChecks().filter((check) => check.state !== 'ready');
+  const assignable = checks.filter((check) => check.title !== 'Assignments started');
+  if (!assignable.length) {
+    setHealthActionStatus('No missing health items need assignments right now.');
+    return;
+  }
+
+  if (typeof addAssignment !== 'function' || typeof render !== 'function') {
+    setHealthActionStatus('Assignment functions are not available yet. Reload and try again.');
+    return;
+  }
+
+  const projectId = getCurrentProjectIdForHealth();
+  const storageKey = `${HEALTH_ACTIONS_KEY_PREFIX}${projectId}`;
+  const created = readCreatedHealthAssignmentTitles(storageKey);
+  let added = 0;
+
+  assignable.forEach((check) => {
+    const title = `Health: ${check.title}`;
+    if (created.includes(title)) return;
+    addAssignment({
+      title,
+      primaryModule: moduleForHealthOwner(check.owner),
+      state: check.state === 'missing' && check.weight > 0 ? 'blocked' : 'unassigned',
+      owner: '',
+      priority: check.state === 'missing' && check.weight > 0 ? 5 : 3,
+      effort: check.weight > 0 ? 2 : 1,
+      milestone: 'Project Setup / Health',
+      zone: 'Creation Guide',
+      notes: `${check.description}\n\nGenerated from the Creation Guide Health Check.`,
+      subtasks: [
+        'Review the related Health Check card',
+        'Open the relevant setup field or tool',
+        'Fix or confirm the project data',
+        'Refresh the Health Check panel'
+      ]
+    });
+    created.push(title);
+    added += 1;
+  });
+
+  localStorage.setItem(storageKey, JSON.stringify(created, null, 2));
+  render();
+  queueHealthRender();
+  setHealthActionStatus(added ? `Created ${added} health assignment${added === 1 ? '' : 's'}.` : 'Health assignments already exist for the current missing items.');
+}
+
+function exportHealthReport() {
+  const checks = getProjectHealthChecks();
+  const required = checks.filter((check) => check.weight > 0);
+  const report = {
+    schemaVersion: 'artifex.health-report.v1',
+    generatedAt: new Date().toISOString(),
+    projectId: getCurrentProjectIdForHealth(),
+    projectName: valueFlow('game-title-input') || 'Untitled Artifex Adventure',
+    summary: {
+      requiredTotal: required.length,
+      requiredReady: required.filter((check) => check.state === 'ready').length,
+      requiredMissing: required.filter((check) => check.state === 'missing').length,
+      optionalWarnings: checks.filter((check) => check.state === 'warning').length
+    },
+    checks
+  };
+
+  const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${report.projectId || 'artifex-project'}-health-report.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  setHealthActionStatus('Exported health report JSON.');
+}
+
 function getCurrentProjectNameForHealth() {
   const projectName = valueFlow('game-title-input');
   const projectId = valueFlow('project-id-input');
   return projectName || projectId || 'Untitled Artifex Adventure';
+}
+
+function getCurrentProjectIdForHealth() {
+  return valueFlow('project-id-input') || 'untitled-artifex-adventure';
+}
+
+function moduleForHealthOwner(owner) {
+  const text = String(owner || '').toLowerCase();
+  if (text.includes('scene')) return 'scene-editor';
+  if (text.includes('quest')) return 'quest-builder';
+  if (text.includes('effect')) return 'effect-editor';
+  if (text.includes('object')) return 'object-creator';
+  if (text.includes('project editor') || text.includes('flatplan') || text.includes('manifest')) return 'project-editor';
+  return 'unassigned';
+}
+
+function readCreatedHealthAssignmentTitles(key) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(key) || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function setHealthActionStatus(message) {
+  const status = document.getElementById('status-text');
+  if (status) status.textContent = message;
+  if (typeof toast === 'function') toast(message);
 }
 
 function valueFlow(id) {
@@ -521,9 +643,11 @@ function injectProjectFlowStyles() {
     .project-health-card strong { display: block; color: #fff0ce; font-size: 12px; }
     .project-health-card p { margin: 7px 0; color: #f2eee9; font-size: 12px; line-height: 1.45; }
     .project-health-card small { color: #a98f72; font-size: 10px; text-transform: uppercase; letter-spacing: .1em; }
+    .project-health-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(226,204,167,.12); }
+    .project-health-actions button { font-size: 11px !important; padding: 7px 10px !important; border-radius: 999px; }
     .project-health-footer { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(226,204,167,.12); color: #a98f72; font-size: 11px; line-height: 1.45; }
     .project-health-footer code { color: #c7b8ff; }
-    @media (max-width: 760px) { .project-flow-grid { grid-template-columns: 1fr; } .project-flow-actions { justify-content: flex-start; } .project-health-header { align-items: flex-start; flex-direction: column; } .project-health-score { width: 88px; height: 88px; } }
+    @media (max-width: 760px) { .project-flow-grid { grid-template-columns: 1fr; } .project-flow-actions, .project-health-actions { justify-content: flex-start; } .project-health-header { align-items: flex-start; flex-direction: column; } .project-health-score { width: 88px; height: 88px; } }
   `;
   document.head.appendChild(style);
 }
