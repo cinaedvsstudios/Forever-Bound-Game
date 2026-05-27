@@ -9,6 +9,28 @@ This document records the agreed update plan for the Maze / Labyrinth engine ins
 
 ## Progress log
 
+### V1.09 display and regeneration clarification
+
+Completed or started in V1.09:
+
+- Added a dedicated `maze-shape-generator.js` helper file for shape-size-mask utilities.
+- Added a V1.09 controls patch module for regeneration controls, 3D View placeholder, shape-change regeneration hooks, and Overview setting summary.
+- Added a third Display mode button: Diorama, Walk Test, and 3D View.
+- Clarified behaviour: Walk Test is the editor movement/collision/path validation mode, while 3D View is the simulated first-person/3D preview mode.
+- Added a placeholder 3D View render so the mode exists but is clearly marked as pending a dedicated first-person/tunnel runtime.
+- Added Regenerate buttons to the top right of Construction, Display, Game Logic, and Visuals cards.
+- Added Overview settings summary under the legend: shape, size, stretch, warp, edge, and tunnel state.
+- Added change hooks so Shape, Stretch X, and Stretch Y trigger a forced regeneration for generated mazes instead of only leaving the old masked map in place.
+
+Still needs follow-up/testing from V1.09:
+
+- Confirm the new 3D View button appears and does not break Diorama or Walk Test.
+- Confirm the Regenerate buttons work on each card.
+- Confirm shape and stretch changes now rebuild generated mazes instead of only visually masking old maps.
+- Confirm Start Blank is not force-regenerated when shape/stretch changes, because hand-drawn layouts should not be destroyed automatically.
+- Wire `maze-shape-generator.js` directly into the main runtime rather than only adding it as a helper file. This is still pending because the runtime file is large and needs a safer split pass.
+- Replace the 3D View placeholder with a real dedicated 3D/tunnel renderer in a later pass.
+
 ### V1.08 quick fix
 
 Completed in V1.08:
@@ -52,8 +74,8 @@ Still needs follow-up/testing from Pass 1:
 - Verify Triangle is actually triangular and not pentagon-like.
 - Verify Start Blank + Draw creates valid manual mazes correctly.
 - Verify entrance and exit placement is sensible for every shape.
-- Move shape-generation logic into a dedicated `maze-shape-generator.js` file instead of keeping it inside the runtime.
-- Confirm V1.08 loads from GitHub Pages without a syntax/runtime error.
+- Move shape-generation logic into a dedicated `maze-shape-generator.js` file instead of keeping it inside the runtime. **Started in V1.09, not fully wired into runtime yet.**
+- Confirm V1.09 loads from GitHub Pages without a syntax/runtime error.
 
 ## Confirmed design corrections
 
@@ -65,9 +87,19 @@ Still needs follow-up/testing from Pass 1:
 - Decorative lights and scattered objects should not require archetype objects. They are decoration-only placements, similar to non-interactive background props in Scene Editor.
 - Other puzzle engines remain placeholders until detailed engine documents are provided.
 
+## Display / testing mode definitions
+
+The Display card should use three distinct modes:
+
+1. **Diorama**: editor-friendly angled/top-down preview of the maze layout.
+2. **Walk Test**: top-down or editor-map movement test for logic validation. It should test movement, collisions, route validity, portals, required objects, locks, helper guidance, and whether the player can actually reach the current objective.
+3. **3D View**: actual simulated first-person or 3D preview. This is the mode that should eventually show tunnel/corridor view, roofed tunnel behaviour, lights, and first-person movement.
+
+Walk Test is not the full 3D simulation. It is a practical editor validation mode. 3D View will need its own runtime pass.
+
 ## Pass 1 · Maze shell and basic construction cleanup
 
-Status: mostly started/completed in V1.07; V1.08 fixed header/dropdown and upload layout regressions; testing and file split still needed.
+Status: mostly started/completed in V1.07; V1.08 fixed header/dropdown and upload layout regressions; V1.09 added regeneration controls and display mode clarification; testing and deeper file split still needed.
 
 Completed:
 
@@ -98,14 +130,19 @@ Completed:
 10. Regenerate entrance and exit whenever Size, Shape, Stretch X, or Stretch Y changes.
 11. Move Puzzles into a dropdown before File.
 12. Hide native file inputs behind stable styled controls.
+13. Add Force Regenerate buttons to main cards.
+14. Add active settings summary to the Overview legend.
+15. Add a third 3D View display mode placeholder.
 
 Remaining Pass 1 cleanup:
 
 1. Test all five shapes at all five sizes.
 2. Confirm route validation and Start Blank lock behave correctly after manual drawing.
-3. Move shape/mask code out of `maze-labyrinth-runtime.js` into `maze-shape-generator.js`.
+3. Fully wire shape/mask code out of `maze-labyrinth-runtime.js` into `maze-shape-generator.js`.
 4. Confirm Shape, Stretch X/Y, and Warp export cleanly and reload from JSON.
 5. Confirm the image reference file picker does not create layout gaps or hide buttons.
+6. Rework the main runtime so Shape and Stretch regenerate the logical map natively, not through a patch module.
+7. Add a true solid border/wall ring around the selected shape in the generated matrix.
 
 ## Pass 2 · Walk Test and player movement
 
@@ -116,6 +153,8 @@ Remaining Pass 1 cleanup:
 5. Prevent movement through walls and invalid masked-out shape areas. **Invalid shape-area check added in V1.07; needs live test.**
 6. Highlight the matching on-screen D-pad key when the physical keyboard key is pressed. **Partially present before V1.07; needs live test.**
 7. Reset player position to the entrance when the maze is regenerated or the shape changes. **Updated in V1.07; needs live test.**
+8. Keep Walk Test as editor logic validation, not 3D simulation.
+9. Add/replace with a dedicated 3D View runtime for simulated first-person/3D preview in a later runtime pass. **Placeholder added in V1.09.**
 
 ## Pass 3 · Difficulty analysis and report-based fixing
 
