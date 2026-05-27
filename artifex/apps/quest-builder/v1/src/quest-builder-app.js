@@ -126,7 +126,7 @@ function render() {
     set('selected-completion', q.completionFlag);
     set('selected-scenes', (q.sceneIds || []).join(', '));
     set('selected-objects', (q.objectIds || []).join(', '));
-    $('quest-thumb-button').textContent = q.thumbnail || '📜';
+    if (document.activeElement !== $('quest-thumb-button')) $('quest-thumb-button').textContent = q.thumbnail || '📜';
   }
 
   renderQuestList();
@@ -139,7 +139,8 @@ function renderQuestList() {
   doc.quests.forEach((item, index) => {
     const button = document.createElement('button');
     button.className = 'quest-item ' + (index === state.activeQuest ? 'selected' : '');
-    button.innerHTML = `<span><strong>${escapeHtml((item.thumbnail || '📜') + ' ' + item.name)}</strong><span>${escapeHtml(item.chronicleId)} / ${escapeHtml(item.type)}</span></span><span class="edit-mini">✎</span>`;
+    button.title = 'Select quest: ' + (item.name || 'Untitled Quest');
+    button.innerHTML = `<span><strong>${escapeHtml((item.thumbnail || '📜') + ' ' + item.name)}</strong><span>${escapeHtml(item.chronicleId)} / ${escapeHtml(item.type)}</span></span><span class="edit-mini" title="Edit this quest">✎</span>`;
     button.onclick = () => { state.activeQuest = index; state.activeBlock = 0; render(); };
     button.querySelector('.edit-mini').onclick = (event) => { event.stopPropagation(); state.activeQuest = index; document.dispatchEvent(new CustomEvent('quest-builder-edit-quest')); };
     $('quest-list').appendChild(button);
@@ -153,7 +154,8 @@ function renderBlockList() {
     const blockType = getBlockType(item.type);
     const button = document.createElement('button');
     button.className = 'record-item border-' + escapeHtml(item.type) + ' ' + (index === state.activeBlock ? 'selected' : '');
-    button.innerHTML = `<span class="block-emoji">${item.thumbnail || blockType.emoji}</span><span><strong>${escapeHtml(item.name || blockType.name)}</strong><span>${escapeHtml(blockType.name)} / ${escapeHtml(item.sceneId || item.objectId || item.dialogueId || item.condition || 'unlinked')}</span></span><span class="edit-mini">✎</span>`;
+    button.title = 'Select block: ' + (item.name || blockType.name);
+    button.innerHTML = `<span class="block-emoji">${item.thumbnail || blockType.emoji}</span><span><strong>${escapeHtml(item.name || blockType.name)}</strong><span>${escapeHtml(blockType.name)} / ${escapeHtml(item.sceneId || item.objectId || item.dialogueId || item.condition || 'unlinked')}</span></span><span class="edit-mini" title="Edit this block">✎</span>`;
     button.onclick = () => { state.activeBlock = index; render(); };
     button.querySelector('.edit-mini').onclick = (event) => { event.stopPropagation(); state.activeBlock = index; document.dispatchEvent(new CustomEvent('quest-builder-edit-block')); };
     button.ondblclick = () => document.dispatchEvent(new CustomEvent('quest-builder-edit-block'));
@@ -163,7 +165,9 @@ function renderBlockList() {
 
 function set(id, value) {
   const element = $(id);
-  if (element) element.value = value ?? '';
+  if (!element || document.activeElement === element) return;
+  const nextValue = value ?? '';
+  if (element.value !== nextValue) element.value = nextValue;
 }
 
 function text(id, value) {
