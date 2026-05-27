@@ -1,14 +1,77 @@
-/* Quest Builder V1.1.2
+/* Quest Builder V1.1.3
    Styling entry point only. Behaviour is split into v1/src modules.
    The visual rules are currently carried forward from the V1.0.8 stylesheet until the next visual pass. */
-@import url("./quest-builder-v108.css?v=1.1.2-base");
+@import url("./quest-builder-v108.css?v=1.1.3-base");
 
-/* V1.1.2 left panel refinement */
+/* V1.1.3 contextual inspector / status actions */
+.status-strip {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  margin: 0 0 13px;
+  padding: 8px 10px;
+  border: 1px solid rgba(127,240,189,.75);
+  border-radius: 14px;
+  background: var(--accent2);
+  color: #041008;
+  box-shadow: 0 8px 20px rgba(0,0,0,.42), 0 0 18px rgba(62,180,137,.28);
+}
+.status-strip #status-text {
+  position: static;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #041008;
+  box-shadow: none;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.status-actions { display: flex; gap: 5px; align-items: center; }
+.status-actions button {
+  min-width: 30px;
+  min-height: 28px;
+  padding: 3px 6px;
+  border-radius: 10px;
+  border-color: rgba(4,16,8,.35);
+  background: rgba(4,16,8,.14);
+  color: #041008;
+  box-shadow: none;
+}
+.status-actions button:hover { background: rgba(4,16,8,.22); color: #000; }
+.inspector-kicker {
+  margin: 0 0 6px;
+  color: #8a7465;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  font-weight: 900;
+}
+.inspector-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
 #selected-card .card-body { display: grid; gap: 11px; }
 #selected-card .quest-hero { margin-bottom: 0; }
+#selected-card .button-row { display: none; }
+#selected-card .quest-list-section { display: none; }
 #selected-card .button-row button { min-height: 38px; }
 #selected-card.locked .inline-field,
 #selected-card.locked .inline-select,
 #selected-card.locked .calling-edit { cursor: default; }
 #quest-list .quest-item { min-height: 58px; }
 #quest-list .quest-item .edit-mini { opacity: .9; }
+#module-canvas { cursor: pointer; }
