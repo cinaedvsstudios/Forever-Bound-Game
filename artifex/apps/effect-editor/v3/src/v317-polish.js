@@ -1,16 +1,14 @@
 import { editorState, getActiveLayer, onStateChange, updateActiveLayer } from './editor-state.js';
 
 const MODULE_LINKS = [
-  ['🏠', 'HUB', '../../index.html'],
-  ['✨', 'Effect Editor', '../effect-editor/index.html'],
-  ['🖼️', 'Scene Editor', '../scene-editor/index.html'],
-  ['🧍', 'Sprite Wizard', '../sprite-wizard/index.html'],
-  ['🧩', 'Archetype Editor', '../archetype-editor/index.html'],
-  ['🗂️', 'Project Editor', '../project-editor/index.html'],
-  ['📜', 'Quest Builder', '../quest-builder/index.html'],
+  ['🏠', 'Hub', '../../index.html'],
   ['🧭', 'Creation Guide', '../creation-guide/index.html'],
-  ['🔤', 'Font Packer', '../font-packer/index.html'],
-  ['🎞️', 'Frame Extractor', '../frame-extractor/index.html']
+  ['🗂️', 'Project Manager', '../project-manager/index.html'],
+  ['🖼️', 'Scene Editor', '../scene-editor/index.html'],
+  ['📜', 'Quest Builder', '../quest-builder/index.html'],
+  ['🧩', 'Puzzle Creator', '../puzzle-creator/index.html'],
+  ['✨', 'Effect Editor', '../effect-editor/index.html'],
+  ['🧱', 'Archetype Object Creator', '../archetype-object-creator/index.html']
 ];
 
 const INSERT_ICON_BY_LABEL = new Map([
@@ -29,6 +27,7 @@ const INSERT_ICON_BY_LABEL = new Map([
 ]);
 
 let dragFixBound = false;
+let moduleFlyoutBound = false;
 
 export function initV317Polish(showToast = () => {}) {
   injectStyles();
@@ -53,11 +52,15 @@ function injectStyles() {
   const style = document.createElement('style');
   style.id = 'v317-polish-style';
   style.textContent = `
-    .module-switcher-section-v317 { border-top: 1px solid rgba(226,204,167,.14); margin-top: 9px; padding-top: 10px; }
-    .module-switcher-section-v317 h3 { margin: 0 0 8px; color: var(--gold-muted); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; }
-    .module-switcher-grid-v317 { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
-    .module-switcher-grid-v317 a { display: flex; align-items: center; gap: 7px; min-height: 34px; padding: 7px 9px; border: 1px solid var(--border); border-radius: 12px; color: var(--gold); background: linear-gradient(180deg, #2a201a 0%, #1b1411 100%); text-decoration: none; font-size: 11px; }
-    .module-switcher-grid-v317 a:hover { border-color: var(--module-accent); box-shadow: 0 0 12px var(--module-glow); color: white; }
+    .module-switcher-section-v317 { position: relative; border-bottom: 1px solid rgba(226,204,167,.14); margin-bottom: 9px; padding-bottom: 9px; }
+    .module-switcher-button-v317 { width: 100%; display: flex !important; justify-content: space-between !important; align-items: center !important; gap: 10px; min-height: 38px !important; }
+    .module-switcher-button-v317 span:first-child { display: inline-flex; align-items: center; gap: 8px; }
+    .module-switcher-flyout-v317 { position: absolute; top: 0; left: calc(100% + 8px); z-index: 60; min-width: 250px; display: none; padding: 10px; border: 1px solid var(--border); border-radius: 16px; background: rgba(18, 12, 10, .98); box-shadow: 0 18px 34px rgba(0,0,0,.58), 0 0 18px rgba(0,174,234,.12); }
+    .module-switcher-section-v317:hover .module-switcher-flyout-v317,
+    .module-switcher-section-v317.is-open .module-switcher-flyout-v317 { display: grid; gap: 7px; }
+    .module-switcher-flyout-v317 h3 { margin: 0 0 4px; color: var(--gold-muted); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; }
+    .module-switcher-flyout-v317 a { display: flex; align-items: center; gap: 8px; min-height: 34px; padding: 7px 9px; border: 1px solid var(--border); border-radius: 12px; color: var(--gold); background: linear-gradient(180deg, #2a201a 0%, #1b1411 100%); text-decoration: none; font-size: 11px; }
+    .module-switcher-flyout-v317 a:hover { border-color: var(--module-accent); box-shadow: 0 0 12px var(--module-glow); color: white; }
 
     .bottom-panel-grid.v315-display-grid { grid-template-columns: minmax(250px, 1.35fr) minmax(168px, 168px) minmax(250px, .95fr) !important; gap: 12px !important; }
     .v315-display-grid .bottom-tool-card.v314-combined-display { min-width: 0 !important; width: 168px !important; max-width: 168px !important; overflow: hidden !important; }
@@ -119,8 +122,31 @@ function installModuleMenu() {
   const section = document.createElement('section');
   section.id = 'module-switcher-section-v317';
   section.className = 'module-switcher-section-v317';
-  section.innerHTML = `<h3>Module</h3><div class="module-switcher-grid-v317">${MODULE_LINKS.map(([icon, label, href]) => `<a href="${href}" title="Open ${escapeHtml(label)}"><span>${icon}</span><span>${escapeHtml(label)}</span></a>`).join('')}</div>`;
+  section.innerHTML = `
+    <button id="module-switcher-button-v317" class="module-switcher-button-v317" type="button" title="Open the core Artifex module switcher."><span>🧭 Module</span><span>▸</span></button>
+    <div id="module-switcher-flyout-v317" class="module-switcher-flyout-v317" role="menu">
+      <h3>Core Modules</h3>
+      ${MODULE_LINKS.map(([icon, label, href]) => `<a href="${href}" role="menuitem" title="Open ${escapeHtml(label)}"><span>${icon}</span><span>${escapeHtml(label)}</span></a>`).join('')}
+    </div>
+  `;
   menuFile.prepend(section);
+  bindModuleFlyout();
+}
+
+function bindModuleFlyout() {
+  if (moduleFlyoutBound) return;
+  moduleFlyoutBound = true;
+  document.addEventListener('click', (event) => {
+    const section = document.getElementById('module-switcher-section-v317');
+    if (!section) return;
+    const button = event.target.closest?.('#module-switcher-button-v317');
+    if (button) {
+      event.preventDefault();
+      section.classList.toggle('is-open');
+      return;
+    }
+    if (!section.contains(event.target)) section.classList.remove('is-open');
+  });
 }
 
 function repairDisplayGrid() {
