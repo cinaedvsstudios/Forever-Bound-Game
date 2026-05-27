@@ -16,7 +16,7 @@ Use the global all-apps to-do list for changes that affect every Artifex app. Us
 
 ## Current live status
 
-Current Quest Builder version: `V1.1.3`
+Current Quest Builder version: `V1.1.4`
 
 Current live app files:
 
@@ -47,8 +47,6 @@ artifex/apps/quest-builder/v1/quest-builder-v108.js
 
 Status: complete.
 
-Completed changes:
-
 - `index.html` loads the split module entry instead of the old single script.
 - App behaviour has been split into responsibility-based modules.
 - `docs/structure.md` defines what belongs in each Quest Builder file.
@@ -65,21 +63,16 @@ Completed changes:
 
 Status: complete.
 
-Completed changes/checks:
-
-- Page title, visible version badge, CSS cache key, JS module cache key, and module config now use `V1.1.0` / `1.1.0`.
+- Page title, visible version badge, CSS cache key, JS module cache key, and module config were updated.
 - `File ▾ → Module ▸` remains a side flyout, not a flat list inside File.
 - The flyout includes only the core modules: Hub, Creation Guide, Project Manager, Scene Editor, Quest Builder, Puzzle Creator, Effect Editor, Archetype Object Creator.
 - Utility tools such as Sprite Wizard, Font Packer, Frame Extractor, and Onda are not included.
-- The module list is also stored in `v1/src/module-config.js`, so future standardisation can read from one config source instead of scattering the order randomly.
-- The header remains aligned with the shared Artifex rule: logo/app title area, version pill, divider/menu area, compact pill menu buttons.
+- The module list is stored in `v1/src/module-config.js`.
 - Quest Builder keeps green as the module accent while retaining the dark Artifex shell.
 
 ### V1.1.1 — File menu simplification
 
 Status: complete.
-
-Completed changes:
 
 - File menu now groups actions into short flyouts instead of showing a long flat list.
 - `File ▾ → New ▸` contains `New Quest Wizard` and `New Quest`.
@@ -88,13 +81,10 @@ Completed changes:
 - `File ▾ → Module ▸` remains the core-module side flyout.
 - Removed the confusing `New Quest File` item from the File menu.
 - Updated action wiring so `New Quest` creates a quest instead of resetting the whole quest file.
-- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.1` / `1.1.1`.
 
 ### V1.1.2 — Left panel refinement
 
 Status: complete.
-
-Completed changes:
 
 - Left panel remains one main `Selected Quest` card with thumbnail, inline quest name, quest type, Calling, info fields, actions, and Quest List.
 - Added title tooltips to important left-panel inputs and actions.
@@ -103,13 +93,10 @@ Completed changes:
 - Stabilised inline editing so render refreshes do not overwrite the active input while the user is typing.
 - Quest and block list rows now include tooltip text for selection/edit actions.
 - Removed the open `todo_quest_builder_left_panel_typing_stability` task from the specific-app open list.
-- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.2` / `1.1.2`.
 
 ### V1.1.3 — Contextual inspector and status actions
 
 Status: complete.
-
-Completed changes:
 
 - Left panel is now treated as a contextual status/inspector panel, not a duplicate quest summary.
 - Clicking the quest header or Calling pill in the viewing canvas selects the quest for the left inspector.
@@ -119,7 +106,19 @@ Completed changes:
 - The older side-panel Add Quest/Add Block row and Quest List section are hidden from the main panel chrome.
 - Canvas renderer now creates hit zones for the quest header, Calling pill, and flow cards.
 - Canvas click hit-testing accounts for zoom and pan.
-- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.3` / `1.1.3`.
+
+### V1.1.4 — Viewing panel warnings and flow card polish
+
+Status: complete.
+
+- Selected quest header, Calling pill, and selected flow card now get stronger visual selection styling.
+- Flow cards now show clearer linked summaries using scene/object/dialogue/condition/action/UI labels.
+- Flow cards now show warning text when required fields are missing.
+- Flow cards show a ready/audio line when required fields are satisfied.
+- START and END nodes now include small helper text so they stay readable as flow anchors.
+- Flow connector arrows are more explicit between cards.
+- Canvas still uses the existing hit zones, zoom, and pan support.
+- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.4` / `1.1.4`.
 
 ## Ownership boundary
 
@@ -171,23 +170,10 @@ Every Quest Builder edit should increase the visible version by `0.01` and updat
 Next versions:
 
 ```text
-V1.1.4  viewing panel warnings and flow card polish
 V1.1.5  block taxonomy and validation pass
 V1.1.6  editor popup redesign
 V1.1.7  export JSON and validation
 ```
-
-## V1.1.4 — Viewing panel warnings and flow card polish
-
-Goal: finish the remaining viewing panel behaviours after the contextual inspector change.
-
-Required:
-
-- Selected card should remain visually obvious after clicking the canvas.
-- Flow cards should show missing-data warnings where required fields are missing.
-- Flow cards should show linked ID summaries more clearly.
-- START and END should remain readable even when blocks wrap.
-- Canvas still supports zoom and pan.
 
 ## V1.1.5 — Block taxonomy and validation pass
 
@@ -206,22 +192,6 @@ Core block distinction:
 Example rule:
 
 `Speak With Vitus` should be a `Player Action` block with optional linked dialogue/audio fields, not only a Dialogue block.
-
-Suggested source/type colour meanings:
-
-```text
-scene/screen: purple
-dialogue: red
-action: amber/orange
-object: teal
-condition/flag: blue
-Capra/UI: green
-Codice/lore: parchment/gold
-reward: gold
-combat/foe: crimson
-route/map unlock: emerald
-start/end: neutral gold/white
-```
 
 Acceptance checks:
 
@@ -244,21 +214,6 @@ Conditions & Actions
 UI / Capra / Rewards
 Notes / JSON
 ```
-
-Required fields:
-
-- Thumbnail/icon field.
-- Block name.
-- Block type.
-- Scene ID.
-- Object/NPC ID.
-- Dialogue ID.
-- Audio ID/file reference.
-- Condition.
-- Action/outcome.
-- UI overlay.
-- Capra feedback.
-- Notes.
 
 Acceptance checks:
 
@@ -291,13 +246,6 @@ Validation should catch:
 - Action block without action/outcome.
 - Completion block without condition or completion flag.
 - Missing linked IDs that Project Manager will need to resolve.
-
-Acceptance checks:
-
-- Export writes `quest-index.json` shape and individual `quest_<slug>.json` shape.
-- Side quests are separated from main quests where needed.
-- Project Manager can consume exported IDs instead of authoring internals.
-- Editor-only layout state does not pollute reusable quest runtime data.
 
 ## Specific-app tasks
 
