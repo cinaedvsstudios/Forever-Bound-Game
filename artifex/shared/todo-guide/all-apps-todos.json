@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "artifex.todos.v1",
+  "scope": "all-apps",
+  "updatedBy": "project-manager-contract-pass",
+  "tasks": [
+    {
+      "taskId": "todo_all_apps_module_split_audit",
+      "scope": "all-apps",
+      "owningModule": "all-artifex-apps",
+      "relatedModules": [
+        "hub",
+        "creation-guide",
+        "project-manager",
+        "scene-editor",
+        "quest-builder",
+        "puzzle-creator",
+        "effect-editor",
+        "archetype-object-creator"
+      ],
+      "title": "Audit every app for module splitting",
+      "description": "Inspect each app against docs/artifex/19-project-file-contracts.md and confirm large monolith files are split into editable modules with clear responsibilities.",
+      "status": "open",
+      "priority": 5,
+      "effort": 4,
+      "source": "project-file-contracts",
+      "projectFile": null,
+      "appFile": "docs/artifex/19-project-file-contracts.md",
+      "fixOwner": "each-app-owner",
+      "tags": ["all-apps", "module-split", "maintainability"]
+    },
+    {
+      "taskId": "todo_all_apps_patch_layer_audit",
+      "scope": "all-apps",
+      "owningModule": "all-artifex-apps",
+      "relatedModules": [
+        "hub",
+        "creation-guide",
+        "project-manager",
+        "scene-editor",
+        "quest-builder",
+        "puzzle-creator",
+        "effect-editor",
+        "archetype-object-creator"
+      ],
+      "title": "Audit and reduce patch layers",
+      "description": "Check every app for active patch/override/hotfix files. No app should run more than two active patch layers; patches must be integrated, converted to normal helpers, removed, or archived as non-live reference.",
+      "status": "open",
+      "priority": 5,
+      "effort": 4,
+      "source": "project-file-contracts",
+      "projectFile": null,
+      "appFile": "docs/artifex/19-project-file-contracts.md",
+      "fixOwner": "each-app-owner",
+      "tags": ["all-apps", "patch-cleanup", "technical-debt"]
+    },
+    {
+      "taskId": "todo_all_apps_header_and_module_menu_standard",
+      "scope": "all-apps",
+      "owningModule": "all-artifex-apps",
+      "relatedModules": [
+        "hub",
+        "creation-guide",
+        "project-manager",
+        "scene-editor",
+        "quest-builder",
+        "puzzle-creator",
+        "effect-editor",
+        "archetype-object-creator"
+      ],
+      "title": "Apply standard header and Module menu",
+      "description": "Every app should use the standard header order: logo/app title, version pill, vertical divider, main menu. Every app should expose the shared Module menu order: Hub, Creation Guide, Project Manager, Scene Editor, Quest Builder, Puzzle Creator, Effect Editor, Archetype Object Creator.",
+      "status": "open",
+      "priority": 4,
+      "effort": 3,
+      "source": "color-and-display-rules",
+      "projectFile": null,
+      "appFile": "docs/artifex/18-color-and-display-rules.md",
+      "fixOwner": "each-app-owner",
+      "tags": ["all-apps", "branding", "navigation"]
+    }
+  ]
+}
