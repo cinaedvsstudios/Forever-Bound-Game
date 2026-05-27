@@ -1,5 +1,6 @@
-const ONBOARDING_VERSION = 'V1.1.5';
+const ONBOARDING_VERSION = 'V1.1.6';
 const MODULE_INTRO_DISABLED_KEY = 'artifex.creationGuide.hideModuleIntro';
+
 let tourMode = localStorage.getItem(MODULE_INTRO_DISABLED_KEY) === 'true' ? 'setup' : 'modules';
 let moduleStep = 0;
 let setupStep = 0;
@@ -166,7 +167,6 @@ function setupGuideHtml() {
   const nextButtonLabel = setupStep >= setupSteps.length - 1 ? 'Done' : (step.optional ? 'Skip / Next' : 'Next');
   return `
     <div class="guide-card-topline setup-guide-topline">
-      <span class="guide-step-pill">Setup ${setupStep + 1}/${setupSteps.length}</span>
       <div class="setup-guide-icon-actions" aria-label="Setup guide controls">
         <button type="button" id="setup-back-button" title="Back" aria-label="Back" ${setupStep === 0 ? 'disabled' : ''}>←</button>
         <button type="button" id="setup-show-button" title="${safe(showButtonLabel)}" aria-label="${safe(showButtonLabel)}">${setupStep === 0 ? '☰' : '📍'}</button>
@@ -178,7 +178,8 @@ function setupGuideHtml() {
     </div>
     <h3>${safe(step.title)}</h3>
     <p>${safe(step.text())}</p>
-    ${setupDetailsOpen ? `<div class="module-more setup-more-scroll"><strong>More info</strong><p>${safe(step.detail || '')}</p></div>` : ''}`;
+    ${setupDetailsOpen ? `<div class="module-more setup-more-scroll"><strong>More info</strong><p>${safe(step.detail || '')}</p></div>` : ''}
+    <span class="setup-step-corner">Setup ${setupStep + 1}/${setupSteps.length}</span>`;
 }
 
 function wireOnboardingButtons() {
@@ -269,6 +270,7 @@ function injectOnboardingStyles() {
   style.textContent = `
     .project-hero .overview-instructions.in-hero { margin-top: 0; flex: 1 1 390px; max-width: 590px; min-width: 300px; align-self: stretch; display: flex; flex-direction: column; justify-content: center; }
     .project-hero .overview-instructions.intro-stub { max-width: 420px; min-width: 260px; opacity: .92; }
+    .project-hero .overview-instructions.guided-onboarding { position: relative; overflow: hidden; padding-bottom: 42px; }
     .project-hero .setup-ring { order: 2; flex: 0 0 auto; }
     .project-hero .overview-instructions.in-hero { order: 3; }
     .module-tour-popup { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(760px, calc(100vw - 38px)); max-height: min(82vh, 780px); overflow: hidden; z-index: 160; padding: 22px 24px; border: 1px solid rgba(143,109,255,.46); border-radius: 28px; color: #f2eee9; background: linear-gradient(145deg, rgba(32,23,34,.98), rgba(14,10,9,.98)); box-shadow: 0 24px 80px rgba(0,0,0,.88), 0 0 0 9999px rgba(0,0,0,.38), 0 0 44px rgba(143,109,255,.36); display: flex; flex-direction: column; }
@@ -289,11 +291,13 @@ function injectOnboardingStyles() {
     .module-tour-preferences input { width: auto; }
     .module-tour-preferences small { color: #a98f72; font-size: 11px; }
     .guide-card-topline { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 8px; flex: 0 0 auto; }
-    .setup-guide-topline { align-items: center; gap: 8px; }
-    .setup-guide-icon-actions { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: 0 0 auto; }
-    .setup-guide-icon-actions button { width: 30px; height: 30px; min-height: 30px; padding: 0 !important; display: grid; place-items: center; border-radius: 999px; font-size: 13px !important; line-height: 1; }
+    .setup-guide-topline { align-items: center; gap: 8px; flex-wrap: wrap; }
+    .setup-guide-icon-actions { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: 1 1 auto; min-width: 0; }
+    .setup-guide-icon-actions button { width: 30px; height: 30px; min-height: 30px; padding: 0 !important; display: grid; place-items: center; border-radius: 999px; font-size: 13px !important; line-height: 1; flex: 0 0 auto; }
     .setup-guide-icon-actions button.active { border-color: #c7b8ff; color: white; box-shadow: 0 0 18px rgba(143,109,255,.48); background: rgba(143,109,255,.22); }
-    .guide-step-pill, .guide-state { display: inline-flex; align-items: center; min-height: 24px; padding: 3px 9px; border: 1px solid rgba(226,204,167,.24); border-radius: 999px; color: #c7b8ff; background: rgba(15,12,11,.55); font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
+    .setup-step-corner { position: absolute; right: 18px; bottom: 14px; display: inline-flex; align-items: center; min-height: 24px; padding: 3px 9px; border: 1px solid rgba(226,204,167,.24); border-radius: 999px; color: #c7b8ff; background: rgba(15,12,11,.72); font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
+    .guide-state { display: inline-flex; align-items: center; justify-content: center; min-height: 24px; max-width: 128px; padding: 3px 9px; border: 1px solid rgba(226,204,167,.24); border-radius: 999px; color: #c7b8ff; background: rgba(15,12,11,.55); font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; }
+    .guide-step-pill { display: inline-flex; align-items: center; min-height: 24px; padding: 3px 9px; border: 1px solid rgba(226,204,167,.24); border-radius: 999px; color: #c7b8ff; background: rgba(15,12,11,.55); font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
     .guide-state.complete { color: #9af0ff; border-color: rgba(62,180,137,.65); }
     .guide-state.waiting { color: #d9a441; border-color: rgba(217,164,65,.55); }
     .guide-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; flex: 0 0 auto; }
@@ -307,7 +311,7 @@ function injectOnboardingStyles() {
     .module-more p { margin: 5px 0 0; line-height: 1.55; }
     .guide-highlight { outline: 2px solid #c7b8ff !important; outline-offset: 3px !important; box-shadow: 0 0 0 4px rgba(143,109,255,.22), 0 0 22px rgba(143,109,255,.55) !important; border-radius: 14px; animation: guidePulse 1.4s ease-in-out infinite alternate; }
     label.guide-highlight { padding: 7px; margin-left: -7px; margin-right: -7px; background: rgba(143,109,255,.10); border-radius: 15px; }
-    @media (max-width: 720px) { .module-tour-popup { top: 54%; width: calc(100vw - 18px); max-height: 88vh; padding: 16px; } .floating-guide-header { flex-direction: column; } .floating-actions { justify-content: flex-start; } .floating-module-card .module-more-scroll { max-height: 28vh; } .setup-guide-topline { flex-wrap: wrap; } .setup-guide-icon-actions { order: 3; width: 100%; justify-content: flex-start; } }
+    @media (max-width: 720px) { .module-tour-popup { top: 54%; width: calc(100vw - 18px); max-height: 88vh; padding: 16px; } .floating-guide-header { flex-direction: column; } .floating-actions { justify-content: flex-start; } .floating-module-card .module-more-scroll { max-height: 28vh; } .setup-guide-icon-actions { justify-content: flex-start; } }
     @keyframes guidePulse { from { box-shadow: 0 0 0 4px rgba(143,109,255,.18), 0 0 16px rgba(143,109,255,.42); } to { box-shadow: 0 0 0 4px rgba(143,109,255,.30), 0 0 30px rgba(143,109,255,.72); } }
   `;
   document.head.appendChild(style);
