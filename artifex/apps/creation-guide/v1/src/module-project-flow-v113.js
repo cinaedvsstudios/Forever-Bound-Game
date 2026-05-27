@@ -1,4 +1,4 @@
-const PROJECT_FLOW_VERSION = 'V1.1.3';
+const PROJECT_FLOW_VERSION = 'V1.1.5';
 const PROJECT_LIBRARY_KEY_FLOW = 'artifex.projectLibrary';
 const ACTIVE_PROJECT_KEY_FLOW = 'artifex.activeProjectId';
 let projectFlowBypassNativeNew = false;
@@ -13,10 +13,14 @@ window.addEventListener('DOMContentLoaded', () => {
 
 function installProjectFlow() {
   injectProjectFlowStyles();
+  polishOverviewToolbar();
   addProjectFlowToolbarButton();
   wireProjectFlowInterceptors();
 
-  const observer = new MutationObserver(() => applyProjectFlowVersion());
+  const observer = new MutationObserver(() => {
+    applyProjectFlowVersion();
+    polishOverviewToolbar();
+  });
   observer.observe(document.body, { childList: true, subtree: true, characterData: true });
 }
 
@@ -24,6 +28,20 @@ function applyProjectFlowVersion() {
   const badge = document.getElementById('version-badge');
   if (badge && badge.textContent !== PROJECT_FLOW_VERSION) badge.textContent = PROJECT_FLOW_VERSION;
   if (document.title !== `Artifex Creation Guide ${PROJECT_FLOW_VERSION}`) document.title = `Artifex Creation Guide ${PROJECT_FLOW_VERSION}`;
+}
+
+function polishOverviewToolbar() {
+  const title = document.querySelector('.workspace-toolbar .toolbar-title');
+  if (title) title.remove();
+  setToolbarButton('set-active-project-button', '✅ Set Active');
+  setToolbarButton('export-project-files-button', '📦 Export ZIP');
+  setToolbarButton('open-assignments-toolbar-button', '📋 Assignments');
+  setToolbarButton('clear-project-data-toolbar-button', '🧹 Clear Test Data');
+}
+
+function setToolbarButton(id, text) {
+  const button = document.getElementById(id);
+  if (button && button.textContent !== text) button.textContent = text;
 }
 
 function addProjectFlowToolbarButton() {
@@ -34,7 +52,7 @@ function addProjectFlowToolbarButton() {
   const button = document.createElement('button');
   button.id = 'project-flow-toolbar-button';
   button.type = 'button';
-  button.textContent = 'New / Open Project';
+  button.textContent = '🗂️ New / Open';
   button.addEventListener('click', () => showProjectFlow('new'));
   toolbar.insertBefore(button, setActive);
 }
@@ -220,7 +238,7 @@ function openProjectFromFlow(projectId) {
   localStorage.setItem(ACTIVE_PROJECT_KEY_FLOW, projectId);
   library[projectId].lastOpenedAt = new Date().toISOString();
   localStorage.setItem(PROJECT_LIBRARY_KEY_FLOW, JSON.stringify(library, null, 2));
-  window.location.href = `${window.location.pathname}?fresh=creation-guide-1.1.3-open-${Date.now()}`;
+  window.location.href = `${window.location.pathname}?fresh=creation-guide-1.1.5-open-${Date.now()}`;
 }
 
 function setFlowField(id, value) {
@@ -255,6 +273,9 @@ function injectProjectFlowStyles() {
   const style = document.createElement('style');
   style.id = 'project-flow-style';
   style.textContent = `
+    .workspace-toolbar { gap: 7px; }
+    .workspace-toolbar button, .workspace-toolbar select { font-size: 11px !important; padding: 6px 10px !important; min-height: 30px; white-space: nowrap; }
+    .workspace-toolbar #status-text { font-size: 11px; }
     .project-flow-dialog { width: min(860px, calc(100vw - 32px)); max-height: min(86vh, 820px); border: 1px solid rgba(143,109,255,.48); border-radius: 26px; padding: 0; color: #f2eee9; background: linear-gradient(145deg, rgba(32,23,34,.98), rgba(14,10,9,.98)); box-shadow: 0 24px 80px rgba(0,0,0,.88), 0 0 44px rgba(143,109,255,.34); }
     .project-flow-dialog::backdrop { background: rgba(0,0,0,.66); }
     .project-flow-shell { padding: 22px; }
