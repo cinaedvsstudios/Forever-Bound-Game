@@ -1,5 +1,5 @@
-import { createDefaultProjectState, cloneDefaultData } from './data/project-defaults.js?v=0.1.11-integration';
-import { listCatalogItems } from './data/flatplan-catalog.js?v=0.1.11-integration';
+import { createDefaultProjectState, cloneDefaultData } from './data/project-defaults.js?v=0.1.23-routes';
+import { listCatalogItems } from './data/flatplan-catalog.js?v=0.1.23-routes';
 
 // Artifex Project Editor state manager
 // Step 3 of the Project Editor real split.
@@ -221,6 +221,12 @@ export class ProjectEditorStateManager {
 
     if (patch.type) route.type = patch.type;
     if (Array.isArray(patch.conditions)) route.conditions = patch.conditions;
+    if (patch.routeMeta) {
+      route.routeMeta = {
+        ...(route.routeMeta ?? {}),
+        ...patch.routeMeta
+      };
+    }
 
     this.saveToStorage();
     return route;
