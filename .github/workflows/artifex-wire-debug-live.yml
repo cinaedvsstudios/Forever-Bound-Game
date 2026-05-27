@@ -1,11 +1,7 @@
 name: Wire Artifex debug branch
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - .github/workflows/artifex-wire-debug-live.yml
+  workflow_dispatch:
 
 permissions:
   contents: write
