@@ -1,18 +1,18 @@
-import { renderProjectShell } from './project-shell.js?v=0.1.19-shell';
-import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.19-shell';
-import { createProjectEditorStateManager } from './project-state.js?v=0.1.19-shell';
-import { createProjectCanvasController } from './project-canvas.js?v=0.1.19-shell';
-import { createProjectRenderer } from './project-renderer.js?v=0.1.19-shell';
-import { createProjectUI } from './project-ui.js?v=0.1.19-shell';
-import { enhanceProjectUI } from './project-integration-ui.js?v=0.1.19-shell';
-import { enhanceProjectHealthUI } from './project-health-ui.js?v=0.1.19-shell';
-import { enhanceProjectIO } from './project-io.js?v=0.1.19-shell';
-import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.19-shell';
-import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.19-shell';
-import { getTypeStyle } from './data/type-styles.js?v=0.1.19-shell';
+import { renderProjectShell } from './project-shell.js?v=0.1.21-link';
+import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.21-link';
+import { createProjectEditorStateManager } from './project-state.js?v=0.1.21-link';
+import { createProjectCanvasController } from './project-canvas.js?v=0.1.21-link';
+import { createProjectRenderer } from './project-renderer.js?v=0.1.21-link';
+import { createProjectUI } from './project-ui.js?v=0.1.21-link';
+import { enhanceProjectUI } from './project-integration-ui.js?v=0.1.21-link';
+import { enhanceProjectHealthUI } from './project-health-ui.js?v=0.1.21-link';
+import { enhanceProjectIO } from './project-io.js?v=0.1.21-link';
+import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.21-link';
+import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.21-link';
+import { getTypeStyle } from './data/type-styles.js?v=0.1.21-link';
 
 applyProjectTheme();
-renderProjectShell({ version: 'v0.1.19 SHELL' });
+renderProjectShell({ version: 'v0.1.21 LINK' });
 
 const state = createProjectEditorStateManager();
 let canvas = null;
@@ -27,7 +27,7 @@ window.ProjectEditorStateManager = state;
 
 function setVersion() {
   document.querySelectorAll('#projectEditorVersionBadge, [data-project-version-badge]').forEach((el) => {
-    el.textContent = 'v0.1.19 SHELL';
+    el.textContent = 'v0.1.21 LINK';
   });
 }
 
@@ -121,7 +121,7 @@ function init() {
 
   ui.setWorkspace(state.activeWorkspace || 'flatplan');
   refresh();
-  console.info('[Artifex Project Editor] v0.1.19 SHELL loaded', {
+  console.info('[Artifex Project Editor] v0.1.21 LINK loaded', {
     nodes: state.logic.nodes.length,
     routes: state.logic.routes.length
   });
