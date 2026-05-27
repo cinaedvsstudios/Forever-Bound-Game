@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Artifex Creation Guide V1.0.6</title>
-  <link rel="stylesheet" href="./v1/styles.css?v=creation-guide-1.0.6" />
+  <title>Artifex Creation Guide V1.0.7</title>
+  <link rel="stylesheet" href="./v1/styles.css?v=creation-guide-1.0.7" />
 </head>
 <body>
   <header class="topbar">
@@ -12,7 +12,7 @@
       <div class="brand-mark" id="brand-mark">✦</div>
       <div>
         <h1>ARTIFEX</h1>
-        <p><span id="module-label">Creation Guide</span> <span id="version-badge">V1.0.6</span></p>
+        <p><span id="module-label">Creation Guide</span> <span id="version-badge">V1.0.7</span></p>
       </div>
     </section>
 
@@ -30,7 +30,7 @@
           <div class="menu-panel" id="menu-file">
             <button id="new-guide-button">New Project</button>
             <label class="menu-file-label">Import Project JSON<input id="import-json-input" type="file" accept=".json,application/json" hidden /></label>
-            <button id="export-json-button">Export Project Files JSON</button>
+            <button id="export-json-button">Export Project Folder ZIP</button>
             <button id="save-local-button">Save + Set Active Project</button>
             <button id="view-local-button">Project Library</button>
           </div>
@@ -72,9 +72,9 @@
         <div class="menu">
           <button class="menu-button" data-menu="open">Open ▾</button>
           <div class="menu-panel right" id="menu-open">
-            <a href="../../index.html?v=creation-guide-1.0.6">Artifex Portal</a>
-            <a href="../scene-editor/?v=creation-guide-1.0.6">Scene Editor</a>
-            <a href="../module-boilerplate/?v=creation-guide-1.0.6">Blank Module Boilerplate</a>
+            <a href="../../index.html?v=creation-guide-1.0.7">Artifex Portal</a>
+            <a href="../scene-editor/?v=creation-guide-1.0.7">Scene Editor</a>
+            <a href="../module-boilerplate/?v=creation-guide-1.0.7">Blank Module Boilerplate</a>
           </div>
         </div>
 
@@ -97,12 +97,44 @@
       <div class="side-panel-content">
         <section class="card">
           <header><h2>Project Setup</h2><span id="setup-percent">0%</span></header>
-          <label>Project Name<input id="game-title-input" /></label>
-          <label>Project ID / Slug<input id="project-id-input" /></label>
-          <label>Creator / Studio<input id="creator-input" /></label>
-          <label>Local File Path<input id="project-folder-input" placeholder="/projects/forever-bound" /></label>
-          <label>Online File Path<input id="online-path-input" placeholder="github.com/.../project-root" /></label>
-          <label>Deployed URL<input id="deployed-url-input" placeholder="https://..." /></label>
+
+          <label>Project Name
+            <div class="validated-field"><input id="game-title-input" placeholder="Forever Bound" /><span id="project-name-status" class="field-status empty">⭕</span></div>
+          </label>
+
+          <label>Project ID / Slug
+            <div class="validated-field"><input id="project-id-input" placeholder="forever-bound" /><span id="project-id-status" class="field-status empty">⭕</span></div>
+          </label>
+          <button id="use-suggested-slug-button" class="helper-button" type="button">Use suggested slug</button>
+          <p id="slug-suggestion-text" class="field-help">Suggested slug appears after you type a project name.</p>
+
+          <label>Creator / Studio
+            <div class="validated-field"><input id="creator-input" placeholder="Cinaedvs Studios" /><span id="creator-status" class="field-status empty">⭕</span></div>
+          </label>
+
+          <label>Local File Path
+            <div class="validated-field"><input id="project-folder-input" placeholder="Choose a folder or type /projects/forever-bound" /><span id="local-path-status" class="field-status empty">⭕</span></div>
+          </label>
+          <button id="choose-local-folder-button" class="helper-button" type="button">Choose Local Folder</button>
+          <input id="local-folder-picker" type="file" webkitdirectory directory multiple hidden />
+          <p class="field-help">Browsers may only provide the selected folder name, not the full computer path.</p>
+
+          <label class="checkbox-row"><input id="use-github-input" type="checkbox" /> Use GitHub repo path</label>
+
+          <label>GitHub Username
+            <div class="validated-field"><input id="github-username-input" placeholder="cinaedvsstudios" /><span id="github-username-status" class="field-status empty">⭕</span></div>
+          </label>
+
+          <label>Online File Path (GitHub repo URL)
+            <div class="validated-field"><input id="online-path-input" placeholder="https://github.com/cinaedvsstudios/forever-bound" /><span id="online-path-status" class="field-status empty">⭕</span></div>
+          </label>
+          <button id="open-online-path-button" class="helper-button" type="button">Open GitHub / Online Path</button>
+
+          <label>Deployed URL
+            <div class="validated-field"><input id="deployed-url-input" placeholder="https://cinaedvsstudios.github.io/forever-bound/" /><span id="deployed-url-status" class="field-status empty">⭕</span></div>
+          </label>
+          <button id="check-deployed-url-button" class="helper-button" type="button">Check Deployed URL</button>
+
           <label>Build Target<select id="build-target-input"><option>Chronicle 0</option><option>Quest 0.5</option><option>Chronicle 1</option><option>Custom</option></select></label>
         </section>
 
@@ -136,7 +168,7 @@
       <section class="workspace-toolbar">
         <strong class="toolbar-title">Project Overview</strong>
         <button id="set-active-project-button">Set Active Project</button>
-        <button id="export-project-files-button">Export Project Files</button>
+        <button id="export-project-files-button">Export Project Folder ZIP</button>
         <button id="open-assignments-toolbar-button">📋 Assignments</button>
         <select id="todo-sort-input" title="Dashboard sort">
           <option value="easy-wins">Easy Wins</option>
@@ -191,6 +223,6 @@
     </form>
   </dialog>
 
-  <script src="./v1/src/module-app.js?v=creation-guide-1.0.6"></script>
+  <script src="./v1/src/module-app.js?v=creation-guide-1.0.7"></script>
 </body>
 </html>
