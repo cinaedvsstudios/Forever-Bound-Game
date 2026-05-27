@@ -1,7 +1,7 @@
 {
   "schemaVersion": "artifex.todos.v1",
   "scope": "all-apps",
-  "updatedBy": "quest-builder-standardization-pass",
+  "updatedBy": "archetype-object-creator-review",
   "importantReferenceFiles": {
     "brandingAndDisplayRules": "docs/artifex/18-color-and-display-rules.md",
     "projectFileContracts": "docs/artifex/19-project-file-contracts.md",
@@ -258,6 +258,29 @@
       "appFile": "docs/artifex/19-project-file-contracts.md",
       "fixOwner": "each-app-owner",
       "tags": ["all-apps", "project-files", "contracts", "import-export"]
+    },
+    {
+      "taskId": "todo_all_apps_project_reference_index",
+      "scope": "all-apps",
+      "owningModule": "shared-project-model",
+      "relatedModules": [
+        "project-manager",
+        "scene-editor",
+        "quest-builder",
+        "archetype-object-creator",
+        "effect-editor",
+        "build-game"
+      ],
+      "title": "Create shared project reference index",
+      "description": "Define and generate a real project reference index that lets apps show where an asset, archetype object, gameplay action, FX archetype, scene, quest, or route is referenced. Archetype Object Creator Step 5 needs this so its Reference panel can list actual scenes, quests, and object/action usages instead of fake placeholder links.",
+      "status": "open",
+      "priority": 5,
+      "effort": 4,
+      "source": "archetype-object-creator-v1.17-review",
+      "projectFile": "projects/<project-id>/reference-index.json",
+      "appFile": "artifex/shared/todo-guide/README.md",
+      "fixOwner": "project-manager-and-shared-health-guide",
+      "tags": ["all-apps", "reference-index", "project-graph", "validation", "archetype-object-creator"]
     }
   ]
 }
