@@ -4,6 +4,7 @@ let tourMode = localStorage.getItem(MODULE_INTRO_DISABLED_KEY) === 'true' ? 'set
 let moduleStep = 0;
 let setupStep = 0;
 let expandedDetails = false;
+let setupDetailsOpen = false;
 let onboardingQueued = false;
 let onboardingReady = false;
 let lastOnboardingHtml = '';
@@ -22,16 +23,16 @@ const artifexModules = [
 ];
 
 const setupSteps = [
-  { title: 'Project setup starts here', ids: ['side-panel-toggle-button'], text: () => 'Now we create a project. Open the setup panel on the left and fill the fields from top to bottom. The setup gates below will update as you go.', done: () => !document.getElementById('left-panel')?.classList.contains('collapsed') },
-  { title: '1. Enter the project name', ids: ['game-title-input'], text: () => isNamedProject() ? `Project name is set to “${valueOf('game-title-input')}”.` : 'Type the human-readable project name, for example “Forever Bound”.', done: () => isNamedProject() },
-  { title: '2. Confirm the project ID / slug', ids: ['project-id-input', 'use-suggested-slug-button'], text: () => validSlug(valueOf('project-id-input')) ? `The safe project ID is “${valueOf('project-id-input')}”.` : 'Use the suggested slug or type a lowercase ID with hyphens, like “forever-bound”.', done: () => validSlug(valueOf('project-id-input')) },
-  { title: '3. Add the creator or studio', ids: ['creator-input'], text: () => valueOf('creator-input') ? `Creator/studio is set to “${valueOf('creator-input')}”.` : 'Enter the creator or studio name for project metadata.', done: () => Boolean(valueOf('creator-input')) },
-  { title: '4. Choose the local project folder', ids: ['project-folder-input', 'choose-local-folder-button'], text: () => valueOf('project-folder-input') ? `Local project location is set to “${valueOf('project-folder-input')}”.` : 'Choose or type the folder where the exported project files will live.', done: () => Boolean(valueOf('project-folder-input')) },
-  { title: '5. Optional GitHub repo path', ids: ['use-github-input', 'github-username-input', 'online-path-input'], text: () => validUrl(valueOf('online-path-input')) ? `Online path is set to ${valueOf('online-path-input')}.` : 'Optional. Tick Use GitHub, enter your username, and the repo URL will auto-fill.', done: () => true, optional: true },
-  { title: '6. Optional deployed URL', ids: ['deployed-url-input', 'check-deployed-url-button'], text: () => validUrl(valueOf('deployed-url-input')) ? 'Deployed URL looks valid. Use Check Deployed URL to test it.' : 'Optional. Add the live site URL later if the project is not deployed yet.', done: () => true, optional: true },
-  { title: '7. Export the starter project folder', ids: ['export-project-files-button', 'export-json-button'], text: () => 'Click Export Project Folder ZIP. Unzip it into the project folder. It contains the folder structure, artifex-project.json, manifest.json, flatplan.json, indexes, and starter placeholder files.', done: () => structuralGatesComplete() },
-  { title: '8. Set the active project', ids: ['set-active-project-button', 'save-local-button'], text: () => 'Click Set Active Project. This saves the project into the browser Project Library and lets the Hub and tools know what project to open.', done: () => savedAsActiveProject() },
-  { title: 'Project setup ready', ids: ['open-assignments-toolbar-button'], text: () => 'Next, open Assignments to track production work. Assignments can be sorted by priority, effort, module, milestone, and status.', done: () => true }
+  { title: 'Project setup starts here', ids: ['side-panel-toggle-button'], text: () => 'Now we create a project. Open the setup panel on the left and fill the fields from top to bottom. The setup gates below will update as you go.', detail: 'The setup guide walks through the minimum information needed before the other Artifex tools can work cleanly: project name, safe project ID, creator/studio, local folder, optional GitHub and deployed URLs, export, and active-project save.', done: () => !document.getElementById('left-panel')?.classList.contains('collapsed') },
+  { title: '1. Enter the project name', ids: ['game-title-input'], text: () => isNamedProject() ? `Project name is set to “${valueOf('game-title-input')}”.` : 'Type the human-readable project name, for example “Forever Bound”.', detail: 'This is the display name shown in the Hub, the Project Library, exported README metadata, and project overview. It can have spaces and capital letters because it is for humans.', done: () => isNamedProject() },
+  { title: '2. Confirm the project ID / slug', ids: ['project-id-input', 'use-suggested-slug-button'], text: () => validSlug(valueOf('project-id-input')) ? `The safe project ID is “${valueOf('project-id-input')}”.` : 'Use the suggested slug or type a lowercase ID with hyphens, like “forever-bound”.', detail: 'The project ID is the safe machine-readable name. Use lowercase letters, numbers, and hyphens only. This becomes the stable identifier used by JSON files, localStorage, exported folders, and later cross-app links.', done: () => validSlug(valueOf('project-id-input')) },
+  { title: '3. Add the creator or studio', ids: ['creator-input'], text: () => valueOf('creator-input') ? `Creator/studio is set to “${valueOf('creator-input')}”.` : 'Enter the creator or studio name for project metadata.', detail: 'This is written into the project metadata and starter README. It does not affect gameplay, but it keeps exported files identifiable when they are shared, backed up, or moved between tools.', done: () => Boolean(valueOf('creator-input')) },
+  { title: '4. Choose the local project folder', ids: ['project-folder-input', 'choose-local-folder-button'], text: () => valueOf('project-folder-input') ? `Local project location is set to “${valueOf('project-folder-input')}”.` : 'Choose or type the folder where the exported project files will live.', detail: 'This is the place where you will unzip the starter project folder. Browser security usually cannot expose a full Windows/Mac/Linux path, so the folder name alone is acceptable for this setup tracker.', done: () => Boolean(valueOf('project-folder-input')) },
+  { title: '5. Optional GitHub repo path', ids: ['use-github-input', 'github-username-input', 'online-path-input'], text: () => validUrl(valueOf('online-path-input')) ? `Online path is set to ${valueOf('online-path-input')}.` : 'Optional. Tick Use GitHub, enter your username, and the repo URL will auto-fill.', detail: 'Use this when the project will live in a GitHub repository. The URL helps the Hub and future build tools know where the online source files are meant to live. Leave it blank for local-only tests.', done: () => true, optional: true },
+  { title: '6. Optional deployed URL', ids: ['deployed-url-input', 'check-deployed-url-button'], text: () => validUrl(valueOf('deployed-url-input')) ? 'Deployed URL looks valid. Use Check Deployed URL to test it.' : 'Optional. Add the live site URL later if the project is not deployed yet.', detail: 'This is the public playable URL, usually GitHub Pages or another static host. It is useful for testing and sharing, but it can be added later after the first export/build exists.', done: () => true, optional: true },
+  { title: '7. Export the starter project folder', ids: ['export-project-files-button', 'export-json-button'], text: () => 'Click Export Project Folder ZIP. Unzip it into the project folder. It contains the folder structure, artifex-project.json, manifest.json, flatplan.json, indexes, and starter placeholder files.', detail: 'Export creates the first real project structure. It marks the structural gates complete because it writes the primary index, manifest, flatplan, data/indexes files, starter Chronicle, starter Quest, and starter Scene placeholders.', done: () => structuralGatesComplete() },
+  { title: '8. Set the active project', ids: ['set-active-project-button', 'save-local-button'], text: () => 'Click Set Active Project. This saves the project into the browser Project Library and lets the Hub and tools know what project to open.', detail: 'This stores the project in artifex.projectLibrary and sets artifex.activeProjectId. The Hub and other apps can then open into the same selected project instead of each tool acting separately.', done: () => savedAsActiveProject() },
+  { title: 'Project setup ready', ids: ['open-assignments-toolbar-button'], text: () => 'Next, open Assignments to track production work. Assignments can be sorted by priority, effort, module, milestone, and status.', detail: 'Assignments are the production tracker. They can represent setup work, scenes, quests, objects, effects, checks, and milestones. The next bigger step is the health/readiness panel.', done: () => true }
 ];
 
 window.openCreationGuideModuleIntro = function openCreationGuideModuleIntro() {
@@ -161,17 +162,23 @@ function moduleTourHtml() {
 function setupGuideHtml() {
   const step = setupSteps[setupStep];
   const done = Boolean(step.done());
+  const showButtonLabel = setupStep === 0 ? 'Open setup panel' : 'Show me where';
+  const nextButtonLabel = setupStep >= setupSteps.length - 1 ? 'Done' : (step.optional ? 'Skip / Next' : 'Next');
   return `
-    <div class="guide-card-topline"><span class="guide-step-pill">Setup ${setupStep + 1}/${setupSteps.length}</span><span class="guide-state ${done ? 'complete' : 'waiting'}">${done ? 'Ready' : 'Needs input'}</span></div>
+    <div class="guide-card-topline setup-guide-topline">
+      <span class="guide-step-pill">Setup ${setupStep + 1}/${setupSteps.length}</span>
+      <div class="setup-guide-icon-actions" aria-label="Setup guide controls">
+        <button type="button" id="setup-back-button" title="Back" aria-label="Back" ${setupStep === 0 ? 'disabled' : ''}>←</button>
+        <button type="button" id="setup-show-button" title="${safe(showButtonLabel)}" aria-label="${safe(showButtonLabel)}">${setupStep === 0 ? '☰' : '📍'}</button>
+        <button type="button" id="setup-info-button" class="${setupDetailsOpen ? 'active' : ''}" title="${setupDetailsOpen ? 'Hide more info' : 'More info'}" aria-label="More info">ℹ️</button>
+        <button type="button" id="setup-intro-button" title="Module intro" aria-label="Module intro">🧭</button>
+        <button type="button" id="setup-next-button" title="${safe(nextButtonLabel)}" aria-label="${safe(nextButtonLabel)}">${setupStep >= setupSteps.length - 1 ? '✓' : '→'}</button>
+      </div>
+      <span class="guide-state ${done ? 'complete' : 'waiting'}">${done ? 'Ready' : 'Needs input'}</span>
+    </div>
     <h3>${safe(step.title)}</h3>
     <p>${safe(step.text())}</p>
-    ${setupStep === 0 ? '<div class="module-more"><strong>What we need</strong><p>Project name, project ID/slug, creator/studio, local folder, optional GitHub repo, optional deployed URL, exported starter folder, and active-project save. After that, work is tracked as Assignments grouped by milestones and module ownership.</p></div>' : ''}
-    <div class="guide-actions">
-      <button type="button" id="setup-back-button" ${setupStep === 0 ? 'disabled' : ''}>Back</button>
-      <button type="button" id="setup-show-button">${setupStep === 0 ? 'Open setup panel' : 'Show me where'}</button>
-      <button type="button" id="setup-intro-button">Module intro</button>
-      <button type="button" id="setup-next-button">${setupStep >= setupSteps.length - 1 ? 'Done' : (step.optional ? 'Skip / Next' : 'Next')}</button>
-    </div>`;
+    ${setupDetailsOpen ? `<div class="module-more setup-more-scroll"><strong>More info</strong><p>${safe(step.detail || '')}</p></div>` : ''}`;
 }
 
 function wireOnboardingButtons() {
@@ -189,12 +196,14 @@ function wireOnboardingButtons() {
   document.getElementById('setup-back-button')?.addEventListener('click', () => moveSetup(-1));
   document.getElementById('setup-next-button')?.addEventListener('click', () => moveSetup(1));
   document.getElementById('setup-show-button')?.addEventListener('click', () => focusSetupTarget(true));
+  document.getElementById('setup-info-button')?.addEventListener('click', () => { setupDetailsOpen = !setupDetailsOpen; queueOnboarding(); });
   document.getElementById('setup-intro-button')?.addEventListener('click', () => { tourMode = 'modules'; expandedDetails = false; queueOnboarding(); });
 }
 
 function startSetupGuide() {
   tourMode = 'setup';
   expandedDetails = false;
+  setupDetailsOpen = false;
   openSidePanel();
   queueOnboarding();
   setTimeout(() => focusSetupTarget(false), 40);
@@ -203,6 +212,7 @@ function startSetupGuide() {
 function moveSetup(amount) {
   if (setupStep === 0 && amount > 0) openSidePanel();
   setupStep = Math.max(0, Math.min(setupSteps.length - 1, setupStep + amount));
+  setupDetailsOpen = false;
   queueOnboarding();
   setTimeout(() => focusSetupTarget(amount > 0), 40);
 }
@@ -279,20 +289,25 @@ function injectOnboardingStyles() {
     .module-tour-preferences input { width: auto; }
     .module-tour-preferences small { color: #a98f72; font-size: 11px; }
     .guide-card-topline { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 8px; flex: 0 0 auto; }
-    .guide-step-pill, .guide-state { display: inline-flex; align-items: center; min-height: 24px; padding: 3px 9px; border: 1px solid rgba(226,204,167,.24); border-radius: 999px; color: #c7b8ff; background: rgba(15,12,11,.55); font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+    .setup-guide-topline { align-items: center; gap: 8px; }
+    .setup-guide-icon-actions { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: 0 0 auto; }
+    .setup-guide-icon-actions button { width: 30px; height: 30px; min-height: 30px; padding: 0 !important; display: grid; place-items: center; border-radius: 999px; font-size: 13px !important; line-height: 1; }
+    .setup-guide-icon-actions button.active { border-color: #c7b8ff; color: white; box-shadow: 0 0 18px rgba(143,109,255,.48); background: rgba(143,109,255,.22); }
+    .guide-step-pill, .guide-state { display: inline-flex; align-items: center; min-height: 24px; padding: 3px 9px; border: 1px solid rgba(226,204,167,.24); border-radius: 999px; color: #c7b8ff; background: rgba(15,12,11,.55); font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
     .guide-state.complete { color: #9af0ff; border-color: rgba(62,180,137,.65); }
     .guide-state.waiting { color: #d9a441; border-color: rgba(217,164,65,.55); }
     .guide-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; flex: 0 0 auto; }
     .guide-actions button { padding: 7px 11px; font-size: 11px; border-radius: 999px; }
-    .guide-actions button:disabled { opacity: .4; cursor: not-allowed; }
+    .guide-actions button:disabled, .setup-guide-icon-actions button:disabled { opacity: .4; cursor: not-allowed; }
     .floating-actions { justify-content: flex-end; }
     .module-more { margin-top: 12px; padding: 12px; border: 1px solid rgba(226,204,167,.18); border-radius: 14px; background: rgba(15,12,11,.46); }
     .floating-module-card .module-more-scroll { max-height: min(30vh, 230px); min-height: 92px; overflow-y: auto; overflow-x: hidden; padding-right: 14px; flex: 1 1 auto; scrollbar-gutter: stable; }
+    .setup-more-scroll { max-height: 120px; overflow-y: auto; scrollbar-gutter: stable; }
     .module-more strong { color: #fff0ce; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; }
     .module-more p { margin: 5px 0 0; line-height: 1.55; }
     .guide-highlight { outline: 2px solid #c7b8ff !important; outline-offset: 3px !important; box-shadow: 0 0 0 4px rgba(143,109,255,.22), 0 0 22px rgba(143,109,255,.55) !important; border-radius: 14px; animation: guidePulse 1.4s ease-in-out infinite alternate; }
     label.guide-highlight { padding: 7px; margin-left: -7px; margin-right: -7px; background: rgba(143,109,255,.10); border-radius: 15px; }
-    @media (max-width: 720px) { .module-tour-popup { top: 54%; width: calc(100vw - 18px); max-height: 88vh; padding: 16px; } .floating-guide-header { flex-direction: column; } .floating-actions { justify-content: flex-start; } .floating-module-card .module-more-scroll { max-height: 28vh; } }
+    @media (max-width: 720px) { .module-tour-popup { top: 54%; width: calc(100vw - 18px); max-height: 88vh; padding: 16px; } .floating-guide-header { flex-direction: column; } .floating-actions { justify-content: flex-start; } .floating-module-card .module-more-scroll { max-height: 28vh; } .setup-guide-topline { flex-wrap: wrap; } .setup-guide-icon-actions { order: 3; width: 100%; justify-content: flex-start; } }
     @keyframes guidePulse { from { box-shadow: 0 0 0 4px rgba(143,109,255,.18), 0 0 16px rgba(143,109,255,.42); } to { box-shadow: 0 0 0 4px rgba(143,109,255,.30), 0 0 30px rgba(143,109,255,.72); } }
   `;
   document.head.appendChild(style);
