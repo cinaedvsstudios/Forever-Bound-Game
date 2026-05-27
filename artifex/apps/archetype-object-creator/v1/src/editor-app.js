@@ -1,4 +1,4 @@
-import { initObjectTemplateIcons } from './object-template-icons.js?v=1.23';
+import { initObjectTemplateIcons } from './object-template-icons.js?v=1.24';
 import './template-card-enhancements.js?v=1.14';
 import './object-creator-workflows-stable.js?v=1.12';
 import { initStep5ColumnLayout } from './object-wizard-step5-layout.js?v=1.22';
@@ -6,7 +6,7 @@ import { initRenderer } from './editor-renderer.js';
 import { initUI, showToast } from './editor-ui.js';
 import { validateCurrentArchetype } from './editor-state.js';
 
-const VERSION_LABEL = 'V1.23';
+const VERSION_LABEL = 'V1.24';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
