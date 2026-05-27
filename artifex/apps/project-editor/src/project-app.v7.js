@@ -1,16 +1,18 @@
-import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.18-indexes';
-import { createProjectEditorStateManager } from './project-state.js?v=0.1.18-indexes';
-import { createProjectCanvasController } from './project-canvas.js?v=0.1.18-indexes';
-import { createProjectRenderer } from './project-renderer.js?v=0.1.18-indexes';
-import { createProjectUI } from './project-ui.js?v=0.1.18-indexes';
-import { enhanceProjectUI } from './project-integration-ui.js?v=0.1.18-indexes';
-import { enhanceProjectHealthUI } from './project-health-ui.js?v=0.1.18-indexes';
-import { enhanceProjectIO } from './project-io.js?v=0.1.18-indexes';
-import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.18-indexes';
-import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.18-indexes';
-import { getTypeStyle } from './data/type-styles.js?v=0.1.18-indexes';
+import { renderProjectShell } from './project-shell.js?v=0.1.19-shell';
+import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.19-shell';
+import { createProjectEditorStateManager } from './project-state.js?v=0.1.19-shell';
+import { createProjectCanvasController } from './project-canvas.js?v=0.1.19-shell';
+import { createProjectRenderer } from './project-renderer.js?v=0.1.19-shell';
+import { createProjectUI } from './project-ui.js?v=0.1.19-shell';
+import { enhanceProjectUI } from './project-integration-ui.js?v=0.1.19-shell';
+import { enhanceProjectHealthUI } from './project-health-ui.js?v=0.1.19-shell';
+import { enhanceProjectIO } from './project-io.js?v=0.1.19-shell';
+import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.19-shell';
+import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.19-shell';
+import { getTypeStyle } from './data/type-styles.js?v=0.1.19-shell';
 
 applyProjectTheme();
+renderProjectShell({ version: 'v0.1.19 SHELL' });
 
 const state = createProjectEditorStateManager();
 let canvas = null;
@@ -25,7 +27,7 @@ window.ProjectEditorStateManager = state;
 
 function setVersion() {
   document.querySelectorAll('#projectEditorVersionBadge, [data-project-version-badge]').forEach((el) => {
-    el.textContent = 'v0.1.18 INDEXES';
+    el.textContent = 'v0.1.19 SHELL';
   });
 }
 
@@ -119,7 +121,7 @@ function init() {
 
   ui.setWorkspace(state.activeWorkspace || 'flatplan');
   refresh();
-  console.info('[Artifex Project Editor] v0.1.18 INDEXES loaded', {
+  console.info('[Artifex Project Editor] v0.1.19 SHELL loaded', {
     nodes: state.logic.nodes.length,
     routes: state.logic.routes.length
   });
