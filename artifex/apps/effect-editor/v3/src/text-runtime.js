@@ -8,6 +8,7 @@ const SAFE_FONTS = new Map([
   ['Arial, sans-serif', 'Arial, sans-serif'],
   ['monospace', 'Consolas, Menlo, monospace']
 ]);
+const EMISSION_MODES = new Set(['once', 'loop', 'continuous']);
 
 export function isTextLayer(layer) {
   return Boolean(layer && ((layer.appearanceMode === 'shape' && layer.particleShape === 'text') || layer.engine === 'text'));
@@ -16,13 +17,20 @@ export function isTextLayer(layer) {
 export function spawnTextParticlesForLayer(layer, densityScale = 1) {
   if (!layer?.visible) return [];
   const state = getTextRuntimeState(layer);
+  const emissionMode = normalizeEmissionMode(layer.textEmissionMode);
+  syncRuntimeMode(state, emissionMode);
   state.frame = (state.frame || 0) + 1;
 
-  const delay = Math.max(0, Math.round(finite(layer.textSpawnDelay, 0)));
-  if (delay > 0 && state.frame % delay !== 1) return [];
+  const interval = getEmissionInterval(layer, emissionMode);
+  if (emissionMode === 'once') {
+    if (state.hasEmittedOnce) return [];
+    state.hasEmittedOnce = true;
+  } else if (state.frame % interval !== 1) {
+    return [];
+  }
 
-  const density = Math.max(0, finite(layer.textDensity, finite(layer.spawnRate, 4))) * Math.max(0, densityScale);
-  const count = delay > 0 ? Math.max(1, Math.round(density)) : getContinuousTextCount(density);
+  const density = Math.max(0, Math.min(10, finite(layer.textDensity, finite(layer.spawnRate, 4)))) * Math.max(0, densityScale);
+  const count = emissionMode === 'continuous' ? getContinuousTextCount(density) : getBurstTextCount(density);
   const particles = [];
   for (let index = 0; index < count; index += 1) {
     particles.push(createTextParticle(layer, state));
@@ -59,9 +67,10 @@ export function drawTextParticle(ctx, particle, layer, scale) {
   ctx.textBaseline = 'middle';
   ctx.textAlign = layer.textAlign || 'center';
 
-  const rawText = String(particle.textToken ?? layer.textContent ?? 'AETHERA').slice(0, 1000);
+  const rawText = String(particle.textToken ?? layer.textContent ?? 'AETHERA').slice(0, 600);
   const blockWidth = Math.max(0, finite(layer.textBlockWidth, 0)) * scale;
-  const lines = prepareLines(ctx, rawText, blockWidth).slice(0, 16);
+  const maxLines = normalizeEmissionMode(layer.textEmissionMode) === 'continuous' ? 8 : 12;
+  const lines = prepareLines(ctx, rawText, blockWidth).slice(0, maxLines);
   const lineHeight = safeSize * Math.max(0.7, Math.min(3, finite(layer.textLineSpacing, 1.2)));
   const letterSpacing = Math.max(0, Math.min(32 * scale, finite(layer.textLetterSpacing, 0) * scale));
   const startY = -((lines.length - 1) * lineHeight) / 2;
@@ -131,7 +140,7 @@ function applyTextMotionProfile(layer) {
 }
 
 function chooseTextToken(layer, state, reveal) {
-  const text = String(layer.textContent || 'AETHERA').slice(0, 1000);
+  const text = String(layer.textContent || 'AETHERA').slice(0, 600);
   if (reveal === 'line') {
     const lines = text.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean);
     if (!lines.length) return text;
@@ -149,9 +158,34 @@ function chooseTextToken(layer, state, reveal) {
   return text;
 }
 
+function normalizeEmissionMode(value) {
+  const mode = String(value || '').trim().toLowerCase();
+  return EMISSION_MODES.has(mode) ? mode : 'loop';
+}
+
+function syncRuntimeMode(state, mode) {
+  if (state.emissionMode === mode) return;
+  state.emissionMode = mode;
+  state.frame = 0;
+  state.hasEmittedOnce = false;
+  state.nextLineIndex = 0;
+  state.nextCharIndex = 0;
+}
+
+function getEmissionInterval(layer, mode) {
+  const configuredDelay = Math.max(0, Math.round(finite(layer.textSpawnDelay, 0)));
+  if (mode === 'continuous') return Math.max(4, configuredDelay || 8);
+  return Math.max(1, configuredDelay || 48);
+}
+
+function getBurstTextCount(density) {
+  return Math.max(1, Math.min(5, Math.ceil(density / 2.5)));
+}
+
 function getContinuousTextCount(density) {
-  const count = Math.floor(density / 4);
-  const chance = density / 4 - count;
+  const scaled = Math.min(3, density) / 8;
+  const count = Math.floor(scaled);
+  const chance = scaled - count;
   return count + (Math.random() < chance ? 1 : 0);
 }
 
