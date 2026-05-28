@@ -10,7 +10,7 @@ Status: open
 Priority: high  
 Source: project file contracts / patch-layer rule
 
-The app currently stays within the two-active-overlay limit, but `template-card-enhancements.js` has grown into a large live overlay. Fold the stable Step 5 wizard, ZIP export, and sound-event logic into normal Object Creator module files now that the Step 5 layout is confirmed.
+The app currently stays within the two-active-overlay limit, but `template-card-enhancements.js` has grown into a large live overlay. Fold the stable ZIP export / asset package logic into normal Object Creator module files now that the Step 5 layout and core wizard controls are confirmed.
 
 Progress:
 
@@ -20,15 +20,28 @@ Progress:
 - Done in V1.25: tightened template icon padding further with smaller cards, lower icon-box padding, smaller grid gaps, and tighter labels/buttons.
 - Done in V1.26: extracted the wizard Reference panel into `object-wizard-reference-panel.js`.
 - Done in V1.27: extracted the wizard Frame Correction popup and per-frame correction logic into `object-wizard-frame-correction.js`.
+- Done in V1.29: extracted the wizard Step 5 core controls into `object-wizard-step5.js`.
 
 Remaining suggested split:
 
-- `object-wizard-step5.js`
 - `object-wizard-asset-package.js`
 
 After the split, keep `editor-app.js` as a thin entry file and remove any no-longer-needed overlay import.
 
 ## Done
+
+### Extract wizard Step 5 core module
+
+Status: done  
+Completed in: V1.29  
+Source: docs/artifex/19-project-file-contracts.md
+
+Completed changes:
+
+- Created `object-wizard-step5.js`.
+- Moved Step 5 action title info, mark-complete title placement, field ordering, wizard button labels, Sound Events list, Action Behaviour controls, trigger mapping, playback rules, and frame event rows into the new module.
+- Updated `editor-app.js` to initialise the Step 5 core module.
+- Bumped the app to V1.29.
 
 ### Extract wizard Frame Correction module
 
