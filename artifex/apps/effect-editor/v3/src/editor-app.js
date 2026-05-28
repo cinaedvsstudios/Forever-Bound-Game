@@ -1,4 +1,4 @@
-import { addLayer } from './editor-state.js';
+import { addLayer, editorState } from './editor-state.js';
 import { initRenderer } from './editor-renderer.js';
 import { initUI, showToast } from './editor-ui.js';
 import { initLibrary } from './editor-library.js';
@@ -22,9 +22,10 @@ import { initV317Polish } from './v317-polish.js';
 import { initV320FileMenu } from './v320-file-menu.js';
 import { initV322TextControls } from './v322-text-controls.js';
 import { initV326LeftPanelSearch } from './v326-left-panel-search.js';
+import { initV330BootRecovery } from './v330-boot-recovery.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'V3.29';
+const VERSION_LABEL = 'V3.30';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
@@ -38,6 +39,7 @@ window.addEventListener('DOMContentLoaded', () => {
   safeInit('renderer', initRenderer);
   safeInit('core UI', initUI);
   safeInit('library', initLibrary);
+  safeInit('V3.30 boot recovery', () => initV330BootRecovery(showToast));
   ensureStarterLayer();
 
   const optionalModules = [
@@ -64,9 +66,10 @@ window.addEventListener('DOMContentLoaded', () => {
   ];
 
   optionalModules.forEach(([name, init]) => safeInit(name, init));
+  safeInit('V3.30 boot recovery final pass', () => initV330BootRecovery(showToast));
   ensureStarterLayer();
 
-  showToast(`${VERSION_LABEL} loaded. Optional patch modules are isolated from boot.`, 'success');
+  showToast(`${VERSION_LABEL} loaded. Menu and starter layer recovery are active.`, 'success');
 });
 
 function safeInit(name, init) {
@@ -79,8 +82,7 @@ function safeInit(name, init) {
 }
 
 function ensureStarterLayer() {
-  const hasLayer = Boolean(document.querySelector('#layer-list .layer-item'));
-  if (hasLayer) return;
+  if (editorState.composition.layers.length) return;
   const preset = cloneBasePreset('base', 'standard-particle');
   if (preset?.config) addLayer(preset.config);
 }
