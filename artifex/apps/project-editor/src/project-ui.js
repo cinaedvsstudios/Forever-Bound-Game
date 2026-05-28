@@ -1,6 +1,7 @@
-import { UI_STORAGE_KEYS, escapeHtml, getById, readBooleanPreference, writeBooleanPreference } from './project-ui-helpers.js?v=0.1.28-inspector';
-import { renderProjectCatalog } from './project-sidebar-ui.js?v=0.1.28-inspector';
-import { createProjectInspectorUI } from './project-inspector-ui.js?v=0.1.28-inspector';
+import { escapeHtml, getById } from './project-ui-helpers.js?v=0.1.29-json-preview';
+import { renderProjectCatalog } from './project-sidebar-ui.js?v=0.1.29-json-preview';
+import { createProjectInspectorUI } from './project-inspector-ui.js?v=0.1.29-json-preview';
+import { createProjectJsonPreviewUI } from './project-json-preview-ui.js?v=0.1.29-json-preview';
 
 // Artifex Project Editor UI coordinator
 // Base UI orchestration only. Focused rendering lives in smaller modules.
@@ -14,8 +15,6 @@ export function createProjectUI({
   renderStitcher,
   renderBuildPrep
 }) {
-  let splitStatePreviewVisible = readBooleanPreference(UI_STORAGE_KEYS.splitStatePreviewVisible, false);
-
   const refs = {
     sidebar: getById('sidebarAccordion'),
     canvas: getById('flatplanCanvas'),
@@ -28,6 +27,20 @@ export function createProjectUI({
     wizardStage: getById('wizardWorkspace')
   };
 
+  const jsonPreview = createProjectJsonPreviewUI({
+    canvasElement: refs.canvas,
+    stateManager,
+    onRefresh
+  });
+
+  const inspector = createProjectInspectorUI({
+    canvasElement: refs.canvas,
+    stateManager,
+    renderer,
+    renderJsonPreview: () => jsonPreview.renderJsonPreview(),
+    onRefresh
+  });
+
   function renderCatalog() {
     renderProjectCatalog({
       sidebar: refs.sidebar,
@@ -37,56 +50,9 @@ export function createProjectUI({
     });
   }
 
-  function updateSplitPreviewMenuLabel() {
-    const toggle = getById('toggleSplitStatePreview');
-    if (!toggle) return;
-    toggle.textContent = splitStatePreviewVisible ? 'Hide Split State Preview' : 'Show Split State Preview';
-  }
-
   function renderJsonPreview() {
-    const existing = getById('splitDataPreview');
-    if (existing) existing.remove();
-    updateSplitPreviewMenuLabel();
-    if (!refs.canvas || !splitStatePreviewVisible) return;
-
-    const panel = document.createElement('div');
-    panel.id = 'splitDataPreview';
-    panel.className = 'absolute bottom-4 right-4 z-30 w-[360px] max-h-[280px] overflow-hidden bg-cardDark/85 backdrop-blur-md border border-projectGold/30 rounded-lg shadow-card-glow';
-    panel.innerHTML = `
-      <div class="flex items-center justify-between px-3 py-2 border-b border-[#2d2d42]">
-        <span class="text-xs font-bold text-projectGoldGlow">Split State Preview</span>
-        <div class="flex items-center gap-3">
-          <button id="hideSplitStatePreviewBtn" class="text-[9px] font-mono text-zinc-500 hover:text-projectGoldGlow transition">hide</button>
-          <button id="resetSplitStateBtn" class="text-[9px] font-mono text-zinc-500 hover:text-projectGoldGlow transition">reset</button>
-        </div>
-      </div>
-      <pre class="p-3 text-[9px] leading-relaxed text-emerald-300 overflow-auto max-h-[220px]">${escapeHtml(JSON.stringify(stateManager.exportSnapshot(), null, 2))}</pre>
-    `;
-    refs.canvas.appendChild(panel);
-    panel.querySelector('#hideSplitStatePreviewBtn')?.addEventListener('click', () => {
-      splitStatePreviewVisible = false;
-      writeBooleanPreference(UI_STORAGE_KEYS.splitStatePreviewVisible, splitStatePreviewVisible);
-      renderJsonPreview();
-    });
-    panel.querySelector('#resetSplitStateBtn')?.addEventListener('click', () => {
-      stateManager.resetToDefaults();
-      onRefresh?.();
-    });
+    jsonPreview.renderJsonPreview();
   }
-
-  function toggleSplitStatePreview() {
-    splitStatePreviewVisible = !splitStatePreviewVisible;
-    writeBooleanPreference(UI_STORAGE_KEYS.splitStatePreviewVisible, splitStatePreviewVisible);
-    renderJsonPreview();
-  }
-
-  const inspector = createProjectInspectorUI({
-    canvasElement: refs.canvas,
-    stateManager,
-    renderer,
-    renderJsonPreview,
-    onRefresh
-  });
 
   function renderInspectorPreview() {
     inspector.renderInspectorPreview();
@@ -197,11 +163,11 @@ export function createProjectUI({
     const toggleSplitStatePreviewButton = getById('toggleSplitStatePreview');
     if (toggleSplitStatePreviewButton) {
       toggleSplitStatePreviewButton.onclick = () => {
-        toggleSplitStatePreview();
+        jsonPreview.toggleSplitStatePreview();
         closeAllMenus();
       };
     }
-    updateSplitPreviewMenuLabel();
+    jsonPreview.updateSplitPreviewMenuLabel();
     wireWorkspaceButtons();
   }
 
