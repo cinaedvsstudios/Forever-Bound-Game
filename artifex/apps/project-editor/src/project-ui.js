@@ -1,7 +1,7 @@
-import { escapeHtml, getById } from './project-ui-helpers.js?v=0.1.29-json-preview';
-import { renderProjectCatalog } from './project-sidebar-ui.js?v=0.1.29-json-preview';
-import { createProjectInspectorUI } from './project-inspector-ui.js?v=0.1.29-json-preview';
-import { createProjectJsonPreviewUI } from './project-json-preview-ui.js?v=0.1.29-json-preview';
+import { escapeHtml, getById } from './project-ui-helpers.js?v=0.1.30-preview-fix';
+import { renderProjectCatalog } from './project-sidebar-ui.js?v=0.1.30-preview-fix';
+import { createProjectInspectorUI } from './project-inspector-ui.js?v=0.1.30-preview-fix';
+import { createProjectJsonPreviewUI } from './project-json-preview-ui.js?v=0.1.30-preview-fix';
 
 // Artifex Project Editor UI coordinator
 // Base UI orchestration only. Focused rendering lives in smaller modules.
@@ -28,7 +28,6 @@ export function createProjectUI({
   };
 
   const jsonPreview = createProjectJsonPreviewUI({
-    canvasElement: refs.canvas,
     stateManager,
     onRefresh
   });
@@ -160,14 +159,7 @@ export function createProjectUI({
       };
     }
 
-    const toggleSplitStatePreviewButton = getById('toggleSplitStatePreview');
-    if (toggleSplitStatePreviewButton) {
-      toggleSplitStatePreviewButton.onclick = () => {
-        jsonPreview.toggleSplitStatePreview();
-        closeAllMenus();
-      };
-    }
-    jsonPreview.updateSplitPreviewMenuLabel();
+    jsonPreview.wireSplitStatePreviewToggle({ closeMenus: closeAllMenus });
     wireWorkspaceButtons();
   }
 
