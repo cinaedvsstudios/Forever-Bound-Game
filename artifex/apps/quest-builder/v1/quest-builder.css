@@ -1,7 +1,7 @@
-/* Quest Builder V1.1.8
+/* Quest Builder V1.1.9
    Styling entry point only. Behaviour is split into v1/src modules.
    The visual rules are currently carried forward from the V1.0.8 stylesheet until the next visual pass. */
-@import url("./quest-builder-v108.css?v=1.1.8-base");
+@import url("./quest-builder-v108.css?v=1.1.9-base");
 
 /* V1.1.3 contextual inspector / status actions */
 .status-strip {
@@ -122,3 +122,50 @@
 .editor-grid.compact .editor-full { grid-column: 1 / -1; }
 .editor-required label::after { content: ' required'; color: var(--accent2); font-size: 9px; letter-spacing: .08em; }
 .editor-dialog input[id$='thumb-input'] { text-align: center; font-size: 24px; padding: 7px 6px; }
+
+/* V1.1.9 export preview summary */
+.export-summary {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid rgba(127,240,189,.35);
+  border-radius: 18px;
+  background: rgba(16,17,18,.72);
+}
+.export-summary h3 {
+  margin: 0;
+  color: var(--gold2);
+  font-family: Georgia, serif;
+  font-size: 14px;
+}
+.export-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(90px, 1fr));
+  gap: 8px;
+}
+.export-stat {
+  padding: 9px;
+  border: 1px solid var(--soft);
+  border-radius: 14px;
+  background: rgba(255,255,255,.035);
+}
+.export-stat strong { display: block; color: var(--accent2); font-size: 18px; }
+.export-stat span { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+.export-status-pass { color: var(--accent2); font-weight: 900; }
+.export-status-fail { color: #fbbf24; font-weight: 900; }
+.export-paths {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.export-paths li {
+  padding: 5px 8px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.04);
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+}
