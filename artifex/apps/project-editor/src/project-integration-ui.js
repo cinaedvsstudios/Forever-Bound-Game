@@ -1,7 +1,9 @@
-import { getLibraryBrowserData } from './project-library-indexes.js?v=0.1.21-link';
+import { getLibraryBrowserData } from './project-library-indexes.js?v=0.1.26-split-ui';
+import { closeProjectMenus, getProjectStorageItem, setProjectStorageItem, wireLibraryMenuTargets, wireProjectMenuBehaviourOnce } from './project-menu-ui.js?v=0.1.26-split-ui';
+import { getSelectedProjectNode, linkItemToSelectedNode } from './project-asset-linking.js?v=0.1.26-split-ui';
 
 // Artifex Project Manager integration UI shell
-// Adds shared-project integration surfaces without bloating project-ui.js.
+// Owns Asset Browser workspace integration. Menu wiring and asset linking now live in focused modules.
 
 const INTEGRATION_STORAGE_KEYS = Object.freeze({
   assetBrowserMode: 'artifex_project_asset_browser_mode'
@@ -17,16 +19,6 @@ const LIBRARY_MODES = Object.freeze([
   { id: 'assets', label: 'Asset Browser', icon: 'image', file: 'assets/asset-index.json', owner: 'Asset Library' }
 ]);
 
-const NODE_LINK_KEYS_BY_MODE = Object.freeze({
-  quests: { idKey: 'linkedQuestId', labelKey: 'linkedQuestName' },
-  sidequests: { idKey: 'linkedSideQuestId', labelKey: 'linkedSideQuestName' },
-  'scenes-screens': { idKey: 'linkedSceneId', labelKey: 'linkedSceneName' },
-  puzzles: { idKey: 'linkedPuzzleId', labelKey: 'linkedPuzzleName' },
-  'archetype-objects': { idKey: 'linkedArchetypeObjectId', labelKey: 'linkedArchetypeObjectName' },
-  'archetype-effects': { idKey: 'linkedArchetypeEffectId', labelKey: 'linkedArchetypeEffectName' },
-  assets: { idKey: 'linkedAssetId', labelKey: 'linkedAssetName' }
-});
-
 function escapeHtml(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -36,98 +28,8 @@ function escapeHtml(value) {
     .replaceAll("'", '&#039;');
 }
 
-function getStorageItem(key, fallback = '') {
-  try {
-    return globalThis.localStorage?.getItem(key) || fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function setStorageItem(key, value) {
-  try {
-    globalThis.localStorage?.setItem(key, value);
-  } catch {
-    // non-fatal
-  }
-}
-
-function closeAllMenus() {
-  document.querySelectorAll('.project-menu details[open]').forEach((menu) => menu.removeAttribute('open'));
-}
-
-function wireMenuBehaviourOnce() {
-  if (window.__artifexProjectMenuWired) return;
-  window.__artifexProjectMenuWired = true;
-
-  document.addEventListener('toggle', (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLDetailsElement)) return;
-    if (!target.matches('[data-project-menu]')) return;
-    if (!target.open) return;
-    document.querySelectorAll('[data-project-menu][open]').forEach((menu) => {
-      if (menu !== target) menu.removeAttribute('open');
-    });
-  }, true);
-
-  document.addEventListener('pointerdown', (event) => {
-    if (event.target?.closest?.('.project-menu')) return;
-    closeAllMenus();
-  });
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') closeAllMenus();
-  });
-}
-
-function getSelectedNode(stateManager) {
-  return stateManager.selectedNodeId ? stateManager.getNode?.(stateManager.selectedNodeId) : null;
-}
-
-function getLinkConfig(modeId) {
-  return NODE_LINK_KEYS_BY_MODE[modeId] || NODE_LINK_KEYS_BY_MODE.assets;
-}
-
-function ensureNodeLinks(node) {
-  node.properties ||= {};
-  if (!Array.isArray(node.properties.libraryLinks)) node.properties.libraryLinks = [];
-  return node.properties.libraryLinks;
-}
-
-function linkItemToSelectedNode({ stateManager, item, modeId }) {
-  const node = getSelectedNode(stateManager);
-  if (!node || !item) return { ok: false, message: 'Select a Flatplan node first, then return here to link this item.' };
-
-  const linkConfig = getLinkConfig(modeId);
-  const links = ensureNodeLinks(node);
-  const linkRecord = {
-    modeId,
-    itemId: item.id,
-    itemName: item.name,
-    itemType: item.type,
-    sourceModule: item.sourceModule,
-    file: item.file,
-    linkedAt: new Date().toISOString()
-  };
-
-  const existingIndex = links.findIndex((link) => link.modeId === modeId && link.itemId === item.id);
-  if (existingIndex >= 0) links[existingIndex] = linkRecord;
-  else links.push(linkRecord);
-
-  stateManager.updateNode?.(node.id, {
-    properties: {
-      [linkConfig.idKey]: item.id,
-      [linkConfig.labelKey]: item.name,
-      [`${modeId}LinkFile`]: item.file,
-      libraryLinks: links
-    }
-  });
-
-  return { ok: true, message: `Linked ${item.name} to ${node.properties?.name || node.id}.` };
-}
-
 function renderSelectedNodeBadge(stateManager) {
-  const selectedNode = getSelectedNode(stateManager);
+  const selectedNode = getSelectedProjectNode(stateManager);
   if (!selectedNode) {
     return `<span class="text-zinc-600">No Flatplan node selected</span>`;
   }
@@ -169,7 +71,7 @@ function renderEmptyCards(activeMode, browserData) {
 }
 
 function renderPreview({ preview, item, activeMode, stateManager }) {
-  const selectedNode = getSelectedNode(stateManager);
+  const selectedNode = getSelectedProjectNode(stateManager);
   preview.innerHTML = `
     <h3 class="text-sm font-bold text-projectGoldGlow mb-2">${escapeHtml(item.name)}</h3>
     <div class="rounded-lg border border-[#2d2d42] bg-black/30 p-3 text-[10px] font-mono text-zinc-500 space-y-1">
@@ -182,7 +84,7 @@ function renderPreview({ preview, item, activeMode, stateManager }) {
     </div>
     <p class="mt-3 text-xs text-zinc-500 leading-relaxed">${escapeHtml(item.description || 'No description available.')}</p>
     <button data-link-selected-item="${escapeHtml(item.id)}" class="mt-4 w-full px-3 py-2 rounded-lg border ${selectedNode ? 'border-projectGold/40 text-projectGoldGlow hover:bg-accentDark/50' : 'border-zinc-800 text-zinc-600 cursor-not-allowed'} text-xs transition" ${selectedNode ? '' : 'disabled'}>
-      ${selectedNode ? `Link to selected node` : `Select a Flatplan node first`}
+      ${selectedNode ? 'Link to selected node' : 'Select a Flatplan node first'}
     </button>
     <p id="assetBrowserLinkStatus" class="mt-3 text-[10px] text-zinc-500 leading-relaxed"></p>
   `;
@@ -201,7 +103,7 @@ function renderAssetBrowser({ stateManager, ui }) {
   const container = document.getElementById('assetBrowserWorkspace');
   if (!container) return;
 
-  const activeModeId = getStorageItem(INTEGRATION_STORAGE_KEYS.assetBrowserMode, 'assets');
+  const activeModeId = getProjectStorageItem(INTEGRATION_STORAGE_KEYS.assetBrowserMode, 'assets');
   const activeMode = LIBRARY_MODES.find((mode) => mode.id === activeModeId) || LIBRARY_MODES.at(-1);
   const browserData = getLibraryBrowserData(stateManager, activeMode.id);
   const items = browserData.items;
@@ -257,7 +159,7 @@ function renderAssetBrowser({ stateManager, ui }) {
 
   container.querySelectorAll('[data-asset-browser-mode]').forEach((button) => {
     button.addEventListener('click', () => {
-      setStorageItem(INTEGRATION_STORAGE_KEYS.assetBrowserMode, button.dataset.assetBrowserMode || 'assets');
+      setProjectStorageItem(INTEGRATION_STORAGE_KEYS.assetBrowserMode, button.dataset.assetBrowserMode || 'assets');
       renderAssetBrowser({ stateManager, ui });
     });
   });
@@ -314,16 +216,11 @@ export function enhanceProjectUI({ ui, stateManager }) {
 
   ui.wireTopCanvasControls = () => {
     baseWireTopCanvasControls();
-    wireMenuBehaviourOnce();
-
-    document.querySelectorAll('[data-library-target]').forEach((button) => {
-      button.onclick = () => {
-        setStorageItem(INTEGRATION_STORAGE_KEYS.assetBrowserMode, button.dataset.libraryTarget || 'assets');
-        ui.setWorkspace('assetbrowser');
-        closeAllMenus();
-      };
-    });
+    wireProjectMenuBehaviourOnce();
+    wireLibraryMenuTargets({ ui, storageKey: INTEGRATION_STORAGE_KEYS.assetBrowserMode });
   };
+
+  ui.closeMenus = closeProjectMenus;
 
   return ui;
 }
