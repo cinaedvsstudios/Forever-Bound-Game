@@ -17,7 +17,7 @@ Use the global all-apps to-do list for changes that affect every Artifex app. Us
 
 ## Current live status
 
-Current Quest Builder version: `V1.1.7`
+Current Quest Builder version: `V1.1.8`
 
 Current live app files:
 
@@ -161,6 +161,16 @@ Status: complete.
 - Removed the open `todo_quest_builder_define_export_contract` task from the specific-app open list.
 - Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.7` / `1.1.7`.
 
+### V1.1.8 — Post-export verification / bugfix pass
+
+Status: complete.
+
+- Added `exportSelfCheck` to every exported `artifex.questExportBundle.v1` bundle.
+- `exportSelfCheck` verifies the bundle schema, files array, quest index, sidequest index, validation warning array, summary counts, runtime flow blocks, and runtime link buckets.
+- Tightened Project Manager resolution warnings so action-only logic does not hide missing scene/object/dialogue/audio IDs.
+- Added a specific warning when an action such as `speak:`, `talk:`, `give:`, `use:`, `inspect:`, `collect:`, or `interact:` appears to target an object/NPC but has no `objectId`.
+- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.8` / `1.1.8`.
+
 ## Ownership boundary
 
 Quest Builder owns:
@@ -211,20 +221,19 @@ Every Quest Builder edit should increase the visible version by `0.01` and updat
 Next version:
 
 ```text
-V1.1.8  post-export verification / bugfix pass
+V1.1.9  exported bundle UI / split-file download planning
 ```
 
-## V1.1.8 — Post-export verification / bugfix pass
+## V1.1.9 — Exported bundle UI / split-file download planning
 
-Goal: test the V1.1.7 export pass in the browser and fix any runtime errors before starting new features.
+Goal: make the export bundle easier to inspect and eventually save as separate project-package files.
 
-Checks:
+Candidate changes:
 
-- App loads as V1.1.7.
-- `View JSON Preview` opens and shows `artifex.questExportBundle.v1`.
-- `Export JSON` downloads the same bundle shape.
-- The exported bundle contains `files` entries for quest and sidequest indexes.
-- No red console errors appear when opening the app, opening JSON Preview, or exporting.
+- Add a small JSON Preview summary above the raw JSON.
+- Show export self-check status clearly.
+- Add file count, quest count, side quest count, warning count, and generated virtual paths.
+- Decide whether Quest Builder should download one bundle file only, or offer a future split-download package.
 
 ## Specific-app tasks
 
