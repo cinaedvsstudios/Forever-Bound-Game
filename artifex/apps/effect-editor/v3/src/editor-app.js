@@ -24,7 +24,7 @@ import { initV322TextControls } from './v322-text-controls.js';
 import { initV326LeftPanelSearch } from './v326-left-panel-search.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'V3.28';
+const VERSION_LABEL = 'V3.29';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
@@ -35,34 +35,52 @@ window.addEventListener('DOMContentLoaded', () => {
   const versionBadge = document.getElementById('version-badge');
   if (versionBadge) versionBadge.textContent = VERSION_LABEL;
 
-  initRenderer();
-  initUI();
-  initLibrary();
-  initSidePanelParity(showToast);
-  initAppearanceParity(showToast);
-  initBrushAssetLibrary(showToast);
-  initBrushRenderControls(showToast);
-  initDynamicsParity(showToast);
-  initEffectSpecificControls(showToast);
-  initIOParity(showToast);
-  initWorkspaceParity(showToast);
-  initResolutionParity(showToast);
-  initLayerOrderParity(showToast);
-  initMenuCleanupParity(showToast);
-  initWorkflowPolish(showToast);
-  initUIPolishV2(showToast);
-  initV312Polish(showToast);
-  initV314Polish(showToast);
-  initV315Polish(showToast);
-  initV317Polish(showToast);
-  initV320FileMenu(showToast);
-  initV322TextControls(showToast);
-  initV326LeftPanelSearch();
+  safeInit('renderer', initRenderer);
+  safeInit('core UI', initUI);
+  safeInit('library', initLibrary);
+  ensureStarterLayer();
 
-  const preset = cloneBasePreset('base', 'standard-particle');
-  if (preset) {
-    addLayer(preset.config);
-  }
+  const optionalModules = [
+    ['side panel parity', () => initSidePanelParity(showToast)],
+    ['appearance parity', () => initAppearanceParity(showToast)],
+    ['brush asset library', () => initBrushAssetLibrary(showToast)],
+    ['brush render controls', () => initBrushRenderControls(showToast)],
+    ['dynamics parity', () => initDynamicsParity(showToast)],
+    ['effect specific controls', () => initEffectSpecificControls(showToast)],
+    ['IO parity', () => initIOParity(showToast)],
+    ['workspace parity', () => initWorkspaceParity(showToast)],
+    ['resolution parity', () => initResolutionParity(showToast)],
+    ['layer order parity', () => initLayerOrderParity(showToast)],
+    ['menu cleanup parity', () => initMenuCleanupParity(showToast)],
+    ['workflow polish', () => initWorkflowPolish(showToast)],
+    ['UI polish v2', () => initUIPolishV2(showToast)],
+    ['V3.12 polish', () => initV312Polish(showToast)],
+    ['V3.14 polish', () => initV314Polish(showToast)],
+    ['V3.15 polish', () => initV315Polish(showToast)],
+    ['V3.17 polish', () => initV317Polish(showToast)],
+    ['V3.20 file menu', () => initV320FileMenu(showToast)],
+    ['V3.22 text controls', () => initV322TextControls(showToast)],
+    ['V3.26 left panel search', () => initV326LeftPanelSearch()]
+  ];
 
-  showToast(`${VERSION_LABEL} loaded. My Settings is paused while its floating-panel boot issue is fixed.`, 'success');
+  optionalModules.forEach(([name, init]) => safeInit(name, init));
+  ensureStarterLayer();
+
+  showToast(`${VERSION_LABEL} loaded. Optional patch modules are isolated from boot.`, 'success');
 });
+
+function safeInit(name, init) {
+  try {
+    init();
+  } catch (error) {
+    console.error(`[Effect Editor] ${name} failed`, error);
+    showToast(`${name} failed, but the editor kept loading.`, 'warn');
+  }
+}
+
+function ensureStarterLayer() {
+  const hasLayer = Boolean(document.querySelector('#layer-list .layer-item'));
+  if (hasLayer) return;
+  const preset = cloneBasePreset('base', 'standard-particle');
+  if (preset?.config) addLayer(preset.config);
+}
