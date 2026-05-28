@@ -1,5 +1,6 @@
-import { createHealthReport } from '../../../shared/health-guide/health-checks.js?v=0.1.18-indexes';
-import { LIBRARY_INDEX_PATHS, createEmptyIndex } from './project-library-indexes.js?v=0.1.18-indexes';
+import { createHealthReport } from '../../../shared/health-guide/health-checks.js?v=0.1.25-todos';
+import { createProjectManagerTodoOutput } from '../../../shared/health-guide/todo-output.js?v=0.1.25-todos';
+import { LIBRARY_INDEX_PATHS, createEmptyIndex } from './project-library-indexes.js?v=0.1.25-todos';
 
 const PROJECT_IO_VERSION = 'artifex.projectPackage.v1';
 const JSZIP_CDN = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
@@ -105,34 +106,6 @@ function makeDefaultInputMap(stateManager) {
   };
 }
 
-function makeProjectManagerTodos(healthReport) {
-  const checks = Array.isArray(healthReport?.checks) ? healthReport.checks : [];
-  return {
-    schemaVersion: 'artifex.todos.v1',
-    scope: 'project-manager',
-    generatedFrom: 'artifex/shared/health-guide/health-checks.js',
-    generatedAt: new Date().toISOString(),
-    tasks: checks
-      .filter((check) => !check.pass)
-      .map((check) => ({
-        taskId: `todo_${check.checkId}`,
-        scope: 'project-manager',
-        owningModule: 'project-manager',
-        relatedModules: check.creationGuideAction ? ['creation-guide'] : [],
-        title: check.label,
-        description: check.detail,
-        status: check.severity === 'warning' ? 'warning' : 'open',
-        priority: check.severity === 'failed' ? 5 : 4,
-        effort: 2,
-        source: 'health-guide',
-        projectFile: null,
-        appFile: 'artifex/shared/health-guide/health-checks.js',
-        fixOwner: check.fixOwner || check.owner || 'project-manager',
-        tags: Array.isArray(check.tags) ? check.tags : []
-      }))
-  };
-}
-
 function addLibraryIndexesToPackage(files, stateManager) {
   const indexStore = stateManager.state?.libraryIndexes || {};
   const projectId = stateManager.project?.projectId || 'project_unknown';
@@ -145,6 +118,7 @@ function addLibraryIndexesToPackage(files, stateManager) {
 
 export function buildProjectPackage(stateManager) {
   const healthReport = createHealthReport({ stateManager, scope: 'project-manager-export' });
+  const projectTodos = createProjectManagerTodoOutput(healthReport);
   const projectRootPath = getProjectRootPath(stateManager.project || {});
   const project = {
     ...clone(stateManager.project),
@@ -159,9 +133,10 @@ export function buildProjectPackage(stateManager) {
     'library-links.json': clone(stateManager.state?.libraryLinks) || makeDefaultLibraryLinks(stateManager),
     'input-map.json': clone(stateManager.state?.inputMap) || makeDefaultInputMap(stateManager),
     'health/latest-health-report.json': healthReport,
-    'todos/project-manager-todos.json': makeProjectManagerTodos(healthReport)
+    'todos/project-manager-todos.json': projectTodos
   };
 
+  stateManager.state.projectTodos = projectTodos;
   addLibraryIndexesToPackage(files, stateManager);
 
   return {
