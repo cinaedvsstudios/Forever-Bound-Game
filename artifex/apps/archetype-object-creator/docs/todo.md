@@ -4,28 +4,6 @@ This file tracks work that belongs specifically to Archetype Object Creator. Pla
 
 ## Open
 
-### Archive or remove old patch files from live source folder
-
-Status: open  
-Priority: high  
-Source: source folder review after V1.30 cleanup
-
-Several old `*-patch.js` files are still present in `artifex/apps/archetype-object-creator/v1/src/`. They should not stay mixed into the live source folder if they are no longer part of the active app path.
-
-Files to check:
-
-- `square-icon-cards-patch.js`
-- `object-build-checklist-wizard-patch.js`
-- `template-card-patch.js`
-- `icon-atlas-crop-patch.js`
-- `right-panel-layout-patch.js`
-
-Required outcome:
-
-- Confirm whether each file is still imported or used.
-- If unused, move it into an archive folder such as `artifex/apps/archetype-object-creator/archive/legacy-patches/` or delete it if it is fully superseded and safe to remove.
-- If still useful, rename it as a normal module and document why it remains active.
-
 ### Retire or split `template-card-enhancements.js`
 
 Status: open  
@@ -58,6 +36,24 @@ Required outcome:
 - Archive or remove `object-creator-workflows-stable.js` after the split.
 
 ## Done
+
+### Archive or remove old patch files from live source folder
+
+Status: done  
+Completed in: V1.31 cleanup  
+Source: source folder review after V1.30 cleanup
+
+Completed changes:
+
+- Confirmed the old patch files were no longer imported by the active app entry point.
+- Created `artifex/apps/archetype-object-creator/archive/legacy-patches/README.md` as the archive manifest.
+- Removed these old patch-layer files from `artifex/apps/archetype-object-creator/v1/src/`:
+  - `square-icon-cards-patch.js`
+  - `object-build-checklist-wizard-patch.js`
+  - `template-card-patch.js`
+  - `icon-atlas-crop-patch.js`
+  - `right-panel-layout-patch.js`
+- Recorded each removed file's blob SHA in the archive manifest so the old code can still be recovered from Git history if needed.
 
 ### Complete current overlay module extraction
 
