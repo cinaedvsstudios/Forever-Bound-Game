@@ -72,7 +72,7 @@ export function resizeCanvas() {
   if (!canvas || !workspace) return;
   const rect = workspace.getBoundingClientRect();
   const deviceRatio = window.devicePixelRatio || 1;
-  const ratio = editorState.lowPerformanceMode ? Math.min(1.25, deviceRatio) : deviceRatio;
+  const ratio = editorState.emergencyLiteMode ? 0.75 : (editorState.lowPerformanceMode ? Math.min(1.25, deviceRatio) : deviceRatio);
   canvas.width = Math.max(320, Math.floor(rect.width * ratio));
   canvas.height = Math.max(180, Math.floor(rect.height * ratio));
   ctx = canvas.getContext('2d', { alpha: false });
@@ -92,6 +92,22 @@ export function takeSnapshot() {
 
 function tick(now) {
   renderTime = now;
+
+  if (editorState.emergencyLiteMode && editorState.isPaused) {
+    editorState.renderStats.fps = 0;
+    editorState.renderStats.performanceMode = 'Emergency Idle';
+    editorState.renderStats.particleCap = 80;
+    editorState.renderStats.particles = editorState.particles.length;
+    if (now - lastDrawFrame > 450) {
+      lastDrawFrame = now;
+      draw();
+    }
+    window.setTimeout(() => {
+      animationId = requestAnimationFrame(tick);
+    }, 250);
+    return;
+  }
+
   const delta = Math.max(1, now - lastFrame);
   lastFrame = now;
   const fps = 1000 / delta;
@@ -128,13 +144,14 @@ function tick(now) {
 }
 
 function updateParticles() {
-  const particleCap = editorState.lowPerformanceMode ? 260 : 900;
+  const particleCap = editorState.emergencyLiteMode ? 80 : (editorState.lowPerformanceMode ? 260 : 900);
   for (const layer of editorState.composition.layers) {
     if (layer.visible !== false && editorState.particles.length < particleCap) {
       const runtimeLayer = toRuntimeLayer(layer);
+      const densityScale = editorState.emergencyLiteMode ? 0.18 : (editorState.lowPerformanceMode ? 0.45 : 1);
       const spawned = isTextLayer(runtimeLayer)
-        ? spawnTextParticlesForLayer(runtimeLayer, editorState.lowPerformanceMode ? 0.45 : 1)
-        : spawnParticlesForLayer(runtimeLayer, editorState.lowPerformanceMode ? 0.45 : 1);
+        ? spawnTextParticlesForLayer(runtimeLayer, densityScale)
+        : spawnParticlesForLayer(runtimeLayer, densityScale);
       editorState.particles.push(...spawned.map((particle) => ({ particle, layerId: layer.id, isTextParticle: isTextLayer(runtimeLayer) })));
     }
   }
@@ -318,78 +335,69 @@ function beginWorkspacePan(event) {
   event.preventDefault();
   event.stopPropagation();
   isWorkspacePanning = true;
-  lastPanPoint = getCanvasPoint(event);
-  canvas.setPointerCapture?.(event.pointerId);
-  window.addEventListener('pointermove', handleWorkspacePanMove, true);
-  window.addEventListener('pointerup', endWorkspacePan, true);
-  window.addEventListener('pointercancel', endWorkspacePan, true);
-  syncCanvasCursor();
+  lastPanPoint = { x: event.clientX, y: event.clientY };
+  canvas.setPointerCapture(event.pointerId);
+  canvas.addEventListener('pointermove', handleWorkspacePan);
+  canvas.addEventListener('pointerup', endWorkspacePan, { once: true });
+  canvas.addEventListener('pointercancel', endWorkspacePan, { once: true });
 }
 
-function handleWorkspacePanMove(event) {
+function handleWorkspacePan(event) {
   if (!isWorkspacePanning || !lastPanPoint) return;
-  event.preventDefault();
-  const nextPoint = getCanvasPoint(event);
-  editorState.viewportPanX = Number(editorState.viewportPanX || 0) + (nextPoint.x - lastPanPoint.x);
-  editorState.viewportPanY = Number(editorState.viewportPanY || 0) + (nextPoint.y - lastPanPoint.y);
-  lastPanPoint = nextPoint;
+  const dx = event.clientX - lastPanPoint.x;
+  const dy = event.clientY - lastPanPoint.y;
+  lastPanPoint = { x: event.clientX, y: event.clientY };
+  const currentOffset = editorState.viewOffset || { x: 0, y: 0 };
+  editorState.viewOffset = { x: currentOffset.x + dx, y: currentOffset.y + dy };
 }
 
 function endWorkspacePan(event) {
-  if (event) event.preventDefault();
+  if (event?.pointerId && canvas?.hasPointerCapture?.(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
   isWorkspacePanning = false;
   lastPanPoint = null;
-  window.removeEventListener('pointermove', handleWorkspacePanMove, true);
-  window.removeEventListener('pointerup', endWorkspacePan, true);
-  window.removeEventListener('pointercancel', endWorkspacePan, true);
-  syncCanvasCursor();
+  canvas?.removeEventListener('pointermove', handleWorkspacePan);
 }
 
 function handlePointer(event) {
-  const active = getActiveLayer();
-  if (!active) return;
-  const scale = getScale();
-  const offset = getOffset(scale);
-  const point = getCanvasPoint(event);
-
-  const worldX = ((point.x - offset.x) / editorState.zoom) / scale;
-  const worldY = ((point.y - offset.y) / editorState.zoom) / scale;
-
-  if (worldX >= 0 && worldX <= getDesignWidth() && worldY >= 0 && worldY <= getDesignHeight()) {
-    if (targetPickCallback) {
-      const callback = targetPickCallback;
-      targetPickCallback = null;
-      callback({ x: worldX, y: worldY });
-      syncCanvasCursor();
-      return;
-    }
-    moveActiveEmitter(worldX, worldY);
+  const point = canvasToStage(event);
+  if (targetPickCallback) {
+    const callback = targetPickCallback;
+    targetPickCallback = null;
+    syncCanvasCursor();
+    callback(point.x, point.y);
+    return;
   }
+  moveActiveEmitter(point.x, point.y);
 }
 
-function getCanvasPoint(event) {
+function canvasToStage(event) {
   const rect = canvas.getBoundingClientRect();
-  const ratioX = canvas.width / rect.width;
-  const ratioY = canvas.height / rect.height;
+  const scale = getScale();
+  const offset = getOffset(scale);
+  const cssX = event.clientX - rect.left;
+  const cssY = event.clientY - rect.top;
+  const pixelRatio = canvas.width / Math.max(1, rect.width);
   return {
-    x: (event.clientX - rect.left) * ratioX,
-    y: (event.clientY - rect.top) * ratioY
+    x: Math.max(0, Math.min(getDesignWidth(), ((cssX * pixelRatio - offset.x) / editorState.zoom) / scale)),
+    y: Math.max(0, Math.min(getDesignHeight(), ((cssY * pixelRatio - offset.y) / editorState.zoom) / scale))
   };
 }
 
 function getScale() {
-  return Math.min(canvas.width / getDesignWidth(), canvas.height / getDesignHeight());
+  return Math.min(canvas.width / getDesignWidth(), canvas.height / getDesignHeight()) * 0.82;
 }
 
 function getOffset(scale) {
+  const stageW = getDesignWidth() * scale * editorState.zoom;
+  const stageH = getDesignHeight() * scale * editorState.zoom;
+  const pan = editorState.viewOffset || { x: 0, y: 0 };
   return {
-    x: (canvas.width - getDesignWidth() * scale * editorState.zoom) / 2 + Number(editorState.viewportPanX || 0),
-    y: (canvas.height - getDesignHeight() * scale * editorState.zoom) / 2 + Number(editorState.viewportPanY || 0)
+    x: (canvas.width - stageW) / 2 + pan.x,
+    y: (canvas.height - stageH) / 2 + pan.y
   };
 }
 
 function syncCanvasCursor() {
   if (!canvas) return;
-  if (isWorkspacePanning) canvas.style.cursor = 'grabbing';
-  else canvas.style.cursor = targetPickCallback ? 'copy' : 'crosshair';
+  canvas.style.cursor = targetPickCallback ? 'crosshair' : 'default';
 }
