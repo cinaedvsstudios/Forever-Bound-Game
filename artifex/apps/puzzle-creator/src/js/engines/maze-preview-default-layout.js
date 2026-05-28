@@ -3,6 +3,7 @@
 // Stable UI behaviour module for default workspace positioning:
 // - Overview opens on the right side of the screen by default.
 // - Maze preview is panned left by default so the Overview does not cover the working map.
+// - Browser context menu is suppressed on maze canvases so right/middle drag remains usable.
 // User drag/pan still wins after the user manually moves either surface.
 
 const $ = (id) => document.getElementById(id);
@@ -16,6 +17,7 @@ const layoutState = {
 
 window.addEventListener('DOMContentLoaded', () => {
   injectDefaultLayoutStyles();
+  suppressWorkspaceContextMenu();
   markUserOverrides();
   placeOverviewDefault();
   bindDefaultPreviewTriggers();
@@ -37,6 +39,14 @@ function injectDefaultLayoutStyles() {
       max-width:420px;
       max-height:calc(100vh - 140px);
     }
+    #threejs-container canvas,
+    #analysis-canvas,
+    .render-viewport{
+      -webkit-user-select:none;
+      user-select:none;
+      -webkit-touch-callout:none;
+    }
+    .render-viewport.is-pan-dragging{cursor:grabbing;}
     @media(max-width:980px){
       #overview-window:not([data-user-positioned="true"]){
         right:12px!important;
@@ -47,6 +57,28 @@ function injectDefaultLayoutStyles() {
     }
   `;
   document.head.appendChild(style);
+}
+
+function suppressWorkspaceContextMenu() {
+  const shouldSuppress = (target) => !!target?.closest?.('.render-viewport, #threejs-container, #maze-preview-canvas, #analysis-canvas, #overview-window');
+
+  window.addEventListener('contextmenu', (event) => {
+    if (!shouldSuppress(event.target)) return;
+    event.preventDefault();
+    event.stopPropagation();
+  }, true);
+
+  window.addEventListener('mousedown', (event) => {
+    if (!shouldSuppress(event.target)) return;
+    if (event.button === 1 || event.button === 2) {
+      event.preventDefault();
+      document.querySelector('.render-viewport')?.classList.add('is-pan-dragging');
+    }
+  }, true);
+
+  window.addEventListener('mouseup', () => {
+    document.querySelector('.render-viewport')?.classList.remove('is-pan-dragging');
+  }, true);
 }
 
 function markUserOverrides() {
