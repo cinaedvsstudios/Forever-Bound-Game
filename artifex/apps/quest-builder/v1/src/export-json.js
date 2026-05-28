@@ -46,7 +46,27 @@ export function buildQuestExportBundle(doc) {
   };
   return {
     ...bundle,
-    exportSelfCheck: verifyExportBundleShape(bundle)
+    exportSelfCheck: verifyExportBundleShape(bundle),
+    splitExportPlan: buildSplitExportPlan(files)
+  };
+}
+
+export function buildSplitExportPlan(files = []) {
+  return {
+    mode: 'browser-multi-download',
+    packageFormat: 'loose-json-files',
+    zipSupported: false,
+    reason: 'Quest Builder can download individual JSON files without adding a ZIP dependency. A future shared exporter can add ZIP packaging across all Artifex apps.',
+    instructions: [
+      'Export JSON downloads one single bundle for review or transfer.',
+      'Export Project Files downloads each virtual project-package file separately.',
+      'Place downloaded files into the matching project package folders shown in each filename/path.'
+    ],
+    files: files.map((file) => ({
+      path: file.path,
+      role: file.role,
+      filename: pathToDownloadName(file.path)
+    }))
   };
 }
 
@@ -223,6 +243,16 @@ export function verifyExportBundleShape(bundle) {
   };
 }
 
+export function downloadProjectPackageFiles(bundle) {
+  const files = bundle.files || [];
+  files.forEach((file, index) => {
+    setTimeout(() => {
+      downloadJson(pathToDownloadName(file.path), JSON.stringify(file.content, null, 2));
+    }, index * 180);
+  });
+  return files.length;
+}
+
 export function downloadJson(filename, contents) {
   const link = document.createElement('a');
   link.href = URL.createObjectURL(new Blob([contents], { type: 'application/json' }));
@@ -233,6 +263,10 @@ export function downloadJson(filename, contents) {
 
 export function slugify(value) {
   return String(value || 'quest-file').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
+function pathToDownloadName(path) {
+  return String(path || 'quest-file.json').replace(/\//g, '__');
 }
 
 function runtimeQuestPath(file) {
