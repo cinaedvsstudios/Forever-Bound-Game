@@ -2,7 +2,7 @@ import { THUMBNAILS } from './module-config.js';
 import { BLOCK_TYPES } from './block-types.js';
 import { parseList, escapeHtml } from './quest-schema.js';
 import { openEditor, createWizardQuest, wireEditorTabs } from './dialog-editors.js';
-import { exportQuestFile, downloadJson, slugify } from './export-json.js';
+import { exportQuestFile, buildQuestExportBundle, downloadJson, slugify } from './export-json.js';
 import { clamp } from './layout-state.js';
 
 export function wireMenus(app) {
@@ -224,6 +224,15 @@ function bind(app, id, fn) {
   });
 }
 
+function renderExportSummary(bundle) {
+  const questCount = bundle.files?.find((file) => file.role === 'quest-index')?.content?.count || 0;
+  const sideQuestCount = bundle.files?.find((file) => file.role === 'sidequest-index')?.content?.count || 0;
+  const checks = bundle.exportSelfCheck?.checks || [];
+  const paths = (bundle.files || []).map((file) => `<li>${escapeHtml(file.path)} <span>(${escapeHtml(file.role)})</span></li>`).join('');
+  const statusClass = bundle.exportSelfCheck?.status === 'pass' ? 'export-status-pass' : 'export-status-fail';
+  return `<section class="export-summary"><h3>Export Bundle Summary <span class="${statusClass}">${escapeHtml(bundle.exportSelfCheck?.status || 'unknown')}</span></h3><div class="export-summary-grid"><div class="export-stat"><strong>${bundle.files?.length || 0}</strong><span>files</span></div><div class="export-stat"><strong>${questCount}</strong><span>quests</span></div><div class="export-stat"><strong>${sideQuestCount}</strong><span>side quests</span></div><div class="export-stat"><strong>${bundle.validationWarnings?.length || 0}</strong><span>warnings</span></div><div class="export-stat"><strong>${checks.filter((check) => check.ok).length}/${checks.length}</strong><span>checks</span></div></div><p class="editor-help">Current export is a single bundle file containing virtual project-package paths. Split-file download should be handled as a future package/export feature.</p><ul class="export-paths">${paths}</ul></section>`;
+}
+
 export function wireActions(app) {
   const addQuestFromMenu = () => { app.addQuest(); closeMenus(); app.toast('Quest added.'); };
   const addBlockFromMenu = () => { app.addBlock(); app.toast('Block added.'); };
@@ -268,8 +277,14 @@ export function wireActions(app) {
   });
   app.$('template-main-quest-button').onclick = () => { app.addQuest({ name: 'New Main Quest', thumbnail: '📜', callingText: 'Define the main Calling for this Quest.', blocks: [{ name: 'Start Scene', type: 'scene', thumbnail: '🖼️' }, { name: 'Key Interaction', type: 'object', thumbnail: '🧩', action: 'interact:key_object' }, { name: 'Calling Fulfilled', type: 'completion', thumbnail: '✅', uiOverlay: 'calling_fulfilled', condition: 'flag_true:quest_complete' }] }); closeMenus(); };
   app.$('template-side-quest-button').onclick = () => { app.addQuest({ name: 'New Side Quest', thumbnail: '🗝️', type: 'side', callingText: 'Define the optional objective or Errand.', blocks: [{ name: 'Optional Trigger', type: 'condition', thumbnail: '🔀', condition: 'flag_true:sidequest_available' }, { name: 'Reward', type: 'reward', thumbnail: '🎁', action: 'grant_reward:silver' }] }); closeMenus(); };
-  app.$('export-json-button').onclick = () => { downloadJson(slugify(app.doc.name) + '.json', exportQuestFile(app.doc)); closeMenus(); app.toast('JSON exported.'); };
-  app.$('view-json-button').onclick = () => { app.$('json-preview').textContent = exportQuestFile(app.doc); closeMenus(); app.$('json-dialog').showModal(); };
+  app.$('export-json-button').onclick = () => { downloadJson(slugify(app.doc.name) + '.json', exportQuestFile(app.doc)); closeMenus(); app.toast('JSON exported as single bundle.'); };
+  app.$('view-json-button').onclick = () => {
+    const bundle = buildQuestExportBundle(app.doc);
+    app.$('json-preview-summary').innerHTML = renderExportSummary(bundle);
+    app.$('json-preview').textContent = JSON.stringify(bundle, null, 2);
+    closeMenus();
+    app.$('json-dialog').showModal();
+  };
   app.$('block-types-button').onclick = () => {
     const rows = Object.entries(BLOCK_TYPES).map(([key, item]) => `<article class="block-type-card"><strong>${item.emoji} ${item.name}</strong><span>${key} / ${item.category} / primary: ${item.primaryField}</span><span>required: ${(item.requiredFields || []).join(', ') || 'none'}</span><span>${item.hint}</span></article>`).join('');
     app.help('Quest Block Type List', `<div class="block-type-grid">${rows}</div>`);
