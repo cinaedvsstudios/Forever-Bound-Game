@@ -17,7 +17,7 @@ Use the global all-apps to-do list for changes that affect every Artifex app. Us
 
 ## Current live status
 
-Current Quest Builder version: `V1.2.1`
+Current Quest Builder version: `V1.2.2`
 
 Current live app files:
 
@@ -206,6 +206,16 @@ Status: complete.
 - Updated the JSON Preview summary text to explain the two export modes.
 - Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.2.1` / `1.2.1`.
 
+### V1.2.2 — Split export verification / browser warning pass
+
+Status: complete.
+
+- User verified that `Export Project Files` downloads the expected current project quest files.
+- Confirmed the current demo quest export produces 3 loose JSON files: quest index, sidequest index, and the main quest runtime file.
+- Confirmed the sidequest index is expected even when empty because the project package expects that file.
+- Confirmed the split export is only the quest/sidequest package slice, not scene, object, dialogue, audio, FX, puzzle, or project manager files.
+- Bumped page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config to `V1.2.2` / `1.2.2`.
+
 ## Ownership boundary
 
 Quest Builder owns:
@@ -256,20 +266,20 @@ Every Quest Builder edit should increase the visible version by `0.01` and updat
 Next version:
 
 ```text
-V1.2.2  split export verification / browser warning pass
+V1.2.3  choose next functional Quest Builder phase
 ```
 
-## V1.2.2 — Split export verification / browser warning pass
+## V1.2.3 — Choose next functional Quest Builder phase
 
-Goal: verify that the loose-file export works in browser without confusing download behaviour.
+Goal: decide the next actual feature pass after export verification.
 
-Checks:
+Candidate phases:
 
-- App loads as V1.2.1.
-- File menu shows `Save ▸ → Export JSON Bundle`, `Export Project Files`, and `Save Locally in Browser`.
-- `View JSON Preview` contains `splitExportPlan`.
-- `Export Project Files` starts one download per generated project-package file.
-- Browser popup/download blocking behaviour is documented if it becomes annoying.
+- Drag/drop flow editing.
+- Better New Quest Wizard.
+- Scene/object/dialogue library picker integration.
+- Project Manager integration wiring.
+- Quest package import/rebuild from exported files.
 
 ## Specific-app tasks
 
