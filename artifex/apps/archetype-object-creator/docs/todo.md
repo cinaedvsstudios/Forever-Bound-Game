@@ -4,31 +4,23 @@ This file tracks work that belongs specifically to Archetype Object Creator. Pla
 
 ## Open
 
-### Continue integrating current overlay code into normal module files
-
-Status: open  
-Priority: high  
-Source: project file contracts / patch-layer rule
-
-The app currently stays within the two-active-overlay limit, but `template-card-enhancements.js` has grown into a large live overlay. Fold the stable ZIP export / asset package logic into normal Object Creator module files now that the Step 5 layout and core wizard controls are confirmed.
-
-Progress:
-
-- Done in V1.22: extracted the Step 5 left/right column wrapper into `object-wizard-step5-layout.js` and made `editor-app.js` thin again for that responsibility.
-- Done in V1.23: extracted template card icon atlas cropping, template-card colour grouping, fallback icons, and card styling into `object-template-icons.js`.
-- Done in V1.24: tightened template card density by reducing card width, outer padding, icon-box padding, icon display scale, text size, button height, and card gaps.
-- Done in V1.25: tightened template icon padding further with smaller cards, lower icon-box padding, smaller grid gaps, and tighter labels/buttons.
-- Done in V1.26: extracted the wizard Reference panel into `object-wizard-reference-panel.js`.
-- Done in V1.27: extracted the wizard Frame Correction popup and per-frame correction logic into `object-wizard-frame-correction.js`.
-- Done in V1.29: extracted the wizard Step 5 core controls into `object-wizard-step5.js`.
-
-Remaining suggested split:
-
-- `object-wizard-asset-package.js`
-
-After the split, keep `editor-app.js` as a thin entry file and remove any no-longer-needed overlay import.
+No app-local cleanup tasks are currently open.
 
 ## Done
+
+### Complete current overlay module extraction
+
+Status: done  
+Completed in: V1.30  
+Source: project file contracts / patch-layer rule
+
+Completed changes:
+
+- Created `object-wizard-asset-package.js`.
+- Moved ZIP package download, frame path table rendering, expected file path generation, object asset folder rules, data URL byte conversion, browser ZIP creation, CRC32 calculation, and asset manifest generation into the new module.
+- Updated `editor-app.js` to initialise the asset package module.
+- Bumped the app to V1.30.
+- The planned Object Creator module extraction list is now complete.
 
 ### Extract wizard Step 5 core module
 
