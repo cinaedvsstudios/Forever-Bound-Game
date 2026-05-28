@@ -1,15 +1,16 @@
 (() => {
-  const VERSION = 'v0.29-title-cache-sync';
+  const config = window.ArtifexSceneEditorConfig || {};
+  const VERSION = config.VERSION || 'v0.29-title-cache-sync';
   document.title = `Artifex Scene Editor · ${VERSION}`;
-  const SETTINGS_KEY = 'artifex.sceneEditor.settings.v1';
-  const WORKING_COPY_KEY = 'artifex.sceneEditor.workingCopy.v1';
-  const DOWNLOAD_KEY = 'artifex.sceneEditor.lastDownload.v1';
+  const SETTINGS_KEY = config.SETTINGS_KEY || 'artifex.sceneEditor.settings.v1';
+  const WORKING_COPY_KEY = config.WORKING_COPY_KEY || 'artifex.sceneEditor.workingCopy.v1';
+  const DOWNLOAD_KEY = config.DOWNLOAD_KEY || 'artifex.sceneEditor.lastDownload.v1';
   const app = document.getElementById('editor-app');
-  const repoPrefix = location.pathname.includes('/Forever-Bound-Game/') ? '/Forever-Bound-Game/' : '/';
-  const brandLogo = '../../artifexlogo.png';
-  const brandTitle = '../../artifextitle.png';
-  const templateManifest = '../../templates/templates.json';
-  const typeOptions = ['prop', 'pickup', 'player_start', 'npc', 'foe', 'door', 'exit', 'overlay', 'background_layer', 'foreground_layer', 'hazard', 'searchable', 'marker', 'effect', 'ui'];
+  const repoPrefix = config.repoPrefix || (location.pathname.includes('/Forever-Bound-Game/') ? '/Forever-Bound-Game/' : '/');
+  const brandLogo = config.brandLogo || '../../artifexlogo.png';
+  const brandTitle = config.brandTitle || '../../artifextitle.png';
+  const templateManifest = config.templateManifest || '../../templates/templates.json';
+  const typeOptions = Array.isArray(config.typeOptions) ? config.typeOptions : ['prop', 'pickup', 'player_start', 'npc', 'foe', 'door', 'exit', 'overlay', 'background_layer', 'foreground_layer', 'hazard', 'searchable', 'marker', 'effect', 'ui'];
 
   function loadSettings() {
     try {
