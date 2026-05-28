@@ -17,7 +17,7 @@ Use the global all-apps to-do list for changes that affect every Artifex app. Us
 
 ## Current live status
 
-Current Quest Builder version: `V1.1.9`
+Current Quest Builder version: `V1.2.0`
 
 Current live app files:
 
@@ -182,6 +182,17 @@ Status: complete.
 - Added styling for the export summary cards and generated path list.
 - Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.9` / `1.1.9`.
 
+### V1.2.0 — Post-V1.1 verification and next-phase planning
+
+Status: complete.
+
+- Confirmed required reference docs before changing the app.
+- Confirmed V1.1.9 completed the export preview summary phase.
+- Confirmed active Quest Builder files remain the split module set listed above.
+- Promoted the next phase to V1.2.x rather than continuing V1.1.x.
+- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.2.0` / `1.2.0`.
+- Next functional phase selected: split-file/package download planning and implementation.
+
 ## Ownership boundary
 
 Quest Builder owns:
@@ -232,28 +243,20 @@ Every Quest Builder edit should increase the visible version by `0.01` and updat
 Next version:
 
 ```text
-V1.2.0  post-V1.1 verification and next-phase planning
+V1.2.1  split-file export/package download planning
 ```
 
-## V1.2.0 — Post-V1.1 verification and next-phase planning
+## V1.2.1 — Split-file export/package download planning
 
-Goal: verify the completed V1.1 pass and choose the next feature phase.
+Goal: decide and document how Quest Builder should export project-package files beyond the single bundle download.
 
-Checks:
+Candidate changes:
 
-- App loads as V1.1.9.
-- JSON Preview summary appears above raw JSON.
-- Export self-check status appears clearly.
-- Export still downloads a single bundle.
-- No red console errors appear when opening the app, opening JSON Preview, or exporting.
-
-Potential next phases:
-
-- Split-file export/package download.
-- Drag/drop flow editing.
-- Better quest wizard.
-- Project Manager integration wiring.
-- Scene/object library picker integration.
+- Keep `Export JSON` as the single bundle download.
+- Add a new export command for project package files.
+- Decide whether browser-only split export should download multiple JSON files one by one, a ZIP package, or a manifest-first bundle.
+- Avoid adding third-party ZIP libraries unless needed.
+- Keep Project Manager expectations aligned with the project file contract.
 
 ## Specific-app tasks
 
