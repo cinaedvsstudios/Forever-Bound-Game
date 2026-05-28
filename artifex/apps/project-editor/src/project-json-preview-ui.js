@@ -1,18 +1,14 @@
-import { UI_STORAGE_KEYS, escapeHtml, getById, readBooleanPreference, writeBooleanPreference } from './project-ui-helpers.js?v=0.1.29-json-preview';
+import { UI_STORAGE_KEYS, escapeHtml, getById, readBooleanPreference, writeBooleanPreference } from './project-ui-helpers.js?v=0.1.30-preview-fix';
 
 // Artifex Project Manager split-state preview UI
 // Owns the optional JSON / split state preview panel and View menu label state.
 
 export function createProjectJsonPreviewUI({
-  canvasElement,
   stateManager,
   onRefresh
 }) {
   let splitStatePreviewVisible = readBooleanPreference(UI_STORAGE_KEYS.splitStatePreviewVisible, false);
-
-  function getCanvas() {
-    return canvasElement || getById('flatplanCanvas');
-  }
+  let fallbackClickWired = false;
 
   function updateSplitPreviewMenuLabel() {
     const toggle = getById('toggleSplitStatePreview');
@@ -24,23 +20,25 @@ export function createProjectJsonPreviewUI({
     const existing = getById('splitDataPreview');
     if (existing) existing.remove();
     updateSplitPreviewMenuLabel();
-    const canvas = getCanvas();
-    if (!canvas || !splitStatePreviewVisible) return;
+    if (!splitStatePreviewVisible) return;
 
     const panel = document.createElement('div');
     panel.id = 'splitDataPreview';
-    panel.className = 'absolute bottom-4 right-4 z-30 w-[360px] max-h-[280px] overflow-hidden bg-cardDark/85 backdrop-blur-md border border-projectGold/30 rounded-lg shadow-card-glow';
+    panel.className = 'fixed bottom-5 right-5 z-[120] w-[420px] max-h-[360px] overflow-hidden bg-cardDark/95 backdrop-blur-md border border-projectGold/40 rounded-xl shadow-card-glow';
     panel.innerHTML = `
-      <div class="flex items-center justify-between px-3 py-2 border-b border-[#2d2d42]">
-        <span class="text-xs font-bold text-projectGoldGlow">Split State Preview</span>
+      <div class="flex items-center justify-between px-3 py-2 border-b border-[#2d2d42] bg-black/25">
+        <div>
+          <span class="text-xs font-bold text-projectGoldGlow block">Split State Preview</span>
+          <span class="text-[9px] font-mono text-zinc-500">Live Project Manager state snapshot</span>
+        </div>
         <div class="flex items-center gap-3">
           <button id="hideSplitStatePreviewBtn" class="text-[9px] font-mono text-zinc-500 hover:text-projectGoldGlow transition">hide</button>
-          <button id="resetSplitStateBtn" class="text-[9px] font-mono text-zinc-500 hover:text-projectGoldGlow transition">reset</button>
+          <button id="resetSplitStateBtn" class="text-[9px] font-mono text-zinc-500 hover:text-red-300 transition">reset</button>
         </div>
       </div>
-      <pre class="p-3 text-[9px] leading-relaxed text-emerald-300 overflow-auto max-h-[220px]">${escapeHtml(JSON.stringify(stateManager.exportSnapshot(), null, 2))}</pre>
+      <pre class="p-3 text-[9px] leading-relaxed text-emerald-300 overflow-auto max-h-[290px]">${escapeHtml(JSON.stringify(stateManager.exportSnapshot(), null, 2))}</pre>
     `;
-    canvas.appendChild(panel);
+    document.body.appendChild(panel);
     panel.querySelector('#hideSplitStatePreviewBtn')?.addEventListener('click', () => {
       splitStatePreviewVisible = false;
       writeBooleanPreference(UI_STORAGE_KEYS.splitStatePreviewVisible, splitStatePreviewVisible);
@@ -49,6 +47,7 @@ export function createProjectJsonPreviewUI({
     panel.querySelector('#resetSplitStateBtn')?.addEventListener('click', () => {
       stateManager.resetToDefaults();
       onRefresh?.();
+      renderJsonPreview();
     });
   }
 
@@ -58,9 +57,37 @@ export function createProjectJsonPreviewUI({
     renderJsonPreview();
   }
 
+  function wireSplitStatePreviewToggle({ closeMenus } = {}) {
+    const button = getById('toggleSplitStatePreview');
+    if (button && button.dataset.splitPreviewWired !== 'true') {
+      button.dataset.splitPreviewWired = 'true';
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleSplitStatePreview();
+        closeMenus?.();
+      });
+    }
+
+    if (!fallbackClickWired) {
+      fallbackClickWired = true;
+      document.addEventListener('click', (event) => {
+        const target = event.target?.closest?.('#toggleSplitStatePreview');
+        if (!target || target.dataset.splitPreviewWired === 'true') return;
+        event.preventDefault();
+        event.stopPropagation();
+        toggleSplitStatePreview();
+        closeMenus?.();
+      });
+    }
+
+    updateSplitPreviewMenuLabel();
+  }
+
   return {
     renderJsonPreview,
     toggleSplitStatePreview,
-    updateSplitPreviewMenuLabel
+    updateSplitPreviewMenuLabel,
+    wireSplitStatePreviewToggle
   };
 }
