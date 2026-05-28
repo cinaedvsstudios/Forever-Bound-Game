@@ -1,19 +1,19 @@
-import { renderProjectShell } from './project-shell.js?v=0.1.27-sidebar';
-import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.27-sidebar';
-import { createProjectEditorStateManager } from './project-state.js?v=0.1.27-sidebar';
-import { createProjectCanvasController } from './project-canvas.js?v=0.1.27-sidebar';
-import { createProjectRenderer } from './project-renderer.js?v=0.1.27-sidebar';
-import { createProjectUI } from './project-ui.js?v=0.1.27-sidebar';
-import { enhanceProjectUI } from './project-integration-ui.js?v=0.1.27-sidebar';
-import { enhanceNodeLinkInspector } from './project-node-links-ui.js?v=0.1.27-sidebar';
-import { enhanceProjectHealthUI } from './project-health-ui.js?v=0.1.27-sidebar';
-import { enhanceProjectIO } from './project-io.js?v=0.1.27-sidebar';
-import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.27-sidebar';
-import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.27-sidebar';
-import { getTypeStyle } from './data/type-styles.js?v=0.1.27-sidebar';
+import { renderProjectShell } from './project-shell.js?v=0.1.28-inspector';
+import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.28-inspector';
+import { createProjectEditorStateManager } from './project-state.js?v=0.1.28-inspector';
+import { createProjectCanvasController } from './project-canvas.js?v=0.1.28-inspector';
+import { createProjectRenderer } from './project-renderer.js?v=0.1.28-inspector';
+import { createProjectUI } from './project-ui.js?v=0.1.28-inspector';
+import { enhanceProjectUI } from './project-integration-ui.js?v=0.1.28-inspector';
+import { enhanceNodeLinkInspector } from './project-node-links-ui.js?v=0.1.28-inspector';
+import { enhanceProjectHealthUI } from './project-health-ui.js?v=0.1.28-inspector';
+import { enhanceProjectIO } from './project-io.js?v=0.1.28-inspector';
+import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.28-inspector';
+import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.28-inspector';
+import { getTypeStyle } from './data/type-styles.js?v=0.1.28-inspector';
 
 applyProjectTheme();
-renderProjectShell({ version: 'v0.1.27 SIDEBAR' });
+renderProjectShell({ version: 'v0.1.28 INSPECTOR' });
 
 const state = createProjectEditorStateManager();
 let canvas = null;
@@ -28,7 +28,7 @@ window.ProjectEditorStateManager = state;
 
 function setVersion() {
   document.querySelectorAll('#projectEditorVersionBadge, [data-project-version-badge]').forEach((el) => {
-    el.textContent = 'v0.1.27 SIDEBAR';
+    el.textContent = 'v0.1.28 INSPECTOR';
   });
 }
 
@@ -125,7 +125,7 @@ function init() {
 
   ui.setWorkspace(state.activeWorkspace || 'flatplan');
   refresh();
-  console.info('[Artifex Project Editor] v0.1.27 SIDEBAR loaded', {
+  console.info('[Artifex Project Editor] v0.1.28 INSPECTOR loaded', {
     nodes: state.logic.nodes.length,
     routes: state.logic.routes.length
   });
