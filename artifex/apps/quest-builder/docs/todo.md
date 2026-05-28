@@ -17,7 +17,7 @@ Use the global all-apps to-do list for changes that affect every Artifex app. Us
 
 ## Current live status
 
-Current Quest Builder version: `V1.1.8`
+Current Quest Builder version: `V1.1.9`
 
 Current live app files:
 
@@ -171,6 +171,17 @@ Status: complete.
 - Added a specific warning when an action such as `speak:`, `talk:`, `give:`, `use:`, `inspect:`, `collect:`, or `interact:` appears to target an object/NPC but has no `objectId`.
 - Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.8` / `1.1.8`.
 
+### V1.1.9 — Exported bundle UI / split-file download planning
+
+Status: complete.
+
+- JSON Preview now shows an export summary above the raw JSON.
+- The summary shows export self-check status, file count, quest count, side quest count, warning count, and passed check count.
+- The summary lists generated virtual project paths and file roles.
+- Export still downloads one bundle file only; split-file/package download is documented as a future export feature.
+- Added styling for the export summary cards and generated path list.
+- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.9` / `1.1.9`.
+
 ## Ownership boundary
 
 Quest Builder owns:
@@ -221,19 +232,28 @@ Every Quest Builder edit should increase the visible version by `0.01` and updat
 Next version:
 
 ```text
-V1.1.9  exported bundle UI / split-file download planning
+V1.2.0  post-V1.1 verification and next-phase planning
 ```
 
-## V1.1.9 — Exported bundle UI / split-file download planning
+## V1.2.0 — Post-V1.1 verification and next-phase planning
 
-Goal: make the export bundle easier to inspect and eventually save as separate project-package files.
+Goal: verify the completed V1.1 pass and choose the next feature phase.
 
-Candidate changes:
+Checks:
 
-- Add a small JSON Preview summary above the raw JSON.
-- Show export self-check status clearly.
-- Add file count, quest count, side quest count, warning count, and generated virtual paths.
-- Decide whether Quest Builder should download one bundle file only, or offer a future split-download package.
+- App loads as V1.1.9.
+- JSON Preview summary appears above raw JSON.
+- Export self-check status appears clearly.
+- Export still downloads a single bundle.
+- No red console errors appear when opening the app, opening JSON Preview, or exporting.
+
+Potential next phases:
+
+- Split-file export/package download.
+- Drag/drop flow editing.
+- Better quest wizard.
+- Project Manager integration wiring.
+- Scene/object library picker integration.
 
 ## Specific-app tasks
 
