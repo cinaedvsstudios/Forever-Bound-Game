@@ -1,113 +1,152 @@
 # Puzzle Creator · Maze / Labyrinth Update Steps
 
-Status: in progress
+Status: consolidation in progress
 Owner: Puzzle Creator
 Related modules: Quest Builder, Scene Editor, Archetype Object Creator, Project Manager
 Last updated: 2026-05-27
 
-This document records the agreed update plan for the Maze / Labyrinth engine inside Puzzle Creator. It exists because the Maze engine is no longer just a canvas preview; it needs to become a graph-based puzzle editor with visual decoration layered on top.
+This document records the agreed update plan for the Maze / Labyrinth engine inside Puzzle Creator. The Maze engine is no longer just a canvas preview; it needs to become a graph-based puzzle editor with visual decoration layered on top.
+
+## Current priority: Patch consolidation before new features
+
+The current live editor reached V1.16 through stacked patch files. This was useful for fast testing, but it is now a maintenance risk. No new major feature pass should begin until the patch stack is consolidated into stable module names.
+
+### Consolidation rule
+
+Temporary version files must not keep accumulating. Working behaviour from V1.11–V1.16 should be moved into stable modules, then the version patch files should be removed from `index.html` and eventually deleted.
+
+### Current temporary files to consolidate
+
+- `maze-v111-fixes.js`
+  - Generated maze runtime
+  - Shape-aware generated maze creation
+  - Clear All / Start Blank behaviour
+  - Walk Test movement
+  - Keyboard handling
+  - Basic solver
+  - Difficulty influence
+  - Preview drawing
+- `maze-v112-modal.js`
+  - Branded Artifex report modal
+  - Difficulty Report modal
+- `maze-v113-polish.js`
+  - Triangle temporarily disabled
+  - Solution status box
+  - Auto-regenerate on difficulty change
+- `maze-v114-completion-rules.js`
+  - Completion rule builder
+  - Completion rule JSON export augmentation
+- `maze-v115-ui-polish.js`
+  - UI text cleanup
+  - Emoji build buttons
+  - Button tooltips
+  - Icon glow cleanup
+  - Display card layout adjustments
+- `maze-v116-portals.js`
+  - Portal builder
+  - Portal placement on Overview
+  - Portal markers
+  - Walk Test teleporting
+  - Portal JSON export augmentation
+
+### Stable files to create or update
+
+- `maze-labyrinth-runtime.js`
+  - Owns maze generation, matrix state, rendering, walk test, keyboard movement, solution plotting, and difficulty basics.
+- `maze-difficulty-report.js`
+  - Owns difficulty report calculation and branded report display wiring.
+- `maze-completion-rules.js`
+  - Owns completion rule UI, state, validation status, required setup chips, and JSON export section.
+- `maze-portals.js`
+  - Owns portal state, UI, placement, markers, walk-test teleporting, and JSON export section.
+- `maze-ui-polish.js`
+  - Owns stable UI layout polish only if that code cannot be moved into CSS/HTML cleanly.
+- `maze-shape-generator.js`
+  - Keep as the permanent shape helper file.
+
+### Consolidation steps
+
+1. **Started in V1.17:** add `maze-labyrinth-consolidation-loader.js` so `index.html` loads one Maze entrypoint instead of six separate version patch scripts.
+2. Move V1.11 runtime behaviour into stable runtime modules.
+3. Move V1.12 modal behaviour into `maze-difficulty-report.js` or a shared Artifex modal module.
+4. Move V1.13 polish behaviour into stable runtime/UI modules.
+5. Move V1.14 completion behaviour into `maze-completion-rules.js`.
+6. Move V1.15 UI polish into HTML/CSS or `maze-ui-polish.js`.
+7. Move V1.16 portal behaviour into `maze-portals.js`.
+8. Update `index.html` to load only stable modules.
+9. Delete old version patch files after live testing passes.
+10. Do a final smoke test: Fresh Random, Start Blank, Clear All, Size, Shape, Stretch, Warp, Difficulty, Plot Solution, Completion Rules, Portals, Walk Test, JSON export/import.
 
 ## Progress log
 
-### V1.10 practical fixes after visual testing
+### V1.17 consolidation started
 
-Completed or started in V1.10:
+Completed or started in V1.17:
 
-- Added `maze-v110-fixes.js` as a stronger temporary patch over the current runtime while the larger runtime split is still pending.
-- Added a Clear All button on the Construction card.
-- Reworked generated maze creation in the patch so generated mazes use the selected shape and enforce a border wall ring with entrance/exit openings.
-- Reworked blank generation so Start Blank / Clear All create a clean selected shape with border walls and entrance/exit openings.
-- Reworked Plot Solution Path in the patch so it calculates a route through the currently patched matrix instead of relying only on the older runtime solver.
-- Added middle/right mouse drag support on the preview workspace for pan-style movement, with Fit resetting pan.
-- Simplified the 3D View placeholder so it is less visually misleading and clearly says the real first-person/tunnel renderer is queued for a later dedicated runtime pass.
-- Added generated-map handling for stretch/shape changes so generated layouts are rebuilt, while hand-drawn blank layouts are preserved and reshaped more cautiously.
+- Added `maze-labyrinth-consolidation-loader.js` as the single Maze entrypoint for the current patch stack.
+- Updated `index.html` to V1.17 and reduced the script list to `main.js` plus the consolidation loader.
+- Added this consolidation section to the to-do list.
+- Marked patch consolidation as the active priority before adding any major new feature.
 
-Still needs live check from V1.10:
+Still needs follow-up from V1.17:
 
-- Confirm middle mouse drag works on the preview workspace. If the browser or mouse blocks middle-drag, try right mouse drag as the fallback.
-- Confirm Triangle now has a proper border wall ring and is less broken visually.
-- Confirm Regenerate produces a playable route in Triangle, Square, Pentagon, Hexagon, and Circle.
-- Confirm Plot Solution Path now draws a path after regeneration.
-- Confirm Clear All creates a clean editable shape with border walls and entrance/exit openings.
-- Confirm Stretch X/Y no longer merely creates visible gaps between the current blocks.
-- Confirm 3D View is acceptable as a placeholder or decide to hide it until the real renderer exists.
+- Confirm V1.17 loads from GitHub Pages.
+- Confirm behaviour is unchanged from V1.16 after the loader change.
+- Begin moving code from version patch files into stable modules.
+- Remove the temporary imports from the consolidation loader one by one as stable modules replace them.
 
-Known remaining issue:
+## Outstanding fixes before continuing features
 
-- The proper long-term fix is still to merge this patch behaviour into the real runtime and remove stacked patch files. The current V1.10 approach is intentionally temporary so testing can continue without rewriting the full runtime in one risky pass.
+### Runtime / maze generation
 
-### V1.09 display and regeneration clarification
+- Triangle is disabled because solution plotting and route solving are unreliable for triangular masks. Keep disabled until a proper triangle-specific route/shape strategy is implemented.
+- Shape and Stretch should be native runtime behaviour, not patch-layer behaviour.
+- Border walls must remain solid around every generated shape, with only defined entrance/exit openings.
+- Start Blank should preserve hand-drawn work and should not auto-destroy manual layouts when display options change.
+- Force Regenerate should always rebuild generated layouts reliably.
 
-Completed or started in V1.09:
+### Walk Test
 
-- Added a dedicated `maze-shape-generator.js` helper file for shape-size-mask utilities.
-- Added a V1.09 controls patch module for regeneration controls, 3D View placeholder, shape-change regeneration hooks, and Overview setting summary.
-- Added a third Display mode button: Diorama, Walk Test, and 3D View.
-- Clarified behaviour: Walk Test is the editor movement/collision/path validation mode, while 3D View is the simulated first-person/3D preview mode.
-- Added a placeholder 3D View render so the mode exists but is clearly marked as pending a dedicated first-person/tunnel runtime.
-- Added Regenerate buttons to the top right of Construction, Display, Game Logic, and Visuals cards.
-- Added Overview settings summary under the legend: shape, size, stretch, warp, edge, and tunnel state.
-- Added change hooks so Shape, Stretch X, and Stretch Y trigger a forced regeneration for generated mazes instead of only leaving the old masked map in place.
+- Walk Test should remain the editor movement/collision/path validation mode, not the final 3D simulation.
+- Keyboard focus must remain stable and not flash/redraw the screen incorrectly.
+- Player should not pass through walls or outside the valid shape area.
+- D-pad highlight should match physical keyboard input.
+- Portal teleporting should fire reliably when the player steps onto an entry/exit cell.
 
-Still needs follow-up/testing from V1.09:
+### Difficulty
 
-- Confirm the new 3D View button appears and does not break Diorama or Walk Test.
-- Confirm the Regenerate buttons work on each card.
-- Confirm shape and stretch changes now rebuild generated mazes instead of only visually masking old maps.
-- Confirm Start Blank is not force-regenerated when shape/stretch changes, because hand-drawn layouts should not be destroyed automatically.
-- Wire `maze-shape-generator.js` directly into the main runtime rather than only adding it as a helper file. This is still pending because the runtime file is large and needs a safer split pass.
-- Replace the 3D View placeholder with a real dedicated 3D/tunnel renderer in a later pass.
+- The current difficulty influence is acceptable for now but is still not the final meaningful-route algorithm.
+- Full difficulty report should later count meaningful alternative routes, excluding tiny detours.
+- Difficulty matching should not silently mutate the maze without a report/action choice.
+- Portal routes should be excluded from difficulty matching by default unless explicitly included.
 
-### V1.08 quick fix
+### Completion Rules
 
-Completed in V1.08:
+- Completion Rules UI is present, but required tabs/sections are placeholders.
+- If Collect is enabled, the Items setup section still needs real object placement.
+- If Unlock is enabled, the Locks setup section still needs real locked-door/key placement.
+- If Portal is required, portal validation should confirm at least one required placed portal pair exists.
+- Required setup chips should eventually drive red/yellow/green status on the icon bar.
 
-- Changed the Puzzles selector from a horizontal title-bar bank into a dropdown menu placed before File.
-- Kept puzzle options as one-word entries: Maze, Arena, Course, Symbol, Order, Hazard.
-- Reduced header layout pressure so the title bar should not push controls off screen.
-- Fixed the image reference upload layout so selecting a file should not create a blank space at the bottom of the page.
-- Moved the image filename status outside the upload button so the button height stays stable.
+### Portals
 
-Still needs live check:
+- Portal placement exists, but needs further live testing after consolidation.
+- Portal markers should remain visible on Overview and Walk Test preview.
+- Teleport status should show clearly when a portal fires.
+- Required portals should be included in completion-rule validation.
+- Portal routes should be ignored by difficulty analysis unless explicitly included.
 
-- Confirm Puzzles dropdown opens cleanly and all six modes still switch correctly.
-- Confirm Use image as map reference opens the file picker without adding blank bottom space.
-- Confirm the Construction, Display, Logic, and Visuals buttons remain visible after upload.
+### UI / export
 
-### V1.07 started
-
-Completed or started in V1.07:
-
-- Moved the puzzle engine buttons into a labelled Puzzles bank beside the title/menu area. **Revised in V1.08: now a dropdown before File.**
-- Changed puzzle engine buttons to one-word labels: Maze, Arena, Course, Symbol, Order, Hazard.
-- Removed Route Style from the Maze / Labyrinth engine fields.
-- Removed Entrances from the Maze / Labyrinth engine fields.
-- Renamed Grid Resolution to Size in the UI.
-- Added Size scale 1–5 using 1=11, 2=15, 3=20, 4=25, 5=30.
-- Added named shape choices: Triangle, Square, Pentagon, Hexagon, Circle.
-- Added Stretch X and Stretch Y controls.
-- Kept Warp as a separate distortion control after shape and stretch.
-- Added Start Blank.
-- Added basic Start Blank advanced-lock behaviour for Warp until a valid entrance-to-exit route exists.
-- Added initial shape masking for Triangle, Square, Pentagon, Hexagon, and Circle.
-- Added entrance/exit regeneration after size and shape changes.
-- Hid ugly native file inputs behind styled buttons/labels for image and JSON import. **Revised in V1.08 after upload layout issue.**
-- Changed Apply Difficulty to Analyse Difficulty so it does not silently mutate the maze.
-- Added a placeholder difficulty analysis alert explaining that the full meaningful-route report/fix tool is a later pass.
-
-Still needs follow-up/testing from Pass 1:
-
-- Verify the new shape masks look clean at all five sizes.
-- Verify Triangle is actually triangular and not pentagon-like.
-- Verify Start Blank + Draw creates valid manual mazes correctly.
-- Verify entrance and exit placement is sensible for every shape.
-- Move shape-generation logic into a dedicated `maze-shape-generator.js` file instead of keeping it inside the runtime. **Started in V1.09, not fully wired into runtime yet.**
-- Confirm V1.10 loads from GitHub Pages without a syntax/runtime error.
+- JSON export must include shape, size, stretch, warp, difficulty, completion rules, and portals.
+- JSON import must restore those settings cleanly.
+- The current inline HTML/CSS is still too dense and should later be split into stable CSS/HTML modules.
+- The 3D View button is a placeholder and should either stay clearly marked or be hidden until the real first-person/tunnel renderer exists.
 
 ## Confirmed design corrections
 
 - Maze / Labyrinth and Arena Trial are separate puzzle engines.
-- Route Style should be removed from Maze / Labyrinth because textures, painting, tunnel style, and visual presets already own that job. **Completed in V1.07.**
+- Route Style should stay removed from Maze / Labyrinth because textures, painting, tunnel style, and visual presets own that job.
 - There should always be exactly one entrance.
 - Multiple exits may be allowed later, but Difficulty Matching should be disabled or warned when more than one exit exists.
 - Escape paths means meaningful alternate routes through the maze, not separate exit doors and not tiny variations around one cell.
@@ -116,136 +155,77 @@ Still needs follow-up/testing from Pass 1:
 
 ## Display / testing mode definitions
 
-The Display card should use three distinct modes:
-
 1. **Diorama**: editor-friendly angled/top-down preview of the maze layout.
-2. **Walk Test**: top-down or editor-map movement test for logic validation. It should test movement, collisions, route validity, portals, required objects, locks, helper guidance, and whether the player can actually reach the current objective.
-3. **3D View**: actual simulated first-person or 3D preview. This is the mode that should eventually show tunnel/corridor view, roofed tunnel behaviour, lights, and first-person movement.
+2. **Walk Test**: top-down/editor-map movement test for logic validation. It tests movement, collisions, route validity, portals, required objects, locks, helper guidance, and whether the player can reach the current objective.
+3. **3D View**: future simulated first-person or 3D preview. This should eventually show tunnel/corridor view, roofed tunnel behaviour, lights, and first-person movement.
 
-Walk Test is not the full 3D simulation. It is a practical editor validation mode. 3D View will need its own runtime pass.
+Walk Test is not the full 3D simulation. It is a practical editor validation mode. 3D View needs its own runtime pass.
 
-## Pass 1 · Maze shell and basic construction cleanup
+## Pass 1 · Maze shell and construction cleanup
 
-Status: mostly started/completed in V1.07; V1.08 fixed header/dropdown and upload layout regressions; V1.09 added regeneration controls and display mode clarification; V1.10 added practical patch fixes for border, clear all, pan, and solution path; testing and deeper file split still needed.
+Status: mostly implemented, but still needs consolidation.
 
-Completed:
+Completed or started:
 
-1. Remove Route Style from the Maze / Labyrinth engine fields.
-2. Rename Grid Resolution to Size.
-3. Replace raw grid values with Size 1–5:
-   - 1 = 11
-   - 2 = 15
-   - 3 = 20
-   - 4 = 25
-   - 5 = 30
-4. Interpret Size by shape:
-   - Triangle: side length
-   - Square: width and height
-   - Pentagon: longest side-to-side span before stretch
-   - Hexagon: longest side-to-side span before stretch
-   - Circle: longest diameter before stretch
-5. Replace Layout Shape with named shape choices:
-   - Triangle
-   - Square
-   - Pentagon
-   - Hexagon
-   - Circle
-6. Add Stretch X and Stretch Y controls.
-7. Keep Warp as a separate distortion control, applied after shape and stretch.
-8. Add Start Blank.
-9. When Start Blank is used, lock advanced options until there is a valid entrance-to-exit route.
-10. Regenerate entrance and exit whenever Size, Shape, Stretch X, or Stretch Y changes.
-11. Move Puzzles into a dropdown before File.
-12. Hide native file inputs behind stable styled controls.
-13. Add Force Regenerate buttons to main cards.
-14. Add active settings summary to the Overview legend.
-15. Add a third 3D View display mode placeholder.
-16. Add Clear All button.
-17. Add temporary generated-shape border ring and patched route solving.
-18. Add preview pan by middle/right mouse drag.
+- Removed Route Style.
+- Removed Entrances.
+- Added Size scale 1–5.
+- Added Shape options, with Triangle currently disabled.
+- Added Stretch X/Y and Warp.
+- Added Start Blank and Clear All.
+- Added shape-aware generation, border ring, entrance/exit placement, and solution plotting through patch/runtime work.
+- Added Force Regenerate buttons.
+- Added active Overview settings summary.
 
-Remaining Pass 1 cleanup:
+Remaining:
 
-1. Test all five shapes at all five sizes.
-2. Confirm route validation and Start Blank lock behave correctly after manual drawing.
-3. Fully wire shape/mask code out of `maze-labyrinth-runtime.js` into `maze-shape-generator.js`.
-4. Confirm Shape, Stretch X/Y, and Warp export cleanly and reload from JSON.
-5. Confirm the image reference file picker does not create layout gaps or hide buttons.
-6. Rework the main runtime so Shape and Stretch regenerate the logical map natively, not through a patch module.
-7. Replace temporary V1.09/V1.10 patch files with integrated runtime modules after behaviour is confirmed.
+- Fully wire shape/mask code into stable runtime modules.
+- Confirm Shape, Stretch X/Y, Warp, and Difficulty export/import cleanly.
+- Replace temporary patch files with stable modules.
 
 ## Pass 2 · Walk Test and player movement
 
-1. Fix Walk Test so clicking the button switches into real playable movement mode.
-2. Ensure keyboard focus is captured reliably.
-3. Support WASD and arrow keys. **Partially present before V1.07; needs live test.**
-4. Move the player marker/camera through open cells only. **Partially present before V1.07; needs live test.**
-5. Prevent movement through walls and invalid masked-out shape areas. **Invalid shape-area check added in V1.07; needs live test.**
-6. Highlight the matching on-screen D-pad key when the physical keyboard key is pressed. **Partially present before V1.07; needs live test.**
-7. Reset player position to the entrance when the maze is regenerated or the shape changes. **Updated in V1.07; needs live test.**
-8. Keep Walk Test as editor logic validation, not 3D simulation.
-9. Add/replace with a dedicated 3D View runtime for simulated first-person/3D preview in a later runtime pass. **Placeholder added in V1.09, simplified in V1.10.**
+Status: partially implemented, needs consolidation and live testing.
+
+Remaining:
+
+- Confirm movement is stable after consolidation.
+- Confirm portal teleporting fires correctly.
+- Confirm D-pad highlight and keyboard input remain stable.
+- Confirm player collision does not allow movement through walls or outside valid shape cells.
 
 ## Pass 3 · Difficulty analysis and report-based fixing
 
-1. Replace silent difficulty mutation with a report-and-fix flow. **Started in V1.07 by removing silent mutation and adding an Analyse Difficulty placeholder.**
-2. When a difficulty target is selected, analyse the current maze and report:
-   - current meaningful route count
-   - target route count
-   - whether portals were excluded
-   - whether multiple exits disable difficulty matching
-   - what changes are required
-3. Difficulty mapping:
-   - 5 = 1 meaningful route
-   - 4 = 2 meaningful routes
-   - 3 = 3 meaningful routes
-   - 2 = 4 meaningful routes
-   - 1 = 5 meaningful routes
-4. Meaningful route alternatives should only count if they differ from another route by a configured threshold, likely 20–30% of route cells.
-5. Tiny detours around one cube should not count as separate escape paths.
-6. Suggested report actions should include:
-   - add blocking walls to side branches
-   - remove blocks to open additional meaningful branches
-   - convert branches into dead ends
-   - cancel and leave maze unchanged
-7. Do not apply route changes until the user chooses a report action.
+Status: basic implementation present; full meaningful-route algorithm still pending.
+
+Remaining:
+
+- Count meaningful route alternatives based on route-difference threshold.
+- Exclude tiny detours.
+- Exclude portal routes by default.
+- Provide report actions before mutating the maze.
 
 ## Pass 4 · Completion rule builder
 
-1. Replace the simple completion dropdown with a rule builder.
-2. Base completion rule: Reach exit.
-3. Optional requirements:
-   - Collect objects, then reach exit
-   - Unlock door, then reach exit
-   - Collect objects and unlock door, then reach exit
-   - Use required portal
-   - Survive or avoid hazard
-   - Defeat foe
-   - Custom flag condition
-4. Reuse Place Object logic for collectable objects.
-5. Use objects from the Archetype Object library where gameplay matters.
-6. For locked doors, reuse locked-door archetype objects where possible.
-7. If Collect is enabled, add an Items tab/icon.
-8. If Unlock is enabled, add a Locks tab/icon.
-9. Required tabs should glow red/yellow/green based on completion state.
+Status: UI and export started.
+
+Remaining:
+
+- Add real Items setup.
+- Add real Locks setup.
+- Validate required portals.
+- Connect required setup chips to red/yellow/green status.
 
 ## Pass 5 · Portals
 
-1. Add a Portals section in Game Logic.
-2. Add portal pairs by clicking the Overview grid:
-   - click entry cell
-   - click exit cell
-3. Each pair should have:
-   - label, such as A, B, C
-   - entry cell
-   - exit cell
-   - one-way or two-way setting
-   - visible door / hidden passage / magic portal setting
-   - optional required object/key
-   - optional Capra hint text
-   - whether it is required or optional
-4. Portal routes should be excluded from Difficulty Matching by default.
-5. Add a later option to include portals in route analysis only if explicitly enabled.
+Status: UI, placement, markers, export, and Walk Test teleporting started.
+
+Remaining:
+
+- Consolidate into `maze-portals.js`.
+- Live test teleporting after consolidation.
+- Add validation for required portals.
+- Keep portal routes excluded from difficulty unless explicitly included.
 
 ## Pass 6 · Tunnel Mode
 
@@ -329,24 +309,17 @@ Remaining Pass 1 cleanup:
 
 ## Pass 10 · Other puzzle engines
 
-1. Keep these engines as placeholders until detailed documents are provided:
-   - Arena Trial
-   - Obstacle Course
-   - Symbol Assembly
-   - Item Order Puzzle
-   - Hazard Puzzle
-2. After documents are provided, each engine should get:
-   - dedicated engine metadata file
-   - dedicated runtime file
-   - export contract
-   - validation rules
-   - preview/render behaviour
+Keep these engines as placeholders until detailed documents are provided:
+
+- Arena Trial
+- Obstacle Course
+- Symbol Assembly
+- Item Order Puzzle
+- Hazard Puzzle
+
+After documents are provided, each engine should get a dedicated metadata file, runtime file, export contract, validation rules, and preview/render behaviour.
 
 ## Required file structure direction
-
-The Puzzle Creator should avoid giant files.
-
-Recommended split:
 
 ```text
 index.html
