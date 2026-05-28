@@ -1,4 +1,4 @@
-const PROJECT_FLOW_VERSION = 'V1.1.9';
+const PROJECT_FLOW_VERSION = 'V1.1.10';
 const PROJECT_LIBRARY_KEY_FLOW = 'artifex.projectLibrary';
 const ACTIVE_PROJECT_KEY_FLOW = 'artifex.activeProjectId';
 const HEALTH_ACTIONS_KEY_PREFIX = 'artifex.creationGuide.healthAssignmentsCreated.';
@@ -263,7 +263,7 @@ function openProjectFromFlow(projectId) {
   localStorage.setItem(ACTIVE_PROJECT_KEY_FLOW, projectId);
   library[projectId].lastOpenedAt = new Date().toISOString();
   localStorage.setItem(PROJECT_LIBRARY_KEY_FLOW, JSON.stringify(library, null, 2));
-  window.location.href = `${window.location.pathname}?fresh=creation-guide-1.1.9-open-${Date.now()}`;
+  window.location.href = `${window.location.pathname}?fresh=creation-guide-1.1.10-open-${Date.now()}`;
 }
 
 function setFlowField(id, value) {
