@@ -13,48 +13,53 @@
     "artifex/apps/scene-editor/scene-editor-audit-2026-05-28.md"
   ],
   "currentStableVersion": "v0.29-title-cache-sync",
-  "freshTestUrl": "https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/index.html?fresh=v0.29-title-cache-sync",
+  "freshTestUrl": "https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/index.html?fresh=v0.29-title-cache-sync-restore-core",
+  "knownGoodState": "Recovered stable runtime after storage/model split regression. scene-editor-config.js is loaded and consumed by scene-editor-v2.js. scene-editor-storage.js is loaded but not consumed by the core. scene-editor-scene-model.js was deleted after causing a blank-page regression. Do not attempt the next core split phase through chat connector full-file replacement.",
   "blockerRule": "Two failed attempts means the item becomes blocked and moves to uploaded local file, agent/Codex, or proper local branch workflow. No placeholders, no patch-on-patch workaround, no manual reconstruction from truncated chunks.",
   "tasks": [
     {
       "taskId": "scene_editor_core_split_00_baseline",
       "title": "Verify stable baseline before core split",
-      "status": "open",
+      "status": "done",
       "priority": 5,
       "phase": 0,
-      "description": "Before touching core modules, verify the fresh URL loads and the existing editor still supports import/restore, select, move, resize, rotate, value sliders, context actions, local backup, and download JSON.",
+      "description": "Fresh URL loads after recovery. The editor restores the local backup, displays the scene, preserves transform controls, and shows the current v0.29-title-cache-sync runtime state.",
       "targetFiles": ["artifex/apps/scene-editor/index.html", "artifex/apps/scene-editor/scene-editor-v2.js"],
-      "testRequired": true
+      "testRequired": true,
+      "testedByUser": true
     },
     {
       "taskId": "scene_editor_core_split_01_config",
       "title": "Extract Scene Editor config constants",
-      "status": "in_progress",
+      "status": "done",
       "priority": 5,
       "phase": 1,
-      "description": "Create scene-editor-config.js for version, storage keys, repo/app paths, brand asset paths, template manifest path, and type options. Load it before the core. Then update core consumption in a separate safe step once full-file editing is available.",
+      "description": "scene-editor-config.js exists, loads before the core, and scene-editor-v2.js consumes it for version, storage keys, repo/app paths, brand asset paths, template manifest path, and type options. This phase is confirmed working.",
       "targetFiles": ["artifex/apps/scene-editor/scene-editor-config.js", "artifex/apps/scene-editor/index.html", "artifex/apps/scene-editor/scene-editor-v2.js"],
-      "testRequired": true
+      "testRequired": true,
+      "testedByUser": true
     },
     {
       "taskId": "scene_editor_core_split_02_storage",
       "title": "Extract local storage helpers",
-      "status": "blocked_by_phase_01",
+      "status": "blocked_chat_connector_full_file_edit",
       "priority": 5,
       "phase": 2,
-      "description": "Move safeParse, settings read/write, working copy read/write, download stamp read/write, and delayed local-save helpers into scene-editor-storage.js after config extraction is stable.",
+      "description": "scene-editor-storage.js exists and may be loaded, but scene-editor-v2.js must not consume it until this extraction is performed in a proper local/Codex/agent workflow with full-file editing and browser console testing. A connector-based full-file replacement caused a blank-page regression and was rolled back.",
       "targetFiles": ["artifex/apps/scene-editor/scene-editor-storage.js", "artifex/apps/scene-editor/scene-editor-v2.js"],
-      "testRequired": true
+      "testRequired": true,
+      "blockedReason": "The storage wiring regressed on true fresh reload. Do not retry through chat connector full-file replacement. Use a local branch or Codex/agent workflow."
     },
     {
       "taskId": "scene_editor_core_split_03_scene_model",
       "title": "Extract scene model helpers",
-      "status": "blocked_by_phase_02",
+      "status": "blocked_by_storage_split",
       "priority": 5,
       "phase": 3,
-      "description": "Move blank scene creation, item lookup, key-for-kind, background path handling, normalisation, add/duplicate/delete helpers into scene-editor-scene-model.js in small steps.",
+      "description": "Do not recreate or load scene-editor-scene-model.js until storage extraction is safely completed and tested. The first model-module load caused a blank-page regression and the file was deleted.",
       "targetFiles": ["artifex/apps/scene-editor/scene-editor-scene-model.js", "artifex/apps/scene-editor/scene-editor-v2.js"],
-      "testRequired": true
+      "testRequired": true,
+      "blockedReason": "A premature scene model module caused a blank page. The file was deleted; future work must happen locally or in Codex/agent mode."
     },
     {
       "taskId": "scene_editor_core_split_04_io",
@@ -131,6 +136,16 @@
       "phase": 10,
       "description": "Only after the core split is stable, confirm Scene Editor has clean integration points for active project loading, scene/screen indexes, object archetype references, effect archetype references, Project Manager links, and shared health checks.",
       "targetFiles": ["artifex/apps/scene-editor/scene-editor-core-api.js", "artifex/apps/scene-editor/scene-editor-app.js"],
+      "testRequired": true
+    },
+    {
+      "taskId": "scene_editor_archive_unused_legacy_files",
+      "title": "Archive unused legacy Scene Editor files",
+      "status": "open",
+      "priority": 4,
+      "phase": 11,
+      "description": "Move old, unused, unreferenced Scene Editor files into an archive folder after verifying they are not loaded by index.html and are not referenced by active code. This should be a separate no-runtime-change batch.",
+      "targetFiles": ["artifex/apps/scene-editor/archive/"],
       "testRequired": true
     }
   ]
