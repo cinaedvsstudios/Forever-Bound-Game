@@ -1,19 +1,19 @@
-import { renderProjectShell } from './project-shell.js?v=0.1.24-build-health';
-import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.24-build-health';
-import { createProjectEditorStateManager } from './project-state.js?v=0.1.24-build-health';
-import { createProjectCanvasController } from './project-canvas.js?v=0.1.24-build-health';
-import { createProjectRenderer } from './project-renderer.js?v=0.1.24-build-health';
-import { createProjectUI } from './project-ui.js?v=0.1.24-build-health';
-import { enhanceProjectUI } from './project-integration-ui.js?v=0.1.24-build-health';
-import { enhanceNodeLinkInspector } from './project-node-links-ui.js?v=0.1.24-build-health';
-import { enhanceProjectHealthUI } from './project-health-ui.js?v=0.1.24-build-health';
-import { enhanceProjectIO } from './project-io.js?v=0.1.24-build-health';
-import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.24-build-health';
-import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.24-build-health';
-import { getTypeStyle } from './data/type-styles.js?v=0.1.24-build-health';
+import { renderProjectShell } from './project-shell.js?v=0.1.25-todos';
+import { PROJECT_THEME, applyProjectTheme, getProjectThemeTailwindConfig } from './project-theme.js?v=0.1.25-todos';
+import { createProjectEditorStateManager } from './project-state.js?v=0.1.25-todos';
+import { createProjectCanvasController } from './project-canvas.js?v=0.1.25-todos';
+import { createProjectRenderer } from './project-renderer.js?v=0.1.25-todos';
+import { createProjectUI } from './project-ui.js?v=0.1.25-todos';
+import { enhanceProjectUI } from './project-integration-ui.js?v=0.1.25-todos';
+import { enhanceNodeLinkInspector } from './project-node-links-ui.js?v=0.1.25-todos';
+import { enhanceProjectHealthUI } from './project-health-ui.js?v=0.1.25-todos';
+import { enhanceProjectIO } from './project-io.js?v=0.1.25-todos';
+import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.25-todos';
+import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.25-todos';
+import { getTypeStyle } from './data/type-styles.js?v=0.1.25-todos';
 
 applyProjectTheme();
-renderProjectShell({ version: 'v0.1.24 BUILD HEALTH' });
+renderProjectShell({ version: 'v0.1.25 TODOS' });
 
 const state = createProjectEditorStateManager();
 let canvas = null;
@@ -28,7 +28,7 @@ window.ProjectEditorStateManager = state;
 
 function setVersion() {
   document.querySelectorAll('#projectEditorVersionBadge, [data-project-version-badge]').forEach((el) => {
-    el.textContent = 'v0.1.24 BUILD HEALTH';
+    el.textContent = 'v0.1.25 TODOS';
   });
 }
 
@@ -125,7 +125,7 @@ function init() {
 
   ui.setWorkspace(state.activeWorkspace || 'flatplan');
   refresh();
-  console.info('[Artifex Project Editor] v0.1.24 BUILD HEALTH loaded', {
+  console.info('[Artifex Project Editor] v0.1.25 TODOS loaded', {
     nodes: state.logic.nodes.length,
     routes: state.logic.routes.length
   });
