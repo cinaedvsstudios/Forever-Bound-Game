@@ -7,6 +7,7 @@ import {
   editorState,
   getActiveLayer,
   moveActiveEmitter,
+  moveLayer,
   onStateChange,
   resetComposition,
   selectLayer,
@@ -16,12 +17,13 @@ import {
   setZoom,
   toggleGrid,
   toggleHelpers,
+  toggleLayerVisibility,
   updateActiveLayer
 } from './editor-state.js';
 import { initRenderer, takeSnapshot } from './editor-renderer.js';
 import { cloneBasePreset, listBasePresets } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'INDEX2-CLEAN-0.1';
+const VERSION_LABEL = 'INDEX2-CLEAN-0.1.2';
 
 const ENGINE_OPTIONS = [
   ['particles', 'Standard Particle Engine'],
@@ -123,7 +125,7 @@ function buildBottomPanel() {
         <div class="index2-layer-toolbar" aria-label="Layer actions">
           <button type="button" data-index2-action="layer-up" title="Move layer up.">↑</button>
           <button type="button" data-index2-action="layer-down" title="Move layer down.">↓</button>
-          <button type="button" data-index2-action="layer-visible" title="Visibility toggle placeholder.">👁️</button>
+          <button type="button" data-index2-action="layer-visible" title="Toggle active layer visibility.">👁️</button>
           <button type="button" data-index2-action="duplicate" title="Duplicate active layer.">⧉</button>
           <button type="button" data-index2-action="delete" title="Delete active layer.">×</button>
         </div>
@@ -230,9 +232,20 @@ function setupButtons() {
 }
 
 function runBottomAction(action) {
-  if (action === 'duplicate') duplicateActiveLayer();
-  else if (action === 'delete') deleteActiveLayer();
-  else if (action === 'pause') togglePaused();
+  if (action === 'duplicate') {
+    duplicateActiveLayer();
+    showToast('Layer duplicated.', 'success');
+  } else if (action === 'delete') {
+    deleteActiveLayer();
+    showToast('Layer deleted.', 'warn');
+  } else if (action === 'layer-up') {
+    moveActiveLayerBy(-1);
+  } else if (action === 'layer-down') {
+    moveActiveLayerBy(1);
+  } else if (action === 'layer-visible') {
+    toggleLayerVisibility(editorState.activeLayerIndex);
+    showToast('Layer visibility toggled.', 'info');
+  } else if (action === 'pause') togglePaused();
   else if (action === 'snapshot') takeSnapshot();
   else if (action === 'grid') toggleGrid();
   else if (action === 'helpers') toggleHelpers();
@@ -241,6 +254,17 @@ function runBottomAction(action) {
   else if (action === 'zoom-reset') setZoom(1);
   else if (action === 'background') toggleWorkspaceBackground();
   else showToast('Reserved for next index2 pass.', 'info');
+}
+
+function moveActiveLayerBy(delta) {
+  const fromIndex = editorState.activeLayerIndex;
+  const toIndex = fromIndex + delta;
+  if (fromIndex < 0 || toIndex < 0 || toIndex >= editorState.composition.layers.length) {
+    showToast('Layer cannot move further.', 'warn');
+    return;
+  }
+  moveLayer(fromIndex, toIndex);
+  showToast(delta < 0 ? 'Layer moved up.' : 'Layer moved down.', 'success');
 }
 
 function toggleWorkspaceBackground() {
