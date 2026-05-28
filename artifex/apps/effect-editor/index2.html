@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Artifex Effect Editor Index2 Clean V0.1.2</title>
-  <link rel="stylesheet" href="./v3/styles.css?v=index2-012" />
+  <title>Artifex Effect Editor Index2 Clean V0.1.5</title>
+  <link rel="stylesheet" href="./v3/styles.css?v=index2-015" />
 </head>
 <body>
   <header class="topbar">
@@ -12,7 +12,7 @@
       <div class="brand-mark">✦</div>
       <div>
         <h1>ARTIFEX</h1>
-        <p>Visual Effects Editor <span id="version-badge">INDEX2-CLEAN-0.1.2</span></p>
+        <p>Visual Effects Editor <span id="version-badge">INDEX2-CLEAN-0.1.5</span></p>
       </div>
     </section>
 
@@ -21,6 +21,10 @@
         <button class="menu-button" data-menu="file">File ▾</button>
         <div class="menu-panel" id="menu-file">
           <button id="new-effect-button">New Effect Archetype</button>
+          <button id="export-json-button">Export Composition JSON</button>
+          <label class="menu-file-label">Import Composition JSON<input id="import-json-input" type="file" accept=".json,application/json" hidden /></label>
+          <button id="save-local-button">Save Locally</button>
+          <button id="load-local-button">Load Local Effect</button>
           <button id="clear-particles-button">Clear Particles</button>
           <button id="snapshot-button-menu">Snapshot</button>
         </div>
@@ -54,7 +58,7 @@
       <div class="menu">
         <button class="menu-button" data-menu="help">Help ▾</button>
         <div class="menu-panel right" id="menu-help">
-          <button id="about-button">About INDEX2-CLEAN-0.1.2</button>
+          <button id="about-button">About INDEX2-CLEAN-0.1.5</button>
         </div>
       </div>
     </nav>
@@ -62,14 +66,20 @@
 
   <main class="app-shell">
     <aside id="left-panel" class="side-panel">
-      <section class="card">
+      <section class="card index2-search-card" data-search-card="Search">
+        <header><h2>Search Settings</h2></header>
+        <label>Filter left panel<input id="left-panel-search-input" placeholder="Search settings..." /></label>
+        <p id="left-panel-search-count" class="index2-search-count">Showing all sections.</p>
+      </section>
+
+      <section class="card" data-search-card="Effect Archetype Assets archetype id layer name engine type">
         <header><h2>Effect Archetype Assets</h2></header>
         <label>Archetype ID<input id="archetype-id-input" value="fx_v3_effect_001" /></label>
         <label>Layer Name<input id="layer-name-input" placeholder="Select or add a layer" /></label>
         <label>Engine Type<select id="engine-select"></select></label>
       </section>
 
-      <section class="card">
+      <section class="card" data-search-card="Quick Edit Presets fire ice good magic dark magic">
         <header><h2>Quick Edit Presets</h2></header>
         <div class="button-row">
           <button data-quick-preset="fire">Fire</button>
@@ -79,7 +89,7 @@
         </div>
       </section>
 
-      <section class="card">
+      <section class="card" data-search-card="Effect Layer Appearance colour opacity size glow">
         <header><h2>Effect Layer Appearance</h2></header>
         <label>Start Colour<input id="color-a-input" type="color" value="#ffcc66" /></label>
         <label>End Colour<input id="color-b-input" type="color" value="#ff6600" /></label>
@@ -90,7 +100,7 @@
         <label>Glow Strength<input id="glow-input" type="range" min="0" max="50" step="1" value="12" /><output id="glow-output">12</output></label>
       </section>
 
-      <section class="card">
+      <section class="card" data-search-card="Effect Layer Dynamics origin density speed gravity direction spread lifetime">
         <header><h2>Effect Layer Dynamics</h2></header>
         <label>Origin X<input id="emitter-x-input" type="number" min="0" max="1280" value="640" /></label>
         <label>Origin Y<input id="emitter-y-input" type="number" min="0" max="720" value="450" /></label>
@@ -101,6 +111,11 @@
         <label>Direction Angle<input id="angle-input" type="range" min="-180" max="180" step="1" value="-90" /><output id="angle-output">-90</output></label>
         <label>Spread<input id="spread-input" type="range" min="0" max="360" step="1" value="60" /><output id="spread-output">60</output></label>
         <label>Lifetime<input id="lifetime-input" type="range" min="10" max="240" step="1" value="80" /><output id="lifetime-output">80</output></label>
+      </section>
+
+      <section id="effect-specific-controls-card" class="card" data-search-card="Effect Specific Controls engine arc flare distortion shockwave lens gas">
+        <header><h2>Effect Specific Controls</h2></header>
+        <div id="effect-specific-controls-body">Select a layer to see engine controls.</div>
       </section>
     </aside>
 
@@ -127,6 +142,6 @@
     </section>
   </main>
 
-  <script type="module" src="./v3/src/index2-clean-controller.js?v=012"></script>
+  <script type="module" src="./v3/src/index2-clean-controller.js?v=015"></script>
 </body>
 </html>
