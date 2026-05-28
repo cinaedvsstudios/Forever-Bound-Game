@@ -17,7 +17,7 @@ Use the global all-apps to-do list for changes that affect every Artifex app. Us
 
 ## Current live status
 
-Current Quest Builder version: `V1.2.0`
+Current Quest Builder version: `V1.2.1`
 
 Current live app files:
 
@@ -193,6 +193,19 @@ Status: complete.
 - Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.2.0` / `1.2.0`.
 - Next functional phase selected: split-file/package download planning and implementation.
 
+### V1.2.1 — Split-file export/package download
+
+Status: complete.
+
+- Kept `Export JSON Bundle` as the single review/transfer bundle download.
+- Added `Export Project Files` under `File ▾ → Save ▸`.
+- `Export Project Files` downloads the virtual project-package files as loose JSON files.
+- Downloaded filenames encode folder paths with double underscores, for example `quests__quest-index.json`.
+- Added `splitExportPlan` to the exported bundle so the JSON preview documents the loose-file export mode, future ZIP decision, generated filenames, and instructions.
+- Avoided adding a ZIP library or third-party dependency; ZIP/package export remains a future shared exporter concern.
+- Updated the JSON Preview summary text to explain the two export modes.
+- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.2.1` / `1.2.1`.
+
 ## Ownership boundary
 
 Quest Builder owns:
@@ -243,20 +256,20 @@ Every Quest Builder edit should increase the visible version by `0.01` and updat
 Next version:
 
 ```text
-V1.2.1  split-file export/package download planning
+V1.2.2  split export verification / browser warning pass
 ```
 
-## V1.2.1 — Split-file export/package download planning
+## V1.2.2 — Split export verification / browser warning pass
 
-Goal: decide and document how Quest Builder should export project-package files beyond the single bundle download.
+Goal: verify that the loose-file export works in browser without confusing download behaviour.
 
-Candidate changes:
+Checks:
 
-- Keep `Export JSON` as the single bundle download.
-- Add a new export command for project package files.
-- Decide whether browser-only split export should download multiple JSON files one by one, a ZIP package, or a manifest-first bundle.
-- Avoid adding third-party ZIP libraries unless needed.
-- Keep Project Manager expectations aligned with the project file contract.
+- App loads as V1.2.1.
+- File menu shows `Save ▸ → Export JSON Bundle`, `Export Project Files`, and `Save Locally in Browser`.
+- `View JSON Preview` contains `splitExportPlan`.
+- `Export Project Files` starts one download per generated project-package file.
+- Browser popup/download blocking behaviour is documented if it becomes annoying.
 
 ## Specific-app tasks
 
