@@ -6,6 +6,7 @@ import {
   duplicateActiveLayer,
   editorState,
   getActiveLayer,
+  loadComposition,
   moveActiveEmitter,
   moveLayer,
   onStateChange,
@@ -23,7 +24,9 @@ import {
 import { initRenderer, takeSnapshot } from './editor-renderer.js';
 import { cloneBasePreset, listBasePresets } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'INDEX2-CLEAN-0.1.2';
+const VERSION_LABEL = 'INDEX2-CLEAN-0.1.5';
+const LOCAL_STORAGE_PREFIX = 'artifex-index2-effect:';
+const LOCAL_STORAGE_INDEX = 'artifex-index2-effect-index';
 
 const ENGINE_OPTIONS = [
   ['particles', 'Standard Particle Engine'],
@@ -59,6 +62,64 @@ const BINDINGS = [
   ['lifetime-input', 'lifetime', 'number']
 ];
 
+const EFFECT_SPECIFIC_CONTROL_SETS = {
+  lightning: [
+    ['arcLength', 'Arc Length', 10, 260, 1],
+    ['arcBranches', 'Branches', 0, 12, 1],
+    ['arcJaggedness', 'Jaggedness', 0, 60, 1],
+    ['arcFlicker', 'Flicker', 0, 1, 0.01]
+  ],
+  'electric-arc': [
+    ['arcLength', 'Arc Length', 10, 260, 1],
+    ['arcBranchLength', 'Branch Length', 0, 120, 1],
+    ['arcJaggedness', 'Jaggedness', 0, 60, 1],
+    ['arcFlicker', 'Flicker', 0, 1, 0.01]
+  ],
+  shockwave: [
+    ['shockwaveRadius', 'Radius', 10, 620, 1],
+    ['shockwaveStartRadius', 'Start Radius', 0, 120, 1],
+    ['shockwaveThickness', 'Thickness', 1, 80, 1],
+    ['shockwaveCenterFlash', 'Center Flash', 0, 1, 0.01]
+  ],
+  refraction: [
+    ['distortionStrength', 'Distortion Strength', 0, 80, 1],
+    ['distortionScale', 'Distortion Scale', 1, 120, 1],
+    ['noiseGrain', 'Noise Grain', 0, 1, 0.01]
+  ],
+  heatdistortion: [
+    ['distortionStrength', 'Distortion Strength', 0, 80, 1],
+    ['distortionScale', 'Distortion Scale', 1, 120, 1],
+    ['noiseGrain', 'Noise Grain', 0, 1, 0.01]
+  ],
+  lensflare: [
+    ['flareStreakLength', 'Streak Length', 0, 900, 1],
+    ['flareGhosts', 'Ghosts', 0, 12, 1],
+    ['flareHalo', 'Halo', 0, 260, 1],
+    ['flareOverlayOpacity', 'Overlay Opacity', 0, 1, 0.01]
+  ],
+  'true-lensflare': [
+    ['flareStreakLength', 'Streak Length', 0, 900, 1],
+    ['flareGhosts', 'Ghosts', 0, 12, 1],
+    ['flareHalo', 'Halo', 0, 260, 1],
+    ['flareOverlayOpacity', 'Overlay Opacity', 0, 1, 0.01]
+  ],
+  gas: [
+    ['noiseGrain', 'Noise Grain', 0, 1, 0.01],
+    ['edgeBlur', 'Edge Blur', 0, 60, 1],
+    ['textureContrast', 'Texture Contrast', 0, 3, 0.01]
+  ],
+  ribbon: [
+    ['friction', 'Friction', 0, 1, 0.01],
+    ['orbitalForce', 'Orbital Force', -2, 2, 0.01],
+    ['emitterWidth', 'Emitter Width', 0, 720, 1]
+  ],
+  projectile: [
+    ['friction', 'Friction', 0, 1, 0.01],
+    ['targetX', 'Target X', 0, 1280, 1],
+    ['targetY', 'Target Y', 0, 720, 1]
+  ]
+};
+
 window.addEventListener('DOMContentLoaded', () => {
   setVersionLabel();
   injectStyles();
@@ -69,6 +130,7 @@ window.addEventListener('DOMContentLoaded', () => {
   populateBaseLayerMenu();
   setupMenus();
   setupButtons();
+  setupSearch();
   bindLayerControls();
   addStarterLayer();
   onStateChange(syncUI);
@@ -96,9 +158,13 @@ function injectStyles() {
   style.id = 'index2-clean-style';
   style.textContent = `
     .menu-panel.open { display: block !important; }
+    .menu-file-label { display: block; cursor: pointer; }
     #base-layer-list button { width: 100%; display: block; text-align: left; margin-bottom: 7px; }
     #base-layer-list button span { display: block; margin-top: 3px; color: var(--gold-muted); font-size: 10px; line-height: 1.25; font-weight: 400; }
     .workspace-toolbar #status-text { margin-left: auto; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .index2-search-card { border-color: rgba(0, 174, 234, .45); }
+    .index2-search-count { color: var(--gold-muted); font-size: 11px; margin: 8px 0 0; }
+    .index2-card-hidden { display: none !important; }
     .index2-bottom-grid { display: grid; grid-template-columns: minmax(330px, 1.5fr) minmax(230px, .78fr) minmax(310px, 1fr); gap: 14px; min-height: 100%; }
     .index2-bottom-card { min-width: 0; border-left: 1px solid rgba(56,42,33,.75); padding-left: 14px; }
     .index2-bottom-card:first-child { border-left: 0; padding-left: 0; }
@@ -108,6 +174,9 @@ function injectStyles() {
     .index2-zoom-strip { display: grid; grid-template-columns: 34px 58px 34px auto; gap: 8px; align-items: center; margin-top: 10px; }
     #index2-zoom-readout { color: var(--gold-bright); text-align: center; font-weight: 800; }
     .index2-diagnostics { color: var(--module-accent-strong); font-family: 'Fira Code', monospace; font-size: 12px; line-height: 1.55; white-space: pre-wrap; }
+    .index2-control-empty { color: var(--gold-muted); font-size: 11px; line-height: 1.45; margin: 0; }
+    .index2-effect-control { display: grid; gap: 5px; margin-bottom: 10px; }
+    .index2-effect-control span { display: flex; justify-content: space-between; gap: 10px; color: var(--gold-muted); font-size: 11px; }
     .layer-item { cursor: pointer; }
     .layer-item.selected { border-color: var(--module-accent); box-shadow: 0 0 0 1px var(--module-glow); }
     @media (max-width: 1100px) { .index2-bottom-grid { grid-template-columns: 1fr; } }
@@ -139,7 +208,7 @@ function buildBottomPanel() {
           <button type="button" data-index2-action="grid" title="Toggle grid.">▦</button>
           <button type="button" data-index2-action="helpers" title="Toggle guides.">🎯</button>
           <button type="button" data-index2-action="background" title="Toggle dark / white background.">BG</button>
-          <button type="button" data-index2-action="folder" title="Reserved local effects button.">📁</button>
+          <button type="button" data-index2-action="folder" title="Open local save loader.">📁</button>
         </div>
         <div class="index2-zoom-strip" aria-label="Zoom controls">
           <button type="button" data-index2-action="zoom-out" title="Zoom out.">−</button>
@@ -213,6 +282,12 @@ function setupButtons() {
   bindClick('toggle-grid-button', toggleGrid);
   bindClick('toggle-helpers-button', toggleHelpers);
   bindClick('about-button', () => showToast(`${VERSION_LABEL}: clean index2 test page.`, 'info'));
+  bindClick('export-json-button', exportCompositionToJson);
+  bindClick('save-local-button', saveCompositionLocal);
+  bindClick('load-local-button', loadCompositionLocal);
+
+  const importInput = document.getElementById('import-json-input');
+  importInput?.addEventListener('change', importCompositionFromJson);
 
   document.querySelectorAll('[data-workspace-mode]').forEach((button) => {
     button.addEventListener('click', () => { setWorkspaceMode(button.dataset.workspaceMode); closeMenus(); });
@@ -229,6 +304,28 @@ function setupButtons() {
   document.querySelectorAll('[data-index2-action]').forEach((button) => {
     button.addEventListener('click', () => runBottomAction(button.dataset.index2Action));
   });
+}
+
+function setupSearch() {
+  const input = document.getElementById('left-panel-search-input');
+  if (!input) return;
+  input.addEventListener('input', applyLeftPanelSearch);
+  applyLeftPanelSearch();
+}
+
+function applyLeftPanelSearch() {
+  const input = document.getElementById('left-panel-search-input');
+  const count = document.getElementById('left-panel-search-count');
+  const query = String(input?.value || '').trim().toLowerCase();
+  const cards = Array.from(document.querySelectorAll('#left-panel .card[data-search-card]')).filter((card) => !card.classList.contains('index2-search-card'));
+  let shown = 0;
+  for (const card of cards) {
+    const haystack = `${card.dataset.searchCard || ''} ${card.textContent || ''}`.toLowerCase();
+    const visible = !query || haystack.includes(query);
+    card.classList.toggle('index2-card-hidden', !visible);
+    if (visible) shown += 1;
+  }
+  if (count) count.textContent = query ? `Showing ${shown} matching section${shown === 1 ? '' : 's'}.` : 'Showing all sections.';
 }
 
 function runBottomAction(action) {
@@ -253,6 +350,7 @@ function runBottomAction(action) {
   else if (action === 'zoom-in') setZoom(editorState.zoom + 0.1);
   else if (action === 'zoom-reset') setZoom(1);
   else if (action === 'background') toggleWorkspaceBackground();
+  else if (action === 'folder') loadCompositionLocal();
   else showToast('Reserved for next index2 pass.', 'info');
 }
 
@@ -276,6 +374,96 @@ function togglePaused() {
   setPaused(!editorState.isPaused);
   editorState.emergencyLiteMode = editorState.isPaused;
   showToast(editorState.isPaused ? 'Preview paused.' : 'Preview running.', 'info');
+}
+
+function exportCompositionToJson() {
+  const payload = JSON.stringify(editorState.composition, null, 2);
+  const blob = new Blob([payload], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const safeName = String(editorState.composition.name || editorState.composition.id || 'artifex-effect').replace(/[^a-z0-9_-]+/gi, '-').replace(/^-|-$/g, '');
+  link.download = `${safeName || 'artifex-effect'}.json`;
+  link.href = url;
+  link.click();
+  URL.revokeObjectURL(url);
+  closeMenus();
+  showToast('Composition JSON exported.', 'success');
+}
+
+function importCompositionFromJson(event) {
+  const file = event.target?.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.addEventListener('load', () => {
+    try {
+      const parsed = JSON.parse(String(reader.result || '{}'));
+      loadComposition(parsed);
+      editorState.emergencyLiteMode = editorState.isPaused;
+      clearParticles();
+      closeMenus();
+      showToast('Composition JSON imported.', 'success');
+    } catch (error) {
+      console.error(`[${VERSION_LABEL}] import failed`, error);
+      showToast('Import failed. Check the JSON file.', 'warn');
+    } finally {
+      event.target.value = '';
+    }
+  });
+  reader.readAsText(file);
+}
+
+function saveCompositionLocal() {
+  const name = window.prompt('Save effect as:', editorState.composition.name || editorState.composition.id || 'Untitled Effect');
+  if (!name) return;
+  const id = `local_${Date.now().toString(36)}`;
+  const entry = {
+    id,
+    name: String(name).trim() || 'Untitled Effect',
+    savedAt: new Date().toISOString(),
+    composition: { ...editorState.composition, name: String(name).trim() || editorState.composition.name }
+  };
+  const index = readLocalIndex().filter((item) => item.id !== id);
+  index.unshift({ id: entry.id, name: entry.name, savedAt: entry.savedAt });
+  window.localStorage.setItem(`${LOCAL_STORAGE_PREFIX}${id}`, JSON.stringify(entry));
+  window.localStorage.setItem(LOCAL_STORAGE_INDEX, JSON.stringify(index.slice(0, 25)));
+  closeMenus();
+  showToast(`Saved locally: ${entry.name}`, 'success');
+}
+
+function loadCompositionLocal() {
+  const index = readLocalIndex();
+  if (!index.length) {
+    showToast('No local effects saved yet.', 'info');
+    return;
+  }
+  const list = index.map((item, idx) => `${idx + 1}. ${item.name} (${formatDate(item.savedAt)})`).join('\n');
+  const choice = window.prompt(`Load local effect:\n${list}\n\nEnter number:`, '1');
+  if (!choice) return;
+  const selected = index[Number(choice) - 1];
+  if (!selected) {
+    showToast('No local effect matched that number.', 'warn');
+    return;
+  }
+  try {
+    const entry = JSON.parse(window.localStorage.getItem(`${LOCAL_STORAGE_PREFIX}${selected.id}`) || '{}');
+    if (!entry.composition) throw new Error('Missing composition.');
+    loadComposition(entry.composition);
+    clearParticles();
+    closeMenus();
+    showToast(`Loaded local effect: ${entry.name || selected.name}`, 'success');
+  } catch (error) {
+    console.error(`[${VERSION_LABEL}] local load failed`, error);
+    showToast('Local effect could not be loaded.', 'warn');
+  }
+}
+
+function readLocalIndex() {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(LOCAL_STORAGE_INDEX) || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 function bindClick(id, handler) {
@@ -327,6 +515,8 @@ function addPresetById(id) {
 function syncUI() {
   renderLayerList();
   syncControls();
+  renderEffectSpecificControls();
+  applyLeftPanelSearch();
   syncStatus();
 }
 
@@ -377,6 +567,40 @@ function syncControls() {
   setOutput('lifetime-output', layer?.lifetime);
 }
 
+function renderEffectSpecificControls() {
+  const body = document.getElementById('effect-specific-controls-body');
+  if (!body) return;
+  const layer = getActiveLayer();
+  if (!layer) {
+    body.innerHTML = '<p class="index2-control-empty">Select a layer to see engine controls.</p>';
+    return;
+  }
+  const controls = EFFECT_SPECIFIC_CONTROL_SETS[layer.engine] || [];
+  if (!controls.length) {
+    body.innerHTML = '<p class="index2-control-empty">This engine has no extra controls in the clean index2 build yet.</p>';
+    return;
+  }
+  const activeId = document.activeElement?.dataset?.effectProperty || '';
+  body.innerHTML = controls.map(([property, label, min, max, step]) => {
+    const value = formatValue(layer[property]);
+    return `
+      <label class="index2-effect-control">
+        <span><b>${escapeHtml(label)}</b><output id="effect-output-${escapeHtml(property)}">${escapeHtml(value)}</output></span>
+        <input data-effect-property="${escapeHtml(property)}" type="range" min="${min}" max="${max}" step="${step}" value="${escapeHtml(layer[property] ?? 0)}" />
+      </label>
+    `;
+  }).join('');
+  body.querySelectorAll('[data-effect-property]').forEach((input) => {
+    input.addEventListener('input', () => {
+      const property = input.dataset.effectProperty;
+      updateActiveLayer({ [property]: Number(input.value) });
+      const output = document.getElementById(`effect-output-${property}`);
+      if (output) output.textContent = formatValue(input.value);
+    });
+    if (input.dataset.effectProperty === activeId) input.focus({ preventScroll: true });
+  });
+}
+
 function syncStatus() {
   const status = document.getElementById('status-text');
   const zoomTop = document.getElementById('zoom-readout');
@@ -422,6 +646,15 @@ function applyQuickPreset(kind) {
   if (!presets[kind]) return;
   updateActiveLayer(presets[kind]);
   showToast('Quick preset applied.', 'success');
+}
+
+function formatDate(value) {
+  if (!value) return 'unknown time';
+  try {
+    return new Date(value).toLocaleString();
+  } catch {
+    return 'unknown time';
+  }
 }
 
 function showToast(message, type = 'info') {
