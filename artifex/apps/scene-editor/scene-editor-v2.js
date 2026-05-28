@@ -1,6 +1,5 @@
 (() => {
   const config = window.ArtifexSceneEditorConfig || {};
-  const storage = window.ArtifexSceneEditorStorage || {};
   const VERSION = config.VERSION || 'v0.29-title-cache-sync';
   document.title = `Artifex Scene Editor · ${VERSION}`;
   const SETTINGS_KEY = config.SETTINGS_KEY || 'artifex.sceneEditor.settings.v1';
@@ -14,7 +13,6 @@
   const typeOptions = Array.isArray(config.typeOptions) ? config.typeOptions : ['prop', 'pickup', 'player_start', 'npc', 'foe', 'door', 'exit', 'overlay', 'background_layer', 'foreground_layer', 'hazard', 'searchable', 'marker', 'effect', 'ui'];
 
   function loadSettings() {
-    if (typeof storage.loadSettings === 'function') return storage.loadSettings(SETTINGS_KEY);
     try {
       return JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
     } catch {
@@ -23,7 +21,6 @@
   }
 
   function safeParse(text, fallback = null) {
-    if (typeof storage.safeParse === 'function') return storage.safeParse(text, fallback);
     try { return JSON.parse(text); }
     catch { return fallback; }
   }
@@ -50,18 +47,13 @@
   document.body.dataset.artifexCoreMoveDrag = 'true';
 
   function saveSettings() {
-    const payload = {
-      defaultZoom,
-      zoom,
-      showHighlight,
-      collapsedCards: collapsed
-    };
-    if (typeof storage.saveSettings === 'function') {
-      storage.saveSettings(SETTINGS_KEY, payload);
-      return;
-    }
     try {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+        defaultZoom,
+        zoom,
+        showHighlight,
+        collapsedCards: collapsed
+      }));
     } catch {
       // localStorage can fail in private or blocked contexts. The editor still works without persistence.
     }
@@ -118,11 +110,9 @@
     catch { return String(iso); }
   }
   function readWorkingCopy() {
-    if (typeof storage.readWorkingCopy === 'function') return storage.readWorkingCopy(WORKING_COPY_KEY);
     return safeParse(localStorage.getItem(WORKING_COPY_KEY), null);
   }
   function readDownloadStamp() {
-    if (typeof storage.readDownloadStamp === 'function') return storage.readDownloadStamp(DOWNLOAD_KEY);
     return safeParse(localStorage.getItem(DOWNLOAD_KEY), null);
   }
   function saveWorkingCopy(reason = 'autosave') {
@@ -138,10 +128,6 @@
     const snapshot = JSON.stringify({ ...payload, savedAt: '' });
     if (snapshot === lastWorkingCopySnapshot && reason !== 'download' && reason !== 'manual save') return;
     lastWorkingCopySnapshot = snapshot;
-    if (typeof storage.writeWorkingCopy === 'function') {
-      storage.writeWorkingCopy(WORKING_COPY_KEY, payload);
-      return;
-    }
     try { localStorage.setItem(WORKING_COPY_KEY, JSON.stringify(payload)); }
     catch { /* localStorage can fail; editor still works without resume. */ }
   }
@@ -164,12 +150,8 @@
       fileName: fileName || scene.id || scene.name || 'Untitled JSON',
       downloadedAt: new Date().toISOString()
     };
-    if (typeof storage.writeDownloadStamp === 'function') {
-      storage.writeDownloadStamp(DOWNLOAD_KEY, payload);
-    } else {
-      try { localStorage.setItem(DOWNLOAD_KEY, JSON.stringify(payload)); }
-      catch { /* ignore */ }
-    }
+    try { localStorage.setItem(DOWNLOAD_KEY, JSON.stringify(payload)); }
+    catch { /* ignore */ }
     saveWorkingCopy('download');
   }
   function filePill() {
