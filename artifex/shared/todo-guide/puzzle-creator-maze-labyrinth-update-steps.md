@@ -17,7 +17,7 @@ Temporary version files must not keep accumulating. Working behaviour from V1.11
 
 ### Current temporary files to consolidate
 
-- `maze-v111-fixes.js`
+- `maze-v111-fixes.js` **replaced in V1.18 by stable module `maze-labyrinth-runtime-controls.js`; keep old file only until V1.18 live smoke test passes.**
   - Generated maze runtime
   - Shape-aware generated maze creation
   - Clear All / Start Blank behaviour
@@ -52,7 +52,9 @@ Temporary version files must not keep accumulating. Working behaviour from V1.11
 ### Stable files to create or update
 
 - `maze-labyrinth-runtime.js`
-  - Owns maze generation, matrix state, rendering, walk test, keyboard movement, solution plotting, and difficulty basics.
+  - Owns base state, existing editor boot, palettes, and export shell.
+- `maze-labyrinth-runtime-controls.js` **created in V1.18**
+  - Owns shape-aware maze generation, matrix rebuilding, rendering override, walk test, keyboard movement, solution plotting, and difficulty basics.
 - `maze-difficulty-report.js`
   - Owns difficulty report calculation and branded report display wiring.
 - `maze-completion-rules.js`
@@ -66,8 +68,8 @@ Temporary version files must not keep accumulating. Working behaviour from V1.11
 
 ### Consolidation steps
 
-1. **Started in V1.17:** add `maze-labyrinth-consolidation-loader.js` so `index.html` loads one Maze entrypoint instead of six separate version patch scripts.
-2. Move V1.11 runtime behaviour into stable runtime modules.
+1. **Completed in V1.17:** add `maze-labyrinth-consolidation-loader.js` so `index.html` loads one Maze entrypoint instead of six separate version patch scripts.
+2. **Started in V1.18:** move V1.11 runtime behaviour into stable runtime module `maze-labyrinth-runtime-controls.js` and replace the `maze-v111-fixes.js` import in the loader.
 3. Move V1.12 modal behaviour into `maze-difficulty-report.js` or a shared Artifex modal module.
 4. Move V1.13 polish behaviour into stable runtime/UI modules.
 5. Move V1.14 completion behaviour into `maze-completion-rules.js`.
@@ -79,6 +81,22 @@ Temporary version files must not keep accumulating. Working behaviour from V1.11
 
 ## Progress log
 
+### V1.18 runtime controls consolidation started
+
+Completed or started in V1.18:
+
+- Created `maze-labyrinth-runtime-controls.js` as the stable module for the former V1.11 runtime/control patch behaviour.
+- Updated `maze-labyrinth-consolidation-loader.js` to import `maze-labyrinth-runtime-controls.js` instead of `maze-v111-fixes.js`.
+- Updated `index.html` to V1.18 cache/version markers.
+- Reduced one temporary patch import from the active consolidation loader.
+
+Still needs follow-up from V1.18:
+
+- Confirm V1.18 loads from GitHub Pages.
+- Smoke test Fresh Random, Start Blank, Clear All, Size, Shape, Stretch, Warp, Plot Solution, and Walk Test.
+- If V1.18 behaves like V1.17/V1.16, delete `maze-v111-fixes.js` or keep it archived only if needed.
+- Continue by moving V1.12 modal behaviour into `maze-difficulty-report.js`.
+
 ### V1.17 consolidation started
 
 Completed or started in V1.17:
@@ -87,13 +105,6 @@ Completed or started in V1.17:
 - Updated `index.html` to V1.17 and reduced the script list to `main.js` plus the consolidation loader.
 - Added this consolidation section to the to-do list.
 - Marked patch consolidation as the active priority before adding any major new feature.
-
-Still needs follow-up from V1.17:
-
-- Confirm V1.17 loads from GitHub Pages.
-- Confirm behaviour is unchanged from V1.16 after the loader change.
-- Begin moving code from version patch files into stable modules.
-- Remove the temporary imports from the consolidation loader one by one as stable modules replace them.
 
 ## Outstanding fixes before continuing features
 
@@ -327,6 +338,7 @@ src/js/main.js
 src/js/engines-ui.js
 src/js/engines/maze-labyrinth.js
 src/js/engines/maze-labyrinth-runtime.js
+src/js/engines/maze-labyrinth-runtime-controls.js
 src/js/engines/maze-shape-generator.js
 src/js/engines/maze-route-analyzer.js
 src/js/engines/maze-difficulty-report.js
