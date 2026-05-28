@@ -22,10 +22,9 @@ import { initV317Polish } from './v317-polish.js';
 import { initV320FileMenu } from './v320-file-menu.js';
 import { initV322TextControls } from './v322-text-controls.js';
 import { initV326LeftPanelSearch } from './v326-left-panel-search.js';
-import { initV327MySettings } from './v327-my-settings.js';
 import { cloneBasePreset } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'V3.27';
+const VERSION_LABEL = 'V3.28';
 
 window.addEventListener('artifex:toast', (event) => {
   showToast(event.detail.message, event.detail.type);
@@ -59,12 +58,11 @@ window.addEventListener('DOMContentLoaded', () => {
   initV320FileMenu(showToast);
   initV322TextControls(showToast);
   initV326LeftPanelSearch();
-  initV327MySettings();
 
   const preset = cloneBasePreset('base', 'standard-particle');
   if (preset) {
     addLayer(preset.config);
   }
 
-  showToast(`${VERSION_LABEL} loaded.`, 'success');
+  showToast(`${VERSION_LABEL} loaded. My Settings is paused while its floating-panel boot issue is fixed.`, 'success');
 });
