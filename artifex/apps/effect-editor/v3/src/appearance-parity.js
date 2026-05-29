@@ -53,10 +53,11 @@ function injectAppearanceStyles() {
     .appearance-ramp-preview { position: relative; height: 52px; border: 1px solid var(--module-accent); border-radius: 0; background: #111; box-shadow: inset 0 0 20px rgba(0,0,0,.65), 0 0 10px var(--module-glow); }
     .appearance-ramp-grid { position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(to right, rgba(255,255,255,.10) 1px, transparent 1px); background-size: 10% 100%; opacity: .45; }
     .appearance-stop-track { position: relative; height: 44px; margin: 4px 9px 0; }
-    .appearance-stop-marker { position: absolute; top: 5px; transform: translateX(-50%); display: grid; place-items: center; width: 24px; height: 32px; border: 0; background: transparent; box-shadow: none; padding: 0; color: var(--module-accent-strong); cursor: grab; }
+    .appearance-stop-marker { position: absolute; top: 5px; transform: translateX(-50%); display: grid; place-items: center; width: 24px; height: 32px; border: 0; background: transparent; box-shadow: none; padding: 0; color: var(--module-accent-strong); cursor: grab; touch-action: none; }
     .appearance-stop-marker::before { content: ''; width: 17px; height: 17px; border-radius: 6px 6px 9px 9px; border: 2px solid var(--text); background: var(--stop-color, #fff); box-shadow: 0 0 0 2px #111, 0 0 12px var(--module-glow); transform: rotate(45deg); }
     .appearance-stop-marker.is-selected::before { border-color: var(--module-accent-strong); box-shadow: 0 0 0 2px #111, 0 0 16px var(--module-glow); }
     .appearance-stop-marker:active { cursor: grabbing; }
+    body.is-dragging-appearance-stop { cursor: grabbing; user-select: none; }
     .appearance-stop-labels { display: grid; grid-template-columns: repeat(11, 1fr); margin-top: 4px; font-family: 'Fira Code', monospace; font-size: 9px; color: var(--module-accent-strong); text-align: center; }
     .appearance-stop-buttons { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 8px; }
     .appearance-stop-buttons span { color: var(--muted); font-size: 11px; }
@@ -395,38 +396,43 @@ function renderStopTrack(layer, stops) {
     marker.style.setProperty('--stop-color', stop.color);
     marker.title = `Stop ${index + 1} · ${Math.round(stop.position * 100)}%`;
     marker.addEventListener('click', () => updateActiveLayer({ activeAppearanceStopIndex: index }));
-    marker.addEventListener('pointerdown', (event) => startMarkerDrag(event, index));
+    marker.addEventListener('pointerdown', (event) => startMarkerDrag(event, stop.id));
     track.append(marker);
   });
 }
 
-function startMarkerDrag(event, index) {
+function startMarkerDrag(event, stopId) {
   event.preventDefault();
-  const layer = getActiveLayer();
+  event.stopPropagation();
   const track = document.getElementById('appearance-stop-track');
-  if (!layer || !track) return;
-  const stops = getStops(layer);
-  const marker = event.currentTarget;
-  marker.setPointerCapture(event.pointerId);
+  if (!getActiveLayer() || !track || !stopId) return;
+  document.body.classList.add('is-dragging-appearance-stop');
 
   const updateFromEvent = (moveEvent) => {
+    const layer = getActiveLayer();
+    if (!layer) return;
+    const stops = getStops(layer);
+    const index = stops.findIndex((stop) => stop.id === stopId);
+    if (index < 0) return;
     const rect = track.getBoundingClientRect();
     const raw = (moveEvent.clientX - rect.left) / Math.max(1, rect.width);
-    const snapped = Math.round(Math.min(1, Math.max(0, raw)) * 10) / 10;
-    const nextStops = stops.map((stop, stopIndex) => stopIndex === index ? { ...stop, position: snapped } : { ...stop });
+    const snapped = Math.round(clamp(raw, 0, 1) * 10) / 10;
+    const nextStops = stops.map((stop) => stop.id === stopId ? { ...stop, position: snapped } : { ...stop });
     const sanitized = sanitizeStops(nextStops);
-    const selectedStopId = stops[index]?.id;
-    const nextIndex = sanitized.findIndex((stop) => stop.id === selectedStopId);
+    const nextIndex = sanitized.findIndex((stop) => stop.id === stopId);
     updateActiveLayer({ appearanceStops: sanitized, activeAppearanceStopIndex: Math.max(0, nextIndex) });
   };
+
   const stopDrag = () => {
-    marker.removeEventListener('pointermove', updateFromEvent);
-    marker.removeEventListener('pointerup', stopDrag);
-    marker.removeEventListener('pointercancel', stopDrag);
+    document.body.classList.remove('is-dragging-appearance-stop');
+    window.removeEventListener('pointermove', updateFromEvent);
+    window.removeEventListener('pointerup', stopDrag);
+    window.removeEventListener('pointercancel', stopDrag);
   };
-  marker.addEventListener('pointermove', updateFromEvent);
-  marker.addEventListener('pointerup', stopDrag);
-  marker.addEventListener('pointercancel', stopDrag);
+
+  window.addEventListener('pointermove', updateFromEvent);
+  window.addEventListener('pointerup', stopDrag);
+  window.addEventListener('pointercancel', stopDrag);
   updateFromEvent(event);
 }
 
@@ -460,7 +466,7 @@ function getStops(layer) {
 function sanitizeStops(stops) {
   const mapped = stops.slice(0, 5).map((stop, index) => ({
     id: stop.id || `stop_${index}_${Date.now().toString(36)}`,
-    position: Math.round(Math.min(1, Math.max(0, Number(stop.position) || 0)) * 10) / 10,
+    position: Math.round(clamp(Number(stop.position) || 0, 0, 1) * 10) / 10,
     color: normalizeHex(stop.color),
     opacity: clamp(Number(stop.opacity), 0, 1),
     size: clamp(Number(stop.size), 0, 180),
