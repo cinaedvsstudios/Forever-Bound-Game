@@ -33,21 +33,22 @@
 .menu-bar { justify-self: end; }
 
 .index2-card-collapse {
-  min-height: 31px;
-  min-width: 31px;
-  width: 31px;
-  height: 31px;
+  min-height: 30px;
+  min-width: 30px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   display: grid;
   place-items: center;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
   color: #d8f7ff;
-  border-color: rgba(0, 174, 234, .48);
-  background: linear-gradient(180deg, rgba(0, 174, 234, .21), rgba(15, 12, 11, .85));
-  box-shadow: 0 0 12px rgba(0, 174, 234, .14);
+  font-size: 16px;
 }
 .index2-card-collapse:hover {
-  border-color: var(--module-accent-strong);
-  box-shadow: 0 0 17px rgba(0, 174, 234, .36);
+  background: rgba(0,174,234,.12);
+  box-shadow: none;
 }
 .card.index2-card-collapsed > :not(header) { display: none !important; }
 .card.index2-card-collapsed { padding-bottom: 9px; }
@@ -68,8 +69,7 @@
   text-shadow: 0 0 13px rgba(0,174,234,.24);
 }
 
-.index2-original-quick-row { margin-bottom: 12px; }
-.index2-quick-helper-sections { border-top: 1px solid rgba(226,204,167,.13); padding-top: 4px; }
+.index2-quick-helper-sections { border-top: 0; padding-top: 0; }
 .index2-helper-section { margin-top: 10px; }
 .index2-helper-title {
   display: flex;
@@ -127,6 +127,22 @@
   padding-left: 10px;
   padding-right: 10px;
 }
+.index2-play-spinner {
+  display: inline-block;
+  width: 19px;
+  height: 19px;
+  border: 2px solid rgba(0,174,234,.26);
+  border-top-color: var(--module-accent-strong);
+  border-radius: 50%;
+  vertical-align: middle;
+  animation: index2-playing-spin .8s linear infinite;
+}
+@keyframes index2-playing-spin { to { transform: rotate(360deg); } }
+.index2-paused-flash { animation: index2-pause-flash .7s ease-out; }
+@keyframes index2-pause-flash {
+  0%, 40% { border-color: rgba(229,69,69,.8); box-shadow: 0 0 17px rgba(229,69,69,.45); }
+  100% { box-shadow: none; }
+}
 .index2-stage-status {
   position: absolute;
   top: 17px;
@@ -146,6 +162,25 @@
 
 .index2-bottom-grid {
   grid-template-columns: minmax(360px, 1.45fr) minmax(150px, .45fr) minmax(310px, 1fr) !important;
+}
+#index2-display-state {
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .14em;
+  line-height: 1.2;
+  border: 1px solid transparent;
+}
+#index2-display-state.index2-status-paused {
+  color: #ffd3d3;
+  background: rgba(201,54,54,.21);
+  border-color: rgba(229,69,69,.54);
+}
+#index2-display-state.index2-status-playing {
+  color: #cef6ff;
+  background: rgba(0,174,234,.18);
+  border-color: rgba(0,174,234,.56);
 }
 .index2-layer-panel-body {
   display: grid;
@@ -177,6 +212,13 @@
   min-width: 0 !important;
   padding: 10px 38px 10px 40px !important;
 }
+.layer-item.selected {
+  border-color: var(--module-accent-strong) !important;
+  background: linear-gradient(135deg, rgba(0,174,234,.56), rgba(0,74,114,.82)) !important;
+  box-shadow: inset 0 0 0 1px rgba(39,215,255,.35), 0 0 16px rgba(0,174,234,.34) !important;
+}
+.layer-item.selected strong,
+.layer-item.selected span:not(.layer-sequence-number) { color: #f2fdff !important; }
 .layer-sequence-number {
   position: absolute;
   left: 10px;
@@ -191,6 +233,10 @@
   border: 1px solid rgba(0,174,234,.42);
   font-size: 11px;
   font-weight: 900;
+}
+.layer-item.selected .layer-sequence-number {
+  background: rgba(4,30,48,.46);
+  border-color: rgba(214,248,255,.6);
 }
 .layer-delete-inline {
   position: absolute;
@@ -209,11 +255,14 @@
 .index2-display-grid button[data-index2-action='snapshot'],
 .index2-zoom-strip button[data-index2-action='zoom-out'],
 .index2-zoom-strip button[data-index2-action='zoom-in'],
-.index2-zoom-strip #index2-zoom-readout {
-  display: none !important;
-}
+.index2-zoom-strip #index2-zoom-readout { display: none !important; }
 .index2-display-grid { grid-template-columns: repeat(3, minmax(42px, 54px)) !important; }
 .index2-zoom-strip { grid-template-columns: auto !important; }
+.index2-zoom-strip button[data-index2-action='zoom-reset'] {
+  font-size: 12px;
+  min-height: 30px;
+  padding: 3px 12px;
+}
 
 .side-resizer, .bottom-resizer { touch-action: none; }
 body.index2-resizing, body.index2-resizing * { user-select: none !important; }
