@@ -15,8 +15,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
 function markVisibleBuildVersion() {
   const pill = document.querySelector('.version-pill');
-  if (pill) pill.textContent = 'V1.25';
-  document.title = 'Artifex Puzzle Creator V1.25 · Forever Bound';
+  if (pill) pill.textContent = 'V1.26';
+  document.title = 'Artifex Puzzle Creator V1.26 · Forever Bound';
 }
 
 function removeVerboseHelperText() {
@@ -83,36 +83,53 @@ function moveLogicButtonsUnderSolutionBox() {
 function installWarpEdgeCleanupControl() {
   const visualPanel = document.querySelector('[data-panel-content="visuals"]');
   const hint = visualPanel?.querySelector('.hint-text');
-  if (!visualPanel || !hint || $('btn-smooth-warp-edges')) return;
+  const gapSlider = $('gap-slider');
+  if (!visualPanel || !hint || !gapSlider || $('btn-smooth-warp-edges')) return;
+  gapSlider.max = '1.46';
   const box = document.createElement('div');
   box.className = 'warp-edge-cleanup';
   box.innerHTML = `
     <div class="warp-edge-copy">
-      <strong>Close Tile Gaps</strong>
-      <small>Removes normal spacing between visual tiles. Fully blended curved joins require the later renderer pass.</small>
+      <strong>Close Warped Gaps</strong>
+      <small>Expands the preview tiles according to Warp so displaced blocks overlap and no dark seams remain.</small>
     </div>
-    <button id="btn-smooth-warp-edges" class="wide-button" type="button" aria-pressed="false" title="Remove normal spacing between visual tiles">Close Gaps: Off</button>
+    <button id="btn-smooth-warp-edges" class="wide-button" type="button" aria-pressed="false" title="Overlap warped visual tiles to cover gaps between displaced blocks">Close Gaps: Off</button>
   `;
   hint.insertAdjacentElement('afterend', box);
-  $('btn-smooth-warp-edges').addEventListener('click', () => {
-    const state = window.__artifexMazeRuntime?.state;
-    const gapSlider = $('gap-slider');
-    if (!state || !gapSlider) return;
-    const active = !state.closeTileGaps;
-    state.closeTileGaps = active;
-    if (active) {
-      state.previousTileGap = Number(gapSlider.value || state.gap || 0.98);
-      gapSlider.value = '1';
-    } else {
-      gapSlider.value = String(state.previousTileGap || 0.98);
-    }
+  const button = $('btn-smooth-warp-edges');
+  const applyCoverage = () => {
+    const mazeState = window.__artifexMazeRuntime?.state;
+    if (!mazeState?.closeTileGaps) return;
+    const warp = Number($('warp-slider')?.value || mazeState.warp || 0);
+    const coverage = Math.min(1.46, 1.04 + warp * 0.0042);
+    gapSlider.value = coverage.toFixed(2);
     gapSlider.dispatchEvent(new Event('input', { bubbles: true }));
-    const button = $('btn-smooth-warp-edges');
+    if ($('gap-val')) $('gap-val').textContent = `${coverage.toFixed(2)} auto`;
+  };
+  button.addEventListener('click', () => {
+    const mazeState = window.__artifexMazeRuntime?.state;
+    if (!mazeState) return;
+    const active = !mazeState.closeTileGaps;
+    mazeState.closeTileGaps = active;
+    if (active) {
+      mazeState.previousTileGap = Number(gapSlider.value || mazeState.gap || 0.98);
+      gapSlider.disabled = true;
+      applyCoverage();
+    } else {
+      gapSlider.disabled = false;
+      gapSlider.value = String(mazeState.previousTileGap || 0.98);
+      gapSlider.dispatchEvent(new Event('input', { bubbles: true }));
+      if ($('gap-val')) $('gap-val').textContent = Number(gapSlider.value).toFixed(2);
+    }
     button.textContent = `Close Gaps: ${active ? 'On' : 'Off'}`;
     button.classList.toggle('is-active', active);
     button.setAttribute('aria-pressed', String(active));
     window.__artifexMazeRuntimeControls?.repaintAll?.();
   });
+  $('warp-slider')?.addEventListener('input', () => {
+    applyCoverage();
+    window.__artifexMazeRuntimeControls?.repaintAll?.();
+  }, true);
 }
 
 function injectUiPolishStyles() {
@@ -132,7 +149,7 @@ function injectUiPolishStyles() {
     .build-quick-actions{gap:13px!important;margin-top:12px!important;margin-bottom:2px!important;}.build-quick-actions + #btn-clear-all{margin-top:13px!important;margin-right:8px!important;}#btn-load-reference{margin-top:13px!important;}
     #btn-random,#btn-start-blank,#btn-clear-all,#btn-load-reference,#dropzone{font-size:.7rem!important;line-height:1.15!important;padding-left:6px!important;padding-right:6px!important;min-height:42px!important;}#btn-clear-all,#btn-load-reference{white-space:nowrap;}
     .stretch-inline-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;}.stretch-inline-row .range-row{min-width:0;padding:10px 10px;}.stretch-inline-row .range-row span{font-size:.75rem;}.stretch-inline-row input[type='range']{width:100%;}.display-size-row{border-color:rgba(158,230,164,.28)!important;background:rgba(7,31,16,.48)!important;}[data-panel-content='logic'] #difficulty-status-box + .button-grid{margin:8px 0 12px;}
-    .warp-edge-cleanup{display:grid;gap:9px;margin:11px 0 15px;padding:11px;border:1px solid rgba(158,230,164,.18);border-radius:14px;background:rgba(0,0,0,.16);}.warp-edge-copy strong{display:block;color:#eadfc6;font-size:.78rem;}.warp-edge-copy small{display:block;color:#a9b59e;margin-top:3px;line-height:1.35;}#btn-smooth-warp-edges{min-height:34px!important;font-size:.68rem!important;}#btn-smooth-warp-edges.is-active{border-color:rgba(158,230,164,.52);background:rgba(50,113,64,.68);color:#dff8d8;box-shadow:0 0 15px rgba(158,230,164,.11);}
+    .warp-edge-cleanup{display:grid;gap:9px;margin:11px 0 15px;padding:11px;border:1px solid rgba(158,230,164,.18);border-radius:14px;background:rgba(0,0,0,.16);}.warp-edge-copy strong{display:block;color:#eadfc6;font-size:.78rem;}.warp-edge-copy small{display:block;color:#a9b59e;margin-top:3px;line-height:1.35;}#btn-smooth-warp-edges{min-height:34px!important;font-size:.68rem!important;}#btn-smooth-warp-edges.is-active{border-color:rgba(158,230,164,.52);background:rgba(50,113,64,.68);color:#dff8d8;box-shadow:0 0 15px rgba(158,230,164,.11);}#gap-slider:disabled{opacity:.58;}
     @media(max-width:520px){.stretch-inline-row{grid-template-columns:1fr;}}
   `;
   document.head.appendChild(style);

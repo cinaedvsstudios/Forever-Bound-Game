@@ -1,5 +1,5 @@
-import { MODULE_VERSION, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.7';
-import { getBlockType } from './block-types.js?v=1.2.7';
+import { MODULE_VERSION, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.8';
+import { getBlockType } from './block-types.js?v=1.2.8';
 
 export function createDefaultBlock(type = 'scene', patch = {}) {
   const blockType = getBlockType(type);
