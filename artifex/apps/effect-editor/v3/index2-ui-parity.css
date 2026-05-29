@@ -1,7 +1,11 @@
 .topbar {
   display: grid;
-  grid-template-columns: minmax(280px, auto) 1fr auto;
+  grid-template-columns: minmax(280px, 1fr) auto minmax(420px, 1fr);
   gap: 18px;
+}
+
+.brand {
+  justify-self: start;
 }
 
 .index2-action-strip {
@@ -33,7 +37,7 @@
   justify-self: end;
 }
 
-.index2-card-jump {
+.index2-card-collapse {
   min-height: 31px;
   min-width: 31px;
   width: 31px;
@@ -47,9 +51,26 @@
   box-shadow: 0 0 12px rgba(0, 174, 234, .14);
 }
 
-.index2-card-jump:hover {
+.index2-card-collapse:hover {
   border-color: var(--module-accent-strong);
   box-shadow: 0 0 17px rgba(0, 174, 234, .36);
+}
+
+.card.index2-card-collapsed > :not(header) {
+  display: none !important;
+}
+
+.card.index2-card-collapsed {
+  padding-bottom: 9px;
+}
+
+.index2-jump-highlight {
+  animation: index2-jump-flash .7s ease-out;
+}
+
+@keyframes index2-jump-flash {
+  0% { box-shadow: 0 0 0 2px rgba(0,174,234,.8), 0 0 32px rgba(0,174,234,.38); }
+  100% { box-shadow: var(--shadow-soft); }
 }
 
 .card.index2-effect-specific-card {
@@ -88,8 +109,10 @@
 
 .index2-workspace-controls button {
   min-height: 36px;
-  padding: 7px 13px;
+  min-width: 38px;
+  padding: 7px 12px;
   white-space: nowrap;
+  font-size: 18px;
 }
 
 .index2-playback-controls {
@@ -121,6 +144,92 @@
   background: rgba(5, 4, 5, .55);
   color: var(--module-accent-strong);
   font-size: 12px;
+}
+
+.index2-bottom-grid {
+  grid-template-columns: minmax(360px, 1.45fr) minmax(150px, .45fr) minmax(310px, 1fr) !important;
+}
+
+.index2-layer-panel-body {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.index2-layer-toolbar {
+  display: grid !important;
+  grid-template-columns: repeat(2, 38px);
+  gap: 8px !important;
+  margin: 0 !important;
+  align-content: start;
+}
+
+.index2-layer-toolbar button {
+  min-width: 38px !important;
+  width: 38px;
+  min-height: 38px !important;
+  padding: 0 !important;
+}
+
+.layer-list {
+  margin-top: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: start;
+}
+
+.layer-item {
+  position: relative;
+  min-width: 0 !important;
+  padding: 10px 38px 10px 40px !important;
+}
+
+.layer-sequence-number {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  width: 21px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #d8f7ff;
+  background: rgba(0,174,234,.17);
+  border: 1px solid rgba(0,174,234,.42);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.layer-delete-inline {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px !important;
+  min-height: 24px !important;
+  padding: 0 !important;
+  border-radius: 8px;
+  color: #ffd7d7;
+}
+
+.index2-display-grid button[data-index2-action='pause'],
+.index2-display-grid button[data-index2-action='snapshot'],
+.index2-display-grid button[data-index2-action='grid'],
+.index2-display-grid button[data-index2-action='helpers'],
+.index2-zoom-strip button[data-index2-action='zoom-out'],
+.index2-zoom-strip button[data-index2-action='zoom-in'],
+.index2-zoom-strip #index2-zoom-readout {
+  display: none !important;
+}
+
+.index2-display-grid {
+  grid-template-columns: repeat(2, minmax(42px, 54px)) !important;
+}
+
+.index2-zoom-strip {
+  grid-template-columns: auto !important;
 }
 
 .side-resizer,
