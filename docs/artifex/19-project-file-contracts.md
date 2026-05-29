@@ -2,11 +2,11 @@
 
 ## Purpose
 
-This document defines how Artifex apps should exchange project data without swallowing each other or inventing different file shapes per module.
+This document defines how Artifex apps exchange and save project data without swallowing each other or inventing different file shapes per module.
 
-It was created after reviewing the current Artifex module docs and live app structures for Project Editor, Creation Guide, Scene Editor, Archetype Object Creator, Effect Editor, and the module boilerplate.
+Artifex now contains several connected authoring modules: Creation Guide, Project Manager, Scene Editor, Quest Builder, Puzzle Creator, Effect Editor, Archetype Object Creator, Asset Browser, Playtest and Build Game. They must all operate on one coherent project folder rather than producing unrelated local JSON files.
 
-The goal is to make the Project Manager / Project Editor work with the rest of Artifex through stable files, stable IDs, clear ownership rules, and app modules that stay easy to edit.
+The goal is stable file ownership, stable IDs, clear project paths, safe direct saving, recoverable local drafts and a clean build/audit path.
 
 ## Required Companion Docs
 
@@ -15,31 +15,221 @@ Every app should inspect this contract together with:
 ```text
 docs/artifex/18-color-and-display-rules.md
 artifex/shared/todo-guide/README.md
+artifex/shared/todo-guide/all-apps-todos.json
 ```
 
-The project file contract defines data ownership, file layout, IDs, module boundaries, app splitting, and patch integration rules.
+The project file contract defines data ownership, file layout, IDs, module boundaries, app splitting, direct project-folder saving and draft/backup rules.
 
-The colour/display rules define the shared Artifex visual language, module accents, typography, control sizing, tooltip rules, header layout, and fallback app logo rule.
+The colour/display rules define the shared Artifex visual language, module accents, typography, control sizing, tooltip rules, header layout and fallback app logo rule.
 
-The to-do guide defines how Project Manager, all-app, and specific-app tasks should be separated.
+The to-do guide defines how Project Manager, all-app and specific-app tasks should be separated.
 
-Do not update an app against this contract while ignoring the style doc. A module can be structurally correct but still non-compliant if its shell, menus, labels, logo, version pill, or controls ignore the shared Artifex display rules.
+## Core Rules
 
-## Core Rule
+1. Each Artifex app owns the files for its own job.
+2. Unique scene/screen/quest/effect/object content lives in the smallest file that needs it.
+3. Reusable project content belongs in project-level indexes and libraries.
+4. Cross-project reusable templates and tooling assets belong in Artifex global/shared folders.
+5. The selected project folder on the user's computer is the normal editable source of truth once folder access has been granted.
+6. localStorage is an autosave/recovery draft layer, not the permanent source of truth.
+7. IndexedDB may store browser file/directory handles and connection metadata; those handles are local browser state and must never be written into project files.
+8. Build Game validates, resolves and packages modular files into runtime-ready output. It does not replace authoring modules.
 
-Each Artifex app owns the files for its own job.
+The Project Manager / Project Editor assembles and validates an existing project package. Creation Guide owns initial New Project creation. Project Manager may open, inspect, link, route, validate and save project structure files; it must not become the full authoring tool for scenes, quests, object archetypes, FX archetypes or raw assets.
 
-The Project Manager / Project Editor assembles and validates an existing project package. It must not create a brand-new project from nothing. New project creation belongs to the Creation Guide.
+## Connected Project Folder and Direct Save Contract
 
-The Project Manager can open, inspect, link, route, validate, and export project structure files. It should not become the full authoring tool for scenes, quests, object archetypes, FX archetypes, or raw assets.
+### Normal Production Workflow
+
+Once implemented, the normal Artifex workflow is:
+
+```text
+Create or select project
+→ Connect the real project folder on the computer
+→ Author content in the appropriate Artifex app
+→ Autosave recovery drafts locally while editing
+→ Press Save / Save All when ready
+→ Write changed owned files directly into the connected project folder
+→ Run audit/build checks
+→ Commit/push approved project-folder changes to GitHub separately
+```
+
+Routine work should not require exporting a zip and manually replacing project files. Zip/package export remains useful for full backup, transfer, archival snapshots and browsers where direct folder access is unavailable.
+
+### Required Browser Mechanism
+
+The project-folder connection should use the browser File System Access API.
+
+Expected flow:
+
+```text
+Connect Project Folder button
+→ window.showDirectoryPicker({ mode: "readwrite" })
+→ user selects the project's root folder and grants access
+→ Artifex stores the FileSystemDirectoryHandle in IndexedDB
+→ Artifex reads/writes files inside that selected folder using project-relative paths
+```
+
+Do not attempt to store the handle in `project.json` or in localStorage JSON. The handle is browser/device-specific and belongs only in IndexedDB.
+
+### Relative Paths Only
+
+Project files must store relative project paths/URLs, not a private absolute computer path.
+
+Good:
+
+```text
+scenes/scene_forest_path.json
+archetypes/objects/archobj_mel.json
+assets/asset-index.json
+build/runtime-project.json
+```
+
+Do not depend on:
+
+```text
+E:/Forever Bound/Forever-Bound-Game/...
+C:/Users/.../Forever-Bound-Game/...
+```
+
+A connected folder handle supplies the root; all Artifex project data resolves relative to that root. This means the same project files work on another computer, backup drive or GitHub checkout.
+
+### Permission and Re-authorisation
+
+A saved directory handle may exist in IndexedDB even if read/write permission is not currently granted.
+
+On project load, the shared project-folder service should:
+
+1. retrieve the saved directory handle from IndexedDB;
+2. query current permission for `readwrite` access;
+3. display the folder as connected, permission needed or unavailable;
+4. require a user click on **Re-authorise Project Folder** before requesting permission again;
+5. fall back to import/export if the folder cannot be re-authorised.
+
+No app should silently claim that it saved to disk unless the actual file write succeeded.
+
+### What Apps May Write
+
+An app may directly write only files it owns, plus registration/index changes explicitly required by creating its own records.
+
+Examples:
+
+```text
+Scene Editor writes scene/screen files and required scene/screen index entries.
+Effect Editor writes FX editor projects and FX archetype files/index entries.
+Archetype Object Creator writes object archetype files/index entries.
+Quest Builder writes quest/sidequest/flag/condition files and indexes.
+Project Manager writes project structure, Flatplan, registry and link files.
+Creation Guide writes initial project setup files and milestone/assignment data.
+Build Game writes build output and generated audit/health reports.
+```
+
+An app must not casually overwrite source code, unrelated documentation or another module's authored internals.
+
+## Local Draft, Save and Navigation Guard Contract
+
+### Recovery Drafts
+
+Each authoring app may save a working draft automatically into localStorage while the user edits. This protects work before a deliberate project-folder save.
+
+A recovery record should include at least:
+
+```json
+{
+  "projectId": "project_forever_bound",
+  "owningModule": "scene-editor",
+  "fileRef": "scenes/scene_forest_path.json",
+  "savedFileHashAtOpen": "...",
+  "draftHash": "...",
+  "draftUpdatedAt": "...",
+  "lastWrittenToProjectFolderAt": null,
+  "dirty": true
+}
+```
+
+Use content hashes for reliable equality checks and timestamps for user-readable information.
+
+### Save Statuses
+
+All apps working on project data should expose a clear save status:
+
+```text
+Saved to Project Folder      Local draft and connected file match.
+Local Draft Only              Changes exist only in localStorage and are not in project files.
+Project File Changed          The connected file is newer/different from the draft baseline.
+Conflict                      Both local draft and connected project file changed since last sync.
+Permission Required           Folder/file handle exists but must be re-authorised before saving.
+No Folder Connected           Only local draft/import/export is currently available.
+Save Failed                   A requested write did not complete successfully.
+```
+
+### Leaving an App With Unsaved Local-Only Changes
+
+If the user attempts to leave one Artifex app for another module while project changes are only in localStorage, the app must stop navigation and show a save prompt.
+
+Required message meaning:
+
+```text
+This work is currently saved only in local storage and has not been written to your project folder. Save it to the project folder before leaving?
+```
+
+Required choices:
+
+```text
+Save and Continue       Write owned changed files to the connected project folder, then navigate if successful.
+Stay Here               Cancel navigation and continue editing.
+Continue Without Saving Leave only after explicit confirmation that the changes remain local-draft-only and may be lost/overwritten.
+Export Backup           Available fallback when no writable folder is connected or permission cannot be granted.
+```
+
+If the folder is not connected or permission is unavailable, the prompt must say that the changes exist only in localStorage and offer connection/re-authorisation or export-backup actions before leaving.
+
+The same protection should apply to page reload/close where browser support permits, using a standard unsaved-changes warning in addition to the in-app module navigation prompt.
+
+### Save Behaviour
+
+Autosave to localStorage may happen frequently and quietly.
+
+Writing to real project files must happen only through a deliberate user action such as:
+
+```text
+Save
+Save All
+Save and Continue
+Build Project
+Create New Item / Confirm Create, where creation explicitly writes the new registered file
+```
+
+Do not continuously overwrite real HDD project files on every field adjustment.
+
+## Folder Connection Service Requirement
+
+Direct folder access is a shared platform capability and must not be separately improvised inside every app.
+
+Create a shared service/module responsible for:
+
+```text
+connecting a project folder
+storing/retrieving directory handles in IndexedDB
+querying/requesting permissions after user action
+reading/writing files by project-relative path
+creating permitted project subfolders/files
+computing hashes/modified metadata
+maintaining save status
+detecting unsaved local drafts
+showing navigation-save guards
+providing fallback export/import when necessary
+```
+
+All apps should use this shared service so permissions, save prompts and conflict handling behave the same everywhere.
 
 ## Module Code Split Contract
 
 Every Artifex app must be split into editable modules. Do not keep growing one huge `index.html`, one huge `app.js`, or one huge patch file until it becomes risky to edit.
 
-The active entry file should be thin. It should load the shell, import modules, create state/controllers, wire the main app, and start the app. It should not contain the full UI, data model, renderer, library browser, health checker, import/export logic, and patch fixes all in one place.
+The active entry file should be thin. It should load the shell, import modules, create state/controllers, wire the main app and start the app. It should not contain the full UI, data model, renderer, library browser, health checker, import/export logic and patch fixes all in one place.
 
-Recommended module split for each app:
+Recommended module split:
 
 ```text
 index.html                         thin shell only
@@ -47,249 +237,134 @@ v*/src/<app>-app.js                main orchestrator / bootstrap
 v*/src/<app>-state.js              state model and mutations
 v*/src/<app>-ui.js                 main UI rendering and events
 v*/src/<app>-renderer.js           canvas/SVG/WebGL/rendering layer, if needed
-v*/src/<app>-io.js                 import/export/save/load helpers
+v*/src/<app>-io.js                 project-folder read/write and fallback import/export
 v*/src/<app>-library.js            library/index browsing helpers, if needed
 v*/src/<app>-health.js             app-local checks, if not yet shared
 v*/src/data/*.js                   static data, catalog definitions, defaults
 v*/src/shared/*.js                 small shared helpers used only inside the app
 ```
 
-Apps may use different names when the meaning is clearer, but the split must remain obvious.
+Shared saving and connection behaviour should live outside individual apps, for example:
+
+```text
+artifex/shared/project-folder/
+  project-folder-client.js
+  file-handle-store.js
+  file-write-service.js
+  draft-status-service.js
+  navigation-save-guard.js
+```
 
 ### File Size Rule
 
-As a practical target, keep source files small enough that an AI assistant or human can edit one responsibility without reading an entire app.
-
-Guideline:
-
 - Under 300 lines: usually fine.
 - 300–500 lines: acceptable if the file has one clear responsibility.
-- Over 500 lines: should be reviewed for splitting before more features are added.
-- Over 800 lines: should be treated as a refactor risk unless there is a documented reason.
+- Over 500 lines: review for splitting before adding features.
+- Over 800 lines: treat as a refactor risk unless a reason is documented.
 
-This is not about arbitrary line counts. The point is that one edit should not require touching unrelated systems.
+### Patch Integration Contract
 
-### Split Before Adding More
+Temporary patches are allowed, but they must stay temporary. No Artifex app should have more than two active patch layers running over the top of normal code at once.
 
-If a file already mixes unrelated responsibilities, split it before adding a new feature. For example, do not add Asset Browser, health checks, module navigation, and setup wizard logic into the same UI file if they can be separate modules.
+Every patch must be integrated into the correct module, converted into a normal helper, removed when unnecessary or archived as non-live historical reference.
 
-Good pattern:
+When inspecting an app, check loaded patches, ownership destination, cache/version clarity and whether inactive old patch files remain in the repo.
 
-```text
-project-ui.js                 existing core UI
-project-integration-ui.js     asset browser, setup wizard, module integration shell
-project-health.js             health checks / diagnostics
-```
-
-Bad pattern:
-
-```text
-project-ui.js                 every screen, every modal, every wizard, every patch, every health check
-```
-
-## Patch Integration Contract
-
-Temporary patches are allowed, but they must stay temporary.
-
-A patch is any file, script, or layer that sits over the top of the normal app code to correct behaviour without being integrated into the owning module. Examples include appearance patches, hotfix scripts, override files, extra imported patch layers, monkeypatch scripts, or version-specific fix files that replace behaviour after the app loads.
-
-### Maximum Active Patch Layers
-
-No Artifex app should have more than two active patch layers running over the top of its normal code at once.
-
-If an app already has two active patch layers, the next work item must be integration cleanup, not another patch.
-
-### Patch Lifecycle
-
-Every patch must have one of these outcomes:
-
-1. Integrated into the correct module file.
-2. Converted into a normal shared helper or app module.
-3. Removed because the base app no longer needs it.
-4. Archived as historical reference but not loaded by the live app.
-
-Do not build permanent patch stacks. Do not add patch over patch over patch.
-
-### Patch Audit Requirement
-
-When inspecting any app, check:
-
-- how many patch/override files are currently loaded by `index.html` or the main entry script;
-- whether those patches are still needed;
-- which owning module should absorb each patch;
-- whether cache keys make it clear which version is live;
-- whether old patch files remain in the repo but are not loaded.
-
-This is an ongoing all-apps cleanup task and should be tracked through `artifex/shared/todo-guide/README.md` and `artifex/shared/todo-guide/all-apps-todos.json`.
-
-## Current App Audit
-
-### Project Editor / Project Manager
-
-Current status: mostly aligned.
-
-The Project Editor is defined as the higher-level game-structure editor. It contains the Manifest, Flatplan, Flatplan Catalog, Stitcher/connection logic, routes, start screen assignment, map projection if needed, and structure-level Build Prep.
-
-Confirmed ownership:
-
-- `project.json`
-- `logic.json`
-- `layout.json`
-- `registry.json`
-- `library-links.json`
-- Project-level route and structure validation
-
-Needed changes:
-
-- File menu must not offer ordinary New Project creation.
-- File menu may offer Open Project Package, Import Project Files, Save Current Project, Export Project Package, Getting Started / Missing Setup Wizard, and Reset Local Editor Cache.
-- Build Prep diagnostics should move to a shared health guide module so Creation Guide can display the same checks.
-- Asset Browser should be a shared browser window, not six separate library windows.
-- Continue splitting integration, health, browser, and wizard logic into separate modules instead of growing one UI file.
+## Current Module Ownership
 
 ### Creation Guide
 
-Current status: aligned, but needs shared health/check integration.
+Owns initial project creation, starter project file structure, assignments, milestones, setup health and starter input-map data.
 
-The Creation Guide is already described as the wizard, assignment planner, milestone tracker, checklist surface, progress dashboard, and health-check module. It helps a creator start a new Artifex Adventure project from the starter template and tracks what still needs changing, confirming, building, testing, reviewing, blocking, or fixing.
+Required direct-save behaviour:
 
-Confirmed ownership:
+- Create New Project should create/register the initial split project files in the connected chosen folder when writable access is available.
+- If no folder is connected, the new project is local-draft-only until the user connects a folder or exports a backup.
+- It must use the same unsaved-draft navigation guard as other modules.
 
-- New project setup
-- Starter project creation
-- Assignment/milestone/checklist tracking
-- Setup health summaries
-- Guidance on which module owns the next piece of work
+### Project Manager / Project Editor
 
-Needed changes:
+Owns project structure files, Flatplan, routes, graph layout, registry, library links, project-level structural validation and connection status display.
 
-- Creation Guide should own Create New Project.
-- Creation Guide should import the shared health guide checks.
-- Creation Guide should not own Flatplan graph editing or route logic.
-- Creation Guide may show Project Manager health results, but should frame them as setup/milestone progress.
-- Creation Guide should generate starter `input-map.json` for gameplay action/button mapping.
+Required direct-save behaviour:
+
+- It should provide Connect Project Folder / Re-authorise Project Folder status and access to Project Audit.
+- It should load real project indexes from the connected root rather than placeholder/demo data once a project is active.
+- It writes its own structure files and approved registration/link updates through the shared folder service.
+- It must not author scene interiors, quest internals, object archetype definitions or FX editor project internals.
 
 ### Scene Editor
 
-Current status: conceptually aligned; file output rules need standardisation.
+Owns visual scenes and screens, placement/layout data, layers, object instances, FX instances, local transitions and scene-local asset references.
 
-The Scene Editor edits visual scenes and screens. It creates playable scenes, title screens, menu screens, UI layouts, ending screens, backgrounds/foregrounds, visual layers, player start position, scene objects, buttons, markers, interaction zones, layout, coordinates, and basic asset placement.
+Required direct-save behaviour:
 
-Confirmed ownership:
-
-- Scene files
-- Screen files
-- Visual layout data
-- Layer/object placement data
-- Scene-local asset references
-
-Needed changes:
-
-- Exported scenes/screens must use stable IDs and index files.
-- Scene Editor should output scene/screen records into the project package instead of only acting as a loose local JSON editor.
-- Project Manager should consume Scene Editor outputs through `scenes/scene-index.json` and `screens/screen-index.json`.
-- Scene Editor should place Object Instances that reference Object Archetypes, not just loose image paths, where possible.
+- New Scene creates a new scene file and registers it in `scenes/scene-index.json`.
+- New Screen creates a new screen file and registers it in `screens/screen-index.json`.
+- Saved changes write directly to its project files when permission is granted.
+- Before navigating away with local-draft-only edits, it must prompt Save and Continue / Stay Here / Continue Without Saving / Export Backup.
 
 ### Archetype Object Creator
 
-Current status: strongly aligned.
+Owns reusable non-FX Object Archetypes, categories, linked sprite assets, portrait assets, animation states, collision/interaction defaults, behaviour flags and placement defaults.
 
-The Archetype Object Creator creates reusable non-FX Object Archetypes. It is separate from the Asset Library and separate from the FX Editor.
+Required output:
 
-Confirmed ownership:
+```text
+archetypes/object-index.json
+archetypes/objects/archobj_<slug>.json
+```
 
-- Object Archetypes
-- Object categories and role metadata
-- Linked gameplay sprite asset IDs
-- Linked dialogue portrait asset IDs
-- Collision defaults
-- Interaction defaults
-- Runtime behaviour flags
-- Placement defaults
-
-Needed changes:
-
-- Its exported target should become `archetypes/object-index.json` plus individual files under `archetypes/objects/`.
-- Use the canonical `archobj_` ID prefix.
-- Do not write directly into Scene Editor data; Scene Editor should reference object archetype IDs when placing instances.
+It creates and saves those records directly into the connected project folder when approved; Scene Editor places object instances referencing those IDs.
 
 ### Effect Editor
 
-Current status: partially aligned; schema helper is still planned.
+Owns FX editor projects, reusable FX Archetypes, effect presets, renderer-specific effect metadata and related export/plate tooling.
 
-The Effect Editor split docs identify `io/artifex-fx-schema.js` as the future helper for Export Editor Project vs Export Artifex FX Asset.
+Required output:
 
-Confirmed ownership:
+```text
+archetypes/effect-index.json
+archetypes/effects/archeffect_<slug>.json
+```
 
-- FX editor projects
-- FX archetype exports
-- Effect presets and rendering helpers
-- FX-specific metadata
-
-Needed changes:
-
-- Use the canonical `archeffect_` ID prefix.
-- Export reusable FX archetypes into `archetypes/effect-index.json` plus individual files under `archetypes/effects/`.
-- Keep editor project files separate from final reusable FX archetype files.
-- Scene Editor and Project Manager should reference FX archetypes by ID, not copy full FX editor state into scene/project graph files.
-- Existing FX patches must be audited and integrated so no more than two patch layers are active.
-
-### Module Boilerplate
-
-Current status: aligned and useful as the future module standard.
-
-The boilerplate already defines a stable structure: `index.html`, `v1/styles.css`, `v1/src/module-app.js`, `module-state.js`, `module-ui.js`, `module-renderer.js`, `module-io.js`, `module-library.js`, README, and extension notes.
-
-Confirmed ownership:
-
-- Future module shell rules
-- Module config constants
-- Local browser save/import/export pattern
-
-Needed changes:
-
-- New modules should include a contract section in their README declaring what files they own, read, and reference.
-- New modules should not hardcode project-specific data into the app shell.
-- New modules should not mix runtime data with Asset Library or Scene Editor data.
-- New modules should follow the module split contract from the start.
+It writes reusable effects into the connected project folder when saved; Scene Editor and Project Manager reference FX archetype IDs rather than copying complete FX editor state.
 
 ### Quest Builder
 
-Current status: conceptually documented but no active app found in the current app scan.
+Owns quests, side quests, branches, flags, conditions, rewards, unlocks and progression logic.
 
-The module architecture and Project Editor docs define Quest Builder as the owner of quests, side quests, branches, flags, conditions, rewards, unlocks, and progression logic.
+Required output:
 
-Confirmed ownership once implemented:
-
-- Quest library
-- Side quest library
-- Branch definitions
-- Flags and conditions
-- Rewards/unlocks
-- Progression logic
-
-Needed changes:
-
-- Create a real Quest Builder app or module folder when ready.
-- Export `quests/quest-index.json` and `sidequests/sidequest-index.json`.
-- Project Manager should reference quest/side quest IDs, not author quest internals directly.
+```text
+quests/quest-index.json
+quests/quest_<slug>.json
+sidequests/sidequest-index.json
+sidequests/sidequest_<slug>.json
+```
 
 ### Puzzle Creator
 
-Current status: planned from project conversations, but no active app contract found in the current scan.
+Owns puzzle definitions and puzzle index output.
 
-Needed changes:
+Required output:
 
-- Define Puzzle Creator as a real module.
-- Export `puzzles/puzzle-index.json` and individual puzzle files under `puzzles/`.
-- Use canonical `puzzle_` IDs.
-- Project Manager should reference puzzles as route gates, node requirements, scene overlays, or side activity links.
+```text
+puzzles/puzzle-index.json
+puzzles/puzzle_<slug>.json
+```
+
+### Asset Library / Asset Browser
+
+Owns raw asset metadata and asset groups, not gameplay behaviour. Asset files and registered metadata live in the project folder; browser views should show project assets and, where allowed, global Artifex assets separately.
+
+### Build Game
+
+Owns final validation, audit output and runtime/package assembly. It reads the connected project files and writes build output only after validation. It does not author module content.
 
 ## Project Package Folder Structure
 
 Use separate files. Do not collapse the whole project into one large JSON blob.
-
-Recommended package structure:
 
 ```text
 projects/<project-id>/
@@ -299,7 +374,6 @@ projects/<project-id>/
   registry.json
   library-links.json
   input-map.json
-  health-report.json
 
   scenes/
     scene-index.json
@@ -337,17 +411,24 @@ projects/<project-id>/
   health/
     latest-health-report.json
 
+  build/
+    runtime-project.json
+    build-manifest.json
+
+  backups/
+    backup-manifest.json
+
   todos/
     project-manager-todos.json
 ```
+
+When the user connects a local project folder, that selected folder is treated as the root represented by `projects/<project-id>/` in this contract. Project files continue to store only paths relative to that root.
 
 ## Required Top-Level Files
 
 ### `project.json`
 
 Owned by Creation Guide at creation time, then editable/inspectable by Project Manager.
-
-Required fields:
 
 ```json
 {
@@ -359,51 +440,44 @@ Required fields:
   "createdBy": "creation-guide",
   "startScreenId": "screen_title_main",
   "enabledModules": [],
-  "fileRefs": {}
+  "fileRefs": {
+    "sceneIndex": "scenes/scene-index.json",
+    "screenIndex": "screens/screen-index.json",
+    "objectArchetypeIndex": "archetypes/object-index.json",
+    "effectArchetypeIndex": "archetypes/effect-index.json",
+    "assetIndex": "assets/asset-index.json",
+    "healthReport": "health/latest-health-report.json"
+  }
 }
 ```
 
+Do not store the user's absolute HDD path or FileSystemDirectoryHandle in this file.
+
 ### `input-map.json`
 
-Owned by Creation Guide at project creation time, then inspectable/validatable by Project Manager.
-
-Contains gameplay action/button mapping. Project Manager should validate required actions and references, but detailed remapping can later belong to a Project Settings or Controls Editor.
+Owned by Creation Guide at project creation time, then inspectable/validatable by Project Manager. Contains gameplay action/button mapping.
 
 ### `logic.json`
 
-Owned by Project Manager.
-
-Contains graph nodes, routes, route types, locks, conditions, linked scene/screen/quest/puzzle IDs, and project-level structure logic.
+Owned by Project Manager. Contains graph nodes, routes, route types, locks, conditions, linked scene/screen/quest/puzzle IDs and project-level structure logic.
 
 ### `layout.json`
 
-Owned by Project Manager.
-
-Contains editor-only Flatplan layout state: node positions, camera pan/zoom, collapsed states, route visual styling, and editor annotations.
-
-Runtime should not require this file to play the game unless a future map projection intentionally uses it.
+Owned by Project Manager. Contains editor-only Flatplan layout state: node positions, camera pan/zoom, collapsed states, route visual styling and editor annotations.
 
 ### `registry.json`
 
-Owned by Project Manager, with references from other modules.
-
-Contains the active project registry of modules, available libraries, and loaded indexes.
+Owned by Project Manager, with references from other modules. Contains the active project registry of modules, available libraries and loaded indexes.
 
 ### `library-links.json`
 
-Owned by Project Manager.
+Owned by Project Manager. Contains normalized links from project graph nodes/routes to scenes, screens, quests, side quests, puzzles, object archetypes, effect archetypes and assets.
 
-Contains normalized links from project graph nodes/routes to scenes, screens, quests, side quests, puzzles, object archetypes, effect archetypes, and assets.
+### `health/latest-health-report.json`
 
-### `health-report.json`
-
-Generated by the shared Health Guide.
-
-May be displayed by Creation Guide, Project Manager Build Prep, or Build Game validation.
+Generated by the shared Health Guide. It may be displayed by Creation Guide, Project Manager Build Prep or Build Game validation.
 
 ## Canonical ID Prefixes
-
-Use these prefixes across all modules:
 
 ```text
 project_       Project package ID
@@ -447,33 +521,11 @@ Archetype Object Creator
 
 Unavailable modules may be disabled, but the order and labels should remain stable.
 
-## Library Menu Names
-
-Project Manager Libraries menu must use these labels:
-
-```text
-Quest Library
-Side Quest Library
-Scenes/Screens Library
-Puzzle Library
-Archetype Object Library
-Archetype Effect Library
-Asset Browser
-```
-
 ## Asset Browser Contract
 
-The Asset Browser should be one shared browser window, not separate duplicated browser UIs for every library.
+Project Manager should expose one shared browser window, not separate duplicated browser UIs for every library.
 
-Required layout:
-
-- left vertical icon rail for library type
-- shared search field
-- common filters
-- right-side results area
-- optional preview/details panel
-
-Required browser modes:
+Required modes:
 
 ```text
 quests
@@ -485,90 +537,87 @@ archetype-effects
 assets
 ```
 
-Every result should expose:
+A result should expose stable ID, type, name, source module, project-relative file path, tags and status.
 
-```json
-{
-  "id": "scene_forest_path",
-  "type": "scene",
-  "name": "Forest Path",
-  "sourceModule": "scene-editor",
-  "file": "scenes/scene_forest_path.json",
-  "tags": [],
-  "status": "ready"
-}
-```
+## Health, Audit and Backup Contract
 
-## Health Guide Contract
-
-Create shared health-check code under:
+Create/import shared checking code under:
 
 ```text
 artifex/shared/health-guide/
 ```
 
-Shared health checks should be importable by:
+Shared checks should be available to Creation Guide, Project Manager / Build Prep and Build Game.
 
-- Creation Guide
-- Project Manager / Build Prep
-- Build Game
+The audit must eventually check:
 
-Creation Guide should display setup/milestone health.
+```text
+connected-folder permission and write status
+local drafts that have not been saved to project files
+files changed outside the current draft baseline
+missing registered files
+broken asset/object/effect/quest references
+duplicate IDs
+unregistered files where detectable
+unused assets
+out-of-date backup/build metadata
+```
 
-Project Manager should display structure and Flatplan health.
-
-Build Game should display final package/export health.
+The audit warns and reports. It must not silently resolve file conflicts or overwrite source files.
 
 ## Module Ownership Matrix
 
-| Module | Owns | Reads | Must not own |
+| Module | Owns / writes | Reads | Must not own |
 |---|---|---|---|
-| Creation Guide | new project creation, assignments, milestones, setup health, starter input map | shared health reports, project package summary | Flatplan graph internals |
-| Project Manager | project manifest inspection, Flatplan, routes, library links, structure validation | all module index files, input-map.json | scene art, quest internals, object/FX archetype authoring |
-| Scene Editor | scenes, screens, visual layout, object/effect instances | asset index, object archetype index, effect archetype index | Project graph/routes |
+| Creation Guide | new project creation, assignments, milestones, setup health, starter input map | shared health reports, project summary | Flatplan graph internals |
+| Project Manager | project manifest inspection, Flatplan, routes, registry, library links, folder/save status, structure validation | all module index files, input map | scene art, quest internals, object/FX archetype authoring |
+| Scene Editor | scenes, screens, visual layout, object/effect instances | asset index, object/effect archetype indexes | project graph/routes |
 | Quest Builder | quests, side quests, branches, flags, conditions, rewards | scene/screen IDs, puzzle IDs, object IDs | visual scene layout |
 | Puzzle Creator | puzzle definitions and puzzle index | scene IDs, asset IDs, object IDs | project route graph |
 | Archetype Object Creator | reusable non-FX object archetypes | asset IDs | scene instances, FX archetypes |
 | Effect Editor | reusable FX archetypes and FX editor projects | asset IDs | object archetypes, scene placement |
-| Asset Library | raw asset metadata and asset groups | file paths | gameplay behaviour |
-| Build Game | final validation and package/export assembly | all project files | authoring/editing module content |
+| Asset Library | raw asset metadata and asset groups | project file paths | gameplay behaviour |
+| Shared Project Folder Service | directory handle persistence, permission state, reads/writes, draft comparison, navigation save guards | all registered project-relative owned paths | module-authored content decisions |
+| Build Game | validation, audit output and package/build assembly | all project files | authoring module content |
 
 ## Rules For Existing Apps To Adopt
 
-1. Every active app README must include an ownership section: owns, reads, writes/exports, must not own.
-2. Every app that exports data must export stable IDs using the canonical prefixes in this doc.
+1. Every active app README must include an ownership section: owns, reads, writes/exports and must not own.
+2. Every app that exports or saves data must use stable IDs and project-relative file paths.
 3. Every app must keep editor project state separate from reusable library output.
-4. Project Manager must link to module outputs through indexes and IDs.
-5. Project Manager must not duplicate large module-owned records unless generating a build snapshot.
+4. Project Manager must link module outputs through indexes and IDs.
+5. Project Manager must not duplicate large module-owned records except when generating a build snapshot.
 6. Creation Guide owns initial project creation and setup wizard flow.
-7. Project Manager Getting Started / Missing Setup Wizard inspects the current project package and reports missing files/links.
-8. Health checks must move toward the shared `artifex/shared/health-guide/` source.
-9. The exported project must stay split into individual files so AI or a human can edit broken files directly.
-10. Any new app made from module boilerplate must follow this contract before being linked from the hub.
-11. Every Artifex app must also follow `docs/artifex/18-color-and-display-rules.md`, including shared logo/fallback-logo, typography, display, tooltip, and module-accent rules.
-12. Every app must follow the Module Code Split Contract so files remain editable and responsibilities stay separate.
-13. No app should run more than two active patch layers over the top of its normal code.
-14. Existing patches must be integrated into the owning module, converted to normal helpers, removed, or archived as non-live historical reference.
-15. Before adding a new patch, check whether the app already has two patch layers; if yes, do integration cleanup first.
+7. Health checks must move toward shared health-guide code.
+8. The project must stay split into individual files so broken content can be edited directly.
+9. Every app must follow `docs/artifex/18-color-and-display-rules.md` and this contract.
+10. Every app must follow the Module Code Split Contract.
+11. No app should run more than two active patch layers over its normal code.
+12. Connected project-folder read/write saving is the normal target workflow; zip/manual replacement is fallback/backup only.
+13. Every app that authors project data must use the shared folder/save service rather than inventing separate write logic.
+14. Every app must clearly show whether work is saved to project files or exists only in localStorage.
+15. Every app must block module navigation when local-draft-only edits exist and show the required save warning/choices.
+16. Folder handles and permission state belong in IndexedDB/browser state, never in committed project JSON.
+17. Content files must contain project-relative paths, never absolute private HDD paths.
+18. Build Game must audit unsaved local drafts and connected-file conflicts before producing a final build.
 
 ## Current Conformance Summary
 
-Mostly fine:
+Already conceptually aligned:
 
-- Module boundaries in `docs/artifex/02-module-architecture.md` already match the intended split.
-- Creation Guide already owns project setup and production health conceptually.
-- Scene Editor already owns scene/screen visual editing.
-- Archetype Object Creator already correctly distinguishes raw assets, object archetypes, FX archetypes, and scene instances.
-- Module Boilerplate already provides a sensible app structure.
+- Module boundaries in `docs/artifex/02-module-architecture.md` match the intended split.
+- Creation Guide owns project setup and production health conceptually.
+- Scene Editor owns scene/screen visual editing.
+- Archetype Object Creator distinguishes raw assets, object archetypes, FX archetypes and scene instances.
+- The module boilerplate provides a sensible app structure.
 
-Needs updates:
+Required next foundation work:
 
-- Project Manager File menu must remove/disable true New Project creation.
-- Project Manager Libraries menu must use the canonical library labels.
-- Project Manager Asset Browser shell should use this doc's browser modes.
-- Project Manager Build Prep and Creation Guide health should share `artifex/shared/health-guide/`.
-- Effect Editor still needs its Artifex FX schema/export helper completed.
-- Quest Builder and Puzzle Creator need real app contracts when implemented.
-- App READMEs should be updated gradually to include ownership/contract sections.
-- Existing apps should be audited against `docs/artifex/18-color-and-display-rules.md` as well as this contract.
-- Existing apps should be audited for large files, monoliths, stale patch layers, and old patch files that remain loaded.
+- Implement a shared project-folder connection/save service using File System Access API plus IndexedDB handle persistence.
+- Add Connect / Re-authorise Project Folder controls and visible save-state indicators.
+- Add the unsaved local-draft navigation guard to every authoring app.
+- Make all apps open and save the active project's real registered files rather than only demo/localStorage state.
+- Update direct authoring actions so they write their owned file plus the correct index entry.
+- Add local-draft-versus-project-file checking to Project Audit and Build validation.
+- Retain localStorage as recovery autosave and zip/package export as backup/fallback, not as the normal data-management route.
+- Continue auditing app shells, colours, monolith files, stale patch layers and old loaded patch files.
