@@ -62,7 +62,7 @@
           <div class="appearance-stop-labels" aria-hidden="true"><span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50</span><span>60</span><span>70</span><span>80</span><span>90</span><span>100</span></div>
           <div class="appearance-stop-buttons"><span id="selected-stop-readout">Stop 1 · 0%</span><button id="add-stop-button" type="button" title="Add appearance marker">+</button><button id="delete-stop-button" type="button" title="Delete selected appearance marker">🗑</button></div>
           <div class="appearance-stop-fields">
-            <label class="appearance-wide">Colour<input id="stop-color-input" type="color" value="#ffcc66" /></label>
+            <label class="appearance-wide">Colour<input id="stop-color-hex-input" type="text" inputmode="text" placeholder="#FF0000" maxlength="7" autocomplete="off" spellcheck="false" /><input id="stop-color-input" type="color" value="#ffcc66" /></label>
             <label>Opacity<input id="stop-opacity-input" type="range" min="0" max="1" step="0.01" value="1" /><output id="stop-opacity-output">1</output></label>
             <label>Size<input id="stop-size-input" type="range" min="0" max="180" step="1" value="20" /><output id="stop-size-output">20</output></label>
             <label>Glow<input id="stop-glow-input" type="range" min="0" max="80" step="1" value="12" /><output id="stop-glow-output">12</output></label>
