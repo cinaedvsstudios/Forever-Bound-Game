@@ -17,9 +17,9 @@ Use the global all-apps to-do list for changes that affect every Artifex app. Us
 
 ## Current live status
 
-Current Quest Builder version in repository: `V1.2.4`
+Current Quest Builder version in repository: `V1.2.7`
 
-Current live confirmation status: awaiting GitHub Pages/browser confirmation for `V1.2.4`.
+Current live confirmation status: awaiting GitHub Pages/browser confirmation for `V1.2.7`.
 
 Current app files:
 
@@ -35,6 +35,8 @@ artifex/apps/quest-builder/v1/src/ui-bindings.js
 artifex/apps/quest-builder/v1/src/canvas-renderer.js
 artifex/apps/quest-builder/v1/src/dialog-editors.js
 artifex/apps/quest-builder/v1/src/export-json.js
+artifex/apps/quest-builder/icons/start.png
+artifex/apps/quest-builder/icons/finish.png
 ```
 
 Older V1.0.8 files remain only as imported base styling/reference; no old V1.0.8 JavaScript should be loaded by the live app:
@@ -82,7 +84,7 @@ Status: complete.
 Status: complete.
 
 - Changed the left panel into a contextual inspector for the selected quest or block.
-- Added quick emoji actions in the green status strip.
+- Added quick emoji actions in the status strip.
 - Added canvas selection hit-testing compatible with zoom and pan.
 
 ### V1.1.4 — Viewing panel warnings and flow card polish
@@ -156,21 +158,40 @@ Status: built, awaiting direct browser interaction confirmation.
 - Quest Flow list cards can be dragged onto another card to reorder the selected quest block array.
 - Added the `↕` drag indicator, drop-target highlight, automatic workspace redraw, retained selected block, and movement confirmation toast.
 - Kept reordering in the floating Quest Flow list; canvas blocks remain the visual workspace.
-- Stabilised drag start so selecting a block does not interrupt the drag gesture.
 
 ### V1.2.4 — Viewing-panel density and endpoint polish
 
-Status: built, awaiting GitHub Pages/browser confirmation and optional custom icon assets.
+Status: complete.
 
 - Reduced oversized text and spacing in the left contextual inspector.
 - Reduced the viewport zoom/pan/reset control footprint.
-- Merged the quest heading and Calling content into one cleaner canvas header card.
-- Changed START and END from large rectangular boxes to solid circular endpoint nodes with labels underneath.
-- Added image-loading support for custom endpoint assets at:
-  - `artifex/apps/quest-builder/icons/start.png`
-  - `artifex/apps/quest-builder/icons/finish.png`
-- Added safe fallback symbols when those PNG files are not yet present in GitHub.
-- Updated module imports/cache keys, CSS entry, page title, visible version badge, and module config to `V1.2.4` / `1.2.4`.
+- Merged the quest heading and Calling content into one canvas header card.
+- Converted START and END into circular endpoint nodes.
+
+### V1.2.5 — Custom endpoint icon display
+
+Status: complete.
+
+- Integrated the committed custom `start.png` and `finish.png` endpoint artwork.
+- Reduced icon size, moved START/END labels inside their nodes, and darkened the endpoint surfaces to match the canvas header.
+
+### V1.2.6 — Status-strip styling alignment
+
+Status: complete.
+
+- Replaced the bright green left-panel Editing strip with the dark green/charcoal treatment used by the canvas header and endpoint circles.
+- Kept the actions visible as compact green-accent controls.
+
+### V1.2.7 — Workspace pencil edit controls
+
+Status: built, awaiting browser confirmation.
+
+- Added separate interactive hit zones for the pencil in the canvas quest header and each large canvas block card.
+- Pencil on the canvas quest header now opens the quest editor.
+- Pencil on a canvas block card now selects that block and opens its block editor.
+- Fixed the pencil icons in the floating Quest Flow rows so they open the matching block editor rather than doing nothing.
+- Fixed quest-list pencil behaviour to open the selected quest editor.
+- Updated page entry, displayed version, CSS cache key, JavaScript cache keys, renderer asset keys and schema module imports to `V1.2.7` / `1.2.7`.
 
 ## Ownership boundary
 
@@ -193,25 +214,31 @@ Project Manager should reference quest and side quest IDs. It should not author 
 
 ## Version plan
 
-Every Quest Builder edit must increase the visible version by `0.01` and update the page title, visible version badge, CSS cache key, JS/module cache key, and loaded/fallback text where present.
+Every Quest Builder edit must increase the visible version by `0.01` and update the page title, visible version badge, CSS cache key, JS/module cache keys, renderer asset keys and loaded/fallback text where present.
 
 Next version after confirmation:
 
 ```text
-V1.2.5  finish endpoint-icon integration and drag-ordering polish, if required by browser testing
+V1.2.8  draggable canvas card placement and saved card positions
 ```
 
 ## Current checks needed
 
-- Confirm the app loads as `V1.2.4`.
-- Confirm the side-panel text and viewport controls are more compact.
-- Confirm the canvas header now contains title, metadata, and Calling content in one card.
-- Confirm START and END render as solid circular endpoint nodes.
-- Add the real `start.png` and `finish.png` files to the GitHub path above if the custom endpoint art should appear instead of fallback symbols.
-- Test dragging a Quest Flow card onto another card and confirm the main canvas redraws in the new order.
+- Confirm the app loads as `V1.2.7`.
+- Click the pencil on the canvas quest header; it must open **Edit Quest**.
+- Click the pencil on each large workspace card; it must open **Edit Quest Block** for that selected card.
+- Click the pencil on a floating Quest Flow row; it must open the matching block editor.
+- Confirm the dark Editing strip still appears correctly after the cache-key refresh.
+- Test dragging a Quest Flow list card onto another card and confirm the canvas redraws in the new sequence.
 
 ## Specific-app tasks
 
 ```json
-[]
+[
+  {
+    "version": "V1.2.8",
+    "task": "Allow large canvas block cards to be dragged into manual layout positions and preserve their positions in saved layout/project draft state.",
+    "status": "next"
+  }
+]
 ```
