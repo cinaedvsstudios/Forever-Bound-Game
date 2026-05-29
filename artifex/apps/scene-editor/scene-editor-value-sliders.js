@@ -47,7 +47,8 @@
     if (id === 'itemY' || name.includes('y axis')) return { min: -100, max: 200, step: 0.25, reset: 0 };
     if (id.includes('Opacity')) return { min: 0, max: 100, step: 1, reset: 100 };
     if (id.includes('Brightness') || id.includes('Contrast') || id.includes('Saturation')) return { min: 0, max: 250, step: 1, reset: 100 };
-    if (id.includes('Hue') || id.includes('Vibrance') || id.includes('Exposure') || id.includes('ShadowStrength') || id.includes('ShadowBlur') || id.includes('GlowStrength')) return { min: id.includes('Hue') ? -180 : id.includes('Vibrance') || id.includes('Exposure') ? -100 : 0, max: id.includes('Hue') ? 180 : 100, step: 1, reset: 0 };
+    if (id.includes('ShadowBlur')) return { min: 0, max: 100, step: 1, reset: 25 };
+    if (id.includes('Hue') || id.includes('Vibrance') || id.includes('Exposure') || id.includes('ShadowStrength') || id.includes('GlowStrength')) return { min: id.includes('Hue') ? -180 : id.includes('Vibrance') || id.includes('Exposure') ? -100 : 0, max: id.includes('Hue') ? 180 : 100, step: 1, reset: 0 };
 
     const explicitMin = input.getAttribute('min');
     const explicitMax = input.getAttribute('max');
@@ -250,6 +251,8 @@
     field.classList.add('value-slider-field-v18');
 
     const cfg = configFor(input);
+    const label = labelFor(input);
+    const escapedLabel = escAttr(label);
     input.setAttribute('step', String(cfg.step));
     input.setAttribute('min', String(cfg.min));
     input.setAttribute('max', String(cfg.max));
@@ -257,11 +260,11 @@
     const control = document.createElement('div');
     control.className = 'value-slider-control-v18';
     control.innerHTML = `
-      <input class="value-slider-range-v18" type="range" min="${cfg.min}" max="${cfg.max}" step="${cfg.step}" value="${escAttr(input.value || 0)}" aria-label="${escAttr(labelFor(input))} slider">
+      <input class="value-slider-range-v18" type="range" min="${cfg.min}" max="${cfg.max}" step="${cfg.step}" value="${escAttr(input.value || 0)}" aria-label="${escapedLabel} slider" title="Adjust ${escapedLabel}">
       <div class="value-slider-stepper-v18">
-        <button class="value-slider-step-v18" type="button" data-step-dir="-1" aria-label="Decrease ${escAttr(labelFor(input))}">&lt;</button>
+        <button class="value-slider-step-v18" type="button" data-step-dir="-1" aria-label="Decrease ${escapedLabel}" title="Decrease ${escapedLabel}">&lt;</button>
         <span class="value-slider-readout-v18" aria-live="polite"></span>
-        <button class="value-slider-step-v18" type="button" data-step-dir="1" aria-label="Increase ${escAttr(labelFor(input))}">&gt;</button>
+        <button class="value-slider-step-v18" type="button" data-step-dir="1" aria-label="Increase ${escapedLabel}" title="Increase ${escapedLabel}">&gt;</button>
       </div>`;
 
     const range = control.querySelector('.value-slider-range-v18');
