@@ -1,7 +1,7 @@
-/* Quest Builder V1.2.4
+/* Quest Builder V1.2.5
    Styling entry point only. Behaviour is split into v1/src modules.
    The visual rules are currently carried forward from the V1.0.8 stylesheet until the next visual pass. */
-@import url("./quest-builder-v108.css?v=1.2.4-base");
+@import url("./quest-builder-v108.css?v=1.2.5-base");
 
 /* V1.1.3 contextual inspector / status actions */
 .status-strip {
