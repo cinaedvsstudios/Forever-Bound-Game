@@ -1,9 +1,9 @@
-import { DESIGN_WIDTH as W, DESIGN_HEIGHT as H } from './module-config.js';
-import { getBlockType } from './block-types.js';
+import { DESIGN_WIDTH as W, DESIGN_HEIGHT as H } from './module-config.js?v=1.2.5';
+import { getBlockType } from './block-types.js?v=1.2.5';
 
 const endpointAssets = {
-  start: new URL('../../icons/start.png?v=1.2.4', import.meta.url).href,
-  finish: new URL('../../icons/finish.png?v=1.2.4', import.meta.url).href
+  start: new URL('../../icons/start.png?v=1.2.5', import.meta.url).href,
+  finish: new URL('../../icons/finish.png?v=1.2.5', import.meta.url).href
 };
 const endpointImages = {};
 
@@ -158,39 +158,50 @@ function drawFlowCard(ctx, x, y, w, h, item, selected) {
 
 function drawEndpointNode(ctx, cx, cy, kind, app) {
   const isStart = kind === 'start';
-  const fill = isStart ? '#58dda7' : '#e2cca7';
-  const stroke = isStart ? '#7ff0bd' : '#fff0ce';
-  const dark = '#08110d';
+  const stroke = isStart ? '#7ff0bd' : '#e2cca7';
   const label = isStart ? 'START' : 'END';
   const helper = isStart ? 'quest begins' : 'quest resolves';
-  const radius = 48;
+  const radius = 55;
+  const fill = ctx.createLinearGradient(cx, cy - radius, cx, cy + radius);
+  fill.addColorStop(0, 'rgba(28,70,52,.98)');
+  fill.addColorStop(1, 'rgba(8,20,15,.98)');
+
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   ctx.fillStyle = fill;
   ctx.fill();
   ctx.strokeStyle = stroke;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2.5;
   ctx.stroke();
   ctx.lineWidth = 1;
 
   const image = getEndpointImage(kind, app);
   if (image?.loaded) {
-    ctx.drawImage(image.element, cx - 33, cy - 33, 66, 66);
+    drawContainedImage(ctx, image.element, cx, cy - 21, 45, 38);
   } else {
-    ctx.fillStyle = dark;
-    ctx.font = '700 35px Arial';
+    ctx.fillStyle = stroke;
+    ctx.font = '700 26px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText(isStart ? '▶' : '✓', cx, cy + 12);
-    ctx.textAlign = 'left';
+    ctx.fillText(isStart ? '▶' : '✓', cx, cy - 11);
   }
-  ctx.fillStyle = stroke;
-  ctx.font = '700 17px Georgia';
+
   ctx.textAlign = 'center';
-  ctx.fillText(label, cx, cy + 70);
+  ctx.fillStyle = isStart ? '#7ff0bd' : '#fff0ce';
+  ctx.font = '700 14px Georgia';
+  ctx.fillText(label, cx, cy + 20);
   ctx.fillStyle = 'rgba(226,204,167,.68)';
-  ctx.font = '600 10px Arial';
-  ctx.fillText(helper, cx, cy + 87);
+  ctx.font = '600 9px Arial';
+  ctx.fillText(helper, cx, cy + 36);
   ctx.textAlign = 'left';
+}
+
+function drawContainedImage(ctx, image, cx, cy, maxWidth, maxHeight) {
+  const width = image.naturalWidth || image.width || maxWidth;
+  const height = image.naturalHeight || image.height || maxHeight;
+  const scale = Math.min(maxWidth / width, maxHeight / height);
+  const drawWidth = width * scale;
+  const drawHeight = height * scale;
+  ctx.drawImage(image, cx - drawWidth / 2, cy - drawHeight / 2, drawWidth, drawHeight);
 }
 
 function getEndpointImage(kind, app) {
