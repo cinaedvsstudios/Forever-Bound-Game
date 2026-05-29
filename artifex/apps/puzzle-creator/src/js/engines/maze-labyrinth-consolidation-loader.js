@@ -1,28 +1,22 @@
-// Maze / Labyrinth consolidation loader
+// Maze / Labyrinth stable module loader
 //
-// Consolidation phase 7: index.html loads one Maze entrypoint and the runtime,
-// report, status, preview defaults, UI polish, and portals now use stable module files.
-//
-// Stable UI defaults keep the Overview open on the right and the main preview left-aligned.
-//
-// Temporary transition still present by design during consolidation:
-// - maze-completion-system.js currently wraps the former completion-rules implementation.
-//   This is now the only active temporary wrapper and must be inlined next.
+// Consolidation phase 8: all active Maze / Labyrinth systems now load through
+// permanent named modules. No live maze-v### patch module remains in this import chain.
 
-import './maze-labyrinth-runtime-controls.js?v=1.24';
-import './maze-difficulty-report.js?v=1.24';
-import './maze-preview-default-layout.js?v=1.24';
-import './maze-runtime-status.js?v=1.24';
-import './maze-completion-system.js?v=1.24';
-import './maze-ui-polish.js?v=1.24';
-import './maze-portals-system.js?v=1.24';
+import './maze-labyrinth-runtime-controls.js?v=1.25';
+import './maze-difficulty-report.js?v=1.25';
+import './maze-preview-default-layout.js?v=1.25';
+import './maze-runtime-status.js?v=1.25';
+import './maze-completion-rules.js?v=1.25';
+import './maze-ui-polish.js?v=1.25';
+import './maze-portals-system.js?v=1.25';
 
 window.__artifexMazeConsolidation = {
-  phase: 'phase_7_portals_inlined_ui_refined',
-  status: 'one_temporary_wrapper_remaining_completion_rules_only',
+  phase: 'phase_8_stable_modules_only',
+  status: 'no_active_versioned_patch_imports',
   next: [
-    'smoke test panel sizing, sticky icons, portal type labels, and tile-gap control',
-    'inline completion rules into its stable module',
-    'delete old versioned patch files after permanent modules pass live tests'
+    'smoke test stable completion rules and item placement',
+    'remove obsolete completion and portal patch files after test passes',
+    'continue Connections, Scatter and Tunnel design implementation in stable modules only'
   ]
 };
