@@ -27,7 +27,7 @@
   }
 
   function loadSettings(key) {
-    return readJson(key, {});
+    return readJson(key, {}) || {};
   }
 
   function saveSettings(key, settings) {
