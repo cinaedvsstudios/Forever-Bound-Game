@@ -5,22 +5,27 @@ const $ = (id) => document.getElementById(id);
 
 window.addEventListener('DOMContentLoaded', () => {
   injectUiPolishStyles();
+  markVisibleBuildVersion();
   removeVerboseHelperText();
   emojiButtonLabelsAndTooltips();
   reorganiseDisplayCard();
   moveLogicButtonsUnderSolutionBox();
   installWarpEdgeCleanupControl();
+  window.setTimeout(correctVisiblePortalControls, 100);
 });
+
+function markVisibleBuildVersion() {
+  const pill = document.querySelector('.version-pill');
+  if (pill) pill.textContent = 'V1.24';
+  document.title = 'Artifex Puzzle Creator V1.24 · Forever Bound';
+}
 
 function removeVerboseHelperText() {
   const purpose = $('active-engine-purpose');
   if (purpose) purpose.hidden = true;
-
   document.querySelectorAll('.triangle-disabled-note').forEach((node) => node.remove());
-
   const gridRow = $('grid-slider')?.closest('.range-row');
   gridRow?.querySelectorAll('small').forEach((small) => small.remove());
-
   const shapeRow = $('layout-style-slider')?.closest('.range-row');
   shapeRow?.querySelectorAll('small').forEach((small) => {
     small.textContent = 'Square → Pentagon → Hexagon → Circle.';
@@ -32,7 +37,6 @@ function emojiButtonLabelsAndTooltips() {
   setButton('btn-start-blank', '⬜ Start Blank', 'Create a blank editable maze shape with entrance, exit, and border walls.');
   setButton('btn-clear-all', '🧹 Clear All', 'Clear the current layout and return to a blank editable shape.');
   setButton('btn-load-reference', '🖼️ Load Reference', 'Load the default reference maze layout.');
-
   document.querySelectorAll('button').forEach((button) => {
     if (!button.title) button.title = button.textContent.trim() || button.getAttribute('aria-label') || 'Button';
   });
@@ -45,10 +49,37 @@ function setButton(id, label, title) {
   button.title = title;
 }
 
+function correctVisiblePortalControls() {
+  const builder = $('portal-builder');
+  const typeSelect = $('portal-type-select');
+  if (!builder || !typeSelect) return;
+
+  const currentType = typeSelect.value === 'portal' ? 'portal' : 'door';
+  typeSelect.innerHTML = '<option value="door">Door</option><option value="portal">Portal</option>';
+  typeSelect.value = currentType;
+  typeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+
+  const heading = builder.querySelector('.portal-builder-head strong');
+  const description = builder.querySelector('.portal-builder-head small');
+  if (heading) heading.textContent = 'Doors & Portals';
+  if (description) description.textContent = 'Place paired visible doors or magical portals. Traboules use a separate hidden-wall passage tool.';
+  setButton('btn-add-portal', '✚ Add', 'Create a new paired door or portal.');
+  setButton('btn-place-portal-entry', '▥ Entry', 'Place the entry cell on the Overview.');
+  setButton('btn-place-portal-exit', '✦ Exit', 'Place the exit cell on the Overview.');
+  setButton('btn-delete-portal', '⌫ Delete', 'Delete the selected pair.');
+
+  if (!$('traboule-pending-note')) {
+    const note = document.createElement('p');
+    note.id = 'traboule-pending-note';
+    note.className = 'portal-type-help traboule-pending-note';
+    note.textContent = 'Traboule is queued as a pass-through wall: it will look like a normal wall but have no collision. It is not a paired teleport.';
+    $('portal-type-help')?.insertAdjacentElement('afterend', note);
+  }
+}
+
 function reorganiseDisplayCard() {
   const displayPanel = document.querySelector('[data-panel-content="display"]');
   if (!displayPanel) return;
-
   const shapeRow = $('layout-style-slider')?.closest('.range-row');
   const gridRow = $('grid-slider')?.closest('.range-row');
   const stretchXRow = $('stretch-x-slider')?.closest('.range-row');
@@ -56,10 +87,8 @@ function reorganiseDisplayCard() {
   const wallHeightRow = $('wall-height-slider')?.closest('.range-row');
   const gapRow = $('gap-slider')?.closest('.range-row');
   const edgeRow = $('edge-style-slider')?.closest('.range-row');
-
   if (gridRow && shapeRow && gridRow.parentElement !== displayPanel) displayPanel.insertBefore(gridRow, shapeRow);
   gridRow?.classList.add('display-size-row');
-
   if (stretchXRow && stretchYRow && !displayPanel.querySelector('.stretch-inline-row')) {
     const stretchWrap = document.createElement('div');
     stretchWrap.className = 'stretch-inline-row';
@@ -67,7 +96,6 @@ function reorganiseDisplayCard() {
     stretchWrap.appendChild(stretchXRow);
     stretchWrap.appendChild(stretchYRow);
   }
-
   if (edgeRow) {
     if (wallHeightRow) edgeRow.insertAdjacentElement('afterend', wallHeightRow);
     if (gapRow) wallHeightRow ? wallHeightRow.insertAdjacentElement('afterend', gapRow) : edgeRow.insertAdjacentElement('afterend', gapRow);
@@ -86,7 +114,6 @@ function installWarpEdgeCleanupControl() {
   const visualPanel = document.querySelector('[data-panel-content="visuals"]');
   const hint = visualPanel?.querySelector('.hint-text');
   if (!visualPanel || !hint || $('btn-smooth-warp-edges')) return;
-
   const box = document.createElement('div');
   box.className = 'warp-edge-cleanup';
   box.innerHTML = `
@@ -97,7 +124,6 @@ function installWarpEdgeCleanupControl() {
     <button id="btn-smooth-warp-edges" class="wide-button" type="button" aria-pressed="false" title="Remove normal spacing between visual tiles">Close Tile Gaps: Off</button>
   `;
   hint.insertAdjacentElement('afterend', box);
-
   $('btn-smooth-warp-edges').addEventListener('click', () => {
     const state = window.__artifexMazeRuntime?.state;
     const gapSlider = $('gap-slider');
@@ -124,10 +150,7 @@ function injectUiPolishStyles() {
   const style = document.createElement('style');
   style.id = 'maze-ui-polish-style';
   style.textContent = `
-    @media(min-width:1241px){
-      .app-header{position:relative!important;}
-      .app-menu{position:absolute!important;left:50%!important;transform:translateX(-50%)!important;justify-self:auto!important;}
-    }
+    @media(min-width:1241px){.app-header{position:relative!important;}.app-menu{position:absolute!important;left:50%!important;transform:translateX(-50%)!important;justify-self:auto!important;}}
     .engine-purpose[hidden]{display:none!important;}
     .left-icon-bar{position:sticky!important;top:0!important;z-index:30!important;background:linear-gradient(180deg,rgba(3,18,10,.99),rgba(4,26,14,.97))!important;background-image:linear-gradient(180deg,rgba(3,18,10,.99),rgba(4,26,14,.97))!important;box-shadow:0 12px 20px rgba(0,0,0,.3)!important;border-color:rgba(158,230,164,.16)!important;backdrop-filter:blur(8px);}
     .panel-nav-button{position:relative;background:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;overflow:visible!important;font-size:1.75rem!important;}
@@ -135,27 +158,12 @@ function injectUiPolishStyles() {
     .panel-nav-button.is-active::before{background:radial-gradient(circle,rgba(158,230,164,.62),rgba(158,230,164,.2) 45%,transparent 76%);filter:blur(5px);}
     .panel-nav-button.status-yellow::before{background:radial-gradient(circle,rgba(238,196,89,.56),rgba(238,196,89,.18) 45%,transparent 76%);}
     .panel-nav-button.status-red::before{background:radial-gradient(circle,rgba(226,88,88,.58),rgba(226,88,88,.18) 45%,transparent 76%);}
-    .left-panel-body,.tool-panel{font-size:.9rem;}
-    .tool-panel h2{font-size:1.18rem!important;}
-    .tool-panel .eyebrow{font-size:.67rem!important;}
-    .tool-panel .field-block>span,.tool-panel .range-row>span,.tool-panel .toggle-row strong{font-size:.88rem!important;}
-    .tool-panel small,.tool-panel .hint-text{font-size:.7rem!important;}
-    .build-quick-actions{gap:13px!important;margin-top:12px!important;margin-bottom:2px!important;}
-    .build-quick-actions + #btn-clear-all{margin-top:13px!important;margin-right:8px!important;}
-    #btn-load-reference{margin-top:13px!important;}
-    #btn-random,#btn-start-blank,#btn-clear-all,#btn-load-reference,#dropzone{font-size:.78rem!important;line-height:1.15!important;padding-left:8px!important;padding-right:8px!important;min-height:45px!important;}
-    #btn-clear-all,#btn-load-reference{white-space:nowrap;}
-    .stretch-inline-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;}
-    .stretch-inline-row .range-row{min-width:0;padding:10px 10px;}
-    .stretch-inline-row .range-row span{font-size:.82rem;}
-    .stretch-inline-row input[type='range']{width:100%;}
-    .display-size-row{border-color:rgba(158,230,164,.28)!important;background:rgba(7,31,16,.48)!important;}
-    [data-panel-content='logic'] #difficulty-status-box + .button-grid{margin:8px 0 12px;}
-    .warp-edge-cleanup{display:grid;gap:9px;margin:11px 0 15px;padding:11px;border:1px solid rgba(158,230,164,.18);border-radius:14px;background:rgba(0,0,0,.16);}
-    .warp-edge-copy strong{display:block;color:#eadfc6;font-size:.82rem;}
-    .warp-edge-copy small{display:block;color:#a9b59e;margin-top:3px;line-height:1.35;}
-    #btn-smooth-warp-edges{min-height:37px!important;font-size:.76rem!important;}
-    #btn-smooth-warp-edges.is-active{border-color:rgba(158,230,164,.52);background:rgba(50,113,64,.68);color:#dff8d8;box-shadow:0 0 15px rgba(158,230,164,.11);}
+    .left-panel-body,.tool-panel{font-size:.9rem;}.tool-panel h2{font-size:1.18rem!important;}.tool-panel .eyebrow{font-size:.67rem!important;}.tool-panel .field-block>span,.tool-panel .range-row>span,.tool-panel .toggle-row strong{font-size:.88rem!important;}.tool-panel small,.tool-panel .hint-text{font-size:.7rem!important;}
+    .build-quick-actions{gap:13px!important;margin-top:12px!important;margin-bottom:2px!important;}.build-quick-actions + #btn-clear-all{margin-top:13px!important;margin-right:8px!important;}#btn-load-reference{margin-top:13px!important;}
+    #btn-random,#btn-start-blank,#btn-clear-all,#btn-load-reference,#dropzone{font-size:.78rem!important;line-height:1.15!important;padding-left:8px!important;padding-right:8px!important;min-height:45px!important;}#btn-clear-all,#btn-load-reference{white-space:nowrap;}
+    .stretch-inline-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;}.stretch-inline-row .range-row{min-width:0;padding:10px 10px;}.stretch-inline-row .range-row span{font-size:.82rem;}.stretch-inline-row input[type='range']{width:100%;}.display-size-row{border-color:rgba(158,230,164,.28)!important;background:rgba(7,31,16,.48)!important;}[data-panel-content='logic'] #difficulty-status-box + .button-grid{margin:8px 0 12px;}
+    .warp-edge-cleanup{display:grid;gap:9px;margin:11px 0 15px;padding:11px;border:1px solid rgba(158,230,164,.18);border-radius:14px;background:rgba(0,0,0,.16);}.warp-edge-copy strong{display:block;color:#eadfc6;font-size:.82rem;}.warp-edge-copy small{display:block;color:#a9b59e;margin-top:3px;line-height:1.35;}#btn-smooth-warp-edges{min-height:37px!important;font-size:.76rem!important;}#btn-smooth-warp-edges.is-active{border-color:rgba(158,230,164,.52);background:rgba(50,113,64,.68);color:#dff8d8;box-shadow:0 0 15px rgba(158,230,164,.11);}
+    .portal-action-row button{font-size:.7rem!important;line-height:1.05!important;padding:5px 4px!important;}.portal-editor-row select{color-scheme:dark!important;background:#07190e!important;}.portal-editor-row select option{background:#07190e!important;color:#eadfc6!important;}.traboule-pending-note{border-color:rgba(238,196,89,.25)!important;color:#d8c185!important;}
     @media(max-width:520px){.stretch-inline-row{grid-template-columns:1fr;}}
   `;
   document.head.appendChild(style);
