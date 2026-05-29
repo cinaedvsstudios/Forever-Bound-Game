@@ -1,9 +1,9 @@
-import { DESIGN_WIDTH as W, DESIGN_HEIGHT as H } from './module-config.js?v=1.2.5';
-import { getBlockType } from './block-types.js?v=1.2.5';
+import { DESIGN_WIDTH as W, DESIGN_HEIGHT as H } from './module-config.js?v=1.2.7';
+import { getBlockType } from './block-types.js?v=1.2.7';
 
 const endpointAssets = {
-  start: new URL('../../icons/start.png?v=1.2.5', import.meta.url).href,
-  finish: new URL('../../icons/finish.png?v=1.2.5', import.meta.url).href
+  start: new URL('../../icons/start.png?v=1.2.7', import.meta.url).href,
+  finish: new URL('../../icons/finish.png?v=1.2.7', import.meta.url).href
 };
 const endpointImages = {};
 
@@ -35,8 +35,8 @@ export function drawCanvas(app) {
   }
 
   drawQuestHeaderCard(ctx, 54, 34, q.thumbnail || '📜', q.name, `${q.chronicleId} / ${q.type} / ${(q.blocks || []).length} blocks`, q.callingText || 'No Calling text set', state.inspectorTarget === 'quest');
-  app.hitZones.push({ kind: 'quest', x: 54, y: 34, w: 740, h: 72, index: state.activeQuest });
-  app.hitZones.push({ kind: 'quest', x: 70, y: 104, w: 708, h: 39, index: state.activeQuest });
+  app.hitZones.push({ kind: 'quest', x: 54, y: 34, w: 740, h: 114, index: state.activeQuest });
+  app.hitZones.push({ kind: 'quest-edit', x: 742, y: 104, w: 40, h: 39, index: state.activeQuest });
 
   drawEndpointNode(ctx, 118, 245, 'start', app);
 
@@ -54,6 +54,7 @@ export function drawCanvas(app) {
     const selected = state.inspectorTarget === 'block' && index === state.activeBlock;
     drawFlowCard(ctx, x, y, cardW, cardH, item, selected);
     app.hitZones.push({ kind: 'block', x, y, w: cardW, h: cardH, index });
+    app.hitZones.push({ kind: 'block-edit', x: x + cardW - 48, y, w: 48, h: 46, index });
     if (index < q.blocks.length - 1) {
       ctx.strokeStyle = 'rgba(62,180,137,.55)';
       ctx.lineWidth = 2;
