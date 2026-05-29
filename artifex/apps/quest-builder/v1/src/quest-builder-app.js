@@ -1,9 +1,9 @@
-import { MODULE_VERSION, MODULE_STORAGE_KEY, LAYOUT_STORAGE_KEY, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.6';
-import { getBlockType } from './block-types.js?v=1.2.6';
-import { createDemoQuestFile, createDefaultQuest, createDefaultBlock, escapeHtml } from './quest-schema.js?v=1.2.6';
-import { createLayoutState, clamp } from './layout-state.js?v=1.2.6';
-import { drawCanvas, applyCanvasTransform, getCanvasHit } from './canvas-renderer.js?v=1.2.6';
-import { fillBlockTypeMenus, wireMenus, wireActions, wireInputs, wireFlowDrag, wireWorkspacePan, wirePanelResize, wireFlowResizeSave } from './ui-bindings.js?v=1.2.6';
+import { MODULE_VERSION, MODULE_STORAGE_KEY, LAYOUT_STORAGE_KEY, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.7';
+import { getBlockType } from './block-types.js?v=1.2.7';
+import { createDemoQuestFile, createDefaultQuest, createDefaultBlock, escapeHtml } from './quest-schema.js?v=1.2.7';
+import { createLayoutState, clamp } from './layout-state.js?v=1.2.7';
+import { drawCanvas, applyCanvasTransform, getCanvasHit } from './canvas-renderer.js?v=1.2.7';
+import { fillBlockTypeMenus, wireMenus, wireActions, wireInputs, wireFlowDrag, wireWorkspacePan, wirePanelResize, wireFlowResizeSave } from './ui-bindings.js?v=1.2.7';
 
 const $ = (id) => document.getElementById(id);
 
@@ -124,11 +124,23 @@ function selectBlock(index) {
   render();
 }
 
+function openQuestEditor(index = state.activeQuest) {
+  selectQuest(index);
+  $('edit-quest-button')?.click();
+}
+
+function openBlockEditor(index) {
+  selectBlock(index);
+  $('edit-block-button')?.click();
+}
+
 function wireCanvasSelection() {
   canvas.addEventListener('click', (event) => {
     if (app.layout().panMode) return;
     const hit = getCanvasHit(app, event);
     if (!hit) return;
+    if (hit.kind === 'quest-edit') return openQuestEditor(hit.index ?? state.activeQuest);
+    if (hit.kind === 'block-edit') return openBlockEditor(hit.index);
     if (hit.kind === 'quest') selectQuest(hit.index ?? state.activeQuest);
     if (hit.kind === 'block') selectBlock(hit.index);
   });
@@ -229,7 +241,7 @@ function renderQuestList() {
     button.title = 'Select quest: ' + (item.name || 'Untitled Quest');
     button.innerHTML = `<span><strong>${escapeHtml((item.thumbnail || '📜') + ' ' + item.name)}</strong><span>${escapeHtml(item.chronicleId)} / ${escapeHtml(item.type)}</span></span><span class="edit-mini" title="Edit this quest">✎</span>`;
     button.onclick = () => selectQuest(index);
-    button.querySelector('.edit-mini').onclick = (event) => { event.stopPropagation(); state.activeQuest = index; state.inspectorTarget = 'quest'; document.dispatchEvent(new CustomEvent('quest-builder-edit-quest')); };
+    button.querySelector('.edit-mini').onclick = (event) => { event.stopPropagation(); openQuestEditor(index); };
     $('quest-list').appendChild(button);
   });
 }
@@ -278,8 +290,8 @@ function renderBlockList() {
       state.dragBlockIndex = null;
       render();
     };
-    button.querySelector('.edit-mini').onclick = (event) => { event.stopPropagation(); state.activeBlock = index; state.inspectorTarget = 'block'; document.dispatchEvent(new CustomEvent('quest-builder-edit-block')); };
-    button.ondblclick = () => document.dispatchEvent(new CustomEvent('quest-builder-edit-block'));
+    button.querySelector('.edit-mini').onclick = (event) => { event.stopPropagation(); openBlockEditor(index); };
+    button.ondblclick = () => openBlockEditor(index);
     $('block-list').appendChild(button);
   });
 }
