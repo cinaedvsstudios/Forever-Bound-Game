@@ -8,142 +8,98 @@ The intake folder is not the final game/library folder structure. It is a tempor
 
 A creator should be able to make a file, save it into one obvious bucket, and let Artifex handle the later admin: review, rename, copy, index, group, and reference it correctly.
 
-## Core idea
+## Folder Location Rule
 
-Creators should not need to understand every final Artifex folder while they are making assets.
+A complete playable template game owns its own intake folder inside its own project folder.
 
-They should place new files into:
+Do **not** place a game's intake folder inside `artifex/templates/`, because that folder is reserved for generic blank reusable starter templates such as scene, screen, UI, or SVG/JSON templates.
+
+For Artifex Adventures, the intake folder is:
 
 ```text
-artifex/templates/artifex-adventures/intake/
+artifex/artifex-adventures/intake/
 ```
 
-Then Artifex can later:
-
-1. read the dropped file;
-2. ask or infer what kind of asset it is;
-3. preserve the original filename in metadata;
-4. assign a stable `asset_` ID;
-5. rename the file safely;
-6. copy the approved file into the correct final `assets/` folder;
-7. update `assets/asset-index.json`;
-8. create an `assets/groups/assetgroup_<slug>.json` record if the files belong together;
-9. update scenes, screens, object archetypes, effects, quests, or runtime settings to reference the new clean asset path or ID.
-
-## Simple intake folders
-
-Use only these first-level buckets:
+Generic blank templates remain under:
 
 ```text
-artifex/templates/artifex-adventures/intake/backgrounds/
-artifex/templates/artifex-adventures/intake/characters/
-artifex/templates/artifex-adventures/intake/objects/
-artifex/templates/artifex-adventures/intake/icons-ui/
-artifex/templates/artifex-adventures/intake/music/
-artifex/templates/artifex-adventures/intake/dialogue-sfx/
+artifex/templates/
+```
+
+## Simple Intake Folders
+
+Use only these first-level buckets inside a game project's `intake/` folder:
+
+```text
+intake/
+  backgrounds/
+  characters/
+  objects/
+  icons-ui/
+  music/
+  dialogue-sfx/
 ```
 
 These buckets are intentionally broad. The app can do the finer sorting later.
 
-## What goes where
+## What Goes Where
 
 | Intake folder | What users should put there |
 |---|---|
-| `backgrounds/` | Full scene backgrounds, title/ending backgrounds, train interiors, station platforms, corridors, scenery loops, window tiles, parallax plates, environmental plates. |
-| `characters/` | Hero art, NPC art, villains, enemies, portraits, turnarounds, sprite sheets, animation frames, character references. |
-| `objects/` | Props, clue items, Great Omar fragments, postcards, journals, tickets, disguises, doors, drawers, cabinet overlays, suitcase states, pickups, interactable object art. |
-| `icons-ui/` | Inventory icons, action icons, interact prompts, menu icons, HUD pieces, buttons, panels, UI frames, status symbols. |
-| `music/` | Theme music, location music, tension cues, victory music, menu music, stingers if they are musical rather than sound effects. |
-| `dialogue-sfx/` | Voice lines, narration, dialogue audio, footsteps, train ambience, door clicks, drawer sounds, item pickup sounds, UI beeps, environmental sound effects. |
+| `backgrounds/` | Full scene backgrounds, title/ending backgrounds, interiors, landscapes, station/platform views, scenery loops, window tiles, parallax plates and environmental plates. |
+| `characters/` | Hero art, NPCs, villains, enemies, portraits, turnarounds, sprite sheets, animation frames and character reference images. |
+| `objects/` | Props, clue items, collectibles, keys, disguises, doors, drawers, furniture state overlays, pickups and interactable object art. |
+| `icons-ui/` | Inventory icons, action icons, interaction prompts, map markers, menu icons, HUD pieces, buttons, panels, UI frames and status symbols. |
+| `music/` | Title themes, exploration music, danger cues, location music, victory music, menu music and musical stingers. |
+| `dialogue-sfx/` | Voice lines, narration, ambience, footsteps, door/drawer sounds, item pickup sounds, UI sounds and environmental sound effects. |
 
-If something feels ambiguous, choose the closest bucket. The importer can ask for confirmation before promoting it into the final project package.
+If an asset is ambiguous, place it in the closest bucket. The importer can ask for confirmation before promoting it into the final project package.
 
-## Artifex Adventures intake folder
+## Import and Promotion Rule
 
-For the current template game, the active intake folder is:
+Files in `intake/` are staging files only. Permanent scene, screen, object, quest and runtime records must not point directly to intake files.
+
+When a creator approves/imports a file, Artifex should:
+
+1. Preserve the original source filename in metadata.
+2. Ask for or confirm the asset type and intended use.
+3. Assign a stable `asset_` ID.
+4. Rename the final copy using safe consistent naming.
+5. Copy it from `intake/` into the appropriate final `assets/` folder inside that game project.
+6. Add or update its Asset Library record in `assets/asset-index.json`.
+7. Create or update an `assets/groups/assetgroup_<slug>.json` record when related assets form a set, such as a character sprite group or object-state animation group.
+8. Use the final asset ID/path when the Scene Editor, Object Library, Effect Editor, Quest Builder or runtime references it.
+
+## Example Promotion
+
+A creator drops a raw music file into:
 
 ```text
-artifex/templates/artifex-adventures/intake/
+artifex/artifex-adventures/intake/music/Hero Theme Final FINAL.mp3
 ```
 
-This is where Chris or any asset creator should dump files while making Artifex Adventures assets.
-
-## Final folder promotion examples
-
-A user drops:
+After import, Artifex may copy it to:
 
 ```text
-intake/music/Artifex Hero Theme Final FINAL.mp3
+artifex/artifex-adventures/assets/audio/music/music_hero_theme.mp3
 ```
 
-Artifex promotes it to:
-
-```text
-assets/audio/music/music_artifex_adventures_hero_theme.mp3
-```
-
-and creates an asset record similar to:
+and register it as:
 
 ```json
 {
-  "id": "asset_music_artifex_adventures_hero_theme",
-  "name": "Artifex Adventures Hero Theme",
+  "id": "asset_music_hero_theme",
+  "name": "Hero Theme",
   "type": "music",
-  "file": "assets/audio/music/music_artifex_adventures_hero_theme.mp3",
-  "sourceFileName": "Artifex Hero Theme Final FINAL.mp3",
+  "file": "assets/audio/music/music_hero_theme.mp3",
+  "sourceFileName": "Hero Theme Final FINAL.mp3",
   "status": "draft",
-  "tags": ["artifex-adventures", "hero-theme", "music", "orchestral"]
+  "tags": ["music", "hero-theme", "orchestral"]
 }
 ```
 
-A user drops:
+## Module Ownership Relationship
 
-```text
-intake/backgrounds/compartment with missing drawer.png
-```
+The Asset Library owns raw asset metadata and asset groups. The Scene Editor owns visual placement in scenes and screens. The Archetype Object Creator owns reusable normal object definitions. The Effect Editor owns reusable effect definitions. Quest Builder owns quests, flags, conditions, rewards, branches and unlocks. Project Manager links the game structure together.
 
-Artifex promotes it to:
-
-```text
-assets/backgrounds/scenes/compartment_4b/scene_compartment_4b_base.png
-```
-
-and the Scene Editor later references that final path from:
-
-```text
-scenes/scene_compartment_4b.json
-```
-
-A user drops:
-
-```text
-intake/objects/drawer open 50 black bg.png
-```
-
-Artifex promotes it to a proper object/scene-layer asset path such as:
-
-```text
-assets/backgrounds/scenes/compartment_4b/overlay_compartment_fixtures_open_50.png
-```
-
-or, if it becomes a reusable object, to:
-
-```text
-assets/objects/scene_props/overlay_compartment_fixtures_open_50.png
-```
-
-depending on the final Asset Library decision.
-
-## What intake files are not
-
-Files in `intake/` are not final game references.
-
-Scene JSON, object archetypes, quest records, and runtime settings should not permanently point at `intake/` files.
-
-The intake folder is allowed to be messy. The final `assets/` and data folders should be clean, stable, indexed, and referenced by IDs.
-
-## Relationship to the project file contract
-
-The project file contract keeps Artifex split into module-owned files and stable IDs. The Asset Library owns raw asset metadata and asset groups. The Scene Editor owns scene and screen placement. The Archetype Object Creator owns reusable object definitions. The Effect Editor owns reusable effect definitions. Quest Builder owns quests, flags, conditions, rewards, branches, and unlocks. Project Manager links the full project together.
-
-The intake folder sits before all of that. It is the practical drop zone for files before they are promoted into the proper module-owned structure.
+The intake folder sits before those module outputs: it is simply where creators drop source files before Artifex promotes them into the proper indexed project structure.
