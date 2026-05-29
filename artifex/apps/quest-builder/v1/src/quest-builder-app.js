@@ -1,9 +1,9 @@
-import { MODULE_VERSION, MODULE_STORAGE_KEY, LAYOUT_STORAGE_KEY, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.5';
-import { getBlockType } from './block-types.js?v=1.2.5';
-import { createDemoQuestFile, createDefaultQuest, createDefaultBlock, escapeHtml } from './quest-schema.js?v=1.2.5';
-import { createLayoutState, clamp } from './layout-state.js?v=1.2.5';
-import { drawCanvas, applyCanvasTransform, getCanvasHit } from './canvas-renderer.js?v=1.2.5';
-import { fillBlockTypeMenus, wireMenus, wireActions, wireInputs, wireFlowDrag, wireWorkspacePan, wirePanelResize, wireFlowResizeSave } from './ui-bindings.js?v=1.2.5';
+import { MODULE_VERSION, MODULE_STORAGE_KEY, LAYOUT_STORAGE_KEY, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.6';
+import { getBlockType } from './block-types.js?v=1.2.6';
+import { createDemoQuestFile, createDefaultQuest, createDefaultBlock, escapeHtml } from './quest-schema.js?v=1.2.6';
+import { createLayoutState, clamp } from './layout-state.js?v=1.2.6';
+import { drawCanvas, applyCanvasTransform, getCanvasHit } from './canvas-renderer.js?v=1.2.6';
+import { fillBlockTypeMenus, wireMenus, wireActions, wireInputs, wireFlowDrag, wireWorkspacePan, wirePanelResize, wireFlowResizeSave } from './ui-bindings.js?v=1.2.6';
 
 const $ = (id) => document.getElementById(id);
 
