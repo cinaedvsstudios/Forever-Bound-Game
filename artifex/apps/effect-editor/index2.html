@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Artifex Effect Editor Index2 Clean V0.2.2</title>
-  <link rel="stylesheet" href="./v3/styles.css?v=index2-022-ramp-drag" />
-  <link rel="stylesheet" href="./v3/index2-workspace-ui.css?v=022-ramp-drag" />
+  <title>Artifex Effect Editor Index2 Clean V0.2.3</title>
+  <link rel="stylesheet" href="./v3/styles.css?v=index2-023-layout" />
+  <link rel="stylesheet" href="./v3/index2-workspace-ui.css?v=023-layout" />
 </head>
 <body>
   <header class="topbar">
@@ -13,7 +13,7 @@
       <div class="brand-mark">✦</div>
       <div>
         <h1>ARTIFEX</h1>
-        <p>Visual Effects Editor <span id="version-badge">INDEX2-CLEAN-0.2.2</span></p>
+        <p>Visual Effects Editor <span id="version-badge">INDEX2-CLEAN-0.2.3</span></p>
       </div>
     </section>
 
@@ -67,7 +67,7 @@
       <div class="menu">
         <button class="menu-button" data-menu="help">Help ▾</button>
         <div class="menu-panel right" id="menu-help">
-          <button id="about-button">About INDEX2-CLEAN-0.2.2</button>
+          <button id="about-button">About INDEX2-CLEAN-0.2.3</button>
         </div>
       </div>
     </nav>
@@ -75,15 +75,15 @@
 
   <main class="app-shell">
     <aside id="left-panel" class="side-panel">
-      <section id="index2-card-search" class="card index2-search-card" data-search-card="Search">
-        <header><h2>Search Settings</h2><button type="button" class="index2-card-collapse" data-card-collapse title="Collapse Search Settings">⬆️</button></header>
-        <label>Filter left panel<input id="left-panel-search-input" placeholder="Search settings..." /></label>
+      <section id="index2-card-search" class="card index2-search-card index2-search-sticky" data-search-card="Search">
+        <label class="index2-search-label">Search Settings<input id="left-panel-search-input" placeholder="Search settings..." /></label>
         <p id="left-panel-search-count" class="index2-search-count">Showing all sections.</p>
       </section>
 
       <section id="index2-card-assets" class="card" data-search-card="Effect Archetype Assets archetype id tags layer name engine type">
         <header><h2>Effect Archetype Assets</h2><button type="button" class="index2-card-collapse" data-card-collapse title="Collapse Effect Archetype Assets">⬆️</button></header>
         <label>Archetype ID<input id="archetype-id-input" value="fx_v3_effect_001" /></label>
+        <label class="index2-tags-field">Tags<input id="effect-tags-input" placeholder="magic, fire, projectile" /></label>
         <label>Layer Name<input id="layer-name-input" placeholder="Select or add a layer" /></label>
         <label>Engine Type<select id="engine-select"></select></label>
       </section>
@@ -109,17 +109,25 @@
         <label>Glow Strength<input id="glow-input" type="range" min="0" max="50" step="1" value="12" /><output id="glow-output">12</output></label>
       </section>
 
-      <section id="index2-card-dynamics" class="card" data-search-card="Effect Layer Dynamics origin density speed gravity direction spread lifetime emitter width">
+      <section id="index2-card-dynamics" class="card" data-search-card="Effect Layer Dynamics origin density speed gravity boost direction spread lifetime emitter width">
         <header><h2>Effect Layer Dynamics</h2><button type="button" class="index2-card-collapse" data-card-collapse title="Collapse Effect Layer Dynamics">⬆️</button></header>
-        <label>Origin X<input id="emitter-x-input" type="number" min="0" max="1280" value="640" /></label>
-        <label>Origin Y<input id="emitter-y-input" type="number" min="0" max="720" value="450" /></label>
+        <div class="index2-field-pair">
+          <label>Origin X<input id="emitter-x-input" type="number" min="0" max="1280" value="640" /></label>
+          <label>Origin Y<input id="emitter-y-input" type="number" min="0" max="720" value="450" /></label>
+        </div>
         <label>Density<input id="spawn-rate-input" type="range" min="1" max="80" step="1" value="16" /><output id="spawn-rate-output">16</output></label>
-        <label>Speed Min<input id="speed-min-input" type="range" min="0" max="30" step="0.1" value="1.5" /><output id="speed-min-output">1.5</output></label>
-        <label>Speed Max<input id="speed-max-input" type="range" min="0" max="30" step="0.1" value="6" /><output id="speed-max-output">6</output></label>
-        <label>Gravity Strength<input id="gravity-input" type="range" min="-200" max="200" step="1" value="100" /><output id="gravity-output">100</output></label>
-        <label>Direction Angle<input id="angle-input" type="range" min="-180" max="180" step="1" value="-90" /><output id="angle-output">-90</output></label>
         <label>Spread<input id="spread-input" type="range" min="0" max="360" step="1" value="60" /><output id="spread-output">60</output></label>
+        <div class="index2-field-pair">
+          <label>Speed Min<input id="speed-min-input" type="range" min="0" max="30" step="0.1" value="1.5" /><output id="speed-min-output">1.5</output></label>
+          <label>Speed Max<input id="speed-max-input" type="range" min="0" max="30" step="0.1" value="6" /><output id="speed-max-output">6</output></label>
+        </div>
         <label>Lifetime<input id="lifetime-input" type="range" min="10" max="240" step="1" value="80" /><output id="lifetime-output">80</output></label>
+        <div class="index2-gravity-row">
+          <label>Gravity Strength<input id="gravity-input" type="range" min="-100" max="100" step="1" value="100" /><output id="gravity-output">100</output></label>
+          <label class="index2-boost-toggle">Boost<input id="gravity-boost-input" type="checkbox" /></label>
+        </div>
+        <p class="index2-gravity-note">0 = none · 100 = earth · Boost = ×2</p>
+        <label>Direction Angle<input id="angle-input" type="range" min="-180" max="180" step="1" value="-90" /><output id="angle-output">-90</output></label>
       </section>
 
       <section id="effect-specific-controls-card" class="card index2-effect-specific-card" data-search-card="Effect Specific Controls engine arc flare distortion shockwave lens gas text font letter spacing wrapping line timing reveal direction density scatter lifetime">
@@ -152,6 +160,6 @@
     </section>
   </main>
 
-  <script type="module" src="./v3/src/index2-app.js?v=022-ramp-drag"></script>
+  <script type="module" src="./v3/src/index2-app.js?v=023-layout"></script>
 </body>
 </html>
