@@ -1,12 +1,14 @@
 import './index2-clean-controller.js';
 import { initAppearanceParity } from './appearance-parity.js?v=022-ramp-drag';
+import { initEditorDynamicsControls } from './editor-dynamics-controls.js';
 import { initEditorWorkspaceUI } from './editor-workspace-ui.js';
 
-const VERSION_LABEL = 'INDEX2-CLEAN-0.2.2';
+const VERSION_LABEL = 'INDEX2-WORK-0.2.3-INTEGRATION';
 
 window.addEventListener('DOMContentLoaded', () => {
   initAppearanceParity(showToast);
   initEditorWorkspaceUI({ versionLabel: VERSION_LABEL, showToast });
+  initEditorDynamicsControls();
 });
 
 function showToast(message, type = 'info') {
