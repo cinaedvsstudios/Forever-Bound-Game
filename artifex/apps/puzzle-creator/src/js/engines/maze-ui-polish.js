@@ -91,20 +91,28 @@ function installWarpEdgeCleanupControl() {
   box.className = 'warp-edge-cleanup';
   box.innerHTML = `
     <div class="warp-edge-copy">
-      <strong>Warp Edge Cleanup</strong>
-      <small>Overlaps warped cube edges slightly to close visible gaps and soften joins.</small>
+      <strong>Close Tile Gaps</strong>
+      <small>Removes the deliberate spacing between tiles. A future renderer pass can blend strongly warped joins into curved surfaces.</small>
     </div>
-    <button id="btn-smooth-warp-edges" class="wide-button" type="button" aria-pressed="false" title="Close the gaps between warped cubes">Smooth Edges: Off</button>
+    <button id="btn-smooth-warp-edges" class="wide-button" type="button" aria-pressed="false" title="Remove normal spacing between visual tiles">Close Tile Gaps: Off</button>
   `;
   hint.insertAdjacentElement('afterend', box);
 
   $('btn-smooth-warp-edges').addEventListener('click', () => {
     const state = window.__artifexMazeRuntime?.state;
-    if (!state) return;
-    state.smoothWarpEdges = !state.smoothWarpEdges;
-    const active = !!state.smoothWarpEdges;
+    const gapSlider = $('gap-slider');
+    if (!state || !gapSlider) return;
+    const active = !state.closeTileGaps;
+    state.closeTileGaps = active;
+    if (active) {
+      state.previousTileGap = Number(gapSlider.value || state.gap || 0.98);
+      gapSlider.value = '1';
+    } else {
+      gapSlider.value = String(state.previousTileGap || 0.98);
+    }
+    gapSlider.dispatchEvent(new Event('input', { bubbles: true }));
     const button = $('btn-smooth-warp-edges');
-    button.textContent = `Smooth Edges: ${active ? 'On' : 'Off'}`;
+    button.textContent = `Close Tile Gaps: ${active ? 'On' : 'Off'}`;
     button.classList.toggle('is-active', active);
     button.setAttribute('aria-pressed', String(active));
     window.__artifexMazeRuntimeControls?.repaintAll?.();
