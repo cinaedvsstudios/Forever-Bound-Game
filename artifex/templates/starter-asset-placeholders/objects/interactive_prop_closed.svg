@@ -1,0 +1,7 @@
+<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" fill="#f4f4f4"/>
+  <rect x="40" y="80" width="120" height="80" fill="#9fc5e8" stroke="#6d9eeb" stroke-width="3"/>
+  <line x1="40" y1="120" x2="160" y2="120" stroke="#6d9eeb" stroke-width="3"/>
+  <circle cx="55" cy="120" r="5" fill="#3d85c6"/>
+  <text x="100" y="190" font-size="14" text-anchor="middle" fill="#6d9eeb">CLOSED</text>
+</svg>

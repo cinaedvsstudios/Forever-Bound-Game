@@ -1,0 +1,6 @@
+<svg width="150" height="200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="150" height="200" fill="none"/>
+  <circle cx="75" cy="70" r="50" fill="#ffe599" stroke="#bf9000" stroke-width="3"/>
+  <rect x="65" y="120" width="20" height="70" fill="#ffe599" stroke="#bf9000" stroke-width="3"/>
+  <text x="75" y="190" font-size="14" text-anchor="middle" fill="#bf9000">MARKER</text>
+</svg>

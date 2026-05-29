@@ -1,0 +1,10 @@
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#f3ecde"/>
+  <line x1="100" y1="100" x2="700" y2="500" stroke="#bda873" stroke-width="4" stroke-dasharray="12,8"/>
+  <line x1="200" y1="50" x2="600" y2="550" stroke="#bda873" stroke-width="4" stroke-dasharray="12,8"/>
+  <circle cx="100" cy="100" r="8" fill="#c7903e"/>
+  <circle cx="700" cy="500" r="8" fill="#c7903e"/>
+  <circle cx="200" cy="50" r="8" fill="#c7903e"/>
+  <circle cx="600" cy="550" r="8" fill="#c7903e"/>
+  <text x="400" y="580" font-size="20" text-anchor="middle" fill="#a88d5c">MAP PLACEHOLDER</text>
+</svg>

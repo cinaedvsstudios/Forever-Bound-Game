@@ -1,0 +1,7 @@
+<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" fill="#d9d9d9"/>
+  <!-- open door to left and right -->
+  <rect x="20" y="60" width="60" height="80" fill="#b0b0b0" stroke="#888" stroke-width="4"/>
+  <rect x="100" y="60" width="60" height="80" fill="#e8e8e8" stroke="#888" stroke-width="4"/>
+  <text x="100" y="180" font-size="16" text-anchor="middle" fill="#666">OPEN</text>
+</svg>

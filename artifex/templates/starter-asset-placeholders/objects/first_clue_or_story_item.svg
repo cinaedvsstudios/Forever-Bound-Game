@@ -1,0 +1,7 @@
+<svg width="150" height="200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="150" height="200" fill="#fff8e1" stroke="#d7c69b" stroke-width="2"/>
+  <line x1="20" y1="40" x2="130" y2="40" stroke="#c5b590" stroke-width="2"/>
+  <line x1="20" y1="60" x2="130" y2="60" stroke="#c5b590" stroke-width="2"/>
+  <line x1="20" y1="80" x2="130" y2="80" stroke="#c5b590" stroke-width="2"/>
+  <text x="75" y="150" font-size="16" text-anchor="middle" fill="#a79a72">CLUE</text>
+</svg>

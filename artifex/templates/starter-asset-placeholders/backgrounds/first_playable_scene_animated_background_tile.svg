@@ -1,0 +1,5 @@
+<svg width="800" height="200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="200" fill="#cde5f4"/>
+  <!-- repeating hills -->
+  <path d="M0 150 L50 130 L100 150 L150 120 L200 150 L250 110 L300 150 L350 140 L400 150 L450 130 L500 150 L550 120 L600 150 L650 135 L700 150 L750 125 L800 150 L800 200 L0 200 Z" fill="#9fc58e"/>
+</svg>
