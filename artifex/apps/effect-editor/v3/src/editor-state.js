@@ -201,7 +201,21 @@ export function normalizeLayer(layer) {
     textSizeOverride: finiteNumber(layer.textSizeOverride, 0),
     textStroke: layer.textStroke !== false,
     textStrokeWidth: finiteNumber(layer.textStrokeWidth, 2),
-    textLetterSpacing: finiteNumber(layer.textLetterSpacing, 1),
+    textLetterSpacing: clamp(finiteNumber(layer.textLetterSpacing, 1), 0, 18),
+    textLineSpacing: clamp(finiteNumber(layer.textLineSpacing, 1.2), 0.7, 2.4),
+    textBlockWidth: clamp(finiteNumber(layer.textBlockWidth, 0), 0, 900),
+    textGeneralSpeed: clamp(finiteNumber(layer.textGeneralSpeed, 1), 0.25, 3),
+    textBlockDelay: clamp(finiteNumber(layer.textBlockDelay, 72), 1, 240),
+    textLineDelay: clamp(finiteNumber(layer.textLineDelay, 12), 1, 120),
+    textCharacterDelay: clamp(finiteNumber(layer.textCharacterDelay, 4), 1, 90),
+    textSpawnDelay: clamp(finiteNumber(layer.textSpawnDelay, 12), 0, 240),
+    textRevealMode: ['all', 'line', 'character'].includes(layer.textRevealMode) ? layer.textRevealMode : 'all',
+    textDirection: ['rise', 'fall', 'static', 'drift'].includes(layer.textDirection) ? layer.textDirection : 'rise',
+    textDensity: clamp(finiteNumber(layer.textDensity, Math.min(finiteNumber(layer.spawnRate, 2), 2.5)), 0, 10),
+    textScatter: clamp(finiteNumber(layer.textScatter, 0), 0, 180),
+    textLifetimeBias: ['short', 'normal', 'long'].includes(layer.textLifetimeBias) ? layer.textLifetimeBias : 'normal',
+    textKeepBlockTogether: layer.textKeepBlockTogether !== false,
+    textEmissionMode: ['once', 'loop', 'continuous'].includes(layer.textEmissionMode) ? layer.textEmissionMode : 'loop',
     syncGroup: layer.syncGroup || ''
   };
 }
