@@ -43,19 +43,15 @@
     const wrap = field.closest('.value-slider-field-v18');
     const slider = wrap?.querySelector('.value-slider-range-v18');
     const readout = wrap?.querySelector('.value-slider-readout-v18');
-    const track = wrap?.querySelector('.value-slider-track-v18');
-    const fill = wrap?.querySelector('.value-slider-fill-v18');
-    const thumb = wrap?.querySelector('.value-slider-thumb-v18');
-    if (slider) slider.value = value;
-    if (readout) readout.textContent = String(value);
-    if (track && fill && thumb) {
-      const min = Number(field.min || 0);
-      const max = Number(field.max || 100);
+    if (slider) {
+      slider.value = value;
+      const min = Number(slider.min || field.min || 0);
+      const max = Number(slider.max || field.max || 100);
       const pct = max === min ? 0 : ((Number(value) - min) / (max - min)) * 100;
-      fill.style.height = `${clamp(pct, 0, 100)}%`;
-      thumb.style.bottom = `${clamp(pct, 0, 100)}%`;
-      track.setAttribute('aria-valuenow', String(value));
+      slider.style.setProperty('--value-slider-percent', `${clamp(pct, 0, 100)}%`);
+      slider.setAttribute('aria-valuenow', String(value));
     }
+    if (readout) readout.textContent = String(value);
   }
   function syncBodyClasses() {
     document.body.classList.toggle('aspect-lock-enabled-v23', settings.aspectLock);
@@ -64,7 +60,12 @@
   function applyImageFit() {
     syncBodyClasses();
     const fit = settings.aspectLock ? 'contain' : 'fill';
-    document.querySelectorAll('.scene-item img').forEach((img) => { img.style.objectFit = fit; });
+    document.querySelectorAll('.scene-item img, .scene-item .small').forEach((node) => {
+      node.style.objectFit = fit;
+      node.dataset.aspectFit = fit;
+      node.style.width = '100%';
+      node.style.height = '100%';
+    });
   }
   function applyItemBox(item) {
     const node = selectedNode();
@@ -235,8 +236,13 @@
     activeResize = null;
     document.body.classList.remove('is-resizing-object');
     api()?.saveWorkingCopySoon?.('resize');
+    window.requestAnimationFrame(applyImageFit);
     event?.preventDefault?.(); event?.stopPropagation?.(); event?.stopImmediatePropagation?.();
   }
+  function keepAspectFitFresh(event) {
+    if (event?.target?.closest?.('#itemW, #itemH, .value-slider-range-v18, .value-slider-step-v18')) window.requestAnimationFrame(applyImageFit);
+  }
+
   function enforceWrapAfterSizeInput(event) {
     if (!settings.wrapBoundingBox || !settings.aspectLock) return;
     const input = event.target.closest?.('#itemW, #itemH');
@@ -259,8 +265,8 @@
   document.addEventListener('pointermove', moveResize, true);
   document.addEventListener('pointerup', endResize, true);
   document.addEventListener('pointercancel', endResize, true);
-  document.addEventListener('input', enforceWrapAfterSizeInput, true);
-  document.addEventListener('change', enforceWrapAfterSizeInput, true);
+  document.addEventListener('input', (event) => { enforceWrapAfterSizeInput(event); keepAspectFitFresh(event); }, true);
+  document.addEventListener('change', (event) => { enforceWrapAfterSizeInput(event); keepAspectFitFresh(event); }, true);
   window.addEventListener('load', install);
   window.addEventListener('blur', endResize);
   setInterval(install, 800);

@@ -38,6 +38,10 @@
 
     function input(label, id, value, type = 'text') { return `<div class="field"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(value)}"></div>`; }
 
+    function settingsSearch() {
+      return `<div class="settings-search" role="search"><label class="settings-search-label" for="settingsSearch">Search Settings</label><input id="settingsSearch" type="search" placeholder="Search settings…" title="Search settings by card title or visible control label" aria-label="Search settings by card title or visible control label" autocomplete="off"><p class="settings-search-empty" id="settingsSearchEmpty" hidden>No matching settings</p></div>`;
+    }
+
     function typeSelect(value) {
       const normalized = String(value || 'prop');
       const options = deps.typeOptions.includes(normalized) ? deps.typeOptions : [normalized, ...deps.typeOptions];
@@ -61,14 +65,14 @@
 
     function selectedForm(item) {
       item.tags = Array.isArray(item.tags) ? item.tags : [];
-      return `${input('ID', 'itemId', item.id)}${input('Name', 'itemName', item.name || item.label || '')}${typeSelect(item.type || '')}${pathInput('Image Path', 'itemImage', item.image || '', 'item')}${input('Text', 'itemText', item.text || '')}<div class="field-row">${input('X Axis', 'itemX', item.x ?? 10, 'number')}${input('Y Axis', 'itemY', item.y ?? 10, 'number')}</div><div class="field-row">${input('Width', 'itemW', item.width ?? 10, 'number')}${input('Height', 'itemH', item.height ?? 10, 'number')}</div><div class="field-row">${input('Layer', 'itemLayer', item.layer ?? item.z ?? 10, 'number')}<div class="field"><label>Z / Depth <span class="range-value" id="zVal">${esc(item.zDepth ?? 0)}</span></label><input id="itemZ" type="range" min="-20" max="20" step="1" value="${esc(item.zDepth ?? 0)}"></div></div><label class="check-row"><input id="itemVisible" type="checkbox" ${item.visible !== false ? 'checked' : ''}> Visible</label>${input('Tags', 'itemTags', item.tags.join(', '))}<div class="button-row"><button class="btn" id="deleteItem" type="button">Delete Selected</button></div>`;
+      return `${input('ID', 'itemId', item.id)}${input('Name', 'itemName', item.name || item.label || '')}${typeSelect(item.type || '')}${pathInput('Image Path', 'itemImage', item.image || '', 'item')}${input('Text', 'itemText', item.text || '')}<div class="field-row">${input('X Axis', 'itemX', item.x ?? 10, 'number')}${input('Y Axis', 'itemY', item.y ?? 10, 'number')}</div><div class="field-row">${input('Width', 'itemW', item.width ?? 10, 'number')}${input('Height', 'itemH', item.height ?? 10, 'number')}</div><div class="field-row">${input('Layer', 'itemLayer', item.layer ?? item.z ?? 10, 'number')}<div class="field"><label>Z / Depth <span class="range-value" id="zVal">${esc(item.zDepth ?? 0)}</span></label><input id="itemZ" type="number" min="-20" max="20" step="1" value="${esc(item.zDepth ?? 0)}"></div></div><label class="check-row"><input id="itemVisible" type="checkbox" ${item.visible !== false ? 'checked' : ''}> Visible</label>${input('Tags', 'itemTags', item.tags.join(', '))}<div class="button-row"><button class="btn" id="deleteItem" type="button">Delete Selected</button></div>`;
     }
 
     function controlPanel() {
       const state = deps.getState();
-      if (!state.scene) return `<aside class="side-panel"><div class="file-pill">No file loaded</div>${card('blank', 'No Scene Loaded', `<p class="small">Use Import to load a JSON from hard drive, URL, or templates.</p>`, 'basics')}</aside>`;
+      if (!state.scene) return `<aside class="side-panel"><div class="file-pill">No file loaded</div>${settingsSearch()}${card('blank', 'No Scene Loaded', `<p class="small">Use Import to load a JSON from hard drive, URL, or templates.</p>`, 'basics')}</aside>`;
       const item = deps.getSelectedItem();
-      return `<aside class="side-panel">${filePill()}${card('basics', 'Scene', basics(), 'basics')}${card('background', 'Background', background(), 'basics')}${card('elements', 'Object Layers', elements(), 'elements')}${card('selected', 'Selected Details', item ? selectedForm(item) : '<p class="small">Select an object.</p>', 'selected')}${card('json', 'JSON Preview', `<pre class="json-preview">${esc(JSON.stringify(state.scene, null, 2))}</pre>`, 'json')}</aside>`;
+      return `<aside class="side-panel">${filePill()}${settingsSearch()}${card('basics', 'Scene', basics(), 'basics')}${card('background', 'Background', background(), 'basics')}${card('elements', 'Object Layers', elements(), 'elements')}${card('selected', 'Selected Details', item ? selectedForm(item) : '<p class="small">Select an object.</p>', 'selected')}${card('json', 'JSON Preview', `<pre class="json-preview">${esc(JSON.stringify(state.scene, null, 2))}</pre>`, 'json')}</aside>`;
     }
 
     function letters(i) { let n = i + 1, s = ''; while (n > 0) { const r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = Math.floor((n - 1) / 26); } return s; }

@@ -12,6 +12,7 @@
     vibrance: 0,
     exposure: 0,
     shadowStrength: 0,
+    shadowBlur: 25,
     glowStrength: 0
   };
 
@@ -68,6 +69,7 @@
           ${numberMarkup('visualVibranceV21', 'Vibrance', visual.vibrance, -100, 100, 1)}
           ${numberMarkup('visualExposureV21', 'Exposure', visual.exposure, -100, 100, 1)}
           ${numberMarkup('visualShadowStrengthV21', 'Shadow Strength', visual.shadowStrength, 0, 100, 1)}
+          ${numberMarkup('visualShadowBlurV21', 'Shadow Blur', visual.shadowBlur, 0, 100, 1)}
           ${numberMarkup('visualGlowStrengthV21', 'Glow Strength', visual.glowStrength, 0, 100, 1)}
         </div>
       </div>`;
@@ -95,8 +97,9 @@
 
     if (shadow > 0) {
       const offset = Math.round(2 + shadow * 0.11);
-      const blur = Math.round(5 + shadow * 0.42);
-      const alpha = clamp(0.26 + shadow / 70, 0, 1);
+      const shadowBlur = clamp(visual.shadowBlur, 0, 100);
+      const blur = Math.round(1 + shadowBlur * 0.62);
+      const alpha = clamp(0.22 + shadow / 80, 0, 1);
       filters.push(`drop-shadow(${Math.round(shadow * 0.08)}px ${offset}px ${blur}px rgba(0,0,0,${alpha}))`);
       if (shadow > 45) filters.push(`drop-shadow(0 ${Math.round(offset * 0.5)}px ${Math.round(blur * 0.55)}px rgba(0,0,0,${clamp(alpha * 0.75, 0, 0.95)}))`);
     }
@@ -145,6 +148,7 @@
     setInputValue('visualVibranceV21', visual.vibrance);
     setInputValue('visualExposureV21', visual.exposure);
     setInputValue('visualShadowStrengthV21', visual.shadowStrength);
+    setInputValue('visualShadowBlurV21', visual.shadowBlur);
     setInputValue('visualGlowStrengthV21', visual.glowStrength);
   }
 
@@ -167,6 +171,7 @@
       if (input.id === 'visualVibranceV21') visual.vibrance = clamp(input.value, -100, 100);
       if (input.id === 'visualExposureV21') visual.exposure = clamp(input.value, -100, 100);
       if (input.id === 'visualShadowStrengthV21') visual.shadowStrength = clamp(input.value, 0, 100);
+      if (input.id === 'visualShadowBlurV21') visual.shadowBlur = clamp(input.value, 0, 100);
       if (input.id === 'visualGlowStrengthV21') visual.glowStrength = clamp(input.value, 0, 100);
 
       applyVisuals();
