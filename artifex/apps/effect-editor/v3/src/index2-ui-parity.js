@@ -7,9 +7,10 @@ import {
 } from './editor-state.js';
 import { resizeCanvas } from './editor-renderer.js';
 
-const VERSION_LABEL = 'INDEX2-CLEAN-0.1.8-UI';
+const VERSION_LABEL = 'INDEX2-CLEAN-0.1.9-UI';
 const LAYOUT_STORAGE_KEY = 'artifex-index2-ui-layout';
 const COLLAPSE_STORAGE_KEY = 'artifex-index2-card-collapse';
+let lastPausedState = null;
 
 window.addEventListener('DOMContentLoaded', initIndex2UIParity);
 
@@ -65,8 +66,7 @@ function setupCardCollapse() {
     setCardCollapsed(card, saved.includes(card.id));
     button.addEventListener('click', (event) => {
       event.stopPropagation();
-      const collapsed = !card.classList.contains('index2-card-collapsed');
-      setCardCollapsed(card, collapsed);
+      setCardCollapsed(card, !card.classList.contains('index2-card-collapsed'));
       persistCollapsedCards();
     });
   });
@@ -102,6 +102,7 @@ function setupLayerPanelLayout() {
   const toolbar = document.querySelector('.index2-layer-toolbar');
   const list = document.getElementById('layer-list');
   if (!toolbar || !list || toolbar.parentElement?.classList.contains('index2-layer-panel-body')) return;
+  toolbar.querySelector('[data-index2-action="delete"]')?.remove();
   const body = document.createElement('div');
   body.className = 'index2-layer-panel-body';
   toolbar.before(body);
@@ -110,6 +111,7 @@ function setupLayerPanelLayout() {
 
 function syncParityUI() {
   syncCanvasButtonIcons();
+  syncPreviewStatusPill();
   enhanceLayerList();
 }
 
@@ -117,13 +119,34 @@ function syncCanvasButtonIcons() {
   const pause = document.getElementById('pause-button');
   const snapshot = document.getElementById('snapshot-button');
   if (pause) {
-    pause.textContent = editorState.isPaused ? '▶️' : '⏸️';
-    pause.title = editorState.isPaused ? 'Resume preview' : 'Pause preview';
+    if (editorState.isPaused) {
+      pause.innerHTML = '<span class="index2-paused-icon" aria-hidden="true">▶️</span>';
+      pause.title = 'Resume preview';
+      if (lastPausedState === false) {
+        pause.classList.remove('index2-paused-flash');
+        void pause.offsetWidth;
+        pause.classList.add('index2-paused-flash');
+        window.setTimeout(() => pause.classList.remove('index2-paused-flash'), 720);
+      }
+    } else {
+      pause.innerHTML = '<span class="index2-play-spinner" aria-hidden="true"></span>';
+      pause.title = 'Pause preview';
+      pause.classList.remove('index2-paused-flash');
+    }
   }
   if (snapshot) {
     snapshot.textContent = '📸';
     snapshot.title = 'Take snapshot';
   }
+  lastPausedState = editorState.isPaused;
+}
+
+function syncPreviewStatusPill() {
+  const state = document.getElementById('index2-display-state');
+  if (!state) return;
+  state.textContent = editorState.isPaused ? 'PAUSED' : 'PLAYING';
+  state.classList.toggle('index2-status-paused', editorState.isPaused);
+  state.classList.toggle('index2-status-playing', !editorState.isPaused);
 }
 
 function enhanceLayerList() {
@@ -154,12 +177,10 @@ function enhanceLayerList() {
 function restoreQuickEditHelpers() {
   const card = document.getElementById('index2-card-presets');
   if (!card || card.querySelector('.index2-quick-helper-sections')) return;
-  const oldRow = card.querySelector('.button-row');
-  if (oldRow) oldRow.classList.add('index2-original-quick-row');
-  installCorrectedCorePresetHandlers(card);
+  card.querySelector('.button-row')?.remove();
   card.insertAdjacentHTML('beforeend', `
     <div class="index2-quick-helper-sections">
-      ${helperSection('Colour Helpers', 'colour', ['Water', 'Evil'])}
+      ${helperSection('Colour Helpers', 'colour', ['Fire', 'Ice', 'Good Magic', 'Dark Magic', 'Water', 'Evil'])}
       ${helperSection('Appearance Helpers', 'appearance', ['Soft Glow', 'Sharp Sparks', 'Fade In/Out', 'Bright Add', 'White Fog', 'Sooty Smoke'])}
       ${helperSection('Dynamics Helpers', 'dynamics', ['Slow Drift', 'Burst Out', 'Rise Up', 'Tight Trail'])}
     </div>
@@ -171,25 +192,6 @@ function restoreQuickEditHelpers() {
       updateActiveLayer(patch);
       showLocalToast(`${button.textContent.trim()} helper applied.`, 'success');
     });
-  });
-}
-
-function installCorrectedCorePresetHandlers(card) {
-  const patches = {
-    fire: HELPER_PATCHES['colour:fire'],
-    ice: HELPER_PATCHES['colour:ice'],
-    goodMagic: HELPER_PATCHES['colour:good-magic'],
-    darkMagic: HELPER_PATCHES['colour:dark-magic']
-  };
-  card.querySelectorAll('[data-quick-preset]').forEach((button) => {
-    button.addEventListener('click', (event) => {
-      const patch = patches[button.dataset.quickPreset];
-      if (!patch) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      updateActiveLayer(patch);
-      showLocalToast(`${button.textContent.trim()} helper applied.`, 'success');
-    }, true);
   });
 }
 
