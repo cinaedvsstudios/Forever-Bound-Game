@@ -1,6 +1,12 @@
 import { DESIGN_WIDTH as W, DESIGN_HEIGHT as H } from './module-config.js';
 import { getBlockType } from './block-types.js';
 
+const endpointAssets = {
+  start: new URL('../../icons/start.png?v=1.2.4', import.meta.url).href,
+  finish: new URL('../../icons/finish.png?v=1.2.4', import.meta.url).href
+};
+const endpointImages = {};
+
 export function drawCanvas(app) {
   const { canvas, ctx, state } = app;
   const layout = app.layoutState.get();
@@ -24,18 +30,17 @@ export function drawCanvas(app) {
 
   const q = app.quest();
   if (!q) {
-    drawHeaderBox(ctx, 60, 50, '📜', 'No Quest Selected', 'Create or import a Quest to begin.', false);
+    drawQuestHeaderCard(ctx, 54, 34, '📜', 'No Quest Selected', 'Create or import a Quest to begin.', 'No Calling text set', false);
     return;
   }
 
-  drawHeaderBox(ctx, 54, 42, q.thumbnail || '📜', q.name, `${q.chronicleId} / ${q.type} / ${(q.blocks || []).length} blocks`, state.inspectorTarget === 'quest');
-  app.hitZones.push({ kind: 'quest', x: 54, y: 42, w: 560, h: 70, index: state.activeQuest });
-  drawCallingPill(ctx, 54, 124, q.callingText || 'No Calling text set', state.inspectorTarget === 'quest');
-  app.hitZones.push({ kind: 'quest', x: 54, y: 124, w: 720, h: 38, index: state.activeQuest });
+  drawQuestHeaderCard(ctx, 54, 34, q.thumbnail || '📜', q.name, `${q.chronicleId} / ${q.type} / ${(q.blocks || []).length} blocks`, q.callingText || 'No Calling text set', state.inspectorTarget === 'quest');
+  app.hitZones.push({ kind: 'quest', x: 54, y: 34, w: 740, h: 72, index: state.activeQuest });
+  app.hitZones.push({ kind: 'quest', x: 70, y: 104, w: 708, h: 39, index: state.activeQuest });
 
-  drawNode(ctx, 60, 190, 170, 96, 'START', '◇', typeColor('neutral'));
+  drawEndpointNode(ctx, 118, 245, 'start', app);
 
-  let x = 270;
+  let x = 252;
   let y = 190;
   const cardW = 250;
   const cardH = 124;
@@ -60,7 +65,7 @@ export function drawCanvas(app) {
     x += cardW + gap;
   });
 
-  drawNode(ctx, W - 230, H - 145, 170, 96, 'END', '✓', typeColor('neutral'));
+  drawEndpointNode(ctx, W - 115, H - 108, 'finish', app);
 }
 
 export function getCanvasHit(app, event) {
@@ -77,33 +82,37 @@ export function applyCanvasTransform(canvas, layout) {
   canvas.style.transform = `translate(${layout.panX}px, ${layout.panY}px) scale(${layout.zoom})`;
 }
 
-function drawHeaderBox(ctx, x, y, thumb, title, meta, selected) {
-  box(ctx, x, y, 560, 70, 18, selected ? 'rgba(62,180,137,.2)' : 'rgba(17,26,20,.88)', selected ? '#7ff0bd' : 'rgba(226,204,167,.26)', selected ? 3 : 1);
+function drawQuestHeaderCard(ctx, x, y, thumb, title, meta, calling, selected) {
+  const w = 740;
+  const h = 114;
+  box(ctx, x, y, w, h, 21, selected ? 'rgba(28,70,52,.63)' : 'rgba(17,26,20,.9)', selected ? '#7ff0bd' : 'rgba(226,204,167,.26)', selected ? 3 : 1);
   ctx.fillStyle = 'rgba(62,180,137,.16)';
-  round(ctx, x + 14, y + 13, 44, 44, 14);
+  round(ctx, x + 16, y + 14, 44, 44, 14);
   ctx.fill();
   ctx.fillStyle = '#fff0ce';
   ctx.font = '25px Arial';
-  ctx.fillText(thumb, x + 24, y + 43);
+  ctx.fillText(thumb, x + 26, y + 44);
   ctx.fillStyle = '#fff0ce';
   ctx.font = '700 22px Georgia';
-  ctx.fillText(short(title, 38), x + 72, y + 32);
+  ctx.fillText(short(title, 46), x + 74, y + 30);
   ctx.fillStyle = '#7ff0bd';
-  ctx.font = '600 13px Arial';
-  ctx.fillText(short(meta, 58), x + 72, y + 54);
-}
+  ctx.font = '600 12px Arial';
+  ctx.fillText(short(meta, 68), x + 74, y + 52);
 
-function drawCallingPill(ctx, x, y, text, selected) {
-  box(ctx, x, y, 720, 38, 19, selected ? 'rgba(62,180,137,.22)' : 'rgba(62,180,137,.14)', selected ? '#7ff0bd' : 'rgba(62,180,137,.45)', selected ? 2 : 1);
+  ctx.strokeStyle = 'rgba(127,240,189,.2)';
+  line(ctx, x + 16, y + 66, x + w - 16, y + 66);
+  round(ctx, x + 16, y + 74, w - 32, 30, 15);
+  ctx.fillStyle = 'rgba(62,180,137,.07)';
+  ctx.fill();
   ctx.fillStyle = '#7ff0bd';
-  ctx.font = '700 13px Arial';
-  ctx.fillText('Calling', x + 18, y + 24);
-  ctx.fillStyle = 'rgba(226,204,167,.88)';
-  ctx.font = '600 13px Arial';
-  ctx.fillText(short(text, 82), x + 90, y + 24);
+  ctx.font = '700 12px Arial';
+  ctx.fillText('Calling', x + 30, y + 94);
+  ctx.fillStyle = 'rgba(226,204,167,.9)';
+  ctx.font = '600 12px Arial';
+  ctx.fillText(short(calling, 86), x + 94, y + 94);
   ctx.fillStyle = '#fff0ce';
-  ctx.font = '16px Arial';
-  ctx.fillText('✎', x + 690, y + 25);
+  ctx.font = '14px Arial';
+  ctx.fillText('✎', x + w - 40, y + 94);
 }
 
 function drawFlowCard(ctx, x, y, w, h, item, selected) {
@@ -147,16 +156,56 @@ function drawFlowCard(ctx, x, y, w, h, item, selected) {
   ctx.fillText('✎', x + w - 28, y + 28);
 }
 
-function drawNode(ctx, x, y, w, h, title, thumb, color) {
-  box(ctx, x, y, w, h, 18, 'rgba(17,26,20,.72)', color, 1.5);
-  ctx.fillStyle = '#fff0ce';
-  ctx.font = '24px Arial';
-  ctx.fillText(thumb, x + 20, y + 42);
-  ctx.font = '700 18px Georgia';
-  ctx.fillText(title, x + 60, y + 42);
-  ctx.fillStyle = 'rgba(226,204,167,.64)';
-  ctx.font = '600 11px Arial';
-  ctx.fillText(title === 'START' ? 'quest begins' : 'quest resolves', x + 20, y + 68);
+function drawEndpointNode(ctx, cx, cy, kind, app) {
+  const isStart = kind === 'start';
+  const fill = isStart ? '#58dda7' : '#e2cca7';
+  const stroke = isStart ? '#7ff0bd' : '#fff0ce';
+  const dark = '#08110d';
+  const label = isStart ? 'START' : 'END';
+  const helper = isStart ? 'quest begins' : 'quest resolves';
+  const radius = 48;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.lineWidth = 1;
+
+  const image = getEndpointImage(kind, app);
+  if (image?.loaded) {
+    ctx.drawImage(image.element, cx - 33, cy - 33, 66, 66);
+  } else {
+    ctx.fillStyle = dark;
+    ctx.font = '700 35px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(isStart ? '▶' : '✓', cx, cy + 12);
+    ctx.textAlign = 'left';
+  }
+  ctx.fillStyle = stroke;
+  ctx.font = '700 17px Georgia';
+  ctx.textAlign = 'center';
+  ctx.fillText(label, cx, cy + 70);
+  ctx.fillStyle = 'rgba(226,204,167,.68)';
+  ctx.font = '600 10px Arial';
+  ctx.fillText(helper, cx, cy + 87);
+  ctx.textAlign = 'left';
+}
+
+function getEndpointImage(kind, app) {
+  if (endpointImages[kind]) return endpointImages[kind];
+  const state = { element: new Image(), loaded: false, failed: false };
+  state.element.onload = () => {
+    state.loaded = true;
+    app.draw();
+  };
+  state.element.onerror = () => {
+    state.failed = true;
+  };
+  state.element.src = endpointAssets[kind];
+  endpointImages[kind] = state;
+  return state;
 }
 
 function missingFields(item, blockType) {
