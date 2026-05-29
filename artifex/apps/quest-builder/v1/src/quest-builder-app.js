@@ -234,6 +234,10 @@ function renderQuestList() {
   });
 }
 
+function clearBlockDragClasses() {
+  document.querySelectorAll('#block-list .record-item').forEach((element) => element.classList.remove('dragging', 'drag-over'));
+}
+
 function renderBlockList() {
   const q = app.quest();
   $('block-list').innerHTML = '';
@@ -248,26 +252,31 @@ function renderBlockList() {
     button.onclick = () => selectBlock(index);
     button.ondragstart = (event) => {
       state.dragBlockIndex = index;
-      selectBlock(index);
+      state.activeBlock = index;
+      state.inspectorTarget = 'block';
       event.dataTransfer.effectAllowed = 'move';
       event.dataTransfer.setData('text/plain', String(index));
-      requestAnimationFrame(() => button.classList.add('dragging'));
+      button.classList.add('dragging', 'selected');
     };
     button.ondragover = (event) => {
       event.preventDefault();
       event.dataTransfer.dropEffect = 'move';
-      if (state.dragBlockIndex !== null && state.dragBlockIndex !== index) button.classList.add('drag-over');
+      if (state.dragBlockIndex !== null && state.dragBlockIndex !== index) {
+        clearBlockDragClasses();
+        button.classList.add('drag-over');
+      }
     };
     button.ondragleave = () => button.classList.remove('drag-over');
     button.ondrop = (event) => {
       event.preventDefault();
-      button.classList.remove('drag-over');
       const from = Number(event.dataTransfer.getData('text/plain') || state.dragBlockIndex);
+      clearBlockDragClasses();
       reorderBlock(from, index);
     };
     button.ondragend = () => {
-      button.classList.remove('dragging', 'drag-over');
+      clearBlockDragClasses();
       state.dragBlockIndex = null;
+      render();
     };
     button.querySelector('.edit-mini').onclick = (event) => { event.stopPropagation(); state.activeBlock = index; state.inspectorTarget = 'block'; document.dispatchEvent(new CustomEvent('quest-builder-edit-block')); };
     button.ondblclick = () => document.dispatchEvent(new CustomEvent('quest-builder-edit-block'));
