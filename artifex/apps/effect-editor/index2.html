@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Artifex Effect Editor Index2 Clean V0.1.9 UI</title>
-  <link rel="stylesheet" href="./v3/styles.css?v=index2-019-ui" />
-  <link rel="stylesheet" href="./v3/index2-ui-parity.css?v=019-ui" />
+  <title>Artifex Effect Editor Index2 Clean V0.2.0 UI</title>
+  <link rel="stylesheet" href="./v3/styles.css?v=index2-020-ui" />
+  <link rel="stylesheet" href="./v3/index2-ui-parity.css?v=020-ui" />
 </head>
 <body>
   <header class="topbar">
@@ -13,7 +13,7 @@
       <div class="brand-mark">✦</div>
       <div>
         <h1>ARTIFEX</h1>
-        <p>Visual Effects Editor <span id="version-badge">INDEX2-CLEAN-0.1.9-UI</span></p>
+        <p>Visual Effects Editor <span id="version-badge">INDEX2-CLEAN-0.2.0-UI</span></p>
       </div>
     </section>
 
@@ -67,7 +67,7 @@
       <div class="menu">
         <button class="menu-button" data-menu="help">Help ▾</button>
         <div class="menu-panel right" id="menu-help">
-          <button id="about-button">About INDEX2-CLEAN-0.1.9-UI</button>
+          <button id="about-button">About INDEX2-CLEAN-0.2.0-UI</button>
         </div>
       </div>
     </nav>
@@ -81,7 +81,7 @@
         <p id="left-panel-search-count" class="index2-search-count">Showing all sections.</p>
       </section>
 
-      <section id="index2-card-assets" class="card" data-search-card="Effect Archetype Assets archetype id layer name engine type">
+      <section id="index2-card-assets" class="card" data-search-card="Effect Archetype Assets archetype id tags layer name engine type">
         <header><h2>Effect Archetype Assets</h2><button type="button" class="index2-card-collapse" data-card-collapse title="Collapse Effect Archetype Assets">⬆️</button></header>
         <label>Archetype ID<input id="archetype-id-input" value="fx_v3_effect_001" /></label>
         <label>Layer Name<input id="layer-name-input" placeholder="Select or add a layer" /></label>
@@ -98,7 +98,7 @@
         </div>
       </section>
 
-      <section id="index2-card-appearance" class="card" data-search-card="Effect Layer Appearance colour opacity size glow ramp palette brush">
+      <section id="index2-card-appearance" class="card" data-search-card="Effect Layer Appearance colour opacity size glow ramp palette brush shape custom image png hex">
         <header><h2>Effect Layer Appearance</h2><button type="button" class="index2-card-collapse" data-card-collapse title="Collapse Effect Layer Appearance">⬆️</button></header>
         <label>Start Colour<input id="color-a-input" type="color" value="#ffcc66" /></label>
         <label>End Colour<input id="color-b-input" type="color" value="#ff6600" /></label>
@@ -109,7 +109,7 @@
         <label>Glow Strength<input id="glow-input" type="range" min="0" max="50" step="1" value="12" /><output id="glow-output">12</output></label>
       </section>
 
-      <section id="index2-card-dynamics" class="card" data-search-card="Effect Layer Dynamics origin density speed gravity direction spread lifetime">
+      <section id="index2-card-dynamics" class="card" data-search-card="Effect Layer Dynamics origin density speed gravity direction spread lifetime emitter width">
         <header><h2>Effect Layer Dynamics</h2><button type="button" class="index2-card-collapse" data-card-collapse title="Collapse Effect Layer Dynamics">⬆️</button></header>
         <label>Origin X<input id="emitter-x-input" type="number" min="0" max="1280" value="640" /></label>
         <label>Origin Y<input id="emitter-y-input" type="number" min="0" max="720" value="450" /></label>
@@ -152,8 +152,8 @@
     </section>
   </main>
 
-  <script type="module" src="./v3/src/index2-clean-controller.js?v=016"></script>
-  <script type="module" src="./v3/src/index2-ui-parity.js?v=019-ui"></script>
-  <script type="module" src="./v3/src/index2-appearance-restore.js?v=019-ui"></script>
+  <script type="module" src="./v3/src/index2-clean-controller.js?v=020-ui"></script>
+  <script type="module" src="./v3/src/index2-ui-parity.js?v=020-ui"></script>
+  <script type="module" src="./v3/src/index2-appearance-restore.js?v=020-ui"></script>
 </body>
 </html>
