@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v0.28-consolidation';
+  const VERSION = window.ArtifexSceneEditorCore?.getVersion?.() || window.ArtifexSceneEditorConfig?.VERSION || 'v0.31-runtime-module-cleanup';
   const LAYER_LOCK_KEY = 'artifex.sceneEditor.layerLocks.v1';
   const BORDER_KEY = 'artifex.sceneEditor.borderHidden.v1';
   const ASSET_MANIFEST = '../../assets-library/asset-library.json';
