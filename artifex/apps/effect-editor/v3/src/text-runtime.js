@@ -10,6 +10,8 @@ const SAFE_FONTS = new Map([
 ]);
 const EMISSION_MODES = new Set(['once', 'loop', 'continuous']);
 const REVEAL_MODES = new Set(['all', 'line', 'character']);
+const lineLayoutCache = new Map();
+const LINE_LAYOUT_CACHE_LIMIT = 160;
 
 export function isTextLayer(layer) {
   return Boolean(layer && ((layer.appearanceMode === 'shape' && layer.particleShape === 'text') || layer.engine === 'text'));
@@ -67,10 +69,10 @@ export function drawTextParticle(ctx, particle, layer, scale) {
   ctx.textBaseline = 'middle';
   ctx.textAlign = layer.textAlign || 'center';
 
-  const rawText = String(particle.textToken ?? layer.textContent ?? 'AETHERA').slice(0, 600);
+  const rawText = String(particle.textToken ?? layer.textContent ?? 'AETHERA').slice(0, 420);
   const blockWidth = Math.max(0, finite(layer.textBlockWidth, 0)) * scale;
-  const maxLines = normalizeEmissionMode(layer.textEmissionMode) === 'continuous' ? 8 : 12;
-  const lines = prepareLines(ctx, rawText, blockWidth).slice(0, maxLines);
+  const maxLines = normalizeEmissionMode(layer.textEmissionMode) === 'continuous' ? 6 : 10;
+  const lines = prepareLinesCached(ctx, rawText, blockWidth, maxLines).slice(0, maxLines);
   const lineHeight = safeSize * Math.max(0.7, Math.min(3, finite(layer.textLineSpacing, 1.2)));
   const letterSpacing = Math.max(0, Math.min(32 * scale, finite(layer.textLetterSpacing, 0) * scale));
   const startY = -((lines.length - 1) * lineHeight) / 2;
@@ -196,10 +198,11 @@ function scheduleNextEmission(layer, state, mode, reveal, completedCycle) {
 }
 
 function getDelayForNextEmission(layer, reveal, completedCycle) {
-  if (completedCycle) return getFrameDelay(layer.textBlockDelay, 48, 1, 240);
-  if (reveal === 'line') return getFrameDelay(layer.textLineDelay, 6, 1, 120);
-  if (reveal === 'character') return getFrameDelay(layer.textCharacterDelay, 2, 1, 90);
-  return getFrameDelay(layer.textBlockDelay, 48, 1, 240);
+  const spawnDelay = getFrameDelay(layer.textSpawnDelay, 0, 0, 240);
+  if (completedCycle) return Math.max(spawnDelay, getFrameDelay(layer.textBlockDelay, 72, 1, 240));
+  if (reveal === 'line') return Math.max(spawnDelay, getFrameDelay(layer.textLineDelay, 12, 1, 120));
+  if (reveal === 'character') return Math.max(spawnDelay, getFrameDelay(layer.textCharacterDelay, 4, 1, 90));
+  return Math.max(spawnDelay, getFrameDelay(layer.textBlockDelay, 72, 1, 240));
 }
 
 function getFrameDelay(value, fallback, min, max) {
@@ -217,7 +220,7 @@ function getTextGeneralSpeed(layer) {
 }
 
 function getBurstTextCount(density) {
-  return Math.max(1, Math.min(5, Math.ceil(density / 2.5)));
+  return Math.max(1, Math.min(3, Math.ceil(density / 3.25)));
 }
 
 function getContinuousTextCount(density) {
@@ -230,6 +233,22 @@ function getContinuousTextCount(density) {
 function getTextRuntimeState(layer) {
   if (!textRuntimeState.has(layer.id)) textRuntimeState.set(layer.id, {});
   return textRuntimeState.get(layer.id);
+}
+
+
+function prepareLinesCached(ctx, text, blockWidth, maxLines) {
+  const normalizedText = String(text || '').slice(0, 420);
+  const normalizedWidth = Math.round(Number(blockWidth) || 0);
+  const key = `${ctx.font}|${normalizedWidth}|${maxLines}|${normalizedText}`;
+  const cached = lineLayoutCache.get(key);
+  if (cached) return cached;
+  const lines = prepareLines(ctx, normalizedText, normalizedWidth).slice(0, maxLines).map((line) => String(line).slice(0, 120));
+  lineLayoutCache.set(key, lines);
+  if (lineLayoutCache.size > LINE_LAYOUT_CACHE_LIMIT) {
+    const firstKey = lineLayoutCache.keys().next().value;
+    lineLayoutCache.delete(firstKey);
+  }
+  return lines;
 }
 
 function prepareLines(ctx, text, blockWidth) {
@@ -263,7 +282,7 @@ function drawTextLine(ctx, text, x, y, letterSpacing, stroke = false) {
     else ctx.fillText(text, x, y);
     return;
   }
-  const chars = Array.from(text);
+  const chars = Array.from(String(text).slice(0, 120));
   const widths = chars.map((char) => ctx.measureText(char).width);
   const total = widths.reduce((sum, width) => sum + width, 0) + Math.max(0, chars.length - 1) * letterSpacing;
   let cursor = x;

@@ -24,7 +24,7 @@ import {
 import { initRenderer, takeSnapshot } from './editor-renderer.js';
 import { cloneBasePreset, listBasePresets } from './presets/base-effects.js';
 
-const VERSION_LABEL = 'INDEX2-CLEAN-0.1.5';
+const VERSION_LABEL = 'INDEX2-CLEAN-0.1.6';
 const LOCAL_STORAGE_PREFIX = 'artifex-index2-effect:';
 const LOCAL_STORAGE_INDEX = 'artifex-index2-effect-index';
 
@@ -40,7 +40,8 @@ const ENGINE_OPTIONS = [
   ['refraction', 'Refraction / Shimmer Engine'],
   ['heatdistortion', 'Heat Distortion Engine'],
   ['lensflare', 'Lens Flare Engine'],
-  ['true-lensflare', 'True Lens Flare Engine']
+  ['true-lensflare', 'True Lens Flare Engine'],
+  ['text', 'Text Effect Engine']
 ];
 
 const BINDINGS = [
@@ -120,6 +121,34 @@ const EFFECT_SPECIFIC_CONTROL_SETS = {
   ]
 };
 
+const TEXT_EFFECT_CONTROLS = [
+  { property: 'textContent', label: 'Text Content', type: 'textarea', rows: 4 },
+  { property: 'textFont', label: 'Font', type: 'select', options: [
+    ['Cinzel, Georgia, serif', 'Cinzel / Fantasy Serif'],
+    ['Georgia, serif', 'Georgia Serif'],
+    ['Garamond, serif', 'Garamond Serif'],
+    ['Arial, sans-serif', 'Arial Sans'],
+    ['monospace', 'Monospace']
+  ] },
+  { property: 'textWeight', label: 'Font Weight', type: 'select', options: [['400', 'Regular'], ['500', 'Medium'], ['700', 'Bold'], ['900', 'Black']] },
+  { property: 'textLetterSpacing', label: 'Letter Spacing', type: 'range', min: 0, max: 18, step: 0.1 },
+  { property: 'textBlockWidth', label: 'Block Width / Wrap', type: 'range', min: 0, max: 900, step: 10 },
+  { property: 'textLineSpacing', label: 'Line Spacing', type: 'range', min: 0.7, max: 2.4, step: 0.05 },
+  { property: 'textGeneralSpeed', label: 'General Speed', type: 'range', min: 0.25, max: 3, step: 0.05 },
+  { property: 'textBlockDelay', label: 'Delay Between Text Blocks', type: 'range', min: 1, max: 240, step: 1 },
+  { property: 'textLineDelay', label: 'Delay Between Lines', type: 'range', min: 1, max: 120, step: 1 },
+  { property: 'textCharacterDelay', label: 'Delay Between Characters', type: 'range', min: 1, max: 90, step: 1, revealModes: ['character'] },
+  { property: 'textRevealMode', label: 'Reveal Mode', type: 'select', options: [['all', 'All Text'], ['line', 'Line by Line'], ['character', 'Character Spray']] },
+  { property: 'textDirection', label: 'Direction', type: 'select', options: [['rise', 'Rise'], ['fall', 'Fall'], ['static', 'Static'], ['drift', 'Drift']] },
+  { property: 'textDensity', label: 'Text Density', type: 'range', min: 0, max: 10, step: 0.1 },
+  { property: 'textSpawnDelay', label: 'Spawn Delay', type: 'range', min: 0, max: 240, step: 1 },
+  { property: 'textScatter', label: 'Scatter', type: 'range', min: 0, max: 180, step: 1 },
+  { property: 'textLifetimeBias', label: 'Lifetime Bias', type: 'select', options: [['short', 'Short'], ['normal', 'Normal'], ['long', 'Long']] },
+  { property: 'textKeepBlockTogether', label: 'Keep Block Together', type: 'checkbox' }
+];
+
+let effectSpecificRenderKey = '';
+
 window.addEventListener('DOMContentLoaded', () => {
   setVersionLabel();
   injectStyles();
@@ -177,6 +206,10 @@ function injectStyles() {
     .index2-control-empty { color: var(--gold-muted); font-size: 11px; line-height: 1.45; margin: 0; }
     .index2-effect-control { display: grid; gap: 5px; margin-bottom: 10px; }
     .index2-effect-control span { display: flex; justify-content: space-between; gap: 10px; color: var(--gold-muted); font-size: 11px; }
+    .index2-effect-control textarea { min-height: 84px; resize: vertical; }
+    .index2-effect-control select, .index2-effect-control textarea { width: 100%; }
+    .index2-effect-control input[type=checkbox] { width: auto; justify-self: start; }
+    .index2-control-note { color: var(--gold-muted); font-size: 10px; line-height: 1.35; margin: -2px 0 10px; }
     .layer-item { cursor: pointer; }
     .layer-item.selected { border-color: var(--module-accent); box-shadow: 0 0 0 1px var(--module-glow); }
     @media (max-width: 1100px) { .index2-bottom-grid { grid-template-columns: 1fr; } }
@@ -507,6 +540,11 @@ function addPresetById(id) {
   if (preset?.config) {
     const config = { ...preset.config };
     if (editorState.emergencyLiteMode) config.spawnRate = Math.min(Number(config.spawnRate) || 4, 4);
+    if (isTextEffectConfig(config)) {
+      config.textDensity = Math.min(Number(config.textDensity) || Number(config.spawnRate) || 2, 2.5);
+      config.spawnRate = Math.min(Number(config.spawnRate) || 2, 3);
+      config.textSpawnDelay = Math.max(Number(config.textSpawnDelay) || 0, 12);
+    }
     addLayer(config);
     showToast(`Added ${preset.label}.`, 'success');
   }
@@ -515,7 +553,7 @@ function addPresetById(id) {
 function syncUI() {
   renderLayerList();
   syncControls();
-  renderEffectSpecificControls();
+  syncEffectSpecificControls();
   applyLeftPanelSearch();
   syncStatus();
 }
@@ -567,38 +605,114 @@ function syncControls() {
   setOutput('lifetime-output', layer?.lifetime);
 }
 
-function renderEffectSpecificControls() {
+function syncEffectSpecificControls() {
   const body = document.getElementById('effect-specific-controls-body');
   if (!body) return;
   const layer = getActiveLayer();
+  const key = getEffectSpecificRenderKey(layer);
+  if (key !== effectSpecificRenderKey) {
+    effectSpecificRenderKey = key;
+    renderEffectSpecificControls(layer);
+  }
+  updateEffectSpecificControlValues(layer);
+}
+
+function getEffectSpecificRenderKey(layer) {
+  if (!layer) return 'none';
+  const kind = isTextEffectConfig(layer) ? 'text' : layer.engine || 'particles';
+  const reveal = isTextEffectConfig(layer) ? (layer.textRevealMode || 'all') : '';
+  return `${layer.id || 'active'}|${kind}|${reveal}`;
+}
+
+function getEffectSpecificControls(layer) {
+  if (isTextEffectConfig(layer)) {
+    const reveal = layer.textRevealMode || 'all';
+    return TEXT_EFFECT_CONTROLS.filter((control) => !control.revealModes || control.revealModes.includes(reveal));
+  }
+  return (EFFECT_SPECIFIC_CONTROL_SETS[layer?.engine] || []).map(([property, label, min, max, step]) => ({
+    property,
+    label,
+    type: 'range',
+    min,
+    max,
+    step
+  }));
+}
+
+function renderEffectSpecificControls(layer = getActiveLayer()) {
+  const body = document.getElementById('effect-specific-controls-body');
+  if (!body) return;
   if (!layer) {
     body.innerHTML = '<p class="index2-control-empty">Select a layer to see engine controls.</p>';
     return;
   }
-  const controls = EFFECT_SPECIFIC_CONTROL_SETS[layer.engine] || [];
+  const controls = getEffectSpecificControls(layer);
   if (!controls.length) {
     body.innerHTML = '<p class="index2-control-empty">This engine has no extra controls in the clean index2 build yet.</p>';
     return;
   }
-  const activeId = document.activeElement?.dataset?.effectProperty || '';
-  body.innerHTML = controls.map(([property, label, min, max, step]) => {
-    const value = formatValue(layer[property]);
-    return `
-      <label class="index2-effect-control">
-        <span><b>${escapeHtml(label)}</b><output id="effect-output-${escapeHtml(property)}">${escapeHtml(value)}</output></span>
-        <input data-effect-property="${escapeHtml(property)}" type="range" min="${min}" max="${max}" step="${step}" value="${escapeHtml(layer[property] ?? 0)}" />
-      </label>
-    `;
-  }).join('');
+  const intro = isTextEffectConfig(layer)
+    ? '<p class="index2-control-note">Text controls use bounded emission and conservative defaults to avoid runaway multiline drawing.</p>'
+    : '';
+  body.innerHTML = `${intro}${controls.map((control) => renderSpecificControl(control, layer)).join('')}`;
   body.querySelectorAll('[data-effect-property]').forEach((input) => {
-    input.addEventListener('input', () => {
-      const property = input.dataset.effectProperty;
-      updateActiveLayer({ [property]: Number(input.value) });
-      const output = document.getElementById(`effect-output-${property}`);
-      if (output) output.textContent = formatValue(input.value);
-    });
-    if (input.dataset.effectProperty === activeId) input.focus({ preventScroll: true });
+    input.addEventListener('input', () => handleSpecificInput(input));
+    input.addEventListener('change', () => handleSpecificInput(input));
   });
+}
+
+function renderSpecificControl(control, layer) {
+  const value = layer[control.property];
+  const output = control.type === 'checkbox' || control.type === 'textarea' || control.type === 'select'
+    ? ''
+    : `<output id="effect-output-${escapeHtml(control.property)}">${escapeHtml(formatValue(value))}</output>`;
+  const label = `<span><b>${escapeHtml(control.label)}</b>${output}</span>`;
+  if (control.type === 'textarea') {
+    return `<label class="index2-effect-control">${label}<textarea data-effect-property="${escapeHtml(control.property)}" rows="${control.rows || 3}">${escapeHtml(value ?? '')}</textarea></label>`;
+  }
+  if (control.type === 'select') {
+    const options = (control.options || []).map(([optionValue, optionLabel]) => `<option value="${escapeHtml(optionValue)}" ${String(value ?? '') === String(optionValue) ? 'selected' : ''}>${escapeHtml(optionLabel)}</option>`).join('');
+    return `<label class="index2-effect-control">${label}<select data-effect-property="${escapeHtml(control.property)}">${options}</select></label>`;
+  }
+  if (control.type === 'checkbox') {
+    return `<label class="index2-effect-control">${label}<input data-effect-property="${escapeHtml(control.property)}" type="checkbox" ${value !== false ? 'checked' : ''} /></label>`;
+  }
+  return `
+    <label class="index2-effect-control">
+      ${label}
+      <input data-effect-property="${escapeHtml(control.property)}" type="range" min="${control.min}" max="${control.max}" step="${control.step}" value="${escapeHtml(value ?? 0)}" />
+    </label>
+  `;
+}
+
+function handleSpecificInput(input) {
+  const property = input.dataset.effectProperty;
+  if (!property) return;
+  let value = input.value;
+  if (input.type === 'range' || input.type === 'number') value = Number(input.value);
+  if (input.type === 'checkbox') value = input.checked;
+  updateActiveLayer({ [property]: value });
+  const output = document.getElementById(`effect-output-${property}`);
+  if (output) output.textContent = formatValue(value);
+}
+
+function updateEffectSpecificControlValues(layer) {
+  const body = document.getElementById('effect-specific-controls-body');
+  if (!body || !layer) return;
+  body.querySelectorAll('[data-effect-property]').forEach((input) => {
+    const property = input.dataset.effectProperty;
+    const value = layer[property];
+    if (document.activeElement !== input) {
+      if (input.type === 'checkbox') input.checked = value !== false;
+      else input.value = value ?? '';
+    }
+    const output = document.getElementById(`effect-output-${property}`);
+    if (output) output.textContent = formatValue(value);
+  });
+}
+
+function isTextEffectConfig(layer) {
+  return Boolean(layer && (layer.engine === 'text' || (layer.appearanceMode === 'shape' && layer.particleShape === 'text')));
 }
 
 function syncStatus() {
