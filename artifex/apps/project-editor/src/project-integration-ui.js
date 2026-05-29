@@ -1,6 +1,6 @@
-import { getLibraryBrowserData } from './project-library-indexes.js?v=0.1.26-split-ui';
-import { closeProjectMenus, getProjectStorageItem, setProjectStorageItem, wireLibraryMenuTargets, wireProjectMenuBehaviourOnce } from './project-menu-ui.js?v=0.1.26-split-ui';
-import { getSelectedProjectNode, linkItemToSelectedNode } from './project-asset-linking.js?v=0.1.26-split-ui';
+import { getLibraryBrowserData } from './project-library-indexes.js?v=0.1.31-tasks';
+import { closeProjectMenus, getProjectStorageItem, setProjectStorageItem, wireLibraryMenuTargets, wireProjectMenuBehaviourOnce } from './project-menu-ui.js?v=0.1.31-tasks';
+import { getSelectedProjectNode, linkItemToSelectedNode } from './project-asset-linking.js?v=0.1.31-tasks';
 
 // Artifex Project Manager integration UI shell
 // Owns Asset Browser workspace integration. Menu wiring and asset linking now live in focused modules.
@@ -203,12 +203,21 @@ export function enhanceProjectUI({ ui, stateManager }) {
       flatplan: document.getElementById('flatplanCanvas'),
       manifest: document.getElementById('manifestWorkspace'),
       stitcher: document.getElementById('stitcherWorkspace'),
-      buildprep: document.getElementById('buildPrepWorkspace')
+      buildprep: document.getElementById('buildPrepWorkspace'),
+      tasks: document.getElementById('tasksWorkspace')
     };
     Object.entries(stages).forEach(([key, element]) => element?.classList.toggle('hidden', key !== workspace));
 
     const workspaceLabel = document.getElementById('activeWorkspaceName');
-    if (workspaceLabel) workspaceLabel.textContent = workspace === 'assetbrowser' ? 'ASSET BROWSER' : workspace === 'wizard' ? 'SETUP WIZARD' : workspace.toUpperCase();
+    if (workspaceLabel) {
+      workspaceLabel.textContent = workspace === 'assetbrowser'
+        ? 'ASSET BROWSER'
+        : workspace === 'wizard'
+          ? 'SETUP WIZARD'
+          : workspace === 'tasks'
+            ? 'PROJECT TASKS'
+            : workspace.toUpperCase();
+    }
 
     if (workspace === 'assetbrowser') ui.renderAssetBrowser();
     if (workspace === 'wizard') ui.renderGettingStartedWizard?.();
