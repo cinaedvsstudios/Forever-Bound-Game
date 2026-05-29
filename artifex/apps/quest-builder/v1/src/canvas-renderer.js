@@ -1,9 +1,9 @@
-import { DESIGN_WIDTH as W, DESIGN_HEIGHT as H } from './module-config.js?v=1.2.7';
-import { getBlockType } from './block-types.js?v=1.2.7';
+import { DESIGN_WIDTH as W, DESIGN_HEIGHT as H } from './module-config.js?v=1.2.8';
+import { getBlockType } from './block-types.js?v=1.2.8';
 
 const endpointAssets = {
-  start: new URL('../../icons/start.png?v=1.2.7', import.meta.url).href,
-  finish: new URL('../../icons/finish.png?v=1.2.7', import.meta.url).href
+  start: new URL('../../icons/start.png?v=1.2.8', import.meta.url).href,
+  finish: new URL('../../icons/finish.png?v=1.2.8', import.meta.url).href
 };
 const endpointImages = {};
 
@@ -71,11 +71,8 @@ export function drawCanvas(app) {
 
 export function getCanvasHit(app, event) {
   const rect = app.canvas.getBoundingClientRect();
-  const layout = app.layoutState.get();
-  const renderedScaleX = rect.width / app.canvas.width;
-  const renderedScaleY = rect.height / app.canvas.height;
-  const x = (event.clientX - rect.left - layout.panX * renderedScaleX) / (renderedScaleX * layout.zoom);
-  const y = (event.clientY - rect.top - layout.panY * renderedScaleY) / (renderedScaleY * layout.zoom);
+  const x = (event.clientX - rect.left) * (app.canvas.width / rect.width);
+  const y = (event.clientY - rect.top) * (app.canvas.height / rect.height);
   return [...(app.hitZones || [])].reverse().find((zone) => x >= zone.x && x <= zone.x + zone.w && y >= zone.y && y <= zone.y + zone.h) || null;
 }
 
