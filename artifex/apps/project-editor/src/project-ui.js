@@ -93,6 +93,7 @@ export function createProjectUI({
   }
 
   function renderTasksWorkspace() {
+    if (!refs.tasksStage) return;
     renderProjectTasks({
       stateManager,
       container: refs.tasksStage,

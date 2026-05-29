@@ -86,7 +86,7 @@ function injectNodeLinksPanel({ ui, stateManager }) {
   const panel = document.getElementById('splitInspectorPreview');
   if (!panel || panel.querySelector('[data-node-links-panel]')) return;
 
-  const footer = panel.querySelector('.border-t.border-\[\#2d2d42\]');
+  const footer = [...panel.children].find((child) => child.classList?.contains('border-t') && String(child.className).includes('border-[#2d2d42]'));
   const section = document.createElement('div');
   section.setAttribute('data-node-links-panel', 'true');
   section.className = 'px-3 pb-3 space-y-2';

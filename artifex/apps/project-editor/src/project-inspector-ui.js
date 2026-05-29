@@ -1,4 +1,4 @@
-import { UI_STORAGE_KEYS, escapeHtml, getById, readJSONPreference, writeJSONPreference } from './project-ui-helpers.js?v=0.1.28-inspector';
+import { UI_STORAGE_KEYS, escapeHtml, getById, readJSONPreference, writeJSONPreference } from './project-ui-helpers.js?v=0.1.31-tasks';
 
 // Artifex Project Manager inspector UI
 // Owns the selected node/route inspector, draggable inspector behaviour, and position persistence.
@@ -43,6 +43,7 @@ export function createProjectInspectorUI({
     if (!canvas || !handle) return;
 
     handle.addEventListener('pointerdown', (event) => {
+      if (event.target?.closest?.('[data-inspector-reset-position]')) return;
       if (event.button !== 0) return;
       event.preventDefault();
       event.stopPropagation();
@@ -91,7 +92,7 @@ export function createProjectInspectorUI({
   function finishInspectorPanel(panel) {
     const canvas = getCanvas();
     if (!canvas) return;
-    canvas.appendChild(panel);
+    (canvas.parentElement || canvas).appendChild(panel);
     applyInspectorPosition(panel);
     makeInspectorDraggable(panel);
     if (window.lucide) window.lucide.createIcons();
@@ -108,7 +109,10 @@ export function createProjectInspectorUI({
 
     const panel = document.createElement('div');
     panel.id = 'splitInspectorPreview';
-    panel.className = 'absolute z-30 w-[300px] bg-cardDark/85 backdrop-blur-md border border-projectGold/30 rounded-lg shadow-card-glow';
+    panel.className = 'w-[300px] bg-cardDark/85 backdrop-blur-md border border-projectGold/30 rounded-lg shadow-card-glow';
+    panel.style.position = 'absolute';
+    panel.style.zIndex = '80';
+    panel.style.pointerEvents = 'auto';
 
     if (selectedNode) {
       panel.innerHTML = `
