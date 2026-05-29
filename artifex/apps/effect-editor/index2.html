@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Artifex Effect Editor Index2 Clean V0.1.7 UI</title>
-  <link rel="stylesheet" href="./v3/styles.css?v=index2-017-ui" />
-  <link rel="stylesheet" href="./v3/index2-ui-parity.css?v=017-ui" />
+  <title>Artifex Effect Editor Index2 Clean V0.1.8 UI</title>
+  <link rel="stylesheet" href="./v3/styles.css?v=index2-018-ui" />
+  <link rel="stylesheet" href="./v3/index2-ui-parity.css?v=018-ui" />
 </head>
 <body>
   <header class="topbar">
@@ -13,7 +13,7 @@
       <div class="brand-mark">✦</div>
       <div>
         <h1>ARTIFEX</h1>
-        <p>Visual Effects Editor <span id="version-badge">INDEX2-CLEAN-0.1.7-UI</span></p>
+        <p>Visual Effects Editor <span id="version-badge">INDEX2-CLEAN-0.1.8-UI</span></p>
       </div>
     </section>
 
@@ -67,7 +67,7 @@
       <div class="menu">
         <button class="menu-button" data-menu="help">Help ▾</button>
         <div class="menu-panel right" id="menu-help">
-          <button id="about-button">About INDEX2-CLEAN-0.1.7-UI</button>
+          <button id="about-button">About INDEX2-CLEAN-0.1.8-UI</button>
         </div>
       </div>
     </nav>
@@ -76,20 +76,20 @@
   <main class="app-shell">
     <aside id="left-panel" class="side-panel">
       <section id="index2-card-search" class="card index2-search-card" data-search-card="Search">
-        <header><h2>Search Settings</h2><button type="button" class="index2-card-jump" data-jump-card="index2-card-assets" title="Go to Effect Archetype Assets">⌄</button></header>
+        <header><h2>Search Settings</h2><button type="button" class="index2-card-collapse" data-card-collapse title="Collapse Search Settings">⬆️</button></header>
         <label>Filter left panel<input id="left-panel-search-input" placeholder="Search settings..." /></label>
         <p id="left-panel-search-count" class="index2-search-count">Showing all sections.</p>
       </section>
 
       <section id="index2-card-assets" class="card" data-search-card="Effect Archetype Assets archetype id layer name engine type">
-        <header><h2>Effect Archetype Assets</h2><button type="button" class="index2-card-jump" data-jump-card="index2-card-presets" title="Go to Quick Edit Presets">⌄</button></header>
+        <header><h2>Effect Archetype Assets</h2><button type="button" class="index2-card-collapse" data-card-collapse title="Collapse Effect Archetype Assets">⬆️</button></header>
         <label>Archetype ID<input id="archetype-id-input" value="fx_v3_effect_001" /></label>
         <label>Layer Name<input id="layer-name-input" placeholder="Select or add a layer" /></label>
         <label>Engine Type<select id="engine-select"></select></label>
       </section>
 
-      <section id="index2-card-presets" class="card" data-search-card="Quick Edit Presets fire ice good magic dark magic">
-        <header><h2>Quick Edit Presets</h2><button type="button" class="index2-card-jump" data-jump-card="index2-card-appearance" title="Go to Appearance">⌄</button></header>
+      <section id="index2-card-presets" class="card" data-search-card="Quick Edit Presets fire ice good magic dark magic helpers colour appearance dynamics water evil smoke glow burst drift">
+        <header><h2>Quick Edit Helpers</h2><button type="button" class="index2-card-collapse" data-card-collapse title="Collapse Quick Edit Helpers">⬆️</button></header>
         <div class="button-row">
           <button data-quick-preset="fire">Fire</button>
           <button data-quick-preset="ice">Ice</button>
@@ -99,7 +99,7 @@
       </section>
 
       <section id="index2-card-appearance" class="card" data-search-card="Effect Layer Appearance colour opacity size glow">
-        <header><h2>Effect Layer Appearance</h2><button type="button" class="index2-card-jump" data-jump-card="index2-card-dynamics" title="Go to Dynamics">⌄</button></header>
+        <header><h2>Effect Layer Appearance</h2><button type="button" class="index2-card-collapse" data-card-collapse title="Collapse Effect Layer Appearance">⬆️</button></header>
         <label>Start Colour<input id="color-a-input" type="color" value="#ffcc66" /></label>
         <label>End Colour<input id="color-b-input" type="color" value="#ff6600" /></label>
         <label>Start Opacity<input id="alpha-start-input" type="range" min="0" max="1" step="0.01" value="1" /><output id="alpha-start-output">1</output></label>
@@ -110,7 +110,7 @@
       </section>
 
       <section id="index2-card-dynamics" class="card" data-search-card="Effect Layer Dynamics origin density speed gravity direction spread lifetime">
-        <header><h2>Effect Layer Dynamics</h2><button type="button" class="index2-card-jump" data-jump-card="effect-specific-controls-card" title="Go to Effect Specific Controls">⌄</button></header>
+        <header><h2>Effect Layer Dynamics</h2><button type="button" class="index2-card-collapse" data-card-collapse title="Collapse Effect Layer Dynamics">⬆️</button></header>
         <label>Origin X<input id="emitter-x-input" type="number" min="0" max="1280" value="640" /></label>
         <label>Origin Y<input id="emitter-y-input" type="number" min="0" max="720" value="450" /></label>
         <label>Density<input id="spawn-rate-input" type="range" min="1" max="80" step="1" value="16" /><output id="spawn-rate-output">16</output></label>
@@ -123,7 +123,7 @@
       </section>
 
       <section id="effect-specific-controls-card" class="card index2-effect-specific-card" data-search-card="Effect Specific Controls engine arc flare distortion shockwave lens gas text font letter spacing wrapping line timing reveal direction density scatter lifetime">
-        <header><h2>Effect Specific Controls</h2><button type="button" class="index2-card-jump index2-card-jump-up" data-jump-card="index2-card-search" title="Back to Search Settings">⌃</button></header>
+        <header><h2>Effect Specific Controls</h2><button type="button" class="index2-card-collapse" data-card-collapse title="Collapse Effect Specific Controls">⬆️</button></header>
         <div id="effect-specific-controls-body">Select a layer to see engine controls.</div>
       </section>
     </aside>
@@ -133,8 +133,8 @@
     <section class="workspace-column">
       <section id="workspace" class="workspace index2-workspace">
         <div class="index2-workspace-controls index2-playback-controls" aria-label="Preview controls">
-          <button id="pause-button">Resume</button>
-          <button id="snapshot-button">Snapshot</button>
+          <button id="pause-button" title="Pause or resume">▶️</button>
+          <button id="snapshot-button" title="Snapshot">📸</button>
         </div>
         <div class="index2-workspace-controls index2-zoom-controls" aria-label="Zoom controls">
           <button id="zoom-out-button">−</button>
@@ -153,6 +153,6 @@
   </main>
 
   <script type="module" src="./v3/src/index2-clean-controller.js?v=016"></script>
-  <script type="module" src="./v3/src/index2-ui-parity.js?v=017-ui"></script>
+  <script type="module" src="./v3/src/index2-ui-parity.js?v=018-ui"></script>
 </body>
 </html>
