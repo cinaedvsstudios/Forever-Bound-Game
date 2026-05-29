@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = 'v0.30-scene-core-split';
+  const VERSION = 'v0.31-runtime-module-cleanup';
   const SETTINGS_KEY = 'artifex.sceneEditor.settings.v1';
   const WORKING_COPY_KEY = 'artifex.sceneEditor.workingCopy.v1';
   const DOWNLOAD_KEY = 'artifex.sceneEditor.lastDownload.v1';

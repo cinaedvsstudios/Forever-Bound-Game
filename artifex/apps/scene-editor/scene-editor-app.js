@@ -11,7 +11,7 @@
   const coreApi = window.ArtifexSceneEditorCoreApi;
 
   function createSceneEditorApp() {
-    const VERSION = config.VERSION || 'v0.30-scene-core-split';
+    const VERSION = config.VERSION || 'v0.31-runtime-module-cleanup';
     const SETTINGS_KEY = config.SETTINGS_KEY || 'artifex.sceneEditor.settings.v1';
     const WORKING_COPY_KEY = config.WORKING_COPY_KEY || 'artifex.sceneEditor.workingCopy.v1';
     const DOWNLOAD_KEY = config.DOWNLOAD_KEY || 'artifex.sceneEditor.lastDownload.v1';
