@@ -17,7 +17,7 @@ Use the global all-apps to-do list for changes that affect every Artifex app. Us
 
 ## Current live status
 
-Current Quest Builder version: `V1.2.2`
+Current Quest Builder version: `V1.2.3`
 
 Current live app files:
 
@@ -147,51 +147,37 @@ Status: complete.
 Status: complete.
 
 - Export now produces a game-readable `artifex.questExportBundle.v1` bundle instead of only dumping local editor state.
-- Export bundle includes virtual project package files for:
-  - `quests/quest-index.json`
-  - `quests/quest_<slug>.json`
-  - `sidequests/sidequest-index.json`
-  - `sidequests/sidequest_<slug>.json`
+- Export bundle includes virtual project package files for `quests/quest-index.json`, `quests/quest_<slug>.json`, `sidequests/sidequest-index.json`, and `sidequests/sidequest_<slug>.json`.
 - Runtime quest files now separate metadata, links, flow blocks, gameplay actions, conditions, feedback, and validation warnings.
 - Main quests and side quests are separated by quest type.
-- Quest index files include stable IDs, slugs, file paths, thumbnails, chronicles, calling text, completion flags, linked scenes/objects, block counts, and validation status.
-- Runtime blocks now separate refs, gameplay, feedback, source module, category, required fields, linked fields, and notes.
-- Validation now catches missing quest IDs, duplicate quest IDs, missing names, missing Calling text, empty quest flow, missing block IDs, duplicate block IDs, missing block type, unknown/custom block types, missing required fields, completion requirements, and unresolved Project Manager references.
-- `View JSON Preview` and `Export JSON` now use the same runtime export bundle shape.
-- Removed the open `todo_quest_builder_define_export_contract` task from the specific-app open list.
-- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.7` / `1.1.7`.
+- Runtime blocks separate refs, gameplay, feedback, source module, category, required fields, linked fields, and notes.
+- Validation checks missing/duplicate IDs, required fields, completion requirements, and unresolved Project Manager references.
+- `View JSON Preview` and `Export JSON` use the same runtime export bundle shape.
 
 ### V1.1.8 — Post-export verification / bugfix pass
 
 Status: complete.
 
 - Added `exportSelfCheck` to every exported `artifex.questExportBundle.v1` bundle.
-- `exportSelfCheck` verifies the bundle schema, files array, quest index, sidequest index, validation warning array, summary counts, runtime flow blocks, and runtime link buckets.
 - Tightened Project Manager resolution warnings so action-only logic does not hide missing scene/object/dialogue/audio IDs.
-- Added a specific warning when an action such as `speak:`, `talk:`, `give:`, `use:`, `inspect:`, `collect:`, or `interact:` appears to target an object/NPC but has no `objectId`.
-- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.8` / `1.1.8`.
+- Added a warning when targeted actions appear to lack an `objectId`.
 
 ### V1.1.9 — Exported bundle UI / split-file download planning
 
 Status: complete.
 
 - JSON Preview now shows an export summary above the raw JSON.
-- The summary shows export self-check status, file count, quest count, side quest count, warning count, and passed check count.
-- The summary lists generated virtual project paths and file roles.
-- Export still downloads one bundle file only; split-file/package download is documented as a future export feature.
-- Added styling for the export summary cards and generated path list.
-- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.9` / `1.1.9`.
+- The summary shows export self-check status, file count, quest count, side quest count, warning count, passed check count, generated paths, and roles.
+- Export remained one bundle file while split-file/package export was planned.
 
 ### V1.2.0 — Post-V1.1 verification and next-phase planning
 
 Status: complete.
 
 - Confirmed required reference docs before changing the app.
-- Confirmed V1.1.9 completed the export preview summary phase.
 - Confirmed active Quest Builder files remain the split module set listed above.
-- Promoted the next phase to V1.2.x rather than continuing V1.1.x.
-- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.2.0` / `1.2.0`.
-- Next functional phase selected: split-file/package download planning and implementation.
+- Promoted the next phase to V1.2.x.
+- Selected split-file/package download as the next functional phase.
 
 ### V1.2.1 — Split-file export/package download
 
@@ -201,10 +187,8 @@ Status: complete.
 - Added `Export Project Files` under `File ▾ → Save ▸`.
 - `Export Project Files` downloads the virtual project-package files as loose JSON files.
 - Downloaded filenames encode folder paths with double underscores, for example `quests__quest-index.json`.
-- Added `splitExportPlan` to the exported bundle so the JSON preview documents the loose-file export mode, future ZIP decision, generated filenames, and instructions.
-- Avoided adding a ZIP library or third-party dependency; ZIP/package export remains a future shared exporter concern.
-- Updated the JSON Preview summary text to explain the two export modes.
-- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.2.1` / `1.2.1`.
+- Added `splitExportPlan` to the exported bundle.
+- Avoided adding a ZIP library; ZIP/package export remains a future shared exporter concern.
 
 ### V1.2.2 — Split export verification / browser warning pass
 
@@ -213,32 +197,27 @@ Status: complete.
 - User verified that `Export Project Files` downloads the expected current project quest files.
 - Confirmed the current demo quest export produces 3 loose JSON files: quest index, sidequest index, and the main quest runtime file.
 - Confirmed the sidequest index is expected even when empty because the project package expects that file.
-- Confirmed the split export is only the quest/sidequest package slice, not scene, object, dialogue, audio, FX, puzzle, or project manager files.
-- Bumped page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config to `V1.2.2` / `1.2.2`.
+- Confirmed the split export is only the quest/sidequest package slice, not scene, object, dialogue, audio, FX, puzzle, or Project Manager files.
+
+### V1.2.3 — Quest Flow drag ordering
+
+Status: complete, awaiting live browser confirmation.
+
+- Selected drag/drop flow editing as the next functional pass.
+- Quest Flow list cards are now draggable and include a small `↕` reorder indicator.
+- Dropping one Quest Flow list card onto another reorders the selected quest's block array.
+- The viewing workspace redraws automatically after a reorder so the visual quest sequence follows the updated flow order.
+- The moved block remains selected after the drop and a confirmation toast is displayed.
+- Drag-over cards show the green Quest Builder accent/glow as a clear drop target.
+- Kept reordering inside the Quest Flow floating list for this pass; the larger canvas cards remain the visual workspace rather than direct draggable nodes.
+- Stabilised drag start so selecting a block does not rerender and destroy the active drag gesture.
+- Page title, visible version badge, CSS cache key, JS/module cache key, stylesheet entry, and module config use `V1.2.3` / `1.2.3`.
 
 ## Ownership boundary
 
-Quest Builder owns:
+Quest Builder owns quest library records, side quest records, branches, player action steps, conditions/flags, rewards/unlocks, progression logic, quest-specific UI/Capra assignments, and links from quest blocks to relevant module IDs.
 
-- Quest library records
-- Side quest records
-- Quest branches
-- Player action steps inside quests
-- Conditions and flags
-- Rewards and unlocks
-- Progression logic
-- Quest-specific UI overlays and Capra feedback assignments
-- Links from quest blocks to scene IDs, object IDs, dialogue IDs, audio IDs, puzzle IDs, route IDs, Codice IDs, and reward IDs
-
-Quest Builder does not own:
-
-- Scene/screen visual layout
-- Scene Editor object placement
-- Flatplan map positioning
-- Object archetype definitions
-- FX archetype definitions
-- Raw dialogue text library ownership if a future Dialogue Editor owns that content
-- Raw audio asset ownership
+Quest Builder does not own scene/screen visual layout, Scene Editor object placement, Flatplan map positioning, object archetype definitions, FX archetype definitions, raw dialogue library ownership, or raw audio asset ownership.
 
 ## Export target
 
@@ -255,31 +234,26 @@ Project Manager should reference quest and side quest IDs. It should not author 
 
 ## Version plan
 
-Every Quest Builder edit should increase the visible version by `0.01` and update:
-
-- Page title
-- Visible version badge
-- CSS cache key
-- JS/module cache key
-- Loaded/fallback text where present
+Every Quest Builder edit should increase the visible version by `0.01` and update the page title, visible version badge, CSS cache key, JS/module cache key, and loaded/fallback text where present.
 
 Next version:
 
 ```text
-V1.2.3  choose next functional Quest Builder phase
+V1.2.4  drag ordering browser verification / polish
 ```
 
-## V1.2.3 — Choose next functional Quest Builder phase
+## V1.2.4 — Drag ordering browser verification / polish
 
-Goal: decide the next actual feature pass after export verification.
+Goal: confirm the new Quest Flow ordering interaction is reliable before adding another major feature.
 
-Candidate phases:
+Checks:
 
-- Drag/drop flow editing.
-- Better New Quest Wizard.
-- Scene/object/dialogue library picker integration.
-- Project Manager integration wiring.
-- Quest package import/rebuild from exported files.
+- App loads as V1.2.3.
+- Quest Flow list cards show the `↕` drag indicator.
+- Dragging `Update Codice` over `Enter Church` changes the sequence in the main workspace.
+- The moved block remains selected and the left inspector updates to it.
+- Re-exporting project files after a reorder writes blocks in the new order.
+- No drag action accidentally opens Edit Block or drags the Quest Flow window itself.
 
 ## Specific-app tasks
 
