@@ -1,9 +1,9 @@
-import { MODULE_VERSION, MODULE_STORAGE_KEY, LAYOUT_STORAGE_KEY, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js';
-import { getBlockType } from './block-types.js';
-import { createDemoQuestFile, createDefaultQuest, createDefaultBlock, escapeHtml } from './quest-schema.js';
-import { createLayoutState, clamp } from './layout-state.js';
-import { drawCanvas, applyCanvasTransform, getCanvasHit } from './canvas-renderer.js';
-import { fillBlockTypeMenus, wireMenus, wireActions, wireInputs, wireFlowDrag, wireWorkspacePan, wirePanelResize, wireFlowResizeSave } from './ui-bindings.js';
+import { MODULE_VERSION, MODULE_STORAGE_KEY, LAYOUT_STORAGE_KEY, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.4';
+import { getBlockType } from './block-types.js?v=1.2.4';
+import { createDemoQuestFile, createDefaultQuest, createDefaultBlock, escapeHtml } from './quest-schema.js?v=1.2.4';
+import { createLayoutState, clamp } from './layout-state.js?v=1.2.4';
+import { drawCanvas, applyCanvasTransform, getCanvasHit } from './canvas-renderer.js?v=1.2.4';
+import { fillBlockTypeMenus, wireMenus, wireActions, wireInputs, wireFlowDrag, wireWorkspacePan, wirePanelResize, wireFlowResizeSave } from './ui-bindings.js?v=1.2.4';
 
 const $ = (id) => document.getElementById(id);
 
