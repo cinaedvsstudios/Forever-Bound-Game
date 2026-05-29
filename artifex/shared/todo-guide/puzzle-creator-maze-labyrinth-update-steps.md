@@ -1,292 +1,263 @@
 # Puzzle Creator · Maze / Labyrinth Update Steps
 
-Status: patch consolidation in progress; approved design changes queued after consolidation
+Status: V1.26 live test required; stable module consolidation complete
 Owner: Puzzle Creator
 Related modules: Project Manager, Scene Editor, Quest Builder, Archetype Object Creator, Build Game
 Last updated: 2026-05-29
 Related global design: `artifex/shared/todo-guide/global-portal-endpoint-registry-design-2026-05-29.md`
 
-This document records the current agreed plan for the Maze / Labyrinth engine inside Puzzle Creator. It replaces earlier drafts where Puzzle Type, Integration Context, Hazard/Foe completion rules, or Traboule-as-teleporter were treated as normal Maze editor options.
+## Current implementation status
 
-## Current priority: Finish consolidation first
+The Maze / Labyrinth editor now loads permanent named modules only. The former numbered patch files are no longer in the live Maze loader import chain. Do not add further numbered fixes or wrappers.
 
-The current editor reached V1.16 through temporary patch files. Stable replacement modules are now being introduced, but Completion Rules still have one temporary wrapper dependency. No major new feature should be implemented until that wrapper is removed and the current behaviours pass a smoke test.
-
-Current stable module direction:
+Current stable modules:
 
 ```text
 src/js/engines/maze-labyrinth-runtime-controls.js
 src/js/engines/maze-difficulty-report.js
 src/js/engines/maze-runtime-status.js
 src/js/engines/maze-preview-default-layout.js
+src/js/engines/maze-features.js
+src/js/engines/maze-completion-rules.js
+src/js/engines/maze-connections.js
 src/js/engines/maze-ui-polish.js
-src/js/engines/maze-portals-system.js
-src/js/engines/maze-completion-rules.js          <- must replace remaining completion wrapper
 ```
 
-### Consolidation remaining work
+Implemented in V1.26 pending live user testing:
 
-1. Inline the existing Completion Rules functionality into `maze-completion-rules.js` and stop using `maze-v114-completion-rules.js` behind a wrapper.
-2. Confirm no active `maze-v###-*` module remains in the live import path.
-3. Delete or archive versioned patch files after live testing.
-4. Smoke test Fresh Random, Start Blank, Clear All, Size, Shape, Stretch, Warp, difficulty display, solution display, Walk Test, Doors/Portals, visuals, export and import.
-5. Only after that, begin the newly approved feature changes below.
+- `Puzzle Type` and `Integration Context` are removed from the Maze workflow by the stable Game Logic module.
+- Solution shows live quick analysis and has maker-only Show/Hide Solution behaviour.
+- A **Features** card appears beneath Solution.
+- Features can currently create **Collect**, **Door** and **Portal** content.
+- Collection object rows can be placed on valid Overview path cells.
+- Doors and local Portal pairs can be placed and tested in Walk Test.
+- Completion Rules appear at the bottom of Quest Data and list added features so the maker can define what is mandatory.
+- **Foe**, **Hazard** and **Traboule** are shown as future feature types but disabled until their actual behaviour exists.
+- **Close Warped Gaps** now expands visual tile coverage based on Warp rather than only changing normal block spacing to `1.00`.
 
-## Approved UI and logic corrections
+Still unimplemented:
 
-### Remove Puzzle Type from Maze / Labyrinth
+- Archetype Object linking for collected items, doors, foes or hazards.
+- Foe and Hazard feature setup and gameplay behaviour.
+- Traboule collision override behaviour.
+- Global Portal Registry app integration.
+- Scatter decorations/lights.
+- Tunnel Mode and helper pendant/crystal.
+- Real 3D renderer.
 
-`Puzzle Type` should be removed from the Maze / Labyrinth workflow. It does not change how the maze is built or played, and it duplicates logic that belongs in Completion Rules or in separate puzzle engines.
+## Core workflow decision: Features first, Completion Rules second
 
-Maze / Labyrinth is already the engine type. The app must not show a field that implies this same maze can become unrelated puzzle types merely by changing metadata.
+The Maze editor must distinguish between content placed in a maze and conditions required to finish it.
 
-### Remove Integration Context from Puzzle Creator
+### Features card
 
-`Integration Context` should be removed from the Maze / Labyrinth editor UI.
+The **Features** card belongs beneath the **Solution** analysis card in `03 · Quest Data / Game Logic`.
 
-A reusable maze does not need the maker to manually declare whether it is a scene or travel puzzle while authoring the maze. The context is determined later by whichever app places or references the puzzle:
+Features are things placed in the maze:
 
-- Scene Editor may insert the maze into a scene/room.
-- Quest Builder may require it in an objective.
-- Project Manager may link it to a node or route.
-- Build Game consumes the final resolved references.
+- Collection objects
+- Doors
+- Portals
+- Foes, when implemented
+- Hazards, when implemented
+- Traboules, when implemented
 
-Puzzle Creator should export a reusable maze definition. Placement context belongs to the app that uses that definition.
+A setup card should not be visible until its feature has been added. Adding a feature creates or reveals the correct setup controls for that feature.
 
-### Move Completion Rule into Game Logic
+### Completion Rules card
 
-Completion Rule currently appearing in Construction is wrong. Move it into **03 · Game Logic**.
+**Completion Rules** belongs at the bottom of Quest Data, after the feature setup content and the normal quest-data fields.
 
-For the Maze / Labyrinth engine, Completion Rule should be deliberately simple:
+Rules should be derived from placed/added features rather than presenting a generic list before anything exists.
 
-1. **Reach Exit** — always required and cannot be removed.
-2. **Collect Objects Before Exit** — optional.
+- **Reach Exit** is always mandatory.
+- If Collection objects have been added, list **Collect all objects** with an optional/mandatory toggle.
+- If a Door or Portal has been added, list that specific connection with an optional/mandatory toggle controlling whether the player must use it before the exit completes the maze.
+- When Foe, Hazard or Traboule features are implemented, their actual placed instances can appear in Completion Rules only where a mandatory completion condition makes sense.
 
-Do not expose Hazard, Foe, Unlock or Required Portal as general Maze completion checkboxes at this stage. Hazards and foes may later be interactive content or belong to their own puzzle engines; doors and portals are route/connection mechanics rather than automatic completion rules.
+A Door or Portal may exist as an optional shortcut or decorative/gameplay route feature without being mandatory for completion.
 
-## Completion Rule: Collect Objects setup
+## Removed Maze fields
 
-If `Collect Objects Before Exit` is enabled, the Game Logic panel must create a real **Required Objects** setup card rather than a placeholder status chip.
+### Puzzle Type
 
-Controls:
+Remove from Maze / Labyrinth. The selected engine is already Maze / Labyrinth; changing generic metadata does not make it a different puzzle.
 
-- Required object count.
-- One setup row/card per required object: `Item 1`, `Item 2`, etc.
-- `Place on Map` action for each item; clicking it then clicking a valid path cell places that required pickup.
-- `Link Archetype Object` action for each item.
-- Display selected archetype/object name and thumbnail when linked.
-- Display placed cell position.
-- Clear/remove placement action.
-- Status per item: Missing, Partially Set, Ready.
+### Integration Context
+
+Remove from Puzzle Creator. A reusable puzzle is placed into a scene, quest or route later by the app that owns that placement relationship.
+
+## Solution and difficulty display
+
+Solution must show quick analysis directly rather than depending on a separate report button:
+
+- difficulty setting
+- target meaningful-route count
+- route exists: yes/no
+- minimum path length in cells
+- branch cell count
+- dead-end count
+- whether the maker-only solution overlay is visible
 
 Rules:
 
-- Required item cells must be valid reachable path cells.
-- Items should not be placed on the entrance, exit, Door/Portal endpoint or another required item unless explicitly allowed later.
-- Walk Test later needs to record collected required items and prevent successful exit until all required items are collected.
-- JSON export must store required item references, placements and completion order.
-- The section icon should be yellow while object configuration is incomplete and green only when every required object is linked/placed and reachable.
+- Remove `Analyse Difficulty` once the same information appears in Solution.
+- Show the solution route by default for the maker/editor only.
+- Use `Show Solution` / `Hide Solution` as the maker-only toggle.
+- Solution overlay must not export as a player-visible gameplay guide.
+- Portal transfer must not be counted as a normal alternate walking route unless a later explicit difficulty option allows it.
 
-## Connections: Door, Traboule and Portal are different systems
+## Feature setup specifications
+
+### Collection objects
+
+Collection setup belongs inside Features. It is not automatically mandatory.
+
+Controls required:
+
+- number of collection objects
+- one setup row per object
+- Place action: select a valid path cell in Overview
+- Link Archetype Object action
+- selected archetype/object thumbnail and label when linked
+- placed cell indicator
+- clear/remove placement action
+
+Validation:
+
+- Do not place on entrance, exit, another collection object, or a Door/Portal endpoint.
+- Mandatory collection status belongs in Completion Rules.
+- Walk Test later needs to record collection state and enforce any mandatory rule.
+
+Current V1.26 state: placement exists; Archetype Object linking and Walk Test objective enforcement are pending.
 
 ### Door
 
-A Door is a visible connection inside the current maze.
+A Door is a visible local connection inside the current maze.
 
-- It has an Entry and Exit cell placed in the maze.
-- In Walk Test it transfers the player between those cells.
-- It needs a visual asset selector: choose a door image from the project/library or upload one into the asset library.
-- It may support one-way or two-way behaviour.
-- It is local Maze data unless a later wider door/scene-transition contract is approved.
+- It has Entry and Exit cells.
+- It transfers the player between cells in Walk Test.
+- It supports one-way/two-way movement.
+- It requires a door image selector from project/library assets or uploaded assets in a later pass.
+- It appears in Completion Rules only after it exists, where it may be marked optional or mandatory.
+
+Current V1.26 state: local pair placement and Walk Test transfer exist; visual asset selection is pending.
 
 ### Traboule
 
 A Traboule is a secret pass-through wall.
 
-- It is not a Door type and is not a Portal type.
+- It is not a Door type.
+- It is not a Portal type.
 - It is not a paired teleport.
-- It is placed on a wall cell or defined wall segment.
-- The cell still renders like an ordinary wall but becomes non-solid so the player can walk through it.
-- It needs its own placement control, e.g. `Add Traboule` then click a valid wall cell.
-- It should be hidden during gameplay unless a helper/hint mechanic reveals it later.
+- It is placed on a wall cell or wall segment.
+- It continues to render like a normal wall while collision is disabled.
+- It needs its own feature setup card and placement logic.
+
+Current V1.26 state: visible as disabled future feature only; no false behaviour is exposed.
 
 ### Portal
 
-A Portal is a game-wide endpoint connection.
+A Portal is a game-wide endpoint mechanic.
 
-- It is not limited to Maze / Labyrinth.
-- It uses an image/effect selected from project/library assets or uploaded assets.
-- It can link to another endpoint in the same maze, another puzzle, a scene, a travel location or another supported game space.
-- When a Portal endpoint is created, it must be registered in a shared project Portal Registry so other apps can select it as a destination.
-- It must support unresolved endpoints while authoring, plus one-way/two-way linking and validation before build.
+- It uses visual image/effect selection in a later asset-linking pass.
+- It may connect locally inside the same maze or link to an endpoint in another playable resource.
+- Created Portal endpoints must ultimately register in the shared project Portal Registry.
+- It supports unresolved endpoints during authoring, plus one-way/two-way validation before build.
 
-Portal cross-app architecture is specified in:
+Current V1.26 state: local paired placement and Walk Test transfer exist as an interim usable function; the UI states that global registry linking is pending.
+
+Global contract document:
 
 ```text
 artifex/shared/todo-guide/global-portal-endpoint-registry-design-2026-05-29.md
 ```
 
-### Connections UI direction
+### Foe and Hazard
 
-Replace the current paired `Portals` card with a broader **Connections** area containing separate creation actions:
+Foe and Hazard belong in Features, not as unexplained Completion Rule checkboxes.
 
-- Add Door
-- Add Portal
-- Add Traboule
+Future controls should include placement, Archetype Object linking, per-instance configuration and optional/mandatory interpretation where meaningful. They remain disabled until their real design and runtime behaviour are implemented.
 
-Door fields:
+## 04 · Surface + Edit
 
-- Label
-- Entry cell
-- Exit cell
-- One-way/two-way
-- Door asset image
-- Optional hint text
+### Close Warped Gaps
 
-Portal fields:
+This is a visual cleanup feature for warped previews. The original implementation merely moved Block Spacing from `0.98` to `1.00`, which was too small to close gaps made by displaced warped tiles.
 
-- Label / stable portal endpoint ID
-- Placement cell
-- Portal visual asset and optional FX
-- Destination: unlinked / existing registry endpoint / create local paired endpoint
-- One-way/two-way
-- Optional activation flag or hint text later
+V1.26 design:
 
-Traboule fields:
+- When enabled, visual tile coverage expands automatically based on the current Warp level.
+- The manual Block Spacing slider is disabled while automatic gap closure controls it.
+- Turning it off restores the earlier spacing value.
+- This is overlap-based seam hiding; truly merged smooth/curved geometry remains part of a later renderer pass.
 
-- Label
-- Wall placement cell
-- Optional hint text later
-- Collision override shown only in editor, not visibly in gameplay
+### Scatter card
 
-## Solution and difficulty display
+Add a **Scatter** card later for visual decoration only.
 
-The Solution information box should show the same useful quick analysis currently provided by **Analyse Difficulty**:
+Lights:
 
-- current difficulty setting
-- target meaningful route count
-- route exists: yes/no
-- main route/minimum path length in cells
-- branch cell count
-- dead-end count
-- note that full meaningful-route matching remains a later algorithm pass until implemented
+- choose light image from library/uploaded assets
+- density/spacing
+- placement preference such as paths, wall edges, corners or dead ends
+- optional tint/pulse later
 
-Changes:
+Decorative objects:
 
-- Remove the `Analyse Difficulty` button after the information is displayed directly in the Solution box.
-- The solution route should be visible by default to the puzzle maker/editor.
-- Replace `Plot Solution Path` with a toggle button: `Hide Solution` / `Show Solution`.
-- The displayed solution is editor-only and must not automatically appear to the player in the exported game.
-- Portal endpoints should not be counted as normal route alternatives in difficulty calculation unless a future explicit option enables that.
+- up to five image slots
+- amount/density and random seed/regenerate
+- placement preference
+- no collision
+- avoid entrance, exit, collection items and connection endpoints
 
-## 04 · Surface + Edit: Scatter card
+## Tunnel Mode design required before implementation
 
-Add a **Scatter** card to Surface + Edit for decorative visuals. These items are rendered images only and do not require archetype objects unless the maker deliberately promotes them into interactive content later.
+Tunnel Mode is not ready to build fully. Decisions still required:
 
-### Lights
+- toggle location in Construction
+- gameplay visibility rules versus editor Overview
+- styles: Square Tunnel, Natural Cave, Pipe, Prism
+- real first-person/3D renderer requirements
+- decorative lighting controls so tunnel play is usable
+- appearance of Doors, Portals, Traboules and collection objects
+- whether helper pendant/crystal is optional, automatic or player-configurable
 
-Controls:
+## Helper pendant / crystal
 
-- Enable decorative lights.
-- Choose a light image from library or upload/select an asset.
-- Light spacing or density.
-- Optional colour/tint, intensity and pulse/flicker settings later.
-- Placement preference: along paths, wall edges, corners or dead ends.
+Not implemented. It should wait until feature objectives, Completion Rules and connection routing are stable.
 
-### Decorative scatter objects
+Proposed later behaviour:
 
-Controls:
+- Off / Subtle / Normal / Strong guidance modes
+- glow/pulse toward the current mandatory target
+- dim when the player moves into an incorrect branch
+- recalculate objective target after mandatory objects are collected or connections used
 
-- Up to five decorative image slots.
-- Each slot chooses from the asset library or uploads/selects an image asset.
-- Density/amount control.
-- Placement preferences: path only, wall edge, corner, dead end, open space.
-- Random seed / regenerate scatter.
-- Clear scatter.
-- Avoid entrance, exit, required collect-item cells, Door/Portal placements and other required gameplay cells.
+## Live test checklist for V1.26
 
-Export each decoration as lightweight visual placement metadata:
+1. Hard refresh and confirm visible version is V1.26.
+2. Open Game Logic and confirm Puzzle Type and Integration Context are absent.
+3. Confirm Solution shows the live information and Hide/Show Solution works.
+4. Confirm Features appears beneath Solution.
+5. Confirm no collection or connection setup cards appear until the relevant feature is added.
+6. Add Collect; place one or more objects on valid Overview path cells.
+7. Add Door; place Entry/Exit; test transfer in Walk Test.
+8. Add Portal; place Entry/Exit; confirm it currently behaves locally and shows the global-linking-pending message.
+9. Confirm Completion Rules at the bottom lists only features that have actually been added and lets them be marked mandatory.
+10. In Surface + Edit, apply Warp and enable Close Warped Gaps; confirm gaps visibly close and Block Spacing becomes automatically controlled.
 
-```text
-assetId/source, cell position, offset, scale, rotation, layer, collision false
-```
+## Next implementation order after V1.26 test
 
-## Tunnel Mode requires a design pass before implementation
-
-Tunnel Mode has been discussed only at a draft level. Do not build the full feature until these decisions are confirmed.
-
-Current intended direction to discuss/confirm:
-
-- Toggle in Construction to make the maze a roofed/enclosed gameplay space.
-- Construction still retains Overview; gameplay should not reveal the full map.
-- Tunnel style options under consideration: Square Tunnel, Natural Cave, Pipe and Prism.
-- 3D/first-person rendering is required for Tunnel Mode to be meaningful; the current 3D placeholder is not sufficient.
-- Decorative lights become important in Tunnel Mode so the player is not walking in unusable darkness.
-- Decide whether the helper crystal/pendant is available, optional or required in Tunnel Mode.
-- Decide how Door, Portal, Traboule and required collect items appear inside tunnel gameplay.
-
-## Helper crystal / pendant
-
-Not implemented yet.
-
-It should not be built until collect-object objectives, global/local connection behaviour and route evaluation are stable. Intended later behaviour remains:
-
-- Off / Subtle / Normal / Strong guidance levels.
-- Pulses or brightens while moving toward the current required objective.
-- Dims while moving away or going into an incorrect branch.
-- Objective order recalculates as required objects are collected, then directs toward the exit or any required later objective if such a design is approved.
-
-## Existing functional checks to preserve
-
-- Shapes: Square, Pentagon, Hexagon and Circle regenerate cleanly; Triangle remains disabled until fixed.
-- Size uses the agreed scale: 1=11, 2=15, 3=20, 4=25, 5=30.
-- Shape and Stretch rebuild actual maze geometry rather than colouring or spacing an old square grid.
-- Borders remain walls with only defined openings.
-- Warp changes visual route line geometry without destroying route validity.
-- Close Tile Gaps removes normal tile spacing; fully smoothed warped surfaces remain a later renderer improvement.
-- Walk Test uses WASD/arrows, collision and connection testing.
-- Overview is draggable/resizable and defaults to the right side.
-- Main preview defaults left-aligned so it is not hidden behind Overview.
-- JSON export/import must ultimately preserve maze layout, visuals, completion rules, required objects, local Doors/Traboules and Portal endpoint references.
-
-## Updated implementation order
-
-### Active: Consolidation
-
-1. Inline Completion Rules into its stable module.
-2. Remove all active versioned patch imports and archive/delete dead patch files.
-3. Smoke test current features and export/import.
-
-### Next: Correct Game Logic UI
-
-4. Remove Puzzle Type.
-5. Remove Integration Context.
-6. Move Completion Rule from Construction into Game Logic.
-7. Limit Maze completion rules to Reach Exit plus optional Collect Objects.
-8. Move the full analysis information into Solution and convert plotting to a show/hide toggle visible by default to the maker.
-
-### Next: Required object placements
-
-9. Build Required Objects setup cards, map placement and Archetype Object links.
-10. Add Walk Test validation and export data for required objects.
-
-### Next: Connections redesign
-
-11. Refactor current Portal card into Connections.
-12. Keep local Door paired placement and add door asset selection.
-13. Build Traboule as a wall collision override, not a teleport.
-14. Build Portal endpoints against the shared global registry contract.
-
-### Next: Visual decoration
-
-15. Add Surface + Edit Scatter card for lights and up to five decorative image slots.
-16. Add decoration export and exclusion rules around required gameplay cells.
-
-### Later design/implementation
-
-17. Complete Tunnel Mode design decisions, then implement tunnel renderer/lighting behaviour.
-18. Build Helper crystal/pendant only after objective and route logic is reliable.
-19. Continue meaningful-route difficulty analysis after connections/objectives are settled.
+1. Fix any live regression from the Features/Completion Rules split.
+2. Delete/archive obsolete numbered patch files after the stable path is confirmed working.
+3. Add Archetype Object/asset linking for collection objects and Doors.
+4. Implement Scatter decorations/lights in a stable module.
+5. Implement Traboule as a hidden collision override.
+6. Implement global Portal Registry integration across apps.
+7. Define and implement Foe/Hazard feature behaviour.
+8. Resolve Tunnel Mode design, then implement the renderer/lighting workflow.
+9. Build helper pendant/crystal only after mandatory objective tracking works.
 
 ## Required file structure direction
 
@@ -296,20 +267,18 @@ src/js/main.js
 src/js/engines-ui.js
 src/js/engines/maze-labyrinth.js
 src/js/engines/maze-labyrinth-runtime-controls.js
-src/js/engines/maze-route-analyzer.js
-src/js/engines/maze-difficulty-report.js
+src/js/engines/maze-runtime-status.js
+src/js/engines/maze-features.js
 src/js/engines/maze-completion-rules.js
-src/js/engines/maze-required-items.js
 src/js/engines/maze-connections.js
-src/js/engines/maze-door-connections.js
-src/js/engines/maze-traboules.js
-src/js/engines/maze-portal-endpoints.js
 src/js/engines/maze-ui-polish.js
 src/js/engines/maze-scatter-decorations.js
+src/js/engines/maze-traboules.js
+src/js/engines/maze-portal-endpoints.js
 src/js/engines/maze-tunnel-mode.js
 src/js/engines/maze-helper-system.js
 ```
 
 ## Implementation warning
 
-Do not make label-only changes unless underlying behaviour is implemented or clearly presented as not yet available. Every visible control should work, be hidden, or be disabled with a precise explanation. In particular, Traboule must not be presented as a paired Portal type, Portal must not be treated as local-only maze data, and unused Puzzle Type / Integration Context controls must not remain visible merely as metadata placeholders.
+Do not make label-only changes unless underlying behaviour is implemented or clearly disabled with an accurate explanation. Every visible control must work, be hidden, or state precisely why it is unavailable. Features define what exists in the maze; Completion Rules define which existing features are required to complete it.
