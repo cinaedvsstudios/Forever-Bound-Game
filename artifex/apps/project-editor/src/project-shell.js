@@ -61,7 +61,7 @@ export function renderProjectShell({ version = 'v0.1.31 TASKS' } = {}) {
             <button data-workspace-target="flatplan" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Flatplan Workspace</button>
             <button data-workspace-target="stitcher" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Stitcher Workspace</button>
             <button data-workspace-target="buildprep" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Build Prep Workspace</button>
-            <button data-workspace-target="tasks" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-projectGoldGlow">Project Tasks / To-Do Board</button>
+            <button data-workspace-target="tasks" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Project Tasks / To-Do Board</button>
             <button data-workspace-target="assetbrowser" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Asset Browser</button>
           </div>
         </details>
