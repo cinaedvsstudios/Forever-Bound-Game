@@ -1,423 +1,318 @@
-# Artifex Creation Guide V1
+# Artifex Creation Guide V1.1.10
 
 ## Purpose
 
-The Creation Guide is the Artifex project onboarding screen, Project Overview, assignment planner, milestone tracker, checklist surface, progress dashboard, and health-check module.
+The Creation Guide is the Artifex project-onboarding, Project Overview, setup guidance, assignment-planning and health-check module.
 
-It helps a creator create or open an Artifex project, define the minimum required project structure, create/export the starter project files, register the project in the Project Library, set the active project for the whole Artifex hub, and then track production work.
+The live V1.1.10 app currently lets a creator create/open a browser-registered project, complete the current setup fields, set the active project, export a starter ZIP, open assignments and review the current Health panel.
 
-The Creation Guide should function as production mission control. It does not replace the individual Artifex tools. It tells the creator what project is active, what needs to be done next, which setup gates are blocking production, and which tool owns each assignment.
+The documented target workflow expands this role: Creation Guide becomes the starting point for connecting the real project folder, initialising starter project files/folders, explaining the `intake/` staging area, reporting starting-media readiness and setting the active project for every Artifex authoring app.
 
-## App Startup Behaviour
+## Required Companion Documentation
 
-When the user clicks New Project, Open Project, or opens Creation Guide with no active project, the right viewing panel should start on **Project Overview**.
+Read this README together with:
 
-The left side panel should start collapsed or mostly collapsed.
+```text
+docs/artifex/05-creation-guide.md
+docs/artifex/05a-creation-guide-v119-implementation-notes.md
+docs/artifex/18-color-and-display-rules.md
+docs/artifex/19-project-file-contracts.md
+docs/artifex/20-asset-intake-workflow.md
+artifex/shared/todo-guide/all-apps-todos.json
+```
 
-The Assignment Board should not be permanently visible on the main screen. It should open as a popup/window from the 📋 Assignments icon or menu.
+`docs/artifex/19-project-file-contracts.md` defines the target connected-folder/direct-save contract and canonical project package. `docs/artifex/20-asset-intake-workflow.md` defines the source-asset intake folder and recommended starting-media checklist.
 
-## Hub / Active Project Flow
+## Current Live Version and Script Stack
 
-The Hub should eventually use its centre button as **Change Project**.
+Visible version:
 
-The active project name should display somewhere on the Hub.
+```text
+V1.1.10
+```
 
-All Artifex apps should read the same active project value when they start.
+Live shell:
 
-Suggested shared browser storage keys:
+```text
+artifex/apps/creation-guide/index.html
+```
+
+Live Creation Guide scripts:
+
+```text
+v1/src/app-bootstrap.js
+v1/src/onboarding-guide.js
+v1/src/project-flow.js
+v1/src/project-health.js
+v1/src/health-actions.js
+```
+
+The final source split is complete. Do not restore or import these retired files:
+
+```text
+v1/src/project-flow-health.js
+v1/src/module-project-flow-v113.js
+v1/src/module-app-v108.js
+v1/src/module-guide-onboarding-v112.js
+v1/src/module-health-actions-v118.js
+```
+
+## What the Live V1.1.10 App Currently Does
+
+Current visible functionality includes:
+
+- Project Overview as the main right-side view.
+- Collapsed project setup panel on the left.
+- Setup coach inside the Project Overview hero panel.
+- Floating module-intro/help popup with hide/reopen behaviour.
+- Guided New / Open modal.
+- Setup fields for project name, slug, creator, planned local path, optional GitHub path and deployed URL.
+- Starter ZIP export.
+- Set Active Project through browser project storage.
+- Assignments popup.
+- Health panel, Refresh, Export Health JSON and Create Fix Assignments.
+- Clear Test Data for browser testing.
+
+Current browser storage keys include:
 
 ```text
 artifex.projectLibrary
 artifex.activeProjectId
+artifex.creationGuide.hideModuleIntro
+artifex.creationGuide.healthAssignmentsCreated.<project-id>
 ```
 
-`artifex.projectLibrary` stores known projects.
+## Current Live Limitation
 
-`artifex.activeProjectId` stores the currently selected project ID.
+The live app does not yet write directly to the real project folder on the user's computer. It currently registers projects and active-project selection in browser storage and provides ZIP export.
 
-Scene Editor, Project Editor, Quest Builder, Object Creator, Effect Editor, Object Library, and Asset Library should all open into the active project automatically.
+The intended production workflow is now different: once the shared folder service is implemented, the connected real project folder becomes the editable source of truth; `localStorage` remains a recovery-draft layer; ZIP export remains backup, transfer and no-permission fallback only.
 
-## Project Overview Fields
+## Target Connected Project Folder Workflow
 
-The Project Overview should show:
-
-- project name
-- project status
-- overall setup percentage spinner/ring
-- project ID / slug
-- local project path
-- online project path or repository path
-- deployed URL if available
-- primary index file path
-- manifest file path
-- flatplan file path
-- active Chronicle / Quest target
-- enabled modules
-- readiness warnings
-- setup gate buttons
-
-## Setup Gates
-
-Before the creator can properly make scenes, characters, quests, objects, or effects, the project needs a minimum structure.
-
-The Project Overview should show these as large setup gate buttons/cards:
-
-1. Define Project Identity.
-2. Choose Project Storage.
-3. Create Primary Project Index.
-4. Create Folder Structure.
-5. Create Manifest Shell.
-6. Create Flatplan Shell.
-7. Create Index Files.
-8. Choose Enabled Modules.
-9. Set Active Project.
-10. Run Project Readiness Check.
-
-## Recommended Project File Hierarchy
+Future intended Creation Guide flow:
 
 ```text
-project-root/
-  artifex-project.json
-  manifest.json
-  flatplan.json
+Create or open project
+→ Connect Project Folder / Re-authorise Project Folder
+→ select the real project root and grant read/write access
+→ Creation Guide initialises or validates starter files/folders
+→ complete or skip the visible Initial Asset Intake Setup section
+→ register/set active project
+→ Artifex authoring apps load their owned real project files
+→ local drafts protect editing work
+→ deliberate Save actions write to the connected project folder
+→ Health/Audit/Build validates the saved project data
+```
+
+Folder handles and permissions are browser/device-specific and must be stored only through the shared IndexedDB-backed folder service. Project files must contain project-relative paths only and must never store private absolute HDD paths.
+
+Future save status UI should expose:
+
+```text
+Saved to Project Folder
+Local Draft Only
+Project File Changed
+Conflict
+Permission Required
+No Folder Connected
+Save Failed
+```
+
+## Project Overview Target Setup Sections
+
+The planned setup/readiness sections are:
+
+1. Define Project Identity, including an optional project logo/title mark.
+2. Connect/Re-authorise Project Folder.
+3. Create primary `project.json` file.
+4. Initialise/validate starter folder structure.
+5. Initial Asset Intake Setup, with explanations, **Create Intake Folders** and **Skip for Now**.
+6. Recommended Starting Media checklist.
+7. Create/register starter structural files and indexes.
+8. Choose enabled modules.
+9. Set active project.
+10. Run project readiness/health check.
+
+The New / Open flow should eventually support:
+
+```text
+Blank Project
+Artifex Adventures Template Game
+Open Existing Project
+```
+
+The Artifex Adventures template option must remain future work until that template game is actually complete and validated.
+
+## Canonical Target Project Folder Structure
+
+Creation Guide should eventually initialise or validate this project-relative structure through the shared connected-folder service:
+
+```text
+<project-root>/
+  project.json
+  logic.json
+  layout.json
+  registry.json
+  library-links.json
+  input-map.json
   README.md
 
-  data/
-    indexes/
-      scene-index.json
-      quest-index.json
-      object-index.json
-      effect-index.json
-      asset-index.json
-      assignment-index.json
-
-    chronicles/
-      ch00/
-        chronicle.json
-
-    quests/
-      ch00/
-        q00/
-          quest.json
-          callings.json
-          objectives.json
-          conditions.json
-
-    scenes/
-      ch00/
-        q00/
-          scene-title.json
-          scene-start.json
-
-    maps/
-      map-index.json
-      routes.json
-      nodes.json
-
+  intake/
+    README.md
+    backgrounds/
+    characters/
     objects/
-      object-index.json
-      archetypes/
-      instances/
+    icons-ui/
+    music/
+    dialogue-sfx/
 
+  scenes/
+    scene-index.json
+    scene_<slug>.json
+
+  screens/
+    screen-index.json
+    screen_<slug>.json
+
+  quests/
+    quest-index.json
+    quest_<slug>.json
+
+  sidequests/
+    sidequest-index.json
+    sidequest_<slug>.json
+
+  puzzles/
+    puzzle-index.json
+    puzzle_<slug>.json
+
+  archetypes/
+    object-index.json
+    effect-index.json
+    objects/
+      archobj_<slug>.json
     effects/
-      effect-index.json
-      presets/
-      instances/
-
-    dialogue/
-      dialogue-index.json
-      ch00/
-
-    assignments/
-      assignment-index.json
-      creation-guide.json
+      archeffect_<slug>.json
 
   assets/
+    asset-index.json
+    groups/
     images/
       backgrounds/
       characters/
       props/
       ui/
-
     sprites/
       characters/
       objects/
       fx/
-
     audio/
       music/
       sfx/
       voice/
-
     fonts/
     video/
 
-  exports/
-    json/
-    images/
-    builds/
+  health/
+    latest-health-report.json
 
-  builds/
-    web/
-    android/
-    archive/
+  build/
+    runtime-project.json
+    build-manifest.json
 
-  docs/
-    design/
-    notes/
-    changelog/
+  backups/
+    backup-manifest.json
 
-  tests/
-    playtest-notes/
-    validation-reports/
+  todos/
+    creation-guide.json
+    project-manager-todos.json
 ```
 
-## Primary Project Index
+## Intake Setup and Media Readiness
 
-The top-level project pointer file should be named:
+`intake/` is the source-material drop zone. It is separate from final registered `assets/` content. Permanent scene, screen, quest, archetype or runtime records must not reference source files in `intake/` directly.
+
+Creation Guide should explain the intake buckets as follows:
+
+| Folder | Put this here |
+|---|---|
+| `intake/backgrounds/` | Scene backgrounds, interiors, landscapes, title/ending backgrounds and environmental plates. |
+| `intake/characters/` | Player character, NPCs, interactive characters, enemies, portraits and sprite/animation sheets. |
+| `intake/objects/` | Props, pickups, doors, passages, transitions, furniture, clue items and interactable object art. |
+| `intake/icons-ui/` | Project logo/title mark, inventory/action icons, markers, HUD/menu elements and UI frames. |
+| `intake/music/` | Music tracks and musical stingers. |
+| `intake/dialogue-sfx/` | Voice/dialogue, narration, ambience, footsteps, UI sounds and environmental SFX. |
+
+Recommended first-scene media checklist:
+
+| Item | Intake destination |
+|---|---|
+| Project logo or temporary title mark | `intake/icons-ui/` |
+| At least 1 scene background | `intake/backgrounds/` |
+| At least 1 player-character asset | `intake/characters/` |
+| At least 1 NPC asset | `intake/characters/` |
+| At least 1 interactable object or pickup | `intake/objects/` |
+| At least 1 door/passage/transition object | `intake/objects/` |
+| At least 1 icon/UI placeholder set | `intake/icons-ui/` |
+
+This checklist reports readiness and does not block creating a project.
+
+## Module Ownership Boundary
+
+Creation Guide owns:
+
+- initial project creation;
+- project registration/selection;
+- starter folder/file initialisation once direct folder saving is implemented;
+- intake setup explanation and readiness reporting;
+- assignments, milestones and setup-health reporting;
+- starter input-map data.
+
+Creation Guide does not own:
+
+- Project Editor structural authoring after starter creation;
+- Scene Editor scene/screen visual layout;
+- Quest Builder quest/condition internals;
+- Archetype Object Creator reusable object definitions;
+- Effect Editor reusable FX definitions;
+- Asset Library promotion/classification of approved intake source files into final assets;
+- Build Game runtime packaging.
+
+## Remaining Creation Guide Work
+
+In practical order:
+
+1. Record Creation Guide-specific task items for the new requirements.
+2. Adopt the shared connected-project-folder service once its all-app foundation exists.
+3. Add Connect/Re-authorise Project Folder and save-state display.
+4. Initialise/validate the canonical project folder/file structure.
+5. Add Initial Asset Intake Setup with folder explanations and Skip for Now.
+6. Add Recommended Starting Media checklist.
+7. Add project-logo selection/import/final-reference display.
+8. Extend Health for connected folder, local draft, intake, media and logo checks.
+9. Add the Artifex Adventures Template Game choice only once its project is validated.
+10. Reuse shared Health Guide checks as the shared system becomes available.
+
+## Final-Split QA URL
 
 ```text
-artifex-project.json
+https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/creation-guide/?fresh=creation-guide-1.1.10-final-split-complete
 ```
 
-Suggested starter shape:
-
-```json
-{
-  "projectId": "forever-bound",
-  "projectName": "Forever Bound",
-  "projectKind": "artifex-adventure",
-  "schemaVersion": "1.0.0",
-  "status": "setup",
-  "paths": {
-    "manifest": "manifest.json",
-    "flatplan": "flatplan.json",
-    "dataRoot": "data/",
-    "assetRoot": "assets/",
-    "exportRoot": "exports/",
-    "buildRoot": "builds/",
-    "indexes": "data/indexes/"
-  },
-  "indexes": {
-    "scenes": "data/indexes/scene-index.json",
-    "quests": "data/indexes/quest-index.json",
-    "objects": "data/indexes/object-index.json",
-    "effects": "data/indexes/effect-index.json",
-    "assets": "data/indexes/asset-index.json",
-    "assignments": "data/indexes/assignment-index.json"
-  },
-  "activeTargets": {
-    "chronicleId": "ch00",
-    "questId": "q00",
-    "startSceneId": "scene-start"
-  }
-}
-```
-
-## Core Object: Assignment
-
-After a project exists, the main production object is an Assignment.
-
-An Assignment is a concrete unit of work such as:
-
-- create first forest scene
-- define Calling completion condition
-- add Capra wrong-object feedback
-- prepare Mel throw animation
-- build Bellator placeholder
-- test Quest 0.5 Songspell cooldown
-
-Assignments contain subtasks, workflow state, priority, effort, linked files, owning module, related module badges, and progress.
-
-Milestones are containers for Assignments. Subtasks are checklist items inside Assignments.
-
-## Assignment Workflow States
-
-Assignments use these workflow states:
+The page should request:
 
 ```text
-unassigned - Cards without an owner.
-assigned - Cards with an owner but not yet started.
-started - Cards currently being worked on.
-snoozing - Cards that went quiet for too long.
-blocked - Cards waiting on something.
-review - Cards ready for feedback.
-done - Completed cards.
-archived - Archived cards.
-undone - Filter only; shows all cards not marked as done.
+app-bootstrap.js
+onboarding-guide.js
+project-flow.js
+project-health.js
+health-actions.js
 ```
 
-`undone` is not stored as a real state. It is a dashboard filter.
-
-## Priority and Effort
-
-Assignments use two 1-5 values:
+It must not request:
 
 ```text
-Priority = how important the Assignment is.
-Effort = how much work the Assignment is expected to take.
+project-flow-health.js
+module-project-flow-v113.js
 ```
-
-Each value has a generated default and a manual override:
-
-```text
-priorityDefault
-priorityOverride
-effortDefault
-effortOverride
-```
-
-The dashboard uses the override when present and otherwise uses the default.
-
-This supports smart sorting while still allowing manual correction.
-
-## Module Accent Colour System
-
-Assignment cards are colour-coded by the Artifex module that owns the work.
-
-```text
-Effect Editor - cyan
-Scene Editor - violet
-Project Editor - yellow
-Quest Builder - green
-Object Creator - red
-Unassigned / General - grey-brown
-```
-
-Module colour means which tool owns the work.
-
-Workflow state is shown separately by column, chip, icon, or label.
-
-Clean rule:
-
-```text
-Module colour = what tool owns the work.
-Workflow state = where the work is in production.
-Priority = how important it is.
-Effort = how much work it is.
-Completion = how much of the Assignment/subtasks are done.
-```
-
-## Assignment Cards
-
-Assignment cards should show:
-
-- icon
-- title
-- owning module colour stripe
-- owning module badge
-- workflow state
-- owner
-- milestone
-- Chronicle / Quest / Calling if relevant
-- zone / scene / screen if relevant
-- priority
-- effort
-- tags
-- subtask progress
-- last touched date
-- blocked or snoozing indicator when relevant
-
-## Assignment Detail Popup
-
-Clicking an Assignment opens a detail popup.
-
-The popup uses the Assignment primary module accent colour in the header, border, action buttons, and progress bar.
-
-## Dashboard Views
-
-The dashboard should answer:
-
-```text
-What project is active?
-Is the project ready to build content?
-What should I do next?
-What is blocked?
-What is almost complete?
-What has gone quiet?
-Which tool do I need to open?
-```
-
-The To Do area should be orderable by:
-
-- easy wins
-- most important
-- not touched recently
-- milestones almost complete
-- blocked
-- needs assignment
-- high priority / low effort
-- by zone
-- by scene
-- by module
-- by Chronicle
-- by Quest
-
-## V1 Scope
-
-This first version is intentionally practical and small. It adapts the Artifex Blank Module Boilerplate into a real Creation Guide module with:
-
-- Project Overview startup screen
-- project setup fields
-- Project Library entry model
-- active project selection model
-- setup gates
-- exportable primary project files
-- enabled module selection
-- assignment popup/window
-- editable assignments
-- editable milestones
-- editable subtasks
-- workflow states
-- priority and effort values
-- module colour coding
-- milestone completion percentage
-- overall completion percentage
-- project health check warnings
-- JSON import/export
-- browser local saves
-- links out to the Artifex Portal and Scene Editor
-
-## What It Does Not Do Yet
-
-V1 does not silently write to GitHub, create real project folders without user action, edit Flatplans directly, open JSON files directly, or validate every live asset path from the repository.
-
-Those features belong to later versions after the core workflow is proven.
-
-## Relationship To Other Modules
-
-Creation Guide creates/selects the active project and points the creator to the correct tool. It does not replace them.
-
-- Project Editor owns the Manifest, Flatplan, routes, catalog, Stitcher, and map projection.
-- Scene Editor builds scene JSON and visual layout.
-- Quest Builder handles Chronicle, Quest, Calling, objective, and completion-condition structure.
-- Object Creator builds archetype objects, NPCs, props, pickups, doors, caches, Foes, interactables, vendors, and job objects.
-- Effect Editor builds FX, particles, overlays, glow, weather, transitions, damage flashes, and magic effects.
-- Object Library and Asset Library provide reusable runtime objects and files.
-
-## Data Model
-
-The module exports one Creation Guide JSON document linked to a project:
-
-```json
-{
-  "id": "creation_xxxxx",
-  "projectId": "forever-bound",
-  "name": "Artifex Adventure Creation Guide",
-  "moduleKind": "creation-guide",
-  "version": "V1.0",
-  "setup": {},
-  "projectLibraryEntry": {},
-  "setupGates": [],
-  "assignments": [],
-  "milestones": [],
-  "notes": "",
-  "projectTree": []
-}
-```
-
-## First Version Rule
-
-This module should first prove one working guide document before it becomes a full project creation system.
-
-The first reliable version should focus on Project Overview, Project Library, active project selection, setup gates, Assignments, workflow states, subtasks, priority, effort, module colours, and dashboard filtering.
