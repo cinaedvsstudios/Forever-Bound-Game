@@ -1,34 +1,57 @@
 # Project Manager split and patch audit
 
-Status: first audit pass  
+Status: second audit pass; pending live verification  
 Scope: Project Manager / Project Editor  
 Source task: `todo_project_manager_15_project_manager_split_patch_audit`
 
 ## Current structure
 
-Project Manager has already been split away from a single `index.html` into multiple modules:
+The Project Manager has been split into focused modules:
 
-- `index.html` — thin loader shell only.
-- `src/project-shell.js` — rendered header, menus, sidebar, and workspace containers.
-- `src/project-app.v7.js` — app bootstrap and module wiring.
-- `src/project-state.js` — project state and storage mutation helpers.
-- `src/project-canvas.js` — pan, zoom, drag and canvas controls.
-- `src/project-renderer.js` — node and route graph rendering.
-- `src/project-ui.js` — base sidebar, catalog, inspector, JSON preview and workspace wiring.
-- `src/project-integration-ui.js` — Asset Browser, library mode UI, menu behaviour, and link-to-node behaviour.
-- `src/project-node-links-ui.js` — selected-node linked library inspector section.
-- `src/project-health-ui.js` — Getting Started / Missing Setup wizard bridge to shared Health Guide.
-- `src/project-io.js` — ZIP import/export and project package file handling.
-- `src/project-buildprep.js` — Build Prep display using shared Health Guide and todo output.
-- `src/project-stitcher.js` — route and Stitcher UI.
+- `index.html` — thin loader shell.
+- `src/project-shell.js` — header, menus, sidebar shell, and workspace containers.
+- `src/project-app.v7.js` — bootstrap and module wiring only.
+- `src/project-state.js` — project state and persistence helpers.
+- `src/project-canvas.js` — pan, zoom, and drag controls.
+- `src/project-renderer.js` — graph node and route rendering.
+- `src/project-ui.js` — workspace coordinator.
+- `src/project-ui-helpers.js` — shared UI utilities.
+- `src/project-sidebar-ui.js` — catalogue/sidebar rendering.
+- `src/project-inspector-ui.js` — selected-node/route inspector and drag/reset behaviour.
+- `src/project-json-preview-ui.js` — Split State Preview panel.
+- `src/project-menu-ui.js` — dropdown behaviour and library menu routing.
+- `src/project-asset-linking.js` — library-item-to-node link helpers.
+- `src/project-integration-ui.js` — Asset Browser display and search behaviour.
+- `src/project-node-links-ui.js` — linked-library inspector section.
+- `src/project-health-ui.js` — Getting Started bridge to shared Health Guide.
+- `src/project-io.js` — ZIP import/export and package files.
+- `src/project-buildprep.js` — Build Prep and health/todo export.
+- `src/project-tasks-ui.js` — Project Tasks / To-Do Board workspace.
+- `src/project-stitcher.js` — route editing workspace.
 - `src/project-route-types.js` — route type definitions.
 - `src/project-library-indexes.js` — library index adapter.
 
-## Patch-layer status
+## Completed in this split pass
 
-No obvious active patch-stack naming is currently being used in Project Manager itself. The risky area is not patch stacking; it is that a few files still have more than one responsibility.
+Implemented on `main`, awaiting live-page confirmation:
 
-Current active wrapper/enhancer chain in `project-app.v7.js`:
+- Shared helper extraction.
+- Sidebar/catalogue split.
+- Inspector split, including drag and reset position.
+- Split State Preview / JSON preview split.
+- Menu behaviour split.
+- Asset-linking split.
+- Project Tasks / To-Do Board as a separate workspace.
+
+## Project Tasks workspace
+
+`src/project-tasks-ui.js` provides the main task browser outside the selected-node inspector. It reads saved `stateManager.state.projectTodos` when present or generates tasks through the shared Health Guide and todo-output modules.
+
+It displays generated date, title, description, status, priority, effort, fix owner, related modules, source, task ID and tags. It includes filters for status, owner/module and priority, a selected-task detail panel, and a regenerate action.
+
+## Wrapper / patch status
+
+No new global enhancer layer was added for the task workspace. The existing composition remains:
 
 1. `createProjectUI(...)`
 2. `enhanceNodeLinkInspector(...)`
@@ -36,55 +59,15 @@ Current active wrapper/enhancer chain in `project-app.v7.js`:
 4. `enhanceProjectHealthUI(...)`
 5. `enhanceProjectIO(...)`
 
-This is still acceptable, but it should not keep growing. If another enhancer is needed, split the target module first rather than adding another wrapper layer.
+New substantial functionality should continue to be added through focused modules rather than another wrapper layer.
 
-## Files that need follow-up splitting
+## Remaining future work
 
-### `src/project-ui.js`
+- Split Manifest/workspace/toolbar logic only if `project-ui.js` grows again.
+- Split Asset Browser rendering and preview/search logic out of `project-integration-ui.js` in a future cleanup pass.
+- Later consider renaming `project-app.v7.js` to `project-app.js` once entry-file naming is stable.
+- Later optionally mirror node-specific tasks into the selected-node inspector.
 
-Risk: high. It still owns several UI concerns at once: catalog/sidebar, inspector, JSON preview, workspace switching, draggable inspector, and top controls.
+## Verification required
 
-Recommended split:
-
-- `project-sidebar-ui.js`
-- `project-inspector-ui.js`
-- `project-json-preview-ui.js`
-- `project-workspace-ui.js`
-- `project-toolbar-ui.js`
-
-### `src/project-integration-ui.js`
-
-Risk: medium-high. It now owns Asset Browser rendering, menu behaviour, library item preview, search, and link-to-node behaviour.
-
-Recommended split:
-
-- `project-menu-ui.js`
-- `project-asset-browser-ui.js`
-- `project-asset-linking.js`
-- `project-asset-browser-preview.js`
-
-### `src/project-app.v7.js`
-
-Risk: medium. It is currently acceptable as a bootstrap file, but it is versioned as `v7`, which makes it look like a patch-era file even though it is now the active app entry.
-
-Recommended follow-up:
-
-- Rename or replace with `project-app.js` once the app stabilises.
-- Keep this file as orchestration only.
-- Do not add feature logic here.
-
-## Rules going forward
-
-- Do not add a third active patch/enhancer layer over the Project Manager UI.
-- If a file needs another feature, first check whether it belongs in a new focused module.
-- Keep `index.html` thin.
-- Keep `project-app.v7.js` as bootstrap/orchestration only.
-- Keep generated project health and task logic in shared Health Guide modules where possible.
-- Do not put Project Tasks / To-Do Board UI inside the selected node inspector by default. That should be a separate workspace with only node-specific tasks mirrored into the inspector later.
-
-## Next recommended implementation tasks
-
-1. Implement `todo_project_manager_16_project_tasks_workspace` as a separate workspace, not inside node inspector.
-2. Split `project-integration-ui.js` before adding more Asset Browser logic.
-3. Split `project-ui.js` before expanding the inspector per node type.
-4. Rename `project-app.v7.js` to a stable active entry once imports/cache keys are settled.
+Target version for this pass is `v0.1.31 TASKS` using cache key `0.1.31-tasks`. Before marking related tasks complete, test GitHub Pages with a fresh cache key and confirm the task workspace, filters, detail panel, Flatplan, inspector, menus, and Split State Preview all work without console errors.
