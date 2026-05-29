@@ -301,10 +301,18 @@ function drawEmitterHelpers(scale) {
 
   const x = active.emitterX * scale;
   const y = active.emitterY * scale;
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--module-accent-strong').trim() || '#00a1d7';
+  const angle = Number.isFinite(Number(active.angle)) ? Number(active.angle) : -90;
+  const radians = angle * Math.PI / 180;
+  const directionLength = 58 * scale;
+  const endX = x + Math.cos(radians) * directionLength;
+  const endY = y + Math.sin(radians) * directionLength;
+  const wing = 10 * scale;
+  const width = Math.max(0, Number(active.emitterWidth) || 0) * scale;
 
   ctx.save();
-  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--module-accent-strong').trim() || '#00a1d7';
-  ctx.fillStyle = ctx.strokeStyle;
+  ctx.strokeStyle = accent;
+  ctx.fillStyle = accent;
   ctx.lineWidth = Math.max(1, 2 * scale);
   ctx.beginPath();
   ctx.arc(x, y, 10 * scale, 0, Math.PI * 2);
@@ -317,8 +325,35 @@ function drawEmitterHelpers(scale) {
   ctx.lineTo(x, y + 18 * scale);
   ctx.stroke();
 
-  ctx.font = `${Math.max(10, 12 * scale)}px monospace`;
-  ctx.fillText(`${Math.round(active.emitterX)}, ${Math.round(active.emitterY)}`, x + 14 * scale, y - 14 * scale);
+  ctx.save();
+  ctx.setLineDash([4 * scale, 4 * scale]);
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(endX, endY);
+  ctx.stroke();
+  ctx.restore();
+  ctx.beginPath();
+  ctx.moveTo(endX, endY);
+  ctx.lineTo(endX - Math.cos(radians - Math.PI / 4) * wing, endY - Math.sin(radians - Math.PI / 4) * wing);
+  ctx.moveTo(endX, endY);
+  ctx.lineTo(endX - Math.cos(radians + Math.PI / 4) * wing, endY - Math.sin(radians + Math.PI / 4) * wing);
+  ctx.stroke();
+
+  if (width > 20 * scale) {
+    const left = x - width / 2;
+    const right = x + width / 2;
+    const brace = 13 * scale;
+    ctx.beginPath();
+    ctx.moveTo(left + brace, y - brace);
+    ctx.lineTo(left, y - brace);
+    ctx.lineTo(left, y + brace);
+    ctx.lineTo(left + brace, y + brace);
+    ctx.moveTo(right - brace, y - brace);
+    ctx.lineTo(right, y - brace);
+    ctx.lineTo(right, y + brace);
+    ctx.lineTo(right - brace, y + brace);
+    ctx.stroke();
+  }
   ctx.restore();
 }
 
