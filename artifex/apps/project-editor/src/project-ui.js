@@ -1,7 +1,8 @@
-import { escapeHtml, getById } from './project-ui-helpers.js?v=0.1.30-preview-fix';
-import { renderProjectCatalog } from './project-sidebar-ui.js?v=0.1.30-preview-fix';
-import { createProjectInspectorUI } from './project-inspector-ui.js?v=0.1.30-preview-fix';
-import { createProjectJsonPreviewUI } from './project-json-preview-ui.js?v=0.1.30-preview-fix';
+import { escapeHtml, getById } from './project-ui-helpers.js?v=0.1.31-tasks';
+import { renderProjectCatalog } from './project-sidebar-ui.js?v=0.1.31-tasks';
+import { createProjectInspectorUI } from './project-inspector-ui.js?v=0.1.31-tasks';
+import { createProjectJsonPreviewUI } from './project-json-preview-ui.js?v=0.1.31-tasks';
+import { renderProjectTasks } from './project-tasks-ui.js?v=0.1.31-tasks';
 
 // Artifex Project Editor UI coordinator
 // Base UI orchestration only. Focused rendering lives in smaller modules.
@@ -23,6 +24,7 @@ export function createProjectUI({
     manifestStage: getById('manifestWorkspace'),
     stitcherStage: getById('stitcherWorkspace'),
     buildPrepStage: getById('buildPrepWorkspace'),
+    tasksStage: getById('tasksWorkspace'),
     assetBrowserStage: getById('assetBrowserWorkspace'),
     wizardStage: getById('wizardWorkspace')
   };
@@ -90,6 +92,14 @@ export function createProjectUI({
     `;
   }
 
+  function renderTasksWorkspace() {
+    renderProjectTasks({
+      stateManager,
+      container: refs.tasksStage,
+      onRefresh
+    });
+  }
+
   function renderAssetBrowser() {
     if (refs.assetBrowserStage) {
       refs.assetBrowserStage.innerHTML = '<div class="h-full p-6 text-xs text-zinc-500">Asset Browser module loading...</div>';
@@ -104,11 +114,14 @@ export function createProjectUI({
 
   function setWorkspace(workspace) {
     stateManager.activeWorkspace = workspace;
-    if (refs.workspaceLabel) refs.workspaceLabel.textContent = workspace.toUpperCase();
+    if (refs.workspaceLabel) {
+      refs.workspaceLabel.textContent = workspace === 'tasks' ? 'PROJECT TASKS' : workspace.toUpperCase();
+    }
     refs.manifestStage?.classList.toggle('hidden', workspace !== 'manifest');
     refs.flatplanStage?.classList.toggle('hidden', workspace !== 'flatplan');
     refs.stitcherStage?.classList.toggle('hidden', workspace !== 'stitcher');
     refs.buildPrepStage?.classList.toggle('hidden', workspace !== 'buildprep');
+    refs.tasksStage?.classList.toggle('hidden', workspace !== 'tasks');
     refs.assetBrowserStage?.classList.toggle('hidden', workspace !== 'assetbrowser');
     refs.wizardStage?.classList.toggle('hidden', workspace !== 'wizard');
 
@@ -116,6 +129,7 @@ export function createProjectUI({
     if (workspace === 'flatplan') onRefresh?.();
     if (workspace === 'stitcher') renderStitcher?.();
     if (workspace === 'buildprep') renderBuildPrep?.();
+    if (workspace === 'tasks') renderTasksWorkspace();
     if (workspace === 'assetbrowser') renderAssetBrowser();
     if (workspace === 'wizard') renderGettingStartedWizard();
     if (window.lucide) window.lucide.createIcons();
@@ -168,6 +182,7 @@ export function createProjectUI({
     renderJsonPreview,
     renderInspectorPreview,
     renderManifest,
+    renderTasksWorkspace,
     renderAssetBrowser,
     renderGettingStartedWizard,
     setWorkspace,
