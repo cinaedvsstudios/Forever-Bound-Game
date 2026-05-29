@@ -2,7 +2,7 @@
 
 ## Required reference files before editing
 
-Before changing Quest Builder, always inspect these files first:
+Before changing Quest Builder, always inspect:
 
 ```text
 docs/artifex/18-color-and-display-rules.md
@@ -17,9 +17,11 @@ Use the global all-apps to-do list for changes that affect every Artifex app. Us
 
 ## Current live status
 
-Current Quest Builder version: `V1.2.3`
+Current Quest Builder version in repository: `V1.2.4`
 
-Current live app files:
+Current live confirmation status: awaiting GitHub Pages/browser confirmation for `V1.2.4`.
+
+Current app files:
 
 ```text
 artifex/apps/quest-builder/index.html
@@ -35,183 +37,140 @@ artifex/apps/quest-builder/v1/src/dialog-editors.js
 artifex/apps/quest-builder/v1/src/export-json.js
 ```
 
-Older V1.0.8 files remain in the repo for reference but should not be loaded by the live app:
+Older V1.0.8 files remain only as imported base styling/reference; no old V1.0.8 JavaScript should be loaded by the live app:
 
 ```text
 artifex/apps/quest-builder/v1/quest-builder-v108.css
 artifex/apps/quest-builder/v1/quest-builder-v108.js
 ```
 
-## Completed
+## Completed phases
 
-### V1.0.9 — Structure cleanup only
+### V1.0.9 — Structure cleanup
 
 Status: complete.
 
-- `index.html` loads the split module entry instead of the old single script.
-- App behaviour has been split into responsibility-based modules.
-- `docs/structure.md` defines what belongs in each Quest Builder file.
-- Export helpers and validation helpers were moved into `export-json.js`.
-- Block taxonomy was moved into `block-types.js`.
-- Demo data and schema helpers were moved into `quest-schema.js`.
-- Layout persistence was moved into `layout-state.js`.
-- Canvas drawing was moved into `canvas-renderer.js`.
-- Dialog/wizard behaviour was moved into `dialog-editors.js`.
-- UI wiring was moved into `ui-bindings.js`.
-- Live GitHub Pages import test passed: user confirmed the V1.0.9 split loaded and looked fine.
+- Split behaviour into responsibility-based modules.
+- Kept `index.html` as the shell and moved taxonomy, schema, layout, rendering, dialogs, UI wiring, and export behaviour into named modules.
+- User confirmed the split app loaded correctly in GitHub Pages.
 
 ### V1.1.0 — Module menu / shared shell alignment
 
 Status: complete.
 
-- `File ▾ → Module ▸` remains a side flyout, not a flat list inside File.
-- The flyout includes only the core modules: Hub, Creation Guide, Project Manager, Scene Editor, Quest Builder, Puzzle Creator, Effect Editor, Archetype Object Creator.
-- Utility tools such as Sprite Wizard, Font Packer, Frame Extractor, and Onda are not included.
-- The module list is stored in `v1/src/module-config.js`.
-- Quest Builder keeps green as the module accent while retaining the dark Artifex shell.
+- Added `File ▾ → Module ▸` as a side flyout containing only the core modules: Hub, Creation Guide, Project Manager, Scene Editor, Quest Builder, Puzzle Creator, Effect Editor, and Archetype Object Creator.
+- Excluded utility tools such as Sprite Wizard, Font Packer, Frame Extractor, and Onda.
+- Kept green as the Quest Builder accent on the dark Artifex shell.
 
 ### V1.1.1 — File menu simplification
 
 Status: complete.
 
-- File menu now groups actions into short flyouts instead of showing a long flat list.
-- `File ▾ → New ▸` contains `New Quest Wizard` and `New Quest`.
-- `File ▾ → Save ▸` contains `Export JSON` and `Save Locally in Browser`.
-- `Import JSON` remains directly in File because it is a single immediate file action.
-- `File ▾ → Module ▸` remains the core-module side flyout.
-- Removed the confusing `New Quest File` item from the File menu.
-- Updated action wiring so `New Quest` creates a quest instead of resetting the whole quest file.
+- Grouped New and Save commands into flyouts.
+- Kept Import JSON as an immediate File action.
+- Changed New Quest so it adds a quest rather than resetting the quest file.
 
 ### V1.1.2 — Left panel refinement
 
 Status: complete.
 
-- Added title tooltips to important left-panel inputs and actions.
-- Preserved resizable left panel behaviour.
-- Stabilised inline editing so render refreshes do not overwrite the active input while the user is typing.
-- Quest and block list rows now include tooltip text for selection/edit actions.
+- Added useful tooltips, retained resizing, and stabilised inline editing while typing.
+- Added selection/edit affordances to list rows.
 
 ### V1.1.3 — Contextual inspector and status actions
 
 Status: complete.
 
-- Left panel is now treated as a contextual status/inspector panel, not a duplicate quest summary.
-- Clicking the quest header or Calling pill in the viewing canvas selects the quest for the left inspector.
-- Clicking a flow card in the viewing canvas selects that block for the left inspector.
-- The inspector switches between Quest fields and Block fields depending on what is selected.
-- The green status strip now contains emoji action buttons for New Quest Wizard, Add Quest, Add Block, and Save Locally.
-- Canvas renderer creates hit zones for the quest header, Calling pill, and flow cards.
-- Canvas click hit-testing accounts for zoom and pan.
+- Changed the left panel into a contextual inspector for the selected quest or block.
+- Added quick emoji actions in the green status strip.
+- Added canvas selection hit-testing compatible with zoom and pan.
 
 ### V1.1.4 — Viewing panel warnings and flow card polish
 
 Status: complete.
 
-- Selected quest header, Calling pill, and selected flow card now get stronger visual selection styling.
-- Flow cards now show clearer linked summaries using scene/object/dialogue/condition/action/UI labels.
-- Flow cards now show warning text when required fields are missing.
-- Flow cards show a ready/audio line when required fields are satisfied.
-- START and END nodes now include small helper text so they stay readable as flow anchors.
-- Flow connector arrows are more explicit between cards.
-- Canvas still uses the existing hit zones, zoom, and pan support.
+- Improved selected states, linked summaries, missing-field warnings, ready/audio states, START/END anchors, and connector arrows.
 
-### V1.1.5 — Block taxonomy and validation pass
+### V1.1.5 — Block taxonomy and validation
 
 Status: complete.
 
-- Added `docs/block-taxonomy.md` as the human-readable block taxonomy contract.
-- Locked each block type with category, source module, primary field, linked fields, required fields, colour, emoji, and hint.
-- The inspector now uses each block type's `primaryField` instead of guessing the primary quick-edit field.
-- The inspector now displays taxonomy metadata: block category, primary field, and required fields.
-- Block type dropdowns are now populated for both the popup editor and the left contextual inspector.
-- Template blocks now include required fields so new template blocks do not immediately show false warnings.
-- Export validation now catches missing block type, missing Calling text, required fields, completion requirements, and dialogue/action misuse hints.
-- The Block Type List now shows category, primary field, required fields, and hint.
-- Removed the open `todo_quest_builder_block_taxonomy_validation` task from the specific-app open list.
+- Added `docs/block-taxonomy.md`.
+- Locked block names, colours, emojis, source modules, primary fields, required fields, and validation behaviour.
+- Connected taxonomy to inspector fields, template defaults, JSON validation, and the Block Type List.
 
 ### V1.1.6 — Better editor popup
 
 Status: complete.
 
-- Replaced the giant single field stack with tabbed editor sections.
-- Quest editing now has grouped panels for Quest Basics, Quest Links, Rewards / Unlocks, and Notes.
-- Block editing now has grouped panels for Basics, Links, Dialogue / Audio, Conditions & Actions, UI / Capra / Rewards, and Notes.
+- Replaced the large field stack with grouped tabbed editor sections.
 - Added thumbnail/icon inputs for quests and blocks.
-- Thumbnail/icon input values are now saved back into quest and block data.
-- Editor tabs are wired from `dialog-editors.js` and initial tab selection is context-aware when editing a quest or block.
-- Dialog styling now has tab buttons, active panel styling, helper text, and compact thumbnail/name/type layout.
-- Page title, visible version badge, CSS cache key, JS module cache key, stylesheet entry, and module config now use `V1.1.6` / `1.1.6`.
 
 ### V1.1.7 — Export JSON and validation
 
 Status: complete.
 
-- Export now produces a game-readable `artifex.questExportBundle.v1` bundle instead of only dumping local editor state.
-- Export bundle includes virtual project package files for `quests/quest-index.json`, `quests/quest_<slug>.json`, `sidequests/sidequest-index.json`, and `sidequests/sidequest_<slug>.json`.
-- Runtime quest files now separate metadata, links, flow blocks, gameplay actions, conditions, feedback, and validation warnings.
-- Main quests and side quests are separated by quest type.
-- Runtime blocks separate refs, gameplay, feedback, source module, category, required fields, linked fields, and notes.
-- Validation checks missing/duplicate IDs, required fields, completion requirements, and unresolved Project Manager references.
-- `View JSON Preview` and `Export JSON` use the same runtime export bundle shape.
+- Export now produces the `artifex.questExportBundle.v1` shape.
+- Added quest/sidequest index and runtime file targets.
+- Separated runtime metadata, links, flow blocks, gameplay, feedback, and validation warnings.
 
-### V1.1.8 — Post-export verification / bugfix pass
+### V1.1.8 — Post-export verification / bugfix
 
 Status: complete.
 
-- Added `exportSelfCheck` to every exported `artifex.questExportBundle.v1` bundle.
-- Tightened Project Manager resolution warnings so action-only logic does not hide missing scene/object/dialogue/audio IDs.
-- Added a warning when targeted actions appear to lack an `objectId`.
+- Added `exportSelfCheck`.
+- Tightened missing Project Manager-resolvable link and targeted-action warnings.
 
-### V1.1.9 — Exported bundle UI / split-file download planning
-
-Status: complete.
-
-- JSON Preview now shows an export summary above the raw JSON.
-- The summary shows export self-check status, file count, quest count, side quest count, warning count, passed check count, generated paths, and roles.
-- Export remained one bundle file while split-file/package export was planned.
-
-### V1.2.0 — Post-V1.1 verification and next-phase planning
+### V1.1.9 — Export summary UI
 
 Status: complete.
 
-- Confirmed required reference docs before changing the app.
-- Confirmed active Quest Builder files remain the split module set listed above.
-- Promoted the next phase to V1.2.x.
-- Selected split-file/package download as the next functional phase.
+- JSON Preview now shows bundle summary, warning/check counts, generated paths, and roles.
+
+### V1.2.0 — Verification and next-phase planning
+
+Status: complete.
+
+- Reconfirmed active split files and promoted functional work into V1.2.x.
 
 ### V1.2.1 — Split-file export/package download
 
 Status: complete.
 
-- Kept `Export JSON Bundle` as the single review/transfer bundle download.
+- Kept `Export JSON Bundle` for one review/transfer bundle.
 - Added `Export Project Files` under `File ▾ → Save ▸`.
-- `Export Project Files` downloads the virtual project-package files as loose JSON files.
-- Downloaded filenames encode folder paths with double underscores, for example `quests__quest-index.json`.
-- Added `splitExportPlan` to the exported bundle.
-- Avoided adding a ZIP library; ZIP/package export remains a future shared exporter concern.
+- Downloads loose project-package JSON files using double-underscore filename paths.
+- Added `splitExportPlan`; deliberately deferred ZIP packaging to a future shared exporter.
 
-### V1.2.2 — Split export verification / browser warning pass
+### V1.2.2 — Split export verification
 
 Status: complete.
 
-- User verified that `Export Project Files` downloads the expected current project quest files.
-- Confirmed the current demo quest export produces 3 loose JSON files: quest index, sidequest index, and the main quest runtime file.
-- Confirmed the sidequest index is expected even when empty because the project package expects that file.
-- Confirmed the split export is only the quest/sidequest package slice, not scene, object, dialogue, audio, FX, puzzle, or Project Manager files.
+- User confirmed the current demo quest produces the correct three project quest files: quest index, empty sidequest index, and the main quest runtime file.
+- Confirmed Quest Builder only exports the quest/sidequest slice of the project package.
 
 ### V1.2.3 — Quest Flow drag ordering
 
-Status: complete, awaiting live browser confirmation.
+Status: built, awaiting direct browser interaction confirmation.
 
-- Selected drag/drop flow editing as the next functional pass.
-- Quest Flow list cards are now draggable and include a small `↕` reorder indicator.
-- Dropping one Quest Flow list card onto another reorders the selected quest's block array.
-- The viewing workspace redraws automatically after a reorder so the visual quest sequence follows the updated flow order.
-- The moved block remains selected after the drop and a confirmation toast is displayed.
-- Drag-over cards show the green Quest Builder accent/glow as a clear drop target.
-- Kept reordering inside the Quest Flow floating list for this pass; the larger canvas cards remain the visual workspace rather than direct draggable nodes.
-- Stabilised drag start so selecting a block does not rerender and destroy the active drag gesture.
-- Page title, visible version badge, CSS cache key, JS/module cache key, stylesheet entry, and module config use `V1.2.3` / `1.2.3`.
+- Quest Flow list cards can be dragged onto another card to reorder the selected quest block array.
+- Added the `↕` drag indicator, drop-target highlight, automatic workspace redraw, retained selected block, and movement confirmation toast.
+- Kept reordering in the floating Quest Flow list; canvas blocks remain the visual workspace.
+- Stabilised drag start so selecting a block does not interrupt the drag gesture.
+
+### V1.2.4 — Viewing-panel density and endpoint polish
+
+Status: built, awaiting GitHub Pages/browser confirmation and optional custom icon assets.
+
+- Reduced oversized text and spacing in the left contextual inspector.
+- Reduced the viewport zoom/pan/reset control footprint.
+- Merged the quest heading and Calling content into one cleaner canvas header card.
+- Changed START and END from large rectangular boxes to solid circular endpoint nodes with labels underneath.
+- Added image-loading support for custom endpoint assets at:
+  - `artifex/apps/quest-builder/icons/start.png`
+  - `artifex/apps/quest-builder/icons/finish.png`
+- Added safe fallback symbols when those PNG files are not yet present in GitHub.
+- Updated module imports/cache keys, CSS entry, page title, visible version badge, and module config to `V1.2.4` / `1.2.4`.
 
 ## Ownership boundary
 
@@ -221,7 +180,7 @@ Quest Builder does not own scene/screen visual layout, Scene Editor object place
 
 ## Export target
 
-Quest Builder exports a bundle that represents these project package targets:
+Quest Builder exports the quest package targets:
 
 ```text
 projects/<project-id>/quests/quest-index.json
@@ -234,26 +193,22 @@ Project Manager should reference quest and side quest IDs. It should not author 
 
 ## Version plan
 
-Every Quest Builder edit should increase the visible version by `0.01` and update the page title, visible version badge, CSS cache key, JS/module cache key, and loaded/fallback text where present.
+Every Quest Builder edit must increase the visible version by `0.01` and update the page title, visible version badge, CSS cache key, JS/module cache key, and loaded/fallback text where present.
 
-Next version:
+Next version after confirmation:
 
 ```text
-V1.2.4  drag ordering browser verification / polish
+V1.2.5  finish endpoint-icon integration and drag-ordering polish, if required by browser testing
 ```
 
-## V1.2.4 — Drag ordering browser verification / polish
+## Current checks needed
 
-Goal: confirm the new Quest Flow ordering interaction is reliable before adding another major feature.
-
-Checks:
-
-- App loads as V1.2.3.
-- Quest Flow list cards show the `↕` drag indicator.
-- Dragging `Update Codice` over `Enter Church` changes the sequence in the main workspace.
-- The moved block remains selected and the left inspector updates to it.
-- Re-exporting project files after a reorder writes blocks in the new order.
-- No drag action accidentally opens Edit Block or drags the Quest Flow window itself.
+- Confirm the app loads as `V1.2.4`.
+- Confirm the side-panel text and viewport controls are more compact.
+- Confirm the canvas header now contains title, metadata, and Calling content in one card.
+- Confirm START and END render as solid circular endpoint nodes.
+- Add the real `start.png` and `finish.png` files to the GitHub path above if the custom endpoint art should appear instead of fallback symbols.
+- Test dragging a Quest Flow card onto another card and confirm the main canvas redraws in the new order.
 
 ## Specific-app tasks
 
