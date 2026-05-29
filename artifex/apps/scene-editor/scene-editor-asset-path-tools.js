@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = 'v0.28-consolidation';
+  const VERSION = window.ArtifexSceneEditorCore?.getVersion?.() || window.ArtifexSceneEditorConfig?.VERSION || 'v0.31-runtime-module-cleanup';
   const ASSET_MANIFEST = '../../assets-library/asset-library.json';
   let assetManifest = null;
   let pickerTarget = 'item';

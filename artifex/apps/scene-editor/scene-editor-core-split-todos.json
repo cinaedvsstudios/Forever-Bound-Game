@@ -1,6 +1,6 @@
 {
   "schemaVersion": "artifex.specificAppTodos.v1",
-  "updatedAt": "2026-05-28",
+  "updatedAt": "2026-05-29",
   "appId": "scene-editor",
   "appPath": "artifex/apps/scene-editor/",
   "purpose": "Track the Scene Editor core split required before wider cross-app linking work.",
@@ -12,9 +12,9 @@
     "artifex/apps/scene-editor/scene-editor-core-split-plan-2026-05-28.md",
     "artifex/apps/scene-editor/scene-editor-audit-2026-05-28.md"
   ],
-  "currentStableVersion": "v0.29-title-cache-sync",
-  "freshTestUrl": "https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/index.html?fresh=v0.29-title-cache-sync-restore-core",
-  "knownGoodState": "Recovered stable runtime after storage/model split regression. scene-editor-config.js is loaded and consumed by scene-editor-v2.js. scene-editor-storage.js is loaded but not consumed by the core. scene-editor-scene-model.js was deleted after causing a blank-page regression. Do not attempt the next core split phase through chat connector full-file replacement.",
+  "currentStableVersion": "v0.31-runtime-module-cleanup",
+  "freshTestUrl": "http://127.0.0.1:5173/artifex/apps/scene-editor/index.html?fresh=v0.31-runtime-module-cleanup",
+  "knownGoodState": "Runtime module cleanup completed after the v0.30 core split. The six remaining numbered runtime feature modules were renamed to permanent ownership-based filenames, index.html loads only permanent runtime names plus the scene-editor-v2.js bootstrap, v11/v15 stale v0.28 helper toast prefixes now derive from the active core/config version, and v0.31 cache labels are synced across active loads. HTTP asset checks, syntax checks, template manifest fetch, and a temporary Playwright smoke test passed.",
   "blockerRule": "Two failed attempts means the item becomes blocked and moves to uploaded local file, agent/Codex, or proper local branch workflow. No placeholders, no patch-on-patch workaround, no manual reconstruction from truncated chunks.",
   "tasks": [
     {
@@ -24,7 +24,10 @@
       "priority": 5,
       "phase": 0,
       "description": "Fresh URL loads after recovery. The editor restores the local backup, displays the scene, preserves transform controls, and shows the current v0.29-title-cache-sync runtime state.",
-      "targetFiles": ["artifex/apps/scene-editor/index.html", "artifex/apps/scene-editor/scene-editor-v2.js"],
+      "targetFiles": [
+        "artifex/apps/scene-editor/index.html",
+        "artifex/apps/scene-editor/scene-editor-v2.js"
+      ],
       "testRequired": true,
       "testedByUser": true
     },
@@ -35,118 +38,197 @@
       "priority": 5,
       "phase": 1,
       "description": "scene-editor-config.js exists, loads before the core, and scene-editor-v2.js consumes it for version, storage keys, repo/app paths, brand asset paths, template manifest path, and type options. This phase is confirmed working.",
-      "targetFiles": ["artifex/apps/scene-editor/scene-editor-config.js", "artifex/apps/scene-editor/index.html", "artifex/apps/scene-editor/scene-editor-v2.js"],
+      "targetFiles": [
+        "artifex/apps/scene-editor/scene-editor-config.js",
+        "artifex/apps/scene-editor/index.html",
+        "artifex/apps/scene-editor/scene-editor-v2.js"
+      ],
       "testRequired": true,
       "testedByUser": true
     },
     {
       "taskId": "scene_editor_core_split_02_storage",
       "title": "Extract local storage helpers",
-      "status": "blocked_chat_connector_full_file_edit",
+      "status": "done",
       "priority": 5,
       "phase": 2,
-      "description": "scene-editor-storage.js exists and may be loaded, but scene-editor-v2.js must not consume it until this extraction is performed in a proper local/Codex/agent workflow with full-file editing and browser console testing. A connector-based full-file replacement caused a blank-page regression and was rolled back.",
-      "targetFiles": ["artifex/apps/scene-editor/scene-editor-storage.js", "artifex/apps/scene-editor/scene-editor-v2.js"],
+      "description": "scene-editor-storage.js is now consumed by scene-editor-app.js for settings, working copy, and download stamp read/write while preserving the existing localStorage keys.",
+      "targetFiles": [
+        "artifex/apps/scene-editor/scene-editor-storage.js",
+        "artifex/apps/scene-editor/scene-editor-v2.js"
+      ],
       "testRequired": true,
-      "blockedReason": "The storage wiring regressed on true fresh reload. Do not retry through chat connector full-file replacement. Use a local branch or Codex/agent workflow."
+      "testedByCodex": true
     },
     {
       "taskId": "scene_editor_core_split_03_scene_model",
       "title": "Extract scene model helpers",
-      "status": "blocked_by_storage_split",
+      "status": "done",
       "priority": 5,
       "phase": 3,
-      "description": "Do not recreate or load scene-editor-scene-model.js until storage extraction is safely completed and tested. The first model-module load caused a blank-page regression and the file was deleted.",
-      "targetFiles": ["artifex/apps/scene-editor/scene-editor-scene-model.js", "artifex/apps/scene-editor/scene-editor-v2.js"],
+      "description": "scene-editor-scene-model.js owns blank scene creation, collection lookup, item lookup, background path mutation, normalisation, default element/layer creation, duplicate/remove, and path data mutations.",
+      "targetFiles": [
+        "artifex/apps/scene-editor/scene-editor-scene-model.js",
+        "artifex/apps/scene-editor/scene-editor-v2.js"
+      ],
       "testRequired": true,
-      "blockedReason": "A premature scene model module caused a blank page. The file was deleted; future work must happen locally or in Codex/agent mode."
+      "testedByCodex": true
     },
     {
       "taskId": "scene_editor_core_split_04_io",
       "title": "Extract import/export IO",
-      "status": "blocked_by_phase_03",
+      "status": "done",
       "priority": 5,
       "phase": 4,
       "description": "Move local JSON import, URL import, template loading, template manifest loading, and JSON download into scene-editor-io.js without changing the current loose JSON behaviour yet.",
-      "targetFiles": ["artifex/apps/scene-editor/scene-editor-io.js", "artifex/apps/scene-editor/scene-editor-v2.js"],
-      "testRequired": true
+      "targetFiles": [
+        "artifex/apps/scene-editor/scene-editor-io.js",
+        "artifex/apps/scene-editor/scene-editor-v2.js"
+      ],
+      "testRequired": true,
+      "testedByCodex": true
     },
     {
       "taskId": "scene_editor_core_split_05_stage_drag",
       "title": "Extract core move-drag controller",
-      "status": "blocked_by_phase_04",
+      "status": "done",
       "priority": 5,
       "phase": 5,
       "description": "Move only centre/move handle drag behaviour into scene-editor-stage-drag.js and verify it does not conflict with offscreen placement, transform controls, or value sliders.",
-      "targetFiles": ["artifex/apps/scene-editor/scene-editor-stage-drag.js", "artifex/apps/scene-editor/scene-editor-v2.js"],
-      "testRequired": true
+      "targetFiles": [
+        "artifex/apps/scene-editor/scene-editor-stage-drag.js",
+        "artifex/apps/scene-editor/scene-editor-v2.js"
+      ],
+      "testRequired": true,
+      "testedByCodex": true
     },
     {
       "taskId": "scene_editor_core_split_06_renderer",
       "title": "Extract renderer and markup helpers",
-      "status": "blocked_by_phase_05",
+      "status": "done",
       "priority": 5,
       "phase": 6,
       "description": "Move markup and render helpers into scene-editor-renderer.js only after state/model/IO/drag are stable. This is the riskiest split because many helper modules depend on generated IDs/classes.",
-      "targetFiles": ["artifex/apps/scene-editor/scene-editor-renderer.js", "artifex/apps/scene-editor/scene-editor-v2.js"],
-      "testRequired": true
+      "targetFiles": [
+        "artifex/apps/scene-editor/scene-editor-renderer.js",
+        "artifex/apps/scene-editor/scene-editor-v2.js"
+      ],
+      "testRequired": true,
+      "testedByCodex": true
     },
     {
       "taskId": "scene_editor_core_split_07_bindings",
       "title": "Extract DOM bindings",
-      "status": "blocked_by_phase_06",
+      "status": "done",
       "priority": 5,
       "phase": 7,
       "description": "Move form/menu/context/stage binding code into scene-editor-bindings.js after renderer extraction is stable.",
-      "targetFiles": ["artifex/apps/scene-editor/scene-editor-bindings.js", "artifex/apps/scene-editor/scene-editor-v2.js"],
-      "testRequired": true
+      "targetFiles": [
+        "artifex/apps/scene-editor/scene-editor-bindings.js",
+        "artifex/apps/scene-editor/scene-editor-v2.js"
+      ],
+      "testRequired": true,
+      "testedByCodex": true
     },
     {
       "taskId": "scene_editor_core_split_08_app_api",
       "title": "Extract app coordinator and public core API",
-      "status": "blocked_by_phase_07",
+      "status": "done",
       "priority": 5,
       "phase": 8,
       "description": "Create scene-editor-app.js and scene-editor-core-api.js so other modules and later cross-app linking work can depend on a stable public Scene Editor bridge instead of reaching into a tangled core file.",
-      "targetFiles": ["artifex/apps/scene-editor/scene-editor-app.js", "artifex/apps/scene-editor/scene-editor-core-api.js", "artifex/apps/scene-editor/scene-editor-v2.js"],
-      "testRequired": true
+      "targetFiles": [
+        "artifex/apps/scene-editor/scene-editor-app.js",
+        "artifex/apps/scene-editor/scene-editor-core-api.js",
+        "artifex/apps/scene-editor/scene-editor-v2.js"
+      ],
+      "testRequired": true,
+      "testedByCodex": true
     },
     {
       "taskId": "scene_editor_core_split_09_remaining_numbered_modules",
-      "title": "Audit and rename remaining numbered feature modules",
-      "status": "blocked_by_core_split",
+      "title": "Rename remaining numbered feature modules to permanent runtime names",
+      "status": "done",
       "priority": 4,
       "phase": 9,
-      "description": "After the core API is clean, audit remaining numbered feature modules and rename or integrate them if they are permanent modules rather than patches.",
+      "description": "Renamed the six retained numbered runtime modules to permanent ownership-based filenames, updated index.html load paths, removed stale v0.28 helper version/toast prefixes, and verified v0.31 runtime-module cleanup over HTTP and Playwright smoke testing.",
       "targetFiles": [
-        "artifex/apps/scene-editor/scene-editor-v11-helper.js",
-        "artifex/apps/scene-editor/scene-editor-v15-helper.js",
-        "artifex/apps/scene-editor/scene-editor-v20-card-controller.js",
-        "artifex/apps/scene-editor/scene-editor-v21-visual-adjustments.js",
-        "artifex/apps/scene-editor/scene-editor-v23-aspect-controls.js",
-        "artifex/apps/scene-editor/scene-editor-v24-object-preview.js"
+        "artifex/apps/scene-editor/scene-editor-asset-path-tools.js",
+        "artifex/apps/scene-editor/scene-editor-layer-controls.js",
+        "artifex/apps/scene-editor/scene-editor-card-controller.js",
+        "artifex/apps/scene-editor/scene-editor-visual-adjustments.js",
+        "artifex/apps/scene-editor/scene-editor-aspect-controls.js",
+        "artifex/apps/scene-editor/scene-editor-object-preview.js",
+        "artifex/apps/scene-editor/index.html"
       ],
-      "testRequired": true
+      "testRequired": true,
+      "testedByCodex": true
     },
     {
       "taskId": "scene_editor_cross_app_ready_gate",
       "title": "Confirm Scene Editor is ready for cross-app linking",
-      "status": "blocked_by_core_split",
+      "status": "ready_for_separate_cross_app_phase",
       "priority": 5,
       "phase": 10,
-      "description": "Only after the core split is stable, confirm Scene Editor has clean integration points for active project loading, scene/screen indexes, object archetype references, effect archetype references, Project Manager links, and shared health checks.",
-      "targetFiles": ["artifex/apps/scene-editor/scene-editor-core-api.js", "artifex/apps/scene-editor/scene-editor-app.js"],
+      "description": "Scene Editor cleanup is complete through v0.31 runtime-module cleanup. Later cross-app active-project/reference/index integration can begin as a separate phase; no cross-app behavior was changed in this cleanup pass.",
+      "targetFiles": [
+        "artifex/apps/scene-editor/scene-editor-core-api.js",
+        "artifex/apps/scene-editor/scene-editor-app.js"
+      ],
       "testRequired": true
     },
     {
       "taskId": "scene_editor_archive_unused_legacy_files",
       "title": "Archive unused legacy Scene Editor files",
-      "status": "open",
+      "status": "done",
       "priority": 4,
       "phase": 11,
-      "description": "Move old, unused, unreferenced Scene Editor files into an archive folder after verifying they are not loaded by index.html and are not referenced by active code. This should be a separate no-runtime-change batch.",
-      "targetFiles": ["artifex/apps/scene-editor/archive/"],
-      "testRequired": true
+      "description": "Archived unused unreferenced legacy files into archive/legacy-2026-05-28 after confirming index.html active load list and active-code references.",
+      "targetFiles": [
+        "artifex/apps/scene-editor/archive/"
+      ],
+      "testRequired": true,
+      "testedByCodex": true
     }
-  ]
+  ],
+  "taskCommits": [
+    "8d0fcec Split Scene Editor core into modular files and archive legacy helpers",
+    "current v0.31 runtime module cleanup commit"
+  ],
+  "activeLoadedFilesLeftInPlace": [
+    "scene-editor-asset-path-tools.js",
+    "scene-editor-transform-controls.js",
+    "scene-editor-layer-controls.js",
+    "scene-editor-value-sliders.js",
+    "scene-editor-card-controller.js",
+    "scene-editor-visual-adjustments.js",
+    "scene-editor-offscreen-placement.js",
+    "scene-editor-aspect-controls.js",
+    "scene-editor-object-preview.js",
+    "scene-editor-menu-controller.js"
+  ],
+  "testsExecuted": [
+    "node --check for active Scene Editor/shared JS files",
+    "HTTP curl index and active CSS/JS asset checks via Vite at 127.0.0.1:5173",
+    "curl template manifest check",
+    "temporary Playwright v31 smoke test for render/version/stale-toast absence/local backup/import menu/object selection/move/resize/rotate/origin/layer/card/visual/aspect/object preview/context/download/core API"
+  ],
+  "testsRequiringUserVerification": [
+    "Full visual regression after deployment",
+    "precise pointer feel for move handle drag",
+    "precise pointer feel for resize handles",
+    "precise pointer feel for rotate handle",
+    "visual appearance of origin marker",
+    "visual appearance of layer/card/visual/aspect/object preview overlays",
+    "download JSON in target browser/OS"
+  ],
+  "nextStep": "Close the Scene Editor cleanup list after user visual verification; begin later cross-app active-project/reference/index integration separately.",
+  "runtimeModuleRenameMap": {
+    "scene-editor-v11-helper.js": "scene-editor-asset-path-tools.js",
+    "scene-editor-v15-helper.js": "scene-editor-layer-controls.js",
+    "scene-editor-v20-card-controller.js": "scene-editor-card-controller.js",
+    "scene-editor-v21-visual-adjustments.js": "scene-editor-visual-adjustments.js",
+    "scene-editor-v23-aspect-controls.js": "scene-editor-aspect-controls.js",
+    "scene-editor-v24-object-preview.js": "scene-editor-object-preview.js"
+  }
 }
