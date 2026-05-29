@@ -1,13 +1,17 @@
 import {
   deleteActiveLayer,
+  duplicateActiveLayer,
   editorState,
+  getActiveLayer,
+  moveLayer,
   onStateChange,
   selectLayer,
+  toggleLayerVisibility,
   updateActiveLayer
 } from './editor-state.js';
 import { resizeCanvas } from './editor-renderer.js';
 
-const VERSION_LABEL = 'INDEX2-CLEAN-0.1.9-UI';
+const VERSION_LABEL = 'INDEX2-CLEAN-0.2.0-UI';
 const LAYOUT_STORAGE_KEY = 'artifex-index2-ui-layout';
 const COLLAPSE_STORAGE_KEY = 'artifex-index2-card-collapse';
 let lastPausedState = null;
@@ -20,11 +24,17 @@ function initIndex2UIParity() {
   setupPanelResizers();
   setupTopShortcuts();
   setupCardCollapse();
-  setupLayerPanelLayout();
+  simplifyBottomPanel();
+  setupEffectTags();
   restoreQuickEditHelpers();
   addControlTooltips();
   onStateChange(syncParityUI);
   syncParityUI();
+  window.setTimeout(() => {
+    setupNumericSteppers();
+    setupHexColourEntry();
+    syncParityUI();
+  }, 0);
 }
 
 function setVersionLabel() {
@@ -98,21 +108,23 @@ function persistCollapsedCards() {
   }
 }
 
-function setupLayerPanelLayout() {
-  const toolbar = document.querySelector('.index2-layer-toolbar');
-  const list = document.getElementById('layer-list');
-  if (!toolbar || !list || toolbar.parentElement?.classList.contains('index2-layer-panel-body')) return;
-  toolbar.querySelector('[data-index2-action="delete"]')?.remove();
-  const body = document.createElement('div');
-  body.className = 'index2-layer-panel-body';
-  toolbar.before(body);
-  body.append(toolbar, list);
+function simplifyBottomPanel() {
+  const cards = document.querySelectorAll('#bottom-panel .index2-bottom-card');
+  if (cards.length < 3) return;
+  cards[0].classList.add('index2-layers-card');
+  cards[1].classList.add('index2-display-card');
+  cards[2].classList.add('index2-diagnostics-card');
+  cards[0].querySelector('.index2-layer-toolbar')?.remove();
 }
 
 function syncParityUI() {
   syncCanvasButtonIcons();
   syncPreviewStatusPill();
+  syncEffectTags();
   enhanceLayerList();
+  setupNumericSteppers();
+  setupHexColourEntry();
+  syncHexColourEntry();
 }
 
 function syncCanvasButtonIcons() {
@@ -150,28 +162,158 @@ function syncPreviewStatusPill() {
 }
 
 function enhanceLayerList() {
+  const layers = editorState.composition.layers;
   const items = document.querySelectorAll('#layer-list .layer-item');
-  if (!editorState.composition.layers.length) return;
+  if (!layers.length) return;
   items.forEach((item, index) => {
     if (item.querySelector('.layer-sequence-number')) return;
+    const layer = layers[index];
     const number = document.createElement('span');
     number.className = 'layer-sequence-number';
     number.textContent = String(index + 1);
     number.title = `Sequence position ${index + 1}`;
-    const remove = document.createElement('button');
-    remove.type = 'button';
-    remove.className = 'layer-delete-inline';
-    remove.textContent = '×';
-    remove.title = `Delete layer ${index + 1}`;
-    remove.addEventListener('click', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      selectLayer(index);
-      deleteActiveLayer();
-    });
+    const actions = document.createElement('span');
+    actions.className = 'layer-inline-actions';
+    actions.append(
+      layerAction('⬆️', `Move ${layer?.name || 'layer'} up`, index === 0, () => moveLayer(index, index - 1)),
+      layerAction('⬇️', `Move ${layer?.name || 'layer'} down`, index === layers.length - 1, () => moveLayer(index, index + 1)),
+      layerAction(layer?.visible === false ? '🙈' : '👁️', 'Toggle layer visibility', false, () => toggleLayerVisibility(index)),
+      layerAction('⧉', 'Duplicate layer', false, () => { selectLayer(index); duplicateActiveLayer(); }),
+      layerAction('×', 'Delete layer', false, () => { selectLayer(index); deleteActiveLayer(); })
+    );
     item.prepend(number);
-    item.append(remove);
+    item.append(actions);
   });
+}
+
+function layerAction(icon, title, disabled, action) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'layer-inline-action';
+  button.textContent = icon;
+  button.title = title;
+  button.disabled = disabled;
+  button.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!button.disabled) action();
+  });
+  return button;
+}
+
+function setupEffectTags() {
+  const card = document.getElementById('index2-card-assets');
+  const layerName = document.getElementById('layer-name-input')?.closest('label');
+  if (!card || !layerName || document.getElementById('effect-tags-input')) return;
+  const field = document.createElement('label');
+  field.className = 'index2-tags-field';
+  field.innerHTML = 'Tags<input id="effect-tags-input" placeholder="magic, fire, projectile" />';
+  layerName.before(field);
+  field.querySelector('input')?.addEventListener('input', (event) => {
+    editorState.composition.tags = normalizeTags(event.target.value);
+  });
+}
+
+function syncEffectTags() {
+  const input = document.getElementById('effect-tags-input');
+  if (!input || document.activeElement === input) return;
+  input.value = Array.isArray(editorState.composition.tags) ? editorState.composition.tags.join(', ') : '';
+}
+
+function normalizeTags(value) {
+  return [...new Set(String(value || '').split(',').map((tag) => tag.trim().toLowerCase()).filter(Boolean))];
+}
+
+function setupNumericSteppers() {
+  document.querySelectorAll('#left-panel label input[type="range"], #left-panel label input[type="number"]').forEach((input) => {
+    if (input.dataset.index2Stepper === 'true') return;
+    input.dataset.index2Stepper = 'true';
+    let output = input.parentElement?.querySelector('output');
+    if (!output) {
+      output = document.createElement('output');
+      output.textContent = input.value;
+    } else {
+      output.remove();
+    }
+    const stepper = document.createElement('span');
+    stepper.className = 'index2-value-stepper';
+    const down = stepButton('<', `Decrease ${labelText(input)}`, () => stepInput(input, -1, output));
+    const up = stepButton('>', `Increase ${labelText(input)}`, () => stepInput(input, 1, output));
+    stepper.append(down, output, up);
+    input.after(stepper);
+    input.addEventListener('input', () => { output.textContent = formatInputValue(input.value); });
+  });
+}
+
+function labelText(input) {
+  return input.closest('label')?.childNodes[0]?.textContent?.trim() || 'value';
+}
+
+function stepButton(text, title, handler) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'index2-value-step';
+  button.textContent = text;
+  button.title = title;
+  button.addEventListener('click', handler);
+  return button;
+}
+
+function stepInput(input, direction, output) {
+  if (direction < 0) input.stepDown();
+  else input.stepUp();
+  output.textContent = formatInputValue(input.value);
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function formatInputValue(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return String(value || '');
+  return Number.isInteger(number) ? String(number) : String(Number(number.toFixed(2)));
+}
+
+function setupHexColourEntry() {
+  const nativeInput = document.getElementById('stop-color-input');
+  if (!nativeInput || document.getElementById('stop-color-hex-input')) return;
+  const hexInput = document.createElement('input');
+  hexInput.id = 'stop-color-hex-input';
+  hexInput.type = 'text';
+  hexInput.inputMode = 'text';
+  hexInput.placeholder = '#FF0000';
+  hexInput.maxLength = 7;
+  hexInput.autocomplete = 'off';
+  hexInput.spellcheck = false;
+  hexInput.addEventListener('input', () => applyHexColour(hexInput.value));
+  nativeInput.before(hexInput);
+}
+
+function applyHexColour(raw) {
+  const normal = normalizeHexInput(raw);
+  if (!normal) return;
+  const layer = getActiveLayer();
+  if (!layer) return;
+  const stops = Array.isArray(layer.appearanceStops) && layer.appearanceStops.length ? layer.appearanceStops.map((stop) => ({ ...stop })) : [];
+  if (!stops.length) return;
+  const index = Math.max(0, Math.min(stops.length - 1, Number(layer.activeAppearanceStopIndex) || 0));
+  stops[index].color = normal;
+  updateActiveLayer({ appearanceStops: stops, activeAppearanceStopIndex: index });
+}
+
+function normalizeHexInput(value) {
+  const raw = String(value || '').trim().replace(/^#/, '');
+  if (/^[0-9a-f]{3}$/i.test(raw)) return `#${raw.split('').map((char) => char + char).join('').toLowerCase()}`;
+  if (/^[0-9a-f]{6}$/i.test(raw)) return `#${raw.toLowerCase()}`;
+  return '';
+}
+
+function syncHexColourEntry() {
+  const input = document.getElementById('stop-color-hex-input');
+  const layer = getActiveLayer();
+  if (!input || !layer || document.activeElement === input) return;
+  const stops = Array.isArray(layer.appearanceStops) ? layer.appearanceStops : [];
+  const index = Math.max(0, Math.min(stops.length - 1, Number(layer.activeAppearanceStopIndex) || 0));
+  if (stops[index]?.color) input.value = stops[index].color.toUpperCase();
 }
 
 function restoreQuickEditHelpers() {
