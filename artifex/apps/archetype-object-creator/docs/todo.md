@@ -4,9 +4,56 @@ This file tracks work that belongs specifically to Archetype Object Creator. Pla
 
 ## Open
 
-No app-local cleanup tasks are currently open.
+### Retire or split `template-card-enhancements.js`
+
+Status: open  
+Priority: high  
+Source: source folder review after V1.30 cleanup
+
+`template-card-enhancements.js` is still imported by `editor-app.js` and is still a large legacy overlay-style file. Much of its behaviour has already been extracted into normal modules, so it should be reviewed and reduced.
+
+Required outcome:
+
+- Identify which behaviour inside `template-card-enhancements.js` is still required.
+- Remove duplicated logic already handled by `object-template-icons.js`, `object-wizard-step5-layout.js`, `object-wizard-step5.js`, `object-wizard-reference-panel.js`, `object-wizard-frame-correction.js`, and `object-wizard-asset-package.js`.
+- If nothing active remains, remove the import from `editor-app.js` and archive/delete the file.
+- If active behaviour remains, split it into properly named modules rather than leaving it as one large enhancement overlay.
+
+### Split or rename `object-creator-workflows-stable.js`
+
+Status: open  
+Priority: medium-high  
+Source: source folder review after V1.30 cleanup
+
+`object-creator-workflows-stable.js` is still imported by `editor-app.js`. It contains the wizard shell/session flow and a large embedded CSS block. It is stable, but the name and size make it look like another overlay layer rather than normal app architecture.
+
+Required outcome:
+
+- Split wizard session / resume logic into a normal module, for example `object-wizard-sessions.js`.
+- Split wizard shell / steps 1–4 into a normal module, for example `object-wizard-flow.js`.
+- Move shared wizard shell styles into a CSS file or a clearly named style module.
+- Update `editor-app.js` to import the new modules.
+- Archive or remove `object-creator-workflows-stable.js` after the split.
 
 ## Done
+
+### Archive or remove old patch files from live source folder
+
+Status: done  
+Completed in: V1.31 cleanup  
+Source: source folder review after V1.30 cleanup
+
+Completed changes:
+
+- Confirmed the old patch files were no longer imported by the active app entry point.
+- Created `artifex/apps/archetype-object-creator/archive/legacy-patches/README.md` as the archive manifest.
+- Removed these old patch-layer files from `artifex/apps/archetype-object-creator/v1/src/`:
+  - `square-icon-cards-patch.js`
+  - `object-build-checklist-wizard-patch.js`
+  - `template-card-patch.js`
+  - `icon-atlas-crop-patch.js`
+  - `right-panel-layout-patch.js`
+- Recorded each removed file's blob SHA in the archive manifest so the old code can still be recovered from Git history if needed.
 
 ### Complete current overlay module extraction
 

@@ -1,8 +1,8 @@
-# Creation Guide V1.1.9 Implementation Notes
+# Creation Guide V1.1.10 Implementation Notes
 
-Date: 2026-05-27
+Date: 2026-05-29
 
-These notes describe the current working Creation Guide implementation after the V1.1.9 integration pass.
+These notes describe the current working Creation Guide implementation after the V1.1.10 source-cleanup pass.
 
 ## Current Live Purpose
 
@@ -18,22 +18,36 @@ The live app shell is:
 artifex/apps/creation-guide/index.html
 ```
 
-The current live script stack is intentionally kept to three active scripts:
+The current live script stack is intentionally kept to three visible app scripts:
+
+```text
+artifex/apps/creation-guide/v1/src/app-bootstrap.js
+artifex/apps/creation-guide/v1/src/onboarding-guide.js
+artifex/apps/creation-guide/v1/src/project-flow-health.js
+```
+
+`project-flow-health.js` is currently a clean entry wrapper. It still loads the older implementation file underneath:
+
+```text
+artifex/apps/creation-guide/v1/src/module-project-flow-v113.js
+```
+
+Do not delete `module-project-flow-v113.js` until its logic has been safely split into smaller normal files such as `project-flow.js`, `project-health.js`, and `health-actions.js`.
+
+Removed stale files:
 
 ```text
 artifex/apps/creation-guide/v1/src/module-app-v108.js
 artifex/apps/creation-guide/v1/src/module-guide-onboarding-v112.js
-artifex/apps/creation-guide/v1/src/module-project-flow-v113.js
+artifex/apps/creation-guide/v1/src/module-health-actions-v118.js
 ```
-
-The separate health-actions patch file was removed after the health actions were integrated into `module-project-flow-v113.js`.
 
 ## Current Version
 
 Current visible version:
 
 ```text
-V1.1.9
+V1.1.10
 ```
 
 The version should appear consistently in:
@@ -41,8 +55,11 @@ The version should appear consistently in:
 ```text
 index.html page title
 visible version badge
-module-project-flow-v113.js runtime version override
-script cache key
+stylesheet cache key
+app-bootstrap.js cache key
+onboarding-guide.js cache key
+project-flow-health.js cache key
+runtime toast text
 ```
 
 ## Current User Flow
@@ -238,20 +255,18 @@ Scene Editor exposed this issue first: it can show or receive the active project
 
 ## Current Technical Debt
 
-The app is stable enough for current testing, but the file names still show their patch history:
+The visible live script names are now mostly clean, but one older implementation file remains loaded under the clean wrapper:
 
 ```text
-module-app-v108.js
-module-guide-onboarding-v112.js
 module-project-flow-v113.js
 ```
 
-Next cleanup should rename/reorganise these into normal module names before more feature work piles up.
+This should be split in a later safe pass, not deleted blindly.
 
 Suggested future structure:
 
 ```text
-v1/src/app-shell.js
+v1/src/app-bootstrap.js
 v1/src/project-model.js
 v1/src/project-library.js
 v1/src/project-export.js
@@ -266,9 +281,10 @@ v1/src/ui-bindings.js
 
 ## Next Practical Steps
 
-1. Test V1.1.9 live after cache refresh.
-2. Confirm health actions still work after integration.
-3. Confirm no separate `module-health-actions-v118.js` is loaded.
-4. Rename/restructure Creation Guide source files into normal module names.
-5. Move Project Health logic toward shared Health Guide once the UI is stable.
-6. Keep active-project runtime integration as a separate all-apps task.
+1. Test V1.1.10 live after cache refresh.
+2. Confirm Health opens and scrolls correctly.
+3. Confirm Create Fix Assignments, Export Health JSON, and Refresh still work.
+4. Confirm there are no 404s for deleted files.
+5. Split `module-project-flow-v113.js` into smaller normal files once the app is stable.
+6. Move Project Health logic toward shared Health Guide once the UI is stable.
+7. Keep active-project runtime integration as a separate all-apps task.

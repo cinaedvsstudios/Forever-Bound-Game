@@ -1,4 +1,4 @@
-const ONBOARDING_VERSION = 'V1.1.6';
+const ONBOARDING_VERSION = 'V1.1.10';
 const MODULE_INTRO_DISABLED_KEY = 'artifex.creationGuide.hideModuleIntro';
 
 let tourMode = localStorage.getItem(MODULE_INTRO_DISABLED_KEY) === 'true' ? 'setup' : 'modules';

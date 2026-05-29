@@ -24,6 +24,8 @@ Artifex is not the Forever Bound editor. Forever Bound is a separate game that m
 - `16-dev-status-and-risks.md` — current repo/editor state, known problems, phase plan, risks, important files, and immediate priorities.
 - `17-codex-prompts.md` — preserved Codex prompt material.
 - `18-color-and-display-rules.md` — display frame, colour palette, and colour meaning reference.
+- `19-project-file-contracts.md` — project file contracts, module integration rules, canonical IDs, package structure, and ownership matrix.
+- `20-asset-intake-workflow.md` — simple creator-facing asset drop folders and promotion workflow from intake to final indexed project assets.
 
 ## Current Simplified Module List
 

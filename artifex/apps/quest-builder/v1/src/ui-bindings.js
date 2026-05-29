@@ -2,7 +2,7 @@ import { THUMBNAILS } from './module-config.js';
 import { BLOCK_TYPES } from './block-types.js';
 import { parseList, escapeHtml } from './quest-schema.js';
 import { openEditor, createWizardQuest, wireEditorTabs } from './dialog-editors.js';
-import { exportQuestFile, buildQuestExportBundle, downloadJson, slugify } from './export-json.js';
+import { exportQuestFile, buildQuestExportBundle, downloadProjectPackageFiles, downloadJson, slugify } from './export-json.js';
 import { clamp } from './layout-state.js';
 
 export function wireMenus(app) {
@@ -230,7 +230,7 @@ function renderExportSummary(bundle) {
   const checks = bundle.exportSelfCheck?.checks || [];
   const paths = (bundle.files || []).map((file) => `<li>${escapeHtml(file.path)} <span>(${escapeHtml(file.role)})</span></li>`).join('');
   const statusClass = bundle.exportSelfCheck?.status === 'pass' ? 'export-status-pass' : 'export-status-fail';
-  return `<section class="export-summary"><h3>Export Bundle Summary <span class="${statusClass}">${escapeHtml(bundle.exportSelfCheck?.status || 'unknown')}</span></h3><div class="export-summary-grid"><div class="export-stat"><strong>${bundle.files?.length || 0}</strong><span>files</span></div><div class="export-stat"><strong>${questCount}</strong><span>quests</span></div><div class="export-stat"><strong>${sideQuestCount}</strong><span>side quests</span></div><div class="export-stat"><strong>${bundle.validationWarnings?.length || 0}</strong><span>warnings</span></div><div class="export-stat"><strong>${checks.filter((check) => check.ok).length}/${checks.length}</strong><span>checks</span></div></div><p class="editor-help">Current export is a single bundle file containing virtual project-package paths. Split-file download should be handled as a future package/export feature.</p><ul class="export-paths">${paths}</ul></section>`;
+  return `<section class="export-summary"><h3>Export Bundle Summary <span class="${statusClass}">${escapeHtml(bundle.exportSelfCheck?.status || 'unknown')}</span></h3><div class="export-summary-grid"><div class="export-stat"><strong>${bundle.files?.length || 0}</strong><span>files</span></div><div class="export-stat"><strong>${questCount}</strong><span>quests</span></div><div class="export-stat"><strong>${sideQuestCount}</strong><span>side quests</span></div><div class="export-stat"><strong>${bundle.validationWarnings?.length || 0}</strong><span>warnings</span></div><div class="export-stat"><strong>${checks.filter((check) => check.ok).length}/${checks.length}</strong><span>checks</span></div></div><p class="editor-help">Export JSON downloads one review bundle. Export Project Files downloads loose JSON files for the project package. ZIP packaging is deferred to a future shared exporter.</p><ul class="export-paths">${paths}</ul></section>`;
 }
 
 export function wireActions(app) {
@@ -278,6 +278,11 @@ export function wireActions(app) {
   app.$('template-main-quest-button').onclick = () => { app.addQuest({ name: 'New Main Quest', thumbnail: '📜', callingText: 'Define the main Calling for this Quest.', blocks: [{ name: 'Start Scene', type: 'scene', thumbnail: '🖼️' }, { name: 'Key Interaction', type: 'object', thumbnail: '🧩', action: 'interact:key_object' }, { name: 'Calling Fulfilled', type: 'completion', thumbnail: '✅', uiOverlay: 'calling_fulfilled', condition: 'flag_true:quest_complete' }] }); closeMenus(); };
   app.$('template-side-quest-button').onclick = () => { app.addQuest({ name: 'New Side Quest', thumbnail: '🗝️', type: 'side', callingText: 'Define the optional objective or Errand.', blocks: [{ name: 'Optional Trigger', type: 'condition', thumbnail: '🔀', condition: 'flag_true:sidequest_available' }, { name: 'Reward', type: 'reward', thumbnail: '🎁', action: 'grant_reward:silver' }] }); closeMenus(); };
   app.$('export-json-button').onclick = () => { downloadJson(slugify(app.doc.name) + '.json', exportQuestFile(app.doc)); closeMenus(); app.toast('JSON exported as single bundle.'); };
+  app.$('export-project-files-button').onclick = () => {
+    const count = downloadProjectPackageFiles(buildQuestExportBundle(app.doc));
+    closeMenus();
+    app.toast(`Started ${count} project file downloads.`);
+  };
   app.$('view-json-button').onclick = () => {
     const bundle = buildQuestExportBundle(app.doc);
     app.$('json-preview-summary').innerHTML = renderExportSummary(bundle);

@@ -1,7 +1,7 @@
 // Artifex Project Manager shell renderer
 // Keeps index.html small and leaves behaviour in focused modules.
 
-export function renderProjectShell({ version = 'v0.1.19 SHELL' } = {}) {
+export function renderProjectShell({ version = 'v0.1.31 TASKS' } = {}) {
   document.body.innerHTML = `
     <header class="h-16 bg-slateDark border-b border-[#20202e] px-4 grid grid-cols-[auto_1fr_auto] items-center z-40 flex-shrink-0 gap-4">
       <div class="flex items-center gap-3 min-w-0">
@@ -55,12 +55,13 @@ export function renderProjectShell({ version = 'v0.1.19 SHELL' } = {}) {
 
         <details class="relative" data-project-menu>
           <summary class="cursor-pointer px-3 py-1.5 rounded-full border border-projectGold/20 hover:bg-accentDark/50 hover:border-projectGold/50 transition">View ▾</summary>
-          <div class="absolute left-1/2 -translate-x-1/2 top-9 z-50 w-56 bg-cardDark border border-projectGold/30 rounded-xl shadow-card-glow p-1">
+          <div class="absolute left-1/2 -translate-x-1/2 top-9 z-50 w-64 bg-cardDark border border-projectGold/30 rounded-xl shadow-card-glow p-1">
             <button id="toggleSplitStatePreview" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Show Split State Preview</button>
             <button data-workspace-target="manifest" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Manifest Workspace</button>
             <button data-workspace-target="flatplan" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Flatplan Workspace</button>
             <button data-workspace-target="stitcher" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Stitcher Workspace</button>
             <button data-workspace-target="buildprep" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Build Prep Workspace</button>
+            <button data-workspace-target="tasks" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Project Tasks / To-Do Board</button>
             <button data-workspace-target="assetbrowser" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Asset Browser</button>
           </div>
         </details>
@@ -129,6 +130,7 @@ export function renderProjectShell({ version = 'v0.1.19 SHELL' } = {}) {
         <div id="manifestWorkspace" class="hidden absolute inset-0 bg-obsidian z-20"></div>
         <div id="stitcherWorkspace" class="hidden absolute inset-0 bg-obsidian z-20"></div>
         <div id="buildPrepWorkspace" class="hidden absolute inset-0 bg-obsidian z-20"></div>
+        <div id="tasksWorkspace" class="hidden absolute inset-0 bg-obsidian z-20"></div>
         <div id="assetBrowserWorkspace" class="hidden absolute inset-0 bg-obsidian z-20"></div>
         <div id="wizardWorkspace" class="hidden absolute inset-0 bg-obsidian z-20"></div>
         <div id="flatplanCanvas" class="w-full h-full relative cursor-default infinite-grid overflow-hidden flex-1 touch-none">

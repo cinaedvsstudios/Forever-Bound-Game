@@ -1,9 +1,9 @@
-import { MODULE_VERSION, MODULE_STORAGE_KEY, LAYOUT_STORAGE_KEY, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js';
-import { getBlockType } from './block-types.js';
-import { createDemoQuestFile, createDefaultQuest, createDefaultBlock, escapeHtml } from './quest-schema.js';
-import { createLayoutState, clamp } from './layout-state.js';
-import { drawCanvas, applyCanvasTransform, getCanvasHit } from './canvas-renderer.js';
-import { fillBlockTypeMenus, wireMenus, wireActions, wireInputs, wireFlowDrag, wireWorkspacePan, wirePanelResize, wireFlowResizeSave } from './ui-bindings.js';
+import { MODULE_VERSION, MODULE_STORAGE_KEY, LAYOUT_STORAGE_KEY, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.4';
+import { getBlockType } from './block-types.js?v=1.2.4';
+import { createDemoQuestFile, createDefaultQuest, createDefaultBlock, escapeHtml } from './quest-schema.js?v=1.2.4';
+import { createLayoutState, clamp } from './layout-state.js?v=1.2.4';
+import { drawCanvas, applyCanvasTransform, getCanvasHit } from './canvas-renderer.js?v=1.2.4';
+import { fillBlockTypeMenus, wireMenus, wireActions, wireInputs, wireFlowDrag, wireWorkspacePan, wirePanelResize, wireFlowResizeSave } from './ui-bindings.js?v=1.2.4';
 
 const $ = (id) => document.getElementById(id);
 
@@ -17,7 +17,8 @@ const state = {
   activeQuest: 0,
   activeBlock: 0,
   inspectorTarget: 'quest',
-  selectedLocked: false
+  selectedLocked: false,
+  dragBlockIndex: null
 };
 
 const app = {
@@ -33,6 +34,7 @@ const app = {
   addBlock,
   removeQuest,
   removeBlock,
+  reorderBlock,
   applyLayout,
   applyCanvasTransform: () => applyCanvasTransform(canvas, layoutState.get()),
   render,
@@ -90,6 +92,21 @@ function removeBlock() {
   state.activeBlock = Math.max(0, Math.min(state.activeBlock, app.quest().blocks.length - 1));
   state.inspectorTarget = 'quest';
   render();
+}
+
+function reorderBlock(fromIndex, toIndex) {
+  const blocks = app.quest()?.blocks || [];
+  const from = Number(fromIndex);
+  const to = Number(toIndex);
+  if (!Number.isInteger(from) || !Number.isInteger(to)) return;
+  if (from === to || from < 0 || to < 0 || from >= blocks.length || to >= blocks.length) return;
+  const [moved] = blocks.splice(from, 1);
+  blocks.splice(to, 0, moved);
+  state.activeBlock = to;
+  state.inspectorTarget = 'block';
+  state.dragBlockIndex = null;
+  render();
+  toast(`Moved ${moved.name || getBlockType(moved.type).name}.`);
 }
 
 function selectQuest(index = state.activeQuest) {
@@ -217,6 +234,10 @@ function renderQuestList() {
   });
 }
 
+function clearBlockDragClasses() {
+  document.querySelectorAll('#block-list .record-item').forEach((element) => element.classList.remove('dragging', 'drag-over'));
+}
+
 function renderBlockList() {
   const q = app.quest();
   $('block-list').innerHTML = '';
@@ -224,9 +245,39 @@ function renderBlockList() {
     const blockType = getBlockType(item.type);
     const button = document.createElement('button');
     button.className = 'record-item border-' + escapeHtml(item.type) + ' ' + (index === state.activeBlock && state.inspectorTarget === 'block' ? 'selected' : '');
-    button.title = 'Select block: ' + (item.name || blockType.name);
-    button.innerHTML = `<span class="block-emoji">${item.thumbnail || blockType.emoji}</span><span><strong>${escapeHtml(item.name || blockType.name)}</strong><span>${escapeHtml(blockType.name)} / ${escapeHtml(item.sceneId || item.objectId || item.dialogueId || item.condition || item.action || 'unlinked')}</span></span><span class="edit-mini" title="Edit this block">✎</span>`;
+    button.title = 'Drag to reorder, click to select: ' + (item.name || blockType.name);
+    button.draggable = true;
+    button.dataset.blockIndex = String(index);
+    button.innerHTML = `<span class="block-emoji">${item.thumbnail || blockType.emoji}</span><span><strong>${escapeHtml(item.name || blockType.name)}</strong><span>${escapeHtml(blockType.name)} / ${escapeHtml(item.sceneId || item.objectId || item.dialogueId || item.condition || item.action || 'unlinked')}</span></span><span class="drag-mini" title="Drag to reorder">↕</span><span class="edit-mini" title="Edit this block">✎</span>`;
     button.onclick = () => selectBlock(index);
+    button.ondragstart = (event) => {
+      state.dragBlockIndex = index;
+      state.activeBlock = index;
+      state.inspectorTarget = 'block';
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', String(index));
+      button.classList.add('dragging', 'selected');
+    };
+    button.ondragover = (event) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      if (state.dragBlockIndex !== null && state.dragBlockIndex !== index) {
+        clearBlockDragClasses();
+        button.classList.add('drag-over');
+      }
+    };
+    button.ondragleave = () => button.classList.remove('drag-over');
+    button.ondrop = (event) => {
+      event.preventDefault();
+      const from = Number(event.dataTransfer.getData('text/plain') || state.dragBlockIndex);
+      clearBlockDragClasses();
+      reorderBlock(from, index);
+    };
+    button.ondragend = () => {
+      clearBlockDragClasses();
+      state.dragBlockIndex = null;
+      render();
+    };
     button.querySelector('.edit-mini').onclick = (event) => { event.stopPropagation(); state.activeBlock = index; state.inspectorTarget = 'block'; document.dispatchEvent(new CustomEvent('quest-builder-edit-block')); };
     button.ondblclick = () => document.dispatchEvent(new CustomEvent('quest-builder-edit-block'));
     $('block-list').appendChild(button);
@@ -258,8 +309,5 @@ function help(title, body) {
   $('help-body').innerHTML = body;
   $('help-dialog').showModal();
 }
-
-document.addEventListener('quest-builder-edit-quest', () => import('./dialog-editors.js').then(({ openEditor }) => openEditor(app, 'quest')));
-document.addEventListener('quest-builder-edit-block', () => import('./dialog-editors.js').then(({ openEditor }) => openEditor(app, 'block')));
 
 boot();
