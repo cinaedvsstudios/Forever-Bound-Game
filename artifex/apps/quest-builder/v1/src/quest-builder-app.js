@@ -1,9 +1,10 @@
-import { MODULE_VERSION, MODULE_STORAGE_KEY, LAYOUT_STORAGE_KEY, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.7';
-import { getBlockType } from './block-types.js?v=1.2.7';
-import { createDemoQuestFile, createDefaultQuest, createDefaultBlock, escapeHtml } from './quest-schema.js?v=1.2.7';
-import { createLayoutState, clamp } from './layout-state.js?v=1.2.7';
-import { drawCanvas, applyCanvasTransform, getCanvasHit } from './canvas-renderer.js?v=1.2.7';
-import { fillBlockTypeMenus, wireMenus, wireActions, wireInputs, wireFlowDrag, wireWorkspacePan, wirePanelResize, wireFlowResizeSave } from './ui-bindings.js?v=1.2.7';
+import { MODULE_VERSION, MODULE_STORAGE_KEY, LAYOUT_STORAGE_KEY, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.8';
+import { getBlockType } from './block-types.js?v=1.2.8';
+import { createDemoQuestFile, createDefaultQuest, createDefaultBlock, escapeHtml } from './quest-schema.js?v=1.2.8';
+import { createLayoutState, clamp } from './layout-state.js?v=1.2.8';
+import { drawCanvas, applyCanvasTransform, getCanvasHit } from './canvas-renderer.js?v=1.2.8';
+import { fillBlockTypeMenus, wireMenus, wireActions, wireInputs, wireFlowDrag, wireWorkspacePan, wirePanelResize, wireFlowResizeSave } from './ui-bindings.js?v=1.2.8';
+import { openEditor } from './dialog-editors.js?v=1.2.8';
 
 const $ = (id) => document.getElementById(id);
 
@@ -126,21 +127,21 @@ function selectBlock(index) {
 
 function openQuestEditor(index = state.activeQuest) {
   selectQuest(index);
-  $('edit-quest-button')?.click();
+  openEditor(app, 'quest');
 }
 
 function openBlockEditor(index) {
   selectBlock(index);
-  $('edit-block-button')?.click();
+  openEditor(app, 'block');
 }
 
 function wireCanvasSelection() {
   canvas.addEventListener('click', (event) => {
-    if (app.layout().panMode) return;
     const hit = getCanvasHit(app, event);
     if (!hit) return;
     if (hit.kind === 'quest-edit') return openQuestEditor(hit.index ?? state.activeQuest);
     if (hit.kind === 'block-edit') return openBlockEditor(hit.index);
+    if (app.layout().panMode) return;
     if (hit.kind === 'quest') selectQuest(hit.index ?? state.activeQuest);
     if (hit.kind === 'block') selectBlock(hit.index);
   });
