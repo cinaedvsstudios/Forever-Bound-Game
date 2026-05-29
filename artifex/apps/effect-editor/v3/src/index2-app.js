@@ -1,8 +1,8 @@
 import './index2-clean-controller.js';
-import { initAppearanceParity } from './appearance-parity.js';
+import { initAppearanceParity } from './appearance-parity.js?v=022-ramp-drag';
 import { initEditorWorkspaceUI } from './editor-workspace-ui.js';
 
-const VERSION_LABEL = 'INDEX2-CLEAN-0.2.1';
+const VERSION_LABEL = 'INDEX2-CLEAN-0.2.2';
 
 window.addEventListener('DOMContentLoaded', () => {
   initAppearanceParity(showToast);
