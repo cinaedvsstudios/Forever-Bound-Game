@@ -47,6 +47,7 @@
     if (id === 'itemY' || name.includes('y axis')) return { min: -100, max: 200, step: 0.25, reset: 0 };
     if (id.includes('Opacity')) return { min: 0, max: 100, step: 1, reset: 100 };
     if (id.includes('Brightness') || id.includes('Contrast') || id.includes('Saturation')) return { min: 0, max: 250, step: 1, reset: 100 };
+    if (id.includes('ShadowBlur')) return { min: 0, max: 100, step: 1, reset: 25 };
     if (id.includes('Hue') || id.includes('Vibrance') || id.includes('Exposure') || id.includes('ShadowStrength') || id.includes('GlowStrength')) return { min: id.includes('Hue') ? -180 : id.includes('Vibrance') || id.includes('Exposure') ? -100 : 0, max: id.includes('Hue') ? 180 : 100, step: 1, reset: 0 };
 
     const explicitMin = input.getAttribute('min');
@@ -81,6 +82,15 @@
   function formatValue(value, step) {
     const decimals = Math.max(0, Math.min(4, decimalsFor(step)));
     return Number(value).toFixed(decimals).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+  }
+
+
+  function escAttr(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+  }
+
+  function labelFor(input) {
+    return input.closest('.field')?.querySelector('label')?.textContent?.trim() || input.id || 'Value';
   }
 
   function snap(value, cfg) {
@@ -168,40 +178,40 @@
 
   function syncSlider(input) {
     const field = input.closest('.value-slider-field-v18');
-    const track = field?.querySelector('.value-slider-track-v18');
-    const fill = field?.querySelector('.value-slider-fill-v18');
-    const thumb = field?.querySelector('.value-slider-thumb-v18');
+    const range = field?.querySelector('.value-slider-range-v18');
     const readout = field?.querySelector('.value-slider-readout-v18');
-    if (!track || !fill || !thumb) return;
+    if (!range) return;
     const cfg = configFor(input);
     const value = clamp(Number(input.value || 0), cfg.min, cfg.max);
-    const percent = cfg.max === cfg.min ? 0 : ((value - cfg.min) / (cfg.max - cfg.min)) * 100;
-    fill.style.height = `${percent}%`;
-    thumb.style.bottom = `${percent}%`;
-    track.setAttribute('aria-valuemin', String(cfg.min));
-    track.setAttribute('aria-valuemax', String(cfg.max));
-    track.setAttribute('aria-valuenow', String(value));
+    range.min = String(cfg.min);
+    range.max = String(cfg.max);
+    range.step = String(cfg.step);
+    range.value = formatValue(value, cfg.step);
+    range.setAttribute('aria-valuemin', String(cfg.min));
+    range.setAttribute('aria-valuemax', String(cfg.max));
+    range.setAttribute('aria-valuenow', String(value));
+    range.style.setProperty('--value-slider-percent', `${cfg.max === cfg.min ? 0 : ((value - cfg.min) / (cfg.max - cfg.min)) * 100}%`);
     if (readout) readout.textContent = input.value || '0';
   }
 
-  function valueFromPointer(track, clientY, cfg) {
+  function valueFromPointer(track, clientX, cfg) {
     const rect = track.getBoundingClientRect();
-    if (!rect.height) return cfg.min;
-    const ratio = clamp((rect.bottom - clientY) / rect.height, 0, 1);
+    if (!rect.width) return cfg.min;
+    const ratio = clamp((clientX - rect.left) / rect.width, 0, 1);
     return snap(cfg.min + ratio * (cfg.max - cfg.min), cfg);
   }
 
   function startCustomDrag(event, input, track) {
     if (event.button === 2) return;
     const cfg = configFor(input);
-    const apply = (clientY) => {
-      const value = valueFromPointer(track, clientY, cfg);
+    const apply = (clientX) => {
+      const value = valueFromPointer(track, clientX, cfg);
       setInputValue(input, formatValue(value, cfg.step));
       syncSlider(input);
     };
-    apply(event.clientY);
+    apply(event.clientX);
     const move = (moveEvent) => {
-      apply(moveEvent.clientY);
+      apply(moveEvent.clientX);
       moveEvent.preventDefault();
       moveEvent.stopPropagation();
       moveEvent.stopImmediatePropagation?.();
@@ -241,75 +251,52 @@
     field.classList.add('value-slider-field-v18');
 
     const cfg = configFor(input);
+    const label = labelFor(input);
+    const escapedLabel = escAttr(label);
     input.setAttribute('step', String(cfg.step));
     input.setAttribute('min', String(cfg.min));
     input.setAttribute('max', String(cfg.max));
 
-    const reset = document.createElement('button');
-    reset.type = 'button';
-    reset.className = 'value-slider-reset-v18';
-    reset.title = 'Reset value';
-    reset.setAttribute('aria-label', 'Reset value');
-    reset.textContent = '↩️';
+    const control = document.createElement('div');
+    control.className = 'value-slider-control-v18';
+    control.innerHTML = `
+      <input class="value-slider-range-v18" type="range" min="${cfg.min}" max="${cfg.max}" step="${cfg.step}" value="${escAttr(input.value || 0)}" aria-label="${escapedLabel} slider" title="Adjust ${escapedLabel}">
+      <div class="value-slider-stepper-v18">
+        <button class="value-slider-step-v18" type="button" data-step-dir="-1" aria-label="Decrease ${escapedLabel}" title="Decrease ${escapedLabel}">&lt;</button>
+        <span class="value-slider-readout-v18" aria-live="polite"></span>
+        <button class="value-slider-step-v18" type="button" data-step-dir="1" aria-label="Increase ${escapedLabel}" title="Increase ${escapedLabel}">&gt;</button>
+      </div>`;
 
-    const dot = document.createElement('button');
-    dot.type = 'button';
-    dot.className = 'value-slider-dot-v18';
-    dot.title = 'Open value slider';
-    dot.setAttribute('aria-label', 'Open value slider');
+    const range = control.querySelector('.value-slider-range-v18');
+    const stepButtons = control.querySelectorAll('.value-slider-step-v18');
+    input.classList.add('value-slider-source-v18');
+    input.setAttribute('aria-hidden', 'true');
+    input.tabIndex = -1;
 
-    const popover = document.createElement('div');
-    popover.className = 'value-slider-popover-v18';
-    popover.innerHTML = '<div class="value-slider-track-v18" role="slider" tabindex="0"><span class="value-slider-fill-v18"></span><span class="value-slider-thumb-v18"></span></div><span class="value-slider-readout-v18"></span>';
-
-    const track = popover.querySelector('.value-slider-track-v18');
-
-    reset.addEventListener('click', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      resetInput(input);
-    });
-
-    dot.addEventListener('click', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      closeResetMenu();
-      const willOpen = !popover.classList.contains('is-open');
-      closeOtherSliders(popover);
-      popover.classList.toggle('is-open', willOpen);
-      dot.classList.toggle('is-open', willOpen);
+    range.addEventListener('input', () => {
+      setInputValue(input, range.value);
       syncSlider(input);
     });
-    dot.addEventListener('contextmenu', (event) => showResetMenu(event, input));
-
-    popover.addEventListener('click', (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-    }, true);
-    popover.addEventListener('pointerdown', (event) => startCustomDrag(event, input, track), true);
-
-    track.addEventListener('pointerdown', (event) => startCustomDrag(event, input, track), true);
-    track.addEventListener('keydown', (event) => {
-      const cfgNow = configFor(input);
-      const step = Number(cfgNow.step || 1);
-      let value = Number(input.value || 0);
-      if (event.key === 'ArrowUp' || event.key === 'ArrowRight') value += step;
-      else if (event.key === 'ArrowDown' || event.key === 'ArrowLeft') value -= step;
-      else if (event.key === 'Home') value = cfgNow.min;
-      else if (event.key === 'End') value = cfgNow.max;
-      else return;
-      setInputValue(input, formatValue(snap(value, cfgNow), cfgNow.step));
+    range.addEventListener('change', () => {
+      setInputValue(input, range.value);
       syncSlider(input);
-      event.preventDefault();
-      event.stopPropagation();
+    });
+    range.addEventListener('contextmenu', (event) => showResetMenu(event, input));
+    stepButtons.forEach((button) => {
+      button.addEventListener('click', (event) => {
+        const cfgNow = configFor(input);
+        const next = snap(Number(input.value || 0) + Number(button.dataset.stepDir || 1) * Number(cfgNow.step || 1), cfgNow);
+        setInputValue(input, formatValue(next, cfgNow.step));
+        syncSlider(input);
+        event.preventDefault();
+        event.stopPropagation();
+      });
     });
 
     input.addEventListener('input', () => syncSlider(input));
     input.addEventListener('change', () => syncSlider(input));
 
-    field.appendChild(reset);
-    field.appendChild(dot);
-    field.appendChild(popover);
+    field.appendChild(control);
     syncSlider(input);
   }
 

@@ -13,9 +13,9 @@
     "artifex/apps/scene-editor/scene-editor-audit-2026-05-28.md",
     "artifex/apps/scene-editor/scene-editor-cleanup-report-2026-05-29.md"
   ],
-  "currentStableVersion": "v0.31-runtime-module-cleanup",
-  "freshTestUrl": "https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/index.html?fresh=v0.31-runtime-module-cleanup",
-  "knownGoodState": "PR #11 is merged and deployed as v0.31-runtime-module-cleanup. The user verified that the live page loads, restores the local title_screen_template.json scene, shows the v0.31 version/status/toast, no longer shows the stale v0.28-consolidation message, and that no additional broken behaviour was found during live inspection except the documented unlocked-aspect resize defect.",
+  "currentStableVersion": "v0.32-controls-resize-search",
+  "freshTestUrl": "https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/index.html?fresh=v0.32-controls-resize-search",
+  "knownGoodState": "v0.32-controls-resize-search is ready for PR review after the permanent-module follow-up pass: unlocked aspect-off resizing now keeps fill/stretch rendering fresh after resize rerenders, left-panel settings search filters cards/rows without touching scene data, Shadow Blur persists in item.visual.shadowBlur with a default of 25, and adjustable numeric controls use the approved horizontal slider plus decrement/value/increment treatment.",
   "deliveries": [
     {
       "pullRequest": "https://github.com/cinaedvsstudios/Forever-Bound-Game/pull/6",
@@ -30,6 +30,12 @@
       "merged": true,
       "mergeCommit": "0067c0b6275bbe55f86398c3a07bf54e5a66d88a",
       "result": "Remaining numbered active modules renamed to permanent files and stale helper toast removed; delivered as v0.31-runtime-module-cleanup."
+    },
+    {
+      "pullRequest": "draft PR pending Codex UI creation",
+      "title": "Scene Editor v0.32 controls, resize, search and Shadow Blur",
+      "merged": false,
+      "result": "Focused permanent-module pass for unlocked aspect resize, settings search, Shadow Blur and adjustable numeric control styling."
     }
   ],
   "blockerRule": "Two failed attempts means the item becomes blocked and moves to uploaded local file, agent/Codex, or proper local branch workflow. No placeholders, no patch-on-patch workaround, no manual reconstruction from truncated chunks.",
@@ -48,7 +54,9 @@
       "title": "Extract Scene Editor config constants",
       "status": "done",
       "phase": 1,
-      "targetFiles": ["scene-editor-config.js"],
+      "targetFiles": [
+        "scene-editor-config.js"
+      ],
       "testedByCodex": true,
       "testedByUserLive": true
     },
@@ -57,7 +65,9 @@
       "title": "Extract local storage helpers",
       "status": "done",
       "phase": 2,
-      "targetFiles": ["scene-editor-storage.js"],
+      "targetFiles": [
+        "scene-editor-storage.js"
+      ],
       "testedByCodex": true,
       "testedByUserLive": true
     },
@@ -66,7 +76,9 @@
       "title": "Extract scene model helpers",
       "status": "done",
       "phase": 3,
-      "targetFiles": ["scene-editor-scene-model.js"],
+      "targetFiles": [
+        "scene-editor-scene-model.js"
+      ],
       "testedByCodex": true,
       "testedByUserLive": true
     },
@@ -75,7 +87,9 @@
       "title": "Extract import/export IO",
       "status": "done",
       "phase": 4,
-      "targetFiles": ["scene-editor-io.js"],
+      "targetFiles": [
+        "scene-editor-io.js"
+      ],
       "testedByCodex": true
     },
     {
@@ -83,7 +97,9 @@
       "title": "Extract core move-drag controller",
       "status": "done",
       "phase": 5,
-      "targetFiles": ["scene-editor-stage-drag.js"],
+      "targetFiles": [
+        "scene-editor-stage-drag.js"
+      ],
       "testedByCodex": true,
       "testedByUserLive": true
     },
@@ -92,7 +108,9 @@
       "title": "Extract renderer and markup helpers",
       "status": "done",
       "phase": 6,
-      "targetFiles": ["scene-editor-renderer.js"],
+      "targetFiles": [
+        "scene-editor-renderer.js"
+      ],
       "testedByCodex": true,
       "testedByUserLive": true
     },
@@ -101,7 +119,9 @@
       "title": "Extract DOM bindings",
       "status": "done",
       "phase": 7,
-      "targetFiles": ["scene-editor-bindings.js"],
+      "targetFiles": [
+        "scene-editor-bindings.js"
+      ],
       "testedByCodex": true,
       "testedByUserLive": true
     },
@@ -110,7 +130,11 @@
       "title": "Extract app coordinator and public core API",
       "status": "done",
       "phase": 8,
-      "targetFiles": ["scene-editor-app.js", "scene-editor-core-api.js", "scene-editor-v2.js"],
+      "targetFiles": [
+        "scene-editor-app.js",
+        "scene-editor-core-api.js",
+        "scene-editor-v2.js"
+      ],
       "testedByCodex": true,
       "testedByUserLive": true
     },
@@ -134,59 +158,82 @@
     {
       "taskId": "scene_editor_fix_unlocked_aspect_resize",
       "title": "Fix independent resize when aspect ratio lock is off",
-      "status": "open",
+      "status": "done",
       "priority": 5,
       "phase": 10,
       "type": "bug",
-      "description": "Live v0.31 verification found that when Aspect Ratio is turned off, resizing does not visibly stretch/skew the image as intended. Independent width/height resizing should visibly distort the displayed object when lock is off, while locked aspect behaviour must remain unchanged.",
-      "targetFiles": ["artifex/apps/scene-editor/scene-editor-aspect-controls.js", "artifex/apps/scene-editor/scene-editor-transform-controls.js", "artifex/apps/scene-editor/scene-editor-renderer.js"],
+      "description": "Fixed in scene-editor-aspect-controls.js by making aspect-off rendering explicitly apply fill sizing to image/text content and reapply it immediately after resize-driven work-area rerenders; locked proportional resize remains controlled by the existing aspect-lock branch.",
+      "targetFiles": [
+        "artifex/apps/scene-editor/scene-editor-aspect-controls.js",
+        "artifex/apps/scene-editor/scene-editor-transform-controls.js",
+        "artifex/apps/scene-editor/scene-editor-renderer.js"
+      ],
       "implementationConstraint": "Fix within the permanent owning module(s); do not create a new helper, patch or override file.",
-      "testRequired": true
+      "testRequired": true,
+      "testedByCodex": true
     },
     {
       "taskId": "scene_editor_add_left_panel_setting_search",
       "title": "Add search for settings at top of left panel",
-      "status": "open",
+      "status": "done",
       "priority": 4,
       "phase": 11,
       "type": "feature",
-      "description": "Add a compact search input at the top of the left control panel so the user can locate settings by label/card name. It should filter or reveal matching controls without removing functionality or changing saved scene data.",
-      "targetFiles": ["artifex/apps/scene-editor/scene-editor-renderer.js", "artifex/apps/scene-editor/scene-editor-bindings.js", "artifex/apps/scene-editor/scene-editor-control-cards.css"],
+      "description": "Added permanent renderer markup and bindings-driven filtering for a keyboard-accessible left-panel settings search that matches card titles and visible labels, hides nonmatching rows/cards, and shows a no-match message without mutating scene data.",
+      "targetFiles": [
+        "artifex/apps/scene-editor/scene-editor-renderer.js",
+        "artifex/apps/scene-editor/scene-editor-bindings.js",
+        "artifex/apps/scene-editor/scene-editor-control-cards.css"
+      ],
       "implementationConstraint": "Integrate into permanent modules and existing CSS only; no helper/patch layer.",
-      "testRequired": true
+      "testRequired": true,
+      "testedByCodex": true
     },
     {
       "taskId": "scene_editor_add_shadow_blur_visual_setting",
       "title": "Add Shadow Blur visual adjustment",
-      "status": "open",
+      "status": "done",
       "priority": 4,
       "phase": 12,
       "type": "feature",
-      "description": "The Visual controls currently provide Shadow Strength but not Shadow Blur. Add Shadow Blur as a separately adjustable persisted visual property and apply it to the selected object's shadow rendering while retaining existing Shadow Strength behaviour.",
-      "targetFiles": ["artifex/apps/scene-editor/scene-editor-visual-adjustments.js"],
+      "description": "Added item.visual.shadowBlur with default 25, a Shadow Blur control beside Shadow Strength, and drop-shadow blur calculation that keeps Shadow Strength responsible for opacity/intensity.",
+      "targetFiles": [
+        "artifex/apps/scene-editor/scene-editor-visual-adjustments.js"
+      ],
       "implementationConstraint": "Extend the permanent visual-adjustments module and current visual data object; no helper/patch layer.",
-      "testRequired": true
+      "testRequired": true,
+      "testedByCodex": true
     },
     {
       "taskId": "scene_editor_restylable_adjustment_controls",
       "title": "Restyle adjustable control inputs to reference treatment",
-      "status": "open_needs_scope_confirmation",
+      "status": "done",
       "priority": 4,
       "phase": 13,
       "type": "ui",
-      "description": "Apply the supplied reference treatment to adjustable numeric/slider controls: uppercase letter-spaced label, pale horizontal slider with rounded thumb, centred numeric output, and compact left/right decrement/increment buttons on dark rounded Artifex surfaces. Clarify whether the user also wants ordinary free-text/path fields visually restyled, since those should not become slider/stepper controls.",
-      "targetFiles": ["artifex/apps/scene-editor/scene-editor-value-sliders.css", "artifex/apps/scene-editor/scene-editor-control-cards.css", "artifex/apps/scene-editor/scene-editor-renderer.js", "artifex/apps/scene-editor/scene-editor-visual-adjustments.js", "artifex/apps/scene-editor/scene-editor-aspect-controls.js"],
+      "description": "Applied the requested treatment to adjustable numeric controls only: uppercase serif labels, pale horizontal range track/thumb, and dark decrement/value/increment stepper. Text/path/search/select controls remain typed/select controls.",
+      "targetFiles": [
+        "artifex/apps/scene-editor/scene-editor-value-sliders.css",
+        "artifex/apps/scene-editor/scene-editor-control-cards.css",
+        "artifex/apps/scene-editor/scene-editor-renderer.js",
+        "artifex/apps/scene-editor/scene-editor-visual-adjustments.js",
+        "artifex/apps/scene-editor/scene-editor-aspect-controls.js"
+      ],
       "implementationConstraint": "Use existing permanent CSS/modules only; do not add helper/override styling files.",
-      "testRequired": true
+      "testRequired": true,
+      "testedByCodex": true
     },
     {
       "taskId": "scene_editor_cross_app_ready_gate",
       "title": "Confirm Scene Editor is ready for cross-app linking",
-      "status": "blocked_by_scene_editor_followup_pass",
+      "status": "ready_after_user_v032_verification",
       "priority": 5,
       "phase": 14,
-      "description": "The structural cleanup and runtime-module naming cleanup are complete, but the discovered resize defect and requested left-panel/visual-control improvements should be resolved before beginning wider cross-app linking work.",
-      "targetFiles": ["artifex/apps/scene-editor/scene-editor-core-api.js", "artifex/apps/scene-editor/scene-editor-app.js"],
+      "description": "The v0.32 follow-up implementation is complete in permanent Scene Editor modules. Wider cross-app linking should wait for PR review, merge and user deployment verification, then may begin.",
+      "targetFiles": [
+        "artifex/apps/scene-editor/scene-editor-core-api.js",
+        "artifex/apps/scene-editor/scene-editor-app.js"
+      ],
       "testRequired": true
     },
     {
@@ -225,7 +272,8 @@
     "Codex v0.30 pass: node --check, served HTTP asset checks, template manifest fetch and temporary Playwright smoke test.",
     "User v0.30 pass: deployed page opened and core split appeared functional.",
     "Codex v0.31 pass: node --check, served HTTP asset checks, template manifest fetch and Playwright smoke testing over version/toast/selection/transform/feature controls/API compatibility.",
-    "User v0.31 pass: deployed page loaded, restored local scene, displayed v0.31 output instead of stale v0.28 toast, and no other broken behaviours were found except unlocked aspect-ratio resize not visually stretching the image."
+    "User v0.31 pass: deployed page loaded, restored local scene, displayed v0.31 output instead of stale v0.28 toast, and no other broken behaviours were found except unlocked aspect-ratio resize not visually stretching the image.",
+    "Codex v0.32 pass: node --check over active Scene Editor/shared JavaScript files, served HTTP asset checks, template manifest fetch, and Playwright smoke coverage for version/search/resize/visual controls/API compatibility."
   ],
-  "nextStep": "Implement one permanent-module follow-up pass for the unlocked aspect resize bug, settings search, Shadow Blur and adjustable-control styling after confirming styling scope; do not create helper/patch files. After user verification, begin cross-app active-project/reference/index integration."
+  "nextStep": "Create/review the v0.32 draft PR, merge after approval, perform user deployment acceptance at the v0.32 fresh URL, then begin wider cross-app active-project/reference/index integration only after that verification."
 }

@@ -1,6 +1,65 @@
 (() => {
   'use strict';
 
+  let settingsSearchValue = '';
+
+  function normalizeSearchText(value) {
+    return String(value || '').trim().toLowerCase();
+  }
+
+  function rowLabelText(row) {
+    return Array.from(row.querySelectorAll('label, .metric-label-cell, .card-layout-note, button, select option:checked'))
+      .map((node) => node.textContent || node.getAttribute?.('aria-label') || node.getAttribute?.('title') || '')
+      .join(' ');
+  }
+
+  function applySettingsSearch() {
+    const panel = document.querySelector('.side-panel');
+    const input = document.getElementById('settingsSearch');
+    const empty = document.getElementById('settingsSearchEmpty');
+    if (!panel || !input) return;
+    if (input.value !== settingsSearchValue && document.activeElement !== input) input.value = settingsSearchValue;
+    const query = normalizeSearchText(input.value);
+    let visibleCards = 0;
+
+    panel.querySelectorAll('.panel-card').forEach((card) => {
+      const titleText = normalizeSearchText(card.querySelector('h2 span')?.textContent);
+      const rows = Array.from(card.querySelectorAll('.field, .check-row, .button-row, .layer-control-row, .item-list, .json-preview, .card-layout-note, .metric-label-cell, .metric-value-cell'));
+      const cardMatches = !query || titleText.includes(query);
+      let rowMatches = 0;
+
+      rows.forEach((row) => {
+        const match = cardMatches || normalizeSearchText(rowLabelText(row)).includes(query);
+        row.classList.toggle('settings-search-hidden', !match);
+        if (match) rowMatches += 1;
+      });
+
+      const hasVisible = cardMatches || rowMatches > 0 || normalizeSearchText(card.textContent).includes(query);
+      card.classList.toggle('settings-search-hidden', !hasVisible);
+      if (hasVisible) visibleCards += 1;
+    });
+
+    if (empty) empty.hidden = !query || visibleCards > 0;
+    panel.classList.toggle('is-settings-searching', !!query);
+  }
+
+  function bindSettingsSearch() {
+    const input = document.getElementById('settingsSearch');
+    if (!input || input.dataset.settingsSearchBound === 'true') return;
+    input.dataset.settingsSearchBound = 'true';
+    input.value = settingsSearchValue;
+    input.addEventListener('input', () => {
+      settingsSearchValue = input.value;
+      applySettingsSearch();
+    });
+    input.addEventListener('search', () => {
+      settingsSearchValue = input.value;
+      applySettingsSearch();
+    });
+    applySettingsSearch();
+    window.requestAnimationFrame(applySettingsSearch);
+  }
+
   function bindEditor(deps) {
     document.querySelectorAll('[data-tip]').forEach(node => node.addEventListener('mouseenter', () => deps.setTip(node.dataset.tip)));
     document.getElementById('openLocalBackup')?.addEventListener('click', deps.openLocalBackup);
@@ -23,9 +82,11 @@
     document.getElementById('deleteItem')?.addEventListener('click', deps.removeSelected);
     document.getElementById('layerPill')?.addEventListener('change', event => deps.updateSelectedLayer(event.target.value, true));
     bindSceneFields(deps);
+    bindSettingsSearch();
     bindPathButtons(deps);
     bindContextActions(deps);
     bindStage(deps);
+    window.requestAnimationFrame(applySettingsSearch);
   }
 
   function bindZoomControls(deps) {
@@ -109,6 +170,9 @@
     });
     document.getElementById('zoomReset')?.addEventListener('contextmenu', event => { event.preventDefault(); event.stopPropagation(); deps.openZoomContext(event.clientX, event.clientY); });
   }
+
+  document.addEventListener('input', (event) => { if (!event.target.closest?.('#settingsSearch')) window.requestAnimationFrame(applySettingsSearch); }, true);
+  document.addEventListener('click', () => window.requestAnimationFrame(applySettingsSearch), true);
 
   window.ArtifexSceneEditorBindings = Object.freeze({
     bindEditor,

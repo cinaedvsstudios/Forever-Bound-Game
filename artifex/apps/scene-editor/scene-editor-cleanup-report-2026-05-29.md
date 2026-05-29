@@ -184,3 +184,32 @@ The large Scene Editor core-file risk has been resolved. The app now satisfies t
 ## Recommended next version
 
 Use `v0.31-runtime-module-cleanup` for the final retained-helper rename/toast-cleanup pass, provided no unrelated feature change is included.
+---
+
+## v0.32 controls, resize and settings-search follow-up — 2026-05-29
+
+Version used for this focused pass: `v0.32-controls-resize-search`.
+
+### Completed v0.32 items
+
+- Fixed the unlocked aspect-ratio resize defect in the permanent aspect-control ownership path. The cause was that resize completion can rerender the work area with the base image rule `object-fit: contain` before the aspect module reapplies its aspect-off fill/stretch state, so independent width/height data changed but the rendered image could visually preserve its natural ratio. The fix explicitly applies `object-fit: fill`, full width and full height to rendered image/text content when the lock is off, records that fit state with `data-aspect-fit`, and reapplies it after resize-driven work-area rerenders. Aspect-lock-on proportional math remains in the existing locked branch.
+- Added a compact left-panel settings search in the renderer and bindings modules. It searches card titles and visible labels case-insensitively, hides nonmatching rows/cards, shows a themed no-match message, and does not modify scene data, local save data or card collapsed state.
+- Added `item.visual.shadowBlur` in the visual-adjustments module. Older scene data receives the default value `25`; save/export/local persistence follows the existing selected-object `visual` object flow. Shadow Strength continues to control drop-shadow opacity/intensity, while Shadow Blur controls softness/blur radius independently.
+- Restyled adjustable numeric controls through the existing value-slider module and stylesheet. Numeric controls now use uppercase letter-spaced serif labels, a pale horizontal range track with rounded cream thumb, and a dark left decrement / centered value / right increment stepper. Ordinary text fields, path fields, selects and the settings search remain typed/select controls.
+- Updated the Scene Editor title, config version and active CSS/JS cache query labels to `v0.32-controls-resize-search` without changing the shared Module menu contents or order.
+
+### v0.32 tracker state
+
+The four focused follow-up tasks are marked complete in `scene-editor-core-split-todos.json`. The cross-app integration gate is no longer blocked by the v0.31 follow-up defects, but it should remain waiting for review, merge and user deployment verification of v0.32 before any cross-app integration begins.
+
+### v0.32 testing expectation
+
+Codex should run static JavaScript checks, served HTTP checks and Playwright/browser smoke coverage for v0.32 before opening the draft PR. User deployment acceptance should use:
+
+`https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/index.html?fresh=v0.32-controls-resize-search`
+
+### Remaining Scene Editor work before cross-app integration
+
+1. Review and merge the v0.32 draft PR after tests pass.
+2. User verifies the deployed v0.32 URL for local restore, aspect-off stretch, aspect-on proportional resize, settings search, Shadow Blur persistence, numeric control styling, selection, movement, rotation, origin marker, layers, cards, preview, menus, zoom and JSON download.
+3. Only after that verification, begin the wider cross-app active-project/reference/index integration pass.
