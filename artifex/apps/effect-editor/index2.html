@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Artifex Effect Editor Index2 Clean V0.1.8 UI</title>
-  <link rel="stylesheet" href="./v3/styles.css?v=index2-018-ui" />
-  <link rel="stylesheet" href="./v3/index2-ui-parity.css?v=018-ui" />
+  <title>Artifex Effect Editor Index2 Clean V0.1.9 UI</title>
+  <link rel="stylesheet" href="./v3/styles.css?v=index2-019-ui" />
+  <link rel="stylesheet" href="./v3/index2-ui-parity.css?v=019-ui" />
 </head>
 <body>
   <header class="topbar">
@@ -13,7 +13,7 @@
       <div class="brand-mark">✦</div>
       <div>
         <h1>ARTIFEX</h1>
-        <p>Visual Effects Editor <span id="version-badge">INDEX2-CLEAN-0.1.8-UI</span></p>
+        <p>Visual Effects Editor <span id="version-badge">INDEX2-CLEAN-0.1.9-UI</span></p>
       </div>
     </section>
 
@@ -67,7 +67,7 @@
       <div class="menu">
         <button class="menu-button" data-menu="help">Help ▾</button>
         <div class="menu-panel right" id="menu-help">
-          <button id="about-button">About INDEX2-CLEAN-0.1.8-UI</button>
+          <button id="about-button">About INDEX2-CLEAN-0.1.9-UI</button>
         </div>
       </div>
     </nav>
@@ -98,7 +98,7 @@
         </div>
       </section>
 
-      <section id="index2-card-appearance" class="card" data-search-card="Effect Layer Appearance colour opacity size glow">
+      <section id="index2-card-appearance" class="card" data-search-card="Effect Layer Appearance colour opacity size glow ramp palette brush">
         <header><h2>Effect Layer Appearance</h2><button type="button" class="index2-card-collapse" data-card-collapse title="Collapse Effect Layer Appearance">⬆️</button></header>
         <label>Start Colour<input id="color-a-input" type="color" value="#ffcc66" /></label>
         <label>End Colour<input id="color-b-input" type="color" value="#ff6600" /></label>
@@ -133,7 +133,7 @@
     <section class="workspace-column">
       <section id="workspace" class="workspace index2-workspace">
         <div class="index2-workspace-controls index2-playback-controls" aria-label="Preview controls">
-          <button id="pause-button" title="Pause or resume">▶️</button>
+          <button id="pause-button" title="Pause or resume"><span class="index2-paused-icon" aria-hidden="true">▶️</span></button>
           <button id="snapshot-button" title="Snapshot">📸</button>
         </div>
         <div class="index2-workspace-controls index2-zoom-controls" aria-label="Zoom controls">
@@ -153,6 +153,7 @@
   </main>
 
   <script type="module" src="./v3/src/index2-clean-controller.js?v=016"></script>
-  <script type="module" src="./v3/src/index2-ui-parity.js?v=018-ui"></script>
+  <script type="module" src="./v3/src/index2-ui-parity.js?v=019-ui"></script>
+  <script type="module" src="./v3/src/index2-appearance-restore.js?v=019-ui"></script>
 </body>
 </html>
