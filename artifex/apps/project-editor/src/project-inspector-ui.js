@@ -1,4 +1,4 @@
-import { UI_STORAGE_KEYS, escapeHtml, getById, readJSONPreference, writeJSONPreference } from './project-ui-helpers.js?v=0.1.28-inspector';
+import { UI_STORAGE_KEYS, escapeHtml, getById, readJSONPreference, writeJSONPreference } from './project-ui-helpers.js?v=0.1.31-tasks';
 
 // Artifex Project Manager inspector UI
 // Owns the selected node/route inspector, draggable inspector behaviour, and position persistence.
@@ -42,8 +42,12 @@ export function createProjectInspectorUI({
     const resetButton = panel.querySelector('[data-inspector-reset-position]');
     if (!canvas || !handle) return;
 
+    resetButton?.addEventListener('pointerdown', (event) => {
+      event.stopPropagation();
+    });
+
     handle.addEventListener('pointerdown', (event) => {
-      if (event.button !== 0) return;
+      if (event.button !== 0 || event.target?.closest?.('[data-inspector-reset-position]')) return;
       event.preventDefault();
       event.stopPropagation();
       const canvasRect = canvas.getBoundingClientRect();
