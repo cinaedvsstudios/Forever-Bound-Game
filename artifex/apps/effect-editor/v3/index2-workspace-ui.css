@@ -55,18 +55,6 @@
   100% { box-shadow: var(--shadow-soft); }
 }
 
-.index2-search-sticky {
-  position: sticky;
-  top: 0;
-  z-index: 12;
-  padding: 11px 12px 10px;
-  background: linear-gradient(180deg, rgba(17,14,13,.985), rgba(17,14,13,.96));
-  backdrop-filter: blur(5px);
-}
-.index2-search-label { margin: 0 !important; }
-.index2-search-label input { margin-top: 7px; }
-.index2-search-count { margin: 7px 0 0 !important; }
-
 .card.index2-effect-specific-card {
   border-color: rgba(0,174,234,.65);
   background: linear-gradient(180deg, rgba(0,174,234,.075), rgba(23,18,16,.96) 72px);
@@ -74,35 +62,6 @@
 }
 .card.index2-effect-specific-card header { border-bottom-color: rgba(0,174,234,.28); }
 .card.index2-effect-specific-card h2 { color: #cbf6ff; text-shadow: 0 0 13px rgba(0,174,234,.24); }
-
-.index2-field-pair {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-.index2-field-pair label { min-width: 0; }
-.index2-gravity-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 66px;
-  gap: 10px;
-  align-items: end;
-}
-.index2-gravity-row > label { min-width: 0; }
-.index2-boost-toggle {
-  display: flex !important;
-  flex-direction: column;
-  align-items: center;
-  justify-content: end;
-  gap: 9px;
-  padding: 0 0 9px;
-}
-.index2-boost-toggle input { width: auto !important; margin: 0 !important; accent-color: var(--module-accent); }
-.index2-gravity-note {
-  margin: -5px 0 11px;
-  color: var(--gold-muted);
-  font-size: 10px;
-  letter-spacing: .04em;
-}
 
 .index2-quick-helper-sections { border-top: 0; padding-top: 0; }
 .index2-helper-section { margin-top: 10px; }
@@ -197,14 +156,11 @@
 
 .index2-tags-field { margin-bottom: 12px; }
 .index2-value-stepper { display: flex; align-items: center; gap: 7px; margin-top: 5px; }
-.index2-field-pair .index2-value-stepper { gap: 4px; }
 .index2-value-stepper output { min-width: 38px; text-align: center; color: var(--gold-bright); font-size: 12px; }
-.index2-field-pair .index2-value-stepper output { min-width: 29px; }
 .index2-value-step {
   min-width: 28px !important; width: 28px; min-height: 28px !important; height: 28px; padding: 0 !important;
   border-radius: 9px !important; font-size: 12px !important;
 }
-.index2-field-pair .index2-value-step { min-width: 24px !important; width: 24px; }
 #stop-color-hex-input {
   margin-bottom: 8px; min-height: 34px; font-family: 'Fira Code', monospace;
   letter-spacing: .08em; color: var(--module-accent-strong); text-transform: uppercase;
