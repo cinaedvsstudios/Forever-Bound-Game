@@ -1,7 +1,7 @@
-/* Quest Builder V1.2.5
+/* Quest Builder V1.2.6
    Styling entry point only. Behaviour is split into v1/src modules.
    The visual rules are currently carried forward from the V1.0.8 stylesheet until the next visual pass. */
-@import url("./quest-builder-v108.css?v=1.2.5-base");
+@import url("./quest-builder-v108.css?v=1.2.6-base");
 
 /* V1.1.3 contextual inspector / status actions */
 .status-strip {
@@ -14,11 +14,11 @@
   align-items: center;
   margin: 0 0 13px;
   padding: 8px 10px;
-  border: 1px solid rgba(127,240,189,.75);
-  border-radius: 14px;
-  background: var(--accent2);
-  color: #041008;
-  box-shadow: 0 8px 20px rgba(0,0,0,.42), 0 0 18px rgba(62,180,137,.28);
+  border: 2px solid rgba(127,240,189,.88);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(28,70,52,.98), rgba(8,20,15,.98));
+  color: var(--accent2);
+  box-shadow: 0 8px 20px rgba(0,0,0,.42), 0 0 18px rgba(62,180,137,.18);
 }
 .status-strip #status-text {
   position: static;
@@ -28,7 +28,7 @@
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: #041008;
+  color: #7ff0bd;
   box-shadow: none;
   font-size: 12px;
   font-weight: 900;
@@ -44,12 +44,16 @@
   min-height: 28px;
   padding: 3px 6px;
   border-radius: 10px;
-  border-color: rgba(4,16,8,.35);
-  background: rgba(4,16,8,.14);
-  color: #041008;
-  box-shadow: none;
+  border: 1px solid rgba(127,240,189,.4);
+  background: rgba(4,16,8,.48);
+  color: #7ff0bd;
+  box-shadow: inset 0 1px rgba(255,255,255,.04);
 }
-.status-actions button:hover { background: rgba(4,16,8,.22); color: #000; }
+.status-actions button:hover {
+  border-color: rgba(127,240,189,.8);
+  background: rgba(62,180,137,.22);
+  color: #fff0ce;
+}
 .inspector-kicker {
   margin: 0 0 6px;
   color: #8a7465;
