@@ -74,4 +74,4 @@ New substantial functionality should continue to be added through focused module
 
 ## Verification note
 
-This audit records the Phase 2 local verification target for `v0.1.31 TASKS` using cache key `0.1.31-tasks`. Live deployment verification remains outside this proposed-change pass until the reviewed diff is merged.
+Live deployment verification for `v0.1.31 TASKS` has been completed successfully on the GitHub Pages deployment. The verified pass confirmed that Flatplan, the Project Tasks / To-Do Board workspace, inspector drag/reset, menus, and workspace switching are working. The Asset Browser was verified to open correctly and show its proper empty state because no asset index has yet been imported. No console errors or blank screens were reported. Asset Browser item search/link/unlink remains untested until a real imported index and library item exist; this is untested, not broken.
