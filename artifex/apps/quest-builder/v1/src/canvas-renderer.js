@@ -1,9 +1,11 @@
-import { DESIGN_WIDTH as W, DESIGN_HEIGHT as H } from './module-config.js?v=1.2.8';
-import { getBlockType } from './block-types.js?v=1.2.8';
+import { DESIGN_WIDTH as W, DESIGN_HEIGHT as H } from './module-config.js?v=1.2.9';
+import { getBlockType } from './block-types.js?v=1.2.9';
 
+const CARD_W = 250;
+const CARD_H = 124;
 const endpointAssets = {
-  start: new URL('../../icons/start.png?v=1.2.8', import.meta.url).href,
-  finish: new URL('../../icons/finish.png?v=1.2.8', import.meta.url).href
+  start: new URL('../../icons/start.png?v=1.2.9', import.meta.url).href,
+  finish: new URL('../../icons/finish.png?v=1.2.9', import.meta.url).href
 };
 const endpointImages = {};
 
@@ -38,46 +40,79 @@ export function drawCanvas(app) {
   app.hitZones.push({ kind: 'quest', x: 54, y: 34, w: 740, h: 114, index: state.activeQuest });
   app.hitZones.push({ kind: 'quest-edit', x: 742, y: 104, w: 40, h: 39, index: state.activeQuest });
 
-  drawEndpointNode(ctx, 118, 245, 'start', app);
+  const start = { x: 118, y: 245 };
+  const finish = { x: W - 115, y: H - 108 };
+  const blocks = q.blocks || [];
+  const positions = blocks.map((item, index) => getBlockPosition(layout, q.id, item.id, index));
 
-  let x = 252;
-  let y = 190;
-  const cardW = 250;
-  const cardH = 124;
-  const gap = 34;
+  if (positions.length) {
+    drawConnector(ctx, { x: start.x + 55, y: start.y }, { x: positions[0].x, y: positions[0].y + CARD_H / 2 });
+    positions.forEach((position, index) => {
+      if (index < positions.length - 1) {
+        drawConnector(ctx, { x: position.x + CARD_W, y: position.y + CARD_H / 2 }, { x: positions[index + 1].x, y: positions[index + 1].y + CARD_H / 2 });
+      }
+    });
+    const last = positions[positions.length - 1];
+    drawConnector(ctx, { x: last.x + CARD_W, y: last.y + CARD_H / 2 }, { x: finish.x - 55, y: finish.y });
+  }
 
-  (q.blocks || []).forEach((item, index) => {
-    if (x + cardW > W - 260) {
-      x = 90;
-      y += cardH + 54;
-    }
+  drawEndpointNode(ctx, start.x, start.y, 'start', app);
+  drawEndpointNode(ctx, finish.x, finish.y, 'finish', app);
+
+  blocks.forEach((item, index) => {
+    const position = positions[index];
     const selected = state.inspectorTarget === 'block' && index === state.activeBlock;
-    drawFlowCard(ctx, x, y, cardW, cardH, item, selected);
-    app.hitZones.push({ kind: 'block', x, y, w: cardW, h: cardH, index });
-    app.hitZones.push({ kind: 'block-edit', x: x + cardW - 48, y, w: 48, h: 46, index });
-    if (index < q.blocks.length - 1) {
-      ctx.strokeStyle = 'rgba(62,180,137,.55)';
-      ctx.lineWidth = 2;
-      line(ctx, x + cardW, y + cardH / 2, x + cardW + gap, y + cardH / 2);
-      ctx.fillStyle = 'rgba(127,240,189,.8)';
-      ctx.font = '14px Arial';
-      ctx.fillText('→', x + cardW + 10, y + cardH / 2 + 5);
-    }
-    x += cardW + gap;
+    const dragging = state.canvasBlockDrag?.index === index && state.canvasBlockDrag?.moved;
+    drawFlowCard(ctx, position.x, position.y, CARD_W, CARD_H, item, selected, dragging);
+    app.hitZones.push({ kind: 'block', x: position.x, y: position.y, w: CARD_W, h: CARD_H, index });
+    app.hitZones.push({ kind: 'block-edit', x: position.x + CARD_W - 48, y: position.y, w: 48, h: 46, index });
   });
+}
 
-  drawEndpointNode(ctx, W - 115, H - 108, 'finish', app);
+export function getCanvasPoint(app, event) {
+  const rect = app.canvas.getBoundingClientRect();
+  return {
+    x: (event.clientX - rect.left) * (app.canvas.width / rect.width),
+    y: (event.clientY - rect.top) * (app.canvas.height / rect.height)
+  };
 }
 
 export function getCanvasHit(app, event) {
-  const rect = app.canvas.getBoundingClientRect();
-  const x = (event.clientX - rect.left) * (app.canvas.width / rect.width);
-  const y = (event.clientY - rect.top) * (app.canvas.height / rect.height);
-  return [...(app.hitZones || [])].reverse().find((zone) => x >= zone.x && x <= zone.x + zone.w && y >= zone.y && y <= zone.y + zone.h) || null;
+  const point = getCanvasPoint(app, event);
+  return [...(app.hitZones || [])].reverse().find((zone) => point.x >= zone.x && point.x <= zone.x + zone.w && point.y >= zone.y && point.y <= zone.y + zone.h) || null;
+}
+
+export function getBlockPosition(layout, questId, blockId, index) {
+  const key = `${questId}:${blockId}`;
+  const saved = layout.blockPositions?.[key];
+  if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) return saved;
+  let x = 252 + index * 284;
+  let y = 190;
+  while (x + CARD_W > W - 260) {
+    x -= 3 * 284;
+    y += CARD_H + 54;
+  }
+  return { x, y };
 }
 
 export function applyCanvasTransform(canvas, layout) {
   canvas.style.transform = `translate(${layout.panX}px, ${layout.panY}px) scale(${layout.zoom})`;
+}
+
+function drawConnector(ctx, from, to) {
+  const midX = from.x + (to.x - from.x) / 2;
+  ctx.beginPath();
+  ctx.moveTo(from.x, from.y);
+  ctx.lineTo(midX, from.y);
+  ctx.lineTo(midX, to.y);
+  ctx.lineTo(to.x, to.y);
+  ctx.strokeStyle = 'rgba(62,180,137,.54)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(127,240,189,.82)';
+  ctx.font = '14px Arial';
+  ctx.fillText('→', to.x - 18, to.y + 5);
+  ctx.lineWidth = 1;
 }
 
 function drawQuestHeaderCard(ctx, x, y, thumb, title, meta, calling, selected) {
@@ -96,7 +131,6 @@ function drawQuestHeaderCard(ctx, x, y, thumb, title, meta, calling, selected) {
   ctx.fillStyle = '#7ff0bd';
   ctx.font = '600 12px Arial';
   ctx.fillText(short(meta, 68), x + 74, y + 52);
-
   ctx.strokeStyle = 'rgba(127,240,189,.2)';
   line(ctx, x + 16, y + 66, x + w - 16, y + 66);
   round(ctx, x + 16, y + 74, w - 32, 30, 15);
@@ -113,13 +147,14 @@ function drawQuestHeaderCard(ctx, x, y, thumb, title, meta, calling, selected) {
   ctx.fillText('✎', x + w - 40, y + 94);
 }
 
-function drawFlowCard(ctx, x, y, w, h, item, selected) {
+function drawFlowCard(ctx, x, y, w, h, item, selected, dragging) {
   const blockType = getBlockType(item.type);
   const color = typeColor(item.type);
   const missing = missingFields(item, blockType);
   const summary = linkedSummary(item);
   const stroke = selected ? '#7ff0bd' : missing.length ? '#f59e0b' : color;
-
+  ctx.save();
+  if (dragging) ctx.globalAlpha = .9;
   box(ctx, x, y, w, h, 18, selected ? 'rgba(62,180,137,.22)' : 'rgba(17,26,20,.86)', stroke, selected ? 3 : 1.5);
   ctx.fillStyle = '#fff0ce';
   ctx.font = '25px Arial';
@@ -130,11 +165,9 @@ function drawFlowCard(ctx, x, y, w, h, item, selected) {
   ctx.fillStyle = color;
   ctx.font = '700 12px Arial';
   ctx.fillText(blockType.name, x + 60, y + 52);
-
   ctx.fillStyle = summary === 'unlinked' ? 'rgba(245,158,11,.9)' : 'rgba(226,204,167,.78)';
   ctx.font = '500 11px Arial';
   ctx.fillText(short(summary, 34), x + 60, y + 76);
-
   if (missing.length) {
     ctx.fillStyle = '#fbbf24';
     ctx.font = '700 11px Arial';
@@ -148,10 +181,13 @@ function drawFlowCard(ctx, x, y, w, h, item, selected) {
     ctx.font = '600 11px Arial';
     ctx.fillText('ready', x + 60, y + 98);
   }
-
   ctx.fillStyle = '#fff0ce';
   ctx.font = '15px Arial';
   ctx.fillText('✎', x + w - 28, y + 28);
+  ctx.fillStyle = 'rgba(127,240,189,.52)';
+  ctx.font = '13px Arial';
+  ctx.fillText('⋮⋮', x + w - 34, y + h - 15);
+  ctx.restore();
 }
 
 function drawEndpointNode(ctx, cx, cy, kind, app) {
@@ -163,7 +199,6 @@ function drawEndpointNode(ctx, cx, cy, kind, app) {
   const fill = ctx.createLinearGradient(cx, cy - radius, cx, cy + radius);
   fill.addColorStop(0, 'rgba(28,70,52,.98)');
   fill.addColorStop(1, 'rgba(8,20,15,.98)');
-
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   ctx.fillStyle = fill;
@@ -172,17 +207,14 @@ function drawEndpointNode(ctx, cx, cy, kind, app) {
   ctx.lineWidth = 2.5;
   ctx.stroke();
   ctx.lineWidth = 1;
-
   const image = getEndpointImage(kind, app);
-  if (image?.loaded) {
-    drawContainedImage(ctx, image.element, cx, cy - 21, 45, 38);
-  } else {
+  if (image?.loaded) drawContainedImage(ctx, image.element, cx, cy - 21, 45, 38);
+  else {
     ctx.fillStyle = stroke;
     ctx.font = '700 26px Arial';
     ctx.textAlign = 'center';
     ctx.fillText(isStart ? '▶' : '✓', cx, cy - 11);
   }
-
   ctx.textAlign = 'center';
   ctx.fillStyle = isStart ? '#7ff0bd' : '#fff0ce';
   ctx.font = '700 14px Georgia';
@@ -205,13 +237,8 @@ function drawContainedImage(ctx, image, cx, cy, maxWidth, maxHeight) {
 function getEndpointImage(kind, app) {
   if (endpointImages[kind]) return endpointImages[kind];
   const state = { element: new Image(), loaded: false, failed: false };
-  state.element.onload = () => {
-    state.loaded = true;
-    app.draw();
-  };
-  state.element.onerror = () => {
-    state.failed = true;
-  };
+  state.element.onload = () => { state.loaded = true; app.draw(); };
+  state.element.onerror = () => { state.failed = true; };
   state.element.src = endpointAssets[kind];
   endpointImages[kind] = state;
   return state;
@@ -233,52 +260,10 @@ function linkedSummary(item) {
 }
 
 export function typeColor(type) {
-  return {
-    scene: '#a78bfa',
-    dialogue: '#f87171',
-    action: '#fbbf24',
-    object: '#2dd4bf',
-    information: '#60a5fa',
-    condition: '#60a5fa',
-    capra: '#7ff0bd',
-    ui: '#7ff0bd',
-    reward: '#e2cca7',
-    codice: '#e2cca7',
-    combat: '#fb7185',
-    route: '#34d399',
-    completion: '#fef3c7',
-    neutral: 'rgba(226,204,167,.65)'
-  }[type] || 'rgba(226,204,167,.25)';
+  return { scene: '#a78bfa', dialogue: '#f87171', action: '#fbbf24', object: '#2dd4bf', information: '#60a5fa', condition: '#60a5fa', capra: '#7ff0bd', ui: '#7ff0bd', reward: '#e2cca7', codice: '#e2cca7', combat: '#fb7185', route: '#34d399', completion: '#fef3c7', neutral: 'rgba(226,204,167,.65)' }[type] || 'rgba(226,204,167,.25)';
 }
 
-function line(ctx, x1, y1, x2, y2) {
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.stroke();
-}
-
-function round(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
-}
-
-function box(ctx, x, y, w, h, r, fill, stroke = 'rgba(226,204,167,.25)', width = 1) {
-  round(ctx, x, y, w, h, r);
-  ctx.fillStyle = fill;
-  ctx.fill();
-  ctx.strokeStyle = stroke;
-  ctx.lineWidth = width;
-  ctx.stroke();
-  ctx.lineWidth = 1;
-}
-
-function short(value, max) {
-  value = String(value || '');
-  return value.length > max ? value.slice(0, max - 1) + '…' : value;
-}
+function line(ctx, x1, y1, x2, y2) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+function round(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function box(ctx, x, y, w, h, r, fill, stroke = 'rgba(226,204,167,.25)', width = 1) { round(ctx, x, y, w, h, r); ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = stroke; ctx.lineWidth = width; ctx.stroke(); ctx.lineWidth = 1; }
+function short(value, max) { value = String(value || ''); return value.length > max ? value.slice(0, max - 1) + '…' : value; }
