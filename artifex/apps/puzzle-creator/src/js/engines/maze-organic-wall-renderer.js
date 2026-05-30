@@ -1,5 +1,5 @@
-// Maze / Labyrinth organic wall renderer
-// Renders a joined visual wall surface in the playable preview while leaving the grid,
+// Maze / Labyrinth Wall Form renderer
+// Renders joined visual wall surfaces on an opaque overlay canvas while leaving the grid,
 // collision, route solving, feature placement and Overview data unchanged.
 
 import { isInsideShape } from './maze-shape-generator.js';
@@ -15,7 +15,7 @@ const rendererState = {
 };
 
 window.__artifexMazeWallRenderer = {
-  render: renderOrganicPreview,
+  render: renderWallFormPreview,
   setMode
 };
 
@@ -31,6 +31,11 @@ function state() {
   return window.__artifexMazeRuntime?.state || null;
 }
 
+function activeMode() {
+  const currentState = state();
+  return currentState?.wallRenderMode && currentState.wallRenderMode !== 'blocks' && currentState.view !== '3d';
+}
+
 function injectControls() {
   if ($('maze-wall-form-card')) return;
   const panel = document.querySelector('[data-panel-content="visuals"]');
@@ -42,12 +47,12 @@ function injectControls() {
   card.innerHTML = `
     <div class="wall-form-copy">
       <strong>Wall Form</strong>
-      <small>Join the visual walls into continuous surfaces. The underlying maze grid and collision do not change.</small>
+      <small>Join visual walls into continuous surfaces. The underlying maze grid and collision do not change.</small>
     </div>
     <div class="wall-form-buttons" role="group" aria-label="Wall form">
       <button type="button" data-wall-form="blocks" class="is-active" title="Show individual tile blocks.">Blocks</button>
       <button type="button" data-wall-form="rounded" title="Join nearby wall tiles with clean rounded corners.">Rounded</button>
-      <button type="button" data-wall-form="organic" title="Render warped walls as smooth flowing hedge, stone or cave surfaces.">Organic</button>
+      <button type="button" data-wall-form="organic" title="Create visibly irregular flowing hedge, cave or natural wall edges.">Organic</button>
     </div>
     <p id="wall-form-status">Blocks preserves the square-tile preview.</p>
   `;
@@ -70,11 +75,12 @@ function setMode(mode) {
   syncControls();
   if (mode === 'blocks') {
     stopTimer();
+    hideOverlay();
     window.__artifexMazeRuntimeControls?.repaintAll?.();
-  } else {
-    startTimer();
-    scheduleRender();
+    return;
   }
+  startTimer();
+  renderWallFormPreview();
 }
 
 function syncControls() {
@@ -84,18 +90,36 @@ function syncControls() {
   const status = $('wall-form-status');
   if (!status) return;
   status.textContent = mode === 'organic'
-    ? 'Organic uses Warp to form flowing continuous wall edges.'
+    ? 'Organic makes the wall masses uneven and flowing; Warp increases the natural distortion.'
     : mode === 'rounded'
       ? 'Rounded joins wall tiles into clean softened corridor edges.'
       : 'Blocks preserves the square-tile preview.';
 }
 
+function ensureOverlay() {
+  const wrap = $('threejs-container');
+  if (!wrap) return null;
+  let canvas = $('maze-wall-form-canvas');
+  if (!canvas) {
+    canvas = document.createElement('canvas');
+    canvas.id = 'maze-wall-form-canvas';
+    canvas.className = 'maze-wall-form-overlay';
+    wrap.appendChild(canvas);
+  }
+  return canvas;
+}
+
+function hideOverlay() {
+  const overlay = $('maze-wall-form-canvas');
+  if (overlay) overlay.hidden = true;
+}
+
 function startTimer() {
   if (rendererState.timer) return;
   rendererState.timer = window.setInterval(() => {
-    const currentState = state();
-    if (currentState?.wallRenderMode && currentState.wallRenderMode !== 'blocks') renderOrganicPreview();
-  }, 90);
+    if (activeMode()) renderWallFormPreview();
+    else if (state()?.view === '3d') hideOverlay();
+  }, 33);
 }
 
 function stopTimer() {
@@ -119,13 +143,13 @@ function bindPanMirror() {
     rendererState.panY += event.clientY - rendererState.lastY;
     rendererState.lastX = event.clientX;
     rendererState.lastY = event.clientY;
-    scheduleRender();
+    renderWallFormPreview();
   }, true);
   window.addEventListener('mouseup', () => { rendererState.dragging = false; }, true);
   $('btn-zoom-reset')?.addEventListener('click', () => {
     rendererState.panX = 0;
     rendererState.panY = 0;
-    scheduleRender();
+    renderWallFormPreview();
   }, true);
 }
 
@@ -134,31 +158,41 @@ function bindRenderTriggers() {
     $(id)?.addEventListener('input', scheduleRender, true);
     $(id)?.addEventListener('change', scheduleRender, true);
   });
-  ['btn-random', 'btn-start-blank', 'btn-clear-all', 'btn-load-reference', 'view-mode-diorama', 'view-mode-fps', 'btn-zoom-in', 'btn-zoom-out'].forEach((id) => {
-    $(id)?.addEventListener('click', () => window.setTimeout(scheduleRender, 30), true);
+  ['btn-random', 'btn-start-blank', 'btn-clear-all', 'btn-load-reference', 'view-mode-diorama', 'view-mode-fps', 'view-mode-3d', 'btn-zoom-in', 'btn-zoom-out'].forEach((id) => {
+    $(id)?.addEventListener('click', () => window.setTimeout(() => {
+      if (activeMode()) renderWallFormPreview();
+      else hideOverlay();
+    }, 20), true);
   });
   window.addEventListener('resize', scheduleRender);
 }
 
 function scheduleRender() {
-  window.requestAnimationFrame(() => window.setTimeout(renderOrganicPreview, 0));
+  if (!activeMode()) return;
+  window.requestAnimationFrame(renderWallFormPreview);
 }
 
-function renderOrganicPreview() {
+function renderWallFormPreview() {
   const currentState = state();
-  const canvas = $('maze-preview-canvas');
   const wrap = $('threejs-container');
-  if (!currentState || !canvas || !wrap || !currentState.matrix?.length || currentState.wallRenderMode === 'blocks' || currentState.view === '3d') return;
+  if (!currentState || !wrap || !currentState.matrix?.length || !activeMode()) {
+    if (currentState?.wallRenderMode === 'blocks' || currentState?.view === '3d') hideOverlay();
+    return;
+  }
+  const canvas = ensureOverlay();
+  if (!canvas) return;
+  canvas.hidden = false;
   const rect = wrap.getBoundingClientRect();
   if (!rect.width || !rect.height) return;
   const ratio = window.devicePixelRatio || 1;
-  if (canvas.width !== Math.max(1, Math.round(rect.width * ratio)) || canvas.height !== Math.max(1, Math.round(rect.height * ratio))) {
-    canvas.width = Math.max(1, Math.round(rect.width * ratio));
-    canvas.height = Math.max(1, Math.round(rect.height * ratio));
+  const pxWidth = Math.max(1, Math.round(rect.width * ratio));
+  const pxHeight = Math.max(1, Math.round(rect.height * ratio));
+  if (canvas.width !== pxWidth || canvas.height !== pxHeight) {
+    canvas.width = pxWidth;
+    canvas.height = pxHeight;
   }
   const ctx = canvas.getContext('2d');
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-  ctx.clearRect(0, 0, rect.width, rect.height);
   ctx.fillStyle = currentState.style?.roof?.color || '#031009';
   ctx.fillRect(0, 0, rect.width, rect.height);
   const dims = dimensions(rect.width, rect.height, currentState);
@@ -196,8 +230,20 @@ function warpedPoint(x, y, dims, currentState) {
 }
 
 function cellCentre(x, y, dims, currentState) {
-  const p = warpedPoint(x, y, dims, currentState);
-  return { x: p.x + dims.cellW / 2, y: p.y + dims.cellH / 2 };
+  const point = warpedPoint(x, y, dims, currentState);
+  return { x: point.x + dims.cellW / 2, y: point.y + dims.cellH / 2 };
+}
+
+function organicWallCentre(x, y, dims, currentState) {
+  const point = cellCentre(x, y, dims, currentState);
+  const minCell = Math.min(dims.cellW, dims.cellH);
+  const warp = Number(currentState.warp || 0) / 100;
+  const strength = minCell * (0.10 + warp * 0.42);
+  const wideDrift = minCell * warp * 0.14;
+  return {
+    x: point.x + (seedNoise(x, y, 3) - 0.5) * 2 * strength + Math.sin(y * 0.56 + x * 0.19) * wideDrift,
+    y: point.y + (seedNoise(x, y, 8) - 0.5) * 2 * strength + Math.cos(x * 0.48 + y * 0.17) * wideDrift
+  };
 }
 
 function isVisibleCell(currentState, x, y) {
@@ -213,33 +259,34 @@ function drawFloorSurface(ctx, currentState, dims) {
   for (let y = 0; y < currentState.gridSize; y++) {
     for (let x = 0; x < currentState.gridSize; x++) {
       if (!isVisibleCell(currentState, x, y)) continue;
-      const p = warpedPoint(x, y, dims, currentState);
-      ctx.fillRect(p.x - 1, p.y - 1, dims.cellW + 2, dims.cellH + 2);
+      const point = warpedPoint(x, y, dims, currentState);
+      ctx.fillRect(point.x - 1, point.y - 1, dims.cellW + 2, dims.cellH + 2);
     }
   }
 }
 
 function drawJoinedWalls(ctx, currentState, dims) {
-  const mode = currentState.wallRenderMode || 'rounded';
-  const organic = mode === 'organic';
+  const organic = currentState.wallRenderMode === 'organic';
   const minCell = Math.min(dims.cellW, dims.cellH);
   const warp = Number(currentState.warp || 0) / 100;
-  const width = minCell * (organic ? 0.86 + warp * 0.13 : 0.9);
+  const width = minCell * (organic ? 0.80 + warp * 0.12 : 0.90);
   const depth = minCell * (0.08 + Number(currentState.wallHeight || 1.5) * 0.07);
   const wallColor = currentState.style?.walls?.color || '#24513a';
   const shadowColor = shade(wallColor, -0.28);
   ctx.save();
   ctx.translate(0, depth);
-  drawWallNetwork(ctx, currentState, dims, organic, width + minCell * 0.12, shadowColor, warp);
+  drawWallNetwork(ctx, currentState, dims, organic, width + minCell * (organic ? 0.20 : 0.12), shadowColor, warp);
   ctx.restore();
   drawWallNetwork(ctx, currentState, dims, organic, width, wallColor, warp);
   ctx.save();
-  ctx.globalAlpha = 0.16;
-  drawWallNetwork(ctx, currentState, dims, organic, Math.max(1.4, width * 0.1), '#eaffde', warp);
+  ctx.globalAlpha = organic ? 0.23 : 0.16;
+  drawWallNetwork(ctx, currentState, dims, organic, Math.max(1.4, width * (organic ? 0.12 : 0.10)), '#eaffde', warp);
   ctx.restore();
 }
 
 function drawWallNetwork(ctx, currentState, dims, organic, width, color, warp) {
+  const minCell = Math.min(dims.cellW, dims.cellH);
+  const wallPoint = (x, y) => organic ? organicWallCentre(x, y, dims, currentState) : cellCentre(x, y, dims, currentState);
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.strokeStyle = color;
@@ -249,18 +296,18 @@ function drawWallNetwork(ctx, currentState, dims, organic, width, color, warp) {
   for (let y = 0; y < currentState.gridSize; y++) {
     for (let x = 0; x < currentState.gridSize; x++) {
       if (!isWall(currentState, x, y)) continue;
-      const a = cellCentre(x, y, dims, currentState);
+      const start = wallPoint(x, y);
       for (const [dx, dy] of [[1, 0], [0, 1]]) {
         if (!isWall(currentState, x + dx, y + dy)) continue;
-        const b = cellCentre(x + dx, y + dy, dims, currentState);
-        ctx.moveTo(a.x, a.y);
+        const end = wallPoint(x + dx, y + dy);
+        ctx.moveTo(start.x, start.y);
         if (organic) {
-          const bend = (seedNoise(x, y, dx + dy) - 0.5) * Math.min(dims.cellW, dims.cellH) * (0.16 + warp * 0.3);
-          const mx = (a.x + b.x) / 2 + (dy ? bend : 0);
-          const my = (a.y + b.y) / 2 + (dx ? bend : 0);
-          ctx.quadraticCurveTo(mx, my, b.x, b.y);
+          const bend = (seedNoise(x, y, 14 + dx + dy) - 0.5) * 2 * minCell * (0.18 + warp * 0.48);
+          const midX = (start.x + end.x) / 2 + (dy ? bend : 0);
+          const midY = (start.y + end.y) / 2 + (dx ? bend : 0);
+          ctx.quadraticCurveTo(midX, midY, end.x, end.y);
         } else {
-          ctx.lineTo(b.x, b.y);
+          ctx.lineTo(end.x, end.y);
         }
       }
     }
@@ -270,9 +317,11 @@ function drawWallNetwork(ctx, currentState, dims, organic, width, color, warp) {
   for (let y = 0; y < currentState.gridSize; y++) {
     for (let x = 0; x < currentState.gridSize; x++) {
       if (!isWall(currentState, x, y)) continue;
-      const p = cellCentre(x, y, dims, currentState);
-      ctx.moveTo(p.x + width / 2, p.y);
-      ctx.arc(p.x, p.y, width / 2, 0, Math.PI * 2);
+      const point = wallPoint(x, y);
+      const radiusScale = organic ? 0.86 + seedNoise(x, y, 21) * 0.30 + warp * 0.08 : 1;
+      const radius = width / 2 * radiusScale;
+      ctx.moveTo(point.x + radius, point.y);
+      ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
     }
   }
   ctx.fill();
@@ -286,8 +335,8 @@ function drawSolution(ctx, currentState, dims) {
   ctx.lineJoin = 'round';
   ctx.beginPath();
   currentState.solution.forEach((cell, index) => {
-    const p = cellCentre(cell.x, cell.y, dims, currentState);
-    index ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y);
+    const point = cellCentre(cell.x, cell.y, dims, currentState);
+    index ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y);
   });
   ctx.stroke();
 }
@@ -296,41 +345,41 @@ function drawConnections(ctx, currentState, dims) {
   const pairs = window.__artifexMazeConnections?.pairs || [];
   pairs.forEach((pair) => {
     const colors = pair.type === 'portal' ? ['#b58cff', '#87dfff'] : ['#f1cf75', '#e1c073'];
-    if (pair.entry) drawLetterMarker(ctx, currentState, dims, pair.entry, colors[0], pair.label, 'I');
-    if (pair.exit) drawLetterMarker(ctx, currentState, dims, pair.exit, colors[1], pair.label, 'O');
+    if (pair.entry) drawLetterMarker(ctx, dims, pair.entry, colors[0], pair.label, 'I', currentState);
+    if (pair.exit) drawLetterMarker(ctx, dims, pair.exit, colors[1], pair.label, 'O', currentState);
   });
 }
 
 function drawCollectionItems(ctx, currentState, dims) {
   const items = window.__artifexMazeFeatures?.collectionItems?.() || [];
   items.forEach((item, index) => {
-    if (item.cell) drawLetterMarker(ctx, currentState, dims, item.cell, '#e1c073', String(index + 1), '');
+    if (item.cell) drawLetterMarker(ctx, dims, item.cell, '#e1c073', String(index + 1), '', currentState);
   });
 }
 
-function drawLetterMarker(ctx, currentState, dims, cell, color, label, suffix) {
-  const p = cellCentre(cell.x, cell.y, dims, currentState);
+function drawLetterMarker(ctx, dims, cell, color, label, suffix, currentState) {
+  const point = cellCentre(cell.x, cell.y, dims, currentState);
   const radius = Math.max(7, Math.min(dims.cellW, dims.cellH) * 0.4);
   ctx.fillStyle = color;
   ctx.strokeStyle = '#06140b';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+  ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
   ctx.fillStyle = '#06140b';
   ctx.font = `900 ${Math.max(8, radius * 0.82)}px Inter, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(`${label}${suffix}`, p.x, p.y + 0.5);
+  ctx.fillText(`${label}${suffix}`, point.x, point.y + 0.5);
 }
 
 function drawMarker(ctx, currentState, dims, cell, color) {
   if (!cell) return;
-  const p = cellCentre(cell.x, cell.y, dims, currentState);
+  const point = cellCentre(cell.x, cell.y, dims, currentState);
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.arc(p.x, p.y, Math.max(4, Math.min(dims.cellW, dims.cellH) * 0.35), 0, Math.PI * 2);
+  ctx.arc(point.x, point.y, Math.max(4, Math.min(dims.cellW, dims.cellH) * 0.35), 0, Math.PI * 2);
   ctx.fill();
 }
 
@@ -368,6 +417,8 @@ function injectStyles() {
   const style = document.createElement('style');
   style.id = 'maze-organic-wall-renderer-style';
   style.textContent = `
+    .threejs-container{position:relative;}
+    .maze-wall-form-overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3;}
     .maze-wall-form-card{display:grid;gap:9px;margin:11px 0 15px;padding:11px;border:1px solid rgba(158,230,164,.18);border-radius:14px;background:rgba(0,0,0,.16);}
     .wall-form-copy strong{display:block;color:#eadfc6;font-size:.78rem;}
     .wall-form-copy small{display:block;color:#a9b59e;margin-top:3px;font-size:.64rem;line-height:1.35;}
