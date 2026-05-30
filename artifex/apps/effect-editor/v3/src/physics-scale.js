@@ -9,7 +9,7 @@ export function toRuntimeLayer(layer) {
     ...layer,
     speedMin,
     speedMax,
-    gravity: toRuntimeGravity(layer.gravity)
+    gravity: toRuntimeGravity(layer.gravity, layer.gravityBoost, layer.gravityScaleVersion)
   };
 }
 
@@ -17,30 +17,39 @@ export function toRuntimeSpeed(value) {
   return Math.max(0, finite(value, 0) * SPEED_RUNTIME_SCALE);
 }
 
-export function toRuntimeGravity(value) {
+export function toRuntimeGravity(value, boost = false, scaleVersion = '') {
   const gravity = finite(value, 0);
-  // Legacy saved files used tiny decimal values directly, e.g. 0.04.
-  // New UI uses a readable gravity scale where 100 maps back to 0.04.
+  if (scaleVersion === 'ui') {
+    return gravity * (boost ? 2 : 1) * GRAVITY_RUNTIME_SCALE;
+  }
+  // Legacy compositions stored the runtime decimal directly, for example 0.04.
+  // New edits are marked gravityScaleVersion='ui' and store -100..100 control values.
   if (Math.abs(gravity) <= 1) return gravity;
   return gravity * GRAVITY_RUNTIME_SCALE;
 }
 
-export function toGravityControlValue(value) {
+export function toGravityControlValue(value, scaleVersion = '') {
   const gravity = finite(value, 0);
-  if (Math.abs(gravity) <= 1) return Math.round(gravity / GRAVITY_RUNTIME_SCALE);
-  return Math.round(gravity);
+  if (scaleVersion === 'ui') return clampControlValue(gravity);
+  if (Math.abs(gravity) <= 1) return clampControlValue(Math.round(gravity / GRAVITY_RUNTIME_SCALE));
+  return clampControlValue(gravity);
 }
 
 export function fromGravityControlValue(value) {
-  return Math.round(finite(value, 0));
+  return clampControlValue(value);
 }
 
-export function describeGravityScale(value) {
-  const gravity = toGravityControlValue(value);
-  if (gravity === 0) return '0 neutral';
-  if (gravity === 100) return '100 earth';
-  if (gravity > 0) return `${gravity} down`;
-  return `${gravity} up`;
+export function describeGravityScale(value, boost = false, scaleVersion = 'ui') {
+  const gravity = toGravityControlValue(value, scaleVersion);
+  const effective = gravity * (boost ? 2 : 1);
+  if (effective === 0) return '0 neutral';
+  if (effective === 100) return '100 earth';
+  if (effective === -100) return '-100 reverse earth';
+  return `${effective} ${effective > 0 ? 'down' : 'up'}`;
+}
+
+function clampControlValue(value) {
+  return Math.max(-100, Math.min(100, Math.round(finite(value, 0))));
 }
 
 function finite(value, fallback) {
