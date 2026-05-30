@@ -1,4 +1,4 @@
-const PROJECT_FLOW_VERSION = 'V1.1.11';
+const PROJECT_FLOW_VERSION = 'V1.1.12';
 const PROJECT_LIBRARY_KEY_FLOW = 'artifex.projectLibrary';
 const ACTIVE_PROJECT_KEY_FLOW = 'artifex.activeProjectId';
 const HEALTH_ACTIONS_KEY_PREFIX = 'artifex.creationGuide.healthAssignmentsCreated.';
@@ -136,7 +136,7 @@ function renderProjectFlowDialog() {
 function newProjectFlowHtml(suggested) {
   return `
     <section class="project-flow-body">
-      <article class="project-flow-note"><strong>What this does</strong><p>This starts a blank project setup. After creating it, use the new Project Folder section to connect a real folder and create the starter structure directly there. ZIP export remains available as backup or fallback.</p></article>
+      <article class="project-flow-note"><strong>What this does</strong><p>This starts a Blank Starter Project setup. After creating it, connect a real folder and create the starter structure directly there. You can then create optional intake drop folders for source media, or skip that step until later. ZIP export remains backup/fallback.</p></article>
       <div class="project-flow-grid">
         <label>Project name<input id="flow-project-name" value="" placeholder="Forever Bound" /></label>
         <label>Project ID / slug<input id="flow-project-id" value="${safeFlow(suggested)}" placeholder="forever-bound" /></label>
@@ -215,82 +215,5 @@ function openProjectFromFlow(projectId) {
   localStorage.setItem(ACTIVE_PROJECT_KEY_FLOW, projectId);
   library[projectId].lastOpenedAt = new Date().toISOString();
   localStorage.setItem(PROJECT_LIBRARY_KEY_FLOW, JSON.stringify(library, null, 2));
-  window.location.href = `${window.location.pathname}?fresh=creation-guide-1.1.11-open-${Date.now()}`;
-}
-
-function setFlowField(id, value) {
-  const field = document.getElementById(id);
-  if (!field) return;
-  field.value = value;
-  field.dispatchEvent(new Event('input', { bubbles: true }));
-}
-
-function setFlowCheckbox(id, checked) {
-  const field = document.getElementById(id);
-  if (!field) return;
-  field.checked = checked;
-  field.dispatchEvent(new Event('change', { bubbles: true }));
-}
-
-function readProjectFlowLibrary() {
-  try { return JSON.parse(localStorage.getItem(PROJECT_LIBRARY_KEY_FLOW) || '{}') || {}; }
-  catch { return {}; }
-}
-
-function valueFlow(id) { return String(document.getElementById(id)?.value || '').trim(); }
-function validSlugFlow(value) { return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(String(value || '')); }
-function validUrlFlow(value) { try { const url = new URL(value); return url.protocol === 'https:' || url.protocol === 'http:'; } catch { return false; } }
-function slugFlow(value) { return String(value || 'untitled-artifex-adventure').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'untitled-artifex-adventure'; }
-function safeFlow(value) { return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char])); }
-
-function injectProjectFlowStyles() {
-  if (document.getElementById('project-flow-style')) return;
-  const style = document.createElement('style');
-  style.id = 'project-flow-style';
-  style.textContent = `
-    .workspace-toolbar { gap: 7px; }
-    .workspace-toolbar button, .workspace-toolbar select { font-size: 11px !important; padding: 6px 10px !important; min-height: 30px; white-space: nowrap; }
-    .workspace-toolbar #status-text { font-size: 11px; }
-    .project-flow-dialog { width: min(860px, calc(100vw - 32px)); max-height: min(86vh, 820px); border: 1px solid rgba(143,109,255,.48); border-radius: 26px; padding: 0; color: #f2eee9; background: linear-gradient(145deg, rgba(32,23,34,.98), rgba(14,10,9,.98)); box-shadow: 0 24px 80px rgba(0,0,0,.88), 0 0 44px rgba(143,109,255,.34); }
-    .project-flow-dialog::backdrop { background: rgba(0,0,0,.66); }
-    .project-flow-shell { padding: 22px; }
-    .project-flow-header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; border-bottom:1px solid rgba(226,204,167,.16); padding-bottom:14px; margin-bottom:14px; }
-    .project-flow-eyebrow { margin:0; color:#c7b8ff; font-size:10px; text-transform:uppercase; letter-spacing:.16em; font-weight:900; }
-    .project-flow-header h2 { margin:4px 0 0; color:#fff0ce; font-family:Cinzel, Georgia, serif; font-size:clamp(24px, 3vw, 36px); letter-spacing:.06em; }
-    .project-flow-close { border-radius:999px; }
-    .project-flow-tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
-    .project-flow-tabs button { border-radius:999px; }
-    .project-flow-tabs button.active { border-color:#8f6dff; color:white; background:rgba(143,109,255,.22); box-shadow:0 0 18px rgba(143,109,255,.38); }
-    .project-flow-body { display:grid; gap:12px; }
-    .project-flow-note { padding:13px; border:1px solid rgba(226,204,167,.18); border-radius:16px; background:rgba(15,12,11,.48); }
-    .project-flow-note strong { color:#fff0ce; text-transform:uppercase; letter-spacing:.1em; font-size:11px; }
-    .project-flow-note p { margin:6px 0 0; color:#e2cca7; line-height:1.45; }
-    .project-flow-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; }
-    .project-flow-body label { margin:0; }
-    .project-flow-helper { justify-self:start; font-size:11px; }
-    .project-flow-check { display:flex; align-items:center; gap:9px; }
-    .project-flow-check input { width:auto; }
-    .project-flow-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:9px; margin-top:4px; }
-    .project-flow-list { display:grid; gap:9px; max-height:46vh; overflow:auto; padding-right:4px; }
-    .project-flow-project { text-align:left; display:grid; gap:4px; }
-    .project-flow-project strong { color:#fff0ce; }
-    .project-flow-project span, .project-flow-empty { color:#8a7465; font-size:12px; }
-    .project-health-panel { margin:18px 0 0; padding:18px; border:1px solid rgba(143,109,255,.38); border-radius:24px; background:linear-gradient(135deg, rgba(26,18,29,.92), rgba(15,10,9,.88)); box-shadow:0 18px 48px rgba(0,0,0,.42), inset 0 0 32px rgba(143,109,255,.08); }
-    .project-health-header { display:flex; justify-content:space-between; align-items:center; gap:14px; margin-bottom:12px; }
-    .project-health-header p { margin:0 0 4px; color:#c7b8ff; font-size:10px; font-weight:900; letter-spacing:.16em; text-transform:uppercase; }
-    .project-health-header h2 { margin:0; color:#fff0ce; font-family:Cinzel, Georgia, serif; letter-spacing:.08em; font-size:clamp(20px, 2.2vw, 30px); }
-    .project-health-header span { display:block; margin-top:4px; color:#a98f72; font-size:12px; }
-    .project-health-score { width:104px; height:104px; border-radius:999px; display:grid; place-items:center; align-content:center; border:10px solid rgba(80,64,52,.72); background:rgba(8,5,7,.72); box-shadow:0 0 28px rgba(143,109,255,.25); text-align:center; }
-    .project-health-score.ready { border-color:rgba(67,211,111,.78); } .project-health-score.warning { border-color:rgba(217,164,65,.78); } .project-health-score.missing { border-color:rgba(217,74,74,.78); }
-    .project-health-score strong { color:#fff0ce; font-size:25px; font-family:Cinzel, Georgia, serif; } .project-health-score small { color:#a98f72; font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
-    .project-health-summary { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px; } .project-health-summary span { padding:5px 9px; border-radius:999px; background:rgba(15,12,11,.55); border:1px solid rgba(226,204,167,.16); font-size:11px; font-weight:800; }
-    .project-health-summary .ready { color:#9af0ff; } .project-health-summary .missing { color:#ff9a9a; } .project-health-summary .warning { color:#d9a441; }
-    .project-health-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:10px; }
-    .project-health-card { padding:12px; border-radius:16px; border:1px solid rgba(226,204,167,.14); background:rgba(15,12,11,.46); } .project-health-card.ready { border-color:rgba(67,211,111,.35); } .project-health-card.missing { border-color:rgba(217,74,74,.45); } .project-health-card.warning { border-color:rgba(217,164,65,.38); }
-    .project-health-card strong { display:block; color:#fff0ce; font-size:12px; } .project-health-card p { margin:7px 0; color:#f2eee9; font-size:12px; line-height:1.45; } .project-health-card small { color:#a98f72; font-size:10px; text-transform:uppercase; letter-spacing:.1em; }
-    .project-health-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid rgba(226,204,167,.12); } .project-health-actions button { font-size:11px !important; padding:7px 10px !important; border-radius:999px; }
-    .project-health-footer { margin-top:12px; padding-top:12px; border-top:1px solid rgba(226,204,167,.12); color:#a98f72; font-size:11px; line-height:1.45; } .project-health-footer code { color:#c7b8ff; }
-    @media (max-width:760px) { .project-flow-grid { grid-template-columns:1fr; } .project-flow-actions, .project-health-actions { justify-content:flex-start; } .project-health-header { align-items:flex-start; flex-direction:column; } .project-health-score { width:88px; height:88px; } }
-  `;
-  document.head.appendChild(style);
+  window.location.href = `${window.location.pathname}?fresh=creation-guide-1.1.12-open-${Date.now()}`;
 }
