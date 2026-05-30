@@ -52,7 +52,7 @@ function renderProjectHealthPanel() {
         </div>
       </header>
       <div class="project-health-summary">
-        <span class="ready">✅ ${ready} ready</span>
+        <span class="ready">✅ ${ready} required ready</span>
         <span class="missing">⚠️ ${critical} required missing</span>
         <span class="warning">⭕ ${warnings} optional notes</span>
       </div>
@@ -65,7 +65,7 @@ function renderProjectHealthPanel() {
         <button type="button" id="health-refresh-button">🔄 Refresh</button>
       </div>
       <footer class="project-health-footer">
-        This panel reports the current Creation Guide setup state. Direct project-folder saving is beginning here; full cross-app project loading remains tracked globally in <code>todo_all_apps_active_project_runtime_integration</code>.
+        This panel reports the current Creation Guide setup state, including connected-folder and optional intake setup. Full cross-app project loading remains tracked globally in <code>todo_all_apps_active_project_runtime_integration</code>.
       </footer>
     </section>`;
 
@@ -108,6 +108,12 @@ function getProjectHealthChecks() {
   const folderState = window.ArtifexProjectFolder?.getState?.() || null;
   const folderConnected = folderState?.folderStatus === 'connected';
   const permissionRequired = folderState?.folderStatus === 'permission-required';
+  const intakeState = typeof window.getCreationGuideIntakeSetupState === 'function' ? window.getCreationGuideIntakeSetupState() : 'pending';
+  const intakeHealth = intakeState === 'ready'
+    ? { state: 'ready', description: 'Optional intake source-material folders are ready in the connected project folder.' }
+    : intakeState === 'skipped'
+      ? { state: 'warning', description: 'Intake setup was skipped for now. Create the folders later when source media is ready.' }
+      : { state: 'warning', description: 'Optional: create intake source-material folders or choose Skip for Now.' };
 
   return [
     {
@@ -153,6 +159,13 @@ function getProjectHealthChecks() {
       weight: 1
     },
     {
+      title: 'Initial asset intake setup',
+      state: intakeHealth.state,
+      description: intakeHealth.description,
+      owner: 'Creation Guide / Asset Library',
+      weight: 0
+    },
+    {
       title: 'Active project saved',
       state: projectId && activeId === projectId && library[projectId] ? 'ready' : 'missing',
       description: projectId && activeId === projectId && library[projectId] ? `${projectId} is active in the Project Library.` : 'Click Set Active Project so Hub and apps know which project to open.',
@@ -167,9 +180,9 @@ function getProjectHealthChecks() {
       weight: 0
     },
     {
-      title: 'Intake and media checklist',
+      title: 'Recommended starting media',
       state: 'warning',
-      description: 'Next feature task: explain intake folders and track recommended starter assets.',
+      description: 'Next feature task: track project logo/title mark, backgrounds, characters, objects and UI starter media.',
       owner: 'Creation Guide / Asset Library',
       weight: 0
     },
