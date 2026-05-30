@@ -17,13 +17,13 @@ Use the global all-apps to-do list for changes that affect every Artifex app. Us
 
 ## Current repository status
 
-Current Quest Builder version in repository: `V1.2.10`
+Current Quest Builder version in repository: `V1.2.11`
 
 Current browser confirmation status:
 
-- `V1.2.9` was tested sufficiently to confirm that the live version badge loaded, the editor pencil action still opened the correct block popup, and cards could be manually moved in the central workspace.
-- Testing exposed that ordered automatic lines were not a valid long-term flow model once blocks could be manually arranged and branched.
-- `V1.2.10` has now been built in the repository as the first explicit-connection foundation pass and still requires GitHub Pages/browser testing.
+- `V1.2.9` was tested sufficiently to confirm the live version badge loaded, pencil edit still opened the correct block popup, and cards could be manually moved in the central workspace.
+- `V1.2.10` was tested in GitHub Pages and confirmed to load as `V1.2.10`, display explicit coloured connector lines and visible connector ports. User feedback identified that the empty-port display was too crowded, disconnecting was not sufficiently direct, and vertical/near-vertical route attachments needed cleaner left-side routing.
+- `V1.2.11` is now built in the repository as a focused connector usability cleanup and requires GitHub Pages/browser confirmation.
 
 Current active app files:
 
@@ -107,60 +107,67 @@ Status: partially browser-confirmed; superseded as a flow-rendering model by the
 
 ### V1.2.10 — explicit connection foundation
 
+Status: browser-tested; required usability cleanup completed in V1.2.11.
+
+- Added explicit `connections` quest data, plus `START` and `END` flow node IDs.
+- Converted the demo quest to explicit saved lines and branch data.
+- Replaced automatic sequence-line drawing with explicit source-coloured connector rendering.
+- Added connector authoring and runtime/export validation for explicit flow connections.
+- User confirmed the new version visibly loaded and the connection model appeared on the live canvas.
+- User identified the next corrections: remove unnecessary empty circles, allow directly clearing a connection from its attached circle, add a dedicated per-card connect action, and route vertical stacked connections from the left side rather than through the cards.
+
+### V1.2.11 — connector usability and routing cleanup
+
 Status: built in repository; awaiting browser testing.
 
-Purpose: replace automatic sequence-line assumptions with deliberate node connections without introducing a patch layer or refactoring the app shell.
+Purpose: implement the direct connector feedback from the V1.2.10 browser test without introducing patch files or changing the broader workspace architecture.
 
 Implemented:
 
-- Added `connections` to the quest data model in `quest-schema.js`, plus `START` and `END` node IDs and stable connection creation helper.
-- Converted the demo `Recover the Chalice` flow into explicit saved connections, including a conditional wrong-cup feedback branch and return link.
-- Replaced ordered automatic connector drawing in `canvas-renderer.js` with explicit connection rendering.
-- Added visible input/output connector circles around nodes, including available spare ports for creating additional links.
-- Added thicker connector lines that inherit the colour of the source block.
-- Added drag-from-output-port to input-port authoring in `quest-builder-app.js`.
-- Added line selection and Delete/Backspace removal of a selected connection.
-- Kept moving cards as layout-only behaviour; movement does not rewire connections.
-- Kept floating Quest Flow list dragging separate; changing list order does not rewire connections.
-- New blocks and template-created blocks now begin loose and unconnected, with guidance text/toasts explaining how to connect them.
-- Removing a block removes only connections that directly reference that deleted block.
-- Runtime export now includes `flow.connections`, while block array order is treated only as `displayOrder` rather than inferred flow logic.
-- Validation now reports missing START/END routes, broken connection references, unconnected blocks, unreachable blocks and completion blocks not linked to END.
-- Updated page/version/cache references to `V1.2.10` / `1.2.10`.
+- Removed the permanently displayed spare connector-circle clutter. Only circles for connections that actually exist are now drawn.
+- Added a `🔗` connect action beside the pencil on each workspace block card.
+- Added a START connect handle so a blank/new quest can deliberately begin its first flow connection.
+- Changed connection authoring so dragging the `🔗` handle onto another block or END creates the required attachment circle automatically on the destination; a free target circle is no longer required beforehand.
+- Made connected attachment circles directly removable: clicking a circle clears that attached connection. Keyboard Delete/Backspace remains available after selecting a line.
+- Added saved `sourceSide` and `targetSide` fields to the connection data model and export data.
+- Added side-choice logic for new connections: largely vertical/stacked links use left-side routing, while ordinary forward links use right-to-left routing.
+- Adjusted the demo connection placement so the stacked Collect Chalice → Update Codice connection routes down the left side rather than drawing through the card interior.
+- Preserved the rule that moving cards is visual only and does not alter connection logic.
+- Updated page title, badge, stylesheet, main module, internal module cache references and renderer icon cache keys to `V1.2.11` / `1.2.11`.
 
 Not implemented in this pass:
 
 - Dynamic workspace/canvas expansion near lower or right edges.
 - Moveable/saved START and END positions.
 - Insert Space horizontal guide tool.
-- Advanced line routing around overlapping cards or route labels shown on the canvas.
+- Fully advanced obstacle-avoiding line routing or branch labels displayed on the canvas.
 
-## V1.2.10 browser test checklist
+## V1.2.11 browser test checklist
 
 Open the new fresh test URL after GitHub Pages updates and verify:
 
-1. The badge shows `V1.2.10`.
-2. The page loads without a blank canvas or obvious JavaScript failure.
-3. The demo flow is no longer a single ordered chain: the lines show the deliberate connections and the wrong-cup branch.
-4. Connector lines are thicker and match the colour of the source block.
-5. Visible connector circles appear on START, END and the flow cards.
-6. Drag from an unused output connector circle on one block to an input connector circle on another block; a new line should appear.
-7. Click a connector line and press Delete; only that connection should disappear.
-8. Add a new block; it should appear loose/unconnected rather than automatically joining the flow.
-9. Move a card; existing connections should follow the card but not change their logical source/destination.
-10. Pencil editor controls should still open the correct block editor.
-11. Hand/pan mode should still pan instead of moving cards or creating connections.
-12. JSON Preview and Export Project Files should include explicit `flow.connections` data and validation warnings for loose blocks where applicable.
-13. View → Reset Saved Layout should reset visual positions but must not delete explicit quest connections.
+1. The badge shows `V1.2.11` and the page loads normally.
+2. Only connector circles attached to existing lines are visible; the rows of unused empty circles are gone.
+3. Each block card now has a `🔗` action beside its pencil.
+4. Click an existing attached connector circle; the associated line should be removed immediately.
+5. Drag a card's `🔗` action onto another block; a new connector line and required destination circle should appear automatically.
+6. Drag a card's `🔗` action onto END; it should connect to END where valid.
+7. The Collect Chalice → Update Codice stacked route should run from the left side and no longer cut through the cards in the way shown during the V1.2.10 test.
+8. Normal forward routes remain source-coloured and readable.
+9. Move a block; the existing lines should follow it without changing logical connections.
+10. Pencil icons still open the correct editor popup.
+11. Hand/pan mode still pans instead of moving cards or creating links.
+12. JSON Preview should contain `flow.connections`, including `sourceSide` and `targetSide` fields.
+13. View → Reset Saved Layout should reset visual positions but not delete explicit quest connections.
 
-## Next specific-app work after V1.2.10 testing
+## Next specific-app work after V1.2.11 testing
 
 Only proceed after browser test results are reported.
 
-Likely next version if the foundation works:
+Likely next version after the connector interaction is confirmed:
 
 ```text
-V1.2.11 — dynamic workspace expansion and manual layout space management
+V1.2.12 — dynamic workspace expansion and manual layout space management
 ```
 
 Required remaining Quest Builder-specific work:
@@ -169,7 +176,7 @@ Required remaining Quest Builder-specific work:
 - Allow START/END endpoints to be positioned consistently in the expanded workspace, without inferring quest logic from position.
 - Add a horizontal `Insert Space` tool: place/drag a temporary guide line, then move every node below that line downward together while preserving connections.
 - Consider a vertical equivalent only after the horizontal tool is tested and useful.
-- Improve connector routing only where crowded diagrams make the current paths unreadable.
+- Improve connector routing only where crowded diagrams make current paths unreadable after testing.
 
 ## Version rule
 
