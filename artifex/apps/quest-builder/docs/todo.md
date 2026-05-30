@@ -17,9 +17,9 @@ Use the global all-apps to-do list for changes that affect every Artifex app. Us
 
 ## Current live status
 
-Current Quest Builder version in repository: `V1.2.7`
+Current Quest Builder version in repository: `V1.2.8`
 
-Current live confirmation status: awaiting GitHub Pages/browser confirmation for `V1.2.7`.
+Current live confirmation status: awaiting GitHub Pages/browser confirmation for `V1.2.8` pencil-button bugfix.
 
 Current app files:
 
@@ -182,16 +182,22 @@ Status: complete.
 - Replaced the bright green left-panel Editing strip with the dark green/charcoal treatment used by the canvas header and endpoint circles.
 - Kept the actions visible as compact green-accent controls.
 
-### V1.2.7 — Workspace pencil edit controls
+### V1.2.7 — Workspace pencil edit controls initial pass
+
+Status: superseded by V1.2.8 bugfix.
+
+- Added interactive pencil hit zones for the canvas quest header and each large canvas block card.
+- Added pencil actions in the floating Quest Flow rows and quest list.
+- Browser test failed: visible pencil icons still did not open the editor reliably.
+
+### V1.2.8 — Workspace pencil interaction bugfix
 
 Status: built, awaiting browser confirmation.
 
-- Added separate interactive hit zones for the pencil in the canvas quest header and each large canvas block card.
-- Pencil on the canvas quest header now opens the quest editor.
-- Pencil on a canvas block card now selects that block and opens its block editor.
-- Fixed the pencil icons in the floating Quest Flow rows so they open the matching block editor rather than doing nothing.
-- Fixed quest-list pencil behaviour to open the selected quest editor.
-- Updated page entry, displayed version, CSS cache key, JavaScript cache keys, renderer asset keys and schema module imports to `V1.2.7` / `1.2.7`.
+- Corrected canvas hit testing at transformed zoom/pan display sizes, avoiding double application of canvas transforms.
+- Pencil actions now run before pan-mode selection blocking, so the hand/pan mode does not suppress edit clicks.
+- Canvas and list pencil actions call the existing editor popup directly for the correct selected quest or block.
+- Updated page entry, displayed version, stylesheet cache key, JavaScript/module cache keys, renderer asset keys and schema imports to `V1.2.8` / `1.2.8`.
 
 ## Ownership boundary
 
@@ -219,12 +225,12 @@ Every Quest Builder edit must increase the visible version by `0.01` and update 
 Next version after confirmation:
 
 ```text
-V1.2.8  draggable canvas card placement and saved card positions
+V1.2.9  draggable canvas card placement and saved card positions
 ```
 
 ## Current checks needed
 
-- Confirm the app loads as `V1.2.7`.
+- Confirm the app loads as `V1.2.8`.
 - Click the pencil on the canvas quest header; it must open **Edit Quest**.
 - Click the pencil on each large workspace card; it must open **Edit Quest Block** for that selected card.
 - Click the pencil on a floating Quest Flow row; it must open the matching block editor.
@@ -236,7 +242,7 @@ V1.2.8  draggable canvas card placement and saved card positions
 ```json
 [
   {
-    "version": "V1.2.8",
+    "version": "V1.2.9",
     "task": "Allow large canvas block cards to be dragged into manual layout positions and preserve their positions in saved layout/project draft state.",
     "status": "next"
   }
