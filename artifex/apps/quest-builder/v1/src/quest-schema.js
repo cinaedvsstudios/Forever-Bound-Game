@@ -1,10 +1,20 @@
-import { MODULE_VERSION, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.9';
-import { getBlockType } from './block-types.js?v=1.2.9';
+import { MODULE_VERSION, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.10';
+import { getBlockType } from './block-types.js?v=1.2.10';
+
+export const START_NODE_ID = 'START';
+export const END_NODE_ID = 'END';
+
+let localIdCounter = 0;
+
+function makeId(prefix) {
+  localIdCounter += 1;
+  return `${prefix}_${Date.now()}_${localIdCounter}`;
+}
 
 export function createDefaultBlock(type = 'scene', patch = {}) {
   const blockType = getBlockType(type);
   return {
-    id: 'block_' + Date.now(),
+    id: makeId('block'),
     name: blockType.name,
     type,
     thumbnail: blockType.emoji,
@@ -21,9 +31,30 @@ export function createDefaultBlock(type = 'scene', patch = {}) {
   };
 }
 
-export function createDefaultQuest(patch = {}) {
+export function createDefaultConnection(sourceNodeId, targetNodeId, patch = {}) {
   return {
-    id: 'quest_' + Date.now(),
+    id: makeId('connection'),
+    sourceNodeId,
+    targetNodeId,
+    sourcePort: 'out:0',
+    targetPort: 'in:0',
+    condition: '',
+    label: '',
+    ...patch
+  };
+}
+
+function normaliseBlocks(blocks = []) {
+  return blocks.map((block) => createDefaultBlock(block.type || 'scene', block));
+}
+
+function normaliseConnections(connections = []) {
+  return connections.map((connection) => createDefaultConnection(connection.sourceNodeId, connection.targetNodeId, connection));
+}
+
+export function createDefaultQuest(patch = {}) {
+  const next = {
+    id: makeId('quest'),
     thumbnail: '📜',
     name: 'New Quest',
     type: 'main',
@@ -36,8 +67,12 @@ export function createDefaultQuest(patch = {}) {
     codiceUpdates: [],
     notes: '',
     blocks: [],
+    connections: [],
     ...patch
   };
+  next.blocks = normaliseBlocks(patch.blocks || next.blocks);
+  next.connections = normaliseConnections(patch.connections || next.connections);
+  return next;
 }
 
 export function createDemoQuestFile() {
@@ -69,6 +104,16 @@ export function createDemoQuestFile() {
           createDefaultBlock('capra', { id: 'b4', name: 'Wrong Cup Warning', thumbnail: '🐐', condition: 'wrong_item_used', uiOverlay: 'capra_popup', capraFeedback: 'That is not the vessel the Calling seeks.' }),
           createDefaultBlock('codice', { id: 'b5', name: 'Update Codice', thumbnail: '📜', action: 'unlock_codice:codice_chalice_truth' }),
           createDefaultBlock('completion', { id: 'b6', name: 'Calling Fulfilled', thumbnail: '✅', condition: 'flag_true:chalice_delivered', uiOverlay: 'calling_fulfilled' })
+        ],
+        connections: [
+          createDefaultConnection(START_NODE_ID, 'b1', { id: 'c_start_enter' }),
+          createDefaultConnection('b1', 'b2', { id: 'c_enter_speak' }),
+          createDefaultConnection('b2', 'b3', { id: 'c_speak_collect' }),
+          createDefaultConnection('b3', 'b5', { id: 'c_collect_codice', sourcePort: 'out:0' }),
+          createDefaultConnection('b3', 'b4', { id: 'c_collect_warning', sourcePort: 'out:1', condition: 'wrong_item_used', label: 'wrong item' }),
+          createDefaultConnection('b4', 'b3', { id: 'c_warning_return', sourcePort: 'out:0', targetPort: 'in:1', label: 'try again' }),
+          createDefaultConnection('b5', 'b6', { id: 'c_codice_complete' }),
+          createDefaultConnection('b6', END_NODE_ID, { id: 'c_complete_end' })
         ]
       })
     ]
