@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.1.0';
+  const VERSION = '0.1.1';
 
   const CORE_DIRECTORIES = Object.freeze([
     'scenes',
@@ -46,9 +46,7 @@
   ]);
 
   function folderClient() {
-    if (!window.ArtifexProjectFolder) {
-      throw new Error('The shared project-folder client is not loaded.');
-    }
+    if (!window.ArtifexProjectFolder) throw new Error('The shared project-folder client is not loaded.');
     return window.ArtifexProjectFolder;
   }
 
@@ -72,6 +70,19 @@
       version: String(input.version || '0.1.0'),
       projectLogo: input.projectLogo || null,
       enabledModules: Array.isArray(input.enabledModules) ? input.enabledModules : []
+    };
+  }
+
+  function indexRefs() {
+    return {
+      sceneIndex: 'scenes/scene-index.json',
+      screenIndex: 'screens/screen-index.json',
+      questIndex: 'quests/quest-index.json',
+      sidequestIndex: 'sidequests/sidequest-index.json',
+      puzzleIndex: 'puzzles/puzzle-index.json',
+      objectArchetypeIndex: 'archetypes/object-index.json',
+      effectArchetypeIndex: 'archetypes/effect-index.json',
+      assetIndex: 'assets/asset-index.json'
     };
   }
 
@@ -102,14 +113,12 @@
         todos: 'todos/'
       },
       fileRefs: {
-        sceneIndex: 'scenes/scene-index.json',
-        screenIndex: 'screens/screen-index.json',
-        questIndex: 'quests/quest-index.json',
-        sidequestIndex: 'sidequests/sidequest-index.json',
-        puzzleIndex: 'puzzles/puzzle-index.json',
-        objectArchetypeIndex: 'archetypes/object-index.json',
-        effectArchetypeIndex: 'archetypes/effect-index.json',
-        assetIndex: 'assets/asset-index.json',
+        logic: 'logic.json',
+        layout: 'layout.json',
+        registry: 'registry.json',
+        libraryLinks: 'library-links.json',
+        inputMap: 'input-map.json',
+        ...indexRefs(),
         healthReport: 'health/latest-health-report.json'
       }
     };
@@ -130,8 +139,9 @@
     return {
       schemaVersion: 'artifex.layout.v1',
       projectId: project.projectId,
+      camera: { zoom: 1, panX: 0, panY: 0 },
       nodes: [],
-      camera: { x: 0, y: 0, zoom: 1 },
+      routes: [],
       annotations: []
     };
   }
@@ -141,7 +151,8 @@
       schemaVersion: 'artifex.registry.v1',
       projectId: project.projectId,
       enabledModules: project.enabledModules,
-      indexes: starterProjectJson(project).fileRefs
+      indexes: indexRefs(),
+      customMacros: []
     };
   }
 
@@ -157,15 +168,18 @@
     return {
       schemaVersion: 'artifex.input-map.v1',
       projectId: project.projectId,
-      actions: {
-        move: { input: 'd-pad', label: 'Move' },
-        invoke: { input: 'B', label: 'Invoke' },
-        useActiveItem: { input: 'A', label: 'Use Active Item' },
-        itemScroll: { input: 'X', label: 'Item Scroll Mode' },
-        reservedSpecial: { input: 'Y', label: 'Reserved Special' },
-        inventory: { input: 'Select', label: 'Kibisis Pouch' },
-        menu: { input: 'Start', label: 'Codice Cylinder of Yggdrasil' }
-      }
+      profileId: 'input_default_gameplay',
+      label: 'Default Gameplay Controls',
+      createdBy: 'creation-guide',
+      actions: [
+        { actionId: 'action_move', label: 'Move', category: 'movement', defaultKeyboard: ['ArrowKeys', 'WASD'], defaultGamepad: ['DPad', 'LeftStick'], required: true },
+        { actionId: 'action_invoke', label: 'Invoke / Interact', category: 'gameplay', defaultKeyboard: ['E', 'Enter'], defaultGamepad: ['B'], required: true },
+        { actionId: 'action_use_active_item', label: 'Use Active Item', category: 'gameplay', defaultKeyboard: ['Space'], defaultGamepad: ['A'], required: true },
+        { actionId: 'action_item_scroll_mode', label: 'Item Scroll Mode', category: 'inventory', defaultKeyboard: ['Tab'], defaultGamepad: ['X'], required: false },
+        { actionId: 'action_reserved_special', label: 'Reserved Special', category: 'gameplay', defaultKeyboard: [], defaultGamepad: ['Y'], required: false },
+        { actionId: 'action_inventory', label: 'Kibisis Pouch', category: 'inventory', defaultKeyboard: ['I'], defaultGamepad: ['Select'], required: true },
+        { actionId: 'action_menu', label: 'Codice Cylinder of Yggdrasil', category: 'system', defaultKeyboard: ['Escape'], defaultGamepad: ['Start'], required: true }
+      ]
     };
   }
 
@@ -229,17 +243,15 @@
     for (const [path, value] of Object.entries(starterFiles(project))) {
       results.push(await writeIfMissing(path, () => client.writeJson(path, value)));
     }
-    if (includeIntake) {
-      results.push(await writeIfMissing('intake/README.md', () => client.writeText('intake/README.md', intakeReadme(project))));
-    }
+    if (includeIntake) results.push(await writeIfMissing('intake/README.md', () => client.writeText('intake/README.md', intakeReadme(project))));
 
     return {
       project,
       includeIntake,
       directories,
       files: results,
-      createdFiles: results.filter((entry) => entry.status === 'created').map((entry) => entry.path),
-      existingFiles: results.filter((entry) => entry.status === 'existing').map((entry) => entry.path)
+      createdFiles: results.filter(entry => entry.status === 'created').map(entry => entry.path),
+      existingFiles: results.filter(entry => entry.status === 'existing').map(entry => entry.path)
     };
   }
 
