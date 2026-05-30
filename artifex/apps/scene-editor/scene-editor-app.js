@@ -11,7 +11,7 @@
   const coreApi = window.ArtifexSceneEditorCoreApi;
 
   function createSceneEditorApp() {
-    const VERSION = config.VERSION || 'v0.32-controls-resize-search';
+    const VERSION = config.VERSION || 'v0.33-inspector-controls-repair';
     const SETTINGS_KEY = config.SETTINGS_KEY || 'artifex.sceneEditor.settings.v1';
     const WORKING_COPY_KEY = config.WORKING_COPY_KEY || 'artifex.sceneEditor.workingCopy.v1';
     const DOWNLOAD_KEY = config.DOWNLOAD_KEY || 'artifex.sceneEditor.lastDownload.v1';
@@ -22,6 +22,7 @@
     const templateManifest = config.templateManifest || '../../templates/templates.json';
     const typeOptions = Array.isArray(config.typeOptions) ? config.typeOptions : ['prop', 'pickup', 'player_start', 'npc', 'foe', 'door', 'exit', 'overlay', 'background_layer', 'foreground_layer', 'hazard', 'searchable', 'marker', 'effect', 'ui'];
     const settings = storage.loadSettings(SETTINGS_KEY);
+    const INSPECTOR_LAYOUT_KEY = 'artifex.sceneEditor.objectInspector.layout.v1';
 
     document.title = `Artifex Scene Editor · ${VERSION}`;
     document.body.dataset.artifexCoreMoveDrag = 'true';
@@ -42,11 +43,26 @@
     let panelScroll = 0;
     let saveTimer = null;
     let lastWorkingCopySnapshot = '';
+    let activeProject = window.ArtifexActiveProject?.project || null;
+    let inspectorLayout = loadInspectorLayout();
     const collapsed = { json: true, ...(settings.collapsedCards || {}) };
 
     function getState() {
       return { scene, fileName, templates, selectedId, selectedKind, importOpen, templateOpen, context, status, tip, defaultZoom, zoom, showHighlight, collapsed };
     }
+
+    function loadInspectorLayout() {
+      try { return { left: 360, top: 92, closed: false, ...(JSON.parse(localStorage.getItem(INSPECTOR_LAYOUT_KEY) || '{}') || {}) }; }
+      catch { return { left: 360, top: 92, closed: false }; }
+    }
+
+    function saveInspectorLayout() {
+      try { localStorage.setItem(INSPECTOR_LAYOUT_KEY, JSON.stringify(inspectorLayout)); } catch {}
+    }
+
+    function getInspectorLayout() { return inspectorLayout; }
+    function setInspectorLayout(next) { inspectorLayout = { ...inspectorLayout, ...(next || {}) }; saveInspectorLayout(); }
+    function getActiveProject() { return activeProject; }
 
     function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
     function getScene() { return scene; }
@@ -155,7 +171,9 @@
       readWorkingCopy,
       readDownloadStamp,
       dateText: io.dateText,
-      clamp
+      clamp,
+      getActiveProject,
+      getInspectorLayout
     });
 
     function render(keepScroll = true) {
@@ -287,6 +305,7 @@
       setZoom,
       setSelectedId,
       toast,
+      setInspectorLayout,
       action,
       endMoveDrag: (...args) => moveDrag.end(...args),
       openObjectContext,
@@ -317,7 +336,15 @@
         if (context && !event.target.closest('.context-menu') && !event.target.closest('.scene-item') && !event.target.closest('#zoomReset')) { context = null; render(); }
         saveWorkingCopySoon('click');
       });
-      window.addEventListener('load', () => toast('Scene Editor loaded'));
+      window.addEventListener('artifex:active-project-ready', (event) => {
+        activeProject = event.detail?.project || window.ArtifexActiveProject?.project || null;
+        render();
+      });
+      window.addEventListener('load', () => {
+        activeProject = window.ArtifexActiveProject?.project || activeProject;
+        toast('Scene Editor loaded');
+        render();
+      });
       render(false);
     }
 

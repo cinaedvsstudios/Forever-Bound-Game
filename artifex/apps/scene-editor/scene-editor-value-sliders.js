@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const NUMERIC_SELECTORS = '.side-panel input[type="number"]';
+  const NUMERIC_SELECTORS = '.side-panel input[type="number"], .object-inspector input[type="number"]';
   const ignoredIds = new Set([]);
   const baselineValues = new Map();
   let resetMenu = null;
@@ -81,7 +81,7 @@
 
   function formatValue(value, step) {
     const decimals = Math.max(0, Math.min(4, decimalsFor(step)));
-    return Number(value).toFixed(decimals).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+    return Number(value).toFixed(decimals).replace(/(?:\.0+|(\.\d+?)0+)$/, '$1');
   }
 
 
@@ -159,14 +159,6 @@
     editor?.saveWorkingCopySoon?.('transform slider');
   }
 
-  function setInputValue(input, value) {
-    input.value = value;
-    applyTransformDirect(input, value);
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-    applyTransformDirect(input, value);
-  }
-
   function resetInput(input) {
     const cfg = configFor(input);
     const raw = resetValueFor(input);
@@ -176,7 +168,7 @@
     closeResetMenu();
   }
 
-  function syncSlider(input) {
+  function syncSlider(input, options = {}) {
     const field = input.closest('.value-slider-field-v18');
     const range = field?.querySelector('.value-slider-range-v18');
     const readout = field?.querySelector('.value-slider-readout-v18');
@@ -191,7 +183,37 @@
     range.setAttribute('aria-valuemax', String(cfg.max));
     range.setAttribute('aria-valuenow', String(value));
     range.style.setProperty('--value-slider-percent', `${cfg.max === cfg.min ? 0 : ((value - cfg.min) / (cfg.max - cfg.min)) * 100}%`);
-    if (readout) readout.textContent = input.value || '0';
+    if (readout) {
+      readout.min = String(cfg.min);
+      readout.max = String(cfg.max);
+      readout.step = 'any';
+      if (options.forceReadout || (document.activeElement !== readout && readout.dataset.userTyping !== 'true')) readout.value = input.value || '0';
+    }
+  }
+
+  function isCompleteNumericText(value) {
+    const text = String(value || '').trim();
+    if (!text || text === '-' || text === '+' || text.endsWith('.')) return false;
+    return /^[+-]?(?:\d+|\d*\.\d+)$/.test(text) && Number.isFinite(Number(text));
+  }
+
+  function setInputValue(input, value, options = {}) {
+    input.value = value;
+    applyTransformDirect(input, value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    if (options.commit !== false) input.dispatchEvent(new Event('change', { bubbles: true }));
+    applyTransformDirect(input, value);
+  }
+
+  function commitReadout(input, readout) {
+    const cfg = configFor(input);
+    delete readout.dataset.userTyping;
+    const raw = String(readout.value || '').trim();
+    const numeric = isCompleteNumericText(raw) ? Number(raw) : Number(input.value || resetValueFor(input) || 0);
+    const next = snap(clamp(numeric, cfg.min, cfg.max), cfg);
+    setInputValue(input, formatValue(next, cfg.step));
+    syncSlider(input, { forceReadout: true });
+    readout.type = 'number';
   }
 
   function valueFromPointer(track, clientX, cfg) {
@@ -243,9 +265,10 @@
   }
 
   function decorate(input) {
-    if (!input || ignoredIds.has(input.id) || input.dataset.v18ValueSlider === 'true') return;
+    if (!input || input.classList.contains('value-slider-readout-v18') || input.closest('.value-slider-control-v18') || ignoredIds.has(input.id) || input.dataset.v18ValueSlider === 'true') return;
     const field = input.closest('.field');
     if (!field) return;
+    field.querySelectorAll(':scope > .value-slider-control-v18').forEach((node) => node.remove());
     rememberBaseline(input);
     input.dataset.v18ValueSlider = 'true';
     field.classList.add('value-slider-field-v18');
@@ -263,15 +286,27 @@
       <input class="value-slider-range-v18" type="range" min="${cfg.min}" max="${cfg.max}" step="${cfg.step}" value="${escAttr(input.value || 0)}" aria-label="${escapedLabel} slider" title="Adjust ${escapedLabel}">
       <div class="value-slider-stepper-v18">
         <button class="value-slider-step-v18" type="button" data-step-dir="-1" aria-label="Decrease ${escapedLabel}" title="Decrease ${escapedLabel}">&lt;</button>
-        <span class="value-slider-readout-v18" aria-live="polite"></span>
+        <input class="value-slider-readout-v18" type="number" inputmode="decimal" aria-label="${escapedLabel} exact value">
         <button class="value-slider-step-v18" type="button" data-step-dir="1" aria-label="Increase ${escapedLabel}" title="Increase ${escapedLabel}">&gt;</button>
       </div>`;
 
     const range = control.querySelector('.value-slider-range-v18');
+    const readoutInput = control.querySelector('.value-slider-readout-v18');
     const stepButtons = control.querySelectorAll('.value-slider-step-v18');
     input.classList.add('value-slider-source-v18');
     input.setAttribute('aria-hidden', 'true');
     input.tabIndex = -1;
+    if (readoutInput) {
+      readoutInput.min = String(cfg.min);
+      readoutInput.max = String(cfg.max);
+      readoutInput.step = 'any';
+    }
+
+    readoutInput?.addEventListener('focus', () => {
+      readoutInput.type = 'text';
+      readoutInput.inputMode = 'decimal';
+      readoutInput.dataset.userTyping = 'true';
+    });
 
     range.addEventListener('input', () => {
       setInputValue(input, range.value);
@@ -281,7 +316,25 @@
       setInputValue(input, range.value);
       syncSlider(input);
     });
+    range.addEventListener('pointerdown', (event) => startCustomDrag(event, input, range));
     range.addEventListener('contextmenu', (event) => showResetMenu(event, input));
+    readoutInput?.addEventListener('input', () => {
+      if (!isCompleteNumericText(readoutInput.value)) return;
+      readoutInput.dataset.userTyping = 'true';
+      const typedValue = readoutInput.value;
+      const cfgNow = configFor(input);
+      const next = clamp(Number(typedValue), cfgNow.min, cfgNow.max);
+      setInputValue(input, String(next), { commit: false });
+      syncSlider(input);
+      if (document.activeElement === readoutInput) readoutInput.value = typedValue;
+    });
+    readoutInput?.addEventListener('change', () => commitReadout(input, readoutInput));
+    readoutInput?.addEventListener('blur', () => commitReadout(input, readoutInput));
+    readoutInput?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      commitReadout(input, readoutInput);
+      readoutInput.blur();
+    });
     stepButtons.forEach((button) => {
       button.addEventListener('click', (event) => {
         const cfgNow = configFor(input);
@@ -324,8 +377,8 @@
 
   window.addEventListener('load', decorateAll);
   document.addEventListener('click', decorateAll, true);
-  document.addEventListener('input', decorateAll, true);
-  document.addEventListener('change', decorateAll, true);
+  document.addEventListener('input', (event) => { if (!event.target.closest?.('.value-slider-control-v18')) decorateAll(); }, true);
+  document.addEventListener('change', (event) => { if (!event.target.closest?.('.value-slider-control-v18')) decorateAll(); }, true);
   document.addEventListener('pointerup', decorateAll, true);
   setInterval(decorateAll, 900);
   decorateAll();

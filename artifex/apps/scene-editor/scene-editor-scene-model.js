@@ -10,7 +10,7 @@
   }
 
   function blankScene() {
-    return { id: '', name: 'Untitled Scene', mode: 'blank', screenType: 'blank', background: '', backgroundScroll: false, grid: { columns: 16, rows: 9, show: true }, layers: [], elements: [], ui: [], audio: {} };
+    return { id: '', name: 'Untitled Scene', mode: 'blank', screenType: 'blank', tags: [], background: '', backgroundScroll: false, grid: { columns: 16, rows: 9, show: true }, layers: [], elements: [], ui: [], audio: { ambience: '', music: '', volume: 100, loop: true, fadeIn: 0, fadeOut: 0 } };
   }
 
   function collectionKey(kind) {
@@ -50,6 +50,12 @@
     scene.name ||= scene.title || label || 'Untitled Scene';
     scene.screenType ||= scene.mode || 'scene';
     scene.mode ||= scene.screenType;
+    scene.tags = Array.isArray(scene.tags) ? scene.tags : (scene.tags ? String(scene.tags).split(',').map(tag => tag.trim()).filter(Boolean) : []);
+    scene.audio = { ambience: '', music: '', volume: 100, loop: true, fadeIn: 0, fadeOut: 0, ...(scene.audio && typeof scene.audio === 'object' ? scene.audio : {}) };
+    scene.audio.volume = Number(scene.audio.volume ?? 100);
+    scene.audio.loop = scene.audio.loop !== false;
+    scene.audio.fadeIn = Number(scene.audio.fadeIn || 0);
+    scene.audio.fadeOut = Number(scene.audio.fadeOut || 0);
     scene.grid ||= { columns: 16, rows: 9, show: true };
     scene.grid.columns = Number(scene.grid.columns || 16);
     scene.grid.rows = Number(scene.grid.rows || 9);
@@ -96,6 +102,16 @@
   function applyPath(scene, selectedKind, selectedId, target, value) {
     if (target === 'background') {
       setBackgroundPath(scene, value);
+      return;
+    }
+    if (target === 'sceneAudioAmbience') {
+      scene.audio = scene.audio || {};
+      scene.audio.ambience = value;
+      return;
+    }
+    if (target === 'sceneAudioMusic') {
+      scene.audio = scene.audio || {};
+      scene.audio.music = value;
       return;
     }
     const item = findItem(scene, selectedKind, selectedId);

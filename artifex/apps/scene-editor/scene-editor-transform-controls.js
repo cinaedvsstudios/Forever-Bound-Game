@@ -358,16 +358,14 @@
   if (document.body.dataset.v17TransformWired !== 'true') {
     document.body.dataset.v17TransformWired = 'true';
     document.addEventListener('pointerdown', (event) => {
-      const resizeHandle = event.target.closest?.('.resize-handle');
       const rotateHandle = event.target.closest?.('.rotate-knob-v17');
       if (rotateHandle) beginRotate(event);
-      else if (resizeHandle) beginSize(event, resizeHandle);
     }, true);
-    document.addEventListener('pointermove', (event) => { if (activeRotate) moveRotate(event); else moveSize(event); }, true);
-    document.addEventListener('pointerup', () => { endRotate(); endSize(); runTransformShell(); }, true);
-    document.addEventListener('pointercancel', () => { endRotate(); endSize(); }, true);
+    document.addEventListener('pointermove', (event) => { if (activeRotate) moveRotate(event); }, true);
+    document.addEventListener('pointerup', () => { endRotate(); runTransformShell(); }, true);
+    document.addEventListener('pointercancel', () => { endRotate(); }, true);
     document.addEventListener('click', handleTransformAction, true);
-    window.addEventListener('blur', () => { endRotate(); endSize(); });
+    window.addEventListener('blur', () => { endRotate(); });
   }
 
   window.addEventListener('load', runTransformShell);

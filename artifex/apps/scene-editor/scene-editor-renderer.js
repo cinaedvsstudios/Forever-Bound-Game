@@ -16,12 +16,15 @@
       const state = deps.getState();
       const working = deps.readWorkingCopy();
       const downloaded = deps.readDownloadStamp();
-      return `<div class="file-pill"><span class="file-pill-line file-pill-project"><span class="file-pill-icon">🏗️</span><span class="file-pill-label">Project:</span> <span class="file-pill-value">Forever Bound Game</span></span><span class="file-pill-line file-pill-file"><span class="file-pill-icon">📁</span><span class="file-pill-label">File:</span> <span class="file-pill-value file-pill-name">${esc(state.fileName || 'Untitled JSON')}</span></span><span class="file-pill-line file-pill-save"><span class="file-pill-icon">💾</span><span class="file-pill-label">Local:</span> <span class="file-pill-value">${esc(deps.dateText(working?.savedAt))}</span> <span class="file-pill-sep">|</span> <span class="file-pill-label">HDD:</span> <span class="file-pill-value">${esc(deps.dateText(downloaded?.downloadedAt))}</span></span></div>`;
+      const activeProject = deps.getActiveProject?.();
+      const projectText = activeProject?.projectName || activeProject?.projectId || 'No active project — Choose in Hub';
+      const projectClass = activeProject ? '' : ' file-pill-no-project';
+      return `<div class="file-pill${projectClass}"><span class="file-pill-line file-pill-project"><span class="file-pill-icon">🏗️</span><span class="file-pill-label">Project:</span> <span class="file-pill-value">${esc(projectText)}</span></span><span class="file-pill-line file-pill-file"><span class="file-pill-icon">📁</span><span class="file-pill-label">File:</span> <span class="file-pill-value file-pill-name">${esc(state.fileName || 'Untitled JSON')}</span></span><span class="file-pill-line file-pill-save"><span class="file-pill-icon">💾</span><span class="file-pill-label">Local:</span> <span class="file-pill-value">${esc(deps.dateText(working?.savedAt))}</span> <span class="file-pill-sep">|</span> <span class="file-pill-label">HDD:</span> <span class="file-pill-value">${esc(deps.dateText(downloaded?.downloadedAt))}</span></span></div>`;
     }
 
     function resumeMarkup() {
       const working = deps.readWorkingCopy();
-      if (!working?.scene) return `<span>Import a JSON from hard drive, URL, or templates to begin.</span><div class="artifex-version-marker">${deps.version} input-stability build</div>`;
+      if (!working?.scene) return `<span>Import a JSON from hard drive, URL, or templates to begin.</span><div class="artifex-version-marker">${deps.version} inspector-controls repair build</div>`;
       const downloaded = deps.readDownloadStamp();
       return `<div class="resume-card-inline"><h3>Start where you left off?</h3><p>You were last working on:</p><strong>${esc(working.fileName || working.scene.id || 'Untitled JSON')}</strong><p>Last local backup: ${esc(deps.dateText(working.savedAt))}</p><p>Last downloaded: ${esc(deps.dateText(downloaded?.downloadedAt))}</p><div class="resume-actions"><button class="btn" id="openLocalBackup" type="button">Open local backup</button><button class="btn" id="ignoreLocalBackup" type="button">Ignore</button></div></div>`;
     }
@@ -38,6 +41,8 @@
 
     function input(label, id, value, type = 'text') { return `<div class="field"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(value)}"></div>`; }
 
+    function checkbox(label, id, checked) { return `<label class="check-row"><input id="${id}" type="checkbox" ${checked ? 'checked' : ''}> ${esc(label)}</label>`; }
+
     function settingsSearch() {
       return `<div class="settings-search" role="search"><label class="settings-search-label" for="settingsSearch">Search Settings</label><input id="settingsSearch" type="search" placeholder="Search settings…" title="Search settings by card title or visible control label" aria-label="Search settings by card title or visible control label" autocomplete="off"><p class="settings-search-empty" id="settingsSearchEmpty" hidden>No matching settings</p></div>`;
     }
@@ -52,10 +57,15 @@
 
     function basics() {
       const scene = deps.getState().scene;
-      return `${input('Scene ID', 'sceneId', scene.id)}${input('Scene Name', 'sceneName', scene.name)}${input('Screen Type', 'sceneType', scene.screenType || scene.mode)}<div class="field-row">${input('Grid Columns', 'gridCols', scene.grid.columns, 'number')}${input('Grid Rows', 'gridRows', scene.grid.rows, 'number')}</div><label class="check-row"><input id="gridShow" type="checkbox" ${scene.grid.show !== false ? 'checked' : ''}> Show grid</label>`;
+      return `${input('Scene ID', 'sceneId', scene.id)}${input('Scene Name', 'sceneName', scene.name)}${input('Screen Type', 'sceneType', scene.screenType || scene.mode)}${input('Scene Tags', 'sceneTags', Array.isArray(scene.tags) ? scene.tags.join(', ') : scene.tags || '')}<div class="field-row">${input('Grid Columns', 'gridCols', scene.grid.columns, 'number')}${input('Grid Rows', 'gridRows', scene.grid.rows, 'number')}</div><label class="check-row"><input id="gridShow" type="checkbox" ${scene.grid.show !== false ? 'checked' : ''}> Show grid</label>`;
     }
 
     function background() { return `${pathInput('Background Image Path', 'sceneBg', deps.backgroundPath(), 'background')}`; }
+
+    function sceneAudio() {
+      const audio = deps.getState().scene.audio || {};
+      return `${pathInput('Ambience Audio Path', 'sceneAudioAmbience', audio.ambience || audio.ambient || '', 'sceneAudioAmbience')}${pathInput('Music Track Path', 'sceneAudioMusic', audio.music || audio.track || '', 'sceneAudioMusic')}<div class="field-row">${input('Scene Volume', 'sceneAudioVolume', audio.volume ?? 100, 'number')}${input('Fade In Seconds', 'sceneAudioFadeIn', audio.fadeIn ?? 0, 'number')}${input('Fade Out Seconds', 'sceneAudioFadeOut', audio.fadeOut ?? 0, 'number')}</div>${checkbox('Loop scene audio', 'sceneAudioLoop', audio.loop !== false)}`;
+    }
 
     function elements() {
       const state = deps.getState();
@@ -64,15 +74,14 @@
     }
 
     function selectedForm(item) {
-      item.tags = Array.isArray(item.tags) ? item.tags : [];
-      return `${input('ID', 'itemId', item.id)}${input('Name', 'itemName', item.name || item.label || '')}${typeSelect(item.type || '')}${pathInput('Image Path', 'itemImage', item.image || '', 'item')}${input('Text', 'itemText', item.text || '')}<div class="field-row">${input('X Axis', 'itemX', item.x ?? 10, 'number')}${input('Y Axis', 'itemY', item.y ?? 10, 'number')}</div><div class="field-row">${input('Width', 'itemW', item.width ?? 10, 'number')}${input('Height', 'itemH', item.height ?? 10, 'number')}</div><div class="field-row">${input('Layer', 'itemLayer', item.layer ?? item.z ?? 10, 'number')}<div class="field"><label>Z / Depth <span class="range-value" id="zVal">${esc(item.zDepth ?? 0)}</span></label><input id="itemZ" type="number" min="-20" max="20" step="1" value="${esc(item.zDepth ?? 0)}"></div></div><label class="check-row"><input id="itemVisible" type="checkbox" ${item.visible !== false ? 'checked' : ''}> Visible</label>${input('Tags', 'itemTags', item.tags.join(', '))}<div class="button-row"><button class="btn" id="deleteItem" type="button">Delete Selected</button></div>`;
+      return `${input('ID', 'itemId', item.id)}${input('Name', 'itemName', item.name || item.label || '')}${typeSelect(item.type || '')}${pathInput('Image Path', 'itemImage', item.image || '', 'item')}${input('Text', 'itemText', item.text || '')}<div class="field-row">${input('X Axis', 'itemX', item.x ?? 10, 'number')}${input('Y Axis', 'itemY', item.y ?? 10, 'number')}</div><div class="field-row">${input('Width', 'itemW', item.width ?? 10, 'number')}${input('Height', 'itemH', item.height ?? 10, 'number')}</div><div class="field-row">${input('Layer', 'itemLayer', item.layer ?? item.z ?? 10, 'number')}<div class="field"><label>Z / Depth <span class="range-value" id="zVal">${esc(item.zDepth ?? 0)}</span></label><input id="itemZ" type="number" min="-20" max="20" step="1" value="${esc(item.zDepth ?? 0)}"></div></div><label class="check-row"><input id="itemVisible" type="checkbox" ${item.visible !== false ? 'checked' : ''}> Visible</label><div class="button-row"><button class="btn" id="deleteItem" type="button">Delete Selected</button></div>`;
     }
 
     function controlPanel() {
       const state = deps.getState();
       if (!state.scene) return `<aside class="side-panel"><div class="file-pill">No file loaded</div>${settingsSearch()}${card('blank', 'No Scene Loaded', `<p class="small">Use Import to load a JSON from hard drive, URL, or templates.</p>`, 'basics')}</aside>`;
       const item = deps.getSelectedItem();
-      return `<aside class="side-panel">${filePill()}${settingsSearch()}${card('basics', 'Scene', basics(), 'basics')}${card('background', 'Background', background(), 'basics')}${card('elements', 'Object Layers', elements(), 'elements')}${card('selected', 'Selected Details', item ? selectedForm(item) : '<p class="small">Select an object.</p>', 'selected')}${card('json', 'JSON Preview', `<pre class="json-preview">${esc(JSON.stringify(state.scene, null, 2))}</pre>`, 'json')}</aside>`;
+      return `<aside class="side-panel">${filePill()}${settingsSearch()}${card('basics', 'Scene', basics(), 'basics')}${card('background', 'Background', background(), 'basics')}${card('scene-audio', 'Scene Audio', sceneAudio(), 'basics')}${card('elements', 'Object Layers', elements(), 'elements')}${card('json', 'JSON Preview', `<pre class="json-preview">${esc(JSON.stringify(state.scene, null, 2))}</pre>`, 'json')}</aside>`;
     }
 
     function letters(i) { let n = i + 1, s = ''; while (n > 0) { const r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = Math.floor((n - 1) / 26); } return s; }
@@ -83,7 +92,7 @@
       const state = deps.getState();
       if (item.visible === false) return '';
       const zDepth = Number(item.zDepth || 0), scale = deps.clamp(1 + zDepth * .035, .45, 2.15);
-      const img = item.image ? `<img src="${esc(assetPath(item.image))}" alt="${esc(item.name || item.id)}">` : `<span class="small">${esc(item.text || item.type || item.id)}</span>`;
+      const img = item.image ? `<svg class="scene-image-v33" role="img" aria-label="${esc(item.name || item.id)}" viewBox="0 0 100 100" preserveAspectRatio="none"><image href="${esc(assetPath(item.image))}" width="100" height="100" preserveAspectRatio="none"></image></svg>` : `<span class="small">${esc(item.text || item.type || item.id)}</span>`;
       return `<div class="scene-item ${item.id === state.selectedId ? 'is-selected' : ''}" data-stage-id="${esc(item.id)}" data-stage-kind="${item.kind}" style="left:${item.x ?? 10}%;top:${item.y ?? 10}%;width:${item.width ?? 10}%;height:${item.height ?? 10}%;z-index:${item.layer ?? item.z ?? 1};transform:scale(${scale});">${img}<button class="move-handle" type="button" title="Drag here to move this object" aria-label="Move object"></button><span class="item-label">${esc(item.name || item.id)}</span></div>`;
     }
 
@@ -110,8 +119,18 @@
       return `<div class="context-menu" style="left:${state.context.x}px;top:${state.context.y}px"><div class="context-menu-head"><strong>${esc(item.name || item.id)}</strong><span>${esc(item.type || state.context.kind)}</span></div><button data-action="zoomObject">Zoom to object</button><button data-action="props">Properties</button><button data-action="duplicate">Duplicate</button><button data-action="remove">Delete</button></div>`;
     }
 
+    function objectInspector() {
+      const item = deps.getSelectedItem();
+      if (!item) return '';
+      const layout = deps.getInspectorLayout?.() || { left: 360, top: 92, closed: false };
+      const closed = layout.closed ? ' is-minimized' : '';
+      const left = Math.max(12, Number(layout.left || 360));
+      const top = Math.max(80, Number(layout.top || 92));
+      return `<section class="object-inspector${closed}" id="objectInspector" data-settings-scope="object-inspector" style="left:${left}px;top:${top}px"><header class="object-inspector-title" id="objectInspectorHandle"><div><strong>Object Inspector</strong><span>${esc(item.name || item.id)}</span></div><button class="object-inspector-minimize" id="objectInspectorMinimize" type="button" aria-label="Minimize Object Inspector">${layout.closed ? '▣' : '—'}</button></header><div class="object-inspector-body">${card('selected', 'Object Details', selectedForm(item), 'selected')}</div></section>`;
+    }
+
     function shell() {
-      return `<div class="editor-shell">${titleBar()}<main class="main-layout">${controlPanel()}${workArea()}</main></div>${templateModal()}${contextMenu()}<input class="hidden-file" id="imageFile" type="file" accept="image/*,.svg,.webp,.gif,.png,.jpg,.jpeg">`;
+      return `<div class="editor-shell">${titleBar()}<main class="main-layout">${controlPanel()}${workArea()}</main></div>${objectInspector()}${templateModal()}${contextMenu()}<input class="hidden-file" id="imageFile" type="file" accept="image/*,.svg,.webp,.gif,.png,.jpg,.jpeg">`;
     }
 
     return { shell, workArea, esc, assetPath };

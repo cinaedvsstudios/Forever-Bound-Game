@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = window.ArtifexSceneEditorCore?.getVersion?.() || window.ArtifexSceneEditorConfig?.VERSION || 'v0.32-controls-resize-search';
+  const VERSION = window.ArtifexSceneEditorCore?.getVersion?.() || window.ArtifexSceneEditorConfig?.VERSION || 'v0.33-inspector-controls-repair';
   const LAYER_LOCK_KEY = 'artifex.sceneEditor.layerLocks.v1';
   const BORDER_KEY = 'artifex.sceneEditor.borderHidden.v1';
   const ASSET_MANIFEST = '../../assets-library/asset-library.json';
@@ -151,33 +151,48 @@
     return row;
   }
 
-  function buildMetricTable() {
-    const x = hideFieldLabel(field('itemX'));
-    const y = hideFieldLabel(field('itemY'));
-    const z = hideFieldLabel(field('itemZ'));
-    const height = hideFieldLabel(field('itemH'));
-    const width = hideFieldLabel(field('itemW'));
-    const layer = hideFieldLabel(field('itemLayer'));
-    if (!x || !y || !z || !height || !width || !layer) return null;
-
+  function sizeShapeGroup() {
     const up = iconButton('scale-step-btn scale-up-btn', '↑', 'Scale width and height up by 2');
     const down = iconButton('scale-step-btn scale-down-btn', '↓', 'Scale width and height down by 2');
-    const wrap = iconButton('wrap-image-btn', '◺', 'Wrap image to aspect ratio');
+    const wrap = iconButton('wrap-image-btn', '◺', 'Wrap Bounding Box to Image');
     wireScale(up, 2);
     wireScale(down, -2);
     wireWrap(wrap);
 
-    const table = document.createElement('div');
-    table.className = 'selected-metric-table-v13c selected-metric-table-v15';
-    table.append(
-      metricLabel('X Axis'), metricLabel('Scale', 'metric-label-center'), metricLabel('Height'),
-      metricValue(x), metricValue(iconRow(up, down), 'metric-icon-value'), metricValue(height),
-      metricLabel('Y Axis'), metricLabel('', 'metric-label-center'), metricLabel('Width'),
-      metricValue(y), metricValue(iconRow(wrap), 'metric-icon-value'), metricValue(width),
-      metricLabel('Z / Depth'), metricLabel('', 'metric-label-center'), metricLabel('Layer'),
-      metricValue(z), metricValue(null, 'metric-blank-value'), metricValue(layer)
-    );
-    return table;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'size-shape-controls-v33';
+    wrapper.innerHTML = '<h3>Size / Shape</h3>';
+
+    const scaleRow = document.createElement('div');
+    scaleRow.className = 'size-shape-row-v33';
+    scaleRow.append(metricLabel('Scale'), metricValue(iconRow(up, down), 'metric-icon-value'));
+
+    const wrapRow = document.createElement('div');
+    wrapRow.className = 'size-shape-row-v33';
+    wrapRow.append(metricLabel('Bounding Box / Wrap Image'), metricValue(iconRow(wrap), 'metric-icon-value'));
+
+    const aspectRow = document.createElement('div');
+    aspectRow.className = 'size-shape-row-v33 aspect-row-v33';
+    const aspectSlot = document.createElement('div');
+    aspectSlot.className = 'aspect-lock-slot-v33 metric-icon-value';
+    aspectRow.append(metricLabel('Aspect Ratio Lock'), metricValue(aspectSlot, 'metric-icon-value'));
+
+    wrapper.append(scaleRow, wrapRow, aspectRow);
+    return wrapper;
+  }
+
+  function buildMetricTable() {
+    const x = field('itemX');
+    const y = field('itemY');
+    const z = field('itemZ');
+    const height = field('itemH');
+    const width = field('itemW');
+    const layer = field('itemLayer');
+    if (!x || !y || !z || !height || !width || !layer) return null;
+
+    const wrapper = group(2, 'transform-metrics-v33');
+    [x, y, width, height, z, layer].forEach((node) => wrapper.appendChild(cell(node)));
+    return wrapper;
   }
 
   function fieldMarkup(label, value = '', kind = 'input', options = []) {
@@ -350,33 +365,31 @@
     const alreadyClean = selected.dataset.v15Object === objectId &&
       document.querySelector('[data-card-id="transform-v15"]') &&
       document.querySelector('[data-card-id="visual-v15"]') &&
-      document.querySelector('[data-card-id="animation-v15"]') &&
-      document.querySelector('[data-card-id="audio-v15"]') &&
+      !document.querySelector('[data-card-id="animation-v15"]') &&
+      !document.querySelector('[data-card-id="audio-v15"]') &&
       !selectedBody.querySelector('.selected-metric-table-v13c, .visual-effects-placeholder-group, .selected-tags-group, .selected-tools-layout-group');
     if (alreadyClean) return;
 
     const identity = identityGroup();
-    const table = document.querySelector('.selected-metric-table-v13c') || buildMetricTable();
-    if (!identity || !table) return;
+    const table = buildMetricTable();
+    const sizeShape = sizeShapeGroup();
+    if (!identity || !table || !sizeShape) return;
 
     const selectedTitle = selected.querySelector('h2 span');
     if (selectedTitle) selectedTitle.textContent = 'Object Details';
 
     const transform = buildCard('transform-v15', 'Transform');
     const visual = buildCard('visual-v15', 'Visual Adjustments');
-    const animation = buildCard('animation-v15', 'Animation');
-    const audio = buildCard('audio-v15', 'Audio');
-    selected.after(transform, visual, animation, audio);
+    document.querySelector('[data-card-id="animation-v15"]')?.remove();
+    document.querySelector('[data-card-id="audio-v15"]')?.remove();
+    selected.after(transform, visual);
 
     const transformBody = transform.querySelector('.card-body');
-    transformBody.replaceChildren(table, rotateBlock());
-    const tags = tagsGroup();
+    transformBody.replaceChildren(rotateBlock(), sizeShape, table);
     const tools = toolsGroup();
-    if (tags) transformBody.appendChild(tags);
     if (tools) transformBody.appendChild(tools);
     visual.querySelector('.card-body').replaceChildren(visualBody());
-    animation.querySelector('.card-body').replaceChildren(animationBody());
-    audio.querySelector('.card-body').replaceChildren(audioBody());
+
     selectedBody.replaceChildren(identity);
     selected.dataset.v15Object = objectId;
     applyBorders();

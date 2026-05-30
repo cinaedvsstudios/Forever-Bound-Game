@@ -2,14 +2,12 @@
   'use strict';
 
   const STORAGE_KEY = 'artifex.sceneEditor.cardCollapse.v20';
-  const MANAGED_IDS = ['selected', 'transform-v15', 'visual-v15', 'animation-v15', 'audio-v15'];
+  const MANAGED_IDS = ['selected', 'transform-v15', 'visual-v15'];
   const SUBCARD_IDS = MANAGED_IDS.slice(1);
   const TITLES = {
     selected: 'Object Details',
     'transform-v15': 'Transform',
-    'visual-v15': 'Visual Adjustments',
-    'animation-v15': 'Animation',
-    'audio-v15': 'Audio'
+    'visual-v15': 'Visual Adjustments'
   };
 
   let applying = false;

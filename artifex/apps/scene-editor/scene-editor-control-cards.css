@@ -132,6 +132,7 @@ body.is-handle-moving .scene-item.is-selected .move-handle {
 }
 
 .scene-item img,
+.scene-item .scene-image-v33,
 .scene-item .item-label {
   pointer-events: none;
 }
@@ -521,4 +522,44 @@ body.is-handle-moving .scene-item.is-selected .move-handle {
   .file-pill {
     grid-template-columns: minmax(0, 1fr) !important;
   }
+}
+
+.size-shape-controls-v33 {
+  display: grid;
+  gap: 7px;
+  width: 100%;
+  margin: 8px 0;
+  padding: 9px;
+  border: 1px solid rgba(102, 199, 255, 0.24);
+  border-radius: 12px;
+  background: rgba(8, 12, 17, 0.44);
+}
+
+.size-shape-controls-v33 h3 {
+  margin: 0 0 2px;
+  color: #d8ecff;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 10px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.size-shape-row-v33 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.size-shape-row-v33 .metric-label-cell {
+  color: rgba(241, 220, 194, 0.9) !important;
+}
+
+.aspect-lock-slot-v33 {
+  display: inline-flex;
+  justify-content: center;
+}
+
+.transform-metrics-v33 {
+  margin-top: 8px;
 }
