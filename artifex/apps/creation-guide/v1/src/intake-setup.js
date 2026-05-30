@@ -17,15 +17,13 @@ function installInitialAssetIntakeSetup() {
 }
 
 function wireIntakeTestDataCleanup() {
+  const action = "if(confirm('Clear Artifex project test data from this browser?')){localStorage.removeItem('artifex.projectLibrary');localStorage.removeItem('artifex.activeProjectId');Object.keys(localStorage).filter(function(key){return key.indexOf('artifex.creationGuide.intakeSetup.')===0;}).forEach(function(key){localStorage.removeItem(key);});location.reload();}";
   ['clear-project-data-button', 'clear-project-data-toolbar-button'].forEach(id => {
     const button = document.getElementById(id);
     if (!button || button.dataset.intakeCleanupWired === 'true') return;
     button.dataset.intakeCleanupWired = 'true';
-    button.addEventListener('click', clearAllIntakeSetupTestState, true);
+    button.setAttribute('onclick', action);
   });
-}
-function clearAllIntakeSetupTestState() {
-  Object.keys(localStorage).filter(key => key.startsWith(INTAKE_SETUP_KEY_PREFIX)).forEach(key => localStorage.removeItem(key));
 }
 
 function getCurrentIntakeSetupState() {
