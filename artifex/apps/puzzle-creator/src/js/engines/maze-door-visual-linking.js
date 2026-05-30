@@ -4,6 +4,7 @@
 // Door movement and connection placement remain owned by maze-connections.js.
 // Portal visual/effect selection remains pending the later Portal Registry stage.
 
+import '../../../../../shared/project-folder/project-folder-client.js?v=0.1.0';
 import { openRegisteredContentPicker } from '../../../../../shared/registered-content/registered-content-picker.js?v=1.30';
 
 const $ = (id) => document.getElementById(id);
@@ -26,7 +27,7 @@ function selectedPair() {
 }
 
 function bindRefreshTriggers() {
-  window.addEventListener('artifex-maze-connections-updated', refreshDoorVisualEditor);
+  window.addEventListener('artifex-maze-connections-updated', () => setTimeout(refreshDoorVisualEditor, 0));
   window.addEventListener('artifex-maze-feature-add-instance', () => setTimeout(refreshDoorVisualEditor, 0));
   document.addEventListener('click', (event) => {
     if (event.target.closest('[data-connection]')) setTimeout(refreshDoorVisualEditor, 0);
@@ -57,6 +58,7 @@ function setLegacyPendingNoteVisibility(pair) {
 function refreshDoorVisualEditor() {
   const pair = selectedPair();
   setLegacyPendingNoteVisibility(pair);
+  annotateConnectionList();
   const editor = ensureEditor();
   if (!editor) return;
   if (!pair || pair.type !== 'door') {
@@ -80,7 +82,6 @@ function refreshDoorVisualEditor() {
   `;
   editor.querySelector('[data-door-link-visual]')?.addEventListener('click', () => openDoorVisualPicker(pair.id));
   editor.querySelector('[data-door-unlink-visual]')?.addEventListener('click', () => unlinkDoorVisual(pair.id));
-  annotateConnectionList();
 }
 
 function openDoorVisualPicker(pairId) {
@@ -124,12 +125,19 @@ function annotateConnectionList() {
   if (!state || !list) return;
   list.querySelectorAll('[data-connection]').forEach((button) => {
     const pair = state.pairs.find((entry) => entry.id === button.dataset.connection);
-    if (!pair || pair.type !== 'door' || !pair.visualAssetId) return;
     const existing = button.querySelector('.door-visual-list-note');
-    if (existing) return;
+    if (!pair || pair.type !== 'door' || !pair.visualAssetId) {
+      existing?.remove();
+      return;
+    }
+    const text = `Visual: ${pair.visualAssetLabel || pair.visualAssetId}`;
+    if (existing) {
+      existing.textContent = text;
+      return;
+    }
     const note = document.createElement('small');
     note.className = 'door-visual-list-note';
-    note.textContent = `Visual: ${pair.visualAssetLabel || pair.visualAssetId}`;
+    note.textContent = text;
     button.appendChild(note);
   });
 }
