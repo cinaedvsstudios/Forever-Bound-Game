@@ -65,7 +65,7 @@ function renderProjectHealthPanel() {
         <button type="button" id="health-refresh-button">🔄 Refresh</button>
       </div>
       <footer class="project-health-footer">
-        This panel is a Creation Guide readiness view. The deeper cross-app project loading work is now tracked globally in <code>todo_all_apps_active_project_runtime_integration</code>.
+        This panel reports the current Creation Guide setup state. Direct project-folder saving is beginning here; full cross-app project loading remains tracked globally in <code>todo_all_apps_active_project_runtime_integration</code>.
       </footer>
     </section>`;
 
@@ -79,7 +79,7 @@ function renderProjectHealthPanel() {
     lastHealthHtml = html;
     existing.outerHTML = html;
   }
-  wireHealthActionButtons();
+  if (typeof wireHealthActionButtons === 'function') wireHealthActionButtons();
 }
 
 function renderHealthCheckCard(check) {
@@ -105,6 +105,9 @@ function getProjectHealthChecks() {
   const gatesComplete = ['project-index', 'folders', 'manifest', 'flatplan', 'indexes'].every(id => document.querySelector(`[data-gate="${id}"]`)?.classList.contains('complete'));
   const assignmentText = document.getElementById('assignment-count')?.textContent || '';
   const assignmentCount = Number((assignmentText.match(/\d+/) || ['0'])[0]);
+  const folderState = window.ArtifexProjectFolder?.getState?.() || null;
+  const folderConnected = folderState?.folderStatus === 'connected';
+  const permissionRequired = folderState?.folderStatus === 'permission-required';
 
   return [
     {
@@ -117,15 +120,15 @@ function getProjectHealthChecks() {
     {
       title: 'Creator metadata',
       state: creator ? 'ready' : 'warning',
-      description: creator ? creator : 'Creator/studio is useful for exported README and project metadata.',
+      description: creator ? creator : 'Creator/studio is useful for README and project metadata.',
       owner: 'Creation Guide',
       weight: 0
     },
     {
-      title: 'Local project folder',
-      state: localPath ? 'ready' : 'missing',
-      description: localPath || 'Choose or type where the starter project folder will be unzipped.',
-      owner: 'Creation Guide',
+      title: 'Connected project folder',
+      state: folderConnected ? 'ready' : permissionRequired ? 'missing' : 'missing',
+      description: folderConnected ? `Writable folder connected: ${folderState.folderName || localPath || 'project folder'}.` : permissionRequired ? 'The project folder is remembered, but write access must be re-authorised.' : 'Connect a writable project folder so Creation Guide can save starter files directly.',
+      owner: 'Creation Guide / Shared Folder Service',
       weight: 1
     },
     {
@@ -143,9 +146,9 @@ function getProjectHealthChecks() {
       weight: deployedUrl ? 1 : 0
     },
     {
-      title: 'Starter files exported',
+      title: 'Starter project structure',
       state: gatesComplete ? 'ready' : 'missing',
-      description: gatesComplete ? 'Primary index, folders, manifest, flatplan, and indexes are marked complete.' : 'Export Project Folder ZIP has not completed all required setup gates yet.',
+      description: gatesComplete ? 'Primary project files, folders and indexes are marked created.' : 'Connect a project folder and click Create Starter Structure. Export ZIP remains available as backup/fallback.',
       owner: 'Creation Guide',
       weight: 1
     },
@@ -164,9 +167,16 @@ function getProjectHealthChecks() {
       weight: 0
     },
     {
+      title: 'Intake and media checklist',
+      state: 'warning',
+      description: 'Next feature task: explain intake folders and track recommended starter assets.',
+      owner: 'Creation Guide / Asset Library',
+      weight: 0
+    },
+    {
       title: 'Cross-app project loading',
       state: 'warning',
-      description: 'Global task added: other apps must map the active project into their real internal state, not just show the pill.',
+      description: 'Global task remains open: other apps must load the active project into their real internal state.',
       owner: 'All app owners',
       weight: 0
     }
