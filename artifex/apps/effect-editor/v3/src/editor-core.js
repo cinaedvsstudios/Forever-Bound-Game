@@ -2,6 +2,8 @@ import {
   addLayer,
   centerActiveEmitter,
   clearParticles,
+  deleteActiveLayer,
+  duplicateActiveLayer,
   editorState,
   getActiveLayer,
   moveActiveEmitter,
@@ -111,6 +113,8 @@ function closeMenus() { document.querySelectorAll('.menu-panel.open').forEach((p
 
 function setupActions() {
   bindClick('new-effect-button', () => { resetComposition(); ensureStarterLayer(); closeMenus(); toast('New effect archetype created.', 'success'); });
+  bindClick('duplicate-layer-button', () => { duplicateActiveLayer(); toast('Layer duplicated.', 'success'); });
+  bindClick('delete-layer-button', () => { deleteActiveLayer(); toast('Layer deleted.', 'warn'); });
   bindClick('clear-particles-button', () => { clearParticles(); toast('Particles cleared.', 'success'); });
   bindClick('center-emitter-button', () => { centerActiveEmitter(); toast('Origin centered.', 'success'); });
   bindClick('pause-button', togglePaused);
