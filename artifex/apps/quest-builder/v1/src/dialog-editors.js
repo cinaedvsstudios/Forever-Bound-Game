@@ -1,4 +1,4 @@
-import { parseList } from './quest-schema.js?v=1.2.11';
+import { parseList } from './quest-schema.js?v=1.2.12';
 
 export function openEditor(app, which) {
   if (which === 'quest' && !app.quest()) app.addQuest();
