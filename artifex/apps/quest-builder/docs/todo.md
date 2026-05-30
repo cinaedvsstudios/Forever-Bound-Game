@@ -15,13 +15,17 @@ artifex/apps/quest-builder/docs/block-taxonomy.md
 
 Use the global all-apps to-do list for changes that affect every Artifex app. Use this file only for Quest Builder-specific work.
 
-## Current live status
+## Current repository status
 
-Current Quest Builder version in repository: `V1.2.9`
+Current Quest Builder version in repository: `V1.2.10`
 
-Current live confirmation status: awaiting GitHub Pages/browser confirmation for draggable workspace cards and saved positions.
+Current browser confirmation status:
 
-Current app files:
+- `V1.2.9` was tested sufficiently to confirm that the live version badge loaded, the editor pencil action still opened the correct block popup, and cards could be manually moved in the central workspace.
+- Testing exposed that ordered automatic lines were not a valid long-term flow model once blocks could be manually arranged and branched.
+- `V1.2.10` has now been built in the repository as the first explicit-connection foundation pass and still requires GitHub Pages/browser testing.
+
+Current active app files:
 
 ```text
 artifex/apps/quest-builder/index.html
@@ -39,178 +43,12 @@ artifex/apps/quest-builder/icons/start.png
 artifex/apps/quest-builder/icons/finish.png
 ```
 
-Older V1.0.8 files remain only as imported base styling/reference; no old V1.0.8 JavaScript should be loaded by the live app:
+Older V1.0.8 files remain only as imported base styling/reference; old V1.0.8 JavaScript must not be loaded by the live app:
 
 ```text
 artifex/apps/quest-builder/v1/quest-builder-v108.css
 artifex/apps/quest-builder/v1/quest-builder-v108.js
 ```
-
-## Completed phases
-
-### V1.0.9 — Structure cleanup
-
-Status: complete.
-
-- Split behaviour into responsibility-based modules.
-- Kept `index.html` as the shell and moved taxonomy, schema, layout, rendering, dialogs, UI wiring, and export behaviour into named modules.
-- User confirmed the split app loaded correctly in GitHub Pages.
-
-### V1.1.0 — Module menu / shared shell alignment
-
-Status: complete.
-
-- Added `File ▾ → Module ▸` as a side flyout containing only the core modules: Hub, Creation Guide, Project Manager, Scene Editor, Quest Builder, Puzzle Creator, Effect Editor, and Archetype Object Creator.
-- Excluded utility tools such as Sprite Wizard, Font Packer, Frame Extractor, and Onda.
-- Kept green as the Quest Builder accent on the dark Artifex shell.
-
-### V1.1.1 — File menu simplification
-
-Status: complete.
-
-- Grouped New and Save commands into flyouts.
-- Kept Import JSON as an immediate File action.
-- Changed New Quest so it adds a quest rather than resetting the quest file.
-
-### V1.1.2 — Left panel refinement
-
-Status: complete.
-
-- Added useful tooltips, retained resizing, and stabilised inline editing while typing.
-- Added selection/edit affordances to list rows.
-
-### V1.1.3 — Contextual inspector and status actions
-
-Status: complete.
-
-- Changed the left panel into a contextual inspector for the selected quest or block.
-- Added quick emoji actions in the status strip.
-- Added canvas selection hit-testing compatible with zoom and pan.
-
-### V1.1.4 — Viewing panel warnings and flow card polish
-
-Status: complete.
-
-- Improved selected states, linked summaries, missing-field warnings, ready/audio states, START/END anchors, and connector arrows.
-
-### V1.1.5 — Block taxonomy and validation
-
-Status: complete.
-
-- Added `docs/block-taxonomy.md`.
-- Locked block names, colours, emojis, source modules, primary fields, required fields, and validation behaviour.
-- Connected taxonomy to inspector fields, template defaults, JSON validation, and the Block Type List.
-
-### V1.1.6 — Better editor popup
-
-Status: complete.
-
-- Replaced the large field stack with grouped tabbed editor sections.
-- Added thumbnail/icon inputs for quests and blocks.
-
-### V1.1.7 — Export JSON and validation
-
-Status: complete.
-
-- Export now produces the `artifex.questExportBundle.v1` shape.
-- Added quest/sidequest index and runtime file targets.
-- Separated runtime metadata, links, flow blocks, gameplay, feedback, and validation warnings.
-
-### V1.1.8 — Post-export verification / bugfix
-
-Status: complete.
-
-- Added `exportSelfCheck`.
-- Tightened missing Project Manager-resolvable link and targeted-action warnings.
-
-### V1.1.9 — Export summary UI
-
-Status: complete.
-
-- JSON Preview now shows bundle summary, warning/check counts, generated paths, and roles.
-
-### V1.2.0 — Verification and next-phase planning
-
-Status: complete.
-
-- Reconfirmed active split files and promoted functional work into V1.2.x.
-
-### V1.2.1 — Split-file export/package download
-
-Status: complete.
-
-- Kept `Export JSON Bundle` for one review/transfer bundle.
-- Added `Export Project Files` under `File ▾ → Save ▸`.
-- Downloads loose project-package JSON files using double-underscore filename paths.
-- Added `splitExportPlan`; deliberately deferred ZIP packaging to a future shared exporter.
-
-### V1.2.2 — Split export verification
-
-Status: complete.
-
-- User confirmed the current demo quest produces the correct three project quest files: quest index, empty sidequest index, and the main quest runtime file.
-- Confirmed Quest Builder only exports the quest/sidequest slice of the project package.
-
-### V1.2.3 — Quest Flow drag ordering
-
-Status: built, awaiting direct browser interaction confirmation.
-
-- Quest Flow list cards can be dragged onto another card to reorder the selected quest block array.
-- Added the `↕` drag indicator, drop-target highlight, automatic workspace redraw, retained selected block, and movement confirmation toast.
-- Kept reordering in the floating Quest Flow list; canvas blocks remain the visual workspace.
-
-### V1.2.4 — Viewing-panel density and endpoint polish
-
-Status: complete.
-
-- Reduced oversized text and spacing in the left contextual inspector.
-- Reduced the viewport zoom/pan/reset control footprint.
-- Merged the quest heading and Calling content into one canvas header card.
-- Converted START and END into circular endpoint nodes.
-
-### V1.2.5 — Custom endpoint icon display
-
-Status: complete.
-
-- Integrated the committed custom `start.png` and `finish.png` endpoint artwork.
-- Reduced icon size, moved START/END labels inside their nodes, and darkened the endpoint surfaces to match the canvas header.
-
-### V1.2.6 — Status-strip styling alignment
-
-Status: complete.
-
-- Replaced the bright green left-panel Editing strip with the dark green/charcoal treatment used by the canvas header and endpoint circles.
-- Kept the actions visible as compact green-accent controls.
-
-### V1.2.7 — Workspace pencil edit controls initial pass
-
-Status: superseded by V1.2.8 bugfix.
-
-- Added interactive pencil hit zones for the canvas quest header and each large canvas block card.
-- Added pencil actions in the floating Quest Flow rows and quest list.
-- Browser test failed: visible pencil icons still did not open the editor reliably.
-
-### V1.2.8 — Workspace pencil interaction bugfix
-
-Status: complete.
-
-- Corrected canvas hit testing at transformed zoom/pan display sizes, avoiding double application of canvas transforms.
-- Pencil actions run before pan-mode selection blocking, so hand/pan mode no longer suppresses edit clicks.
-- Canvas and list pencil actions call the existing editor popup directly for the correct selected quest or block.
-- User confirmed the pencil actions work in the browser.
-
-### V1.2.9 — Draggable workspace cards and saved positions
-
-Status: built, awaiting browser confirmation.
-
-- Large canvas flow cards can now be dragged directly around the viewing workspace when hand/pan mode is off.
-- Added `blockPositions` to saved layout state, keyed by quest ID and block ID, so each moved card restores to its saved location after refresh.
-- Manual positioning is a view/layout setting only; it does not change quest sequence or runtime export order.
-- Quest Flow list drag ordering remains the way to change logical block sequence.
-- Reworked connector rendering so lines follow the manual card locations from START through each ordered card to END.
-- Added a small drag-handle mark to each large canvas card.
-- `View ▾ → Reset Saved Layout` now also clears saved card positions through the existing layout reset.
-- Updated page entry, displayed version, stylesheet cache key, JavaScript/module cache keys, renderer asset keys and schema imports to `V1.2.9` / `1.2.9`.
 
 ## Ownership boundary
 
@@ -231,27 +69,108 @@ projects/<project-id>/sidequests/sidequest_<slug>.json
 
 Project Manager should reference quest and side quest IDs. It should not author quest internals directly.
 
-## Version plan
+## Completed phases summary
 
-Every Quest Builder edit must increase the visible version by `0.01` and update the page title, visible version badge, CSS cache key, JS/module cache keys, renderer asset keys and loaded/fallback text where present.
+### V1.0.9 to V1.2.2 — foundation, shell, editing and export
 
-Next version after confirmation:
+Status: complete/browser-confirmed where previously recorded.
+
+- Split the app into responsibility-based active modules.
+- Established the approved core Module flyout, simplified File menu, contextual left inspector, dark/green visual shell, popup editors and block taxonomy.
+- Added bundle export, export self-check, export summary and split Quest Builder project-file downloads.
+- User confirmed the project-file export produces the correct quest/sidequest-owned files.
+
+### V1.2.3 — floating Quest Flow drag ordering
+
+Status: built; retain as a separate list-order behaviour.
+
+- Floating Quest Flow cards can be dragged to reorder the block list.
+- This must remain separate from workspace positioning and explicit logical connection editing.
+
+### V1.2.4 to V1.2.8 — workspace visual density, endpoints and edit actions
+
+Status: complete/browser-confirmed for pencil action fix.
+
+- Reduced panel/control density.
+- Changed START/END to dark circular icon nodes using the custom endpoint assets.
+- Styled the left Editing strip consistently with the dark workspace.
+- Added and fixed pencil edit controls; user confirmed the correct block editor opens from the workspace.
+
+### V1.2.9 — draggable workspace cards and saved positions
+
+Status: partially browser-confirmed; superseded as a flow-rendering model by the explicit-connection direction.
+
+- Large canvas cards can be manually positioned as visual layout state only.
+- Stored card positions in `layout-state.js` under `blockPositions`.
+- User confirmed card movement works in the live screen.
+- Testing showed that drawing a line automatically through the ordered blocks is incorrect for branches and manual layouts.
+
+### V1.2.10 — explicit connection foundation
+
+Status: built in repository; awaiting browser testing.
+
+Purpose: replace automatic sequence-line assumptions with deliberate node connections without introducing a patch layer or refactoring the app shell.
+
+Implemented:
+
+- Added `connections` to the quest data model in `quest-schema.js`, plus `START` and `END` node IDs and stable connection creation helper.
+- Converted the demo `Recover the Chalice` flow into explicit saved connections, including a conditional wrong-cup feedback branch and return link.
+- Replaced ordered automatic connector drawing in `canvas-renderer.js` with explicit connection rendering.
+- Added visible input/output connector circles around nodes, including available spare ports for creating additional links.
+- Added thicker connector lines that inherit the colour of the source block.
+- Added drag-from-output-port to input-port authoring in `quest-builder-app.js`.
+- Added line selection and Delete/Backspace removal of a selected connection.
+- Kept moving cards as layout-only behaviour; movement does not rewire connections.
+- Kept floating Quest Flow list dragging separate; changing list order does not rewire connections.
+- New blocks and template-created blocks now begin loose and unconnected, with guidance text/toasts explaining how to connect them.
+- Removing a block removes only connections that directly reference that deleted block.
+- Runtime export now includes `flow.connections`, while block array order is treated only as `displayOrder` rather than inferred flow logic.
+- Validation now reports missing START/END routes, broken connection references, unconnected blocks, unreachable blocks and completion blocks not linked to END.
+- Updated page/version/cache references to `V1.2.10` / `1.2.10`.
+
+Not implemented in this pass:
+
+- Dynamic workspace/canvas expansion near lower or right edges.
+- Moveable/saved START and END positions.
+- Insert Space horizontal guide tool.
+- Advanced line routing around overlapping cards or route labels shown on the canvas.
+
+## V1.2.10 browser test checklist
+
+Open the new fresh test URL after GitHub Pages updates and verify:
+
+1. The badge shows `V1.2.10`.
+2. The page loads without a blank canvas or obvious JavaScript failure.
+3. The demo flow is no longer a single ordered chain: the lines show the deliberate connections and the wrong-cup branch.
+4. Connector lines are thicker and match the colour of the source block.
+5. Visible connector circles appear on START, END and the flow cards.
+6. Drag from an unused output connector circle on one block to an input connector circle on another block; a new line should appear.
+7. Click a connector line and press Delete; only that connection should disappear.
+8. Add a new block; it should appear loose/unconnected rather than automatically joining the flow.
+9. Move a card; existing connections should follow the card but not change their logical source/destination.
+10. Pencil editor controls should still open the correct block editor.
+11. Hand/pan mode should still pan instead of moving cards or creating connections.
+12. JSON Preview and Export Project Files should include explicit `flow.connections` data and validation warnings for loose blocks where applicable.
+13. View → Reset Saved Layout should reset visual positions but must not delete explicit quest connections.
+
+## Next specific-app work after V1.2.10 testing
+
+Only proceed after browser test results are reported.
+
+Likely next version if the foundation works:
 
 ```text
-V1.2.10  draggable workspace browser verification and usability polish, if required
+V1.2.11 — dynamic workspace expansion and manual layout space management
 ```
 
-## Current checks needed
+Required remaining Quest Builder-specific work:
 
-- Confirm the app loads as `V1.2.9`.
-- With the hand button off, drag a large canvas flow card to a different place; the connector lines should redraw to it.
-- Refresh the page using the same URL; the moved card should remain in its saved position.
-- Turn the hand/pan button on; dragging the workspace should still pan rather than moving an individual card.
-- Click a card pencil after moving it; the correct block editor should still open.
-- Drag a Quest Flow list item if you want to test logical ordering separately from visual placement.
+- Grow the logical workspace when cards approach the lower/right boundary and keep comfortable blank padding.
+- Allow START/END endpoints to be positioned consistently in the expanded workspace, without inferring quest logic from position.
+- Add a horizontal `Insert Space` tool: place/drag a temporary guide line, then move every node below that line downward together while preserving connections.
+- Consider a vertical equivalent only after the horizontal tool is tested and useful.
+- Improve connector routing only where crowded diagrams make the current paths unreadable.
 
-## Specific-app tasks
+## Version rule
 
-```json
-[]
-```
+Every Quest Builder app edit must increase the visible version by `0.01` and update the page title, visible version badge, CSS cache key, JavaScript/module cache keys, renderer asset keys and loaded/fallback text where present.
