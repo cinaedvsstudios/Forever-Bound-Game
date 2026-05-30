@@ -6,6 +6,7 @@
   <title>Artifex Effect Editor Index2 Work V0.2.3 Integration</title>
   <link rel="stylesheet" href="./v3/styles.css?v=index2-023-integration" />
   <link rel="stylesheet" href="./v3/index2-workspace-ui.css?v=023-integration" />
+  <link rel="stylesheet" href="./v3/editor-appearance-controls.css?v=023-integration" />
 </head>
 <body>
   <header class="topbar">
@@ -16,7 +17,6 @@
         <p>Visual Effects Editor <span id="version-badge">INDEX2-WORK-0.2.3-INTEGRATION</span></p>
       </div>
     </section>
-
     <nav class="index2-action-strip" aria-label="Control panel shortcuts">
       <button type="button" class="index2-action-button" data-jump-card="index2-card-assets" title="Jump to assets">🧩</button>
       <button type="button" class="index2-action-button" data-jump-card="index2-card-appearance" title="Jump to appearance">🎨</button>
@@ -24,7 +24,6 @@
       <button type="button" class="index2-action-button" data-jump-card="effect-specific-controls-card" title="Jump to effect controls">🚀</button>
       <button type="button" class="index2-action-button" data-jump-card="effect-specific-controls-card" title="Jump to specialised controls">💥</button>
     </nav>
-
     <nav class="menu-bar" aria-label="Editor menus">
       <div class="menu"><button class="menu-button" data-menu="file">File ▾</button><div class="menu-panel" id="menu-file"><button id="new-effect-button">New Effect Archetype</button><button id="export-json-button">Export Composition JSON</button><label class="menu-file-label">Import Composition JSON<input id="import-json-input" type="file" accept=".json,application/json" hidden /></label><button id="save-local-button">Save Locally</button><button id="load-local-button">Load Local Effect</button><button id="clear-particles-button">Clear Particles</button><button id="snapshot-button-menu">Snapshot</button></div></div>
       <div class="menu"><button class="menu-button" data-menu="edit">Edit ▾</button><div class="menu-panel" id="menu-edit"><button id="duplicate-layer-button">Duplicate Layer</button><button id="delete-layer-button">Delete Layer</button><button id="center-emitter-button">Center Origin</button></div></div>
@@ -33,11 +32,9 @@
       <div class="menu"><button class="menu-button" data-menu="help">Help ▾</button><div class="menu-panel right" id="menu-help"><button id="about-button">About INDEX2-WORK-0.2.3-INTEGRATION</button></div></div>
     </nav>
   </header>
-
   <main class="app-shell">
     <aside id="left-panel" class="side-panel">
       <section id="index2-card-search" class="card index2-search-card index2-search-sticky" data-search-card="Search"><label class="index2-search-label">Search Settings<input id="left-panel-search-input" placeholder="Search settings..." /></label><p id="left-panel-search-count" class="index2-search-count">Showing all sections.</p></section>
-
       <section id="index2-card-assets" class="card" data-search-card="Effect Archetype Assets archetype id tags layer name engine type">
         <header><h2>Effect Archetype Assets</h2><button type="button" class="index2-card-collapse" data-card-collapse title="Collapse Effect Archetype Assets">⬆️</button></header>
         <label>Archetype ID<input id="archetype-id-input" value="fx_v3_effect_001" /></label>
@@ -45,7 +42,6 @@
         <label>Layer Name<input id="layer-name-input" placeholder="Select or add a layer" /></label>
         <label>Engine Type<select id="engine-select"></select></label>
       </section>
-
       <section id="index2-card-presets" class="card" data-search-card="Quick Edit Helpers fire ice good magic dark magic colour appearance dynamics water evil smoke glow burst drift">
         <header><h2>Quick Edit Helpers</h2><button type="button" class="index2-card-collapse" data-card-collapse title="Collapse Quick Edit Helpers">⬆️</button></header>
         <div class="index2-quick-helper-sections">
@@ -54,7 +50,6 @@
           <section class="index2-helper-section"><div class="index2-helper-title"><span></span>Dynamics Helpers</div><div class="index2-helper-grid"><button type="button" data-helper-preset="dynamics:slow-drift">Slow Drift</button><button type="button" data-helper-preset="dynamics:burst-out">Burst Out</button><button type="button" data-helper-preset="dynamics:rise-up">Rise Up</button><button type="button" data-helper-preset="dynamics:tight-trail">Tight Trail</button></div></section>
         </div>
       </section>
-
       <section id="index2-card-appearance" class="card" data-search-card="Effect Layer Appearance colour opacity size glow ramp palette brush shape custom image png hex">
         <header><h2>Effect Layer Appearance</h2><button type="button" class="index2-card-collapse" data-card-collapse title="Collapse Effect Layer Appearance">⬆️</button></header>
         <div id="appearance-ramp-editor" class="appearance-ramp-editor">
@@ -80,7 +75,6 @@
         </div>
         <label class="inline-toggle-row">Reverse Colour Gradient<input id="reverse-toggle" type="checkbox" /></label>
       </section>
-
       <section id="index2-card-dynamics" class="card" data-search-card="Effect Layer Dynamics origin density speed gravity boost direction spread lifetime emitter width">
         <header><h2>Effect Layer Dynamics</h2><button type="button" class="index2-card-collapse" data-card-collapse title="Collapse Effect Layer Dynamics">⬆️</button></header>
         <div class="index2-field-pair"><label>Origin X<input id="emitter-x-input" type="number" min="0" max="1280" value="640" /></label><label>Origin Y<input id="emitter-y-input" type="number" min="0" max="720" value="450" /></label></div>
@@ -92,7 +86,6 @@
         <p class="index2-gravity-note">0 = none · 100 = earth · Boost = ×2</p>
         <label>Direction Angle<input id="angle-input" type="range" min="-180" max="180" step="1" value="-90" /><output id="angle-output">-90</output></label>
       </section>
-
       <section id="effect-specific-controls-card" class="card index2-effect-specific-card" data-search-card="Effect Specific Controls engine arc flare distortion shockwave lens gas text font letter spacing wrapping line timing reveal direction density scatter lifetime"><header><h2>Effect Specific Controls</h2><button type="button" class="index2-card-collapse" data-card-collapse title="Collapse Effect Specific Controls">⬆️</button></header><div id="effect-specific-controls-body">Select a layer to see engine controls.</div></section>
     </aside>
     <div id="side-resizer" class="side-resizer" title="Drag to resize side panel"></div>
