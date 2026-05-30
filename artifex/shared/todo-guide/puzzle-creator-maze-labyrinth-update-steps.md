@@ -1,6 +1,6 @@
 # Puzzle Creator · Maze / Labyrinth Update Steps
 
-Status: V1.28 live-approved stable baseline; asset/archetype dependency check complete
+Status: V1.28 live-approved stable baseline; registered-content reader foundation added, picker UI not yet wired
 Owner: Puzzle Creator
 Related modules: Project Manager, Scene Editor, Quest Builder, Archetype Object Creator, Asset Library, Build Game
 Last updated: 2026-05-30
@@ -41,9 +41,38 @@ src/js/engines/maze-labyrinth-consolidation-loader.js
 - Rounded/Organic Walk Test no longer visibly flashes the underlying square grid between redraws.
 - Wall Form is included in exported visual-rendering metadata.
 
+## Shared registered-content foundation added · not yet visible in Maze UI
+
+Created shared dependency files:
+
+```text
+artifex/shared/registered-content/registered-content-reader.js
+artifex/shared/registered-content/README.md
+```
+
+The reader now defines and validates the canonical project-backed content sources required by future Maze linking:
+
+```text
+assets/asset-index.json                 final registered visual/audio assets using asset_ IDs
+archetypes/object-index.json            reusable gameplay object records using archobj_ IDs
+archetypes/effect-index.json            reusable effect records using archeffect_ IDs
+```
+
+Implemented foundation behaviour:
+
+- loads the canonical index types through a provided JSON reader or `window.ArtifexProjectFolder.readJson`;
+- validates index schema and typed collection name;
+- validates stable ID prefixes and project-relative final record paths;
+- filters out intake files, external/browser URLs and legacy `artifex/assets-library/` paths from final selectable records;
+- exposes normalized search results and stable minimal reference creation for future picker consumers;
+- reports honest empty/missing/invalid/read-failed statuses.
+
+This is deliberately a data dependency only. Puzzle Creator has not yet imported it, no Maze Link button has been enabled, and no current V1.28 visible behaviour has changed.
+
 ## Still unimplemented
 
-- Shared project-backed registered-content picker for final `asset_`, `archobj_` and `archeffect_` records.
+- Reusable registered-content picker UI consuming the shared reader.
+- Puzzle Creator consumption of that picker for final `asset_`, `archobj_` and `archeffect_` records.
 - Archetype Object linking for collected items, foes or hazards.
 - Door asset/image selection.
 - Portal visual asset/FX selection.
@@ -58,7 +87,7 @@ src/js/engines/maze-labyrinth-consolidation-loader.js
 
 ## Asset/archetype linking dependency decision · 2026-05-30
 
-Inspection result: the project has canonical contract paths and partial source modules, but no honest shared picker that Puzzle Creator can use for final project-backed linking yet.
+Inspection result: the project has canonical contract paths and partial source modules, but no honest shared picker that Puzzle Creator can use for final project-backed linking yet. The shared reader foundation now removes the first data-validation blocker, but selection UI and owning-module project records are still required before Maze controls can become active.
 
 Existing usable contract direction:
 
@@ -68,12 +97,13 @@ archetypes/object-index.json            reusable gameplay object records using a
 archetypes/effect-index.json            reusable effect records using archeffect_ IDs
 ```
 
-Current dependency gap:
+Remaining dependency gap:
 
 - Project Editor can browse imported index data and link it to Flatplan nodes, but that browser is not a shared field picker for authoring apps.
 - Archetype Object Creator defines and exports `archobj_` records, but its current library workflow is template/local-browser based rather than a connected-project picker service.
 - Scene Editor has a useful legacy asset picker for `artifex/assets-library/asset-library.json`, but that catalogue is not the project-final `assets/asset-index.json` contract.
 - `artifex/apps/object-library/index.html` is currently empty and cannot supply a picker dependency.
+- The new shared reader validates final records, but it does not itself create promoted assets, project-backed archetypes or picker UI.
 
 Required linking ownership:
 
@@ -84,9 +114,9 @@ Required linking ownership:
 
 Correct next coding move:
 
-1. Build or expose a shared project-backed registered-content reader/picker for the canonical index types.
-2. Ensure it distinguishes real registered final records from local browser objects, intake files and legacy unpromoted catalogue entries.
-3. Only then enable Collect Archetype Object selection and Door visual selection inside Puzzle Creator.
+1. Add a reusable picker UI/controller around `artifex/shared/registered-content/registered-content-reader.js`.
+2. Keep its empty/unavailable state truthful until real connected-project `asset_` / `archobj_` / `archeffect_` index records exist.
+3. Only then consume it in Puzzle Creator to enable Collect Archetype Object selection and Door visual selection.
 4. Keep Portal destination/global linking for the separate shared Portal Registry stage.
 
 Do not enable a Maze Link button by storing raw local uploads, free-text IDs or legacy asset paths as if they were final project records.
@@ -146,7 +176,7 @@ Rules:
 
 ### Collection objects
 
-Current state: placement exists; Archetype Object linking and gameplay enforcement are pending the shared registered-content picker dependency.
+Current state: placement exists; Archetype Object linking and gameplay enforcement are pending the registered-content picker UI dependency.
 
 Required controls/validation:
 
@@ -159,7 +189,7 @@ Required controls/validation:
 
 ### Door
 
-Current state: local pair placement and Walk Test transfer exist; visual asset selection is pending the shared final-asset picker dependency.
+Current state: local pair placement and Walk Test transfer exist; visual asset selection is pending the registered-content picker UI dependency.
 
 - visible local connection with Entry and Exit
 - one-way/two-way transfer
@@ -256,9 +286,9 @@ Whenever later feature work changes the Maze editor, retain these already-approv
 7. Walk Test in Rounded/Organic does not flash back to the underlying square grid.
 8. No numbered patch files or transitional wrapper modules are reintroduced.
 
-## Next implementation order after dependency check
+## Next implementation order after reader foundation
 
-1. Create a shared registered-content picker/index dependency for project-backed `asset_`, `archobj_` and `archeffect_` records.
+1. Create a reusable shared registered-content picker UI/controller using the completed reader foundation.
 2. Implement Collect Archetype Object linking once real project-backed `archobj_` records can be selected.
 3. Implement Door visual asset linking once real project-backed `asset_` records can be selected.
 4. Implement Scatter decorations/lights in a stable module using final registered visual assets only.
