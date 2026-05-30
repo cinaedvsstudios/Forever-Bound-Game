@@ -159,6 +159,8 @@ function wireCanvasBlockDrag() {
     let x = clamp(point.x - drag.offsetX, 12, DESIGN_WIDTH - CARD_W - 12);
     let y = clamp(point.y - drag.offsetY, 158, DESIGN_HEIGHT - CARD_H - 12);
     if (app.layout().snapToGrid) { x = snapCoordinate(x); y = snapCoordinate(y); }
+    x = clamp(x, 12, DESIGN_WIDTH - CARD_W - 12);
+    y = clamp(y, 158, DESIGN_HEIGHT - CARD_H - 12);
     blockPositions[drag.key] = { x: Math.round(x), y: Math.round(y) };
     app.patchLayout({ blockPositions }); app.draw();
   });
