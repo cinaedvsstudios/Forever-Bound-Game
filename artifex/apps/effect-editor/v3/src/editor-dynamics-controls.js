@@ -2,20 +2,30 @@ import { editorState, getActiveLayer, onStateChange, updateActiveLayer } from '.
 import { describeGravityScale, fromGravityControlValue, toGravityControlValue } from './physics-scale.js';
 
 export function initEditorDynamicsControls() {
-  bindTagsField();
+  bindMetadataFields();
   bindGravityControls();
   onStateChange(syncDynamicsControls);
   syncDynamicsControls();
 }
 
-function bindTagsField() {
-  const input = document.getElementById('effect-tags-input');
-  if (!input || input.dataset.dynamicsBound === 'true') return;
-  input.dataset.dynamicsBound = 'true';
-  input.addEventListener('input', () => {
-    editorState.composition.tags = normalizeTags(input.value);
-    editorState.composition.updatedAt = new Date().toISOString();
-  });
+function bindMetadataFields() {
+  const idInput = document.getElementById('archetype-id-input');
+  const tagsInput = document.getElementById('effect-tags-input');
+  if (idInput && idInput.dataset.dynamicsBound !== 'true') {
+    idInput.dataset.dynamicsBound = 'true';
+    idInput.addEventListener('input', () => {
+      const nextId = String(idInput.value || '').trim();
+      if (nextId) editorState.composition.id = nextId;
+      editorState.composition.updatedAt = new Date().toISOString();
+    });
+  }
+  if (tagsInput && tagsInput.dataset.dynamicsBound !== 'true') {
+    tagsInput.dataset.dynamicsBound = 'true';
+    tagsInput.addEventListener('input', () => {
+      editorState.composition.tags = normalizeTags(tagsInput.value);
+      editorState.composition.updatedAt = new Date().toISOString();
+    });
+  }
 }
 
 function bindGravityControls() {
@@ -44,10 +54,12 @@ function applyGravityFromControls() {
 }
 
 function syncDynamicsControls() {
-  bindTagsField();
+  bindMetadataFields();
   bindGravityControls();
   const layer = getActiveLayer();
+  const idInput = document.getElementById('archetype-id-input');
   const tagsInput = document.getElementById('effect-tags-input');
+  if (idInput && document.activeElement !== idInput) idInput.value = String(editorState.composition.id || '');
   if (tagsInput && document.activeElement !== tagsInput) {
     tagsInput.value = Array.isArray(editorState.composition.tags) ? editorState.composition.tags.join(', ') : '';
   }
