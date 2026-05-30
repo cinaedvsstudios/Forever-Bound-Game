@@ -11,18 +11,82 @@ function installProjectFolderSetup() {
   if (projectFolderSetupInstalled) return;
   projectFolderSetupInstalled = true;
   injectProjectFolderSetupStyles();
+  installProjectFolderLegacyControlOverrides();
   addProjectFolderToolbarButton();
+  polishProjectFolderFacingLabels();
   renderProjectFolderSetupSection();
   window.addEventListener('artifex:project-folder-state', () => renderProjectFolderSetupSection(true));
 
   const overview = document.getElementById('project-overview-panel');
   if (overview && !projectFolderSetupObserver) {
     projectFolderSetupObserver = new MutationObserver(() => {
+      installProjectFolderLegacyControlOverrides();
       addProjectFolderToolbarButton();
+      polishProjectFolderFacingLabels();
       renderProjectFolderSetupSection();
     });
     projectFolderSetupObserver.observe(overview, { childList: true, subtree: true });
   }
+}
+
+function installProjectFolderLegacyControlOverrides() {
+  const chooseButton = document.getElementById('choose-local-folder-button');
+  if (chooseButton && chooseButton.dataset.projectFolderRouted !== 'true') {
+    chooseButton.dataset.projectFolderRouted = 'true';
+    chooseButton.textContent = 'Go to Project Folder Section';
+    chooseButton.title = 'Use the connected project folder controls in Project Overview';
+    chooseButton.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      document.getElementById('project-folder-setup-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, true);
+  }
+
+  const quickStart = document.getElementById('quick-start-button');
+  if (quickStart && quickStart.dataset.projectFolderRouted !== 'true') {
+    quickStart.dataset.projectFolderRouted = 'true';
+    quickStart.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (typeof closeMenus === 'function') closeMenus();
+      if (typeof showHelp === 'function') {
+        showHelp('Quick Start Guide', '<p>Enter the project name, ID and creator, then open <strong>Project Folder</strong> and connect the real writable project folder. Click <strong>Create Starter Structure</strong> to write the canonical project files there. Use <strong>Export ZIP</strong> only as backup or fallback, then click <strong>Set Active</strong>.</p>');
+      }
+    }, true);
+  }
+}
+
+function polishProjectFolderFacingLabels() {
+  const cardText = {
+    storage: ['Connect Project Folder', 'Connect or re-authorise the real writable project root folder.'],
+    'project-index': ['Create Primary Project File', 'Create project.json as the top-level pointer file.'],
+    folders: ['Create Folder Structure', 'Create the starter project, asset, build, health and backup folders.'],
+    manifest: ['Create Logic Shell', 'Create logic.json for starter structure and route logic.'],
+    flatplan: ['Create Layout Shell', 'Create layout.json for editor layout and map placement state.'],
+    indexes: ['Create Index Files', 'Create scene, screen, quest, archetype and asset indexes.']
+  };
+  Object.entries(cardText).forEach(([id, values]) => {
+    const card = document.querySelector(`[data-gate="${id}"]`);
+    if (!card) return;
+    const title = card.querySelector('strong');
+    const details = card.querySelector('em');
+    const status = details?.querySelector('small');
+    if (title) title.textContent = values[0];
+    if (details && status) {
+      const complete = card.classList.contains('complete');
+      status.textContent = complete ? 'Marked created or supplied as a backup package.' : (id === 'storage' ? 'Use the Connected Project Folder controls above.' : 'Click Create Starter Structure after connecting a folder.');
+      details.childNodes[0].textContent = values[1];
+    }
+  });
+
+  document.querySelectorAll('.project-facts article').forEach(article => {
+    const label = article.querySelector('span');
+    const value = article.querySelector('strong');
+    if (!label || !value) return;
+    if (label.textContent === 'Primary index') value.textContent = 'project.json';
+    if (label.textContent === 'Manifest') { label.textContent = 'Logic'; value.textContent = 'logic.json'; }
+    if (label.textContent === 'Flatplan') { label.textContent = 'Layout'; value.textContent = 'layout.json'; }
+  });
 }
 
 function projectFolderClientAvailable() {
@@ -139,6 +203,7 @@ async function connectRealProjectFolder() {
     updateProjectFolderNameField(folderState.folderName);
     showProjectFolderToast(`Connected project folder: ${folderState.folderName}.`, 'success');
     renderProjectFolderSetupSection(true);
+    if (typeof queueHealthRender === 'function') queueHealthRender();
   } catch (error) {
     showProjectFolderToast(error.message || 'Could not connect the project folder.', 'warn');
     renderProjectFolderSetupSection(true);
@@ -156,6 +221,7 @@ async function reauthoriseRealProjectFolder() {
       showProjectFolderToast('Project folder permission is still required.', 'warn');
     }
     renderProjectFolderSetupSection(true);
+    if (typeof queueHealthRender === 'function') queueHealthRender();
   } catch (error) {
     showProjectFolderToast(error.message || 'Could not re-authorise the project folder.', 'warn');
   }
@@ -183,9 +249,11 @@ async function initialiseRealProjectStructure() {
 function markConnectedStructureGatesComplete() {
   try {
     if (typeof state !== 'undefined' && state.project?.gates && typeof STRUCTURAL_GATES !== 'undefined') {
-      STRUCTURAL_GATES.forEach((gateId) => { state.project.gates[gateId] = true; });
+      STRUCTURAL_GATES.forEach(gateId => { state.project.gates[gateId] = true; });
       if (typeof updateProjectStatusFromGates === 'function') updateProjectStatusFromGates();
       if (typeof render === 'function') render();
+      polishProjectFolderFacingLabels();
+      renderProjectFolderSetupSection(true);
       if (typeof queueHealthRender === 'function') queueHealthRender();
     }
   } catch (error) {
