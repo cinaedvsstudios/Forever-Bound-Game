@@ -1,12 +1,17 @@
-import './index2-clean-controller.js';
-import { initAppearanceParity } from './appearance-parity.js?v=022-ramp-drag';
+import { initEditorCore } from './editor-core.js';
+import { initEditorAppearanceControls } from './editor-appearance-controls.js';
+import { initEditorDynamicsControls } from './editor-dynamics-controls.js';
+import { initEditorQuickEditControls } from './editor-quick-edit-controls.js';
 import { initEditorWorkspaceUI } from './editor-workspace-ui.js';
 
-const VERSION_LABEL = 'INDEX2-CLEAN-0.2.2';
+const VERSION_LABEL = 'INDEX2-CLEAN-0.2.3';
 
 window.addEventListener('DOMContentLoaded', () => {
-  initAppearanceParity(showToast);
+  initEditorCore({ versionLabel: VERSION_LABEL, showToast });
+  initEditorAppearanceControls(showToast);
   initEditorWorkspaceUI({ versionLabel: VERSION_LABEL, showToast });
+  initEditorDynamicsControls();
+  initEditorQuickEditControls(showToast);
 });
 
 function showToast(message, type = 'info') {
