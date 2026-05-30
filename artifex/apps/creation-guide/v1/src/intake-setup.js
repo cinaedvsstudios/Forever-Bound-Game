@@ -9,10 +9,23 @@ function installInitialAssetIntakeSetup() {
   if (intakeSetupInstalled) return;
   intakeSetupInstalled = true;
   injectInitialAssetIntakeStyles();
+  wireIntakeTestDataCleanup();
   renderInitialAssetIntakeSection();
   window.addEventListener('artifex:project-folder-state', () => { renderInitialAssetIntakeSection(true); if (typeof queueHealthRender === 'function') queueHealthRender(); });
   const overview = document.getElementById('project-overview-panel');
-  if (overview) new MutationObserver(() => renderInitialAssetIntakeSection()).observe(overview, { childList: true, subtree: true });
+  if (overview) new MutationObserver(() => { wireIntakeTestDataCleanup(); renderInitialAssetIntakeSection(); }).observe(overview, { childList: true, subtree: true });
+}
+
+function wireIntakeTestDataCleanup() {
+  ['clear-project-data-button', 'clear-project-data-toolbar-button'].forEach(id => {
+    const button = document.getElementById(id);
+    if (!button || button.dataset.intakeCleanupWired === 'true') return;
+    button.dataset.intakeCleanupWired = 'true';
+    button.addEventListener('click', clearAllIntakeSetupTestState, true);
+  });
+}
+function clearAllIntakeSetupTestState() {
+  Object.keys(localStorage).filter(key => key.startsWith(INTAKE_SETUP_KEY_PREFIX)).forEach(key => localStorage.removeItem(key));
 }
 
 function getCurrentIntakeSetupState() {
