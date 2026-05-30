@@ -1,10 +1,10 @@
-import { MODULE_VERSION, MODULE_STORAGE_KEY, LAYOUT_STORAGE_KEY, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.11';
-import { getBlockType } from './block-types.js?v=1.2.11';
-import { createDemoQuestFile, createDefaultQuest, createDefaultBlock, createDefaultConnection, escapeHtml, START_NODE_ID, END_NODE_ID } from './quest-schema.js?v=1.2.11';
-import { createLayoutState, clamp } from './layout-state.js?v=1.2.11';
-import { drawCanvas, applyCanvasTransform, getCanvasHit, getCanvasPoint, getBlockPosition, typeColor, CARD_W, CARD_H } from './canvas-renderer.js?v=1.2.11';
-import { fillBlockTypeMenus, wireMenus, wireActions, wireInputs, wireFlowDrag, wireWorkspacePan, wirePanelResize, wireFlowResizeSave } from './ui-bindings.js?v=1.2.11';
-import { openEditor } from './dialog-editors.js?v=1.2.11';
+import { MODULE_VERSION, MODULE_STORAGE_KEY, LAYOUT_STORAGE_KEY, DESIGN_WIDTH, DESIGN_HEIGHT, GRID_SIZE } from './module-config.js?v=1.2.12';
+import { getBlockType } from './block-types.js?v=1.2.12';
+import { createDemoQuestFile, createDefaultQuest, createDefaultBlock, createDefaultConnection, escapeHtml, START_NODE_ID, END_NODE_ID } from './quest-schema.js?v=1.2.12';
+import { createLayoutState, clamp } from './layout-state.js?v=1.2.12';
+import { drawCanvas, applyCanvasTransform, getCanvasHit, getCanvasPoint, getBlockPosition, typeColor, CARD_W, CARD_H } from './canvas-renderer.js?v=1.2.12';
+import { fillBlockTypeMenus, wireMenus, wireActions, wireInputs, wireFlowDrag, wireWorkspacePan, wirePanelResize, wireFlowResizeSave } from './ui-bindings.js?v=1.2.12';
+import { openEditor } from './dialog-editors.js?v=1.2.12';
 
 const $ = (id) => document.getElementById(id);
 const layoutState = createLayoutState(LAYOUT_STORAGE_KEY);
@@ -44,46 +44,12 @@ function addBlock(type = 'scene', patch = {}) {
   state.activeBlock = app.quest().blocks.length - 1; state.inspectorTarget = 'block'; state.activeConnectionId = null; render();
 }
 
-function nextPort(nodeId, end, side) {
-  const matching = (app.quest()?.connections || []).filter((connection) => {
-    const sameNode = end === 'source' ? connection.sourceNodeId === nodeId : connection.targetNodeId === nodeId;
-    const sameSide = end === 'source' ? (connection.sourceSide || 'right') === side : (connection.targetSide || 'left') === side;
-    return sameNode && sameSide;
-  });
-  return `${end === 'source' ? 'out' : 'in'}:${side}:${matching.length}`;
-}
-
-function nodePosition(nodeId) {
-  if (nodeId === START_NODE_ID) return { x: 118, y: 245 };
-  if (nodeId === END_NODE_ID) return { x: DESIGN_WIDTH - 115, y: DESIGN_HEIGHT - 108 };
-  const index = (app.quest()?.blocks || []).findIndex((block) => block.id === nodeId);
-  const block = app.quest()?.blocks?.[index];
-  if (!block) return null;
-  const position = getBlockPosition(app.layout(), app.quest().id, block.id, index);
-  return { x: position.x + CARD_W / 2, y: position.y + CARD_H / 2 };
-}
-
-function chooseConnectionSides(sourceNodeId, targetNodeId) {
-  if (sourceNodeId === START_NODE_ID) return { sourceSide: 'right', targetSide: 'left' };
-  if (targetNodeId === END_NODE_ID) return { sourceSide: 'right', targetSide: 'left' };
-  const source = nodePosition(sourceNodeId);
-  const target = nodePosition(targetNodeId);
-  if (!source || !target) return { sourceSide: 'right', targetSide: 'left' };
-  const deltaX = target.x - source.x;
-  const deltaY = Math.abs(target.y - source.y);
-  if (Math.abs(deltaX) < 90 || deltaY > Math.abs(deltaX) * 1.15) return { sourceSide: 'left', targetSide: 'left' };
-  return deltaX >= 0 ? { sourceSide: 'right', targetSide: 'left' } : { sourceSide: 'left', targetSide: 'right' };
-}
-
 function addConnection(sourceNodeId, targetNodeId) {
   const quest = app.quest();
   if (!quest || !sourceNodeId || !targetNodeId || sourceNodeId === targetNodeId || sourceNodeId === END_NODE_ID || targetNodeId === START_NODE_ID) return false;
   quest.connections = quest.connections || [];
   if (quest.connections.some((connection) => connection.sourceNodeId === sourceNodeId && connection.targetNodeId === targetNodeId)) return false;
-  const { sourceSide, targetSide } = chooseConnectionSides(sourceNodeId, targetNodeId);
-  const connection = createDefaultConnection(sourceNodeId, targetNodeId, {
-    sourceSide, targetSide, sourcePort: nextPort(sourceNodeId, 'source', sourceSide), targetPort: nextPort(targetNodeId, 'target', targetSide)
-  });
+  const connection = createDefaultConnection(sourceNodeId, targetNodeId, { routingMode: 'smart-shortest' });
   quest.connections.push(connection); state.activeConnectionId = connection.id; render(); return true;
 }
 
@@ -170,10 +136,12 @@ function wireCanvasConnections() {
     state.connectionDrag = null; state.suppressCanvasClick = true;
     try { canvas.releasePointerCapture(event.pointerId); } catch { /* noop */ }
     canvas.style.cursor = app.layout().panMode ? 'grab' : 'pointer'; render();
-    toast(connected ? 'Connection created.' : 'Connection cancelled. Drag the link icon onto a block or END.');
+    toast(connected ? 'Connection created. Smart routing will choose the shortest edge.' : 'Connection cancelled. Drag the link icon onto a block or END.');
   };
   canvas.addEventListener('pointerup', endConnection); canvas.addEventListener('pointercancel', endConnection);
 }
+
+function snapCoordinate(value) { return Math.round(value / GRID_SIZE) * GRID_SIZE; }
 
 function wireCanvasBlockDrag() {
   canvas.addEventListener('pointerdown', (event) => {
@@ -188,12 +156,15 @@ function wireCanvasBlockDrag() {
     const drag = state.canvasBlockDrag; if (!drag || drag.pointerId !== event.pointerId) return;
     const point = getCanvasPoint(app, event); if (!drag.moved && Math.hypot(point.x - drag.startX, point.y - drag.startY) < 5) return;
     drag.moved = true; const blockPositions = { ...(app.layout().blockPositions || {}) };
-    blockPositions[drag.key] = { x: Math.round(clamp(point.x - drag.offsetX, 12, DESIGN_WIDTH - CARD_W - 12)), y: Math.round(clamp(point.y - drag.offsetY, 158, DESIGN_HEIGHT - CARD_H - 12)) };
+    let x = clamp(point.x - drag.offsetX, 12, DESIGN_WIDTH - CARD_W - 12);
+    let y = clamp(point.y - drag.offsetY, 158, DESIGN_HEIGHT - CARD_H - 12);
+    if (app.layout().snapToGrid) { x = snapCoordinate(x); y = snapCoordinate(y); }
+    blockPositions[drag.key] = { x: Math.round(x), y: Math.round(y) };
     app.patchLayout({ blockPositions }); app.draw();
   });
   const endDrag = (event) => {
     const drag = state.canvasBlockDrag; if (!drag || drag.pointerId !== event.pointerId) return;
-    if (drag.moved) { app.saveLayout(); state.suppressCanvasClick = true; toast('Workspace card position saved. Connections unchanged.'); }
+    if (drag.moved) { app.saveLayout(); state.suppressCanvasClick = true; toast(app.layout().snapToGrid ? 'Workspace card snapped to grid. Connections rerouted.' : 'Workspace card position saved. Connections rerouted.'); }
     state.canvasBlockDrag = null; canvas.style.cursor = app.layout().panMode ? 'grab' : 'pointer';
     try { canvas.releasePointerCapture(event.pointerId); } catch { /* noop */ }
     render();
@@ -204,7 +175,7 @@ function wireCanvasBlockDrag() {
 function applyLayout() {
   const layout = layoutState.get(); document.documentElement.style.setProperty('--left-w', clamp(layout.leftW, 230, 620) + 'px');
   const flowWindow = $('flow-window'); flowWindow.style.left = layout.flowX + 'px'; flowWindow.style.top = layout.flowY + 'px'; flowWindow.classList.toggle('vertical', !!layout.flowVertical); flowWindow.classList.toggle('collapsed', !!layout.flowCollapsed);
-  $('toggle-flow-layout-button').textContent = layout.flowVertical ? '⇆' : '⇅'; $('collapse-flow-button').textContent = layout.flowCollapsed ? '+' : '−'; $('pan-toggle-button').classList.toggle('is-active', !!layout.panMode);
+  $('toggle-flow-layout-button').textContent = layout.flowVertical ? '⇆' : '⇅'; $('collapse-flow-button').textContent = layout.flowCollapsed ? '+' : '−'; $('pan-toggle-button').classList.toggle('is-active', !!layout.panMode); $('snap-grid-button')?.classList.toggle('is-active', !!layout.snapToGrid);
   if (!layout.flowCollapsed) { flowWindow.style.width = layout.flowW + 'px'; flowWindow.style.height = layout.flowH === 'auto' ? 'auto' : layout.flowH + 'px'; } else { flowWindow.style.width = '220px'; flowWindow.style.height = '42px'; }
   app.applyCanvasTransform();
 }
@@ -215,7 +186,7 @@ function render() {
   renderQuestList(); renderBlockList(); drawCanvas(app);
 }
 function renderQuestInspector(q) {
-  text('inspector-title', 'Quest Status'); text('inspector-kicker', 'QUEST'); text('inspector-note', 'Click a quest header, Calling pill, or flow card in the viewing area. This panel edits the selected thing.'); showQuestFields(true); showBlockFields(false);
+  text('inspector-title', 'Quest Status'); text('inspector-kicker', 'QUEST'); text('inspector-note', 'Click a quest header, Calling pill, or a flow card in the viewing area. This panel edits the selected thing.'); showQuestFields(true); showBlockFields(false);
   set('selected-quest-name', q.name); set('selected-quest-type', q.type); set('selected-calling', q.callingText); set('selected-chronicle', q.chronicleId); set('selected-completion', q.completionFlag); set('selected-scenes', (q.sceneIds || []).join(', ')); set('selected-objects', (q.objectIds || []).join(', '));
   if (document.activeElement !== $('quest-thumb-button')) $('quest-thumb-button').textContent = q.thumbnail || '📜';
 }
