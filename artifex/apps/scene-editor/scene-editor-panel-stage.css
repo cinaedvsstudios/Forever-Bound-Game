@@ -257,3 +257,82 @@
 .header-icon-btn {
   font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Inter, system-ui, sans-serif;
 }
+
+/* v0.34 Scene Editor-specific presentation repairs. */
+body .artifex-active-project-pill {
+  display: none !important;
+}
+
+.file-pill-project {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.file-pill-project-action {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 3px 7px;
+  border: 1px solid rgba(226, 204, 167, 0.4);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.24);
+  color: #f1dcc2;
+  font-size: 9.5px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.file-pill-project-action:hover {
+  border-color: rgba(231, 56, 56, 0.78);
+  box-shadow: 0 0 10px rgba(195, 0, 255, 0.25);
+}
+
+.object-inspector {
+  width: min(376px, calc(100vw - 28px));
+}
+
+.object-inspector-body {
+  padding: 8px;
+}
+
+.object-inspector .panel-card {
+  margin-bottom: 8px;
+}
+
+.object-inspector .card-body {
+  padding: 10px 12px;
+}
+
+.object-inspector,
+.object-inspector input,
+.object-inspector select,
+.object-inspector textarea,
+.object-inspector button {
+  font-size: 11px;
+}
+
+.object-inspector label {
+  font-size: 10px;
+}
+
+.object-inspector .field {
+  gap: 5px;
+  margin-bottom: 9px;
+}
+
+.object-inspector .field input,
+.object-inspector .field select,
+.object-inspector .path-row input {
+  min-height: 38px;
+  padding: 8px 11px;
+}
+
+.object-inspector .value-slider-step-v18,
+.object-inspector .value-slider-readout-v18 {
+  min-height: 25px;
+}
+
+.stage-wrap.is-panning {
+  user-select: none;
+}
