@@ -100,7 +100,7 @@ function buildLayerItem(layer, index, layerCount) {
 }
 
 function layerButton(action, label, title, index, disabled = false) {
-  const button = element('button', '', label);
+  const button = element('button', 'layer-inline-action', label);
   button.type = 'button';
   button.title = title;
   button.disabled = disabled;
