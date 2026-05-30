@@ -1,14 +1,14 @@
 import { editorState, updateArchetype } from './editor-state.js';
 import { GAMEPLAY_ACTIONS, PORTRAIT_ACTIONS } from './templates.js';
-import { appendNote, labelFor, WIZARD_DATA_VERSION } from './object-wizard-helpers.js?v=1.33';
+import { appendNote, labelFor, WIZARD_DATA_VERSION } from './object-wizard-helpers.js?v=1.34';
 
 export function createObjectWizardBuildRequirements({ renderBuildChecklist, updateProgressOrb }) {
   function buildRequirements(item) {
     const requirements = [];
+    if (item.visual?.spriteAssetId !== undefined) requirements.push({ id: 'asset:gameplay_sprite', type: 'asset', actionId: 'gameplay_sprite_asset', label: 'Gameplay Sprite Asset ID', defaultMode: 'metadata' });
+    if (item.visual?.portraitAssetId !== undefined) requirements.push({ id: 'asset:dialogue_portrait', type: 'asset', actionId: 'dialogue_portrait_asset', label: 'Dialogue Portrait Asset ID', defaultMode: 'metadata' });
     (item.animationProfile?.gameplayActions || []).forEach((actionId) => requirements.push({ id: `gameplay:${actionId}`, type: 'gameplay', actionId, label: labelFor(GAMEPLAY_ACTIONS, actionId), defaultMode: 'sprite_sheet' }));
     (item.animationProfile?.portraitActions || []).forEach((actionId) => requirements.push({ id: `portrait:${actionId}`, type: 'portrait', actionId, label: labelFor(PORTRAIT_ACTIONS, actionId), defaultMode: 'sprite_sheet' }));
-    if (item.visual?.spriteAssetId !== undefined) requirements.push({ id: 'asset:gameplay_sprite', type: 'asset', actionId: 'gameplay_sprite_asset', label: 'Gameplay sprite asset link', defaultMode: 'metadata' });
-    if (item.visual?.portraitAssetId !== undefined) requirements.push({ id: 'asset:dialogue_portrait', type: 'asset', actionId: 'dialogue_portrait_asset', label: 'Dialogue portrait asset link', defaultMode: 'metadata' });
     if (item.behaviour?.flags?.hasCollision) requirements.push({ id: 'runtime:collision', type: 'runtime', actionId: 'collision', label: 'Collision box / bounds', defaultMode: 'metadata' });
     if (item.behaviour?.flags?.interactable) requirements.push({ id: 'runtime:interaction', type: 'runtime', actionId: 'interaction', label: 'Interaction prompt / hotspot', defaultMode: 'metadata' });
     return orderedRequirements(requirements);
@@ -16,18 +16,18 @@ export function createObjectWizardBuildRequirements({ renderBuildChecklist, upda
 
   function ensureProductionAssets(requirements) {
     const current = editorState.archetype.productionAssets || {};
-    const tasks = { ...(current.tasks || {}) };
+    const storedRequirements = { ...(current.requirements || {}) };
     requirements.forEach((req) => {
-      if (!tasks[req.id]) tasks[req.id] = { mode: req.defaultMode, frameCount: 0, fps: req.type === 'portrait' ? 10 : 8, frames: [], complete: false, notes: '' };
+      if (!storedRequirements[req.id]) storedRequirements[req.id] = { mode: req.defaultMode, frameCount: 0, fps: req.type === 'portrait' ? 10 : 8, frames: [], complete: false, notes: '' };
     });
-    const order = mergeOrder(current.order || [], requirements.map((req) => req.id));
-    updateArchetype({ productionAssets: { ...current, version: WIZARD_DATA_VERSION, order, tasks } });
+    const requirementOrder = mergeOrder(current.requirementOrder || [], requirements.map((req) => req.id));
+    updateArchetype({ productionAssets: { ...current, version: WIZARD_DATA_VERSION, requirementOrder, requirements: storedRequirements } });
   }
 
   function orderedRequirements(requirements) {
-    const order = editorState.archetype.productionAssets?.order || [];
+    const requirementOrder = editorState.archetype.productionAssets?.requirementOrder || [];
     const map = new Map(requirements.map((req) => [req.id, req]));
-    return mergeOrder(order, requirements.map((req) => req.id)).map((id) => map.get(id)).filter(Boolean);
+    return mergeOrder(requirementOrder, requirements.map((req) => req.id)).map((id) => map.get(id)).filter(Boolean);
   }
 
   function mergeOrder(existing, ids) {
@@ -44,15 +44,15 @@ export function createObjectWizardBuildRequirements({ renderBuildChecklist, upda
     if (from < 0 || to < 0) return;
     const [id] = ids.splice(from, 1);
     ids.splice(to, 0, id);
-    updateArchetype({ productionAssets: { ...(editorState.archetype.productionAssets || {}), order: ids } });
+    updateArchetype({ productionAssets: { ...(editorState.archetype.productionAssets || {}), version: WIZARD_DATA_VERSION, requirementOrder: ids } });
     renderBuildChecklist();
   }
 
-  function getRequirementData(id) { return editorState.archetype.productionAssets?.tasks?.[id] || {}; }
+  function getRequirementData(id) { return editorState.archetype.productionAssets?.requirements?.[id] || {}; }
 
   function setRequirementData(id, data) {
     const productionAssets = editorState.archetype.productionAssets || {};
-    updateArchetype({ productionAssets: { ...productionAssets, version: WIZARD_DATA_VERSION, tasks: { ...(productionAssets.tasks || {}), [id]: data } } });
+    updateArchetype({ productionAssets: { ...productionAssets, version: WIZARD_DATA_VERSION, requirements: { ...(productionAssets.requirements || {}), [id]: data } } });
   }
 
   function syncVisualAssetFromTask(id, data) {
