@@ -1,7 +1,7 @@
-// Artifex Project Manager shell renderer
+// Artifex Project Editor shell renderer
 // Keeps index.html small and leaves behaviour in focused modules.
 
-export function renderProjectShell({ version = 'v0.1.31 TASKS' } = {}) {
+export function renderProjectShell({ version = 'v0.1.32 CONTRACT' } = {}) {
   document.body.innerHTML = `
     <header class="h-16 bg-slateDark border-b border-[#20202e] px-4 grid grid-cols-[auto_1fr_auto] items-center z-40 flex-shrink-0 gap-4">
       <div class="flex items-center gap-3 min-w-0">
@@ -19,11 +19,11 @@ export function renderProjectShell({ version = 'v0.1.31 TASKS' } = {}) {
       <nav class="project-menu flex items-center justify-center gap-2 min-w-0 text-xs text-zinc-300">
         <details class="relative" data-project-menu>
           <summary class="cursor-pointer px-3 py-1.5 rounded-full border border-projectGold/20 hover:bg-accentDark/50 hover:border-projectGold/50 transition">File ▾</summary>
-          <div class="absolute left-1/2 -translate-x-1/2 top-9 z-50 w-56 bg-cardDark border border-projectGold/30 rounded-xl shadow-card-glow p-1">
+          <div class="absolute left-1/2 -translate-x-1/2 top-9 z-50 w-64 bg-cardDark border border-projectGold/30 rounded-xl shadow-card-glow p-1">
             <button data-workspace-target="wizard" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Getting Started / Missing Setup</button>
             <button data-project-io-action="import" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Open / Import Project Files</button>
-            <button data-project-io-action="save-local" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Save Current Project</button>
-            <button data-project-io-action="export-package" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Export Project Package</button>
+            <button data-project-io-action="save-local" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Save Browser Draft Only</button>
+            <button data-project-io-action="export-package" class="w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Export Backup ZIP</button>
             <div class="my-1 border-t border-[#2d2d42]"></div>
             <a href="../creation-guide/" class="block w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-projectGoldGlow">Create New Project in Creation Guide</a>
           </div>
@@ -35,7 +35,7 @@ export function renderProjectShell({ version = 'v0.1.31 TASKS' } = {}) {
             <a href="../../index.html" class="block w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-projectGoldGlow font-semibold">Hub</a>
             <div class="my-1 border-t border-[#2d2d42]"></div>
             <a href="../creation-guide/" class="block w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Creation Guide</a>
-            <a href="../project-editor/" class="block w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Project Manager</a>
+            <a href="../project-editor/" class="block w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Project Editor</a>
             <a href="../scene-editor/" class="block w-full text-left px-3 py-2 rounded hover:bg-accentDark/50 text-zinc-200">Scene Editor</a>
             <button class="w-full text-left px-3 py-2 rounded text-zinc-600 cursor-default">Quest Builder</button>
             <button class="w-full text-left px-3 py-2 rounded text-zinc-600 cursor-default">Puzzle Creator</button>
@@ -119,7 +119,7 @@ export function renderProjectShell({ version = 'v0.1.31 TASKS' } = {}) {
               <span id="activeFileIndicator" class="text-xs font-mono text-projectGoldGlow">project-editor split shell</span>
             </div>
             <div class="mt-2 text-[10px] font-mono text-zinc-500 flex justify-between items-center bg-black/40 p-1 rounded border border-zinc-800">
-              <span>LOCAL: SPLIT BUILD</span><span class="text-projectGreen font-bold">&#9679; ONLINE</span>
+              <span>LOCAL: DRAFT STATE</span><span class="text-projectGoldGlow font-bold">BROWSER ONLY</span>
             </div>
           </div>
         </div>
@@ -135,8 +135,8 @@ export function renderProjectShell({ version = 'v0.1.31 TASKS' } = {}) {
         <div id="wizardWorkspace" class="hidden absolute inset-0 bg-obsidian z-20"></div>
         <div id="flatplanCanvas" class="w-full h-full relative cursor-default infinite-grid overflow-hidden flex-1 touch-none">
           <div id="canvasViewport" class="absolute inset-0 origin-top-left select-none will-change-transform" style="transform: translate(0px, 0px) scale(1);">
-            <svg id="svgEdgeLayer" class="absolute inset-0 pointer-events-none w-[5000px] h-[5000px]"></svg>
-            <div id="nodesContainer" class="absolute inset-0 pointer-events-none"></div>
+            <svg id="svgEdgeLayer" class="absolute inset-0 w-full h-full pointer-events-none overflow-visible"></svg>
+            <div id="nodesContainer" class="absolute inset-0"></div>
           </div>
         </div>
       </main>
