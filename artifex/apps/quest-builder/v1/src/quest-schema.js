@@ -1,5 +1,5 @@
-import { MODULE_VERSION, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.10';
-import { getBlockType } from './block-types.js?v=1.2.10';
+import { MODULE_VERSION, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.11';
+import { getBlockType } from './block-types.js?v=1.2.11';
 
 export const START_NODE_ID = 'START';
 export const END_NODE_ID = 'END';
@@ -38,6 +38,8 @@ export function createDefaultConnection(sourceNodeId, targetNodeId, patch = {}) 
     targetNodeId,
     sourcePort: 'out:0',
     targetPort: 'in:0',
+    sourceSide: sourceNodeId === START_NODE_ID ? 'right' : 'right',
+    targetSide: targetNodeId === END_NODE_ID ? 'left' : 'left',
     condition: '',
     label: '',
     ...patch
@@ -106,14 +108,14 @@ export function createDemoQuestFile() {
           createDefaultBlock('completion', { id: 'b6', name: 'Calling Fulfilled', thumbnail: '✅', condition: 'flag_true:chalice_delivered', uiOverlay: 'calling_fulfilled' })
         ],
         connections: [
-          createDefaultConnection(START_NODE_ID, 'b1', { id: 'c_start_enter' }),
-          createDefaultConnection('b1', 'b2', { id: 'c_enter_speak' }),
-          createDefaultConnection('b2', 'b3', { id: 'c_speak_collect' }),
-          createDefaultConnection('b3', 'b5', { id: 'c_collect_codice', sourcePort: 'out:0' }),
-          createDefaultConnection('b3', 'b4', { id: 'c_collect_warning', sourcePort: 'out:1', condition: 'wrong_item_used', label: 'wrong item' }),
-          createDefaultConnection('b4', 'b3', { id: 'c_warning_return', sourcePort: 'out:0', targetPort: 'in:1', label: 'try again' }),
-          createDefaultConnection('b5', 'b6', { id: 'c_codice_complete' }),
-          createDefaultConnection('b6', END_NODE_ID, { id: 'c_complete_end' })
+          createDefaultConnection(START_NODE_ID, 'b1', { id: 'c_start_enter', sourceSide: 'right', targetSide: 'left' }),
+          createDefaultConnection('b1', 'b2', { id: 'c_enter_speak', sourceSide: 'right', targetSide: 'left' }),
+          createDefaultConnection('b2', 'b3', { id: 'c_speak_collect', sourceSide: 'left', targetSide: 'right' }),
+          createDefaultConnection('b3', 'b5', { id: 'c_collect_codice', sourcePort: 'out:left:0', targetPort: 'in:left:0', sourceSide: 'left', targetSide: 'left' }),
+          createDefaultConnection('b3', 'b4', { id: 'c_collect_warning', sourcePort: 'out:right:0', targetPort: 'in:left:0', sourceSide: 'right', targetSide: 'left', condition: 'wrong_item_used', label: 'wrong item' }),
+          createDefaultConnection('b4', 'b3', { id: 'c_warning_return', sourcePort: 'out:right:0', targetPort: 'in:right:1', sourceSide: 'right', targetSide: 'right', label: 'try again' }),
+          createDefaultConnection('b5', 'b6', { id: 'c_codice_complete', sourceSide: 'right', targetSide: 'left' }),
+          createDefaultConnection('b6', END_NODE_ID, { id: 'c_complete_end', sourceSide: 'right', targetSide: 'left' })
         ]
       })
     ]
