@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "artifex.registry.v1",
+  "projectId": "project_untitled_artifex_adventure",
+  "enabledModules": [
+    "creation-guide",
+    "project-editor",
+    "scene-editor",
+    "quest-builder",
+    "puzzle-creator",
+    "archetype-object-creator",
+    "effect-editor",
+    "asset-library",
+    "build-game"
+  ],
+  "indexes": {
+    "sceneIndex": "scenes/scene-index.json",
+    "screenIndex": "screens/screen-index.json",
+    "questIndex": "quests/quest-index.json",
+    "sidequestIndex": "sidequests/sidequest-index.json",
+    "puzzleIndex": "puzzles/puzzle-index.json",
+    "objectArchetypeIndex": "archetypes/object-index.json",
+    "effectArchetypeIndex": "archetypes/effect-index.json",
+    "assetIndex": "assets/asset-index.json",
+    "healthReport": "health/latest-health-report.json"
+  }
+}

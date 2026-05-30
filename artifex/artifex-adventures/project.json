@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "artifex.project.v1",
+  "projectId": "project_untitled_artifex_adventure",
+  "projectSlug": "untitled-artifex-adventure",
+  "gameTitle": "Untitled Artifex Adventure",
+  "creator": "",
+  "version": "0.1.0",
+  "createdBy": "creation-guide",
+  "projectLogo": null,
+  "startScreenId": "screen_title_main",
+  "enabledModules": [
+    "creation-guide",
+    "project-editor",
+    "scene-editor",
+    "quest-builder",
+    "puzzle-creator",
+    "archetype-object-creator",
+    "effect-editor",
+    "asset-library",
+    "build-game"
+  ],
+  "roots": {
+    "intake": "intake/",
+    "assets": "assets/",
+    "scenes": "scenes/",
+    "screens": "screens/",
+    "quests": "quests/",
+    "sidequests": "sidequests/",
+    "puzzles": "puzzles/",
+    "archetypes": "archetypes/",
+    "health": "health/",
+    "build": "build/",
+    "backups": "backups/",
+    "todos": "todos/"
+  },
+  "fileRefs": {
+    "sceneIndex": "scenes/scene-index.json",
+    "screenIndex": "screens/screen-index.json",
+    "questIndex": "quests/quest-index.json",
+    "sidequestIndex": "sidequests/sidequest-index.json",
+    "puzzleIndex": "puzzles/puzzle-index.json",
+    "objectArchetypeIndex": "archetypes/object-index.json",
+    "effectArchetypeIndex": "archetypes/effect-index.json",
+    "assetIndex": "assets/asset-index.json",
+    "healthReport": "health/latest-health-report.json"
+  }
+}

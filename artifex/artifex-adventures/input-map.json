@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "artifex.input-map.v1",
+  "projectId": "project_untitled_artifex_adventure",
+  "actions": {
+    "move": {
+      "input": "d-pad",
+      "label": "Move"
+    },
+    "invoke": {
+      "input": "B",
+      "label": "Invoke"
+    },
+    "useActiveItem": {
+      "input": "A",
+      "label": "Use Active Item"
+    },
+    "itemScroll": {
+      "input": "X",
+      "label": "Item Scroll Mode"
+    },
+    "reservedSpecial": {
+      "input": "Y",
+      "label": "Reserved Special"
+    },
+    "inventory": {
+      "input": "Select",
+      "label": "Kibisis Pouch"
+    },
+    "menu": {
+      "input": "Start",
+      "label": "Codice Cylinder of Yggdrasil"
+    }
+  }
+}
