@@ -168,6 +168,11 @@ function addPreset(id) {
   const preset = cloneBasePreset('base', id);
   if (!preset?.config) return;
   const config = { ...preset.config, spawnRate: Math.min(Number(preset.config.spawnRate) || 4, 4) };
+  if (id === 'standard-particle') {
+    config.gravity = 100;
+    config.gravityBoost = false;
+    config.gravityScaleVersion = 'ui';
+  }
   if (config.engine === 'text') {
     config.textDensity = Math.min(Number(config.textDensity) || Number(config.spawnRate) || 2, 2.5);
     config.spawnRate = Math.min(Number(config.spawnRate) || 2, 3);
