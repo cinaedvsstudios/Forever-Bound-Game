@@ -1,4 +1,4 @@
-import { parseList } from './quest-schema.js';
+import { parseList } from './quest-schema.js?v=1.2.10';
 
 export function openEditor(app, which) {
   if (which === 'quest' && !app.quest()) app.addQuest();
@@ -71,7 +71,7 @@ export function createWizardQuest(app) {
     completionFlag,
     blocks: wizardBlocks(app.$('wizard-flow-input').value, sceneId, objectId, completionFlag)
   });
-  app.toast('Quest created from wizard.');
+  app.toast('Quest created with loose blocks. Drag connector circles to define the flow.');
 }
 
 function wizardBlocks(flow, sceneId, objectId, flag) {
