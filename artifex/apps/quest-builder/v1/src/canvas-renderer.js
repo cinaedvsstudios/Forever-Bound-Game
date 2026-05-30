@@ -1,11 +1,13 @@
-import { DESIGN_WIDTH as W, DESIGN_HEIGHT as H } from './module-config.js?v=1.2.9';
-import { getBlockType } from './block-types.js?v=1.2.9';
+import { DESIGN_WIDTH as W, DESIGN_HEIGHT as H } from './module-config.js?v=1.2.10';
+import { getBlockType } from './block-types.js?v=1.2.10';
+import { START_NODE_ID, END_NODE_ID } from './quest-schema.js?v=1.2.10';
 
-const CARD_W = 250;
-const CARD_H = 124;
+export const CARD_W = 250;
+export const CARD_H = 124;
+const PORT_RADIUS = 9;
 const endpointAssets = {
-  start: new URL('../../icons/start.png?v=1.2.9', import.meta.url).href,
-  finish: new URL('../../icons/finish.png?v=1.2.9', import.meta.url).href
+  start: new URL('../../icons/start.png?v=1.2.10', import.meta.url).href,
+  finish: new URL('../../icons/finish.png?v=1.2.10', import.meta.url).href
 };
 const endpointImages = {};
 
@@ -43,30 +45,39 @@ export function drawCanvas(app) {
   const start = { x: 118, y: 245 };
   const finish = { x: W - 115, y: H - 108 };
   const blocks = q.blocks || [];
-  const positions = blocks.map((item, index) => getBlockPosition(layout, q.id, item.id, index));
+  const positions = Object.fromEntries(blocks.map((item, index) => [item.id, getBlockPosition(layout, q.id, item.id, index)]));
+  const graph = buildGraphDrawingData(q, blocks);
 
-  if (positions.length) {
-    drawConnector(ctx, { x: start.x + 55, y: start.y }, { x: positions[0].x, y: positions[0].y + CARD_H / 2 });
-    positions.forEach((position, index) => {
-      if (index < positions.length - 1) {
-        drawConnector(ctx, { x: position.x + CARD_W, y: position.y + CARD_H / 2 }, { x: positions[index + 1].x, y: positions[index + 1].y + CARD_H / 2 });
-      }
-    });
-    const last = positions[positions.length - 1];
-    drawConnector(ctx, { x: last.x + CARD_W, y: last.y + CARD_H / 2 }, { x: finish.x - 55, y: finish.y });
+  (q.connections || []).forEach((connection) => {
+    const source = getPortPoint(connection.sourceNodeId, 'out', connection.sourcePort, positions, start, finish, graph);
+    const target = getPortPoint(connection.targetNodeId, 'in', connection.targetPort, positions, start, finish, graph);
+    if (!source || !target) return;
+    const sourceBlock = blocks.find((block) => block.id === connection.sourceNodeId);
+    const color = connection.sourceNodeId === START_NODE_ID ? '#7ff0bd' : typeColor(sourceBlock?.type);
+    const segments = drawConnector(ctx, source, target, color, state.activeConnectionId === connection.id);
+    app.hitZones.push({ kind: 'connection', connectionId: connection.id, segments, threshold: 9 });
+  });
+
+  if (state.connectionDrag) {
+    const source = getPortPoint(state.connectionDrag.sourceNodeId, 'out', state.connectionDrag.sourcePort, positions, start, finish, graph);
+    if (source && state.connectionDrag.point) drawPreviewConnector(ctx, source, state.connectionDrag.point, state.connectionDrag.color);
   }
 
   drawEndpointNode(ctx, start.x, start.y, 'start', app);
   drawEndpointNode(ctx, finish.x, finish.y, 'finish', app);
 
   blocks.forEach((item, index) => {
-    const position = positions[index];
+    const position = positions[item.id];
     const selected = state.inspectorTarget === 'block' && index === state.activeBlock;
     const dragging = state.canvasBlockDrag?.index === index && state.canvasBlockDrag?.moved;
     drawFlowCard(ctx, position.x, position.y, CARD_W, CARD_H, item, selected, dragging);
     app.hitZones.push({ kind: 'block', x: position.x, y: position.y, w: CARD_W, h: CARD_H, index });
     app.hitZones.push({ kind: 'block-edit', x: position.x + CARD_W - 48, y: position.y, w: 48, h: 46, index });
   });
+
+  drawNodePorts(ctx, app, START_NODE_ID, null, positions, start, finish, graph);
+  blocks.forEach((block) => drawNodePorts(ctx, app, block.id, block, positions, start, finish, graph));
+  drawNodePorts(ctx, app, END_NODE_ID, null, positions, start, finish, graph);
 }
 
 export function getCanvasPoint(app, event) {
@@ -79,7 +90,7 @@ export function getCanvasPoint(app, event) {
 
 export function getCanvasHit(app, event) {
   const point = getCanvasPoint(app, event);
-  return [...(app.hitZones || [])].reverse().find((zone) => point.x >= zone.x && point.x <= zone.x + zone.w && point.y >= zone.y && point.y <= zone.y + zone.h) || null;
+  return [...(app.hitZones || [])].reverse().find((zone) => hitContains(zone, point)) || null;
 }
 
 export function getBlockPosition(layout, questId, blockId, index) {
@@ -99,20 +110,121 @@ export function applyCanvasTransform(canvas, layout) {
   canvas.style.transform = `translate(${layout.panX}px, ${layout.panY}px) scale(${layout.zoom})`;
 }
 
-function drawConnector(ctx, from, to) {
+function buildGraphDrawingData(quest, blocks) {
+  const inPorts = new Map();
+  const outPorts = new Map();
+  const add = (map, nodeId, portId) => {
+    if (!map.has(nodeId)) map.set(nodeId, new Set());
+    map.get(nodeId).add(portId);
+  };
+  (quest.connections || []).forEach((connection) => {
+    add(outPorts, connection.sourceNodeId, connection.sourcePort || 'out:0');
+    add(inPorts, connection.targetNodeId, connection.targetPort || 'in:0');
+  });
+  add(outPorts, START_NODE_ID, 'out:0');
+  add(inPorts, END_NODE_ID, 'in:0');
+  blocks.forEach((block) => {
+    add(inPorts, block.id, nextAvailablePort(inPorts.get(block.id), 'in'));
+    add(outPorts, block.id, nextAvailablePort(outPorts.get(block.id), 'out'));
+  });
+  return { inPorts, outPorts };
+}
+
+function nextAvailablePort(ports, direction) {
+  const used = ports || new Set();
+  let index = 0;
+  while (used.has(`${direction}:${index}`)) index += 1;
+  return `${direction}:${index}`;
+}
+
+function sortedPorts(graph, direction, nodeId) {
+  return [...(direction === 'out' ? graph.outPorts.get(nodeId) : graph.inPorts.get(nodeId) || [])]
+    .sort((a, b) => portIndex(a) - portIndex(b));
+}
+
+function portIndex(portId) {
+  const number = Number(String(portId || '').split(':')[1]);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function getPortPoint(nodeId, direction, portId, positions, start, finish, graph) {
+  if (nodeId === START_NODE_ID) return direction === 'out' ? { x: start.x + 55, y: start.y } : null;
+  if (nodeId === END_NODE_ID) return direction === 'in' ? { x: finish.x - 55, y: finish.y } : null;
+  const position = positions[nodeId];
+  if (!position) return null;
+  const ports = sortedPorts(graph, direction, nodeId);
+  const index = Math.max(0, ports.indexOf(portId || `${direction}:0`));
+  const spread = 22;
+  const y = position.y + CARD_H / 2 + (index - (ports.length - 1) / 2) * spread;
+  return { x: direction === 'out' ? position.x + CARD_W : position.x, y };
+}
+
+function drawNodePorts(ctx, app, nodeId, block, positions, start, finish, graph) {
+  const directions = nodeId === START_NODE_ID ? ['out'] : nodeId === END_NODE_ID ? ['in'] : ['in', 'out'];
+  directions.forEach((direction) => {
+    const ports = sortedPorts(graph, direction, nodeId);
+    ports.forEach((portId) => {
+      const point = getPortPoint(nodeId, direction, portId, positions, start, finish, graph);
+      if (!point) return;
+      const active = app.state.connectionDrag?.sourceNodeId === nodeId && app.state.connectionDrag?.sourcePort === portId;
+      drawPort(ctx, point, direction, active);
+      app.hitZones.push({ kind: `port-${direction}`, nodeId, portId, x: point.x - PORT_RADIUS - 4, y: point.y - PORT_RADIUS - 4, w: (PORT_RADIUS + 4) * 2, h: (PORT_RADIUS + 4) * 2, blockId: block?.id });
+    });
+  });
+}
+
+function drawPort(ctx, point, direction, active) {
+  ctx.beginPath();
+  ctx.arc(point.x, point.y, PORT_RADIUS, 0, Math.PI * 2);
+  ctx.fillStyle = active ? 'rgba(127,240,189,.96)' : 'rgba(17,26,20,.98)';
+  ctx.fill();
+  ctx.strokeStyle = direction === 'out' ? '#7ff0bd' : 'rgba(226,204,167,.9)';
+  ctx.lineWidth = active ? 3 : 2;
+  ctx.stroke();
+  ctx.lineWidth = 1;
+}
+
+function drawConnector(ctx, from, to, color, selected) {
   const midX = from.x + (to.x - from.x) / 2;
+  const segments = [[from, { x: midX, y: from.y }], [{ x: midX, y: from.y }, { x: midX, y: to.y }], [{ x: midX, y: to.y }, to]];
   ctx.beginPath();
   ctx.moveTo(from.x, from.y);
   ctx.lineTo(midX, from.y);
   ctx.lineTo(midX, to.y);
   ctx.lineTo(to.x, to.y);
-  ctx.strokeStyle = 'rgba(62,180,137,.54)';
-  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = color || '#7ff0bd';
+  ctx.lineWidth = selected ? 6 : 4;
+  if (selected) {
+    ctx.shadowColor = color || '#7ff0bd';
+    ctx.shadowBlur = 14;
+  }
   ctx.stroke();
-  ctx.fillStyle = 'rgba(127,240,189,.82)';
-  ctx.font = '14px Arial';
-  ctx.fillText('→', to.x - 18, to.y + 5);
+  ctx.shadowBlur = 0;
   ctx.lineWidth = 1;
+  return segments;
+}
+
+function drawPreviewConnector(ctx, from, to, color) {
+  ctx.save();
+  ctx.setLineDash([10, 7]);
+  ctx.globalAlpha = .84;
+  drawConnector(ctx, from, to, color, false);
+  ctx.restore();
+}
+
+function hitContains(zone, point) {
+  if (zone.kind === 'connection') return (zone.segments || []).some(([a, b]) => distanceToSegment(point, a, b) <= (zone.threshold || 8));
+  return point.x >= zone.x && point.x <= zone.x + zone.w && point.y >= zone.y && point.y <= zone.y + zone.h;
+}
+
+function distanceToSegment(point, start, end) {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  if (!dx && !dy) return Math.hypot(point.x - start.x, point.y - start.y);
+  const t = Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / (dx * dx + dy * dy)));
+  return Math.hypot(point.x - (start.x + t * dx), point.y - (start.y + t * dy));
 }
 
 function drawQuestHeaderCard(ctx, x, y, thumb, title, meta, calling, selected) {
@@ -260,7 +372,7 @@ function linkedSummary(item) {
 }
 
 export function typeColor(type) {
-  return { scene: '#a78bfa', dialogue: '#f87171', action: '#fbbf24', object: '#2dd4bf', information: '#60a5fa', condition: '#60a5fa', capra: '#7ff0bd', ui: '#7ff0bd', reward: '#e2cca7', codice: '#e2cca7', combat: '#fb7185', route: '#34d399', completion: '#fef3c7', neutral: 'rgba(226,204,167,.65)' }[type] || 'rgba(226,204,167,.25)';
+  return { scene: '#a78bfa', dialogue: '#f87171', action: '#fbbf24', object: '#2dd4bf', information: '#60a5fa', condition: '#60a5fa', capra: '#7ff0bd', ui: '#7ff0bd', reward: '#e2cca7', codice: '#e2cca7', ritual: '#e2cca7', combat: '#fb7185', route: '#34d399', travel: '#34d399', companion: '#7ff0bd', cleansing: '#7ff0bd', completion: '#7ff0bd', neutral: 'rgba(226,204,167,.65)' }[type] || 'rgba(226,204,167,.25)';
 }
 
 function line(ctx, x1, y1, x2, y2) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
