@@ -1,10 +1,10 @@
-import { MODULE_VERSION, MODULE_STORAGE_KEY, LAYOUT_STORAGE_KEY, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.10';
-import { getBlockType } from './block-types.js?v=1.2.10';
-import { createDemoQuestFile, createDefaultQuest, createDefaultBlock, createDefaultConnection, escapeHtml } from './quest-schema.js?v=1.2.10';
-import { createLayoutState, clamp } from './layout-state.js?v=1.2.10';
-import { drawCanvas, applyCanvasTransform, getCanvasHit, getCanvasPoint, getBlockPosition, typeColor, CARD_W, CARD_H } from './canvas-renderer.js?v=1.2.10';
-import { fillBlockTypeMenus, wireMenus, wireActions, wireInputs, wireFlowDrag, wireWorkspacePan, wirePanelResize, wireFlowResizeSave } from './ui-bindings.js?v=1.2.10';
-import { openEditor } from './dialog-editors.js?v=1.2.10';
+import { MODULE_VERSION, MODULE_STORAGE_KEY, LAYOUT_STORAGE_KEY, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.11';
+import { getBlockType } from './block-types.js?v=1.2.11';
+import { createDemoQuestFile, createDefaultQuest, createDefaultBlock, createDefaultConnection, escapeHtml, START_NODE_ID, END_NODE_ID } from './quest-schema.js?v=1.2.11';
+import { createLayoutState, clamp } from './layout-state.js?v=1.2.11';
+import { drawCanvas, applyCanvasTransform, getCanvasHit, getCanvasPoint, getBlockPosition, typeColor, CARD_W, CARD_H } from './canvas-renderer.js?v=1.2.11';
+import { fillBlockTypeMenus, wireMenus, wireActions, wireInputs, wireFlowDrag, wireWorkspacePan, wirePanelResize, wireFlowResizeSave } from './ui-bindings.js?v=1.2.11';
+import { openEditor } from './dialog-editors.js?v=1.2.11';
 
 const $ = (id) => document.getElementById(id);
 const layoutState = createLayoutState(LAYOUT_STORAGE_KEY);
@@ -87,13 +87,27 @@ function addBlock(type = 'scene', patch = {}) {
   render();
 }
 
-function addConnection(sourceNodeId, sourcePort, targetNodeId, targetPort) {
+function nextPort(nodeId, end, side) {
+  const matching = (app.quest()?.connections || []).filter((connection) => {
+    const sameNode = end === 'source' ? connection.sourceNodeId === nodeId : connection.targetNodeId === nodeId;
+    const sameSide = end === 'source' ? (connection.sourceSide || 'right') === side : (connection.targetSide || 'left') === side;
+    return sameNode && sameSide;
+  });
+  return `${end === 'source' ? 'out' : 'in'}:${side}:${matching.length}`;
+}
+
+function addConnection(sourceNodeId, targetNodeId, sourceSide = 'right', targetSide = 'left') {
   const quest = app.quest();
-  if (!quest || !sourceNodeId || !targetNodeId || sourceNodeId === targetNodeId) return false;
+  if (!quest || !sourceNodeId || !targetNodeId || sourceNodeId === targetNodeId || sourceNodeId === END_NODE_ID || targetNodeId === START_NODE_ID) return false;
   quest.connections = quest.connections || [];
-  const duplicate = quest.connections.some((connection) => connection.sourceNodeId === sourceNodeId && connection.targetNodeId === targetNodeId && connection.sourcePort === sourcePort && connection.targetPort === targetPort);
+  const duplicate = quest.connections.some((connection) => connection.sourceNodeId === sourceNodeId && connection.targetNodeId === targetNodeId);
   if (duplicate) return false;
-  const connection = createDefaultConnection(sourceNodeId, targetNodeId, { sourcePort, targetPort });
+  const connection = createDefaultConnection(sourceNodeId, targetNodeId, {
+    sourceSide,
+    targetSide,
+    sourcePort: nextPort(sourceNodeId, 'source', sourceSide),
+    targetPort: nextPort(targetNodeId, 'target', targetSide)
+  });
   quest.connections.push(connection);
   state.activeConnectionId = connection.id;
   render();
@@ -187,13 +201,17 @@ function wireCanvasSelection() {
     }
     if (hit.kind === 'quest-edit') return openQuestEditor(hit.index ?? state.activeQuest);
     if (hit.kind === 'block-edit') return openBlockEditor(hit.index);
+    if (hit.kind === 'connected-port') {
+      if (removeConnection(hit.connectionId)) toast('Connection cleared.');
+      return;
+    }
     if (hit.kind === 'connection') {
       state.activeConnectionId = hit.connectionId;
       app.draw();
-      toast('Connection selected. Press Delete to remove it.');
+      toast('Connection selected. Click either endpoint circle to clear it, or press Delete.');
       return;
     }
-    if (hit.kind.startsWith('port-')) return;
+    if (hit.kind === 'connect-add') return;
     if (app.layout().panMode) return;
     if (hit.kind === 'quest') selectQuest(hit.index ?? state.activeQuest);
     if (hit.kind === 'block') selectBlock(hit.index);
@@ -206,18 +224,43 @@ function wireCanvasSelection() {
   });
 }
 
+function sideFromStartPoint(nodeId, point) {
+  if (nodeId === START_NODE_ID) return 'right';
+  const index = (app.quest()?.blocks || []).findIndex((block) => block.id === nodeId);
+  const block = app.quest()?.blocks?.[index];
+  if (!block || !point) return 'right';
+  const position = getBlockPosition(app.layout(), app.quest().id, block.id, index);
+  return point.x <= position.x + CARD_W / 2 ? 'left' : 'right';
+}
+
+function sideForTarget(nodeId, sourcePoint) {
+  if (nodeId === END_NODE_ID) return 'left';
+  const index = (app.quest()?.blocks || []).findIndex((block) => block.id === nodeId);
+  const block = app.quest()?.blocks?.[index];
+  if (!block || !sourcePoint) return 'left';
+  const position = getBlockPosition(app.layout(), app.quest().id, block.id, index);
+  return sourcePoint.x < position.x + CARD_W / 2 ? 'left' : 'right';
+}
+
+function targetNodeFromHit(hit) {
+  if (!hit) return null;
+  if (hit.kind === 'block' || hit.kind === 'endpoint' || hit.kind === 'connected-port') return hit.nodeId;
+  return null;
+}
+
 function wireCanvasConnections() {
   canvas.addEventListener('pointerdown', (event) => {
     if (event.button !== 0 || app.layout().panMode) return;
     const hit = getCanvasHit(app, event);
-    if (!hit || hit.kind !== 'port-out') return;
+    if (!hit || hit.kind !== 'connect-add') return;
     event.preventDefault();
     const block = app.quest()?.blocks?.find((item) => item.id === hit.nodeId);
     state.connectionDrag = {
       pointerId: event.pointerId,
       sourceNodeId: hit.nodeId,
-      sourcePort: hit.portId,
-      color: hit.nodeId === 'START' ? '#7ff0bd' : typeColor(block?.type),
+      sourceSide: sideFromStartPoint(hit.nodeId, hit.startPoint),
+      color: hit.nodeId === START_NODE_ID ? '#7ff0bd' : typeColor(block?.type),
+      startPoint: hit.startPoint,
       point: getCanvasPoint(app, event)
     };
     canvas.setPointerCapture(event.pointerId);
@@ -234,13 +277,14 @@ function wireCanvasConnections() {
     const drag = state.connectionDrag;
     if (!drag || drag.pointerId !== event.pointerId) return;
     const hit = getCanvasHit(app, event);
-    const connected = hit?.kind === 'port-in' && addConnection(drag.sourceNodeId, drag.sourcePort, hit.nodeId, hit.portId);
+    const targetNodeId = targetNodeFromHit(hit);
+    const connected = targetNodeId && targetNodeId !== drag.sourceNodeId && addConnection(drag.sourceNodeId, targetNodeId, drag.sourceSide, sideForTarget(targetNodeId, drag.startPoint));
     state.connectionDrag = null;
     state.suppressCanvasClick = true;
     try { canvas.releasePointerCapture(event.pointerId); } catch { /* noop */ }
     canvas.style.cursor = app.layout().panMode ? 'grab' : 'pointer';
     render();
-    toast(connected ? 'Connection created.' : 'Connection cancelled. Drag onto an input circle to connect.');
+    toast(connected ? 'Connection created.' : 'Connection cancelled. Drag the link icon onto a block or END.');
   };
   canvas.addEventListener('pointerup', endConnection);
   canvas.addEventListener('pointercancel', endConnection);
@@ -353,7 +397,7 @@ function render() {
 function renderQuestInspector(q) {
   text('inspector-title', 'Quest Status');
   text('inspector-kicker', 'QUEST');
-  text('inspector-note', 'Click a quest header, Calling pill, or a flow card in the viewing area. This panel edits the selected thing.');
+  text('inspector-note', 'Click a quest header, Calling pill, or flow card in the viewing area. This panel edits the selected thing.');
   showQuestFields(true);
   showBlockFields(false);
   set('selected-quest-name', q.name);
