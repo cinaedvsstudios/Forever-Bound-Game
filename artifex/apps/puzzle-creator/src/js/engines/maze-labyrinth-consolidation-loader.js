@@ -12,7 +12,7 @@ import './maze-features.js?v=1.29.2';
 import './maze-completion-rules.js?v=1.28';
 import './maze-ui-polish.js?v=1.28';
 import './maze-connections.js?v=1.28';
-import './maze-door-visual-linking.js?v=1.30.1';
+import './maze-door-visual-linking.js?v=1.30.2';
 import './maze-organic-wall-renderer.js?v=1.28';
 
 window.__artifexMazeConsolidation = {
