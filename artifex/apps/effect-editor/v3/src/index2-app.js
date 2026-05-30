@@ -1,9 +1,9 @@
-import { initEditorCore } from './editor-core.js';
+import { initEditorCore } from './editor-core.js?v=024-feedback';
 import { initEditorAppearanceControls } from './editor-appearance-controls.js';
 import { initEditorDynamicsControls } from './editor-dynamics-controls.js';
 import { initEditorQuickEditControls } from './editor-quick-edit-controls.js';
-import { initEditorRestoredMotionControls } from './editor-restored-motion-controls.js';
-import { initEditorWorkspaceUI } from './editor-workspace-ui.js';
+import { initEditorRestoredMotionControls } from './editor-restored-motion-controls.js?v=024-feedback';
+import { initEditorWorkspaceUI } from './editor-workspace-ui.js?v=024-feedback';
 
 const VERSION_LABEL = 'INDEX2-CLEAN-0.2.4';
 
