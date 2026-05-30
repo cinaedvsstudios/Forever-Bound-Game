@@ -1,6 +1,6 @@
 # Puzzle Creator · Maze / Labyrinth Update Steps
 
-Status: V1.28 live-approved stable baseline; registered-content reader foundation added, picker UI not yet wired
+Status: V1.28 live-approved stable baseline; shared registered-content reader and picker controller added, Maze consumer not yet wired
 Owner: Puzzle Creator
 Related modules: Project Manager, Scene Editor, Quest Builder, Archetype Object Creator, Asset Library, Build Game
 Last updated: 2026-05-30
@@ -41,16 +41,17 @@ src/js/engines/maze-labyrinth-consolidation-loader.js
 - Rounded/Organic Walk Test no longer visibly flashes the underlying square grid between redraws.
 - Wall Form is included in exported visual-rendering metadata.
 
-## Shared registered-content foundation added · not yet visible in Maze UI
+## Shared registered-content dependency completed · not yet consumed by Maze UI
 
 Created shared dependency files:
 
 ```text
 artifex/shared/registered-content/registered-content-reader.js
+artifex/shared/registered-content/registered-content-picker.js
 artifex/shared/registered-content/README.md
 ```
 
-The reader now defines and validates the canonical project-backed content sources required by future Maze linking:
+The dependency defines and validates the canonical project-backed content sources required by future Maze linking:
 
 ```text
 assets/asset-index.json                 final registered visual/audio assets using asset_ IDs
@@ -58,7 +59,7 @@ archetypes/object-index.json            reusable gameplay object records using a
 archetypes/effect-index.json            reusable effect records using archeffect_ IDs
 ```
 
-Implemented foundation behaviour:
+Implemented reader behaviour:
 
 - loads the canonical index types through a provided JSON reader or `window.ArtifexProjectFolder.readJson`;
 - validates index schema and typed collection name;
@@ -67,15 +68,25 @@ Implemented foundation behaviour:
 - exposes normalized search results and stable minimal reference creation for future picker consumers;
 - reports honest empty/missing/invalid/read-failed statuses.
 
-This is deliberately a data dependency only. Puzzle Creator has not yet imported it, no Maze Link button has been enabled, and no current V1.28 visible behaviour has changed.
+Implemented picker controller behaviour:
+
+- opens a reusable Artifex-themed modal selection panel;
+- supports Final Assets, Archetype Objects and Archetype Effects tabs;
+- searches valid records by ID, name, type, final path, status and tags;
+- shows empty, missing, invalid, unreadable and partially-rejected results honestly;
+- shows a selected record's stable ID and final project path before confirmation;
+- returns a minimal stable reference only from a record accepted by the reader;
+- does not provide uploads or raw-path entry that could bypass project promotion/indexing.
+
+This dependency exists for consuming authoring apps. Puzzle Creator has not yet imported it, no Maze Link button has been enabled, and no current V1.28 visible behaviour has changed.
 
 ## Still unimplemented
 
-- Reusable registered-content picker UI consuming the shared reader.
-- Puzzle Creator consumption of that picker for final `asset_`, `archobj_` and `archeffect_` records.
+- Puzzle Creator consumption of the shared picker for Collect and Door records.
 - Archetype Object linking for collected items, foes or hazards.
 - Door asset/image selection.
 - Portal visual asset/FX selection.
+- Connected-project production/population workflow that creates real selectable asset and archetype records where required.
 - Walk Test enforcement for mandatory Completion Rules.
 - Foe and Hazard feature setup and runtime behaviour.
 - Traboule collision override behaviour.
@@ -87,39 +98,23 @@ This is deliberately a data dependency only. Puzzle Creator has not yet imported
 
 ## Asset/archetype linking dependency decision · 2026-05-30
 
-Inspection result: the project has canonical contract paths and partial source modules, but no honest shared picker that Puzzle Creator can use for final project-backed linking yet. The shared reader foundation now removes the first data-validation blocker, but selection UI and owning-module project records are still required before Maze controls can become active.
-
-Existing usable contract direction:
-
-```text
-assets/asset-index.json                 final registered visual/audio assets using asset_ IDs
-archetypes/object-index.json            reusable gameplay object records using archobj_ IDs
-archetypes/effect-index.json            reusable effect records using archeffect_ IDs
-```
-
-Remaining dependency gap:
-
-- Project Editor can browse imported index data and link it to Flatplan nodes, but that browser is not a shared field picker for authoring apps.
-- Archetype Object Creator defines and exports `archobj_` records, but its current library workflow is template/local-browser based rather than a connected-project picker service.
-- Scene Editor has a useful legacy asset picker for `artifex/assets-library/asset-library.json`, but that catalogue is not the project-final `assets/asset-index.json` contract.
-- `artifex/apps/object-library/index.html` is currently empty and cannot supply a picker dependency.
-- The new shared reader validates final records, but it does not itself create promoted assets, project-backed archetypes or picker UI.
+The project had canonical contract paths but no shared validated picker. That platform dependency now exists as a reader plus reusable picker controller. It does not create final registered content itself, and it does not make any Maze control operational until Puzzle Creator stores and exports the selected reference correctly.
 
 Required linking ownership:
 
-- A placed Collect item must store a placed maze cell plus a stable `archetypeObjectId` resolving to an `archobj_` record. The archetype owns gameplay identity and linked visual assets.
-- A Door remains a maze connection record; its visual should later store a final `visualAssetId` resolving to an `asset_` record.
+- A placed Collect item stores a placed maze cell plus a stable `archetypeObjectId` resolving to an `archobj_` record. The archetype owns gameplay identity and linked visual assets.
+- A Door remains a maze connection record; its visual later stores a final `visualAssetId` resolving to an `asset_` record.
 - A Portal eventually stores final visual `asset_` and optional reusable `archeffect_` references, while endpoint/destination linking belongs to the shared global Portal Registry.
 - Scatter decoration later stores final visual `asset_` references only, because it is decoration rather than gameplay object behaviour.
 
 Correct next coding move:
 
-1. Add a reusable picker UI/controller around `artifex/shared/registered-content/registered-content-reader.js`.
-2. Keep its empty/unavailable state truthful until real connected-project `asset_` / `archobj_` / `archeffect_` index records exist.
-3. Only then consume it in Puzzle Creator to enable Collect Archetype Object selection and Door visual selection.
+1. Consume the shared picker in Puzzle Creator for **Collect** only, opening it from the existing Link action and storing/exporting `archetypeObjectId` when a real `archobj_` record is selected.
+2. When no connected project or no registered object records exist, show the picker’s truthful empty/unavailable message rather than pretending a link was created.
+3. After Collect wiring is tested, use the same dependency for Door visual `asset_` selection.
 4. Keep Portal destination/global linking for the separate shared Portal Registry stage.
 
-Do not enable a Maze Link button by storing raw local uploads, free-text IDs or legacy asset paths as if they were final project records.
+Do not store raw local uploads, free-text IDs or legacy asset paths as final Maze feature references.
 
 ## Core workflow: Features first, Completion Rules second
 
@@ -176,20 +171,20 @@ Rules:
 
 ### Collection objects
 
-Current state: placement exists; Archetype Object linking and gameplay enforcement are pending the registered-content picker UI dependency.
+Current state: placement exists; Archetype Object linking is the next Maze consumer stage now that the shared picker controller exists. Gameplay enforcement remains pending.
 
 Required controls/validation:
 
 - object count and one setup row per object
 - Place on valid Overview path cell
-- future Link Archetype Object from registered `archobj_` project records and display thumbnail/label where available
-- clear/reset placement
+- Link Archetype Object from registered `archobj_` project records and display selected label/ID where available
+- clear/reset placement and linked reference independently where appropriate
 - reject entrance, exit, other collection objects and Door/Portal endpoint cells
 - Completion Rules determine whether collecting objects is mandatory
 
 ### Door
 
-Current state: local pair placement and Walk Test transfer exist; visual asset selection is pending the registered-content picker UI dependency.
+Current state: local pair placement and Walk Test transfer exist; visual asset selection comes after tested Collect picker consumption.
 
 - visible local connection with Entry and Exit
 - one-way/two-way transfer
@@ -286,17 +281,16 @@ Whenever later feature work changes the Maze editor, retain these already-approv
 7. Walk Test in Rounded/Organic does not flash back to the underlying square grid.
 8. No numbered patch files or transitional wrapper modules are reintroduced.
 
-## Next implementation order after reader foundation
+## Next implementation order after shared picker dependency
 
-1. Create a reusable shared registered-content picker UI/controller using the completed reader foundation.
-2. Implement Collect Archetype Object linking once real project-backed `archobj_` records can be selected.
-3. Implement Door visual asset linking once real project-backed `asset_` records can be selected.
-4. Implement Scatter decorations/lights in a stable module using final registered visual assets only.
-5. Implement Traboule as a hidden collision override.
-6. Implement global Portal Registry integration across apps.
-7. Define and implement Foe/Hazard feature behaviour.
-8. Resolve Tunnel Mode design, then implement the renderer/lighting workflow.
-9. Build helper pendant/crystal after mandatory objective tracking works.
+1. Wire Collect Archetype Object linking to the shared picker, storing/exporting only valid `archobj_` references.
+2. Implement Door visual asset linking using valid `asset_` records.
+3. Implement Scatter decorations/lights in a stable module using final registered visual assets only.
+4. Implement Traboule as a hidden collision override.
+5. Implement global Portal Registry integration across apps.
+6. Define and implement Foe/Hazard feature behaviour.
+7. Resolve Tunnel Mode design, then implement the renderer/lighting workflow.
+8. Build helper pendant/crystal after mandatory objective tracking works.
 
 ## Required file structure direction
 
@@ -319,7 +313,7 @@ src/js/engines/maze-tunnel-mode.js
 src/js/engines/maze-helper-system.js
 ```
 
-A shared registered-content picker is a platform dependency rather than a Maze-owned feature module, so it should be implemented in a shared Artifex location and consumed by Puzzle Creator rather than copied into this engine folder.
+The shared registered-content files remain platform dependencies rather than Maze-owned feature modules, so they live under `artifex/shared/registered-content/` and are consumed by Puzzle Creator rather than copied into its engine folder.
 
 ## Implementation warning
 
