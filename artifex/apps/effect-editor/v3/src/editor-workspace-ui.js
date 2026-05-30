@@ -1,14 +1,4 @@
-import {
-  deleteActiveLayer,
-  duplicateActiveLayer,
-  editorState,
-  getActiveLayer,
-  moveLayer,
-  onStateChange,
-  selectLayer,
-  toggleLayerVisibility,
-  updateActiveLayer
-} from './editor-state.js';
+import { editorState, getActiveLayer, onStateChange, updateActiveLayer } from './editor-state.js';
 import { resizeCanvas } from './editor-renderer.js';
 
 const LAYOUT_STORAGE_KEY = 'artifex-index2-ui-layout';
@@ -21,16 +11,11 @@ export function initEditorWorkspaceUI({ versionLabel } = {}) {
   setupPanelResizers();
   setupTopShortcuts();
   setupCardCollapse();
-  simplifyBottomPanel();
   addControlTooltips();
   bindHexColourEntry();
+  setupNumericSteppers();
   onStateChange(syncWorkspaceUI);
   syncWorkspaceUI();
-  window.setTimeout(() => {
-    setupNumericSteppers();
-    bindHexColourEntry();
-    syncWorkspaceUI();
-  }, 0);
 }
 
 function setVersionLabel(versionLabel) {
@@ -44,8 +29,6 @@ function setVersionLabel(versionLabel) {
 
 function setupTopShortcuts() {
   document.querySelectorAll('.index2-action-strip [data-jump-card]').forEach((button) => {
-    if (button.dataset.workspaceBound === 'true') return;
-    button.dataset.workspaceBound = 'true';
     button.addEventListener('click', () => jumpToCard(button.dataset.jumpCard));
   });
 }
@@ -71,8 +54,7 @@ function setupCardCollapse() {
   const saved = readCollapsedCards();
   document.querySelectorAll('#left-panel .card[id]').forEach((card) => {
     const button = card.querySelector('[data-card-collapse]');
-    if (!button || button.dataset.workspaceBound === 'true') return;
-    button.dataset.workspaceBound = 'true';
+    if (!button) return;
     setCardCollapsed(card, saved.includes(card.id));
     button.addEventListener('click', (event) => {
       event.stopPropagation();
@@ -108,19 +90,8 @@ function persistCollapsedCards() {
   }
 }
 
-function simplifyBottomPanel() {
-  const cards = document.querySelectorAll('#bottom-panel .index2-bottom-card');
-  if (cards.length < 3) return;
-  cards[0].classList.add('index2-layers-card');
-  cards[1].classList.add('index2-display-card');
-  cards[2].classList.add('index2-diagnostics-card');
-  cards[0].querySelector('.index2-layer-toolbar')?.remove();
-}
-
 function syncWorkspaceUI() {
   syncCanvasButtonIcons();
-  syncPreviewStatusPill();
-  enhanceLayerList();
   setupNumericSteppers();
   bindHexColourEntry();
   syncHexColourEntry();
@@ -152,54 +123,6 @@ function syncCanvasButtonIcons() {
   lastPausedState = editorState.isPaused;
 }
 
-function syncPreviewStatusPill() {
-  const state = document.getElementById('index2-display-state');
-  if (!state) return;
-  state.textContent = editorState.isPaused ? 'PAUSED' : 'PLAYING';
-  state.classList.toggle('index2-status-paused', editorState.isPaused);
-  state.classList.toggle('index2-status-playing', !editorState.isPaused);
-}
-
-function enhanceLayerList() {
-  const layers = editorState.composition.layers;
-  const items = document.querySelectorAll('#layer-list .layer-item');
-  if (!layers.length) return;
-  items.forEach((item, index) => {
-    if (item.querySelector('.layer-sequence-number')) return;
-    const layer = layers[index];
-    const number = document.createElement('span');
-    number.className = 'layer-sequence-number';
-    number.textContent = String(index + 1);
-    number.title = `Sequence position ${index + 1}`;
-    const actions = document.createElement('span');
-    actions.className = 'layer-inline-actions';
-    actions.append(
-      layerAction('⬆️', `Move ${layer?.name || 'layer'} up`, index === 0, () => moveLayer(index, index - 1)),
-      layerAction('⬇️', `Move ${layer?.name || 'layer'} down`, index === layers.length - 1, () => moveLayer(index, index + 1)),
-      layerAction(layer?.visible === false ? '🙈' : '👁️', 'Toggle layer visibility', false, () => toggleLayerVisibility(index)),
-      layerAction('⧉', 'Duplicate layer', false, () => { selectLayer(index); duplicateActiveLayer(); }),
-      layerAction('×', 'Delete layer', false, () => { selectLayer(index); deleteActiveLayer(); })
-    );
-    item.prepend(number);
-    item.append(actions);
-  });
-}
-
-function layerAction(icon, title, disabled, action) {
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'layer-inline-action';
-  button.textContent = icon;
-  button.title = title;
-  button.disabled = disabled;
-  button.addEventListener('click', (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (!button.disabled) action();
-  });
-  return button;
-}
-
 function setupNumericSteppers() {
   document.querySelectorAll('#left-panel label input[type="range"], #left-panel label input[type="number"]').forEach((input) => {
     if (input.dataset.index2Stepper === 'true') return;
@@ -226,7 +149,6 @@ function setupNumericSteppers() {
 function labelText(input) {
   return input.closest('label')?.childNodes[0]?.textContent?.trim() || 'value';
 }
-
 function stepButton(text, title, handler) {
   const button = document.createElement('button');
   button.type = 'button';
@@ -236,7 +158,6 @@ function stepButton(text, title, handler) {
   button.addEventListener('click', handler);
   return button;
 }
-
 function stepInput(input, direction, output) {
   if (direction < 0) input.stepDown();
   else input.stepUp();
@@ -244,7 +165,6 @@ function stepInput(input, direction, output) {
   input.dispatchEvent(new Event('input', { bubbles: true }));
   input.dispatchEvent(new Event('change', { bubbles: true }));
 }
-
 function formatInputValue(value) {
   const number = Number(value);
   if (!Number.isFinite(number)) return String(value || '');
@@ -257,7 +177,6 @@ function bindHexColourEntry() {
   input.dataset.workspaceBound = 'true';
   input.addEventListener('input', () => applyHexColour(input.value));
 }
-
 function applyHexColour(raw) {
   const colour = normalizeHexInput(raw);
   if (!colour) return;
@@ -269,14 +188,12 @@ function applyHexColour(raw) {
   stops[index].color = colour;
   updateActiveLayer({ appearanceStops: stops, activeAppearanceStopIndex: index });
 }
-
 function normalizeHexInput(value) {
   const raw = String(value || '').trim().replace(/^#/, '');
   if (/^[0-9a-f]{3}$/i.test(raw)) return `#${raw.split('').map((char) => char + char).join('').toLowerCase()}`;
   if (/^[0-9a-f]{6}$/i.test(raw)) return `#${raw.toLowerCase()}`;
   return '';
 }
-
 function syncHexColourEntry() {
   const input = document.getElementById('stop-color-hex-input');
   const layer = getActiveLayer();
@@ -292,7 +209,6 @@ function setupPanelResizers() {
   const bottomPanel = document.getElementById('bottom-panel');
   const bottomResizer = document.getElementById('bottom-resizer');
   if (!leftPanel || !sideResizer || !bottomPanel || !bottomResizer) return;
-
   setupPointerResize(sideResizer, 'side', (event, start) => {
     leftPanel.style.width = `${Math.round(clamp(start.size + event.clientX - start.pointer, 245, 560))}px`;
     requestCanvasResize();
@@ -304,7 +220,6 @@ function setupPanelResizers() {
   sideResizer.addEventListener('dblclick', () => { leftPanel.style.width = '330px'; persistLayout(); requestCanvasResize(); });
   bottomResizer.addEventListener('dblclick', () => { bottomPanel.style.height = '170px'; persistLayout(); requestCanvasResize(); });
 }
-
 function setupPointerResize(handle, kind, onMove) {
   handle.addEventListener('pointerdown', (event) => {
     event.preventDefault();
@@ -329,17 +244,11 @@ function setupPointerResize(handle, kind, onMove) {
     handle.addEventListener('pointercancel', finish);
   });
 }
-
 function persistLayout() {
   const leftWidth = document.getElementById('left-panel')?.style.width || '';
   const bottomHeight = document.getElementById('bottom-panel')?.style.height || '';
-  try {
-    window.localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify({ leftWidth, bottomHeight }));
-  } catch {
-    // Ignore storage restrictions.
-  }
+  try { window.localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify({ leftWidth, bottomHeight })); } catch { /* Ignore. */ }
 }
-
 function restoreSavedLayout() {
   try {
     const saved = JSON.parse(window.localStorage.getItem(LAYOUT_STORAGE_KEY) || '{}');
@@ -348,31 +257,15 @@ function restoreSavedLayout() {
     if (leftPanel && saved.leftWidth) leftPanel.style.width = saved.leftWidth;
     if (bottomPanel && saved.bottomHeight) bottomPanel.style.height = saved.bottomHeight;
     requestCanvasResize();
-  } catch {
-    try { window.localStorage.removeItem(LAYOUT_STORAGE_KEY); } catch { /* no-op */ }
-  }
+  } catch { try { window.localStorage.removeItem(LAYOUT_STORAGE_KEY); } catch { /* Ignore. */ } }
 }
-
 let resizeFrame = 0;
 function requestCanvasResize() {
   window.cancelAnimationFrame(resizeFrame);
   resizeFrame = window.requestAnimationFrame(() => resizeCanvas());
 }
-
 function addControlTooltips() {
-  const tips = {
-    'pause-button': 'Pause or resume the preview.',
-    'snapshot-button': 'Export a PNG snapshot.',
-    'zoom-out-button': 'Zoom out.',
-    'zoom-in-button': 'Zoom in.',
-    'zoom-reset-button': 'Reset zoom.'
-  };
-  Object.entries(tips).forEach(([id, title]) => {
-    const element = document.getElementById(id);
-    if (element) element.title = title;
-  });
+  const tips = { 'pause-button': 'Pause or resume the preview.', 'snapshot-button': 'Export a PNG snapshot.', 'zoom-out-button': 'Zoom out.', 'zoom-in-button': 'Zoom in.', 'zoom-reset-button': 'Reset zoom.' };
+  Object.entries(tips).forEach(([id, title]) => { const element = document.getElementById(id); if (element) element.title = title; });
 }
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
+function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
