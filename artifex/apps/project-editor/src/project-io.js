@@ -1,8 +1,9 @@
 import { createHealthReport } from '../../../shared/health-guide/health-checks.js?v=0.1.25-todos';
 import { createProjectManagerTodoOutput } from '../../../shared/health-guide/todo-output.js?v=0.1.25-todos';
-import { LIBRARY_INDEX_PATHS, createEmptyIndex } from './project-library-indexes.js?v=0.1.25-todos';
+import { LIBRARY_INDEX_PATHS, createEmptyIndex } from './project-library-indexes.js?v=0.1.32-contract';
 
-const PROJECT_IO_VERSION = 'artifex.projectPackage.v1';
+const PROJECT_IO_VERSION = 'artifex.project-package.v1';
+const LEGACY_PROJECT_IO_VERSION = 'artifex.projectPackage.v1';
 const JSZIP_CDN = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
 
 const CORE_PROJECT_FILES = Object.freeze([
@@ -51,28 +52,8 @@ function normalizeZipPath(path = '') {
     .trim();
 }
 
-function getProjectRootPath(project = {}) {
-  const explicitPath = project.projectRootPath
-    || project.localProjectPath
-    || project.localPath
-    || project.projectPath
-    || project.folderPath
-    || project.fileRefs?.projectRootPath
-    || project.fileRefs?.localProjectPath
-    || '';
-
-  const normalized = normalizeZipPath(explicitPath);
-  if (normalized) {
-    const projectMarker = normalized.match(/(?:^|\/)(projects\/[^/]+)(?:\/)?$/i);
-    if (projectMarker?.[1]) return projectMarker[1];
-
-    const repoMarker = normalized.match(/(?:^|\/)(artifex\/projects\/[^/]+)(?:\/)?$/i);
-    if (repoMarker?.[1]) return repoMarker[1];
-
-    return normalized;
-  }
-
-  return `projects/${makeSafeProjectSlug(project.projectId || project.gameTitle || 'artifex-project')}`;
+function getBackupFolderName(project = {}) {
+  return makeSafeProjectSlug(project.projectSlug || project.projectId || project.gameTitle || 'artifex-project');
 }
 
 function joinZipPath(rootPath, relativePath) {
@@ -81,7 +62,7 @@ function joinZipPath(rootPath, relativePath) {
 
 function makeDefaultLibraryLinks(stateManager) {
   return {
-    schemaVersion: 'artifex.libraryLinks.v1',
+    schemaVersion: 'artifex.library-links.v1',
     projectId: stateManager.project?.projectId || 'project_unknown',
     links: []
   };
@@ -89,19 +70,19 @@ function makeDefaultLibraryLinks(stateManager) {
 
 function makeDefaultInputMap(stateManager) {
   return {
-    schemaVersion: 'artifex.inputMap.v1',
-    profileId: 'input_default_keyboard',
-    label: 'Default Keyboard Controls',
-    createdBy: 'creation-guide',
+    schemaVersion: 'artifex.input-map.v1',
     projectId: stateManager.project?.projectId || 'project_unknown',
+    profileId: 'input_default_gameplay',
+    label: 'Default Gameplay Controls',
+    createdBy: 'creation-guide',
     actions: [
-      { actionId: 'action_move_left', label: 'Move Left', category: 'movement', defaultKeyboard: ['ArrowLeft', 'A'], defaultGamepad: ['DPadLeft', 'LeftStickLeft'], required: true },
-      { actionId: 'action_move_right', label: 'Move Right', category: 'movement', defaultKeyboard: ['ArrowRight', 'D'], defaultGamepad: ['DPadRight', 'LeftStickRight'], required: true },
-      { actionId: 'action_jump', label: 'Jump', category: 'movement', defaultKeyboard: ['Space'], defaultGamepad: ['A'], required: true },
-      { actionId: 'action_interact', label: 'Interact', category: 'gameplay', defaultKeyboard: ['E', 'Enter'], defaultGamepad: ['A'], required: true },
-      { actionId: 'action_pick_up', label: 'Pick Up', category: 'gameplay', defaultKeyboard: ['F'], defaultGamepad: ['X'], required: false },
-      { actionId: 'action_throw', label: 'Throw', category: 'gameplay', defaultKeyboard: ['Q'], defaultGamepad: ['RightTrigger'], required: false },
-      { actionId: 'action_pause', label: 'Pause', category: 'system', defaultKeyboard: ['Escape'], defaultGamepad: ['Start'], required: true }
+      { actionId: 'action_move', label: 'Move', category: 'movement', defaultKeyboard: ['ArrowKeys', 'WASD'], defaultGamepad: ['DPad', 'LeftStick'], required: true },
+      { actionId: 'action_invoke', label: 'Invoke / Interact', category: 'gameplay', defaultKeyboard: ['E', 'Enter'], defaultGamepad: ['B'], required: true },
+      { actionId: 'action_use_active_item', label: 'Use Active Item', category: 'gameplay', defaultKeyboard: ['Space'], defaultGamepad: ['A'], required: true },
+      { actionId: 'action_item_scroll_mode', label: 'Item Scroll Mode', category: 'inventory', defaultKeyboard: ['Tab'], defaultGamepad: ['X'], required: false },
+      { actionId: 'action_reserved_special', label: 'Reserved Special', category: 'gameplay', defaultKeyboard: [], defaultGamepad: ['Y'], required: false },
+      { actionId: 'action_inventory', label: 'Kibisis Pouch', category: 'inventory', defaultKeyboard: ['I'], defaultGamepad: ['Select'], required: true },
+      { actionId: 'action_menu', label: 'Codice Cylinder of Yggdrasil', category: 'system', defaultKeyboard: ['Escape'], defaultGamepad: ['Start'], required: true }
     ]
   };
 }
@@ -110,7 +91,7 @@ function addLibraryIndexesToPackage(files, stateManager) {
   const indexStore = stateManager.state?.libraryIndexes || {};
   const projectId = stateManager.project?.projectId || 'project_unknown';
 
-  Object.values(LIBRARY_INDEX_PATHS).flat().forEach((path) => {
+  Object.values(LIBRARY_INDEX_PATHS).flat().forEach(path => {
     const normalizedPath = normalizeZipPath(path).toLowerCase();
     files[path] = clone(indexStore[normalizedPath] || indexStore[path]) || createEmptyIndex(path, projectId);
   });
@@ -119,11 +100,8 @@ function addLibraryIndexesToPackage(files, stateManager) {
 export function buildProjectPackage(stateManager) {
   const healthReport = createHealthReport({ stateManager, scope: 'project-manager-export' });
   const projectTodos = createProjectManagerTodoOutput(healthReport);
-  const projectRootPath = getProjectRootPath(stateManager.project || {});
-  const project = {
-    ...clone(stateManager.project),
-    projectRootPath
-  };
+  const backupFolderName = getBackupFolderName(stateManager.project || {});
+  const project = clone(stateManager.project);
 
   const files = {
     'project.json': project,
@@ -142,7 +120,7 @@ export function buildProjectPackage(stateManager) {
   return {
     schemaVersion: PROJECT_IO_VERSION,
     generatedAt: new Date().toISOString(),
-    projectRootPath,
+    backupFolderName,
     files
   };
 }
@@ -181,7 +159,7 @@ function downloadBlob(filename, blob) {
 async function downloadPackageAsZip(projectPackage, stateManager) {
   const JSZip = await loadJSZip();
   const zip = new JSZip();
-  const rootPath = projectPackage.projectRootPath || getProjectRootPath(stateManager.project || {});
+  const rootPath = projectPackage.backupFolderName || getBackupFolderName(stateManager.project || {});
 
   Object.entries(projectPackage.files).forEach(([path, value]) => {
     zip.file(joinZipPath(rootPath, path), prettyJSON(value));
@@ -190,12 +168,12 @@ async function downloadPackageAsZip(projectPackage, stateManager) {
   zip.file(joinZipPath(rootPath, 'project-package-manifest.json'), prettyJSON({
     schemaVersion: PROJECT_IO_VERSION,
     generatedAt: projectPackage.generatedAt,
-    projectRootPath: rootPath,
-    files: PROJECT_PACKAGE_FILES.map((path) => joinZipPath(rootPath, path))
+    backupFolderName: rootPath,
+    files: PROJECT_PACKAGE_FILES.map(path => joinZipPath(rootPath, path))
   }));
 
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
-  const filename = `${makeSafeProjectSlug(stateManager.project?.projectId || stateManager.project?.gameTitle)}-project-package.zip`;
+  const filename = `${getBackupFolderName(stateManager.project || {})}-project-backup.zip`;
   downloadBlob(filename, blob);
 }
 
@@ -253,9 +231,8 @@ function assignParsedFileByPath(parsedFiles, path, json) {
   const basename = normalizeFilename(path);
   const pathKey = normalizeZipPath(path).toLowerCase();
 
-  if (json?.schemaVersion === PROJECT_IO_VERSION && json.files) {
+  if ((json?.schemaVersion === PROJECT_IO_VERSION || json?.schemaVersion === LEGACY_PROJECT_IO_VERSION) && json.files) {
     Object.entries(json.files).forEach(([nestedPath, value]) => assignParsedFileByPath(parsedFiles, nestedPath, value));
-    if (json.projectRootPath) parsedFiles.projectRootPath = json.projectRootPath;
     return;
   }
 
@@ -268,7 +245,7 @@ function assignParsedFileByPath(parsedFiles, path, json) {
   else if (basename === 'latest-health-report.json' || pathKey.endsWith('health/latest-health-report.json')) parsedFiles.healthReport = json;
   else if (basename === 'project-manager-todos.json' || pathKey.endsWith('todos/project-manager-todos.json')) parsedFiles.projectTodos = json;
 
-  Object.values(LIBRARY_INDEX_PATHS).flat().forEach((indexPath) => {
+  Object.values(LIBRARY_INDEX_PATHS).flat().forEach(indexPath => {
     const normalizedIndexPath = normalizeZipPath(indexPath).toLowerCase();
     if (pathKey.endsWith(normalizedIndexPath)) {
       parsedFiles.libraryIndexes ||= {};
@@ -281,7 +258,7 @@ async function parseZipProjectFile(file, parsedFiles) {
   const JSZip = await loadJSZip();
   const arrayBuffer = await readFileArrayBuffer(file);
   const zip = await JSZip.loadAsync(arrayBuffer);
-  const entries = Object.values(zip.files).filter((entry) => !entry.dir && entry.name.toLowerCase().endsWith('.json'));
+  const entries = Object.values(zip.files).filter(entry => !entry.dir && entry.name.toLowerCase().endsWith('.json'));
 
   for (const entry of entries) {
     const text = await entry.async('string');
@@ -331,7 +308,6 @@ async function importProjectFiles({ stateManager, onRefresh }) {
         return;
       }
 
-      if (parsedFiles.projectRootPath && parsedFiles.project) parsedFiles.project.projectRootPath = parsedFiles.projectRootPath;
       applyProjectPackageData({ stateManager, parsedFiles });
       onRefresh?.();
       showIOToast(`Imported ${Object.keys(parsedFiles).length} project file section(s).`);
@@ -348,7 +324,7 @@ async function exportProjectPackage({ stateManager }) {
 
   try {
     await downloadPackageAsZip(projectPackage, stateManager);
-    showIOToast(`Exported ZIP using root path: ${projectPackage.projectRootPath}`);
+    showIOToast(`Exported backup ZIP folder: ${projectPackage.backupFolderName}`);
   } catch (error) {
     console.error('[ProjectIO] ZIP export failed.', error);
     showIOToast(`ZIP export failed: ${error.message}`, 'error');
@@ -357,7 +333,7 @@ async function exportProjectPackage({ stateManager }) {
 
 function saveCurrentProject({ stateManager }) {
   stateManager.saveToStorage?.();
-  showIOToast('Saved current Project Manager state to browser storage.');
+  showIOToast('Saved current Project Editor draft to browser storage only. Direct project-folder save is not yet connected here.');
 }
 
 export function enhanceProjectIO({ ui, stateManager, onRefresh }) {
@@ -368,7 +344,7 @@ export function enhanceProjectIO({ ui, stateManager, onRefresh }) {
   ui.wireTopCanvasControls = () => {
     baseWireTopCanvasControls();
 
-    document.querySelectorAll('[data-project-io-action]').forEach((button) => {
+    document.querySelectorAll('[data-project-io-action]').forEach(button => {
       button.onclick = () => {
         const action = button.dataset.projectIoAction;
         if (action === 'import') importProjectFiles({ stateManager, onRefresh });
