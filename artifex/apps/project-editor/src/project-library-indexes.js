@@ -1,5 +1,6 @@
-// Artifex Project Manager library index adapter
-// Normalizes imported library index files for the shared Asset Browser.
+// Artifex Project Editor library index adapter
+// Normalizes imported library index files for the shared Asset Browser and
+// creates canonical typed empty indexes for backup/package output.
 
 export const LIBRARY_INDEX_PATHS = Object.freeze({
   quests: ['quests/quest-index.json'],
@@ -19,6 +20,17 @@ const MODE_TYPE_LABELS = Object.freeze({
   'archetype-objects': 'archetype-object',
   'archetype-effects': 'archetype-effect',
   assets: 'asset'
+});
+
+const EMPTY_INDEX_SCHEMAS = Object.freeze({
+  'quests/quest-index.json': { schemaVersion: 'artifex.quests.index.v1', collection: 'quests' },
+  'sidequests/sidequest-index.json': { schemaVersion: 'artifex.sidequests.index.v1', collection: 'sidequests' },
+  'scenes/scene-index.json': { schemaVersion: 'artifex.scenes.index.v1', collection: 'scenes' },
+  'screens/screen-index.json': { schemaVersion: 'artifex.screens.index.v1', collection: 'screens' },
+  'puzzles/puzzle-index.json': { schemaVersion: 'artifex.puzzles.index.v1', collection: 'puzzles' },
+  'archetypes/object-index.json': { schemaVersion: 'artifex.archetypes.objects.index.v1', collection: 'objects' },
+  'archetypes/effect-index.json': { schemaVersion: 'artifex.archetypes.effects.index.v1', collection: 'effects' },
+  'assets/asset-index.json': { schemaVersion: 'artifex.assets.index.v1', collection: 'assets' }
 });
 
 function normalizePath(path = '') {
@@ -99,32 +111,39 @@ function normalizeItem(item, { modeId, sourcePath, sourceIndex, number }) {
 export function getLibraryBrowserData(stateManager, modeId) {
   const expectedPaths = LIBRARY_INDEX_PATHS[modeId] || [];
   const indexes = expectedPaths
-    .map((path) => ({ path, index: getIndexByPath(stateManager, path) }))
-    .filter((entry) => Boolean(entry.index));
+    .map(path => ({ path, index: getIndexByPath(stateManager, path) }))
+    .filter(entry => Boolean(entry.index));
 
-  const items = indexes.flatMap((entry) => {
-    return arrayFromAnyIndex(entry.index).map((item, index) => normalizeItem(item, {
-      modeId,
-      sourcePath: entry.path,
-      sourceIndex: entry.index,
-      number: index + 1
-    }));
-  });
+  const items = indexes.flatMap(entry => arrayFromAnyIndex(entry.index).map((item, index) => normalizeItem(item, {
+    modeId,
+    sourcePath: entry.path,
+    sourceIndex: entry.index,
+    number: index + 1
+  })));
 
   return {
     modeId,
     expectedPaths,
-    loadedPaths: indexes.map((entry) => entry.path),
+    loadedPaths: indexes.map(entry => entry.path),
     hasRealIndex: indexes.length > 0,
     items
   };
 }
 
 export function createEmptyIndex(path, projectId = 'project_unknown') {
+  const normalizedPath = normalizePath(path);
+  const definition = EMPTY_INDEX_SCHEMAS[normalizedPath];
+  if (!definition) {
+    return {
+      schemaVersion: 'artifex.library-index.unknown.v1',
+      projectId,
+      sourcePath: path,
+      items: []
+    };
+  }
   return {
-    schemaVersion: 'artifex.libraryIndex.v1',
+    schemaVersion: definition.schemaVersion,
     projectId,
-    sourcePath: path,
-    items: []
+    [definition.collection]: []
   };
 }
