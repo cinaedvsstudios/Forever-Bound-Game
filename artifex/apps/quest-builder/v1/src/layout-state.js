@@ -9,17 +9,23 @@ export const DEFAULT_LAYOUT = {
   zoom: 1,
   panX: 0,
   panY: 0,
-  panMode: false
+  panMode: false,
+  blockPositions: {}
 };
 
+function freshLayout() {
+  return { ...DEFAULT_LAYOUT, blockPositions: {} };
+}
+
 export function createLayoutState(storageKey) {
-  let current = { ...DEFAULT_LAYOUT };
+  let current = freshLayout();
 
   function load() {
     try {
-      current = { ...DEFAULT_LAYOUT, ...JSON.parse(localStorage.getItem(storageKey) || '{}') };
+      const saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
+      current = { ...freshLayout(), ...saved, blockPositions: saved.blockPositions || {} };
     } catch {
-      current = { ...DEFAULT_LAYOUT };
+      current = freshLayout();
     }
     return current;
   }
@@ -38,7 +44,7 @@ export function createLayoutState(storageKey) {
   }
 
   function reset() {
-    current = { ...DEFAULT_LAYOUT };
+    current = freshLayout();
     save();
     return current;
   }
