@@ -17,13 +17,14 @@ Use the global all-apps to-do list for changes that affect every Artifex app. Us
 
 ## Current repository status
 
-Current Quest Builder version in repository: `V1.2.11`
+Current Quest Builder version in repository: `V1.2.12`
 
 Current browser confirmation status:
 
-- `V1.2.9` was tested sufficiently to confirm the live version badge loaded, pencil edit still opened the correct block popup, and cards could be manually moved in the central workspace.
-- `V1.2.10` was tested in GitHub Pages and confirmed to load as `V1.2.10`, display explicit coloured connector lines and visible connector ports. User feedback identified that the empty-port display was too crowded, disconnecting was not sufficiently direct, and vertical/near-vertical route attachments needed cleaner left-side routing.
-- `V1.2.11` is now built in the repository as a focused connector usability cleanup and requires GitHub Pages/browser confirmation.
+- `V1.2.9` was tested sufficiently to confirm the live version badge loaded, pencil edit opened the correct block popup, and cards could be manually moved in the central workspace.
+- `V1.2.10` was tested in GitHub Pages and confirmed to load, display explicit coloured connector lines and visible connector ports. Testing identified that unused port circles were cluttered and stacked line routing needed refinement.
+- The user's V1.2.11 live screenshot confirmed the cleaned connector interface was loaded, including the per-card link action and reduced connector clutter. The screenshot also identified the next problem: vertically stacked connected cards were still using left/right attachments rather than the shortest top/bottom route.
+- `V1.2.12` has now been built in the repository for fine-grid snapping and smart shortest-edge connector display. It requires GitHub Pages/browser confirmation.
 
 Current active app files:
 
@@ -37,6 +38,7 @@ artifex/apps/quest-builder/v1/src/quest-schema.js
 artifex/apps/quest-builder/v1/src/layout-state.js
 artifex/apps/quest-builder/v1/src/ui-bindings.js
 artifex/apps/quest-builder/v1/src/canvas-renderer.js
+artifex/apps/quest-builder/v1/src/connection-routing.js
 artifex/apps/quest-builder/v1/src/dialog-editors.js
 artifex/apps/quest-builder/v1/src/export-json.js
 artifex/apps/quest-builder/icons/start.png
@@ -98,76 +100,90 @@ Status: complete/browser-confirmed for pencil action fix.
 
 ### V1.2.9 — draggable workspace cards and saved positions
 
-Status: partially browser-confirmed; superseded as a flow-rendering model by the explicit-connection direction.
+Status: partially browser-confirmed; superseded as a flow-rendering model by explicit connections.
 
 - Large canvas cards can be manually positioned as visual layout state only.
 - Stored card positions in `layout-state.js` under `blockPositions`.
 - User confirmed card movement works in the live screen.
-- Testing showed that drawing a line automatically through the ordered blocks is incorrect for branches and manual layouts.
+- Testing showed that drawing a line automatically through ordered blocks is incorrect for branches and manual layouts.
 
 ### V1.2.10 — explicit connection foundation
 
-Status: browser-tested; required usability cleanup completed in V1.2.11.
+Status: browser-tested; required usability cleanup progressed in V1.2.11.
 
 - Added explicit `connections` quest data, plus `START` and `END` flow node IDs.
-- Converted the demo quest to explicit saved lines and branch data.
+- Converted the demo quest to explicit saved logical lines and branch data.
 - Replaced automatic sequence-line drawing with explicit source-coloured connector rendering.
 - Added connector authoring and runtime/export validation for explicit flow connections.
-- User confirmed the new version visibly loaded and the connection model appeared on the live canvas.
-- User identified the next corrections: remove unnecessary empty circles, allow directly clearing a connection from its attached circle, add a dedicated per-card connect action, and route vertical stacked connections from the left side rather than through the cards.
+- User confirmed the new connection model appeared on the live canvas.
 
 ### V1.2.11 — connector usability and routing cleanup
 
+Status: displayed in live browser screenshot; further routing improvement requested.
+
+- Removed permanently displayed spare connector-circle clutter; only attached connector circles are shown.
+- Added a `🔗` connect action beside the pencil on each workspace card.
+- Added a START connection handle.
+- Made attached connector circles directly removable while retaining Delete/Backspace line removal.
+- Allowed new links to create required destination attachment circles automatically.
+- Initial left/right side-routing cleanup still did not solve vertically stacked card layouts cleanly.
+
+### V1.2.12 — fine grid, snap mode and smart shortest-edge connectors
+
 Status: built in repository; awaiting browser testing.
 
-Purpose: implement the direct connector feedback from the V1.2.10 browser test without introducing patch files or changing the broader workspace architecture.
+Purpose: implement the requested smaller grid and make connector attachment follow the card positions rather than being forced onto left/right edges.
 
 Implemented:
 
-- Removed the permanently displayed spare connector-circle clutter. Only circles for connections that actually exist are now drawn.
-- Added a `🔗` connect action beside the pencil on each workspace block card.
-- Added a START connect handle so a blank/new quest can deliberately begin its first flow connection.
-- Changed connection authoring so dragging the `🔗` handle onto another block or END creates the required attachment circle automatically on the destination; a free target circle is no longer required beforehand.
-- Made connected attachment circles directly removable: clicking a circle clears that attached connection. Keyboard Delete/Backspace remains available after selecting a line.
-- Added saved `sourceSide` and `targetSide` fields to the connection data model and export data.
-- Added side-choice logic for new connections: largely vertical/stacked links use left-side routing, while ordinary forward links use right-to-left routing.
-- Adjusted the demo connection placement so the stacked Collect Chalice → Update Codice connection routes down the left side rather than drawing through the card interior.
-- Preserved the rule that moving cards is visual only and does not alter connection logic.
-- Updated page title, badge, stylesheet, main module, internal module cache references and renderer icon cache keys to `V1.2.11` / `1.2.11`.
+- Changed the visual workspace grid to a finer `40` design-pixel spacing, retaining slightly stronger lines every `80` pixels for readability.
+- Added a compact `🧲` Snap to Grid control beside the hand/pan control in the top-right viewport controls.
+- Added saved layout preference `snapToGrid`, defaulting to off so existing positions are not unexpectedly rearranged.
+- When snap is enabled, cards snap to the smaller grid as they are dragged; existing cards remain where they are until moved.
+- Re-clamped snapped positions after rounding so cards cannot be pushed beyond the currently fixed canvas bounds.
+- Added normal module `connection-routing.js`, rather than a patch layer, for connector display routing responsibilities.
+- Smart connector routing now evaluates left, right, top and bottom edges and chooses the shortest visible edge pair for each existing logical connection.
+- Routing recalculates while cards are moved, so a vertical card stack can switch to bottom-to-top connectors and a horizontal relationship can remain side-to-side.
+- Kept connector line colour derived from the source block.
+- Kept `🔗` link creation and click-attached-circle removal from V1.2.11.
+- Kept logical connections separate from visual routing: the export now records each logical connection with `routingMode: "smart-shortest"`, rather than exporting fixed edge/port placement as quest progression data.
+- Updated page title, visible badge, CSS cache key, main script key, internal module cache keys, icon asset cache keys and module loaded version text to `V1.2.12` / `1.2.12`.
+- Updated `docs/structure.md` to document `connection-routing.js` as visual routing only, not quest logic.
 
 Not implemented in this pass:
 
 - Dynamic workspace/canvas expansion near lower or right edges.
 - Moveable/saved START and END positions.
 - Insert Space horizontal guide tool.
-- Fully advanced obstacle-avoiding line routing or branch labels displayed on the canvas.
+- Obstacle-avoiding connector routing around unrelated overlapping cards.
+- Manual connector side override when a shortest route is visually undesirable.
 
-## V1.2.11 browser test checklist
+## V1.2.12 browser test checklist
 
-Open the new fresh test URL after GitHub Pages updates and verify:
+Open the fresh test URL after GitHub Pages updates and verify:
 
-1. The badge shows `V1.2.11` and the page loads normally.
-2. Only connector circles attached to existing lines are visible; the rows of unused empty circles are gone.
-3. Each block card now has a `🔗` action beside its pencil.
-4. Click an existing attached connector circle; the associated line should be removed immediately.
-5. Drag a card's `🔗` action onto another block; a new connector line and required destination circle should appear automatically.
-6. Drag a card's `🔗` action onto END; it should connect to END where valid.
-7. The Collect Chalice → Update Codice stacked route should run from the left side and no longer cut through the cards in the way shown during the V1.2.10 test.
-8. Normal forward routes remain source-coloured and readable.
-9. Move a block; the existing lines should follow it without changing logical connections.
-10. Pencil icons still open the correct editor popup.
+1. The badge shows `V1.2.12` and the page loads normally.
+2. The workspace grid is visibly smaller/finer than V1.2.11.
+3. A `🧲` button appears directly beside the hand/pan button and shows an active glow when enabled.
+4. With snap off, a dragged card moves freely; with snap on, a dragged card aligns to the smaller grid.
+5. Enabling snap does not suddenly rearrange existing cards before they are moved.
+6. Vertically arranged connected cards, such as Enter Church / Collect Chalice / Update Codice when stacked, attach using top/bottom edges when those are shortest.
+7. Moving a connected card changes its visible connector edge automatically when another edge becomes shortest, without changing the logical source/destination.
+8. Horizontal routes remain readable and use the colour of the source block.
+9. The `🔗` create-connection action still creates a line, and clicking an attached circle still removes its connection.
+10. Pencil edit controls still open the correct editor popup.
 11. Hand/pan mode still pans instead of moving cards or creating links.
-12. JSON Preview should contain `flow.connections`, including `sourceSide` and `targetSide` fields.
-13. View → Reset Saved Layout should reset visual positions but not delete explicit quest connections.
+12. JSON Preview contains logical `flow.connections` with `routingMode: "smart-shortest"`, not fixed side placement used as game logic.
+13. View → Reset Saved Layout resets visual positions and snap preference, but does not delete quest connections.
 
-## Next specific-app work after V1.2.11 testing
+## Next specific-app work after V1.2.12 testing
 
 Only proceed after browser test results are reported.
 
-Likely next version after the connector interaction is confirmed:
+Likely next version if this interaction works:
 
 ```text
-V1.2.12 — dynamic workspace expansion and manual layout space management
+V1.2.13 — dynamic workspace expansion and manual layout space management
 ```
 
 Required remaining Quest Builder-specific work:
@@ -176,7 +192,7 @@ Required remaining Quest Builder-specific work:
 - Allow START/END endpoints to be positioned consistently in the expanded workspace, without inferring quest logic from position.
 - Add a horizontal `Insert Space` tool: place/drag a temporary guide line, then move every node below that line downward together while preserving connections.
 - Consider a vertical equivalent only after the horizontal tool is tested and useful.
-- Improve connector routing only where crowded diagrams make current paths unreadable after testing.
+- Consider obstacle-avoiding connector routing only if smart nearest-edge routing still creates unacceptable line collisions in realistic layouts.
 
 ## Version rule
 
