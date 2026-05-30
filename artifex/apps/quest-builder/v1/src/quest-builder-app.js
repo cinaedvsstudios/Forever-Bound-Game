@@ -1,13 +1,14 @@
-import { MODULE_VERSION, MODULE_STORAGE_KEY, LAYOUT_STORAGE_KEY, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.8';
-import { getBlockType } from './block-types.js?v=1.2.8';
-import { createDemoQuestFile, createDefaultQuest, createDefaultBlock, escapeHtml } from './quest-schema.js?v=1.2.8';
-import { createLayoutState, clamp } from './layout-state.js?v=1.2.8';
-import { drawCanvas, applyCanvasTransform, getCanvasHit } from './canvas-renderer.js?v=1.2.8';
-import { fillBlockTypeMenus, wireMenus, wireActions, wireInputs, wireFlowDrag, wireWorkspacePan, wirePanelResize, wireFlowResizeSave } from './ui-bindings.js?v=1.2.8';
-import { openEditor } from './dialog-editors.js?v=1.2.8';
+import { MODULE_VERSION, MODULE_STORAGE_KEY, LAYOUT_STORAGE_KEY, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.9';
+import { getBlockType } from './block-types.js?v=1.2.9';
+import { createDemoQuestFile, createDefaultQuest, createDefaultBlock, escapeHtml } from './quest-schema.js?v=1.2.9';
+import { createLayoutState, clamp } from './layout-state.js?v=1.2.9';
+import { drawCanvas, applyCanvasTransform, getCanvasHit, getCanvasPoint, getBlockPosition } from './canvas-renderer.js?v=1.2.9';
+import { fillBlockTypeMenus, wireMenus, wireActions, wireInputs, wireFlowDrag, wireWorkspacePan, wirePanelResize, wireFlowResizeSave } from './ui-bindings.js?v=1.2.9';
+import { openEditor } from './dialog-editors.js?v=1.2.9';
 
 const $ = (id) => document.getElementById(id);
-
+const CARD_W = 250;
+const CARD_H = 124;
 const layoutState = createLayoutState(LAYOUT_STORAGE_KEY);
 const doc = createDemoQuestFile();
 const canvas = $('module-canvas');
@@ -19,7 +20,9 @@ const state = {
   activeBlock: 0,
   inspectorTarget: 'quest',
   selectedLocked: false,
-  dragBlockIndex: null
+  dragBlockIndex: null,
+  canvasBlockDrag: null,
+  suppressCanvasClick: false
 };
 
 const app = {
@@ -57,6 +60,7 @@ function boot() {
   wirePanelResize(app);
   wireFlowResizeSave(app);
   wireCanvasSelection();
+  wireCanvasBlockDrag();
   applyLayout();
   render();
   toast(`Quest Builder ${MODULE_VERSION} loaded.`);
@@ -137,6 +141,10 @@ function openBlockEditor(index) {
 
 function wireCanvasSelection() {
   canvas.addEventListener('click', (event) => {
+    if (state.suppressCanvasClick) {
+      state.suppressCanvasClick = false;
+      return;
+    }
     const hit = getCanvasHit(app, event);
     if (!hit) return;
     if (hit.kind === 'quest-edit') return openQuestEditor(hit.index ?? state.activeQuest);
@@ -145,6 +153,64 @@ function wireCanvasSelection() {
     if (hit.kind === 'quest') selectQuest(hit.index ?? state.activeQuest);
     if (hit.kind === 'block') selectBlock(hit.index);
   });
+}
+
+function wireCanvasBlockDrag() {
+  canvas.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0 || app.layout().panMode) return;
+    const hit = getCanvasHit(app, event);
+    if (!hit || hit.kind !== 'block') return;
+    const block = app.quest()?.blocks?.[hit.index];
+    if (!block) return;
+    const point = getCanvasPoint(app, event);
+    const position = getBlockPosition(app.layout(), app.quest().id, block.id, hit.index);
+    state.canvasBlockDrag = {
+      pointerId: event.pointerId,
+      index: hit.index,
+      key: `${app.quest().id}:${block.id}`,
+      offsetX: point.x - position.x,
+      offsetY: point.y - position.y,
+      startX: point.x,
+      startY: point.y,
+      moved: false
+    };
+    state.activeBlock = hit.index;
+    state.inspectorTarget = 'block';
+    canvas.setPointerCapture(event.pointerId);
+    canvas.style.cursor = 'grabbing';
+    app.draw();
+  });
+
+  canvas.addEventListener('pointermove', (event) => {
+    const drag = state.canvasBlockDrag;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const point = getCanvasPoint(app, event);
+    if (!drag.moved && Math.hypot(point.x - drag.startX, point.y - drag.startY) < 5) return;
+    drag.moved = true;
+    const blockPositions = { ...(app.layout().blockPositions || {}) };
+    blockPositions[drag.key] = {
+      x: Math.round(clamp(point.x - drag.offsetX, 12, DESIGN_WIDTH - CARD_W - 12)),
+      y: Math.round(clamp(point.y - drag.offsetY, 158, DESIGN_HEIGHT - CARD_H - 12))
+    };
+    app.patchLayout({ blockPositions });
+    app.draw();
+  });
+
+  const endDrag = (event) => {
+    const drag = state.canvasBlockDrag;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (drag.moved) {
+      app.saveLayout();
+      state.suppressCanvasClick = true;
+      toast('Workspace card position saved.');
+    }
+    state.canvasBlockDrag = null;
+    canvas.style.cursor = app.layout().panMode ? 'grab' : 'pointer';
+    try { canvas.releasePointerCapture(event.pointerId); } catch { /* noop */ }
+    render();
+  };
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', endDrag);
 }
 
 function applyLayout() {
@@ -171,6 +237,7 @@ function applyLayout() {
 function resetLayout() {
   layoutState.reset();
   applyLayout();
+  render();
 }
 
 function render() {
@@ -181,12 +248,10 @@ function render() {
   text('status-text', q ? 'Editing: ' + q.name : 'Ready.');
   text('block-count', (q?.blocks?.length || 0) + ' blocks');
   text('zoom-readout', Math.round(layoutState.get().zoom * 100) + '%');
-
   if (q) {
     if (state.inspectorTarget === 'block' && b) renderBlockInspector(b);
     else renderQuestInspector(q);
   }
-
   renderQuestList();
   renderBlockList();
   drawCanvas(app);
