@@ -85,11 +85,12 @@ function injectStyles() {
     .registered-picker-tabs { display: flex; flex-wrap: wrap; gap: 7px; padding: 10px 16px; border-bottom: 1px solid rgba(158,230,164,.13); }
     .registered-picker-tab { border: 1px solid rgba(158,230,164,.18); border-radius: 10px; background: rgba(5,18,11,.7); color: #a9b59e; min-height: 35px; padding: 7px 12px; font: 700 .72rem Inter, Arial, sans-serif; cursor: pointer; }
     .registered-picker-tab.is-active { color: #d7ffdb; border-color: rgba(158,230,164,.55); background: rgba(40,92,47,.42); }
-    .registered-picker-toolbar { display: grid; grid-template-columns: minmax(170px, 1fr) auto auto; align-items: center; gap: 9px; padding: 10px 16px; border-bottom: 1px solid rgba(158,230,164,.13); }
+    .registered-picker-toolbar { display: grid; grid-template-columns: minmax(156px, 1fr) auto auto auto; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 1px solid rgba(158,230,164,.13); }
     .registered-picker-search { width: 100%; box-sizing: border-box; min-height: 38px; border: 1px solid rgba(158,230,164,.2); border-radius: 10px; background: rgba(0,0,0,.28); padding: 8px 11px; color: #eadfc6; font: .77rem Inter, Arial, sans-serif; }
     .registered-picker-search:focus { outline: none; border-color: rgba(158,230,164,.55); }
-    .registered-picker-reload { min-height: 38px; border: 1px solid rgba(158,230,164,.26); border-radius: 10px; padding: 7px 12px; background: rgba(20,72,37,.38); color: #eadfc6; font: 700 .72rem Inter, Arial, sans-serif; cursor: pointer; }
-    .registered-picker-status { max-width: 190px; border: 1px solid rgba(158,230,164,.18); border-radius: 999px; padding: 6px 10px; color: #a9b59e; font: 700 .64rem Inter, Arial, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .registered-picker-reload, .registered-picker-connect { min-height: 38px; border: 1px solid rgba(158,230,164,.26); border-radius: 10px; padding: 7px 12px; background: rgba(20,72,37,.38); color: #eadfc6; font: 700 .7rem Inter, Arial, sans-serif; cursor: pointer; }
+    .registered-picker-connect { border-color: rgba(225,192,115,.34); color: #e1c073; }
+    .registered-picker-status { max-width: 160px; border: 1px solid rgba(158,230,164,.18); border-radius: 999px; padding: 6px 10px; color: #a9b59e; font: 700 .64rem Inter, Arial, sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .registered-picker-status.is-ready { color: #9ee6a4; border-color: rgba(158,230,164,.38); }
     .registered-picker-status.is-warning { color: #e1c073; border-color: rgba(225,192,115,.35); }
     .registered-picker-body { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 264px; }
@@ -112,7 +113,7 @@ function injectStyles() {
     .registered-picker-cancel { border: 1px solid rgba(158,230,164,.22); background: rgba(0,0,0,.22); color: #eadfc6; }
     .registered-picker-select { border: 1px solid rgba(158,230,164,.48); background: rgba(40,92,47,.55); color: #eaffea; }
     .registered-picker-select:disabled { cursor: not-allowed; opacity: .42; }
-    @media (max-width: 690px) {
+    @media (max-width: 760px) {
       .registered-picker-toolbar { grid-template-columns: 1fr auto; }
       .registered-picker-status { grid-column: 1/-1; }
       .registered-picker-body { grid-template-columns: 1fr; }
@@ -150,6 +151,17 @@ function normalizeOptions(options = {}) {
     onSelect: typeof options.onSelect === 'function' ? options.onSelect : () => {},
     onClose: typeof options.onClose === 'function' ? options.onClose : () => {}
   };
+}
+
+function resolveProjectFolderClient(config) {
+  return config.projectFolderClient || (typeof window !== 'undefined' ? window.ArtifexProjectFolder : null);
+}
+
+function folderButtonLabel(client) {
+  const status = client?.getState?.().folderStatus;
+  if (status === 'connected') return 'Folder Connected';
+  if (status === 'permission-required') return 'Authorise Folder';
+  return 'Connect Folder';
 }
 
 export function createRegisteredContentPicker(options = {}) {
@@ -197,11 +209,24 @@ export function createRegisteredContentPicker(options = {}) {
     `;
   }
 
+  function updateConnectionButton() {
+    const button = dialog?.querySelector('[data-picker-connect]');
+    if (!button) return;
+    const client = resolveProjectFolderClient(config);
+    button.textContent = folderButtonLabel(client);
+    button.title = button.textContent === 'Folder Connected'
+      ? 'The connected project folder is active. Click to reload registered records.'
+      : button.textContent === 'Authorise Folder'
+        ? 'Grant access again to the previously selected project folder.'
+        : 'Choose the Artifex project folder containing the registered-content indexes.';
+  }
+
   function renderResults() {
     const results = dialog?.querySelector('[data-picker-results]');
     const status = dialog?.querySelector('[data-picker-status]');
     const selectButton = dialog?.querySelector('[data-picker-confirm]');
     if (!results || !status || !selectButton) return;
+    updateConnectionButton();
 
     if (loading) {
       status.textContent = 'Loading…';
@@ -257,13 +282,46 @@ export function createRegisteredContentPicker(options = {}) {
     renderResults();
     const result = await loadRegisteredContentIndex(activeKind, {
       readJson: config.readJson,
-      projectFolderClient: config.projectFolderClient
+      projectFolderClient: resolveProjectFolderClient(config)
     });
     if (token !== requestNumber || !dialog) return result;
     currentResult = result;
     loading = false;
     renderResults();
     return result;
+  }
+
+  async function connectOrAuthoriseFolder() {
+    const client = resolveProjectFolderClient(config);
+    if (!client) {
+      currentResult = {
+        status: REGISTERED_CONTENT_STATUS.READER_UNAVAILABLE,
+        items: [],
+        rejected: [],
+        message: 'Project-folder support is not loaded in this app.'
+      };
+      renderResults();
+      return;
+    }
+    try {
+      const status = client.getState?.().folderStatus;
+      if (status === 'connected') {
+        await loadActiveKind();
+        return;
+      }
+      if (status === 'permission-required') await client.reauthoriseProjectFolder();
+      else await client.connectProjectFolder();
+      await loadActiveKind();
+    } catch (error) {
+      loading = false;
+      currentResult = {
+        status: REGISTERED_CONTENT_STATUS.READ_FAILED,
+        items: [],
+        rejected: [],
+        message: `Unable to connect project folder: ${error?.message || String(error)}`
+      };
+      renderResults();
+    }
   }
 
   async function switchKind(kind) {
@@ -301,6 +359,7 @@ export function createRegisteredContentPicker(options = {}) {
         <nav class="registered-picker-tabs" data-picker-tabs aria-label="Registered content types"></nav>
         <section class="registered-picker-toolbar">
           <input class="registered-picker-search" data-picker-search type="search" placeholder="Search registered records" title="Search registered IDs, names, paths and tags." />
+          <button class="registered-picker-connect" type="button" data-picker-connect title="Connect an Artifex project folder.">Connect Folder</button>
           <button class="registered-picker-reload" type="button" data-picker-reload title="Read the current project index again.">Reload</button>
           <span class="registered-picker-status" data-picker-status>Waiting</span>
         </section>
@@ -322,6 +381,7 @@ export function createRegisteredContentPicker(options = {}) {
     dialog.querySelector('[data-picker-close]')?.addEventListener('click', () => close('cancelled'));
     dialog.querySelector('[data-picker-cancel]')?.addEventListener('click', () => close('cancelled'));
     dialog.querySelector('[data-picker-confirm]')?.addEventListener('click', confirmSelection);
+    dialog.querySelector('[data-picker-connect]')?.addEventListener('click', connectOrAuthoriseFolder);
     dialog.querySelector('[data-picker-reload]')?.addEventListener('click', loadActiveKind);
     dialog.querySelector('[data-picker-search]')?.addEventListener('input', (event) => {
       query = text(event.target.value);
