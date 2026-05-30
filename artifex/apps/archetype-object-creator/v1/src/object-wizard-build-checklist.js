@@ -1,9 +1,9 @@
 import { editorState, validateCurrentArchetype } from './editor-state.js';
 import { saveCurrentLocal } from './editor-io.js';
-import { autoSaveWizardSession, deleteWizardSession, saveWizardSession } from './object-wizard-sessions.js?v=1.33';
-import { createObjectWizardBuildRequirements } from './object-wizard-build-requirements.js?v=1.33';
-import { createObjectWizardFrameTasks } from './object-wizard-frame-tasks.js?v=1.33';
-import { clampNumber, emojiFor, escapeHtml } from './object-wizard-helpers.js?v=1.33';
+import { autoSaveWizardSession, deleteWizardSession, saveWizardSession } from './object-wizard-sessions.js?v=1.34';
+import { createObjectWizardBuildRequirements } from './object-wizard-build-requirements.js?v=1.34';
+import { createObjectWizardFrameTasks } from './object-wizard-frame-tasks.js?v=1.34';
+import { clampNumber, emojiFor, escapeHtml } from './object-wizard-helpers.js?v=1.34';
 
 export function createObjectWizardBuildChecklist({ wizardState, setHeader, content, renderBasicChanges }) {
   const requirements = createObjectWizardBuildRequirements({ renderBuildChecklist, updateProgressOrb });
@@ -25,7 +25,7 @@ export function createObjectWizardBuildChecklist({ wizardState, setHeader, conte
       wizardState.selectedRequirementId = activeRequirements[0]?.id || '';
     }
     const node = content();
-    node.innerHTML = `<p class="hint">Use the numbered list on the left. Drag tasks to reorder them. The right side edits one task at a time.</p><div class="wizard-toolbar"><button type="button" data-back>Back</button><button type="button" data-session>Save & Resume Later</button><button type="button" data-save>Finish + Save Local</button><button type="button" data-finish>Finish</button></div><div class="wizard-build-shell"><aside class="wizard-build-left"><div class="wizard-build-nav"></div></aside><section class="wizard-build-detail-panel"></section></div>`;
+    node.innerHTML = `<div class="wizard-toolbar wizard-step5-toolbar"><button type="button" data-back title="Return to basic changes">← Back</button><button type="button" data-session title="Save this wizard to resume later">💾 Save</button><button type="button" data-save title="Finish and save this object locally">✅ Save Local</button><button type="button" data-finish title="Finish setup without saving a local copy">🏁 Finish</button></div><div class="wizard-build-shell"><aside class="wizard-build-left"><div class="wizard-build-nav"></div></aside><section class="wizard-build-detail-panel"></section></div>`;
     node.querySelector('[data-back]').addEventListener('click', renderBasicChanges);
     node.querySelector('[data-session]').addEventListener('click', saveAndResumeLater);
     node.querySelector('[data-save]').addEventListener('click', () => finishWizard(true));
@@ -46,7 +46,7 @@ export function createObjectWizardBuildChecklist({ wizardState, setHeader, conte
       button.draggable = true;
       button.dataset.requirementId = req.id;
       button.className = `${req.id === wizardState.selectedRequirementId ? 'is-selected' : ''} ${data.complete ? 'is-complete' : ''}`;
-      button.innerHTML = `<span class="wizard-task-number">${index + 1}</span><span class="wizard-task-emoji">${emojiFor(req.actionId)}</span><span>${escapeHtml(req.label)}<small>${escapeHtml(req.type)} · ${escapeHtml(req.actionId)}</small></span><em>${data.complete ? 'Ready' : 'Needed'}</em>`;
+      button.innerHTML = `<span class="wizard-task-number">${index + 1}</span><span class="wizard-task-emoji">${emojiFor(req.actionId)}</span><span class="wizard-task-copy"><strong>${escapeHtml(req.label)}</strong><small>${escapeHtml(req.type)} · ${escapeHtml(req.actionId)}</small></span><em>${data.complete ? 'Ready' : 'Needed'}</em>`;
       button.addEventListener('click', () => {
         wizardState.selectedRequirementId = req.id;
         renderBuildChecklist();
