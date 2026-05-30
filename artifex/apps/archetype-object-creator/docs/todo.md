@@ -4,38 +4,73 @@ This file tracks work that belongs specifically to Archetype Object Creator. Pla
 
 ## Open
 
-### Retire or split `template-card-enhancements.js`
+### Future maintainability cleanup for `editor-ui.js`
 
 Status: open  
-Priority: high  
-Source: source folder review after V1.30 cleanup
+Priority: medium  
+Source: V1.33 line-count audit
 
-`template-card-enhancements.js` is still imported by `editor-app.js` and is still a large legacy overlay-style file. Much of its behaviour has already been extracted into normal modules, so it should be reviewed and reduced.
+`editor-ui.js` is still 821 lines. It is outside the current wizard-flow split and was not refactored in V1.33 because doing so was not necessary to prevent a regression. Plan a separate focused pass to split general editor UI/menu/dialog/library responsibilities into smaller named modules without changing the accepted UI.
 
-Required outcome:
-
-- Identify which behaviour inside `template-card-enhancements.js` is still required.
-- Remove duplicated logic already handled by `object-template-icons.js`, `object-wizard-step5-layout.js`, `object-wizard-step5.js`, `object-wizard-reference-panel.js`, `object-wizard-frame-correction.js`, and `object-wizard-asset-package.js`.
-- If nothing active remains, remove the import from `editor-app.js` and archive/delete the file.
-- If active behaviour remains, split it into properly named modules rather than leaving it as one large enhancement overlay.
-
-### Split or rename `object-creator-workflows-stable.js`
+### Future maintainability cleanup for `object-wizard-step5.js`
 
 Status: open  
-Priority: medium-high  
-Source: source folder review after V1.30 cleanup
+Priority: low-medium  
+Source: V1.33 line-count audit
 
-`object-creator-workflows-stable.js` is still imported by `editor-app.js`. It contains the wizard shell/session flow and a large embedded CSS block. It is stable, but the name and size make it look like another overlay layer rather than normal app architecture.
-
-Required outcome:
-
-- Split wizard session / resume logic into a normal module, for example `object-wizard-sessions.js`.
-- Split wizard shell / steps 1–4 into a normal module, for example `object-wizard-flow.js`.
-- Move shared wizard shell styles into a CSS file or a clearly named style module.
-- Update `editor-app.js` to import the new modules.
-- Archive or remove `object-creator-workflows-stable.js` after the split.
+`object-wizard-step5.js` is still 524 lines. It is a named Step 5 core module rather than a legacy overlay, but a future pass should consider separating Action Behaviour and Sound Events into smaller named modules if the file grows further.
 
 ## Done
+
+### Split `object-wizard-flow.js` into smaller wizard modules
+
+Status: done  
+Completed in: V1.33  
+Source: review feedback after V1.32 cleanup
+
+Completed changes:
+
+- Reopened app-local cleanup after the V1.32 `object-wizard-flow.js` file measured 939 lines.
+- Split Step 1 and Step 2 source selection into `object-wizard-start.js`.
+- Split Step 3 runtime/action capability selection into `object-wizard-capabilities.js`.
+- Split Step 4 basic archetype details into `object-wizard-basic-details.js`.
+- Split Step 5 base checklist rendering into `object-wizard-build-checklist.js`, requirement/task storage into `object-wizard-build-requirements.js`, and frame/preview mechanics into `object-wizard-frame-tasks.js`.
+- Added `object-wizard-helpers.js` for shared wizard constants and helper functions.
+- Reduced `object-wizard-flow.js` to a thin 117-line wizard router/orchestrator.
+- Bumped the app to V1.33.
+- Local browser verification passed for load, menus, wizard source paths, Step 2 icons/colours, Steps 3–5, Frame Fix, Reference safe empty state, Step 5 panels, Save & Resume Later, Finish + Save Local, Finish, reload, and retired-file request checks.
+
+
+### Split object wizard workflow modules
+
+Status: done  
+Completed in: V1.32  
+Source: source folder review after V1.30 cleanup
+
+Completed changes:
+
+- Created `object-wizard-flow.js` for the Quick Start Wizard route, template/existing-object choices, Steps 1–4, and the Step 5 build-checklist shell.
+- Created `object-wizard-sessions.js` for saved wizard sessions, localStorage persistence, resume/delete behaviour, and the crystal-ball session indicator.
+- Created `object-wizard.css` for the wizard shell, session indicator, progress orb, build checklist, frame strip, and responsive wizard layout styles that previously lived in `object-creator-workflows-stable.js`.
+- Updated `editor-app.js` to initialise the named flow module instead of importing `object-creator-workflows-stable.js`.
+- Removed `object-creator-workflows-stable.js` and the inactive `object-creator-workflows.js` predecessor from the live `v1/src/` folder and recorded both files in the archive manifest.
+- Bumped the app to V1.32.
+- Local browser verification covered page load, version badge, menus, the template route through Step 5, Step 5 extracted panels, Frame Fix, saved wizard sessions, Finish, and the existing-object empty state.
+
+### Retire `template-card-enhancements.js`
+
+Status: done  
+Completed in: V1.31  
+Source: source folder review after V1.30 cleanup
+
+Completed changes:
+
+- Confirmed the file duplicated behaviour already owned by `object-template-icons.js`, `object-wizard-step5-layout.js`, `object-wizard-step5.js`, `object-wizard-reference-panel.js`, `object-wizard-frame-correction.js`, and `object-wizard-asset-package.js`.
+- Removed the active import from `editor-app.js`.
+- Removed `template-card-enhancements.js` from the live `v1/src/` folder and recorded its blob SHA in the archive manifest.
+- Bumped the app to V1.31.
+- Local browser verification covered page load, version badge, menus, the template route through Step 5, Step 5 extracted panels, Frame Fix, and network requests for retired files.
+
 
 ### Archive or remove old patch files from live source folder
 

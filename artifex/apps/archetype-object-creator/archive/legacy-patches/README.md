@@ -13,6 +13,9 @@ The code is still preserved in Git history and can be recovered by looking at th
 | `artifex/apps/archetype-object-creator/v1/src/template-card-patch.js` | `43771ae1573f16ca6b458dfcb8aba889225c0f81` | Superseded by `object-template-icons.js` |
 | `artifex/apps/archetype-object-creator/v1/src/icon-atlas-crop-patch.js` | `808aaf4d005377fe30e1dec9ce7d8c3295518269` | Superseded by `object-template-icons.js` |
 | `artifex/apps/archetype-object-creator/v1/src/right-panel-layout-patch.js` | `406f400f96b5f2f35f81b19ca379be06173849dd` | Superseded by the normal layout files and current wizard modules |
+| `artifex/apps/archetype-object-creator/v1/src/template-card-enhancements.js` | `5c2787be249f98ebfd9529b133d9e97ccd5f6d72` | Retired in V1.31 after duplicated template-card, icon, Step 5, reference, frame-correction, and asset-package behaviour was superseded by normal modules. |
+| `artifex/apps/archetype-object-creator/v1/src/object-creator-workflows.js` | `f8967b0b357dd52b6171e032051c5daeeb9e97ec` | Removed from live source in V1.32 as an inactive predecessor of the split workflow modules. |
+| `artifex/apps/archetype-object-creator/v1/src/object-creator-workflows-stable.js` | `877b89290fbaadbf5cf1cc6acaa624ef196f7ad5` | Retired in V1.32 after wizard flow, sessions, and shell styles were split into `object-wizard-flow.js`, `object-wizard-sessions.js`, and `object-wizard.css`. |
 
 ## Rule
 
