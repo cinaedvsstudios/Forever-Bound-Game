@@ -1,7 +1,6 @@
 const INTAKE_SETUP_VERSION = 'V1.1.12';
 const INTAKE_SETUP_KEY_PREFIX = 'artifex.creationGuide.intakeSetup.';
 let intakeSetupInstalled = false;
-let intakeSetupObserver = null;
 let intakeStructureCreating = false;
 
 window.addEventListener('DOMContentLoaded', () => window.setTimeout(installInitialAssetIntakeSetup, 0));
@@ -11,82 +10,42 @@ function installInitialAssetIntakeSetup() {
   intakeSetupInstalled = true;
   injectInitialAssetIntakeStyles();
   renderInitialAssetIntakeSection();
-  window.addEventListener('artifex:project-folder-state', () => {
-    renderInitialAssetIntakeSection(true);
-    if (typeof queueHealthRender === 'function') queueHealthRender();
-  });
+  window.addEventListener('artifex:project-folder-state', () => { renderInitialAssetIntakeSection(true); if (typeof queueHealthRender === 'function') queueHealthRender(); });
   const overview = document.getElementById('project-overview-panel');
-  if (overview) {
-    intakeSetupObserver = new MutationObserver(() => renderInitialAssetIntakeSection());
-    intakeSetupObserver.observe(overview, { childList: true, subtree: true });
-  }
-}
-
-function intakeProjectKey() {
-  const projectId = String(document.getElementById('project-id-input')?.value || 'untitled-artifex-adventure').trim() || 'untitled-artifex-adventure';
-  return `${INTAKE_SETUP_KEY_PREFIX}${projectId}`;
+  if (overview) new MutationObserver(() => renderInitialAssetIntakeSection()).observe(overview, { childList: true, subtree: true });
 }
 
 function getCurrentIntakeSetupState() {
-  return localStorage.getItem(intakeProjectKey()) || 'pending';
+  const id = String(document.getElementById('project-id-input')?.value || 'untitled-artifex-adventure').trim() || 'untitled-artifex-adventure';
+  return localStorage.getItem(`${INTAKE_SETUP_KEY_PREFIX}${id}`) || 'pending';
 }
-
-function setCurrentIntakeSetupState(state) {
-  localStorage.setItem(intakeProjectKey(), state);
+function setCurrentIntakeSetupState(value) {
+  const id = String(document.getElementById('project-id-input')?.value || 'untitled-artifex-adventure').trim() || 'untitled-artifex-adventure';
+  localStorage.setItem(`${INTAKE_SETUP_KEY_PREFIX}${id}`, value);
   renderInitialAssetIntakeSection(true);
   if (typeof queueHealthRender === 'function') queueHealthRender();
 }
-
 window.getCreationGuideIntakeSetupState = getCurrentIntakeSetupState;
 
-function intakeFolderState() {
-  return window.ArtifexProjectFolder?.getState?.() || { folderStatus: 'loading', supported: typeof window.showDirectoryPicker === 'function' };
-}
-
-function intakeProjectInput() {
-  const title = String(document.getElementById('game-title-input')?.value || 'Untitled Artifex Adventure').trim();
-  return {
-    gameTitle: title,
-    projectName: title,
-    projectSlug: String(document.getElementById('project-id-input')?.value || '').trim(),
-    creator: String(document.getElementById('creator-input')?.value || '').trim(),
-    version: '0.1.0'
-  };
-}
-
 function renderInitialAssetIntakeSection(force = false) {
-  const projectFolderSection = document.getElementById('project-folder-setup-section');
-  if (!projectFolderSection) return;
+  const storage = document.getElementById('project-folder-setup-section');
+  if (!storage) return;
+  const oldNote = storage.querySelector('.project-folder-footnote');
+  const newNote = 'This creates canonical blank-starter files and folders without overwriting existing files. Use Initial Asset Intake Setup below for optional raw source-material drop folders.';
+  if (oldNote && oldNote.textContent !== newNote) oldNote.textContent = newNote;
   let section = document.getElementById('initial-asset-intake-section');
-  if (!section) {
-    section = document.createElement('section');
-    section.id = 'initial-asset-intake-section';
-    section.className = 'project-folder-setup-section intake-setup-section';
-    projectFolderSection.insertAdjacentElement('afterend', section);
-  }
-
-  const connected = intakeFolderState().folderStatus === 'connected';
-  const setupState = getCurrentIntakeSetupState();
-  const statusText = intakeStructureCreating ? 'Creating Intake Folders…' : setupState === 'ready' ? 'Intake Folders Ready' : setupState === 'skipped' ? 'Skipped For Now' : 'Not Set Up';
-  const statusClass = intakeStructureCreating ? 'working' : setupState === 'ready' ? 'connected' : setupState === 'skipped' ? 'warn' : 'empty';
-  const description = setupState === 'ready'
-    ? 'Your source-material drop folders are ready. Files placed here still need approval and promotion before final project content may reference them.'
-    : setupState === 'skipped'
-      ? 'You skipped intake setup for now. You can create these folders later when you are ready to gather source media.'
-      : 'Create optional source-material drop folders now, or skip this step until you are ready to gather art and audio.';
-  const folders = [
-    ['backgrounds/', 'Scene backgrounds, interiors, landscapes and environmental art.'],
-    ['characters/', 'Player, NPC, interactive character and sprite or portrait art.'],
-    ['objects/', 'Props, pickups, doors, transitions and interactable objects.'],
-    ['icons-ui/', 'Project logo, title mark, icons, HUD and menu pieces.'],
-    ['music/', 'Music tracks and stingers.'],
-    ['dialogue-sfx/', 'Dialogue, voice, ambience and sound effects.']
-  ];
-  const folderHtml = folders.map(([folder, purpose]) => `<li><code>${safeIntakeText(folder)}</code><span>${safeIntakeText(purpose)}</span></li>`).join('');
-  const html = `<header class="project-folder-setup-header"><div><p class="project-folder-eyebrow">Optional setup step</p><h3>Initial Asset Intake Setup</h3></div><span class="project-folder-state ${statusClass}">${statusText}</span></header><p class="project-folder-copy">${description}</p><div class="intake-folder-root"><strong>intake/</strong><ul>${folderHtml}</ul></div><p class="intake-storage-rule"><strong>Source material only.</strong> Final scenes and game content must reference approved files promoted into <code>assets/</code>, never files directly inside <code>intake/</code>.</p><div class="project-folder-actions"><button type="button" id="create-intake-folders-button" ${connected && !intakeStructureCreating ? '' : 'disabled'}>${intakeStructureCreating ? 'Creating Intake Folders…' : setupState === 'ready' ? 'Verify Intake Folders' : 'Create Intake Folders'}</button><button type="button" id="skip-intake-setup-button" ${intakeStructureCreating ? 'disabled' : ''}>${setupState === 'skipped' ? 'Skipped For Now' : 'Skip for Now'}</button></div>${!connected ? '<p class="project-folder-footnote">Connect a writable project folder before creating intake folders.</p>' : ''}`;
+  if (!section) { section = document.createElement('section'); section.id = 'initial-asset-intake-section'; section.className = 'project-folder-setup-section intake-setup-section'; storage.insertAdjacentElement('afterend', section); }
+  const connected = window.ArtifexProjectFolder?.getState?.().folderStatus === 'connected';
+  const state = getCurrentIntakeSetupState();
+  const working = intakeStructureCreating;
+  const label = working ? 'Creating Intake Folders…' : state === 'ready' ? 'Intake Folders Ready' : state === 'skipped' ? 'Skipped For Now' : 'Not Set Up';
+  const tone = working ? 'working' : state === 'ready' ? 'connected' : state === 'skipped' ? 'warn' : 'empty';
+  const copy = state === 'ready' ? 'Your source-material drop folders are ready. Approved files must still be promoted before final project content references them.' : state === 'skipped' ? 'You skipped intake setup for now. You can return and create these folders later.' : 'Create optional source-material drop folders now, or skip this step until you are ready to gather art and audio.';
+  const folders = [['backgrounds/','Scene backgrounds, interiors, landscapes and environmental art.'],['characters/','Player, NPC, interactive character and sprite or portrait art.'],['objects/','Props, pickups, doors, transitions and interactable objects.'],['icons-ui/','Project logo, title mark, icons, HUD and menu pieces.'],['music/','Music tracks and stingers.'],['dialogue-sfx/','Dialogue, voice, ambience and sound effects.']];
+  const items = folders.map(([path, text]) => `<li><code>${path}</code><span>${text}</span></li>`).join('');
+  const html = `<header class="project-folder-setup-header"><div><p class="project-folder-eyebrow">Optional setup step</p><h3>Initial Asset Intake Setup</h3></div><span class="project-folder-state ${tone}">${label}</span></header><p class="project-folder-copy">${copy}</p><div class="intake-folder-root"><strong>intake/</strong><ul>${items}</ul></div><p class="intake-storage-rule"><strong>Source material only.</strong> Final game content must use approved files promoted into <code>assets/</code>, not source files inside <code>intake/</code>.</p><div class="project-folder-actions"><button type="button" id="create-intake-folders-button" ${connected && !working ? '' : 'disabled'}>${working ? 'Creating Intake Folders…' : state === 'ready' ? 'Verify Intake Folders' : 'Create Intake Folders'}</button><button type="button" id="skip-intake-setup-button" ${working ? 'disabled' : ''}>${state === 'skipped' ? 'Skipped For Now' : 'Skip for Now'}</button></div>${connected ? '' : '<p class="project-folder-footnote">Connect a writable project folder before creating intake folders.</p>'}`;
   if (!force && section.dataset.lastHtml === html) return;
-  section.dataset.lastHtml = html;
-  section.innerHTML = html;
+  section.dataset.lastHtml = html; section.innerHTML = html;
   section.querySelector('#create-intake-folders-button')?.addEventListener('click', createIntakeFolders);
   section.querySelector('#skip-intake-setup-button')?.addEventListener('click', skipIntakeSetup);
 }
@@ -94,40 +53,21 @@ function renderInitialAssetIntakeSection(force = false) {
 async function createIntakeFolders() {
   if (intakeStructureCreating) return;
   if (!window.ArtifexProjectStructure?.initialiseIntakeOnly) return showIntakeToast('Intake folder service has not loaded.', 'warn');
-  if (intakeFolderState().folderStatus !== 'connected') return showIntakeToast('Connect a writable project folder before creating intake folders.', 'warn');
-  intakeStructureCreating = true;
-  renderInitialAssetIntakeSection(true);
-  showIntakeToast('Creating intake source-material folders in the connected project folder…');
+  if (window.ArtifexProjectFolder?.getState?.().folderStatus !== 'connected') return showIntakeToast('Connect a writable project folder before creating intake folders.', 'warn');
+  intakeStructureCreating = true; renderInitialAssetIntakeSection(true); showIntakeToast('Creating intake source-material folders in the connected project folder…');
   try {
-    const result = await window.ArtifexProjectStructure.initialiseIntakeOnly(intakeProjectInput());
+    const title = String(document.getElementById('game-title-input')?.value || 'Untitled Artifex Adventure').trim();
+    const result = await window.ArtifexProjectStructure.initialiseIntakeOnly({ gameTitle: title, projectName: title, projectSlug: String(document.getElementById('project-id-input')?.value || '').trim(), creator: String(document.getElementById('creator-input')?.value || '').trim(), version: '0.1.0' });
     setCurrentIntakeSetupState('ready');
-    const readmeStatus = result.files?.[0]?.status === 'created' ? 'README created.' : 'Existing README left unchanged.';
-    showIntakeToast(`Intake folders ready. ${readmeStatus}`);
-  } catch (error) {
-    showIntakeToast(error.message || 'Could not create intake folders.', 'warn');
-  } finally {
-    intakeStructureCreating = false;
-    renderInitialAssetIntakeSection(true);
-  }
+    showIntakeToast(`Intake folders ready. ${result.files?.[0]?.status === 'created' ? 'README created.' : 'Existing README left unchanged.'}`);
+  } catch (error) { showIntakeToast(error.message || 'Could not create intake folders.', 'warn'); }
+  finally { intakeStructureCreating = false; renderInitialAssetIntakeSection(true); }
 }
-
-function skipIntakeSetup() {
-  setCurrentIntakeSetupState('skipped');
-  showIntakeToast('Intake setup skipped for now. You can create these folders later.');
-}
-
-function showIntakeToast(message, type = 'success') {
-  if (typeof toast === 'function') toast(message, type);
-}
-
-function safeIntakeText(value) {
-  return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[character]));
-}
-
+function skipIntakeSetup() { setCurrentIntakeSetupState('skipped'); showIntakeToast('Intake setup skipped for now. You can create these folders later.'); }
+function showIntakeToast(message, type = 'success') { if (typeof toast === 'function') toast(message, type); }
 function injectInitialAssetIntakeStyles() {
   if (document.getElementById('creation-guide-intake-setup-style')) return;
-  const style = document.createElement('style');
-  style.id = 'creation-guide-intake-setup-style';
+  const style = document.createElement('style'); style.id = 'creation-guide-intake-setup-style';
   style.textContent = `.intake-setup-section{margin-top:12px}.intake-folder-root{margin:10px 0;padding:12px 14px;border:1px solid rgba(226,204,167,.13);border-radius:10px;background:rgba(0,0,0,.15)}.intake-folder-root>strong{color:#f4dfc4;font-size:13px}.intake-folder-root ul{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:8px 14px;margin:10px 0 0;padding:0;list-style:none}.intake-folder-root li{display:flex;align-items:flex-start;gap:8px;color:#bcae9c;font-size:11px;line-height:1.4}.intake-folder-root code,.intake-storage-rule code{color:#f0d08b;font-size:11px}.intake-folder-root li code{min-width:92px}.intake-storage-rule{margin:12px 0;color:#bcae9c;font-size:11px;line-height:1.55}.intake-storage-rule strong{color:#f4dfc4}@media(max-width:850px){.intake-folder-root ul{grid-template-columns:1fr}}`;
   document.head.appendChild(style);
 }
