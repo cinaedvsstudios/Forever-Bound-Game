@@ -5,7 +5,7 @@
 // Portal visual/effect selection remains pending the later Portal Registry stage.
 
 import '../../../../../shared/project-folder/project-folder-client.js?v=0.1.0';
-import { openRegisteredContentPicker } from '../../../../../shared/registered-content/registered-content-picker.js?v=1.30';
+import { openRegisteredContentPicker } from '../../../../../shared/registered-content/registered-content-picker.js?v=1.29.1';
 
 const $ = (id) => document.getElementById(id);
 const EDITOR_ID = 'door-visual-link-editor';
