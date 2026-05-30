@@ -1,4 +1,5 @@
-import { getBlockType } from './block-types.js';
+import { getBlockType } from './block-types.js?v=1.2.10';
+import { START_NODE_ID, END_NODE_ID } from './quest-schema.js?v=1.2.10';
 
 export function exportQuestFile(doc) {
   return JSON.stringify(buildQuestExportBundle(doc), null, 2);
@@ -90,6 +91,7 @@ export function buildIndexFile(quests, kind = 'quest') {
         sceneIds: quest.sceneIds || [],
         objectIds: quest.objectIds || [],
         blockCount: (quest.blocks || []).length,
+        connectionCount: (quest.connections || []).length,
         status: validationStatusForQuest(quest)
       };
     })
@@ -100,6 +102,7 @@ export function buildRuntimeQuestFile(quest, doc, allWarnings = []) {
   const side = isSideQuest(quest);
   const slug = slugify(quest.id || quest.name || 'quest');
   const blocks = (quest.blocks || []).map((block, index) => buildRuntimeBlock(block, index));
+  const connections = (quest.connections || []).map(buildRuntimeConnection);
   const questWarnings = allWarnings.filter((warning) => warning.questId === (quest.id || quest.name));
 
   return {
@@ -121,9 +124,10 @@ export function buildRuntimeQuestFile(quest, doc, allWarnings = []) {
     },
     links: collectQuestLinks(quest),
     flow: {
-      start: { type: 'start', label: 'START' },
+      start: { id: START_NODE_ID, type: 'start', label: 'START' },
       blocks,
-      end: { type: 'end', label: 'END', completionFlag: quest.completionFlag || '' }
+      connections,
+      end: { id: END_NODE_ID, type: 'end', label: 'END', completionFlag: quest.completionFlag || '' }
     },
     validationWarnings: questWarnings
   };
@@ -134,7 +138,7 @@ export function buildRuntimeBlock(block, index) {
   const meta = getBlockType(type);
   return {
     id: block.id || `block_${String(index + 1).padStart(2, '0')}_${slugify(block.name || meta.name)}`,
-    order: index + 1,
+    displayOrder: index + 1,
     name: block.name || meta.name,
     type,
     category: meta.category || 'custom',
@@ -159,6 +163,18 @@ export function buildRuntimeBlock(block, index) {
     }),
     notes: block.notes || ''
   };
+}
+
+export function buildRuntimeConnection(connection) {
+  return compactObject({
+    id: connection.id,
+    sourceNodeId: connection.sourceNodeId,
+    targetNodeId: connection.targetNodeId,
+    sourcePort: connection.sourcePort || 'out:0',
+    targetPort: connection.targetPort || 'in:0',
+    condition: connection.condition,
+    label: connection.label
+  });
 }
 
 export function validateQuestFile(doc) {
@@ -203,8 +219,55 @@ export function validateQuestFile(doc) {
         addWarning(warnings, 'warning', blockTarget, 'Block has no Project Manager-resolvable scene/object/dialogue/audio ID.', questTarget);
       }
     });
+    validateConnections(quest, questTarget, blockIds, warnings);
   });
   return warnings;
+}
+
+function validateConnections(quest, questTarget, blockIds, warnings) {
+  const connections = quest.connections || [];
+  const validIds = new Set([START_NODE_ID, END_NODE_ID, ...blockIds]);
+  const connectionIds = new Set();
+  const incoming = new Map();
+  const outgoing = new Map();
+  connections.forEach((connection, index) => {
+    const target = connection.id || `${questTarget}:connection_${index + 1}`;
+    if (!connection.id) addWarning(warnings, 'info', target, 'Connection has no stable id; export will generate one.', questTarget);
+    if (connection.id && connectionIds.has(connection.id)) addWarning(warnings, 'error', target, `Duplicate connection id: ${connection.id}`, questTarget);
+    if (connection.id) connectionIds.add(connection.id);
+    if (!validIds.has(connection.sourceNodeId)) addWarning(warnings, 'error', target, `Connection source does not exist: ${connection.sourceNodeId || 'empty'}`, questTarget);
+    if (!validIds.has(connection.targetNodeId)) addWarning(warnings, 'error', target, `Connection destination does not exist: ${connection.targetNodeId || 'empty'}`, questTarget);
+    if (connection.sourceNodeId === END_NODE_ID) addWarning(warnings, 'warning', target, 'END cannot create an outgoing connection.', questTarget);
+    if (connection.targetNodeId === START_NODE_ID) addWarning(warnings, 'warning', target, 'START cannot receive an incoming connection.', questTarget);
+    if (!outgoing.has(connection.sourceNodeId)) outgoing.set(connection.sourceNodeId, []);
+    outgoing.get(connection.sourceNodeId).push(connection.targetNodeId);
+    if (!incoming.has(connection.targetNodeId)) incoming.set(connection.targetNodeId, []);
+    incoming.get(connection.targetNodeId).push(connection.sourceNodeId);
+  });
+  if (!connections.length) addWarning(warnings, 'warning', questTarget, 'Quest has no explicit flow connections. Draw links from START to blocks and END.', questTarget);
+  if (!outgoing.has(START_NODE_ID)) addWarning(warnings, 'warning', questTarget, 'START is not connected to a quest block.', questTarget);
+  if (!incoming.has(END_NODE_ID)) addWarning(warnings, 'warning', questTarget, 'END has no incoming completion connection.', questTarget);
+  const reachable = walkGraph(START_NODE_ID, outgoing);
+  (quest.blocks || []).forEach((block) => {
+    if (!incoming.has(block.id) && !outgoing.has(block.id)) addWarning(warnings, 'warning', block.id || block.name, 'Block is unconnected in the flow workspace.', questTarget);
+    else if (!reachable.has(block.id)) addWarning(warnings, 'warning', block.id || block.name, 'Block has connections but no route from START.', questTarget);
+    if (block.type === 'completion' && !(outgoing.get(block.id) || []).includes(END_NODE_ID)) {
+      addWarning(warnings, 'warning', block.id || block.name, 'Calling Fulfilled block is not connected to END.', questTarget);
+    }
+  });
+  if (!reachable.has(END_NODE_ID)) addWarning(warnings, 'warning', questTarget, 'No valid connection route currently reaches END.', questTarget);
+}
+
+function walkGraph(startNodeId, outgoing) {
+  const visited = new Set();
+  const pending = [startNodeId];
+  while (pending.length) {
+    const node = pending.shift();
+    if (visited.has(node)) continue;
+    visited.add(node);
+    (outgoing.get(node) || []).forEach((next) => { if (!visited.has(next)) pending.push(next); });
+  }
+  return visited;
 }
 
 export function collectQuestLinks(quest) {
@@ -214,7 +277,7 @@ export function collectQuestLinks(quest) {
     objectIds: unique([...(quest.objectIds || []), ...blocks.map((block) => block.objectId)]),
     dialogueIds: unique(blocks.map((block) => block.dialogueId)),
     audioIds: unique(blocks.map((block) => block.audioId)),
-    conditions: unique(blocks.map((block) => block.condition)),
+    conditions: unique([...(quest.connections || []).map((connection) => connection.condition), ...blocks.map((block) => block.condition)]),
     actions: unique(blocks.map((block) => block.action)),
     uiOverlays: unique(blocks.map((block) => block.uiOverlay)),
     capraFeedback: unique(blocks.map((block) => block.capraFeedback)),
@@ -234,6 +297,7 @@ export function verifyExportBundleShape(bundle) {
   pass('summary-counts', ['error', 'warning', 'info'].every((key) => Number.isInteger(bundle.validationSummary?.[key])), 'Bundle includes validation summary counts.');
   (bundle.files || []).filter((file) => file.role === 'quest-runtime' || file.role === 'sidequest-runtime').forEach((file) => {
     pass(`runtime-${file.content?.id || file.path}`, Boolean(file.content?.flow && Array.isArray(file.content.flow.blocks)), `${file.path} includes runtime flow blocks.`);
+    pass(`connections-${file.content?.id || file.path}`, Boolean(file.content?.flow && Array.isArray(file.content.flow.connections)), `${file.path} includes explicit runtime flow connections.`);
     pass(`links-${file.content?.id || file.path}`, Boolean(file.content?.links), `${file.path} includes resolved links bucket.`);
   });
   return {
