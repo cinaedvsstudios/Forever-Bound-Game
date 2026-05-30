@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Artifex Puzzle Creator V1.29 · Forever Bound</title>
+  <title>Artifex Puzzle Creator V1.30 · Forever Bound</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -15,7 +15,7 @@
 <body>
   <div class="app-shell">
     <header class="app-header">
-      <div class="brand-lockup"><div class="brand-sigil" aria-hidden="true"><span class="brand-rune">ᚠ</span></div><div class="brand-title-block"><p class="eyebrow">Artifex Quest Builder Module</p><div class="title-row"><h1>Puzzle Creator</h1><span class="version-pill">V1.29</span><span class="title-divider"></span></div></div></div>
+      <div class="brand-lockup"><div class="brand-sigil" aria-hidden="true"><span class="brand-rune">ᚠ</span></div><div class="brand-title-block"><p class="eyebrow">Artifex Quest Builder Module</p><div class="title-row"><h1>Puzzle Creator</h1><span class="version-pill">V1.30</span><span class="title-divider"></span></div></div></div>
       <nav class="app-menu" aria-label="Puzzle Creator menu"><div class="menu-group"><button class="menu-top" type="button">Puzzles</button><div class="menu-panel"><div class="engine-switcher" id="engine-switcher" aria-label="Puzzle engine selector"></div></div></div><div class="menu-group"><button class="menu-top" type="button">File</button><div class="menu-panel"><button id="menu-new-maze" type="button">New puzzle</button><button id="menu-save-maze" type="button">Save JSON</button><button id="menu-import-json" type="button">Import JSON</button><button id="menu-import-image" type="button">Use image as map reference</button></div></div><div class="menu-group"><button class="menu-top" type="button">Edit</button><div class="menu-panel"><button id="menu-undo" type="button">Undo</button><button id="menu-redo" type="button">Redo</button><button id="menu-copy-json" type="button">Copy JSON</button><button id="menu-paste-json" type="button">Paste JSON</button></div></div><div class="menu-group"><button class="menu-top" type="button">View</button><div class="menu-panel"><button id="menu-toggle-overview" type="button">Show / hide Overview</button><button id="menu-fit-preview" type="button">Fit preview</button><button id="menu-zoom-in" type="button">Zoom in</button><button id="menu-zoom-out" type="button">Zoom out</button></div></div><div class="menu-group"><button class="menu-top" type="button">Templates</button><div class="menu-panel"><button class="template-action" type="button" data-template="training">Training setup</button><button class="template-action" type="button" data-template="hedge">Hedge route</button><button class="template-action" type="button" data-template="stone">Stone chamber</button><button class="template-action" type="button" data-template="underworld">Underworld hazard</button></div></div><div class="menu-group"><button class="menu-top" type="button">Help</button><div class="menu-panel wide-menu-panel"><p><strong>Image Contrast</strong> appears only after an image reference is loaded.</p></div></div></nav>
       <div class="header-actions"><button id="btn-export-json" class="primary-button">Download JSON</button></div>
     </header>
@@ -34,6 +34,6 @@
   </div>
   <div class="overview-window" id="overview-window"><div class="overview-titlebar" id="overview-titlebar"><strong>Overview</strong><span id="matrix-summary">No cells yet</span><button id="overview-close" type="button">×</button></div><div class="canvas-frame matrix-canvas-frame"><canvas id="analysis-canvas" width="300" height="300"></canvas></div><div class="legend-row compact-legend"><span><i class="legend wall"></i>Wall</span><span><i class="legend path"></i>Path</span><span><i class="legend start"></i>Start</span><span><i class="legend end"></i>Exit</span></div><small id="overview-settings-summary" class="overview-settings-summary">Shape: Square · Size: 3/20 · Stretch: X 100%, Y 100% · Warp: 0% · Edge: Sharp · Tunnel: Off</small></div>
   <script type="module" src="src/js/main.js?v=1.28"></script>
-  <script type="module" src="src/js/engines/maze-labyrinth-consolidation-loader.js?v=1.29.2"></script>
+  <script type="module" src="src/js/engines/maze-labyrinth-consolidation-loader.js?v=1.30.1"></script>
 </body>
 </html>
