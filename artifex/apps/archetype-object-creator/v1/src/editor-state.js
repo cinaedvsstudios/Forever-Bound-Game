@@ -53,8 +53,9 @@ export function createEmptyArchetype() {
       defaultFacing: 'right'
     },
     productionAssets: {
-      version: '1.19',
-      requirements: {}
+      version: '1.34',
+      requirements: {},
+      requirementOrder: []
     },
     exportTarget: objectExportTarget(id),
     exportPaths: createExportPaths(id),
@@ -100,10 +101,7 @@ export function normalizeArchetype(input = {}) {
     },
     behaviour: {
       preset: String(behaviour.preset || template.behaviourPreset || role),
-      flags: {
-        ...template.flags,
-        ...(behaviour.flags || {})
-      }
+      flags: { ...template.flags, ...(behaviour.flags || {}) }
     },
     animationProfile: {
       gameplayActions: normalizeActionList(animationProfile.gameplayActions || template.gameplayActions),
@@ -146,24 +144,11 @@ export function applyRoleTemplate(roleId) {
     role: roleId,
     category: template.category,
     subtype: template.subtype,
-    visual: {
-      ...current.visual,
-      width: template.size.width,
-      height: template.size.height
-    },
+    visual: { ...current.visual, width: template.size.width, height: template.size.height },
     collision: template.collision,
-    behaviour: {
-      preset: template.behaviourPreset,
-      flags: { ...template.flags }
-    },
-    animationProfile: {
-      gameplayActions: [...template.gameplayActions],
-      portraitActions: [...template.portraitActions]
-    },
-    productionAssets: {
-      version: '1.19',
-      requirements: {}
-    }
+    behaviour: { preset: template.behaviourPreset, flags: { ...template.flags } },
+    animationProfile: { gameplayActions: [...template.gameplayActions], portraitActions: [...template.portraitActions] },
+    productionAssets: { version: '1.34', requirements: {}, requirementOrder: [] }
   });
   validateCurrentArchetype();
   notifyChange();
@@ -184,21 +169,17 @@ export function updateIdentity(fields) {
   notifyChange();
 }
 
-export function updateFlag(flagKey, value) {
-  updateArchetype({ behaviour: { flags: { [flagKey]: Boolean(value) } } });
-}
+export function updateFlag(flagKey, value) { updateArchetype({ behaviour: { flags: { [flagKey]: Boolean(value) } } }); }
 
 export function toggleGameplayAction(actionId) {
   const actions = new Set(editorState.archetype.animationProfile.gameplayActions);
-  if (actions.has(actionId)) actions.delete(actionId);
-  else actions.add(actionId);
+  if (actions.has(actionId)) actions.delete(actionId); else actions.add(actionId);
   updateArchetype({ animationProfile: { gameplayActions: [...actions] } });
 }
 
 export function togglePortraitAction(actionId) {
   const actions = new Set(editorState.archetype.animationProfile.portraitActions);
-  if (actions.has(actionId)) actions.delete(actionId);
-  else actions.add(actionId);
+  if (actions.has(actionId)) actions.delete(actionId); else actions.add(actionId);
   updateArchetype({ animationProfile: { portraitActions: [...actions] } });
 }
 
@@ -230,31 +211,13 @@ export function deleteSelectedGameplayAction() {
 
 export function resetBounds() {
   const template = ROLE_TEMPLATES[editorState.archetype.role] || ROLE_TEMPLATES.person_npc_basic;
-  updateArchetype({
-    visual: { width: template.size.width, height: template.size.height },
-    collision: template.collision
-  });
+  updateArchetype({ visual: { width: template.size.width, height: template.size.height }, collision: template.collision });
 }
 
-export function setWorkspaceMode(mode) {
-  editorState.workspaceMode = ['dark', 'white', 'scene'].includes(mode) ? mode : 'dark';
-  notifyChange();
-}
-
-export function toggleGrid() {
-  editorState.showGrid = !editorState.showGrid;
-  notifyChange();
-}
-
-export function toggleHelpers() {
-  editorState.showHelpers = !editorState.showHelpers;
-  notifyChange();
-}
-
-export function setZoom(value) {
-  editorState.zoom = Math.min(3, Math.max(0.4, Number(value) || 1));
-  notifyChange();
-}
+export function setWorkspaceMode(mode) { editorState.workspaceMode = ['dark', 'white', 'scene'].includes(mode) ? mode : 'dark'; notifyChange(); }
+export function toggleGrid() { editorState.showGrid = !editorState.showGrid; notifyChange(); }
+export function toggleHelpers() { editorState.showHelpers = !editorState.showHelpers; notifyChange(); }
+export function setZoom(value) { editorState.zoom = Math.min(3, Math.max(0.4, Number(value) || 1)); notifyChange(); }
 
 export function validateCurrentArchetype() {
   const item = editorState.archetype;
@@ -264,63 +227,23 @@ export function validateCurrentArchetype() {
   if (item.exportTarget !== objectExportTarget(item.id)) warnings.push({ type: 'warn', message: 'Export target was normalised to the canonical archetypes/objects/ path.' });
   if (!item.name) warnings.push({ type: 'error', message: 'Missing display name.' });
   if (!item.category) warnings.push({ type: 'error', message: 'Missing category.' });
-  if (item.animationProfile.gameplayActions.includes('talk')) {
-    warnings.push({ type: 'error', message: 'Gameplay action “talk” is not allowed. Dialogue belongs to portrait actions.' });
-  }
-  if (item.behaviour.flags.usesPortrait && !item.animationProfile.portraitActions.length) {
-    warnings.push({ type: 'warn', message: 'This archetype uses portraits but has no portrait actions selected.' });
-  }
-  if (item.behaviour.flags.hasCollision && item.collision.type === 'none') {
-    warnings.push({ type: 'warn', message: 'Collision flag is enabled, but collision type is none.' });
-  }
-  if (item.behaviour.flags.collectible && !item.behaviour.flags.interactable) {
-    warnings.push({ type: 'warn', message: 'Collectible objects usually need interaction enabled.' });
-  }
-  if (item.behaviour.flags.hostile && !item.animationProfile.gameplayActions.includes('attack')) {
-    warnings.push({ type: 'warn', message: 'Hostile archetype has no attack action.' });
-  }
-  if (item.behaviour.flags.damageable && !item.animationProfile.gameplayActions.includes('take_damage')) {
-    warnings.push({ type: 'warn', message: 'Damageable archetype has no take damage action.' });
-  }
-  if (!item.visual.spriteAssetId) {
-    warnings.push({ type: 'info', message: 'No gameplay sprite asset linked yet. Placeholder preview is being used.' });
-  }
+  if (item.animationProfile.gameplayActions.includes('talk')) warnings.push({ type: 'error', message: 'Gameplay action “talk” is not allowed. Dialogue belongs to portrait actions.' });
+  if (item.behaviour.flags.usesPortrait && !item.animationProfile.portraitActions.length) warnings.push({ type: 'warn', message: 'This archetype uses portraits but has no portrait actions selected.' });
+  if (item.behaviour.flags.hasCollision && item.collision.type === 'none') warnings.push({ type: 'warn', message: 'Collision flag is enabled, but collision type is none.' });
+  if (item.behaviour.flags.collectible && !item.behaviour.flags.interactable) warnings.push({ type: 'warn', message: 'Collectible objects usually need interaction enabled.' });
+  if (item.behaviour.flags.hostile && !item.animationProfile.gameplayActions.includes('attack')) warnings.push({ type: 'warn', message: 'Hostile archetype has no attack action.' });
+  if (item.behaviour.flags.damageable && !item.animationProfile.gameplayActions.includes('take_damage')) warnings.push({ type: 'warn', message: 'Damageable archetype has no take damage action.' });
+  if (!item.visual.spriteAssetId) warnings.push({ type: 'info', message: 'No gameplay sprite asset linked yet. Placeholder preview is being used.' });
   editorState.validation = warnings;
   return warnings;
 }
 
-export function serializeArchetype() {
-  return JSON.stringify(editorState.archetype, null, 2);
-}
-
-export function onStateChange(listener) {
-  listeners.push(listener);
-  return () => {
-    listeners = listeners.filter((item) => item !== listener);
-  };
-}
-
-export function notifyChange() {
-  editorState.archetype.updatedAt = new Date().toISOString();
-  for (const listener of listeners) listener(editorState);
-}
-
-export function objectExportTarget(id) {
-  return `archetypes/objects/${normalizeObjectArchetypeId(id)}.json`;
-}
-
-export function createExportPaths(id) {
-  const normalizedId = normalizeObjectArchetypeId(id);
-  return {
-    objectIndex: OBJECT_INDEX_TARGET,
-    objectFile: objectExportTarget(normalizedId)
-  };
-}
-
-export function makeObjectArchetypeId(seed = Date.now().toString(36)) {
-  return `${OBJECT_ARCHETYPE_PREFIX}${safeId(seed)}`;
-}
-
+export function serializeArchetype() { return JSON.stringify(editorState.archetype, null, 2); }
+export function onStateChange(listener) { listeners.push(listener); return () => { listeners = listeners.filter((item) => item !== listener); }; }
+export function notifyChange() { editorState.archetype.updatedAt = new Date().toISOString(); for (const listener of listeners) listener(editorState); }
+export function objectExportTarget(id) { return `archetypes/objects/${normalizeObjectArchetypeId(id)}.json`; }
+export function createExportPaths(id) { const normalizedId = normalizeObjectArchetypeId(id); return { objectIndex: OBJECT_INDEX_TARGET, objectFile: objectExportTarget(normalizedId) }; }
+export function makeObjectArchetypeId(seed = Date.now().toString(36)) { return `${OBJECT_ARCHETYPE_PREFIX}${safeId(seed)}`; }
 export function normalizeObjectArchetypeId(value) {
   const safe = safeId(value || makeObjectArchetypeId());
   if (safe.startsWith(OBJECT_ARCHETYPE_PREFIX)) return safe;
@@ -328,45 +251,22 @@ export function normalizeObjectArchetypeId(value) {
   return `${OBJECT_ARCHETYPE_PREFIX}${safe}`;
 }
 
-function normalizeTags(tags) {
-  if (Array.isArray(tags)) return tags.map((tag) => String(tag).trim()).filter(Boolean);
-  return String(tags || '').split(',').map((tag) => tag.trim()).filter(Boolean);
-}
-
-function normalizeActionList(actions) {
-  return [...new Set((Array.isArray(actions) ? actions : []).map((item) => String(item).trim()).filter(Boolean).filter((item) => item !== 'talk'))];
-}
-
+function normalizeTags(tags) { if (Array.isArray(tags)) return tags.map((tag) => String(tag).trim()).filter(Boolean); return String(tags || '').split(',').map((tag) => tag.trim()).filter(Boolean); }
+function normalizeActionList(actions) { return [...new Set((Array.isArray(actions) ? actions : []).map((item) => String(item).trim()).filter(Boolean).filter((item) => item !== 'talk'))]; }
 function normalizeProductionAssets(value) {
   const source = value && typeof value === 'object' ? value : {};
-  const requirements = source.requirements && typeof source.requirements === 'object' ? source.requirements : {};
-  return {
-    version: String(source.version || '1.19'),
-    requirements: { ...requirements }
-  };
+  const requirements = source.requirements && typeof source.requirements === 'object' && !Array.isArray(source.requirements) ? source.requirements : {};
+  const requirementOrder = Array.isArray(source.requirementOrder) ? source.requirementOrder.map((id) => String(id)).filter(Boolean) : [];
+  return { version: String(source.version || '1.34'), requirements: { ...requirements }, requirementOrder };
 }
-
-function safeId(value) {
-  return String(value || 'object_archetype').trim().toLowerCase().replace(/[^a-z0-9_\-]+/g, '_').replace(/^_+|_+$/g, '') || 'object_archetype';
-}
-
-function finiteNumber(value, fallback) {
-  const number = Number(value);
-  return Number.isFinite(number) ? number : fallback;
-}
-
-function clampNumber(value, fallback, min, max) {
-  return Math.min(max, Math.max(min, finiteNumber(value, fallback)));
-}
-
+function safeId(value) { return String(value || 'object_archetype').trim().toLowerCase().replace(/[^a-z0-9_\-]+/g, '_').replace(/^_+|_+$/g, '') || 'object_archetype'; }
+function finiteNumber(value, fallback) { const number = Number(value); return Number.isFinite(number) ? number : fallback; }
+function clampNumber(value, fallback, min, max) { return Math.min(max, Math.max(min, finiteNumber(value, fallback))); }
 function deepMerge(target, patch) {
   const output = Array.isArray(target) ? [...target] : { ...target };
   for (const [key, value] of Object.entries(patch || {})) {
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      output[key] = deepMerge(output[key] || {}, value);
-    } else {
-      output[key] = value;
-    }
+    if (value && typeof value === 'object' && !Array.isArray(value)) output[key] = deepMerge(output[key] || {}, value);
+    else output[key] = value;
   }
   return output;
 }
