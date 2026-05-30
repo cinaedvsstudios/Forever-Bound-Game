@@ -1,4 +1,4 @@
-import { createDefaultProjectState, cloneDefaultData } from './data/project-defaults.js?v=0.1.23-routes';
+import { createDefaultProjectState, cloneDefaultData } from './data/project-defaults.js?v=0.1.32-contract';
 import { listCatalogItems } from './data/flatplan-catalog.js?v=0.1.23-routes';
 
 // Artifex Project Editor state manager
