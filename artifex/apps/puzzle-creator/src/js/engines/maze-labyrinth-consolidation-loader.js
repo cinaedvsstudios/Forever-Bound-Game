@@ -1,6 +1,6 @@
 // Maze / Labyrinth stable module loader
 //
-// Consolidation phase 12: all active Maze / Labyrinth systems load through permanent named
+// V1.28 approved baseline: all active Maze / Labyrinth systems load through permanent named
 // modules. Features own content added to the maze; Completion Rules validate which added
 // content is mandatory; Wall Form owns joined visual wall rendering without Walk Test flicker.
 
@@ -15,11 +15,12 @@ import './maze-connections.js?v=1.28';
 import './maze-organic-wall-renderer.js?v=1.28';
 
 window.__artifexMazeConsolidation = {
-  phase: 'phase_12_wall_form_walk_test_fix',
+  phase: 'v1_28_approved_stable_baseline',
   status: 'stable_modules_only_no_active_versioned_patch_imports',
   next: [
-    'smoke test Organic distinction and Walk Test without base-grid flashing',
-    'delete obsolete numbered patch files after live test passes',
+    'build a shared project-backed registered-content picker dependency',
+    'link Collect items to registered archobj_ records when the picker exists',
+    'link Door visuals to registered asset_ records when the picker exists',
     'implement Scatter, Traboule and Tunnel work in stable modules only'
   ]
 };
