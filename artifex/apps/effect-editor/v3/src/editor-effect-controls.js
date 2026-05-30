@@ -17,7 +17,6 @@ const TEXT_CONTROLS = [
   { property: 'textFont', label: 'Font', type: 'select', options: [['Cinzel, Georgia, serif', 'Cinzel / Fantasy Serif'], ['Georgia, serif', 'Georgia Serif'], ['Garamond, serif', 'Garamond Serif'], ['Arial, sans-serif', 'Arial Sans'], ['monospace', 'Monospace']] },
   { property: 'textWeight', label: 'Font Weight', type: 'select', options: [['400', 'Regular'], ['500', 'Medium'], ['700', 'Bold'], ['900', 'Black']] },
   { property: 'textLetterSpacing', label: 'Letter Spacing', type: 'range', min: 0, max: 18, step: 0.1 },
-  { property: 'textBlockWidth', label: 'Block Width / Wrap', type: 'range', min: 0, max: 900, step: 10 },
   { property: 'textLineSpacing', label: 'Line Spacing', type: 'range', min: 0.7, max: 2.4, step: 0.05 },
   { property: 'textGeneralSpeed', label: 'General Speed', type: 'range', min: 0.25, max: 3, step: 0.05 },
   { property: 'textBlockDelay', label: 'Delay Between Text Blocks', type: 'range', min: 1, max: 240, step: 1 },
@@ -57,7 +56,7 @@ function renderControls(body, layer) {
     return;
   }
   if (isTextLayer(layer)) {
-    const note = paragraph('Text controls use bounded emission and conservative defaults to avoid runaway multiline drawing.');
+    const note = paragraph('Text is drawn using only the line breaks entered below. Size changes will not re-wrap it.');
     note.className = 'index2-control-note';
     body.append(note);
   }
@@ -65,9 +64,7 @@ function renderControls(body, layer) {
 }
 
 function getControls(layer) {
-  if (isTextLayer(layer)) {
-    return TEXT_CONTROLS.filter((control) => !control.revealModes || control.revealModes.includes(layer.textRevealMode || 'all'));
-  }
+  if (isTextLayer(layer)) return TEXT_CONTROLS.filter((control) => !control.revealModes || control.revealModes.includes(layer.textRevealMode || 'all'));
   return (ENGINE_CONTROLS[layer.engine] || []).map(([property, label, min, max, step]) => ({ property, label, type: 'range', min, max, step }));
 }
 
@@ -112,7 +109,25 @@ function buildControl(control, layer) {
   input.addEventListener('input', () => updateFromInput(input));
   input.addEventListener('change', () => updateFromInput(input));
   label.append(heading, input);
+  if (control.property === 'textContent') label.append(buildUppercaseAction(input));
   return label;
+}
+
+function buildUppercaseAction(textarea) {
+  const row = document.createElement('span');
+  row.className = 'index2-text-actions';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'index2-text-action';
+  button.textContent = 'ALL CAPS';
+  button.title = 'Convert text content to uppercase';
+  button.addEventListener('click', () => {
+    const next = String(textarea.value || '').toUpperCase();
+    textarea.value = next;
+    updateActiveLayer({ textContent: next });
+  });
+  row.append(button);
+  return row;
 }
 
 function updateFromInput(input) {
