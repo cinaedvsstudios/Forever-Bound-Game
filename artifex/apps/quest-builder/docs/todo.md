@@ -17,9 +17,9 @@ Use the global all-apps to-do list for changes that affect every Artifex app. Us
 
 ## Current live status
 
-Current Quest Builder version in repository: `V1.2.8`
+Current Quest Builder version in repository: `V1.2.9`
 
-Current live confirmation status: awaiting GitHub Pages/browser confirmation for `V1.2.8` pencil-button bugfix.
+Current live confirmation status: awaiting GitHub Pages/browser confirmation for draggable workspace cards and saved positions.
 
 Current app files:
 
@@ -192,12 +192,25 @@ Status: superseded by V1.2.8 bugfix.
 
 ### V1.2.8 — Workspace pencil interaction bugfix
 
-Status: built, awaiting browser confirmation.
+Status: complete.
 
 - Corrected canvas hit testing at transformed zoom/pan display sizes, avoiding double application of canvas transforms.
-- Pencil actions now run before pan-mode selection blocking, so the hand/pan mode does not suppress edit clicks.
+- Pencil actions run before pan-mode selection blocking, so hand/pan mode no longer suppresses edit clicks.
 - Canvas and list pencil actions call the existing editor popup directly for the correct selected quest or block.
-- Updated page entry, displayed version, stylesheet cache key, JavaScript/module cache keys, renderer asset keys and schema imports to `V1.2.8` / `1.2.8`.
+- User confirmed the pencil actions work in the browser.
+
+### V1.2.9 — Draggable workspace cards and saved positions
+
+Status: built, awaiting browser confirmation.
+
+- Large canvas flow cards can now be dragged directly around the viewing workspace when hand/pan mode is off.
+- Added `blockPositions` to saved layout state, keyed by quest ID and block ID, so each moved card restores to its saved location after refresh.
+- Manual positioning is a view/layout setting only; it does not change quest sequence or runtime export order.
+- Quest Flow list drag ordering remains the way to change logical block sequence.
+- Reworked connector rendering so lines follow the manual card locations from START through each ordered card to END.
+- Added a small drag-handle mark to each large canvas card.
+- `View ▾ → Reset Saved Layout` now also clears saved card positions through the existing layout reset.
+- Updated page entry, displayed version, stylesheet cache key, JavaScript/module cache keys, renderer asset keys and schema imports to `V1.2.9` / `1.2.9`.
 
 ## Ownership boundary
 
@@ -225,26 +238,20 @@ Every Quest Builder edit must increase the visible version by `0.01` and update 
 Next version after confirmation:
 
 ```text
-V1.2.9  draggable canvas card placement and saved card positions
+V1.2.10  draggable workspace browser verification and usability polish, if required
 ```
 
 ## Current checks needed
 
-- Confirm the app loads as `V1.2.8`.
-- Click the pencil on the canvas quest header; it must open **Edit Quest**.
-- Click the pencil on each large workspace card; it must open **Edit Quest Block** for that selected card.
-- Click the pencil on a floating Quest Flow row; it must open the matching block editor.
-- Confirm the dark Editing strip still appears correctly after the cache-key refresh.
-- Test dragging a Quest Flow list card onto another card and confirm the canvas redraws in the new sequence.
+- Confirm the app loads as `V1.2.9`.
+- With the hand button off, drag a large canvas flow card to a different place; the connector lines should redraw to it.
+- Refresh the page using the same URL; the moved card should remain in its saved position.
+- Turn the hand/pan button on; dragging the workspace should still pan rather than moving an individual card.
+- Click a card pencil after moving it; the correct block editor should still open.
+- Drag a Quest Flow list item if you want to test logical ordering separately from visual placement.
 
 ## Specific-app tasks
 
 ```json
-[
-  {
-    "version": "V1.2.9",
-    "task": "Allow large canvas block cards to be dragged into manual layout positions and preserve their positions in saved layout/project draft state.",
-    "status": "next"
-  }
-]
+[]
 ```
