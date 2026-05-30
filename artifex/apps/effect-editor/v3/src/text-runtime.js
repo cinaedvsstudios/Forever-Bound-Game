@@ -70,13 +70,11 @@ export function drawTextParticle(ctx, particle, layer, scale) {
   ctx.textAlign = layer.textAlign || 'center';
 
   const rawText = String(particle.textToken ?? layer.textContent ?? 'AETHERA').slice(0, 420);
-  const blockWidth = Math.max(0, finite(layer.textBlockWidth, 0)) * scale;
   const maxLines = normalizeEmissionMode(layer.textEmissionMode) === 'continuous' ? 6 : 10;
-  const lines = prepareLinesCached(ctx, rawText, blockWidth, maxLines).slice(0, maxLines);
+  const lines = prepareAuthoredLinesCached(rawText, maxLines);
   const lineHeight = safeSize * Math.max(0.7, Math.min(3, finite(layer.textLineSpacing, 1.2)));
   const letterSpacing = Math.max(0, Math.min(32 * scale, finite(layer.textLetterSpacing, 0) * scale));
   const startY = -((lines.length - 1) * lineHeight) / 2;
-  const originX = textOriginX(ctx.textAlign, blockWidth);
 
   ctx.fillStyle = color;
   if (layer.textStroke) {
@@ -85,9 +83,9 @@ export function drawTextParticle(ctx, particle, layer, scale) {
   }
 
   lines.forEach((line, index) => {
-    const y = startY + index * lineHeight;
-    if (layer.textStroke) drawTextLine(ctx, line, originX, y, letterSpacing, true);
-    drawTextLine(ctx, line, originX, y, letterSpacing, false);
+    const lineY = startY + index * lineHeight;
+    if (layer.textStroke) drawTextLine(ctx, line, 0, lineY, letterSpacing, true);
+    drawTextLine(ctx, line, 0, lineY, letterSpacing, false);
   });
 
   ctx.restore();
@@ -235,45 +233,19 @@ function getTextRuntimeState(layer) {
   return textRuntimeState.get(layer.id);
 }
 
-
-function prepareLinesCached(ctx, text, blockWidth, maxLines) {
+function prepareAuthoredLinesCached(text, maxLines) {
   const normalizedText = String(text || '').slice(0, 420);
-  const normalizedWidth = Math.round(Number(blockWidth) || 0);
-  const key = `${ctx.font}|${normalizedWidth}|${maxLines}|${normalizedText}`;
+  const key = `${maxLines}|${normalizedText}`;
   const cached = lineLayoutCache.get(key);
   if (cached) return cached;
-  const lines = prepareLines(ctx, normalizedText, normalizedWidth).slice(0, maxLines).map((line) => String(line).slice(0, 120));
-  lineLayoutCache.set(key, lines);
+  const lines = normalizedText.split(/\r?\n/u).slice(0, maxLines).map((line) => String(line).slice(0, 120));
+  const safeLines = lines.length ? lines : [''];
+  lineLayoutCache.set(key, safeLines);
   if (lineLayoutCache.size > LINE_LAYOUT_CACHE_LIMIT) {
     const firstKey = lineLayoutCache.keys().next().value;
     lineLayoutCache.delete(firstKey);
   }
-  return lines;
-}
-
-function prepareLines(ctx, text, blockWidth) {
-  const sourceLines = String(text || '').split(/\r?\n/u);
-  if (!blockWidth || blockWidth < 40) return sourceLines.length ? sourceLines : [''];
-  const wrapped = [];
-  sourceLines.forEach((line) => {
-    const words = line.split(/\s+/u).filter(Boolean);
-    if (!words.length) {
-      wrapped.push('');
-      return;
-    }
-    let current = '';
-    words.forEach((word) => {
-      const candidate = current ? `${current} ${word}` : word;
-      if (ctx.measureText(candidate).width > blockWidth && current) {
-        wrapped.push(current);
-        current = word;
-      } else {
-        current = candidate;
-      }
-    });
-    if (current) wrapped.push(current);
-  });
-  return wrapped.length ? wrapped : [''];
+  return safeLines;
 }
 
 function drawTextLine(ctx, text, x, y, letterSpacing, stroke = false) {
@@ -296,13 +268,6 @@ function drawTextLine(ctx, text, x, y, letterSpacing, stroke = false) {
     cursor += widths[index] + letterSpacing;
   });
   ctx.textAlign = originalAlign;
-}
-
-function textOriginX(align, blockWidth) {
-  if (!blockWidth) return 0;
-  if (align === 'left') return -blockWidth / 2;
-  if (align === 'right') return blockWidth / 2;
-  return 0;
 }
 
 function sampleAppearanceRamp(layer, t) {
@@ -347,60 +312,36 @@ function getAppearanceStops(layer) {
 function safeFont(value) {
   return SAFE_FONTS.get(String(value || '').trim()) || 'Cinzel, Georgia, serif';
 }
-
 function safeWeight(value) {
   const weight = String(value || '700');
   return ['400', '500', '700', '900'].includes(weight) ? weight : '700';
 }
-
 function mixHexRaw(a, b, t) {
   const ca = hexToRgb(a);
   const cb = hexToRgb(b);
   const r = Math.round(lerp(ca.r, cb.r, t));
   const g = Math.round(lerp(ca.g, cb.g, t));
-  const blue = Math.round(lerp(ca.b, cb.b, t));
+  const blue = Math.round(lerp(ca.blue, cb.blue, t));
   return `#${toHex(r)}${toHex(g)}${toHex(blue)}`;
 }
-
 function rgbaFromHex(hex, alpha = 1) {
   const rgb = hexToRgb(hex);
-  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.blue}, ${alpha})`;
 }
-
 function hexToRgb(hex) {
   const normalized = normalizeHex(hex).replace('#', '').trim();
   const number = Number.parseInt(normalized, 16);
-  return { r: (number >> 16) & 255, g: (number >> 8) & 255, b: number & 255 };
+  return { r: (number >> 16) & 255, g: (number >> 8) & 255, blue: number & 255 };
 }
-
 function normalizeHex(value) {
   const string = String(value || '').trim();
   if (/^#[0-9a-f]{6}$/iu.test(string)) return string;
   if (/^#[0-9a-f]{3}$/iu.test(string)) return `#${string.slice(1).split('').map((char) => char + char).join('')}`;
   return '#ffcc66';
 }
-
-function toHex(value) {
-  return Math.max(0, Math.min(255, value)).toString(16).padStart(2, '0');
-}
-
-function finite(value, fallback) {
-  const number = Number(value);
-  return Number.isFinite(number) ? number : fallback;
-}
-
-function easeOut(t) {
-  return 1 - Math.pow(1 - t, 2);
-}
-
-function lerp(a, b, t) {
-  return Number(a) + (Number(b) - Number(a)) * t;
-}
-
-function randomRange(min, max) {
-  return Number(min) + Math.random() * (Number(max) - Number(min));
-}
-
-function degreesToRadians(degrees) {
-  return (degrees * Math.PI) / 180;
-}
+function toHex(value) { return Math.max(0, Math.min(255, value)).toString(16).padStart(2, '0'); }
+function finite(value, fallback) { const number = Number(value); return Number.isFinite(number) ? number : fallback; }
+function easeOut(t) { return 1 - Math.pow(1 - t, 2); }
+function lerp(a, b, t) { return Number(a) + (Number(b) - Number(a)) * t; }
+function randomRange(min, max) { return Number(min) + Math.random() * (Number(max) - Number(min)); }
+function degreesToRadians(degrees) { return (degrees * Math.PI) / 180; }
