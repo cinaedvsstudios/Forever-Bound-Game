@@ -1,10 +1,12 @@
-const CREATION_GUIDE_RUNTIME_VERSION = 'V1.1.10';
+const CREATION_GUIDE_RUNTIME_VERSION = 'V1.1.11';
 
-// Load the original base module, then patch the legacy startup text it still emits.
-document.write('<script src="./v1/src/module-app.js?v=creation-guide-1.1.10-base-runtime"><\/script>');
+// Load the original base module, then normalise the legacy startup text it still emits.
+document.write('<script src="./v1/src/module-app.js?v=creation-guide-1.1.11-base-runtime"><\/script>');
 
 function normalizeCreationGuideRuntimeText(value) {
-  return String(value ?? '').replaceAll('Creation Guide V1.0.7 loaded.', `Creation Guide ${CREATION_GUIDE_RUNTIME_VERSION} loaded.`);
+  return String(value ?? '')
+    .replaceAll('Creation Guide V1.0.7 loaded.', `Creation Guide ${CREATION_GUIDE_RUNTIME_VERSION} loaded.`)
+    .replaceAll('Creation Guide V1.1.10 loaded.', `Creation Guide ${CREATION_GUIDE_RUNTIME_VERSION} loaded.`);
 }
 
 function patchCreationGuideRuntimeVersion() {
@@ -18,7 +20,7 @@ function patchCreationGuideRuntimeVersion() {
   if (document.title !== wantedTitle) document.title = wantedTitle;
 
   document.querySelectorAll('#toast-area > *, .toast').forEach((node) => {
-    if (node.textContent && node.textContent.includes('Creation Guide V1.0.7 loaded.')) {
+    if (node.textContent && (node.textContent.includes('Creation Guide V1.0.7 loaded.') || node.textContent.includes('Creation Guide V1.1.10 loaded.'))) {
       node.textContent = normalizeCreationGuideRuntimeText(node.textContent);
     }
   });
