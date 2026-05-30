@@ -1,14 +1,12 @@
-import { MODULE_VERSION, MODULE_STORAGE_KEY, LAYOUT_STORAGE_KEY, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.9';
-import { getBlockType } from './block-types.js?v=1.2.9';
-import { createDemoQuestFile, createDefaultQuest, createDefaultBlock, escapeHtml } from './quest-schema.js?v=1.2.9';
-import { createLayoutState, clamp } from './layout-state.js?v=1.2.9';
-import { drawCanvas, applyCanvasTransform, getCanvasHit, getCanvasPoint, getBlockPosition } from './canvas-renderer.js?v=1.2.9';
-import { fillBlockTypeMenus, wireMenus, wireActions, wireInputs, wireFlowDrag, wireWorkspacePan, wirePanelResize, wireFlowResizeSave } from './ui-bindings.js?v=1.2.9';
-import { openEditor } from './dialog-editors.js?v=1.2.9';
+import { MODULE_VERSION, MODULE_STORAGE_KEY, LAYOUT_STORAGE_KEY, DESIGN_WIDTH, DESIGN_HEIGHT } from './module-config.js?v=1.2.10';
+import { getBlockType } from './block-types.js?v=1.2.10';
+import { createDemoQuestFile, createDefaultQuest, createDefaultBlock, createDefaultConnection, escapeHtml } from './quest-schema.js?v=1.2.10';
+import { createLayoutState, clamp } from './layout-state.js?v=1.2.10';
+import { drawCanvas, applyCanvasTransform, getCanvasHit, getCanvasPoint, getBlockPosition, typeColor, CARD_W, CARD_H } from './canvas-renderer.js?v=1.2.10';
+import { fillBlockTypeMenus, wireMenus, wireActions, wireInputs, wireFlowDrag, wireWorkspacePan, wirePanelResize, wireFlowResizeSave } from './ui-bindings.js?v=1.2.10';
+import { openEditor } from './dialog-editors.js?v=1.2.10';
 
 const $ = (id) => document.getElementById(id);
-const CARD_W = 250;
-const CARD_H = 124;
 const layoutState = createLayoutState(LAYOUT_STORAGE_KEY);
 const doc = createDemoQuestFile();
 const canvas = $('module-canvas');
@@ -22,6 +20,8 @@ const state = {
   selectedLocked: false,
   dragBlockIndex: null,
   canvasBlockDrag: null,
+  connectionDrag: null,
+  activeConnectionId: null,
   suppressCanvasClick: false
 };
 
@@ -36,6 +36,8 @@ const app = {
   meta: getBlockType,
   addQuest,
   addBlock,
+  addConnection,
+  removeConnection,
   removeQuest,
   removeBlock,
   reorderBlock,
@@ -60,6 +62,7 @@ function boot() {
   wirePanelResize(app);
   wireFlowResizeSave(app);
   wireCanvasSelection();
+  wireCanvasConnections();
   wireCanvasBlockDrag();
   applyLayout();
   render();
@@ -71,6 +74,7 @@ function addQuest(patch = {}) {
   state.activeQuest = doc.quests.length - 1;
   state.activeBlock = 0;
   state.inspectorTarget = 'quest';
+  state.activeConnectionId = null;
   render();
 }
 
@@ -79,7 +83,32 @@ function addBlock(type = 'scene', patch = {}) {
   app.quest().blocks.push(createDefaultBlock(type, patch));
   state.activeBlock = app.quest().blocks.length - 1;
   state.inspectorTarget = 'block';
+  state.activeConnectionId = null;
   render();
+}
+
+function addConnection(sourceNodeId, sourcePort, targetNodeId, targetPort) {
+  const quest = app.quest();
+  if (!quest || !sourceNodeId || !targetNodeId || sourceNodeId === targetNodeId) return false;
+  quest.connections = quest.connections || [];
+  const duplicate = quest.connections.some((connection) => connection.sourceNodeId === sourceNodeId && connection.targetNodeId === targetNodeId && connection.sourcePort === sourcePort && connection.targetPort === targetPort);
+  if (duplicate) return false;
+  const connection = createDefaultConnection(sourceNodeId, targetNodeId, { sourcePort, targetPort });
+  quest.connections.push(connection);
+  state.activeConnectionId = connection.id;
+  render();
+  return true;
+}
+
+function removeConnection(connectionId = state.activeConnectionId) {
+  const quest = app.quest();
+  if (!quest || !connectionId) return false;
+  const index = (quest.connections || []).findIndex((connection) => connection.id === connectionId);
+  if (index < 0) return false;
+  quest.connections.splice(index, 1);
+  state.activeConnectionId = null;
+  render();
+  return true;
 }
 
 function removeQuest() {
@@ -88,14 +117,18 @@ function removeQuest() {
   state.activeQuest = Math.max(0, Math.min(state.activeQuest, doc.quests.length - 1));
   state.activeBlock = 0;
   state.inspectorTarget = 'quest';
+  state.activeConnectionId = null;
   render();
 }
 
 function removeBlock() {
   if (!app.block()) return;
+  const removedId = app.block().id;
   app.quest().blocks.splice(state.activeBlock, 1);
+  app.quest().connections = (app.quest().connections || []).filter((connection) => connection.sourceNodeId !== removedId && connection.targetNodeId !== removedId);
   state.activeBlock = Math.max(0, Math.min(state.activeBlock, app.quest().blocks.length - 1));
   state.inspectorTarget = 'quest';
+  state.activeConnectionId = null;
   render();
 }
 
@@ -111,13 +144,14 @@ function reorderBlock(fromIndex, toIndex) {
   state.inspectorTarget = 'block';
   state.dragBlockIndex = null;
   render();
-  toast(`Moved ${moved.name || getBlockType(moved.type).name}.`);
+  toast(`Moved ${moved.name || getBlockType(moved.type).name} in the list. Connections unchanged.`);
 }
 
 function selectQuest(index = state.activeQuest) {
   state.activeQuest = Math.max(0, Math.min(index, doc.quests.length - 1));
   state.activeBlock = Math.max(0, Math.min(state.activeBlock, (app.quest()?.blocks || []).length - 1));
   state.inspectorTarget = 'quest';
+  state.activeConnectionId = null;
   render();
 }
 
@@ -126,6 +160,7 @@ function selectBlock(index) {
   if (!blocks.length) return selectQuest();
   state.activeBlock = Math.max(0, Math.min(index, blocks.length - 1));
   state.inspectorTarget = 'block';
+  state.activeConnectionId = null;
   render();
 }
 
@@ -146,18 +181,74 @@ function wireCanvasSelection() {
       return;
     }
     const hit = getCanvasHit(app, event);
-    if (!hit) return;
+    if (!hit) {
+      if (state.activeConnectionId) { state.activeConnectionId = null; app.draw(); }
+      return;
+    }
     if (hit.kind === 'quest-edit') return openQuestEditor(hit.index ?? state.activeQuest);
     if (hit.kind === 'block-edit') return openBlockEditor(hit.index);
+    if (hit.kind === 'connection') {
+      state.activeConnectionId = hit.connectionId;
+      app.draw();
+      toast('Connection selected. Press Delete to remove it.');
+      return;
+    }
+    if (hit.kind.startsWith('port-')) return;
     if (app.layout().panMode) return;
     if (hit.kind === 'quest') selectQuest(hit.index ?? state.activeQuest);
     if (hit.kind === 'block') selectBlock(hit.index);
   });
+  window.addEventListener('keydown', (event) => {
+    if ((event.key === 'Delete' || event.key === 'Backspace') && state.activeConnectionId && !event.target.matches('input, textarea, select')) {
+      event.preventDefault();
+      if (removeConnection()) toast('Connection removed.');
+    }
+  });
+}
+
+function wireCanvasConnections() {
+  canvas.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0 || app.layout().panMode) return;
+    const hit = getCanvasHit(app, event);
+    if (!hit || hit.kind !== 'port-out') return;
+    event.preventDefault();
+    const block = app.quest()?.blocks?.find((item) => item.id === hit.nodeId);
+    state.connectionDrag = {
+      pointerId: event.pointerId,
+      sourceNodeId: hit.nodeId,
+      sourcePort: hit.portId,
+      color: hit.nodeId === 'START' ? '#7ff0bd' : typeColor(block?.type),
+      point: getCanvasPoint(app, event)
+    };
+    canvas.setPointerCapture(event.pointerId);
+    canvas.style.cursor = 'crosshair';
+    app.draw();
+  });
+  canvas.addEventListener('pointermove', (event) => {
+    const drag = state.connectionDrag;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    drag.point = getCanvasPoint(app, event);
+    app.draw();
+  });
+  const endConnection = (event) => {
+    const drag = state.connectionDrag;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const hit = getCanvasHit(app, event);
+    const connected = hit?.kind === 'port-in' && addConnection(drag.sourceNodeId, drag.sourcePort, hit.nodeId, hit.portId);
+    state.connectionDrag = null;
+    state.suppressCanvasClick = true;
+    try { canvas.releasePointerCapture(event.pointerId); } catch { /* noop */ }
+    canvas.style.cursor = app.layout().panMode ? 'grab' : 'pointer';
+    render();
+    toast(connected ? 'Connection created.' : 'Connection cancelled. Drag onto an input circle to connect.');
+  };
+  canvas.addEventListener('pointerup', endConnection);
+  canvas.addEventListener('pointercancel', endConnection);
 }
 
 function wireCanvasBlockDrag() {
   canvas.addEventListener('pointerdown', (event) => {
-    if (event.button !== 0 || app.layout().panMode) return;
+    if (event.button !== 0 || app.layout().panMode || state.connectionDrag) return;
     const hit = getCanvasHit(app, event);
     if (!hit || hit.kind !== 'block') return;
     const block = app.quest()?.blocks?.[hit.index];
@@ -176,6 +267,7 @@ function wireCanvasBlockDrag() {
     };
     state.activeBlock = hit.index;
     state.inspectorTarget = 'block';
+    state.activeConnectionId = null;
     canvas.setPointerCapture(event.pointerId);
     canvas.style.cursor = 'grabbing';
     app.draw();
@@ -202,7 +294,7 @@ function wireCanvasBlockDrag() {
     if (drag.moved) {
       app.saveLayout();
       state.suppressCanvasClick = true;
-      toast('Workspace card position saved.');
+      toast('Workspace card position saved. Connections unchanged.');
     }
     state.canvasBlockDrag = null;
     canvas.style.cursor = app.layout().panMode ? 'grab' : 'pointer';
@@ -236,6 +328,7 @@ function applyLayout() {
 
 function resetLayout() {
   layoutState.reset();
+  state.activeConnectionId = null;
   applyLayout();
   render();
 }
@@ -323,10 +416,10 @@ function renderBlockList() {
     const blockType = getBlockType(item.type);
     const button = document.createElement('button');
     button.className = 'record-item border-' + escapeHtml(item.type) + ' ' + (index === state.activeBlock && state.inspectorTarget === 'block' ? 'selected' : '');
-    button.title = 'Drag to reorder, click to select: ' + (item.name || blockType.name);
+    button.title = 'Drag to reorder list display, click to select: ' + (item.name || blockType.name);
     button.draggable = true;
     button.dataset.blockIndex = String(index);
-    button.innerHTML = `<span class="block-emoji">${item.thumbnail || blockType.emoji}</span><span><strong>${escapeHtml(item.name || blockType.name)}</strong><span>${escapeHtml(blockType.name)} / ${escapeHtml(item.sceneId || item.objectId || item.dialogueId || item.condition || item.action || 'unlinked')}</span></span><span class="drag-mini" title="Drag to reorder">↕</span><span class="edit-mini" title="Edit this block">✎</span>`;
+    button.innerHTML = `<span class="block-emoji">${item.thumbnail || blockType.emoji}</span><span><strong>${escapeHtml(item.name || blockType.name)}</strong><span>${escapeHtml(blockType.name)} / ${escapeHtml(item.sceneId || item.objectId || item.dialogueId || item.condition || item.action || 'unlinked')}</span></span><span class="drag-mini" title="Drag to reorder list">↕</span><span class="edit-mini" title="Edit this block">✎</span>`;
     button.onclick = () => selectBlock(index);
     button.ondragstart = (event) => {
       state.dragBlockIndex = index;
@@ -379,7 +472,7 @@ function toast(message) {
   div.className = 'toast';
   div.textContent = message;
   $('toast-area').appendChild(div);
-  setTimeout(() => div.remove(), 2600);
+  setTimeout(() => div.remove(), 3000);
 }
 
 function help(title, body) {
