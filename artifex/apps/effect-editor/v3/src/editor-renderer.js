@@ -174,7 +174,7 @@ function draw() {
 
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = editorState.workspaceMode === 'white' ? '#f7f3ee' : '#050405';
+  ctx.fillStyle = '#050405';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.translate(offset.x, offset.y);
