@@ -1,5 +1,5 @@
-import { getBlockType } from './block-types.js?v=1.2.10';
-import { START_NODE_ID, END_NODE_ID } from './quest-schema.js?v=1.2.10';
+import { getBlockType } from './block-types.js?v=1.2.11';
+import { START_NODE_ID, END_NODE_ID } from './quest-schema.js?v=1.2.11';
 
 export function exportQuestFile(doc) {
   return JSON.stringify(buildQuestExportBundle(doc), null, 2);
@@ -170,8 +170,10 @@ export function buildRuntimeConnection(connection) {
     id: connection.id,
     sourceNodeId: connection.sourceNodeId,
     targetNodeId: connection.targetNodeId,
-    sourcePort: connection.sourcePort || 'out:0',
-    targetPort: connection.targetPort || 'in:0',
+    sourcePort: connection.sourcePort || 'out:right:0',
+    targetPort: connection.targetPort || 'in:left:0',
+    sourceSide: connection.sourceSide || 'right',
+    targetSide: connection.targetSide || 'left',
     condition: connection.condition,
     label: connection.label
   });
