@@ -2,254 +2,147 @@
 
 ## Purpose
 
-This guide defines how Artifex should track work without mixing three different kinds of to-do items into one messy list.
+This guide defines how Artifex tracks work without confusing project problems, platform work and app-specific implementation tasks.
 
-Artifex needs three separate but connected to-do views:
+Artifex uses three connected task scopes:
 
-1. Project Manager to-do list for the current game project.
-2. All-apps to-do list for platform-wide Artifex work.
-3. One-specific-app to-do list for a selected module.
+| Scope | What it tracks | Typical location |
+|---|---|---|
+| Current project tasks | Missing/broken content or references inside one connected game project. | `<project-root>/todos/project-manager-todos.json` when generated. |
+| All-app platform tasks | Changes required across the Artifex suite or shared services. | `artifex/shared/todo-guide/all-apps-todos.json` |
+| Specific-app tasks | Work needed only in one app/module. | `artifex/apps/<app-slug>/docs/todo.md` or app-specific JSON where needed. |
 
-Each view can use the same underlying assignment/task shape, but the scope and ownership must stay clear.
+## Required Contract Documents
 
-## Gameplay Action / Button Mapping Decision
-
-Gameplay action mapping means deciding how project actions map to player controls, for example:
-
-- move left / right / up / down
-- jump
-- interact
-- pick up
-- throw
-- use item
-- sing / cast
-- open inventory
-- pause
-- confirm / cancel
-
-This should be treated as project setup data, not as scene art, not as a Flatplan route, and not as a single-object setting.
-
-### Ownership
-
-Creation Guide should create the first default control/input profile when a new project is created.
-
-Project Manager should inspect, validate, and reference that profile. It can show whether required gameplay actions are mapped, whether any action is missing a button, and whether route/object/quest logic refers to an unmapped action.
-
-A future Project Settings or Controls Editor can become the proper editor for detailed remapping.
-
-### Practical Rule
-
-Do not put gameplay button mapping only inside Project Manager.
-
-Project Manager can display and validate input mappings, but Creation Guide should ensure a new project starts with a valid default `input-map.json`.
-
-Recommended file:
+Before updating project-file, intake, Template Game or save-system tasks, check:
 
 ```text
-projects/<project-id>/input-map.json
+docs/artifex/05-creation-guide.md
+docs/artifex/18-color-and-display-rules.md
+docs/artifex/19-project-file-contracts.md
+docs/artifex/19a-project-starter-file-schemas.md
+docs/artifex/20-asset-intake-workflow.md
+docs/artifex/21-template-game-project-contract.md
+artifex/shared/todo-guide/all-apps-todos.json
 ```
 
-Recommended schema shape:
+## Project Terminology
 
-```json
-{
-  "schemaVersion": "artifex.inputMap.v1",
-  "profileId": "input_default_keyboard",
-  "label": "Default Keyboard Controls",
-  "createdBy": "creation-guide",
-  "actions": [
-    {
-      "actionId": "action_interact",
-      "label": "Interact",
-      "category": "gameplay",
-      "defaultKeyboard": ["E", "Enter"],
-      "defaultGamepad": ["A"],
-      "required": true
-    }
-  ]
-}
-```
+Do not collapse these into one task concept:
 
-Recommended action ID prefix:
+| Term | Meaning |
+|---|---|
+| **Blank Starter Project** | Empty valid starter project created by Creation Guide: structural JSON, required directories and empty indexes, plus optional intake setup. |
+| **Template Game** | Later small populated connected reference project proving cross-app file/reference integration. |
+| **Artifacts Adventures** | First real production project made through Artifex after Template Game flow works. |
+
+## Gameplay Action / Input Mapping Decision
+
+Gameplay action mapping is setup data. Creation Guide creates the initial default profile; Project Editor inspects/validates it; a future settings/controls editor may later own detailed remapping.
+
+Canonical relative file path inside the selected connected project root:
 
 ```text
+input-map.json
+```
+
+The exact canonical schema belongs in:
+
+```text
+docs/artifex/19a-project-starter-file-schemas.md
+```
+
+Current schema name and action prefix:
+
+```text
+artifex.input-map.v1
 action_
 ```
 
-This prefix should be added to the canonical ID list in the project file contracts doc when the next contract pass is made.
+Do not restore the older `artifex.inputMap.v1` name or a `projects/<project-id>/input-map.json` assumption. The connected folder itself is `<project-root>/`.
 
-## To-Do Scope 1: Project Manager To-Do List
+## Scope 1: Current Project Tasks
 
-The Project Manager to-do list is about the current game project package.
-
-It answers:
+Project-level tasks answer:
 
 ```text
-What is missing or broken in this project package?
-What does this project need before it can be played or built?
-Which project file needs editing?
+What is missing or broken inside this connected project?
+Which owned project file needs editing?
 Which module owns the fix?
+What blocks preview, validation or build?
 ```
 
-Examples:
+Examples include:
 
-- Missing `project.json`.
-- Missing `input-map.json`.
-- Start screen ID points to a screen that does not exist.
-- Flatplan route points to a missing node.
-- Node is linked to a missing scene.
-- Quest route references a missing quest ID.
-- Puzzle gate references a missing puzzle ID.
-- Object instance references a missing archetype object.
-- FX instance references a missing archetype effect.
-- Asset ID in scene file is not present in `asset-index.json`.
-- Required gameplay action is unmapped.
+- missing `project.json` or `input-map.json`;
+- a blank project referring to a start screen that does not exist;
+- broken Flatplan routes or linked scene/screen/quest/puzzle/archetype IDs;
+- missing asset registrations;
+- required gameplay actions not mapped;
+- local drafts not yet written to the project folder;
+- build or health output reporting unresolved references.
 
-Recommended location in a project package:
+When generated, the project-specific task file is relative to the connected project root:
 
 ```text
-projects/<project-id>/todos/project-manager-todos.json
+todos/project-manager-todos.json
 ```
 
-This list can be generated by Project Manager, Creation Guide, or shared Health Guide, but it describes the current project package, not the whole Artifex platform.
+This may be generated or displayed by Project Editor, Creation Guide or Shared Health Guide, but it describes one project rather than the Artifex platform.
 
-## To-Do Scope 2: All-Apps To-Do List
+## Scope 2: All-Apps Platform Tasks
 
-The all-apps to-do list is about the Artifex tool suite as a whole.
-
-It answers:
+All-app tasks answer:
 
 ```text
-What needs to change across every module?
-Which apps need to adopt the shared contracts?
-Which app still has stale menus, old cache keys, old file paths, or missing README ownership sections?
+Which shared contract or shared service is missing?
+Which apps still use old file paths, old schemas, local-only saving or unrelated demo state?
+What must change across the Artifex suite?
 ```
 
-Examples:
+Examples include:
 
-- Every active app README needs an ownership section.
-- Every app must use cache keys consistently in `index.html` and module imports.
-- Every app must declare owned files, read files, export files, and forbidden ownership.
-- Every app should use canonical ID prefixes.
-- Every app should have a module version visible in the UI.
-- Every app should have import/export behaviour documented.
-- Every app should separate local editor state from reusable library output.
-- Create and maintain one machine-readable active app index at `artifex/apps/app-index.json`.
+- build/use the shared connected-project-folder service;
+- integrate direct-save and recovery-draft status across apps;
+- ensure every app loads the selected active connected project;
+- standardise module menus, versions and branding rules;
+- prove cross-app references through Template Game;
+- audit file ownership/module split/patch-layer rules.
 
-Recommended shared location:
+Machine-readable location:
 
 ```text
 artifex/shared/todo-guide/all-apps-todos.json
 ```
 
-This is not tied to one project package. It is platform work.
+## Scope 3: Specific-App Tasks
 
-## Machine-Readable App Index
+Specific-app tasks concern one module only, for example:
 
-Artifex should maintain one shared machine-readable app index so audits, hubs, and AI-assisted inspections know which apps are active, draft, archived, experimental, or template-only.
+- Creation Guide: implement intake setup, media checklist, logo support or Template Game selection.
+- Project Editor: connect real folder reads/writes, asset browser/index integration or route tools.
+- Scene Editor: save scene/screen files and references through the shared folder contract.
+- Effect Editor: build a specific FX engine or remove legacy live patches.
 
-Recommended location:
-
-```text
-artifex/apps/app-index.json
-```
-
-This file is an all-apps platform file. It is not owned by one module and should be kept in sync when apps are added, renamed, archived, or promoted from draft to active.
-
-Recommended schema shape:
-
-```json
-{
-  "schemaVersion": "artifex.appIndex.v1",
-  "updatedAt": "2026-05-27",
-  "apps": [
-    {
-      "appId": "app_scene_editor",
-      "slug": "scene-editor",
-      "name": "Scene Editor",
-      "path": "artifex/apps/scene-editor/",
-      "status": "active",
-      "moduleType": "scene-editor",
-      "version": "0.1.0",
-      "entry": "index.html",
-      "requiredDocs": [
-        "docs/artifex/18-color-and-display-rules.md",
-        "docs/artifex/19-project-file-contracts.md",
-        "artifex/shared/todo-guide/README.md"
-      ]
-    }
-  ]
-}
-```
-
-Allowed app index statuses:
-
-```text
-active
-draft
-experimental
-archived
-template
-```
-
-Audit agents should use this index to decide which app folders to inspect. Template and archived apps should not be treated as active apps unless the prompt explicitly asks for them.
-
-## To-Do Scope 3: One-Specific-App To-Do List
-
-The specific-app to-do list is about one Artifex module.
-
-It answers:
-
-```text
-What does this app need next?
-What is broken or missing inside this app only?
-Which files should an AI assistant inspect before editing this app?
-```
-
-Examples for Project Manager:
-
-- Update top menu layout.
-- Add Asset Browser shell.
-- Move Build Prep checks to shared Health Guide.
-- Add Missing Setup Wizard.
-
-Examples for Creation Guide:
-
-- Add Create New Project flow.
-- Generate starter `project.json`.
-- Generate starter `input-map.json`.
-- Pull Health Guide checks.
-
-Examples for Scene Editor:
-
-- Export scene index files.
-- Add object archetype reference picker.
-- Normalize scene/screen IDs.
-
-Recommended app-local location:
+Recommended locations:
 
 ```text
 artifex/apps/<app-slug>/docs/todo.md
-```
-
-or, if the app needs machine-readable tasks:
-
-```text
 artifex/apps/<app-slug>/docs/todo.json
 ```
 
 ## Shared Task Shape
 
-Use one general task shape so the same UI can render all three to-do scopes.
+Use one general task shape for machine-readable task sets:
 
 ```json
 {
-  "taskId": "todo_project_manager_missing_input_map",
-  "scope": "project-manager",
-  "owningModule": "project-manager",
+  "taskId": "todo_project_editor_missing_input_map",
+  "scope": "specific-app",
+  "owningModule": "project-editor",
   "relatedModules": ["creation-guide"],
-  "title": "Missing input map",
-  "description": "The current project package does not include input-map.json.",
+  "title": "Report missing input map",
+  "description": "The connected project does not include the canonical input-map.json file.",
   "status": "open",
   "priority": 4,
   "effort": 2,
@@ -261,7 +154,7 @@ Use one general task shape so the same UI can render all three to-do scopes.
 }
 ```
 
-## Required Task Fields
+Required fields:
 
 ```text
 taskId
@@ -275,17 +168,7 @@ source
 fixOwner
 ```
 
-## Allowed Scopes
-
-```text
-project-manager
-all-apps
-specific-app
-```
-
-## Recommended Status Values
-
-Use the Creation Guide workflow states where possible so assignment cards, to-do lists, and app health can share language:
+Recommended status values:
 
 ```text
 unassigned
@@ -296,11 +179,6 @@ blocked
 review
 done
 archived
-```
-
-For generated health items, these aliases are also allowed:
-
-```text
 open
 warning
 failed
@@ -308,122 +186,94 @@ passed
 not-needed
 ```
 
-## Module Ownership For To-Do Items
+## Ownership Rules For Tasks
 
-A to-do item should always distinguish where the item is shown from who owns the fix.
+A task should distinguish where it appears from who owns the actual fix. A missing quest reference may appear in Project Editor/Health because it breaks the project graph, while the missing quest content belongs to Quest Builder. A missing scene record may appear in a project audit, while Scene Editor owns the correction. Creation Guide owns the initial creation of the blank starter data and input map, not later authored module content.
 
-Example:
+## App Roles Relevant To Tasks
 
-A missing quest reference appears in Project Manager because it breaks the project graph, but the fix may belong to Quest Builder if the quest file does not exist.
+| App/service | Task responsibility |
+|---|---|
+| Creation Guide | New project setup, connected folder initialisation, future intake/media/logo setup, project registration and early setup Health. |
+| Project Editor | Existing project structure, Flatplan/routes/registry/library links, structural audit display and later connected-folder structural save. |
+| Scene Editor | Scene/screen authored content and related index entries. |
+| Quest Builder | Quest/sidequest/branch/condition/reward content. |
+| Puzzle Creator | Puzzle definitions and related entries. |
+| Archetype Object Creator | Reusable object archetype content. |
+| Effect Editor | Reusable FX archetype content. |
+| Asset Library | Promotion/registration of approved intake source files into final `assets/`. |
+| Shared Health Guide | Generated audit/readiness reporting; never silent content overwrite. |
+| Build Game | Generated validated build output; never authored module content. |
 
-A missing scene ID appears in Project Manager, but the fix may belong to Scene Editor.
+## Current Creation Guide / Project Editor Status
 
-A missing input map appears in Project Manager, but the initial setup fix belongs to Creation Guide or Project Settings.
+Current verified/aligned state:
 
-## Audit Report Location and Format
+```text
+Creation Guide V1.1.11
+  Connected Project Folder and Create Starter Structure are implemented and browser-tested.
+  Canonical starter-schema generator is loaded for fresh starter-file creation.
+  Intake/media/logo/Template Game selection remain pending.
 
-Repo-wide Artifex app audits should write reports into this shared location:
+Project Editor v0.1.32 CONTRACT
+  Default/package schema shapes align with the canonical starter schemas.
+  It still labels/saves browser draft state only until direct-folder integration is built.
+```
+
+A known pending contract fix remains: a genuinely Blank Starter Project should not reference a non-existent start screen. This requires an approved runtime change to the starter initializer, separately from documentation alignment.
+
+## Machine-Readable App Index
+
+Artifex should maintain one machine-readable app index so audits know which apps are active, draft, archived, experimental or template-only:
+
+```text
+artifex/apps/app-index.json
+```
+
+This is platform metadata, not a file inside any connected game project.
+
+## Audit Reports
+
+Repo-wide Artifex audits should be written under:
 
 ```text
 artifex/shared/todo-guide/audits/
 ```
 
-Recommended report filename pattern:
+Suggested filenames:
 
 ```text
 YYYY-MM-DD-global-app-audit.md
 YYYY-MM-DD-<app-slug>-audit.md
 ```
 
-The audit report is not a fix plan and must not change app code. It is a read-only inspection record used to decide what should become all-apps tasks, project-manager tasks, or specific-app tasks.
+An audit report is an inspection record, not permission to refactor or overwrite runtime code. It should identify source contract files, apps/files inspected, compliance gaps, risk level, recommended task scope and whether a change needs human approval.
 
-Each audit report should include:
+## Inspection Prompt Rule
 
-```text
-1. Audit date
-2. Audited rule files
-3. Apps inspected
-4. Files inspected per app
-5. Branding/display compliance
-6. Project file contract compliance
-7. To-do handling compliance
-8. README ownership section status
-9. Import/export and data-shape status
-10. Missing shared features
-11. Risk level per app: Low / Medium / High
-12. Recommended action
-13. Suggested to-do scope: project-manager / all-apps / specific-app
-14. Whether the change is safe for automatic fixing or needs human review
-```
-
-If an audit finds a platform-wide issue, it should propose an `all-apps` task. If it finds an issue only inside one module, it should propose a `specific-app` task. If it finds a broken reference inside a project package, it should propose a `project-manager` task and identify the module that owns the fix.
-
-## How Each App Should Use This Guide
-
-### Creation Guide
-
-Creation Guide should show setup tasks and all-app milestone tasks. It should create the first project package and generate default required files such as:
+When inspecting an app, begin with the central contracts and report before refactoring:
 
 ```text
-project.json
-input-map.json
-library-links.json
-```
-
-Creation Guide should not edit Flatplan internals.
-
-### Project Manager
-
-Project Manager should show project-package tasks. It should inspect the current files and report what is missing. Its Getting Started / Missing Setup Wizard should be data-aware, not just educational.
-
-Project Manager should not create a brand-new project.
-
-### Scene Editor
-
-Scene Editor should show tasks related to visual scene/screen editing. It may show project-related warnings if a scene is not indexed, but it should not own project graph fixes.
-
-### Quest Builder
-
-Quest Builder should show quest, side quest, branch, condition, reward, and flag tasks. It should not own scene layout or Flatplan positioning.
-
-### Archetype Object Creator
-
-Archetype Object Creator should show object archetype tasks. It should not own Scene Editor object instances or FX archetypes.
-
-### Effect Editor
-
-Effect Editor should show FX archetype and FX editor project tasks. It should not own object archetypes or scene placement.
-
-### Build Game
-
-Build Game should show final packaging and export-readiness tasks. It can consume all project and module indexes, but it should not become an authoring tool.
-
-## Recommended Inspection Prompt For Each App
-
-When asking AI to inspect a module, use this checklist:
-
-```text
-Inspect this app against artifex/shared/todo-guide/README.md and docs/artifex/19-project-file-contracts.md.
+Inspect this app against docs/artifex/19-project-file-contracts.md,
+docs/artifex/19a-project-starter-file-schemas.md where starter/project JSON is involved,
+docs/artifex/20-asset-intake-workflow.md where assets/intake are involved,
+docs/artifex/21-template-game-project-contract.md where reference-project work is involved,
+and artifex/shared/todo-guide/README.md.
 
 Report:
-1. What files this app owns.
-2. What files this app reads.
-3. What files this app exports.
-4. What files it must not own.
-5. Whether it uses canonical ID prefixes.
-6. Whether it needs a project-manager to-do, all-apps to-do, or specific-app to-do list.
-7. What changes are needed before this app can integrate cleanly with Project Manager.
-
-Do not refactor yet. Report first.
+1. files owned/read/written and files it must not own;
+2. schema/path/ID compatibility;
+3. save state and connected-folder compatibility;
+4. whether work belongs to project, all-app or specific-app scope;
+5. exact safe changes before editing.
 ```
 
-## Current Decisions Locked
+## Locked Decisions
 
-- New Project creation belongs in Creation Guide.
-- Project Manager opens and assembles existing project packages.
-- Project Manager Getting Started Wizard should inspect the current project and list missing setup.
-- Gameplay input/action mapping is setup data generated by Creation Guide and validated by Project Manager.
-- Project files stay separate so AI or a human can edit individual broken files.
-- To-do items must be separated by scope: current project, all apps, or one app.
-- Repo-wide audit reports go under `artifex/shared/todo-guide/audits/`.
-- The Artifex app index belongs at `artifex/apps/app-index.json` and should be treated as an all-apps platform task until created.
+- New Blank Starter Project creation belongs in Creation Guide.
+- Project Editor assembles/validates/edits existing structural project files; it does not create populated games by itself.
+- Connected project-folder data becomes the intended saved source of truth; localStorage is recovery draft only.
+- ZIP/package output is backup/fallback, not normal everyday saving.
+- Starter JSON shapes are canonical only in `docs/artifex/19a-project-starter-file-schemas.md`.
+- `intake/` is staging only; final authored/runtime references resolve through promoted `assets/` content.
+- Template Game and Artifacts Adventures are separate projects with different purposes.
