@@ -16,11 +16,12 @@ Creation Guide design and implementation must be read together with:
 docs/artifex/18-color-and-display-rules.md
 docs/artifex/19-project-file-contracts.md
 docs/artifex/20-asset-intake-workflow.md
+docs/artifex/21-template-game-project-contract.md
 artifex/shared/todo-guide/README.md
 artifex/shared/todo-guide/all-apps-todos.json
 ```
 
-`19-project-file-contracts.md` is the source of truth for connected-folder saving, file ownership, relative paths, drafts and save-state rules. `20-asset-intake-workflow.md` is the source of truth for the creator-facing `intake/` drop folders and promotion into final registered assets.
+`19-project-file-contracts.md` is the source of truth for connected-folder saving, file ownership, relative paths, drafts and save-state rules. `20-asset-intake-workflow.md` is the source of truth for the creator-facing `intake/` drop folders and promotion into final registered assets. `21-template-game-project-contract.md` defines the minimum populated connected reference requirements for the future Template Game.
 
 ## Naming Decision
 
@@ -157,11 +158,13 @@ The New / Open workflow should eventually support:
 
 ```text
 Blank Project
-Artifex Adventures Template Game
+Template Game
 Open Existing Project
 ```
 
-**Artifex Adventures Template Game** must not appear as a functioning choice until the playable template project has been built and validated. Once available, it provides a learn-by-editing starter project containing working examples and its own `intake/` area.
+**Template Game** must not appear as a functioning choice until the connected reference project has been populated and validated. Once available, it provides a small learn-by-editing connected project containing working references and its own `intake/` area. **Artifacts Adventures** is the later first real production project authored after this reference flow works.
+
+The detailed minimum populated cross-app reference project requirements for Template Game are defined in `docs/artifex/21-template-game-project-contract.md`.
 
 ## Initial Setup Gates
 
@@ -390,6 +393,8 @@ For new projects, Creation Guide should initialise or validate this project-rela
     project-manager-todos.json
 ```
 
+This hierarchy describes the complete connected project package that can exist. The starter initializer, `artifex/shared/project-folder/project-structure-initializer.js`, creates the initial blank structure and empty indexes only; app-owned generated or populated files appear later when those systems are authored, validated or built. For the populated cross-app minimum used by Template Game, see `docs/artifex/21-template-game-project-contract.md`.
+
 `intake/` is intentionally separate from `assets/`. Intake contains incoming source material; final asset files and records live under `assets/` after review/import/promotion.
 
 This hierarchy is a recommended default. The binding rule is that `project.json` and related registries tell every app where files live using project-relative paths only.
@@ -560,7 +565,7 @@ It creates/selects the active project, connects/initialises the real project fol
 Intended workflow:
 
 1. Open Artifex Hub and choose Change Project.
-2. Create a new project, start from a validated Artifex Adventures template when available, or open an existing project.
+2. Create a new project, start from a validated Template Game when available, or open an existing project.
 3. Creation Guide opens Project Overview.
 4. Connect or re-authorise the real project folder.
 5. Complete project identity and initial folder/file setup.
@@ -574,4 +579,4 @@ Intended workflow:
 
 ## Current Implementation and Future Tasks
 
-The live Creation Guide V1.1.10 currently proves Project Overview, setup coaching, project registration in browser storage, active project selection, ZIP starter export, assignments and Health UI. Direct project-folder connection, initial folder creation, intake checklist UI, project logo support and Artifex Adventures template choice are future implementation tasks and must not be described as already working in the live app.
+The live Creation Guide V1.1.10 currently proves Project Overview, setup coaching, project registration in browser storage, active project selection, ZIP starter export, assignments and Health UI. Direct project-folder connection, initial folder creation, intake checklist UI, project logo support and Template Game choice are future implementation tasks and must not be described as already working in the live app.
