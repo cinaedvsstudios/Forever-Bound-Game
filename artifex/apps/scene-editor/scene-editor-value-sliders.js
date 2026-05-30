@@ -81,7 +81,7 @@
 
   function formatValue(value, step) {
     const decimals = Math.max(0, Math.min(4, decimalsFor(step)));
-    return Number(value).toFixed(decimals).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+    return Number(value).toFixed(decimals).replace(/(?:\.0+|(\.\d+?)0+)$/, '$1');
   }
 
 
@@ -159,14 +159,6 @@
     editor?.saveWorkingCopySoon?.('transform slider');
   }
 
-  function setInputValue(input, value) {
-    input.value = value;
-    applyTransformDirect(input, value);
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-    applyTransformDirect(input, value);
-  }
-
   function resetInput(input) {
     const cfg = configFor(input);
     const raw = resetValueFor(input);
@@ -176,7 +168,7 @@
     closeResetMenu();
   }
 
-  function syncSlider(input) {
+  function syncSlider(input, options = {}) {
     const field = input.closest('.value-slider-field-v18');
     const range = field?.querySelector('.value-slider-range-v18');
     const readout = field?.querySelector('.value-slider-readout-v18');
@@ -192,11 +184,36 @@
     range.setAttribute('aria-valuenow', String(value));
     range.style.setProperty('--value-slider-percent', `${cfg.max === cfg.min ? 0 : ((value - cfg.min) / (cfg.max - cfg.min)) * 100}%`);
     if (readout) {
-      readout.value = input.value || '0';
       readout.min = String(cfg.min);
       readout.max = String(cfg.max);
-      readout.step = String(cfg.step);
+      readout.step = 'any';
+      if (options.forceReadout || (document.activeElement !== readout && readout.dataset.userTyping !== 'true')) readout.value = input.value || '0';
     }
+  }
+
+  function isCompleteNumericText(value) {
+    const text = String(value || '').trim();
+    if (!text || text === '-' || text === '+' || text.endsWith('.')) return false;
+    return /^[+-]?(?:\d+|\d*\.\d+)$/.test(text) && Number.isFinite(Number(text));
+  }
+
+  function setInputValue(input, value, options = {}) {
+    input.value = value;
+    applyTransformDirect(input, value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    if (options.commit !== false) input.dispatchEvent(new Event('change', { bubbles: true }));
+    applyTransformDirect(input, value);
+  }
+
+  function commitReadout(input, readout) {
+    const cfg = configFor(input);
+    delete readout.dataset.userTyping;
+    const raw = String(readout.value || '').trim();
+    const numeric = isCompleteNumericText(raw) ? Number(raw) : Number(input.value || resetValueFor(input) || 0);
+    const next = snap(clamp(numeric, cfg.min, cfg.max), cfg);
+    setInputValue(input, formatValue(next, cfg.step));
+    syncSlider(input, { forceReadout: true });
+    readout.type = 'number';
   }
 
   function valueFromPointer(track, clientX, cfg) {
@@ -282,8 +299,14 @@
     if (readoutInput) {
       readoutInput.min = String(cfg.min);
       readoutInput.max = String(cfg.max);
-      readoutInput.step = String(cfg.step);
+      readoutInput.step = 'any';
     }
+
+    readoutInput?.addEventListener('focus', () => {
+      readoutInput.type = 'text';
+      readoutInput.inputMode = 'decimal';
+      readoutInput.dataset.userTyping = 'true';
+    });
 
     range.addEventListener('input', () => {
       setInputValue(input, range.value);
@@ -296,16 +319,21 @@
     range.addEventListener('pointerdown', (event) => startCustomDrag(event, input, range));
     range.addEventListener('contextmenu', (event) => showResetMenu(event, input));
     readoutInput?.addEventListener('input', () => {
+      if (!isCompleteNumericText(readoutInput.value)) return;
+      readoutInput.dataset.userTyping = 'true';
+      const typedValue = readoutInput.value;
       const cfgNow = configFor(input);
-      const next = clamp(Number(readoutInput.value || 0), cfgNow.min, cfgNow.max);
-      setInputValue(input, formatValue(next, cfgNow.step));
+      const next = clamp(Number(typedValue), cfgNow.min, cfgNow.max);
+      setInputValue(input, String(next), { commit: false });
       syncSlider(input);
+      if (document.activeElement === readoutInput) readoutInput.value = typedValue;
     });
-    readoutInput?.addEventListener('change', () => {
-      const cfgNow = configFor(input);
-      const next = snap(readoutInput.value || 0, cfgNow);
-      setInputValue(input, formatValue(next, cfgNow.step));
-      syncSlider(input);
+    readoutInput?.addEventListener('change', () => commitReadout(input, readoutInput));
+    readoutInput?.addEventListener('blur', () => commitReadout(input, readoutInput));
+    readoutInput?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      commitReadout(input, readoutInput);
+      readoutInput.blur();
     });
     stepButtons.forEach((button) => {
       button.addEventListener('click', (event) => {

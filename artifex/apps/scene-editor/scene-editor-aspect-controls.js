@@ -177,21 +177,15 @@
     return true;
   }
   function addAspectButton() {
-    const table = document.querySelector('.selected-metric-table-v15');
-    if (!table || table.dataset.v23AspectButton === 'true') return;
-    table.dataset.v23AspectButton = 'true';
-    const label = document.createElement('div');
-    label.className = 'metric-label-cell metric-label-center aspect-lock-label-v23';
-    label.textContent = 'Aspect';
+    const slot = document.querySelector('.aspect-lock-slot-v33');
+    if (!slot || slot.dataset.v23AspectButton === 'true') return;
+    slot.dataset.v23AspectButton = 'true';
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'aspect-lock-btn-v23 metric-icon-button';
     button.textContent = '⛓';
     button.title = 'Aspect Ratio Lock';
-    const value = document.createElement('div');
-    value.className = 'metric-value-cell metric-icon-value aspect-lock-cell-v23';
-    value.appendChild(button);
-    table.append(label, value);
+    slot.replaceChildren(button);
     setButtonState();
   }
   function interceptButtonClicks(event) { if (toggleWrap(event)) return; toggleAspectLock(event); }
