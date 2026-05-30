@@ -1,7 +1,9 @@
 // Maze / Labyrinth features
-// Owns feature selection and the setup UI for required/optional collection objects.
+// Owns feature selection and setup UI for collection objects.
 // Connection feature setup is rendered by maze-connections.js inside the shared setup host.
 
+import '../../../../../shared/project-folder/project-folder-client.js?v=0.1.0';
+import { openRegisteredContentPicker } from '../../../../../shared/registered-content/registered-content-picker.js?v=1.29';
 import { isInsideShape } from './maze-shape-generator.js';
 
 const $ = (id) => document.getElementById(id);
@@ -122,7 +124,14 @@ function ensureCollectionItems() {
   const needed = Math.max(1, Number(collection.count || 1));
   while (collection.items.length < needed) {
     const position = collection.items.length + 1;
-    collection.items.push({ id: `collect_item_${position}`, label: `Item ${position}`, cell: null, archetypeObjectId: null, archetypeLabel: null });
+    collection.items.push({
+      id: `collect_item_${position}`,
+      label: `Item ${position}`,
+      cell: null,
+      archetypeObjectId: null,
+      archetypeLabel: null,
+      archetypeReferenceSource: null
+    });
   }
   collection.items = collection.items.slice(0, needed);
   if (!collection.items.some((item) => item.id === collection.placingItemId)) collection.placingItemId = null;
@@ -144,12 +153,14 @@ function renderCollectionCard() {
     host.appendChild(card);
   }
   const placed = featureState.collection.items.filter((item) => item.cell).length;
+  const linked = featureState.collection.items.filter((item) => item.archetypeObjectId).length;
   card.innerHTML = `
     <div class="feature-setup-head">
-      <div><strong>Collect Objects</strong><small>Place pickups; Completion Rules decides whether collecting them is mandatory.</small></div>
+      <div><strong>Collect Objects</strong><small>Place pickups and link registered Archetype Objects; Completion Rules decides whether collection is mandatory.</small></div>
       <button type="button" data-remove-feature="collection" title="Remove collection objects from this maze.">×</button>
     </div>
-    <label class="feature-count-row"><span>Objects</span><input id="feature-collect-count" type="number" min="1" max="20" value="${featureState.collection.count}" title="Number of collection objects in this maze." /><small>${placed}/${featureState.collection.items.length} placed</small></label>
+    <label class="feature-count-row"><span>Objects</span><input id="feature-collect-count" type="number" min="1" max="20" value="${featureState.collection.count}" title="Number of collection objects in this maze." /><small>${placed}/${featureState.collection.items.length} placed · ${linked}/${featureState.collection.items.length} linked</small></label>
+    <p class="feature-library-note">Links select registered <strong>Archetype Objects</strong> from the connected project folder only.</p>
     <div class="feature-item-list">${featureState.collection.items.map(itemHtml).join('')}</div>
   `;
   card.querySelector('[data-remove-feature="collection"]')?.addEventListener('click', () => disable('collection'));
@@ -163,6 +174,12 @@ function renderCollectionCard() {
     featureState.collection.placingItemId = button.dataset.placeCollect;
     renderCollectionCard();
   }));
+  card.querySelectorAll('[data-link-collect]').forEach((button) => button.addEventListener('click', () => {
+    openCollectionArchetypePicker(button.dataset.linkCollect);
+  }));
+  card.querySelectorAll('[data-unlink-collect]').forEach((button) => button.addEventListener('click', () => {
+    unlinkCollectionArchetype(button.dataset.unlinkCollect);
+  }));
   card.querySelectorAll('[data-clear-collect]').forEach((button) => button.addEventListener('click', () => {
     const item = featureState.collection.items.find((row) => row.id === button.dataset.clearCollect);
     if (!item) return;
@@ -173,15 +190,48 @@ function renderCollectionCard() {
   }));
 }
 
+function openCollectionArchetypePicker(itemId) {
+  const collectionItem = featureState.collection.items.find((item) => item.id === itemId);
+  if (!collectionItem) return;
+  openRegisteredContentPicker({
+    initialKind: 'archetype-objects',
+    kinds: ['archetype-objects'],
+    title: `Link ${collectionItem.label}`,
+    selectLabel: 'Link Object',
+    contextNote: 'Requires a connected project folder containing registered archobj_ records.',
+    onSelect: ({ item, reference }) => {
+      collectionItem.archetypeObjectId = reference.archetypeObjectId;
+      collectionItem.archetypeReferenceSource = reference.referenceSource;
+      collectionItem.archetypeLabel = item.name;
+      notifyChange();
+      renderAll();
+    }
+  });
+}
+
+function unlinkCollectionArchetype(itemId) {
+  const item = featureState.collection.items.find((row) => row.id === itemId);
+  if (!item) return;
+  item.archetypeObjectId = null;
+  item.archetypeLabel = null;
+  item.archetypeReferenceSource = null;
+  notifyChange();
+  renderAll();
+}
+
 function itemHtml(item) {
   const placing = featureState.collection.placingItemId === item.id;
   const placed = item.cell ? `${item.cell.x}, ${item.cell.y}` : 'Not placed';
+  const linkedText = item.archetypeObjectId
+    ? `${item.archetypeLabel || 'Linked Object'} · ${item.archetypeObjectId}`
+    : 'No Archetype Object linked';
   return `<article class="feature-item ${placing ? 'is-placing' : ''}">
-    <div><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(placed)}</small></div>
+    <div><strong>${escapeHtml(item.label)}</strong><small>Cell: ${escapeHtml(placed)}</small><small class="feature-item-link ${item.archetypeObjectId ? 'is-linked' : ''}">${escapeHtml(linkedText)}</small></div>
     <div class="feature-item-actions">
       <button type="button" data-place-collect="${item.id}" title="Choose a path cell in Overview for this object.">${placing ? 'Pick…' : 'Place'}</button>
-      <button type="button" disabled title="Archetype Object linking is queued; it is not available yet.">Link</button>
-      <button type="button" data-clear-collect="${item.id}" title="Remove placed cell.">Clear</button>
+      <button type="button" data-link-collect="${item.id}" title="Select a registered Archetype Object from the connected project folder.">${item.archetypeObjectId ? 'Replace' : 'Link'}</button>
+      ${item.archetypeObjectId ? `<button type="button" data-unlink-collect="${item.id}" title="Remove the linked Archetype Object reference while retaining this placement.">Unlink</button>` : ''}
+      <button type="button" data-clear-collect="${item.id}" title="Remove the placed cell while retaining any linked Archetype Object.">Clear</button>
     </div>
   </article>`;
 }
@@ -248,13 +298,28 @@ function drawCollectionMarkers() {
   });
 }
 
+function collectionLinksStatus() {
+  const items = featureState.collection.items;
+  const linked = items.filter((item) => item.archetypeObjectId).length;
+  if (!linked) return 'no_registered_archetype_links_selected';
+  if (linked === items.length) return 'registered_archetype_links_complete';
+  return 'partially_linked_registered_archetypes';
+}
+
 function exportFeatures() {
   return {
     schemaVersion: 'artifex.mazeFeatures.v1',
     enabled: Object.entries(featureState.enabled).filter(([, value]) => value).map(([key]) => key),
     collection: featureState.enabled.collection ? {
-      items: featureState.collection.items.map((item) => ({ id: item.id, label: item.label, cell: item.cell, archetypeObjectId: item.archetypeObjectId })),
-      objectLinksStatus: 'pending_archetype_library_integration'
+      items: featureState.collection.items.map((item) => ({
+        id: item.id,
+        label: item.label,
+        cell: item.cell,
+        archetypeObjectId: item.archetypeObjectId,
+        archetypeObjectLabel: item.archetypeLabel,
+        archetypeReferenceSource: item.archetypeReferenceSource
+      })),
+      objectLinksStatus: collectionLinksStatus()
     } : null
   };
 }
@@ -278,8 +343,8 @@ function injectStyles() {
     .feature-head{display:flex;justify-content:space-between;gap:8px;margin-bottom:9px}.feature-head strong{display:block;color:#eadfc6;font-size:.8rem}.feature-head small{display:block;color:#a9b59e;font-size:.63rem;line-height:1.3}.feature-count{height:max-content;padding:4px 7px;border:1px solid rgba(158,230,164,.28);border-radius:999px;color:#a8e8a3;font-size:.63rem;font-weight:900}
     .feature-add-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:9px}.feature-add-grid button{min-height:32px;padding:4px;border-radius:9px;border:1px solid rgba(158,230,164,.22);background:rgba(12,54,28,.7);color:#eadfc6;font-size:.65rem;font-weight:900}.feature-add-grid button.is-active{border-color:rgba(158,230,164,.55);box-shadow:0 0 11px rgba(158,230,164,.12)}.feature-add-grid button:disabled{opacity:.42}
     .maze-feature-setup-host{display:grid;gap:8px}.feature-setup-card{padding:9px;border:1px solid rgba(158,230,164,.18);border-radius:12px;background:rgba(0,0,0,.14)}.feature-setup-head{display:flex;justify-content:space-between;gap:7px;margin-bottom:8px}.feature-setup-head strong{font-size:.73rem;color:#eadfc6}.feature-setup-head small{display:block;font-size:.62rem;color:#a9b59e;line-height:1.3}.feature-setup-head button{min-width:28px;height:28px;border-radius:8px;border:1px solid rgba(204,49,49,.35);background:rgba(80,20,20,.3);color:#e89068}
-    .feature-count-row{display:grid;grid-template-columns:1fr 58px auto;gap:6px;align-items:center;color:#d8d0ba;font-size:.67rem;margin-bottom:8px}.feature-count-row input{min-height:27px;min-width:0;border-radius:8px;border:1px solid rgba(158,230,164,.24);background:#07190e;color:#eadfc6;padding:3px 5px}.feature-count-row small{font-size:.61rem;color:#a9b59e}
-    .feature-item-list{display:grid;gap:5px}.feature-item{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;padding:6px;border:1px solid rgba(158,230,164,.12);border-radius:9px}.feature-item.is-placing{border-color:rgba(238,196,89,.4)}.feature-item strong{display:block;color:#eadfc6;font-size:.67rem}.feature-item small{font-size:.6rem;color:#a9b59e}.feature-item-actions{display:flex;gap:4px}.feature-item-actions button{min-height:27px;padding:3px 5px;border-radius:7px;border:1px solid rgba(158,230,164,.2);background:rgba(12,54,28,.65);color:#eadfc6;font-size:.6rem}.feature-item-actions button:disabled{opacity:.42}
+    .feature-count-row{display:grid;grid-template-columns:1fr 58px auto;gap:6px;align-items:center;color:#d8d0ba;font-size:.67rem;margin-bottom:8px}.feature-count-row input{min-height:27px;min-width:0;border-radius:8px;border:1px solid rgba(158,230,164,.24);background:#07190e;color:#eadfc6;padding:3px 5px}.feature-count-row small{font-size:.61rem;color:#a9b59e}.feature-library-note{margin:0 0 8px;color:#a9b59e;font-size:.59rem;line-height:1.35}.feature-library-note strong{color:#9ee6a4}
+    .feature-item-list{display:grid;gap:5px}.feature-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;padding:6px;border:1px solid rgba(158,230,164,.12);border-radius:9px}.feature-item.is-placing{border-color:rgba(238,196,89,.4)}.feature-item strong{display:block;color:#eadfc6;font-size:.67rem}.feature-item small{display:block;font-size:.6rem;color:#a9b59e;max-width:156px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.feature-item-link.is-linked{color:#9ee6a4}.feature-item-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px;max-width:145px}.feature-item-actions button{min-height:27px;padding:3px 5px;border-radius:7px;border:1px solid rgba(158,230,164,.2);background:rgba(12,54,28,.65);color:#eadfc6;font-size:.6rem}.feature-item-actions button:disabled{opacity:.42}
     .feature-pending-note{margin:8px 0 0;color:#d8c185;font-size:.61rem;line-height:1.3}
   `;
   document.head.appendChild(style);
