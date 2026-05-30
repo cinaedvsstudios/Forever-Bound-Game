@@ -15,6 +15,7 @@ Every app should inspect this contract together with:
 ```text
 docs/artifex/18-color-and-display-rules.md
 docs/artifex/20-asset-intake-workflow.md
+docs/artifex/21-template-game-project-contract.md
 artifex/shared/todo-guide/README.md
 artifex/shared/todo-guide/all-apps-todos.json
 ```
@@ -22,6 +23,8 @@ artifex/shared/todo-guide/all-apps-todos.json
 The project file contract defines data ownership, file layout, IDs, module boundaries, app splitting, direct project-folder saving and draft/backup rules.
 
 The asset-intake workflow defines the root-level `intake/` staging area, the folder explanations shown by Creation Guide, recommended starting-media readiness and promotion of approved source files into final `assets/` records.
+
+The Template Game project contract defines the minimum populated connected reference content required to prove cross-app data references before the first real production project begins.
 
 The colour/display rules define the shared Artifex visual language, module accents, typography, control sizing, tooltip rules, header layout and fallback app logo rule.
 
@@ -135,6 +138,14 @@ Build Game writes build output and generated audit/health reports.
 ```
 
 An app must not casually overwrite source code, unrelated documentation or another module's authored internals.
+
+### Template Game Connected Reference Project
+
+The future **Template Game** uses the canonical project hierarchy as a small populated connected reference project. It must demonstrate references across app-owned files without changing the ownership rules in this contract.
+
+Creation Guide starter initialisation remains separate from later app-generated or populated content. `project-structure-initializer.js` creates blank starter structure and empty indexes; Template Game content and generated validation/build outputs appear later through their appropriate owning apps and/or the connected reference generation/validation pass.
+
+Build Game, Health Guide, Project Manager, Scene Editor, Quest Builder, Puzzle Creator, Asset Library, Effect Editor and Archetype Object Creator remain responsible for their owned outputs even when Template Game is generated as a connected example. See `docs/artifex/21-template-game-project-contract.md` for the minimum populated cross-app reference requirements.
 
 ## Local Draft, Save and Navigation Guard Contract
 
