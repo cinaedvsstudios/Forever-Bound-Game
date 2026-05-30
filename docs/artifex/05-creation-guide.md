@@ -2,84 +2,115 @@
 
 ## Purpose
 
-The Creation Guide is the Artifex project onboarding screen, project overview, assignment planner, production dashboard, checklist, milestone tracker and health-check system.
+The Creation Guide is the Artifex project-onboarding, Project Overview, setup guidance, assignment-planning and early-health module. It creates or opens a project, connects the real writable project folder, creates the initial blank project structure, sets the active project, explains later asset intake requirements and directs remaining production work to the correct owning apps.
 
-It helps the creator start or open an Artifex project, connect and initialise the real project folder, define the minimum required project structure, create the primary project/index files, set the active project for the whole Artifex hub, prepare source assets through an intake area, and track the work needed to build the game.
+Creation Guide is not the full structural editor, asset importer, scene authoring app, quest authoring app, FX editor, build system or runtime engine.
 
-The Creation Guide should feel like mission control. It tells the creator what project is active, whether the real project folder is connected and writable, what still needs to be defined, which setup gates are blocking production, what recommended media is available, which Artifex tool owns each piece of work and whether the project is healthy enough to keep building.
-
-## Required Companion Docs
+## Required Companion Documents
 
 Creation Guide design and implementation must be read together with:
 
 ```text
 docs/artifex/18-color-and-display-rules.md
 docs/artifex/19-project-file-contracts.md
+docs/artifex/19a-project-starter-file-schemas.md
 docs/artifex/20-asset-intake-workflow.md
+docs/artifex/21-template-game-project-contract.md
 artifex/shared/todo-guide/README.md
 artifex/shared/todo-guide/all-apps-todos.json
 ```
 
-`19-project-file-contracts.md` is the source of truth for connected-folder saving, file ownership, relative paths, drafts and save-state rules. `20-asset-intake-workflow.md` is the source of truth for the creator-facing `intake/` drop folders and promotion into final registered assets.
+- `19-project-file-contracts.md` defines ownership, connected-folder saving, relative paths, drafts and cross-app rules.
+- `19a-project-starter-file-schemas.md` is the source of truth for exact starter JSON shapes. Do not duplicate incomplete JSON definitions in this document.
+- `20-asset-intake-workflow.md` defines `intake/` staging and final asset promotion.
+- `21-template-game-project-contract.md` defines the later populated reference project used to prove cross-app integration.
 
-## Naming Decision
+## Three Separate Project Concepts
 
-Use **Creation Guide** for the project onboarding, overview, assignment, dashboard, milestone, checklist and health-check module.
+| Term | Meaning | Creation Guide responsibility |
+|---|---|---|
+| **Blank Starter Project** | An empty valid project structure: starter structural JSON, directories and empty indexes. | Create and initialise it in a connected folder. |
+| **Template Game** | A later small populated connected reference project proving that all Artifex apps read and reference the same project files correctly. | Eventually offer it as a new-project option only after it exists and validates. |
+| **Artifacts Adventures** | The first real production project authored through Artifex after the Template Game flow works. | Onboard it as a real project; do not treat it as the Template Game. |
 
-Use **Project Editor** for the structural game editor that owns the Manifest, Flatplan, Flatplan Catalog, Stitcher, Routes and Map Projection. The Creation Guide can create starter structure and report project health, but it should not become the full Project Editor.
+## Current Live State
 
-## Top-Level Architecture
+Current visible Creation Guide version:
 
-The Artifex workflow should be:
+```text
+V1.1.11
+```
+
+The live V1.1.11 implementation currently provides:
+
+- Project Overview and collapsed left setup panel;
+- setup coach and module-intro popup;
+- New / Open browser-project flow;
+- Set Active Project, Assignments and Health views;
+- Export ZIP as backup/fallback;
+- **Project Folder** toolbar access;
+- **Connect Project Folder** through the shared folder service;
+- **Re-authorise Folder** support;
+- **Create Starter Structure** writing canonical starter folders/files to the connected project root without overwriting existing files;
+- visible working/status feedback while starter structure writes are running.
+
+The connected-folder/starter-structure feature has been browser-tested. The canonical starter-schema correction in `19a-project-starter-file-schemas.md` and the aligned initializer apply to newly created starter files and require fresh-folder verification; existing previously generated test files are intentionally not silently overwritten.
+
+Still future Creation Guide UI work:
+
+- Initial Asset Intake Setup section with **Create Intake Folders** and **Skip for Now**;
+- Recommended Starting Media checklist;
+- project logo intake/promotion/display support;
+- Template Game choice once the reference project exists;
+- expanded shared Health integration and full cross-app active-project runtime loading.
+
+## Top-Level Workflow
 
 ```text
 Artifex Hub
-  Change/select active project
-  Display active project name and logo where available
-  Open Artifex apps into the active project
+  Choose or change active project
+  Open apps into that active project
 
 Creation Guide
   Create/open project
   Connect or re-authorise the real project folder
-  Initialise the starter folder/file structure
-  Explain and create intake folders
-  Show Project Overview and recommended-media readiness
-  Register project in Project Library
-  Set active project
-  Track assignments, milestones, readiness and health
-  Offer ZIP backup/export fallback when needed
+  Create the Blank Starter Project structure
+  Explain/create optional intake staging folders
+  Report starting-media readiness
+  Register/set the active project
+  Track assignments and early health
+  Offer backup ZIP only when useful
 
 Project Editor
-  Edit Manifest, Flatplan, Routes, Map Projection, Stitcher and structural files
+  Load and edit structural project files such as logic/layout/registry
 
-Scene Editor / Quest Builder / Archetype Object Creator / Effect Editor
-  Load and edit owned content inside the connected active project
-  Keep recovery drafts locally until deliberately saved to project files
+Scene Editor / Quest Builder / Puzzle Creator / Archetype Object Creator / Effect Editor / Asset Library
+  Load and edit owned files inside the connected active project
+  Keep recovery drafts locally until deliberate save
+
+Build Game / Health Guide
+  Generate validation/build outputs from the saved project data
 ```
 
-Every app opened from the Hub should eventually read the shared active project and open its real registered files. If no active project is set, the app should ask the creator to select or create one in Creation Guide.
+## Connected Project Folder Is the Normal Save Direction
 
-## Connected Project Folder Is the Normal Save Workflow
-
-Creation Guide owns first-time folder connection and initial project creation. The normal intended workflow is:
+The intended production workflow is:
 
 ```text
 Create or open project
 → Connect Project Folder
-→ user chooses the real project root and grants read/write access
-→ Creation Guide creates/validates starter folders and files
-→ Artifex apps edit against the active project
-→ localStorage keeps temporary recovery drafts while editing
-→ Save / Save All writes owned changed files into the connected project folder
-→ Health/Audit/Build validates the real folder contents
-→ approved changes can be committed or pushed to GitHub separately
+→ choose the real project root and grant read/write permission
+→ Creation Guide creates missing blank starter files and folders
+→ apps load/edit their owned project files
+→ localStorage protects temporary drafts while editing
+→ explicit Save actions write owned files into the connected project folder
+→ Health/Audit/Build checks saved data
+→ approved changes may be backed up or pushed to GitHub separately
 ```
 
-The shared project-folder service must use the browser File System Access API and persist the browser-specific directory handle/permission metadata in IndexedDB. Project files store only project-relative paths. They must never store an absolute hard-drive path or a browser file handle.
+The directory handle and browser permission metadata belong in IndexedDB/browser state. Project files must store only project-relative paths. They must never store an absolute private HDD path or a browser directory handle.
 
-ZIP export is retained for full backups, transfer, archival snapshots and fallback when the project folder is not connected or write access is unavailable. It is not the normal daily save method once direct folder access is implemented.
-
-Creation Guide should show the current folder/save state clearly:
+Save/folder state language across apps should use:
 
 ```text
 Saved to Project Folder
@@ -91,20 +122,20 @@ No Folder Connected
 Save Failed
 ```
 
+ZIP export remains useful for backup, transfer and no-permission fallback. It is not the eventual normal daily save method.
+
 ## Shared Project Library
 
-Creation Guide owns project registration and active project selection.
-
-Suggested browser storage keys:
+Creation Guide owns browser project registration and active-project selection using:
 
 ```text
 artifex.projectLibrary
 artifex.activeProjectId
 ```
 
-`artifex.projectLibrary` stores known project summaries for selection. `artifex.activeProjectId` stores the currently selected project ID. Neither replaces the editable project files in the connected folder.
+These store portable summary/selection information only. They do not replace editable project files in the connected folder and do not store the directory handle.
 
-A project library entry should contain portable project metadata and relative file references:
+A project-library summary may contain:
 
 ```json
 {
@@ -119,7 +150,7 @@ A project library entry should contain portable project metadata and relative fi
   "onlineProjectPath": "",
   "deployedUrl": "",
   "primaryIndexFile": "project.json",
-  "manifestFile": "logic.json",
+  "logicFile": "logic.json",
   "layoutFile": "layout.json",
   "intakeRoot": "intake/",
   "assetRoot": "assets/",
@@ -129,147 +160,65 @@ A project library entry should contain portable project metadata and relative fi
 }
 ```
 
-The project library entry may indicate that a folder has previously been connected, but the actual directory handle and permissions belong in IndexedDB/browser state only.
+`projectLogo`, when set, must be a final promoted asset reference under `assets/`, never an `intake/` source file.
 
-## Startup Screen: Project Overview
+## Project Overview Screen
 
-When the user clicks **New Project**, **Open Project**, or opens Creation Guide without an active project, the right viewing panel should start on **Project Overview**. The left setup panel should start collapsed or mostly collapsed.
+The right viewing panel should start on Project Overview, with the left setup panel collapsed or mostly collapsed. Project Overview should show:
 
-The Project Overview screen should show:
-
-- project name and optional project logo;
+- project name and optional promoted logo;
 - project status and setup percentage;
 - active project ID/slug;
-- connected-folder state and Save status;
-- online repository/deployed URL if available;
-- primary file/index paths;
-- active Chronicle/Quest target where relevant;
+- connected-folder and save state;
+- online repository/deployed URL if supplied;
+- key project/index paths;
 - enabled modules;
 - intake setup state;
-- recommended-media readiness checklist;
-- readiness warnings and setup actions.
+- recommended-media readiness;
+- warnings, setup actions and Health information.
 
-The assignment board is not the starting screen. Assignments open from a popup/window after the project overview exists.
+Assignments remain a popup/work view accessed after Project Overview exists.
 
-## New / Open Project Choice
+## New / Open Choices
 
-The New / Open workflow should eventually support:
+The intended New / Open options are:
 
 ```text
-Blank Project
-Artifex Adventures Template Game
+Blank Starter Project
+Template Game
 Open Existing Project
 ```
 
-**Artifex Adventures Template Game** must not appear as a functioning choice until the playable template project has been built and validated. Once available, it provides a learn-by-editing starter project containing working examples and its own `intake/` area.
+`Template Game` must not appear as a functioning project choice until the small populated connected-reference project exists and has passed its cross-app validation checklist. It is not Artifacts Adventures.
 
 ## Initial Setup Gates
 
-Before the creator can properly make scenes, characters, quests, objects or effects, the project needs a minimum structure. Creation Guide should show these as setup gate cards in Project Overview.
+Creation Guide setup should cover these steps:
 
-### 1. Define Project Identity
+1. **Define Project Identity** — project name, ID/slug, creator/studio, version, optional description/language, optional project logo reference later.
+2. **Connect Project Folder** — connect or re-authorise the writable project root.
+3. **Create Blank Starter Project Structure** — create missing starter structural files, directories and empty indexes only.
+4. **Initial Asset Intake Setup** — explain and optionally create `intake/` and its six drop buckets; provide **Skip for Now**.
+5. **Recommended Starting Media** — non-blocking readiness checklist.
+6. **Choose Enabled Modules** — record which apps/features are relevant.
+7. **Set Active Project** — register summary and active project selection.
+8. **Run Project Readiness Check** — report incomplete setup honestly.
 
-Required information:
+## Blank Starter Project Output
 
-- project name;
-- project ID/slug;
-- creator or studio name;
-- version;
-- short description;
-- template used;
-- default language.
-
-Optional but recommended:
-
-- project logo or temporary title mark, stored as a final asset path after promotion/import.
-
-The project logo should be able to display beside the project title in Creation Guide and in other Artifex project selectors where practical.
-
-### 2. Connect Project Folder
-
-Creation Guide should provide **Connect Project Folder** and **Re-authorise Project Folder** actions through the shared folder service.
-
-When writable access exists, Creation Guide can initialise missing permitted project folders/files. When access is not available, the project may exist as a local draft and offer backup export, but the UI must not claim that files were saved to disk.
-
-### 3. Create Primary Project File
-
-Creation Guide creates the top-level project pointer file that all tools can discover:
+Creation Guide owns initial creation of the following top-level starter files:
 
 ```text
 project.json
-```
-
-The file points to the other important project files, roots and indexes using relative paths only.
-
-### 4. Create Folder Structure
-
-Creation Guide creates or validates the recommended folder hierarchy in the connected root, including data/module output folders, final assets, health/build/backups and the source-material `intake/` area.
-
-### 5. Initial Asset Intake Setup
-
-This must be its own visible section, not an unexplained background action. Creation Guide should explain that `intake/` is the simple incoming drop zone for source material before Artifex imports, renames, indexes and copies files into final `assets/` locations.
-
-The setup should show and offer to create:
-
-```text
-intake/
-  README.md
-  backgrounds/
-  characters/
-  objects/
-  icons-ui/
-  music/
-  dialogue-sfx/
-```
-
-Plain-language explanation shown to the creator:
-
-| Folder | Put this here |
-|---|---|
-| `backgrounds/` | Scene backgrounds, interiors, landscapes, title/ending backgrounds and environmental plates. |
-| `characters/` | Player character, NPCs, interactive characters, enemies, portraits, reference art and sprite/animation sheets. |
-| `objects/` | Props, pickups, doors, transitions, furniture, clue items and interactable object art. |
-| `icons-ui/` | Project logo, inventory/action icons, map markers, HUD/menu elements and UI frames. |
-| `music/` | Music tracks and musical stingers. |
-| `dialogue-sfx/` | Voice/dialogue, ambience, footsteps, UI sounds and environmental sound effects. |
-
-The section must offer **Create Intake Folders** and **Skip for Now**. Skipping does not block project creation, but Project Overview/Health should show that intake setup was skipped or remains unfinished until deliberately completed/dismissed.
-
-No permanent scene, quest, object or runtime file may reference an `intake/` file directly. Approved files are promoted into final `assets/` paths and registered by the asset workflow.
-
-### 6. Recommended Starting Media Checklist
-
-This is a readiness checklist, not a hard block on project creation. It should report whether the creator has enough starting material to plan a simple first scene.
-
-| Recommended item | Intake destination | Initial readiness purpose |
-|---|---|---|
-| Project logo or temporary title mark | `intake/icons-ui/` | Project identity and title/menu planning. |
-| At least 1 scene background | `intake/backgrounds/` | First playable/test scene. |
-| At least 1 player-character image or sprite sheet | `intake/characters/` | Playable character placeholder/final art. |
-| At least 1 NPC image or sprite sheet | `intake/characters/` | Basic interaction/dialogue test. |
-| At least 1 interactable object or pickup | `intake/objects/` | Object interaction test. |
-| At least 1 door/passage/transition object | `intake/objects/` | Scene movement/transition planning. |
-| At least 1 icon/UI placeholder set | `intake/icons-ui/` | HUD/menu/prompt test. |
-
-Useful additions after the initial minimum include music or ambience, dialogue/SFX samples, enemy/hazard art and FX source art.
-
-### 7. Create Starter Structural Files
-
-Creation Guide should create starter shells or register their creation for:
-
-```text
 logic.json
 layout.json
 registry.json
 library-links.json
 input-map.json
+README.md
 ```
 
-Project Editor becomes the owner of structural editing after starter creation.
-
-### 8. Create Index Files
-
-Suggested starter indexes include:
+It also creates required directories and empty index files:
 
 ```text
 scenes/scene-index.json
@@ -282,31 +231,15 @@ archetypes/effect-index.json
 assets/asset-index.json
 ```
 
-### 9. Choose Enabled Modules
+The exact JSON fields and shapes are canonical only in:
 
-Typical modules:
+```text
+docs/artifex/19a-project-starter-file-schemas.md
+```
 
-- Creation Guide;
-- Project Editor;
-- Scene Editor;
-- Quest Builder;
-- Puzzle Creator;
-- Archetype Object Creator;
-- Effect Editor;
-- Asset Library;
-- Build Game.
+Creation Guide must not independently populate later app-owned records simply because their folders exist. A blank starter structure is not a populated game.
 
-### 10. Set Active Project
-
-Writes the project summary into `artifex.projectLibrary` and sets `artifex.activeProjectId`. Other Artifex apps must eventually load their real state from the active connected project rather than only showing its name.
-
-### 11. Run Project Readiness Check
-
-Confirms project structure, folder/save state and starting requirements. A project may be created without completing optional media/intake work, but it should not be shown as fully ready without acknowledging outstanding setup.
-
-## Canonical Recommended Project Folder Hierarchy
-
-For new projects, Creation Guide should initialise or validate this project-relative structure through the shared folder service:
+## Canonical Project Folder Hierarchy
 
 ```text
 <project-root>/
@@ -390,188 +323,77 @@ For new projects, Creation Guide should initialise or validate this project-rela
     project-manager-todos.json
 ```
 
-`intake/` is intentionally separate from `assets/`. Intake contains incoming source material; final asset files and records live under `assets/` after review/import/promotion.
+The complete hierarchy lists possible project-owned/generated locations. Immediately after a Blank Starter Project is created, Creation Guide creates starter files, required directories and empty indexes only. Health reports, build outputs, backup manifests and app-authored todo/content files are generated later by their owning systems when required.
 
-This hierarchy is a recommended default. The binding rule is that `project.json` and related registries tell every app where files live using project-relative paths only.
+## Intake and Media Readiness
 
-## Primary Project File
-
-`project.json` is owned by Creation Guide at creation time, then inspectable/editable where allowed by Project Editor.
-
-Suggested starter shape:
-
-```json
-{
-  "schemaVersion": "artifex.project.v1",
-  "projectId": "project_forever_bound",
-  "gameTitle": "Forever Bound",
-  "creator": "Cinaedvs Studios",
-  "version": "0.1.0",
-  "createdBy": "creation-guide",
-  "projectLogo": "assets/images/ui/project-logo.png",
-  "startScreenId": "screen_title_main",
-  "enabledModules": [],
-  "roots": {
-    "intake": "intake/",
-    "assets": "assets/",
-    "scenes": "scenes/",
-    "screens": "screens/",
-    "quests": "quests/",
-    "puzzles": "puzzles/",
-    "archetypes": "archetypes/",
-    "health": "health/",
-    "build": "build/",
-    "backups": "backups/"
-  },
-  "fileRefs": {
-    "sceneIndex": "scenes/scene-index.json",
-    "screenIndex": "screens/screen-index.json",
-    "questIndex": "quests/quest-index.json",
-    "puzzleIndex": "puzzles/puzzle-index.json",
-    "objectArchetypeIndex": "archetypes/object-index.json",
-    "effectArchetypeIndex": "archetypes/effect-index.json",
-    "assetIndex": "assets/asset-index.json",
-    "healthReport": "health/latest-health-report.json"
-  }
-}
-```
-
-The optional `projectLogo` value is a final promoted asset path. A temporary source image may begin in `intake/icons-ui/`, but the final project reference must not point into `intake/`.
-
-## Creation Guide Layout
-
-The Creation Guide app should use a simple two-panel layout:
+`intake/` is a staging area, not final runtime storage. The planned visible intake setup section should offer:
 
 ```text
-Top bar
-  Brand, module title and visible version
-  Project identity/logo where supported
-  Quick icons and menu bar
-
-Main area
-  Left setup panel
-    collapsed by default on new/open project
-    setup fields and selected assignment inspector
-
-  Right viewing panel
-    Project Overview by default
-    setup coach
-    setup gates and readiness sections
-    Health section
-
-Popup windows
-  New / Open Project
-  Assignments
-  Assignment detail
-  Project Library / Change Project
-  Module intro/help
+Create Intake Folders
+Skip for Now
 ```
 
-## Core Object: Assignment
+and explain:
 
-After a project exists, the main production object inside the Creation Guide is an **Assignment**: a concrete unit of production work that can be assigned, started, blocked, reviewed, completed or archived.
+| Folder | Source material placed here |
+|---|---|
+| `intake/backgrounds/` | Scene backgrounds, interiors, landscapes, title/ending backgrounds and plates. |
+| `intake/characters/` | Player/NPC/interactive/enemy art, portraits and animation/sprite sheets. |
+| `intake/objects/` | Props, pickups, doors, transitions, furniture and interactable object art. |
+| `intake/icons-ui/` | Logo/title mark, inventory/action icons, markers, HUD/menu elements and frames. |
+| `intake/music/` | Music tracks and stingers. |
+| `intake/dialogue-sfx/` | Dialogue/voice, ambience, footsteps, UI sounds and SFX. |
 
-Examples include: create first forest scene; define Calling completion condition; prepare Mel throw animation; add initial intake folder guidance; provide a project logo; connect the real project folder; create Bellator placeholder; replace placeholder title-screen art.
+Recommended starting-media readiness should remain non-blocking and check for a logo/title mark, background, player asset, NPC asset, interactable object, transition object and icon/UI placeholders.
 
-Assignments are smaller than milestones but larger than individual checklist ticks.
+No permanent scene, screen, quest, archetype or runtime file may reference an intake file directly. Approved source files must be promoted and registered under final `assets/` paths.
 
-## Milestones and Assignment Workflow
+## Ownership Boundary
 
-Example milestones:
+Creation Guide owns:
 
-- Project Setup;
-- First Playable;
-- Chronicle 0 Prototype;
-- First Scene Complete;
-- First Quest Complete;
-- First Playtest;
-- Build Game.
+- initial project onboarding and project summary registration;
+- active-project selection;
+- initial connected-folder setup actions;
+- initial blank structural files/directories/empty indexes;
+- future intake explanation/readiness reporting;
+- assignments and setup-facing Health information.
 
-Workflow states:
+Creation Guide does not own populated output from:
 
-```text
-unassigned
-assigned
-started
-snoozing
-blocked
-review
-done
-archived
-```
+- Project Editor structural authoring after initial creation;
+- Scene Editor scene/screen content;
+- Quest Builder quest content;
+- Puzzle Creator puzzle content;
+- Archetype Object Creator object records;
+- Effect Editor FX records;
+- Asset Library promotion/final asset registration;
+- Health Guide generated reports;
+- Build Game runtime/build output;
+- backup generation beyond its own explicit backup/export action.
 
-`undone` is a dashboard filter, not a stored workflow state.
+## Project Health Direction
 
-Assignments should retain priority and effort values on a 1–5 scale, with optional manual overrides. Module colour indicates which app owns the work; workflow state, priority, effort and completion must be displayed separately.
+Creation Guide Health should report, without silently overwriting files:
 
-## Project Health Check
+- missing/invalid project identity;
+- missing connected folder or permission required;
+- local-draft-only state or conflicts once shared support exists;
+- missing starter files/directories/indexes;
+- missing or skipped intake setup;
+- missing recommended starting media;
+- invalid final project-logo reference if configured;
+- unresolved links surfaced by shared Health Guide checks;
+- assignment blockers and setup actions.
 
-Project Health is the validation portion of Creation Guide. It should eventually check:
+## Current Next Tasks
 
-- no active project selected or active project not found;
-- no connected folder, permission required, save failed or conflicts;
-- local drafts that have not been written to project files;
-- missing `project.json`, starter structural files, registered index files or required roots;
-- missing or intentionally skipped `intake/` setup;
-- missing recommended starting media items;
-- missing/invalid project logo final reference where one is configured;
-- broken routes, duplicate IDs and broken asset/object/effect/quest references;
-- blocked or snoozing assignments;
-- high-priority assignments without an owner;
-- completed assignments with incomplete required subtasks;
-- outdated backup/build metadata.
+In order:
 
-Health reports warn and generate actions; they must not silently overwrite project files or resolve conflicts.
-
-## Suggested Creation Guide Data Model
-
-The module exports one Creation Guide document linked to a project:
-
-```json
-{
-  "id": "creation_xxxxx",
-  "projectId": "project_forever_bound",
-  "name": "Artifex Adventure Creation Guide",
-  "moduleKind": "creation-guide",
-  "version": "V1.1.10",
-  "setup": {
-    "folderConnection": {},
-    "intakeSetup": {},
-    "recommendedMedia": {},
-    "projectLogo": null
-  },
-  "projectLibraryEntry": {},
-  "setupGates": [],
-  "assignments": [],
-  "milestones": [],
-  "notes": "",
-  "projectTree": []
-}
-```
-
-A linked Assignment should use stable IDs, primary/related module ownership, workflow status, priority, effort, milestone links, relative linked-file paths, linked asset IDs, subtasks, blockers and created/updated/last-touched dates.
-
-## Relationship to Other Modules
-
-The Creation Guide does not replace Scene Editor, Project Editor, Quest Builder, Puzzle Creator, Archetype Object Creator, Asset Library or Effect Editor.
-
-It creates/selects the active project, connects/initialises the real project folder, creates starter file structure, explains source-asset intake, reports recommended-media readiness, points the creator to the correct tool and reports whether required setup work is complete.
-
-Intended workflow:
-
-1. Open Artifex Hub and choose Change Project.
-2. Create a new project, start from a validated Artifex Adventures template when available, or open an existing project.
-3. Creation Guide opens Project Overview.
-4. Connect or re-authorise the real project folder.
-5. Complete project identity and initial folder/file setup.
-6. Complete or skip the visible `intake/` explanation/setup step.
-7. Add recommended starting source material and import/promote approved assets into final `assets/` paths.
-8. Creation Guide registers the project and sets it active.
-9. Other apps open their owned real files from the active connected project.
-10. While editing, recovery drafts are retained locally; deliberate saves write through the shared folder service.
-11. Run Health/Audit/Build checks against the real project folder.
-12. Use ZIP export only for backup, transfer or fallback where direct folder saving is unavailable.
-
-## Current Implementation and Future Tasks
-
-The live Creation Guide V1.1.10 currently proves Project Overview, setup coaching, project registration in browser storage, active project selection, ZIP starter export, assignments and Health UI. Direct project-folder connection, initial folder creation, intake checklist UI, project logo support and Artifex Adventures template choice are future implementation tasks and must not be described as already working in the live app.
+1. Resolve the Blank Starter Project `startScreenId` rule: an empty starter should not reference a screen which does not yet exist.
+2. Add the visible Initial Asset Intake Setup section and optional intake-folder creation.
+3. Add Recommended Starting Media readiness.
+4. Add project-logo promotion/reference/display support.
+5. Add Template Game choice only after the populated reference project exists and validates.
+6. Continue shared Health and all-app active-project/direct-save integration work.
