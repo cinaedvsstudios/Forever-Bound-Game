@@ -48,8 +48,15 @@ function ensureEditor() {
   return editor;
 }
 
+function setLegacyPendingNoteVisibility(pair) {
+  const pendingNotes = document.querySelectorAll('#connection-fields .connection-pending-note');
+  const legacyVisualNote = Array.from(pendingNotes).find((note) => note.id !== 'portal-registry-status');
+  if (legacyVisualNote) legacyVisualNote.hidden = Boolean(pair && pair.type === 'door');
+}
+
 function refreshDoorVisualEditor() {
   const pair = selectedPair();
+  setLegacyPendingNoteVisibility(pair);
   const editor = ensureEditor();
   if (!editor) return;
   if (!pair || pair.type !== 'door') {
