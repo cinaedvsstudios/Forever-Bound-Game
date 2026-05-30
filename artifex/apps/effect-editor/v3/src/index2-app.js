@@ -2,9 +2,10 @@ import { initEditorCore } from './editor-core.js';
 import { initEditorAppearanceControls } from './editor-appearance-controls.js';
 import { initEditorDynamicsControls } from './editor-dynamics-controls.js';
 import { initEditorQuickEditControls } from './editor-quick-edit-controls.js';
+import { initEditorRestoredMotionControls } from './editor-restored-motion-controls.js';
 import { initEditorWorkspaceUI } from './editor-workspace-ui.js';
 
-const VERSION_LABEL = 'INDEX2-CLEAN-0.2.3';
+const VERSION_LABEL = 'INDEX2-CLEAN-0.2.4';
 
 window.addEventListener('DOMContentLoaded', () => {
   initEditorCore({ versionLabel: VERSION_LABEL, showToast });
@@ -12,6 +13,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initEditorWorkspaceUI({ versionLabel: VERSION_LABEL, showToast });
   initEditorDynamicsControls();
   initEditorQuickEditControls(showToast);
+  initEditorRestoredMotionControls(showToast);
 });
 
 function showToast(message, type = 'info') {
