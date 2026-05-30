@@ -1,13 +1,13 @@
-import { DESIGN_WIDTH as W, DESIGN_HEIGHT as H } from './module-config.js?v=1.2.10';
-import { getBlockType } from './block-types.js?v=1.2.10';
-import { START_NODE_ID, END_NODE_ID } from './quest-schema.js?v=1.2.10';
+import { DESIGN_WIDTH as W, DESIGN_HEIGHT as H } from './module-config.js?v=1.2.11';
+import { getBlockType } from './block-types.js?v=1.2.11';
+import { START_NODE_ID, END_NODE_ID } from './quest-schema.js?v=1.2.11';
 
 export const CARD_W = 250;
 export const CARD_H = 124;
 const PORT_RADIUS = 9;
 const endpointAssets = {
-  start: new URL('../../icons/start.png?v=1.2.10', import.meta.url).href,
-  finish: new URL('../../icons/finish.png?v=1.2.10', import.meta.url).href
+  start: new URL('../../icons/start.png?v=1.2.11', import.meta.url).href,
+  finish: new URL('../../icons/finish.png?v=1.2.11', import.meta.url).href
 };
 const endpointImages = {};
 
@@ -46,38 +46,40 @@ export function drawCanvas(app) {
   const finish = { x: W - 115, y: H - 108 };
   const blocks = q.blocks || [];
   const positions = Object.fromEntries(blocks.map((item, index) => [item.id, getBlockPosition(layout, q.id, item.id, index)]));
-  const graph = buildGraphDrawingData(q, blocks);
+  const attachmentGroups = buildAttachmentGroups(q);
 
   (q.connections || []).forEach((connection) => {
-    const source = getPortPoint(connection.sourceNodeId, 'out', connection.sourcePort, positions, start, finish, graph);
-    const target = getPortPoint(connection.targetNodeId, 'in', connection.targetPort, positions, start, finish, graph);
+    const source = getConnectionPoint(connection, 'source', positions, start, finish, attachmentGroups);
+    const target = getConnectionPoint(connection, 'target', positions, start, finish, attachmentGroups);
     if (!source || !target) return;
     const sourceBlock = blocks.find((block) => block.id === connection.sourceNodeId);
     const color = connection.sourceNodeId === START_NODE_ID ? '#7ff0bd' : typeColor(sourceBlock?.type);
     const segments = drawConnector(ctx, source, target, color, state.activeConnectionId === connection.id);
-    app.hitZones.push({ kind: 'connection', connectionId: connection.id, segments, threshold: 9 });
+    app.hitZones.push({ kind: 'connection', connectionId: connection.id, segments, threshold: 10 });
   });
 
-  if (state.connectionDrag) {
-    const source = getPortPoint(state.connectionDrag.sourceNodeId, 'out', state.connectionDrag.sourcePort, positions, start, finish, graph);
-    if (source && state.connectionDrag.point) drawPreviewConnector(ctx, source, state.connectionDrag.point, state.connectionDrag.color);
+  if (state.connectionDrag?.startPoint && state.connectionDrag?.point) {
+    drawPreviewConnector(ctx, state.connectionDrag.startPoint, state.connectionDrag.point, state.connectionDrag.color);
   }
 
   drawEndpointNode(ctx, start.x, start.y, 'start', app);
   drawEndpointNode(ctx, finish.x, finish.y, 'finish', app);
+  app.hitZones.push({ kind: 'endpoint', nodeId: START_NODE_ID, x: start.x - 55, y: start.y - 55, w: 110, h: 110 });
+  app.hitZones.push({ kind: 'endpoint', nodeId: END_NODE_ID, x: finish.x - 55, y: finish.y - 55, w: 110, h: 110 });
 
   blocks.forEach((item, index) => {
     const position = positions[item.id];
     const selected = state.inspectorTarget === 'block' && index === state.activeBlock;
     const dragging = state.canvasBlockDrag?.index === index && state.canvasBlockDrag?.moved;
     drawFlowCard(ctx, position.x, position.y, CARD_W, CARD_H, item, selected, dragging);
-    app.hitZones.push({ kind: 'block', x: position.x, y: position.y, w: CARD_W, h: CARD_H, index });
-    app.hitZones.push({ kind: 'block-edit', x: position.x + CARD_W - 48, y: position.y, w: 48, h: 46, index });
+    app.hitZones.push({ kind: 'block', nodeId: item.id, x: position.x, y: position.y, w: CARD_W, h: CARD_H, index });
+    app.hitZones.push({ kind: 'block-edit', x: position.x + CARD_W - 36, y: position.y + 6, w: 30, h: 35, index });
+    const addPoint = { x: position.x + CARD_W - 58, y: position.y + 28 };
+    app.hitZones.push({ kind: 'connect-add', nodeId: item.id, x: addPoint.x - 14, y: addPoint.y - 16, w: 28, h: 30, startPoint: preferredStartPoint(position, item.id, q.connections || []) });
   });
 
-  drawNodePorts(ctx, app, START_NODE_ID, null, positions, start, finish, graph);
-  blocks.forEach((block) => drawNodePorts(ctx, app, block.id, block, positions, start, finish, graph));
-  drawNodePorts(ctx, app, END_NODE_ID, null, positions, start, finish, graph);
+  drawConnectedPorts(ctx, app, q, positions, start, finish, attachmentGroups);
+  drawStartConnectionHandle(ctx, app, start);
 }
 
 export function getCanvasPoint(app, event) {
@@ -110,88 +112,90 @@ export function applyCanvasTransform(canvas, layout) {
   canvas.style.transform = `translate(${layout.panX}px, ${layout.panY}px) scale(${layout.zoom})`;
 }
 
-function buildGraphDrawingData(quest, blocks) {
-  const inPorts = new Map();
-  const outPorts = new Map();
-  const add = (map, nodeId, portId) => {
-    if (!map.has(nodeId)) map.set(nodeId, new Set());
-    map.get(nodeId).add(portId);
+function buildAttachmentGroups(quest) {
+  const groups = new Map();
+  const add = (nodeId, side, ref) => {
+    const key = `${nodeId}:${side}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(ref);
   };
   (quest.connections || []).forEach((connection) => {
-    add(outPorts, connection.sourceNodeId, connection.sourcePort || 'out:0');
-    add(inPorts, connection.targetNodeId, connection.targetPort || 'in:0');
+    add(connection.sourceNodeId, connection.sourceSide || 'right', `${connection.id}:source`);
+    add(connection.targetNodeId, connection.targetSide || 'left', `${connection.id}:target`);
   });
-  add(outPorts, START_NODE_ID, 'out:0');
-  add(inPorts, END_NODE_ID, 'in:0');
-  blocks.forEach((block) => {
-    add(inPorts, block.id, nextAvailablePort(inPorts.get(block.id), 'in'));
-    add(outPorts, block.id, nextAvailablePort(outPorts.get(block.id), 'out'));
-  });
-  return { inPorts, outPorts };
+  return groups;
 }
 
-function nextAvailablePort(ports, direction) {
-  const used = ports || new Set();
-  let index = 0;
-  while (used.has(`${direction}:${index}`)) index += 1;
-  return `${direction}:${index}`;
-}
-
-function sortedPorts(graph, direction, nodeId) {
-  return [...(direction === 'out' ? graph.outPorts.get(nodeId) : graph.inPorts.get(nodeId) || [])]
-    .sort((a, b) => portIndex(a) - portIndex(b));
-}
-
-function portIndex(portId) {
-  const number = Number(String(portId || '').split(':')[1]);
-  return Number.isFinite(number) ? number : 0;
-}
-
-function getPortPoint(nodeId, direction, portId, positions, start, finish, graph) {
-  if (nodeId === START_NODE_ID) return direction === 'out' ? { x: start.x + 55, y: start.y } : null;
-  if (nodeId === END_NODE_ID) return direction === 'in' ? { x: finish.x - 55, y: finish.y } : null;
+function getConnectionPoint(connection, end, positions, start, finish, groups) {
+  const source = end === 'source';
+  const nodeId = source ? connection.sourceNodeId : connection.targetNodeId;
+  const side = source ? (connection.sourceSide || 'right') : (connection.targetSide || 'left');
+  if (nodeId === START_NODE_ID) return { x: start.x + 55, y: start.y };
+  if (nodeId === END_NODE_ID) return { x: finish.x - 55, y: finish.y };
   const position = positions[nodeId];
   if (!position) return null;
-  const ports = sortedPorts(graph, direction, nodeId);
-  const index = Math.max(0, ports.indexOf(portId || `${direction}:0`));
-  const spread = 22;
-  const y = position.y + CARD_H / 2 + (index - (ports.length - 1) / 2) * spread;
-  return { x: direction === 'out' ? position.x + CARD_W : position.x, y };
+  const refs = groups.get(`${nodeId}:${side}`) || [];
+  const ref = `${connection.id}:${end}`;
+  const index = Math.max(0, refs.indexOf(ref));
+  const offset = (index - (refs.length - 1) / 2) * 22;
+  return {
+    x: side === 'left' ? position.x : position.x + CARD_W,
+    y: position.y + CARD_H / 2 + offset
+  };
 }
 
-function drawNodePorts(ctx, app, nodeId, block, positions, start, finish, graph) {
-  const directions = nodeId === START_NODE_ID ? ['out'] : nodeId === END_NODE_ID ? ['in'] : ['in', 'out'];
-  directions.forEach((direction) => {
-    const ports = sortedPorts(graph, direction, nodeId);
-    ports.forEach((portId) => {
-      const point = getPortPoint(nodeId, direction, portId, positions, start, finish, graph);
+function preferredStartPoint(position, nodeId, connections) {
+  const leftCount = connections.filter((connection) => connection.sourceNodeId === nodeId && connection.sourceSide === 'left').length;
+  const rightCount = connections.filter((connection) => connection.sourceNodeId === nodeId && (connection.sourceSide || 'right') === 'right').length;
+  const side = leftCount > rightCount ? 'left' : 'right';
+  return { x: side === 'left' ? position.x : position.x + CARD_W, y: position.y + CARD_H / 2 };
+}
+
+function drawConnectedPorts(ctx, app, quest, positions, start, finish, groups) {
+  (quest.connections || []).forEach((connection) => {
+    ['source', 'target'].forEach((end) => {
+      const point = getConnectionPoint(connection, end, positions, start, finish, groups);
       if (!point) return;
-      const active = app.state.connectionDrag?.sourceNodeId === nodeId && app.state.connectionDrag?.sourcePort === portId;
-      drawPort(ctx, point, direction, active);
-      app.hitZones.push({ kind: `port-${direction}`, nodeId, portId, x: point.x - PORT_RADIUS - 4, y: point.y - PORT_RADIUS - 4, w: (PORT_RADIUS + 4) * 2, h: (PORT_RADIUS + 4) * 2, blockId: block?.id });
+      const nodeId = end === 'source' ? connection.sourceNodeId : connection.targetNodeId;
+      drawPort(ctx, point, stateMatches(app, connection.id));
+      app.hitZones.push({ kind: 'connected-port', nodeId, connectionId: connection.id, x: point.x - PORT_RADIUS - 4, y: point.y - PORT_RADIUS - 4, w: (PORT_RADIUS + 4) * 2, h: (PORT_RADIUS + 4) * 2 });
     });
   });
 }
 
-function drawPort(ctx, point, direction, active) {
+function drawStartConnectionHandle(ctx, app, start) {
+  const x = start.x + 30;
+  const y = start.y - 40;
+  ctx.fillStyle = '#7ff0bd';
+  ctx.font = '15px Arial';
+  ctx.fillText('🔗', x, y);
+  app.hitZones.push({ kind: 'connect-add', nodeId: START_NODE_ID, x: x - 6, y: y - 18, w: 28, h: 25, startPoint: { x: start.x + 55, y: start.y } });
+}
+
+function stateMatches(app, connectionId) {
+  return app.state.activeConnectionId === connectionId;
+}
+
+function drawPort(ctx, point, active) {
   ctx.beginPath();
   ctx.arc(point.x, point.y, PORT_RADIUS, 0, Math.PI * 2);
-  ctx.fillStyle = active ? 'rgba(127,240,189,.96)' : 'rgba(17,26,20,.98)';
+  ctx.fillStyle = active ? 'rgba(127,240,189,.98)' : 'rgba(17,26,20,.98)';
   ctx.fill();
-  ctx.strokeStyle = direction === 'out' ? '#7ff0bd' : 'rgba(226,204,167,.9)';
+  ctx.strokeStyle = active ? '#7ff0bd' : 'rgba(226,204,167,.9)';
   ctx.lineWidth = active ? 3 : 2;
   ctx.stroke();
   ctx.lineWidth = 1;
 }
 
 function drawConnector(ctx, from, to, color, selected) {
-  const midX = from.x + (to.x - from.x) / 2;
-  const segments = [[from, { x: midX, y: from.y }], [{ x: midX, y: from.y }, { x: midX, y: to.y }], [{ x: midX, y: to.y }, to]];
+  const points = routedPoints(from, to);
+  const segments = [];
   ctx.beginPath();
-  ctx.moveTo(from.x, from.y);
-  ctx.lineTo(midX, from.y);
-  ctx.lineTo(midX, to.y);
-  ctx.lineTo(to.x, to.y);
+  ctx.moveTo(points[0].x, points[0].y);
+  points.slice(1).forEach((point, index) => {
+    ctx.lineTo(point.x, point.y);
+    segments.push([points[index], point]);
+  });
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.strokeStyle = color || '#7ff0bd';
@@ -204,6 +208,19 @@ function drawConnector(ctx, from, to, color, selected) {
   ctx.shadowBlur = 0;
   ctx.lineWidth = 1;
   return segments;
+}
+
+function routedPoints(from, to) {
+  if (from.x === to.x) {
+    const sideX = from.x - 42;
+    return [from, { x: sideX, y: from.y }, { x: sideX, y: to.y }, to];
+  }
+  if (from.x < to.x) {
+    const midX = from.x + (to.x - from.x) / 2;
+    return [from, { x: midX, y: from.y }, { x: midX, y: to.y }, to];
+  }
+  const outerX = Math.min(from.x, to.x) - 42;
+  return [from, { x: outerX, y: from.y }, { x: outerX, y: to.y }, to];
 }
 
 function drawPreviewConnector(ctx, from, to, color) {
@@ -293,6 +310,9 @@ function drawFlowCard(ctx, x, y, w, h, item, selected, dragging) {
     ctx.font = '600 11px Arial';
     ctx.fillText('ready', x + 60, y + 98);
   }
+  ctx.fillStyle = '#7ff0bd';
+  ctx.font = '14px Arial';
+  ctx.fillText('🔗', x + w - 67, y + 29);
   ctx.fillStyle = '#fff0ce';
   ctx.font = '15px Arial';
   ctx.fillText('✎', x + w - 28, y + 28);
