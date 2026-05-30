@@ -1,6 +1,7 @@
 const PROJECT_FOLDER_SETUP_VERSION = 'V1.1.11';
 let projectFolderSetupObserver = null;
 let projectFolderSetupInstalled = false;
+let projectFolderStructureWrittenThisSession = false;
 
 window.addEventListener('DOMContentLoaded', () => {
   window.setTimeout(() => installProjectFolderSetup(), 0);
@@ -89,10 +90,13 @@ function renderProjectFolderSetupSection(force = false) {
   const connected = folderState.folderStatus === 'connected';
   const needsPermission = folderState.folderStatus === 'permission-required';
   const stateClass = connected ? 'connected' : needsPermission ? 'warn' : folderState.folderStatus === 'error' ? 'error' : 'empty';
+  const visibleState = connected
+    ? (projectFolderStructureWrittenThisSession ? 'Saved to Project Folder' : 'Folder Connected')
+    : folderState.saveStatus || 'No Folder Connected';
   const description = !supported
     ? 'Direct project-folder access is not supported in this browser. Export ZIP remains available as backup/fallback.'
     : connected
-      ? `Connected to “${safeFolderText(folderState.folderName || 'project folder')}”. Creation Guide can now create the starter structure there.`
+      ? `Connected to “${safeFolderText(folderState.folderName || 'project folder')}”. Creation Guide can create the starter structure directly in this folder.`
       : needsPermission
         ? `“${safeFolderText(folderState.folderName || 'Project folder')}” is remembered, but write access must be re-authorised before saving.`
         : 'Connect the real project root folder. It will become the normal saved location for project files; ZIP export remains a backup/fallback option.';
@@ -103,7 +107,7 @@ function renderProjectFolderSetupSection(force = false) {
         <p class="project-folder-eyebrow">Project storage</p>
         <h3>Connected Project Folder</h3>
       </div>
-      <span class="project-folder-state ${stateClass}">${safeFolderText(folderState.saveStatus || 'No Folder Connected')}</span>
+      <span class="project-folder-state ${stateClass}">${safeFolderText(visibleState)}</span>
     </header>
     <p class="project-folder-copy">${description}</p>
     <div class="project-folder-actions">
@@ -131,6 +135,7 @@ async function connectRealProjectFolder() {
     const current = readProjectFolderSetupInput();
     const folderState = await window.ArtifexProjectFolder.connectProjectFolder(current.projectSlug || null);
     if (folderState.folderStatus !== 'connected') return;
+    projectFolderStructureWrittenThisSession = false;
     updateProjectFolderNameField(folderState.folderName);
     showProjectFolderToast(`Connected project folder: ${folderState.folderName}.`, 'success');
     renderProjectFolderSetupSection(true);
@@ -165,6 +170,7 @@ async function initialiseRealProjectStructure() {
   }
   try {
     const result = await window.ArtifexProjectStructure.initialiseProjectStructure(readProjectFolderSetupInput(), { includeIntake: false });
+    projectFolderStructureWrittenThisSession = true;
     markConnectedStructureGatesComplete();
     showProjectFolderToast(`Starter structure ready: ${result.createdFiles.length} new file(s) created; existing files were left unchanged.`, 'success');
     renderProjectFolderSetupSection(true);
@@ -175,8 +181,15 @@ async function initialiseRealProjectStructure() {
 }
 
 function markConnectedStructureGatesComplete() {
-  if (typeof window.markCreationGuideStructuralGatesComplete === 'function') {
-    window.markCreationGuideStructuralGatesComplete('Saved starter structure to connected project folder.');
+  try {
+    if (typeof state !== 'undefined' && state.project?.gates && typeof STRUCTURAL_GATES !== 'undefined') {
+      STRUCTURAL_GATES.forEach((gateId) => { state.project.gates[gateId] = true; });
+      if (typeof updateProjectStatusFromGates === 'function') updateProjectStatusFromGates();
+      if (typeof render === 'function') render();
+      if (typeof queueHealthRender === 'function') queueHealthRender();
+    }
+  } catch (error) {
+    console.warn('Starter files were written, but the setup gate UI could not be refreshed.', error);
   }
 }
 
@@ -188,7 +201,7 @@ function updateProjectFolderNameField(folderName) {
 }
 
 function showProjectFolderToast(message, type = 'success') {
-  if (typeof window.toast === 'function') window.toast(message, type);
+  if (typeof toast === 'function') toast(message, type);
   else {
     const area = document.getElementById('toast-area');
     if (!area) return;
@@ -201,7 +214,7 @@ function showProjectFolderToast(message, type = 'success') {
 }
 
 function safeFolderText(value) {
-  return String(value ?? '').replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[character]));
+  return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[character]));
 }
 
 function injectProjectFolderSetupStyles() {
@@ -209,7 +222,7 @@ function injectProjectFolderSetupStyles() {
   const style = document.createElement('style');
   style.id = 'project-folder-setup-style';
   style.textContent = `
-    .project-folder-setup-section { margin: 16px 0; padding: 16px; border: 1px solid rgba(226,204,167,.18); border-radius: 12px; background: rgba(19,14,13,.88); }
+    .project-folder-setup-section { margin:16px 0; padding:16px; border:1px solid rgba(226,204,167,.18); border-radius:12px; background:rgba(19,14,13,.88); }
     .project-folder-setup-header { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:9px; }
     .project-folder-setup-header h3 { margin:2px 0 0; font-size:16px; color:#f4dfc4; }
     .project-folder-eyebrow { margin:0; font-size:10px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:#a98f72; }
