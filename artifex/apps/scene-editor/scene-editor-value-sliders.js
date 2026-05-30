@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const NUMERIC_SELECTORS = '.side-panel input[type="number"]';
+  const NUMERIC_SELECTORS = '.side-panel input[type="number"], .object-inspector input[type="number"]';
   const ignoredIds = new Set([]);
   const baselineValues = new Map();
   let resetMenu = null;
@@ -191,7 +191,12 @@
     range.setAttribute('aria-valuemax', String(cfg.max));
     range.setAttribute('aria-valuenow', String(value));
     range.style.setProperty('--value-slider-percent', `${cfg.max === cfg.min ? 0 : ((value - cfg.min) / (cfg.max - cfg.min)) * 100}%`);
-    if (readout) readout.textContent = input.value || '0';
+    if (readout) {
+      readout.value = input.value || '0';
+      readout.min = String(cfg.min);
+      readout.max = String(cfg.max);
+      readout.step = String(cfg.step);
+    }
   }
 
   function valueFromPointer(track, clientX, cfg) {
@@ -243,9 +248,10 @@
   }
 
   function decorate(input) {
-    if (!input || ignoredIds.has(input.id) || input.dataset.v18ValueSlider === 'true') return;
+    if (!input || input.classList.contains('value-slider-readout-v18') || input.closest('.value-slider-control-v18') || ignoredIds.has(input.id) || input.dataset.v18ValueSlider === 'true') return;
     const field = input.closest('.field');
     if (!field) return;
+    field.querySelectorAll(':scope > .value-slider-control-v18').forEach((node) => node.remove());
     rememberBaseline(input);
     input.dataset.v18ValueSlider = 'true';
     field.classList.add('value-slider-field-v18');
@@ -263,15 +269,21 @@
       <input class="value-slider-range-v18" type="range" min="${cfg.min}" max="${cfg.max}" step="${cfg.step}" value="${escAttr(input.value || 0)}" aria-label="${escapedLabel} slider" title="Adjust ${escapedLabel}">
       <div class="value-slider-stepper-v18">
         <button class="value-slider-step-v18" type="button" data-step-dir="-1" aria-label="Decrease ${escapedLabel}" title="Decrease ${escapedLabel}">&lt;</button>
-        <span class="value-slider-readout-v18" aria-live="polite"></span>
+        <input class="value-slider-readout-v18" type="number" inputmode="decimal" aria-label="${escapedLabel} exact value">
         <button class="value-slider-step-v18" type="button" data-step-dir="1" aria-label="Increase ${escapedLabel}" title="Increase ${escapedLabel}">&gt;</button>
       </div>`;
 
     const range = control.querySelector('.value-slider-range-v18');
+    const readoutInput = control.querySelector('.value-slider-readout-v18');
     const stepButtons = control.querySelectorAll('.value-slider-step-v18');
     input.classList.add('value-slider-source-v18');
     input.setAttribute('aria-hidden', 'true');
     input.tabIndex = -1;
+    if (readoutInput) {
+      readoutInput.min = String(cfg.min);
+      readoutInput.max = String(cfg.max);
+      readoutInput.step = String(cfg.step);
+    }
 
     range.addEventListener('input', () => {
       setInputValue(input, range.value);
@@ -281,7 +293,20 @@
       setInputValue(input, range.value);
       syncSlider(input);
     });
+    range.addEventListener('pointerdown', (event) => startCustomDrag(event, input, range));
     range.addEventListener('contextmenu', (event) => showResetMenu(event, input));
+    readoutInput?.addEventListener('input', () => {
+      const cfgNow = configFor(input);
+      const next = clamp(Number(readoutInput.value || 0), cfgNow.min, cfgNow.max);
+      setInputValue(input, formatValue(next, cfgNow.step));
+      syncSlider(input);
+    });
+    readoutInput?.addEventListener('change', () => {
+      const cfgNow = configFor(input);
+      const next = snap(readoutInput.value || 0, cfgNow);
+      setInputValue(input, formatValue(next, cfgNow.step));
+      syncSlider(input);
+    });
     stepButtons.forEach((button) => {
       button.addEventListener('click', (event) => {
         const cfgNow = configFor(input);
@@ -324,8 +349,8 @@
 
   window.addEventListener('load', decorateAll);
   document.addEventListener('click', decorateAll, true);
-  document.addEventListener('input', decorateAll, true);
-  document.addEventListener('change', decorateAll, true);
+  document.addEventListener('input', (event) => { if (!event.target.closest?.('.value-slider-control-v18')) decorateAll(); }, true);
+  document.addEventListener('change', (event) => { if (!event.target.closest?.('.value-slider-control-v18')) decorateAll(); }, true);
   document.addEventListener('pointerup', decorateAll, true);
   setInterval(decorateAll, 900);
   decorateAll();

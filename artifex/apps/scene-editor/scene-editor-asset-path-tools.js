@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = window.ArtifexSceneEditorCore?.getVersion?.() || window.ArtifexSceneEditorConfig?.VERSION || 'v0.32-controls-resize-search';
+  const VERSION = window.ArtifexSceneEditorCore?.getVersion?.() || window.ArtifexSceneEditorConfig?.VERSION || 'v0.33-inspector-controls-repair';
   const ASSET_MANIFEST = '../../assets-library/asset-library.json';
   let assetManifest = null;
   let pickerTarget = 'item';

@@ -24,6 +24,7 @@
   const settings = safeRead();
   settings.wrapBoundingBox = !!settings.wrapBoundingBox;
   settings.aspectLock = !!settings.aspectLock;
+  settings.ratios = settings.ratios && typeof settings.ratios === 'object' ? settings.ratios : {};
 
   function selectedItem() { return api()?.getSelectedItem?.() || null; }
   function selectedNode() {
@@ -60,11 +61,15 @@
   function applyImageFit() {
     syncBodyClasses();
     const fit = settings.aspectLock ? 'contain' : 'fill';
-    document.querySelectorAll('.scene-item img, .scene-item .small').forEach((node) => {
+    document.querySelectorAll('.scene-item img, .scene-item .small, .scene-item .scene-image-v33').forEach((node) => {
       node.style.objectFit = fit;
       node.dataset.aspectFit = fit;
       node.style.width = '100%';
       node.style.height = '100%';
+      if (node.matches?.('.scene-image-v33')) {
+        node.setAttribute('preserveAspectRatio', settings.aspectLock ? 'xMidYMid meet' : 'none');
+        node.querySelector('image')?.setAttribute('preserveAspectRatio', settings.aspectLock ? 'xMidYMid meet' : 'none');
+      }
     });
   }
   function applyItemBox(item) {
@@ -79,6 +84,21 @@
     setField('itemW', item.width ?? 10);
     setField('itemH', item.height ?? 10);
     applyImageFit();
+  }
+  function ratioFor(item) {
+    if (!item) return 1;
+    const id = item.id || 'selected';
+    const stored = Number(settings.ratios[id]);
+    if (stored && Number.isFinite(stored)) return stored;
+    const ratio = Math.max(MIN_SIZE, Number(item.width || 10)) / Math.max(MIN_SIZE, Number(item.height || 10));
+    settings.ratios[id] = ratio;
+    saveSettings();
+    return ratio;
+  }
+  function rememberRatio(item) {
+    if (!item?.id) return;
+    const ratio = Math.max(MIN_SIZE, Number(item.width || 10)) / Math.max(MIN_SIZE, Number(item.height || 10));
+    if (ratio && Number.isFinite(ratio)) settings.ratios[item.id] = ratio;
   }
   function saveSettings() { safeWrite(settings); }
   function setButtonState() {
@@ -149,6 +169,7 @@
     if (!button) return false;
     event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation();
     settings.aspectLock = !settings.aspectLock;
+    if (settings.aspectLock) rememberRatio(selectedItem());
     if (!settings.aspectLock) settings.wrapBoundingBox = false;
     saveSettings();
     setButtonState();
@@ -191,7 +212,7 @@
       y: Number(item.y || 0),
       w: Math.max(MIN_SIZE, Number(item.width || 10)),
       h: Math.max(MIN_SIZE, Number(item.height || 10)),
-      ratio: Math.max(MIN_SIZE, Number(item.width || 10)) / Math.max(MIN_SIZE, Number(item.height || 10))
+      ratio: ratioFor(item)
     };
     document.body.classList.add('is-resizing-object');
     event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation();
@@ -239,8 +260,23 @@
     window.requestAnimationFrame(applyImageFit);
     event?.preventDefault?.(); event?.stopPropagation?.(); event?.stopImmediatePropagation?.();
   }
+  function enforceLockedSizeInput(event) {
+    if (!settings.aspectLock || document.body.classList.contains('is-resizing-object')) return;
+    const input = event.target.closest?.('#itemW, #itemH');
+    if (!input) return;
+    window.clearTimeout(enforceLockedSizeInput.timer);
+    enforceLockedSizeInput.timer = window.setTimeout(() => {
+      const item = selectedItem();
+      if (!item) return;
+      const ratio = ratioFor(item);
+      if (input.id === 'itemW') item.height = Number(clamp(Number(item.width || input.value || 1) / ratio, MIN_SIZE, MAX_SIZE).toFixed(3));
+      if (input.id === 'itemH') item.width = Number(clamp(Number(item.height || input.value || 1) * ratio, MIN_SIZE, MAX_SIZE).toFixed(3));
+      applyItemBox(item);
+      api()?.saveWorkingCopySoon?.('aspect locked size');
+    }, 0);
+  }
   function keepAspectFitFresh(event) {
-    if (event?.target?.closest?.('#itemW, #itemH, .value-slider-range-v18, .value-slider-step-v18')) window.requestAnimationFrame(applyImageFit);
+    if (event?.target?.closest?.('#itemW, #itemH, .value-slider-range-v18, .value-slider-step-v18, .value-slider-readout-v18')) window.requestAnimationFrame(applyImageFit);
   }
 
   function enforceWrapAfterSizeInput(event) {
@@ -265,8 +301,8 @@
   document.addEventListener('pointermove', moveResize, true);
   document.addEventListener('pointerup', endResize, true);
   document.addEventListener('pointercancel', endResize, true);
-  document.addEventListener('input', (event) => { enforceWrapAfterSizeInput(event); keepAspectFitFresh(event); }, true);
-  document.addEventListener('change', (event) => { enforceWrapAfterSizeInput(event); keepAspectFitFresh(event); }, true);
+  document.addEventListener('input', (event) => { enforceLockedSizeInput(event); enforceWrapAfterSizeInput(event); keepAspectFitFresh(event); }, true);
+  document.addEventListener('change', (event) => { enforceLockedSizeInput(event); enforceWrapAfterSizeInput(event); keepAspectFitFresh(event); }, true);
   window.addEventListener('load', install);
   window.addEventListener('blur', endResize);
   setInterval(install, 800);

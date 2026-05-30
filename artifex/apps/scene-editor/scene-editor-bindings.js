@@ -15,6 +15,7 @@
 
   function applySettingsSearch() {
     const panel = document.querySelector('.side-panel');
+    const inspector = document.getElementById('objectInspector');
     const input = document.getElementById('settingsSearch');
     const empty = document.getElementById('settingsSearchEmpty');
     if (!panel || !input) return;
@@ -22,7 +23,7 @@
     const query = normalizeSearchText(input.value);
     let visibleCards = 0;
 
-    panel.querySelectorAll('.panel-card').forEach((card) => {
+    [panel, inspector].filter(Boolean).forEach((scope) => scope.querySelectorAll('.panel-card').forEach((card) => {
       const titleText = normalizeSearchText(card.querySelector('h2 span')?.textContent);
       const rows = Array.from(card.querySelectorAll('.field, .check-row, .button-row, .layer-control-row, .item-list, .json-preview, .card-layout-note, .metric-label-cell, .metric-value-cell'));
       const cardMatches = !query || titleText.includes(query);
@@ -37,10 +38,12 @@
       const hasVisible = cardMatches || rowMatches > 0 || normalizeSearchText(card.textContent).includes(query);
       card.classList.toggle('settings-search-hidden', !hasVisible);
       if (hasVisible) visibleCards += 1;
-    });
+    }));
 
+    if (inspector) inspector.classList.toggle('settings-search-hidden', !!query && !inspector.querySelector('.panel-card:not(.settings-search-hidden)'));
     if (empty) empty.hidden = !query || visibleCards > 0;
     panel.classList.toggle('is-settings-searching', !!query);
+    inspector?.classList.toggle('is-settings-searching', !!query);
   }
 
   function bindSettingsSearch() {
@@ -85,6 +88,7 @@
     bindSettingsSearch();
     bindPathButtons(deps);
     bindContextActions(deps);
+    bindObjectInspector(deps);
     bindStage(deps);
     window.requestAnimationFrame(applySettingsSearch);
   }
@@ -104,7 +108,17 @@
       if (key === 'screenType') scene.mode = event.target.value;
       deps.saveWorkingCopySoon('scene field');
     }));
+    document.getElementById('sceneTags')?.addEventListener('input', event => {
+      scene.tags = event.target.value.split(',').map(tag => tag.trim()).filter(Boolean);
+      deps.saveWorkingCopySoon('scene tags');
+    });
     document.getElementById('sceneBg')?.addEventListener('change', event => { deps.applyPath('background', event.target.value); });
+    document.getElementById('sceneAudioAmbience')?.addEventListener('input', event => { scene.audio = scene.audio || {}; scene.audio.ambience = event.target.value; deps.saveWorkingCopySoon('scene audio'); });
+    document.getElementById('sceneAudioMusic')?.addEventListener('input', event => { scene.audio = scene.audio || {}; scene.audio.music = event.target.value; deps.saveWorkingCopySoon('scene audio'); });
+    document.getElementById('sceneAudioVolume')?.addEventListener('input', event => { scene.audio = scene.audio || {}; scene.audio.volume = Number(event.target.value || 0); deps.saveWorkingCopySoon('scene audio'); });
+    document.getElementById('sceneAudioFadeIn')?.addEventListener('input', event => { scene.audio = scene.audio || {}; scene.audio.fadeIn = Number(event.target.value || 0); deps.saveWorkingCopySoon('scene audio'); });
+    document.getElementById('sceneAudioFadeOut')?.addEventListener('input', event => { scene.audio = scene.audio || {}; scene.audio.fadeOut = Number(event.target.value || 0); deps.saveWorkingCopySoon('scene audio'); });
+    document.getElementById('sceneAudioLoop')?.addEventListener('change', event => { scene.audio = scene.audio || {}; scene.audio.loop = event.target.checked; deps.saveWorkingCopySoon('scene audio'); });
     document.getElementById('gridCols')?.addEventListener('change', event => { scene.grid.columns = Number(event.target.value) || 16; deps.saveWorkingCopySoon('grid'); deps.render(); });
     document.getElementById('gridRows')?.addEventListener('change', event => { scene.grid.rows = Number(event.target.value) || 9; deps.saveWorkingCopySoon('grid'); deps.render(); });
     document.getElementById('gridShow')?.addEventListener('change', event => { scene.grid.show = event.target.checked; deps.saveWorkingCopySoon('grid'); deps.render(); });
@@ -140,7 +154,48 @@
 
     document.getElementById('itemLayer')?.addEventListener('change', event => deps.updateSelectedLayer(event.target.value, true));
     document.getElementById('itemVisible')?.addEventListener('change', event => { item.visible = event.target.checked; deps.saveWorkingCopySoon('visibility'); deps.render(); });
-    document.getElementById('itemTags')?.addEventListener('input', event => { item.tags = event.target.value.split(',').map(tag => tag.trim()).filter(Boolean); deps.saveWorkingCopySoon('tags'); });
+  }
+
+
+  function bindObjectInspector(deps) {
+    const inspector = document.getElementById('objectInspector');
+    const handle = document.getElementById('objectInspectorHandle');
+    if (!inspector || !handle || inspector.dataset.inspectorBound === 'true') return;
+    inspector.dataset.inspectorBound = 'true';
+    document.getElementById('objectInspectorMinimize')?.addEventListener('click', (event) => {
+      event.preventDefault();
+      deps.setInspectorLayout?.({ closed: !inspector.classList.contains('is-minimized') });
+      deps.render();
+    });
+
+    let drag = null;
+    handle.addEventListener('pointerdown', (event) => {
+      if (event.button === 2 || event.target.closest('button')) return;
+      const rect = inspector.getBoundingClientRect();
+      drag = { offsetX: event.clientX - rect.left, offsetY: event.clientY - rect.top };
+      inspector.classList.add('is-dragging');
+      handle.setPointerCapture?.(event.pointerId);
+      event.preventDefault();
+    });
+    handle.addEventListener('pointermove', (event) => {
+      if (!drag) return;
+      const maxLeft = Math.max(12, window.innerWidth - inspector.offsetWidth - 12);
+      const maxTop = Math.max(80, window.innerHeight - 80);
+      const left = Math.max(12, Math.min(maxLeft, event.clientX - drag.offsetX));
+      const top = Math.max(80, Math.min(maxTop, event.clientY - drag.offsetY));
+      inspector.style.left = `${left}px`;
+      inspector.style.top = `${top}px`;
+      event.preventDefault();
+    });
+    const end = (event) => {
+      if (!drag) return;
+      drag = null;
+      inspector.classList.remove('is-dragging');
+      deps.setInspectorLayout?.({ left: parseFloat(inspector.style.left) || 360, top: parseFloat(inspector.style.top) || 92 });
+      handle.releasePointerCapture?.(event.pointerId);
+    };
+    handle.addEventListener('pointerup', end);
+    handle.addEventListener('pointercancel', end);
   }
 
   function bindPathButtons(deps) {

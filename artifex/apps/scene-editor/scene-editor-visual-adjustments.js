@@ -76,7 +76,7 @@
   }
 
   function targetForNode(node) {
-    return node.querySelector(':scope > img') || node.querySelector(':scope > .small') || node;
+    return node.querySelector(':scope > img') || node.querySelector(':scope > .scene-image-v33') || node.querySelector(':scope > .small') || node;
   }
 
   function visualForRead(item) {

@@ -213,3 +213,29 @@ Codex should run static JavaScript checks, served HTTP checks and Playwright/bro
 1. Review and merge the v0.32 draft PR after tests pass.
 2. User verifies the deployed v0.32 URL for local restore, aspect-off stretch, aspect-on proportional resize, settings search, Shadow Blur persistence, numeric control styling, selection, movement, rotation, origin marker, layers, cards, preview, menus, zoom and JSON download.
 3. Only after that verification, begin the wider cross-app active-project/reference/index integration pass.
+
+---
+
+## v0.33 inspector, controls and resize repair follow-up — 2026-05-30
+
+Version used for this repair pass: `v0.33-inspector-controls-repair`.
+
+### Correction to v0.32 tracker state
+
+PR #13 was merged and deployed as `v0.32-controls-resize-search`, but deployed manual user acceptance failed. The failed behaviours were slider dragging in Visual Adjustments, the non-editable center value readout in numeric controls, and aspect-ratio-off image resizing still not visibly stretching/compressing the user-facing title-screen image. Therefore v0.32 must not be treated as the accepted completion gate for cross-app integration.
+
+### v0.33 repair/reorganisation scope
+
+The v0.33 pass repairs the existing permanent Scene Editor modules only: editable numeric sliders, aspect-off/on resize behaviour, a floating remembered-position Object Inspector, scene-level Scene Tags, scene-level Scene Audio, consistent active-project presentation, and removal of redundant Scene Editor Animation/object-audio placeholders. The pass intentionally does not implement connected project-folder loading, scene/screen indexes, reference indexes, portals, archetype linkage, Events/Triggers, or any shared Module menu changes.
+
+### Future Scene Events / Triggers task
+
+Scene Events / Triggers remain open future cross-app schema work. That later contract should cover scene-enter actions, object interact/pickup, portal/exit triggers, conditions, FX and sound triggers, existing object action/animation triggers, and quest-state updates involving Scene Editor, Archetype Object Creator, Effect Editor, Quest Builder and Project Manager.
+
+### Gate before cross-app integration
+
+After review and merge, user acceptance must verify the deployed v0.33 page at:
+
+`https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/index.html?fresh=v0.33-inspector-controls-repair`
+
+Do not open cross-app active-project/reference/index integration until that deployed v0.33 build is manually accepted by the user.

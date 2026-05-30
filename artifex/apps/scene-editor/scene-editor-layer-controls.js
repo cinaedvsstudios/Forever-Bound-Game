@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = window.ArtifexSceneEditorCore?.getVersion?.() || window.ArtifexSceneEditorConfig?.VERSION || 'v0.32-controls-resize-search';
+  const VERSION = window.ArtifexSceneEditorCore?.getVersion?.() || window.ArtifexSceneEditorConfig?.VERSION || 'v0.33-inspector-controls-repair';
   const LAYER_LOCK_KEY = 'artifex.sceneEditor.layerLocks.v1';
   const BORDER_KEY = 'artifex.sceneEditor.borderHidden.v1';
   const ASSET_MANIFEST = '../../assets-library/asset-library.json';
@@ -350,8 +350,8 @@
     const alreadyClean = selected.dataset.v15Object === objectId &&
       document.querySelector('[data-card-id="transform-v15"]') &&
       document.querySelector('[data-card-id="visual-v15"]') &&
-      document.querySelector('[data-card-id="animation-v15"]') &&
-      document.querySelector('[data-card-id="audio-v15"]') &&
+      !document.querySelector('[data-card-id="animation-v15"]') &&
+      !document.querySelector('[data-card-id="audio-v15"]') &&
       !selectedBody.querySelector('.selected-metric-table-v13c, .visual-effects-placeholder-group, .selected-tags-group, .selected-tools-layout-group');
     if (alreadyClean) return;
 
@@ -364,19 +364,16 @@
 
     const transform = buildCard('transform-v15', 'Transform');
     const visual = buildCard('visual-v15', 'Visual Adjustments');
-    const animation = buildCard('animation-v15', 'Animation');
-    const audio = buildCard('audio-v15', 'Audio');
-    selected.after(transform, visual, animation, audio);
+    document.querySelector('[data-card-id="animation-v15"]')?.remove();
+    document.querySelector('[data-card-id="audio-v15"]')?.remove();
+    selected.after(transform, visual);
 
     const transformBody = transform.querySelector('.card-body');
-    transformBody.replaceChildren(table, rotateBlock());
-    const tags = tagsGroup();
+    transformBody.replaceChildren(rotateBlock(), table);
     const tools = toolsGroup();
-    if (tags) transformBody.appendChild(tags);
     if (tools) transformBody.appendChild(tools);
     visual.querySelector('.card-body').replaceChildren(visualBody());
-    animation.querySelector('.card-body').replaceChildren(animationBody());
-    audio.querySelector('.card-body').replaceChildren(audioBody());
+
     selectedBody.replaceChildren(identity);
     selected.dataset.v15Object = objectId;
     applyBorders();

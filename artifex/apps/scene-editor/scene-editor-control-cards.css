@@ -132,6 +132,7 @@ body.is-handle-moving .scene-item.is-selected .move-handle {
 }
 
 .scene-item img,
+.scene-item .scene-image-v33,
 .scene-item .item-label {
   pointer-events: none;
 }

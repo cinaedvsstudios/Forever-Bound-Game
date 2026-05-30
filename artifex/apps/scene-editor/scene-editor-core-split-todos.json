@@ -1,6 +1,6 @@
 {
   "schemaVersion": "artifex.specificAppTodos.v1",
-  "updatedAt": "2026-05-29",
+  "updatedAt": "2026-05-30",
   "appId": "scene-editor",
   "appPath": "artifex/apps/scene-editor/",
   "purpose": "Track Scene Editor modularisation cleanup and the readiness gate before wider cross-app linking work.",
@@ -13,9 +13,9 @@
     "artifex/apps/scene-editor/scene-editor-audit-2026-05-28.md",
     "artifex/apps/scene-editor/scene-editor-cleanup-report-2026-05-29.md"
   ],
-  "currentStableVersion": "v0.32-controls-resize-search",
-  "freshTestUrl": "https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/index.html?fresh=v0.32-controls-resize-search",
-  "knownGoodState": "v0.32-controls-resize-search is ready for PR review after the permanent-module follow-up pass: unlocked aspect-off resizing now keeps fill/stretch rendering fresh after resize rerenders, left-panel settings search filters cards/rows without touching scene data, Shadow Blur persists in item.visual.shadowBlur with a default of 25, and adjustable numeric controls use the approved horizontal slider plus decrement/value/increment treatment.",
+  "currentStableVersion": "v0.32-controls-resize-search (deployed but failed manual acceptance)",
+  "freshTestUrl": "https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/index.html?fresh=v0.33-inspector-controls-repair",
+  "knownGoodState": "PR #13 was merged and deployed as v0.32-controls-resize-search, but manual user acceptance failed slider dragging, editable numeric readout, and aspect-off visible image stretching. v0.33-inspector-controls-repair is the required repair/reorganisation pass and still awaits deployed user verification before any cross-app integration gate can reopen.",
   "deliveries": [
     {
       "pullRequest": "https://github.com/cinaedvsstudios/Forever-Bound-Game/pull/6",
@@ -244,6 +244,15 @@
       "description": "Archived unused unreferenced legacy files into archive/legacy-2026-05-28 after confirming runtime references.",
       "testedByCodex": true,
       "testedByUserLive": true
+    },
+    {
+      "taskId": "scene_editor_future_scene_events_triggers_contract",
+      "title": "Define future Scene Events / Triggers cross-app contract",
+      "status": "open",
+      "phase": 16,
+      "description": "Future integration task only: define scene enter, object interact/pickup, portal/exit, conditions, FX/sound triggers, object action/animation triggers and quest-state updates across Scene Editor, Archetype Object Creator, Effect Editor, Quest Builder and Project Manager. Do not implement ad hoc events in v0.33.",
+      "testedByCodex": false,
+      "testedByUserLive": false
     }
   ],
   "activeRuntimeModules": [
@@ -273,7 +282,8 @@
     "User v0.30 pass: deployed page opened and core split appeared functional.",
     "Codex v0.31 pass: node --check, served HTTP asset checks, template manifest fetch and Playwright smoke testing over version/toast/selection/transform/feature controls/API compatibility.",
     "User v0.31 pass: deployed page loaded, restored local scene, displayed v0.31 output instead of stale v0.28 toast, and no other broken behaviours were found except unlocked aspect-ratio resize not visually stretching the image.",
-    "Codex v0.32 pass: node --check over active Scene Editor/shared JavaScript files, served HTTP asset checks, template manifest fetch, and Playwright smoke coverage for version/search/resize/visual controls/API compatibility."
+    "Codex v0.32 pass: static, served HTTP and Playwright smoke checks were run before PR #13, but deployed manual user acceptance failed slider dragging, editable value readout and aspect-off visible stretch.",
+    "Codex v0.33 pass pending in this branch: repair slider dragging/editable numeric readouts, aspect-off/on resize paths, floating Object Inspector, Scene Tags, Scene Audio, active-project presentation, and placeholder removals before draft PR."
   ],
-  "nextStep": "Create/review the v0.32 draft PR, merge after approval, perform user deployment acceptance at the v0.32 fresh URL, then begin wider cross-app active-project/reference/index integration only after that verification."
+  "nextStep": "PR #13 was merged and deployed as v0.32-controls-resize-search, but user acceptance failed. Review v0.33-inspector-controls-repair, merge only after PR approval, then perform deployed user verification at the v0.33 fresh URL before opening cross-app integration."
 }
