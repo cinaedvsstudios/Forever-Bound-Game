@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '0.1.1';
+  const VERSION = '0.1.2';
 
   const CORE_DIRECTORIES = Object.freeze([
     'scenes',
@@ -96,7 +96,7 @@
       version: project.version,
       createdBy: 'creation-guide',
       projectLogo: project.projectLogo,
-      startScreenId: 'screen_title_main',
+      startScreenId: null,
       enabledModules: project.enabledModules,
       roots: {
         intake: 'intake/',
@@ -131,7 +131,7 @@
       nodes: [],
       routes: [],
       conditions: [],
-      startScreenId: 'screen_title_main'
+      startScreenId: null
     };
   }
 
