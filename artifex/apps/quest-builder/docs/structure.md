@@ -36,7 +36,7 @@ It should not grow into the full app again. If a feature has a clear domain, mov
 
 ### `v1/src/module-config.js`
 
-Version, app labels, storage keys, design size, theme accent, thumbnail list, and shared core Module menu list.
+Version, app labels, storage keys, design size, grid size, theme accent, thumbnail list, and shared core Module menu list.
 
 No renderer code, no dialog code, no quest data mutation.
 
@@ -48,27 +48,33 @@ No UI binding and no canvas drawing.
 
 ### `v1/src/quest-schema.js`
 
-Quest file, quest, and block defaults. Also small schema-safe helpers such as list parsing and HTML escaping.
+Quest file, quest, block and explicit connection defaults. Also small schema-safe helpers such as list parsing and HTML escaping.
 
 No DOM binding and no rendering.
 
 ### `v1/src/layout-state.js`
 
-Saved UI layout state only: left panel width, Quest Flow window position/size, vertical/horizontal mode, collapse state, zoom, pan, and clamp helper.
+Saved UI layout state only: left panel width, Quest Flow window position/size, vertical/horizontal mode, collapse state, zoom, pan, snap-to-grid preference, stored canvas card positions, and clamp helper.
 
 No quest data and no dialog code.
 
 ### `v1/src/ui-bindings.js`
 
-DOM events and controls: menus, buttons, inline editing, panel resize, floating Quest Flow drag/resize, workspace pan, lock/collapse controls, and standard action wiring.
+DOM events and controls: menus, buttons, inline editing, panel resize, floating Quest Flow drag/resize, workspace pan, snap toggle, lock/collapse controls, and standard action wiring.
 
 Keep heavy rendering and schema definitions out of this file.
 
 ### `v1/src/canvas-renderer.js`
 
-Viewing panel only: quest header, Calling pill, START/END nodes, flow cards, colours used while drawing, canvas transform, and draw helpers.
+Viewing panel only: quest header, Calling pill, START/END nodes, flow cards, visible connector rendering, colours used while drawing, fine grid display, canvas transform, and draw helpers.
 
 No localStorage and no dialog behaviour.
+
+### `v1/src/connection-routing.js`
+
+Connector display routing only: resolve the nearest visible edge between connected nodes and provide attachment points for left, right, top and bottom edges.
+
+This module controls how explicit connections are drawn in the workspace. It must not invent quest connections, change quest order, own saved layout state, or become runtime progression logic.
 
 ### `v1/src/dialog-editors.js`
 
