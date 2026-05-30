@@ -1,9 +1,9 @@
-import { THUMBNAILS } from './module-config.js';
-import { BLOCK_TYPES } from './block-types.js';
-import { parseList, escapeHtml } from './quest-schema.js';
-import { openEditor, createWizardQuest, wireEditorTabs } from './dialog-editors.js';
-import { exportQuestFile, buildQuestExportBundle, downloadProjectPackageFiles, downloadJson, slugify } from './export-json.js';
-import { clamp } from './layout-state.js';
+import { THUMBNAILS } from './module-config.js?v=1.2.10';
+import { BLOCK_TYPES } from './block-types.js?v=1.2.10';
+import { parseList, escapeHtml } from './quest-schema.js?v=1.2.10';
+import { openEditor, createWizardQuest, wireEditorTabs } from './dialog-editors.js?v=1.2.10';
+import { exportQuestFile, buildQuestExportBundle, downloadProjectPackageFiles, downloadJson, slugify } from './export-json.js?v=1.2.10';
+import { clamp } from './layout-state.js?v=1.2.10';
 
 export function wireMenus(app) {
   document.querySelectorAll('.menu-button').forEach((button) => {
@@ -230,12 +230,12 @@ function renderExportSummary(bundle) {
   const checks = bundle.exportSelfCheck?.checks || [];
   const paths = (bundle.files || []).map((file) => `<li>${escapeHtml(file.path)} <span>(${escapeHtml(file.role)})</span></li>`).join('');
   const statusClass = bundle.exportSelfCheck?.status === 'pass' ? 'export-status-pass' : 'export-status-fail';
-  return `<section class="export-summary"><h3>Export Bundle Summary <span class="${statusClass}">${escapeHtml(bundle.exportSelfCheck?.status || 'unknown')}</span></h3><div class="export-summary-grid"><div class="export-stat"><strong>${bundle.files?.length || 0}</strong><span>files</span></div><div class="export-stat"><strong>${questCount}</strong><span>quests</span></div><div class="export-stat"><strong>${sideQuestCount}</strong><span>side quests</span></div><div class="export-stat"><strong>${bundle.validationWarnings?.length || 0}</strong><span>warnings</span></div><div class="export-stat"><strong>${checks.filter((check) => check.ok).length}/${checks.length}</strong><span>checks</span></div></div><p class="editor-help">Export JSON downloads one review bundle. Export Project Files downloads loose JSON files for the project package. ZIP packaging is deferred to a future shared exporter.</p><ul class="export-paths">${paths}</ul></section>`;
+  return `<section class="export-summary"><h3>Export Bundle Summary <span class="${statusClass}">${escapeHtml(bundle.exportSelfCheck?.status || 'unknown')}</span></h3><div class="export-summary-grid"><div class="export-stat"><strong>${bundle.files?.length || 0}</strong><span>files</span></div><div class="export-stat"><strong>${questCount}</strong><span>quests</span></div><div class="export-stat"><strong>${sideQuestCount}</strong><span>side quests</span></div><div class="export-stat"><strong>${bundle.validationWarnings?.length || 0}</strong><span>warnings</span></div><div class="export-stat"><strong>${checks.filter((check) => check.ok).length}/${checks.length}</strong><span>checks</span></div></div><p class="editor-help">Export JSON downloads one review bundle. Export Project Files downloads loose JSON files for the project package. Runtime flow now uses deliberate connector links rather than screen position or list order.</p><ul class="export-paths">${paths}</ul></section>`;
 }
 
 export function wireActions(app) {
-  const addQuestFromMenu = () => { app.addQuest(); closeMenus(); app.toast('Quest added.'); };
-  const addBlockFromMenu = () => { app.addBlock(); app.toast('Block added.'); };
+  const addQuestFromMenu = () => { app.addQuest(); closeMenus(); app.toast('Quest added. Create blocks and connect them when ready.'); };
+  const addBlockFromMenu = () => { app.addBlock(); app.toast('Block added loose. Drag from connector circles to join it to the flow.'); };
   app.$('new-quest-wizard-button').onclick = () => { closeMenus(); app.$('wizard-dialog').showModal(); };
   app.$('new-quest-button').onclick = addQuestFromMenu;
   app.$('create-wizard-quest-button').onclick = () => createWizardQuest(app);
@@ -247,9 +247,9 @@ export function wireActions(app) {
   app.$('status-save-button').onclick = () => { localStorage.setItem(app.storageKey, JSON.stringify(app.doc)); app.toast('Saved locally.'); };
   app.$('edit-quest-button').onclick = () => { closeMenus(); openEditor(app, 'quest'); };
   app.$('delete-quest-button').onclick = () => { app.removeQuest(); closeMenus(); app.toast('Quest deleted.'); };
-  app.$('side-add-block-button').onclick = app.$('add-flow-block-button').onclick = () => { app.addBlock(); openEditor(app, 'block'); };
+  app.$('side-add-block-button').onclick = app.$('add-flow-block-button').onclick = () => { app.addBlock(); openEditor(app, 'block'); app.toast('Block added loose. Connect it from its circles when ready.'); };
   app.$('edit-block-button').onclick = () => { closeMenus(); openEditor(app, 'block'); };
-  app.$('delete-block-button').onclick = () => { app.removeBlock(); closeMenus(); app.toast('Block deleted.'); };
+  app.$('delete-block-button').onclick = () => { app.removeBlock(); closeMenus(); app.toast('Block and its connections deleted.'); };
   app.$('save-editor-button').onclick = () => app.toast('Saved.');
   app.$('quest-thumb-button').onclick = () => {
     const quest = app.quest();
@@ -273,10 +273,10 @@ export function wireActions(app) {
     app.$('collapse-selected-button').textContent = app.$('selected-card').classList.contains('collapsed') ? '▸' : '▾';
   };
   document.querySelectorAll('[data-add-block]').forEach((button) => {
-    button.onclick = () => { app.addBlock(button.dataset.addBlock); closeMenus(); openEditor(app, 'block'); };
+    button.onclick = () => { app.addBlock(button.dataset.addBlock); closeMenus(); openEditor(app, 'block'); app.toast('Block added loose. Connect it using the edge circles.'); };
   });
-  app.$('template-main-quest-button').onclick = () => { app.addQuest({ name: 'New Main Quest', thumbnail: '📜', callingText: 'Define the main Calling for this Quest.', blocks: [{ name: 'Start Scene', type: 'scene', thumbnail: '🖼️' }, { name: 'Key Interaction', type: 'object', thumbnail: '🧩', action: 'interact:key_object' }, { name: 'Calling Fulfilled', type: 'completion', thumbnail: '✅', uiOverlay: 'calling_fulfilled', condition: 'flag_true:quest_complete' }] }); closeMenus(); };
-  app.$('template-side-quest-button').onclick = () => { app.addQuest({ name: 'New Side Quest', thumbnail: '🗝️', type: 'side', callingText: 'Define the optional objective or Errand.', blocks: [{ name: 'Optional Trigger', type: 'condition', thumbnail: '🔀', condition: 'flag_true:sidequest_available' }, { name: 'Reward', type: 'reward', thumbnail: '🎁', action: 'grant_reward:silver' }] }); closeMenus(); };
+  app.$('template-main-quest-button').onclick = () => { app.addQuest({ name: 'New Main Quest', thumbnail: '📜', callingText: 'Define the main Calling for this Quest.', blocks: [{ name: 'Start Scene', type: 'scene', thumbnail: '🖼️' }, { name: 'Key Interaction', type: 'object', thumbnail: '🧩', action: 'interact:key_object' }, { name: 'Calling Fulfilled', type: 'completion', thumbnail: '✅', uiOverlay: 'calling_fulfilled', condition: 'flag_true:quest_complete' }] }); closeMenus(); app.toast('Template blocks added unconnected. Draw the flow deliberately.'); };
+  app.$('template-side-quest-button').onclick = () => { app.addQuest({ name: 'New Side Quest', thumbnail: '🗝️', type: 'side', callingText: 'Define the optional objective or Errand.', blocks: [{ name: 'Optional Trigger', type: 'condition', thumbnail: '🔀', condition: 'flag_true:sidequest_available' }, { name: 'Reward', type: 'reward', thumbnail: '🎁', action: 'grant_reward:silver' }] }); closeMenus(); app.toast('Template blocks added unconnected. Draw the flow deliberately.'); };
   app.$('export-json-button').onclick = () => { downloadJson(slugify(app.doc.name) + '.json', exportQuestFile(app.doc)); closeMenus(); app.toast('JSON exported as single bundle.'); };
   app.$('export-project-files-button').onclick = () => {
     const count = downloadProjectPackageFiles(buildQuestExportBundle(app.doc));
@@ -296,8 +296,8 @@ export function wireActions(app) {
     closeMenus();
   };
   app.$('library-note-button').onclick = () => { app.help('Linked Libraries', '<p>Quest Builder references completed scenes, archetype objects, dialogue IDs, audio IDs, Capra popup templates, Codice entries, UI overlays, rewards, route unlocks, and completion flags. It should not own those libraries directly.</p>'); closeMenus(); };
-  app.$('quick-start-button').onclick = () => { app.help('Quick Start', '<p>Click the quest header, Calling pill, or any flow card in the viewing area to inspect it on the left. Use the green status strip buttons for wizard, add quest, add block, and local save.</p>'); closeMenus(); };
-  app.$('about-button').onclick = () => { app.help('About Quest Builder', '<p>Quest Builder assembles scenes, actions, linked dialogue/audio, objects, Capra feedback, Codice updates, UI overlays, rewards, map unlocks, and completion flags into playable Quest flow.</p>'); closeMenus(); };
+  app.$('quick-start-button').onclick = () => { app.help('Quick Start', '<p>Add blocks as loose workspace cards. Move a card by dragging its body. Create quest flow by dragging from a green output circle to an input circle on another node. Click a connector line and press Delete to remove it. Card position and floating-list ordering do not alter the connections.</p>'); closeMenus(); };
+  app.$('about-button').onclick = () => { app.help('About Quest Builder', '<p>Quest Builder assembles scenes, actions, linked dialogue/audio, objects, Capra feedback, Codice updates, UI overlays, rewards, map unlocks, and completion flags into playable Quest flow. Flow logic is authored through explicit connector links.</p>'); closeMenus(); };
   app.$('bg-dark-button').onclick = () => { app.state.mode = 'dark'; closeMenus(); app.draw(); };
   app.$('bg-light-button').onclick = () => { app.state.mode = 'light'; closeMenus(); app.draw(); };
   app.$('zoom-in-button').onclick = () => { app.patchLayout({ zoom: Math.min(1.6, app.layout().zoom + .1) }); app.saveLayout(); app.render(); };
@@ -306,7 +306,7 @@ export function wireActions(app) {
   app.$('pan-toggle-button').onclick = () => { app.patchLayout({ panMode: !app.layout().panMode }); app.saveLayout(); app.applyLayout(); };
   app.$('collapse-flow-button').onclick = () => { const next = !app.layout().flowCollapsed; app.patchLayout({ flowCollapsed: next, flowW: next ? app.layout().flowW : Math.max(app.layout().flowW, 220), flowH: next ? app.layout().flowH : Math.max(app.layout().flowH, 90) }); app.saveLayout(); app.applyLayout(); };
   app.$('toggle-flow-layout-button').onclick = () => { const vertical = !app.layout().flowVertical; app.patchLayout({ flowVertical: vertical, flowW: vertical ? Math.min(app.layout().flowW, 390) : Math.max(app.layout().flowW, 720), flowH: vertical ? Math.max(app.layout().flowH, 420) : 116 }); app.saveLayout(); app.applyLayout(); };
-  app.$('reset-layout-button').onclick = () => { app.resetLayout(); closeMenus(); app.toast('Layout reset.'); };
-  app.$('import-json-input').onchange = async (event) => { const file = event.target.files[0]; if (!file) return; Object.assign(app.doc, JSON.parse(await file.text())); app.state.activeQuest = 0; app.state.activeBlock = 0; app.state.inspectorTarget = 'quest'; closeMenus(); app.render(); app.toast('JSON imported.'); };
+  app.$('reset-layout-button').onclick = () => { app.resetLayout(); closeMenus(); app.toast('Visual layout reset. Quest connections retained.'); };
+  app.$('import-json-input').onchange = async (event) => { const file = event.target.files[0]; if (!file) return; Object.assign(app.doc, JSON.parse(await file.text())); app.state.activeQuest = 0; app.state.activeBlock = 0; app.state.activeConnectionId = null; app.state.inspectorTarget = 'quest'; closeMenus(); app.render(); app.toast('JSON imported. Unconnected imported blocks remain loose until linked.'); };
   app.$('snapshot-button').onclick = () => { const link = document.createElement('a'); link.href = app.canvas.toDataURL('image/png'); link.download = 'quest-builder-snapshot.png'; link.click(); closeMenus(); };
 }
