@@ -1,9 +1,9 @@
-import { THUMBNAILS } from './module-config.js?v=1.2.10';
-import { BLOCK_TYPES } from './block-types.js?v=1.2.10';
-import { parseList, escapeHtml } from './quest-schema.js?v=1.2.10';
-import { openEditor, createWizardQuest, wireEditorTabs } from './dialog-editors.js?v=1.2.10';
-import { exportQuestFile, buildQuestExportBundle, downloadProjectPackageFiles, downloadJson, slugify } from './export-json.js?v=1.2.10';
-import { clamp } from './layout-state.js?v=1.2.10';
+import { THUMBNAILS } from './module-config.js?v=1.2.11';
+import { BLOCK_TYPES } from './block-types.js?v=1.2.11';
+import { parseList, escapeHtml } from './quest-schema.js?v=1.2.11';
+import { openEditor, createWizardQuest, wireEditorTabs } from './dialog-editors.js?v=1.2.11';
+import { exportQuestFile, buildQuestExportBundle, downloadProjectPackageFiles, downloadJson, slugify } from './export-json.js?v=1.2.11';
+import { clamp } from './layout-state.js?v=1.2.11';
 
 export function wireMenus(app) {
   document.querySelectorAll('.menu-button').forEach((button) => {
@@ -230,12 +230,12 @@ function renderExportSummary(bundle) {
   const checks = bundle.exportSelfCheck?.checks || [];
   const paths = (bundle.files || []).map((file) => `<li>${escapeHtml(file.path)} <span>(${escapeHtml(file.role)})</span></li>`).join('');
   const statusClass = bundle.exportSelfCheck?.status === 'pass' ? 'export-status-pass' : 'export-status-fail';
-  return `<section class="export-summary"><h3>Export Bundle Summary <span class="${statusClass}">${escapeHtml(bundle.exportSelfCheck?.status || 'unknown')}</span></h3><div class="export-summary-grid"><div class="export-stat"><strong>${bundle.files?.length || 0}</strong><span>files</span></div><div class="export-stat"><strong>${questCount}</strong><span>quests</span></div><div class="export-stat"><strong>${sideQuestCount}</strong><span>side quests</span></div><div class="export-stat"><strong>${bundle.validationWarnings?.length || 0}</strong><span>warnings</span></div><div class="export-stat"><strong>${checks.filter((check) => check.ok).length}/${checks.length}</strong><span>checks</span></div></div><p class="editor-help">Export JSON downloads one review bundle. Export Project Files downloads loose JSON files for the project package. Runtime flow now uses deliberate connector links rather than screen position or list order.</p><ul class="export-paths">${paths}</ul></section>`;
+  return `<section class="export-summary"><h3>Export Bundle Summary <span class="${statusClass}">${escapeHtml(bundle.exportSelfCheck?.status || 'unknown')}</span></h3><div class="export-summary-grid"><div class="export-stat"><strong>${bundle.files?.length || 0}</strong><span>files</span></div><div class="export-stat"><strong>${questCount}</strong><span>quests</span></div><div class="export-stat"><strong>${sideQuestCount}</strong><span>side quests</span></div><div class="export-stat"><strong>${bundle.validationWarnings?.length || 0}</strong><span>warnings</span></div><div class="export-stat"><strong>${checks.filter((check) => check.ok).length}/${checks.length}</strong><span>checks</span></div></div><p class="editor-help">Export JSON downloads one review bundle. Export Project Files downloads loose JSON files for the project package. Runtime flow uses deliberate connector links; connection side routing is saved for readable diagrams.</p><ul class="export-paths">${paths}</ul></section>`;
 }
 
 export function wireActions(app) {
   const addQuestFromMenu = () => { app.addQuest(); closeMenus(); app.toast('Quest added. Create blocks and connect them when ready.'); };
-  const addBlockFromMenu = () => { app.addBlock(); app.toast('Block added loose. Drag from connector circles to join it to the flow.'); };
+  const addBlockFromMenu = () => { app.addBlock(); app.toast('Block added loose. Drag the link icon on a card to connect it.'); };
   app.$('new-quest-wizard-button').onclick = () => { closeMenus(); app.$('wizard-dialog').showModal(); };
   app.$('new-quest-button').onclick = addQuestFromMenu;
   app.$('create-wizard-quest-button').onclick = () => createWizardQuest(app);
@@ -247,7 +247,7 @@ export function wireActions(app) {
   app.$('status-save-button').onclick = () => { localStorage.setItem(app.storageKey, JSON.stringify(app.doc)); app.toast('Saved locally.'); };
   app.$('edit-quest-button').onclick = () => { closeMenus(); openEditor(app, 'quest'); };
   app.$('delete-quest-button').onclick = () => { app.removeQuest(); closeMenus(); app.toast('Quest deleted.'); };
-  app.$('side-add-block-button').onclick = app.$('add-flow-block-button').onclick = () => { app.addBlock(); openEditor(app, 'block'); app.toast('Block added loose. Connect it from its circles when ready.'); };
+  app.$('side-add-block-button').onclick = app.$('add-flow-block-button').onclick = () => { app.addBlock(); openEditor(app, 'block'); app.toast('Block added loose. Drag its link icon to join it to the flow.'); };
   app.$('edit-block-button').onclick = () => { closeMenus(); openEditor(app, 'block'); };
   app.$('delete-block-button').onclick = () => { app.removeBlock(); closeMenus(); app.toast('Block and its connections deleted.'); };
   app.$('save-editor-button').onclick = () => app.toast('Saved.');
@@ -273,7 +273,7 @@ export function wireActions(app) {
     app.$('collapse-selected-button').textContent = app.$('selected-card').classList.contains('collapsed') ? '▸' : '▾';
   };
   document.querySelectorAll('[data-add-block]').forEach((button) => {
-    button.onclick = () => { app.addBlock(button.dataset.addBlock); closeMenus(); openEditor(app, 'block'); app.toast('Block added loose. Connect it using the edge circles.'); };
+    button.onclick = () => { app.addBlock(button.dataset.addBlock); closeMenus(); openEditor(app, 'block'); app.toast('Block added loose. Drag its link icon onto another card to connect it.'); };
   });
   app.$('template-main-quest-button').onclick = () => { app.addQuest({ name: 'New Main Quest', thumbnail: '📜', callingText: 'Define the main Calling for this Quest.', blocks: [{ name: 'Start Scene', type: 'scene', thumbnail: '🖼️' }, { name: 'Key Interaction', type: 'object', thumbnail: '🧩', action: 'interact:key_object' }, { name: 'Calling Fulfilled', type: 'completion', thumbnail: '✅', uiOverlay: 'calling_fulfilled', condition: 'flag_true:quest_complete' }] }); closeMenus(); app.toast('Template blocks added unconnected. Draw the flow deliberately.'); };
   app.$('template-side-quest-button').onclick = () => { app.addQuest({ name: 'New Side Quest', thumbnail: '🗝️', type: 'side', callingText: 'Define the optional objective or Errand.', blocks: [{ name: 'Optional Trigger', type: 'condition', thumbnail: '🔀', condition: 'flag_true:sidequest_available' }, { name: 'Reward', type: 'reward', thumbnail: '🎁', action: 'grant_reward:silver' }] }); closeMenus(); app.toast('Template blocks added unconnected. Draw the flow deliberately.'); };
@@ -296,7 +296,7 @@ export function wireActions(app) {
     closeMenus();
   };
   app.$('library-note-button').onclick = () => { app.help('Linked Libraries', '<p>Quest Builder references completed scenes, archetype objects, dialogue IDs, audio IDs, Capra popup templates, Codice entries, UI overlays, rewards, route unlocks, and completion flags. It should not own those libraries directly.</p>'); closeMenus(); };
-  app.$('quick-start-button').onclick = () => { app.help('Quick Start', '<p>Add blocks as loose workspace cards. Move a card by dragging its body. Create quest flow by dragging from a green output circle to an input circle on another node. Click a connector line and press Delete to remove it. Card position and floating-list ordering do not alter the connections.</p>'); closeMenus(); };
+  app.$('quick-start-button').onclick = () => { app.help('Quick Start', '<p>Add blocks as loose workspace cards. Move a card by dragging its body. Create quest flow by dragging the 🔗 icon beside its pencil onto another block or END. Click an attached connector circle to clear that connection. Card position and floating-list ordering do not change connections.</p>'); closeMenus(); };
   app.$('about-button').onclick = () => { app.help('About Quest Builder', '<p>Quest Builder assembles scenes, actions, linked dialogue/audio, objects, Capra feedback, Codice updates, UI overlays, rewards, map unlocks, and completion flags into playable Quest flow. Flow logic is authored through explicit connector links.</p>'); closeMenus(); };
   app.$('bg-dark-button').onclick = () => { app.state.mode = 'dark'; closeMenus(); app.draw(); };
   app.$('bg-light-button').onclick = () => { app.state.mode = 'light'; closeMenus(); app.draw(); };
