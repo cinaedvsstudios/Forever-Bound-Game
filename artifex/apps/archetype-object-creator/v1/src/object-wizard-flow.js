@@ -1,8 +1,8 @@
-import { initObjectWizardSessions } from './object-wizard-sessions.js?v=1.34';
-import { createObjectWizardStart } from './object-wizard-start.js?v=1.34';
-import { createObjectWizardCapabilities } from './object-wizard-capabilities.js?v=1.34';
-import { createObjectWizardBasicDetails } from './object-wizard-basic-details.js?v=1.34';
-import { createObjectWizardBuildChecklist } from './object-wizard-build-checklist.js?v=1.34';
+import { initObjectWizardSessions } from './object-wizard-sessions.js?v=1.35';
+import { createObjectWizardStart } from './object-wizard-start.js?v=1.35';
+import { createObjectWizardCapabilities } from './object-wizard-capabilities.js?v=1.35';
+import { createObjectWizardBasicDetails } from './object-wizard-basic-details.js?v=1.35';
+import { createObjectWizardBuildChecklist } from './object-wizard-build-checklist.js?v=1.35';
 
 const wizardState = {
   source: '',
