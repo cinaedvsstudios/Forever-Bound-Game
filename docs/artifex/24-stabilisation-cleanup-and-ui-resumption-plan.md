@@ -6,22 +6,61 @@ This plan records the controlled path back to safe visible UI work after the lar
 
 The goal is **not** to stop Artifex development or demand a full rewrite before any design work continues. The goal is to restore a known, reviewable baseline so that UI changes can resume without silently stacking more structural debt underneath them.
 
-This is a planning document only. It does not approve runtime edits, PR merges, branch reuse, mass file moves or refactors by itself.
-
-## Why this plan exists
-
-A current-main integration review reported that Artifex has useful foundations already in place, including shared project-folder infrastructure, central contract documents, canonical starter-project structure, and working or partly integrated app surfaces. It also reported drift across live app versions, documentation, Project Manager / Project Editor naming, save-state adoption, wrapper/patch layers, and open PR relevance.
-
-The existing recovery record in `docs/artifex/23-current-main-scan-and-pr20-recovery.md` already locks an important working rule: inspect current `main` first, do not use stale PR branches as the source of truth, and recreate only still-needed changes on fresh branches after review.
-
-The user's priority is now to stabilise the repository enough to safely resume UI design and iteration, while making two cleanup goals central:
+The two central cleanup goals are:
 
 1. **Move genuinely unused, superseded and obsolete files into clearly labelled archive folders rather than leaving dead implementation mixed with active runtime code.**
-2. **Integrate small hotfixes, patch layers and transitional wrappers into the permanent files/modules that should own that behaviour, then archive the replaced files after verification.**
+2. **Integrate small hotfixes, patch layers and transitional wrappers into the permanent modules that should own that behaviour, then archive the replaced files after verification.**
 
-## Current authority set
+This document is a plan and progress tracker. It does not authorise a repo-wide automatic cleanup, blind PR merges, mass file moves or hidden implementation work.
 
-Until deliberately superseded, planning and implementation work should check current `main` against these documents:
+## Current Progress Status — Updated 1 June 2026
+
+### Completed: Phase 0 — Preserve current truth and stop hidden drift
+
+The read-only Phase 0 audit has been reviewed and recorded in:
+
+```text
+artifex/shared/todo-guide/audits/2026-06-01-change-timeline.md
+artifex/shared/todo-guide/audits/2026-06-01-current-main-baseline-matrix.md
+```
+
+Phase 0 confirmed:
+
+```text
+- A large mixed merge on 31 May brought runtime, shared-service, documentation and asset work into main across several apps.
+- Scene Editor v0.34 is on main but failed manual acceptance and requires ownership consolidation before further UI implementation.
+- Archetype Object Creator V1.35 is on main but explicitly unverified.
+- Effect Editor has baseline ambiguity between its emergency primary route and the index2 clean route.
+- PR #20 is unsafe/abandoned as a merge target and must not be used as a development base.
+- PR #9 requires diff-based salvage review only if Project Editor stabilisation is selected later.
+- PR #17 is historical evidence only and should not be merged.
+```
+
+### Active now: Phase 1 — Archive and hotfix consolidation inventory
+
+The next step is a **read-only inventory** of active apps and shared utilities. It must identify unused/superseded files and map active patch/hotfix/wrapper behaviour to the permanent module that should own it.
+
+No files are to be moved, archived, rewritten or deleted in this phase.
+
+Target output:
+
+```text
+artifex/shared/todo-guide/audits/2026-06-01-archive-and-hotfix-inventory.md
+```
+
+### Not yet authorised
+
+```text
+- Scene Editor consolidation implementation.
+- Any archive moves.
+- Any hotfix integration work.
+- Any UI implementation pass.
+- Any merge or reuse of PR #9, PR #17 or PR #20.
+```
+
+## Current Authority Set
+
+All stabilisation and later implementation work must use current `main` and check against:
 
 ```text
 docs/artifex/00-index.md
@@ -32,104 +71,131 @@ docs/artifex/20-asset-intake-workflow.md
 docs/artifex/21-template-game-project-contract.md
 docs/artifex/22-sound-archetype-generator.md
 docs/artifex/23-current-main-scan-and-pr20-recovery.md
+docs/artifex/24-stabilisation-cleanup-and-ui-resumption-plan.md
 artifex/shared/todo-guide/README.md
 artifex/shared/todo-guide/all-apps-todos.json
 ```
 
 App-local docs remain useful, but any conflict with the authority set must be flagged and decided rather than silently followed.
 
-## Non-negotiable working controls
+## Non-Negotiable Working Controls
 
-The following controls apply during stabilisation:
+1. **Current `main` is the only implementation baseline.** Old PRs and branches may be inspected as evidence, but may not be used as implementation bases unless the user explicitly approves an exception.
+2. **Audit work is read-only.** Audits must not edit files, update docs, create branches, merge PRs or perform cleanup while investigating.
+3. **Implementation occurs only after the user approves a named pass.** Each pass must state the app, exact purpose, permitted file area, prohibited changes and manual acceptance checks before edits begin.
+4. **One app and one concern per implementation pass.** UI, save-contract integration, schema work and hotfix consolidation are separate workstreams unless an unavoidable dependency is explicitly approved.
+5. **No new patch/hotfix/wrapper files as the normal fix route.** Valid behaviour must move into permanent ownership rather than receiving another overlay.
+6. **No silent multi-hour implementation.** Every task must stop with a report after the agreed pass.
+7. **Archive rather than delete obsolete work initially.** Archiving preserves history while clearing active folders.
+8. **A manual acceptance gate is required before the next implementation pass starts.** Static checks do not replace user review of visible behaviour.
 
-1. **Current `main` is the only implementation baseline.** Old PRs and branches may be inspected as evidence or idea sources, but not used as development bases unless the user explicitly approves that exception.
-2. **Audit work is read-only.** An audit must not edit files, update docs, create branches, merge PRs or perform cleanup as it investigates.
-3. **Implementation occurs only after the user approves a named pass.** Each pass must state the app, exact purpose, permitted file area, prohibited changes and manual acceptance checks before editing begins.
-4. **One app and one concern per implementation pass.** UI, save-contract integration, schema work and hotfix consolidation must not be bundled together unless the user explicitly approves the dependency.
-5. **No new patch/hotfix/wrapper files as the normal fix route.** Behaviour must move toward a permanent owning module rather than receiving another overlay.
-6. **No silent multi-hour implementation.** Every task must stop with a report after the agreed pass, even if further work appears obvious.
-7. **Archive rather than delete obsolete work initially.** Archiving keeps history inspectable while clearing active runtime folders. Deletion should be a later deliberate decision only.
-8. **A live/manual acceptance gate is required before the next pass starts.** Static checks are useful, but they do not replace the user's review of visible behaviour.
+## Stable Enough for UI Work
 
-## Definition of stable enough for UI work
-
-An app is stable enough to resume UI-only changes when all of these are true:
+An app may resume UI-only implementation only when:
 
 ```text
-- Its current main entry point and visible version are recorded.
-- Its core existing function has a short manual smoke test result.
-- There is no unresolved runtime blocker that would invalidate the proposed UI work.
-- Open branches/PRs overlapping the same code area have been classified.
-- Active patch/wrapper files affecting that UI area are either documented as temporary owners or already consolidated.
-- The approved UI scope excludes unrelated save/schema/integration refactors.
+- Its current-main entry point and visible version are recorded.
+- Its core function has a short manual smoke-test result.
+- No unresolved runtime blocker invalidates the proposed UI work.
+- Overlapping branches/PRs have been classified.
+- Active patch/wrapper files affecting the UI area have been consolidated or explicitly accepted as temporary and non-conflicting.
+- Unused files affecting the app have been inventoried and archived where approved.
+- The UI scope explicitly excludes unrelated save/schema/integration refactors.
 - A rollback or pre-change baseline is recorded.
 ```
 
-This does not require every Artifex app to be complete. Stability is approved app-by-app.
+Stability is approved app-by-app; the whole platform does not need to be complete before one controlled UI lane reopens.
 
-## Stabilisation sequence
+## Phase 0 Outcome Summary
 
-### Phase 0 — Preserve current truth and stop hidden drift
+### Open PR classification
 
-**Purpose:** establish what is actually on `main`, what happened during the uncontrolled period, and what is only branch/PR debris.
+| PR | Area | Classification | Handling rule |
+|---|---|---|---|
+| #9 | Project Editor / historical Project Manager task-workspace and inspector work | Requires diff-based salvage review | Do not merge as-is. Compare only later if Project Editor is selected for stabilisation. |
+| #17 | Effect Editor index2 integration | Historical evidence only | Do not merge. Use only to understand intended index2 direction if required. |
+| #20 | Creation Guide / Project Editor cleanup | Unsafe / abandoned | Do not merge or use as a base. Recreate approved ideas only from fresh current `main`. |
 
-Required read-only outputs:
+### App-level implementation safety
 
-1. A 31 May 2026 change timeline listing commits, PRs and branches touched, files affected, modules affected, whether changes reached `main`, and whether the change was runtime, documentation, asset, shared service or workflow work.
-2. A current-main app/service matrix listing entry point, visible version, project save method, active wrappers/patches, known blockers and safe next action.
-3. An open-PR classification: current/useful, historical evidence only, unsafe/abandoned, or requires diff-based salvage review.
+| Area | Current direction | UI discussion | UI implementation status |
+|---|---|---:|---:|
+| Scene Editor | First later stabilisation pass: consolidate Object Inspector and transform ownership | Allowed | **Blocked** pending accepted correctness repair |
+| Archetype Object Creator | Validate V1.35 project save/sound integration and identify wrapper/archive candidates | Allowed | **Blocked** pending validation |
+| Effect Editor | Decide primary route versus index2 accepted baseline; identify rescue/archive debt | Allowed | Hold |
+| Creation Guide | Confirm current baseline and any residual package/wrapper work from current `main`; do not use PR #20 | Allowed | Hold pending baseline |
+| Project Editor | Inventory naming, save boundary and wrapper composition; do not use PR #9/#20 as implementation bases | Allowed | Hold pending baseline |
+| Puzzle Creator | Quick baseline check before narrow visual work | Allowed | Likely early safe UI lane after check |
+| Sound Generator preview | Quick preview smoke test only; do not expand caller integration | Allowed | Likely early safe UI lane after check |
+| Quest Builder | Quick baseline check before presentation-only work | Allowed | Possible safe UI lane after check |
+| Hub | Quick link/version baseline check | Allowed | Possible safe UI lane after check |
 
-Rules:
+## Phase 1 — Archive and Hotfix Consolidation Inventory
 
-- No implementation during Phase 0.
-- No old PR merges during Phase 0.
-- The output must distinguish verified current-main facts from recommendations or inferred risks.
+### Purpose
 
-Target record locations:
+Identify dead files and active repair layers without moving or rewriting anything prematurely. This phase must produce the evidence needed for safe archiving and safe consolidation.
 
-```text
-artifex/shared/todo-guide/audits/2026-06-01-change-timeline.md
-artifex/shared/todo-guide/audits/2026-06-01-current-main-baseline-matrix.md
-```
+### What must be inspected
 
-### Phase 1 — Create the archive and hotfix consolidation inventory
-
-**Purpose:** identify dead files and patch-layer behaviour without moving or rewriting anything prematurely.
-
-The audit must inspect each active app and shared utility for:
+Each active app and shared utility must be inspected for:
 
 ```text
 - unused files not imported or referenced by the current entry point;
-- superseded versioned helper files;
-- old patch, fix, override, rescue, restore or wrapper modules;
-- duplicated UI injection, event binding, rendering or save paths;
-- docs or test harnesses that are intentionally retained but not runtime code;
-- files that look unused but are still loaded dynamically or referenced by old project data.
+- superseded versioned helpers;
+- files named or functioning as patch, fix, override, rescue, restore or wrapper layers;
+- duplicate UI injection, event-binding, rendering or save paths;
+- docs/test harnesses intentionally retained but not runtime code;
+- files that appear unused but may be loaded dynamically or referenced by project data.
 ```
 
-For every candidate, record:
+### Required inventory fields
 
 | Field | Meaning |
 |---|---|
-| File path | Existing current-main location |
+| File path | Existing location on current `main` |
+| App/shared area | Which surface owns or loads it |
 | Classification | active owner / active transitional wrapper / unused / superseded / uncertain / evidence-only |
 | Referenced by | Imports, HTML script tags, dynamic loading, docs or project data |
-| Behaviour contained | What must not be lost |
+| Behaviour contained | What must not be lost if retired |
 | Permanent owner | Where retained behaviour belongs if consolidated |
 | Proposed action | retain / consolidate then archive / archive only / investigate further |
+| Archive destination | Proposed destination if later approved |
 | Test required | How absence or replacement will be proven safe |
+| Priority | blocker / high / medium / low |
 
 No file is eligible for archiving merely because its filename contains `patch`, `old`, `v12`, `fix` or `legacy`. It must be shown to be unused or safely replaced first.
 
-Target record location:
+### Phase 1 app priority
+
+The inventory must cover all active apps and shared utilities, but should prioritise evidence in this order:
+
+1. **Scene Editor**, because its current runtime has a confirmed correctness failure and known duplicated behaviour ownership.
+2. **Archetype Object Creator**, because V1.35 is on `main` but explicitly unverified.
+3. **Effect Editor**, because its route and rescue-module baseline is unclear.
+4. **Creation Guide** and **Project Editor**, because PR #20 is not reusable and both require current-main-only decisions.
+5. **Puzzle Creator**, **Sound Generator**, **Quest Builder** and **Hub**, to identify the first safe UI-only lane.
+6. **Shared utilities**, including project-folder, active-project, health/todo and registered-content surfaces.
+
+### Phase 1 deliverable and gate
+
+Deliverable:
 
 ```text
 artifex/shared/todo-guide/audits/2026-06-01-archive-and-hotfix-inventory.md
 ```
 
-### Phase 2 — Archive genuinely unused and superseded files
+Approval gate:
 
-**Purpose:** remove dead clutter from active source folders while preserving traceability.
+```text
+After the inventory is reviewed, the user chooses either:
+- one app-specific consolidation implementation pass; or
+- one app confirmed safe enough for a restricted UI-only baseline pass.
+```
+
+## Phase 2 — Archive Verified Unused and Superseded Files
+
+This phase begins only after the Phase 1 inventory has been reviewed and individual moves approved.
 
 Recommended archive locations:
 
@@ -139,208 +205,76 @@ artifex/shared/archive/legacy-2026-06-01/
 docs/archive/<area>/
 ```
 
-Archive rules:
+Rules:
 
 1. Move only files confirmed as unused, superseded or evidence-only.
-2. Do not archive an active wrapper until the equivalent permanent implementation has been verified.
-3. Keep a README inside each new archive folder listing:
-   - files moved;
-   - former location;
-   - why they were archived;
-   - which replacement is active, if any;
-   - commit/PR and manual test reference.
+2. Do not archive an active wrapper until equivalent permanent behaviour is verified.
+3. Keep a README inside each new archive folder listing moved files, former locations, reason for archiving, active replacement if any, and commit/manual-test reference.
 4. Update imports, HTML loading and cache references only as part of an approved app-specific pass.
 5. Run static reference checks and manual app smoke checks after each archive pass.
-6. Archive one app at a time; do not run a mass repo move.
+6. Archive one app at a time; never run a mass repo move.
 
-### Phase 3 — Integrate small hotfixes into permanent owners
+## Phase 3 — Integrate Small Hotfixes into Permanent Owners
 
-**Purpose:** convert temporary repair architecture into maintainable runtime ownership.
+This phase converts temporary repair architecture into maintainable runtime ownership.
 
-This is a primary stabilisation goal, not an optional tidying exercise. A UI pass is not safe where two live systems can still render, bind or write the same state.
-
-For each app, produce a consolidation map before editing:
+For every approved app pass, prepare a consolidation map first:
 
 | Current hotfix/wrapper behaviour | Permanent owner module | Files to retire/archive after success | Manual acceptance gate |
 |---|---|---|---|
-| Example: injected controls after render | real UI renderer / control owner | patch module | controls exist once and affect the selected item only |
+| Example: controls injected after render | Real UI renderer/control owner | Patch module | Controls exist once and affect selected item only |
 
-Implementation rules:
+Rules:
 
 1. Consolidate behaviour into existing permanent owning modules; do not add a new consolidation wrapper.
-2. Preserve existing intended behaviour before changing design or adding new capability.
-3. Remove the retired import/script load only after the permanent owner passes tests.
-4. Move retired files to the app archive folder in the same reviewed pass or in a dedicated immediately-following archive pass.
+2. Preserve intended current behaviour before adding new capability or redesign.
+3. Remove the retired import/script load only after the permanent owner passes checks.
+4. Move retired files to the approved archive folder in the same reviewed pass or an immediately following archive-only pass.
 5. Record exactly which behaviours moved and which were deliberately removed.
 6. Stop for user testing after each app pass.
 
-Priority order for consolidation decisions:
+The currently expected first stabilisation implementation pass is **Scene Editor: consolidate Object Inspector and transform ownership**, but this remains subject to review of the Phase 1 inventory before approval.
 
-#### Priority A — Scene Editor blocker cleanup
+## Phase 4 — Resolve Only Integration Blockers That Prevent Chosen UI Work
 
-The documented selected-object/control failure means Scene Editor is not currently a safe implementation target for new UI work. Its first task is to consolidate control/inspector/movement ownership so changing one selected object cannot modify another. New UI implementation remains blocked until that baseline is accepted.
+Not every contract mismatch blocks visual development. Resolve only blockers that make the chosen UI work unreliable or likely to be overwritten.
 
-#### Priority B — Creation Guide cleanup verification
-
-Confirm its current visible version, starter-structure behaviour, active bootstrap/wrapper status and documentation alignment. Consolidate only verified residual patch/wrapper behaviour. Creation Guide UI work can resume after its baseline is agreed.
-
-#### Priority C — Project Editor ownership and naming cleanup
-
-Inventory the current wrapper composition, remaining `Project Manager` user-facing wording and save-state boundaries. Keep connected-folder read/write integration as a separate explicitly approved structural pass rather than hiding it inside UI polish or hotfix cleanup.
-
-#### Priority D — Effect Editor accepted baseline and PR triage
-
-Confirm the accepted live baseline before changing it. Old PR work should be diffed against `main` and either discarded or deliberately recreated; it must not be blindly merged into a moving app.
-
-#### Priority E — Remaining apps and shared utilities
-
-Quest Builder, Puzzle Creator, Archetype Object Creator, Sound Generator and shared utilities receive smaller baseline/inventory checks. The Sound Generator preview is a likely early candidate for UI discussion or UI-only change once a quick smoke test confirms its present behaviour.
-
-### Phase 4 — Resolve only integration blockers that prevent chosen UI work
-
-**Purpose:** avoid turning stabilisation into an endless structural rewrite.
-
-Not every contract mismatch blocks visual development. For the app selected for the next UI pass, resolve only the blockers that would make the UI work unreliable or likely to be overwritten.
-
-Examples of blockers:
+Blockers include:
 
 ```text
 - selected-item controls affect the wrong object;
-- the visible UI is still inserted by competing wrappers;
-- the app entry point or live baseline is unclear;
-- an unreviewed branch is modifying the same active files;
-- the proposed UI directly involves save/load behaviour that is not yet defined.
+- visible UI is still inserted by competing wrappers;
+- app entry point or live baseline is unclear;
+- unreviewed branch work overlaps the same active files;
+- proposed UI requires save/load behaviour that is not settled.
 ```
 
-Examples of non-blocking later work for an unrelated UI pass:
+Non-blocking later work for an unrelated UI pass may include wider Project Editor connected-folder adoption, stale wording in another app or a future cross-app feature unrelated to the chosen UI surface.
 
-```text
-- broader Project Editor connected-folder adoption while designing Sound Generator visuals;
-- stale README wording in another app;
-- a future cross-app feature that does not affect the chosen UI surface.
-```
+## Phase 5 — Reopen Controlled UI Changes App-by-App
 
-### Phase 5 — Reopen controlled UI changes app-by-app
+Once one app satisfies the stability rules:
 
-Once an app satisfies the stability definition, UI work can resume under a strict lane:
-
-1. User selects one app and one visible design goal.
+1. The user chooses one app and one visible design goal.
 2. A baseline screenshot/test URL and version are recorded before edits.
-3. The implementation brief explicitly prohibits schema, save, integration and architectural changes unless approved.
-4. The implementation edits owning UI/CSS modules only; it does not add patch files.
-5. The agent reports every changed file and gives an exact live test URL.
+3. The implementation brief prohibits schema, save, integration and architecture changes unless explicitly approved.
+4. Changes are made in permanent owning UI/CSS modules only; no patch files are added.
+5. The agent reports every changed file, checks run and an exact live test URL.
 6. The user accepts or rejects the pass before more work starts.
 
-## App-by-app current planning status
+## Current Next Step
 
-This table is a planning classification based on the reported audit and existing recovery record. It must be confirmed by current-main inspection before implementation.
+Run the Phase 1 read-only archive and hotfix consolidation inventory from current `main`. Do not modify files or create cleanup commits during that audit. The inventory must be reviewed before any app-specific consolidation or archive work is authorised.
 
-| Area | Immediate handling | UI discussion | UI implementation |
-|---|---|---:|---:|
-| Sound Generator preview/shared popup | Quick baseline smoke check; record owning UI/CSS files | Allowed now | Likely earliest safe UI lane after check |
-| Creation Guide | Confirm live version, starter behaviour and wrapper state; reconcile only verified drift | Allowed | After baseline approval |
-| Quest Builder | Confirm export/runtime changes and live load | Allowed | After baseline approval |
-| Puzzle Creator | Confirm current app status and overlapping changes | Allowed | After baseline approval |
-| Archetype Object Creator | Confirm sound integration and wrapper/archive candidates | Allowed | After baseline approval |
-| Project Editor | Inventory wrappers, naming drift and save-state boundary; structural work separately scoped | Allowed | Restrict until overlapping structural scope is clear |
-| Scene Editor | Consolidate object-control ownership blocker first | Allowed | Blocked until accepted repair baseline |
-| Effect Editor | Determine accepted baseline and classify PR overlap | Allowed | Hold implementation until baseline decision |
-
-## Codex work packages
-
-Codex should be used as a controlled workbench. The user reviews scope and results before implementation continues.
-
-### Package A — Read-only timeline and baseline reports
-
-```text
-AUDIT ONLY. Do not modify, create, delete, rename, merge, close, commit, push or update any repository file, branch, pull request, issue, workflow or document.
-
-Starting from current main, produce:
-1. A timeline of repository changes on 2026-05-31, showing branches/PRs/commits, files affected, apps affected, whether each change reached main, and whether each change was runtime, docs, shared service, asset or workflow work.
-2. A current-main app/service baseline matrix listing entry point, visible version, save source of truth, wrapper/patch debt, known blocker and safe next action.
-3. A classification of open PRs/branches as current/useful, historical evidence only, unsafe/abandoned, or needing diff-based salvage review.
-
-Report only. Do not implement or clean anything.
-```
-
-### Package B — Read-only archive and hotfix inventory
-
-```text
-AUDIT ONLY. Do not move or edit files.
-
-From current main, inspect every active Artifex app and shared utility for unused files, superseded implementations, patch/fix/override/wrapper files, duplicated behaviour owners and obsolete demo/runtime files.
-
-For each candidate, report its current path, references/imports, behaviour contained, permanent owner if the behaviour must be integrated, recommended action, archive destination and tests needed before any move.
-
-The purpose is to prepare a safe archive-and-consolidation plan, not to perform it.
-```
-
-### Package C — One approved consolidation implementation pass
-
-Use this only after reviewing the inventory and choosing one app:
-
-```text
-IMPLEMENTATION PASS: <one named app> hotfix consolidation only.
-
-Start from fresh current main in a new branch. Read the current global Artifex contract documents first.
-
-Implement only the approved consolidation items for <app>. Move existing valid behaviour from identified hotfix/wrapper files into the stated permanent owning modules. Do not add new patch, override, helper or rescue layers. Do not change unrelated UI design, file schemas, save contracts or other apps.
-
-After replacement is verified, archive only the retired files approved in the plan and add an archive README explaining their former role and replacement.
-
-Run appropriate checks, provide the exact changed-file report and live manual test URL, then stop for user acceptance.
-```
-
-### Package D — One approved UI-only pass after stabilisation
-
-```text
-IMPLEMENTATION PASS: <one named app> UI only.
-
-Start from the accepted baseline on current main. Read the current global Artifex display and ownership rules first.
-
-Implement only this approved visible design change: <specific UI goal>.
-
-Do not change schemas, project-folder/save behaviour, imports outside this app, cross-app integration, business logic or archived/legacy files. Do not add patch/hotfix/wrapper files. Edit permanent owning UI/CSS files only.
-
-Report changed files, checks run and the exact live test URL. Stop for manual acceptance before any further pass.
-```
-
-## Expected deliverables and approval gates
-
-| Deliverable | Type | User approval required before next action? |
-|---|---|---:|
-| Change timeline and current-main baseline matrix | Read-only report | Yes |
-| Archive/hotfix candidate inventory | Read-only report | Yes |
-| App-specific consolidation plan | Plan only | Yes |
-| One app's hotfix integration/archive pass | Code change | Manual live acceptance required |
-| One app's approved stable baseline record | Status record | Yes |
-| UI-only pass | Code change | Manual live acceptance required |
-
-## What is explicitly not authorised by this plan
-
-This document does not authorise:
+## What Is Explicitly Not Authorised
 
 ```text
 - a repo-wide automatic cleanup;
-- moving every file with an old-looking name into archive;
-- deleting history or old implementations without an inventory;
+- moving every old-looking file into archive without reference/behaviour evidence;
+- deleting old implementations instead of initially archiving them;
 - merging PR #20 or using it as a development base;
-- blindly merging other open PRs without a current-main diff review;
+- blindly merging PR #9 or PR #17;
 - a mass save-schema or connected-folder rewrite;
-- bundling architecture work into a visual UI pass;
-- agents continuing to make changes without a stop-and-report checkpoint.
+- bundling architecture work into a UI pass;
+- continuing implementation work without a stop-and-report checkpoint.
 ```
-
-## Practical outcome required before returning to normal UI iteration
-
-Normal UI iteration may resume on an individual app once:
-
-```text
-1. its live/current-main baseline is known and manually checkable;
-2. overlapping branch/PR work is classified;
-3. active hotfix or wrapper debt in the affected UI area has either been consolidated or explicitly accepted as temporary and non-conflicting;
-4. unused files affecting that app have been inventoried and safely archived where appropriate;
-5. the user approves a UI-only scope with no hidden structural work.
-```
-
-The intended end state is not a frozen project. It is a project where active files mean active code, archived files are clearly historical, temporary fixes have been absorbed into proper owners, and each UI improvement can be tested and accepted without discovering an unrelated architectural rewrite underneath it.
