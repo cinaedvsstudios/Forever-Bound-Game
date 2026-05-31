@@ -2,43 +2,95 @@
 
 ## Purpose
 
-The Archetype Object Creator is the Artifex module for creating reusable non-FX Object Archetypes.
+The Archetype Object Creator is the Artifex authoring module for reusable non-FX Object Archetypes: characters, animals, NPCs, enemies, props, doors, pickups, markers, searchable caches, throwable objects, hazards and interactable objects.
 
-It is not the same thing as the Asset Library. The Asset Library stores raw files and file metadata. The Archetype Object Creator turns those assets into reusable game things with properties, animation sets, behaviours, tags, defaults, collision boxes, interaction zones, and runtime meaning.
+It is not the Asset Library. The Asset Library owns promoted/final media assets and registered generated audio resources. Object Creator links those final `asset_` resources into reusable gameplay definitions with animation sets, behaviours, tags, defaults, collision boxes, interaction zones and runtime meaning.
 
-It is also not the FX Editor. The FX Editor creates FX Archetypes such as fog, magic glows, particles, audio-reactive vignettes, and video/plate effects. This module creates Object Archetypes such as characters, animals, NPCs, enemies, props, doors, pickups, markers, searchable caches, throwable objects, hazards, and interactable objects.
+It is not the Effect Editor. Effect Editor owns reusable FX definitions; Object Creator owns reusable non-FX object definitions.
 
-## Current Build
+## Current Implementation Status
 
-The current first tool build lives here:
+Current visible build: `V1.35`  
+Status: **implemented on `main`, but V1.35 integration is unverified and not accepted as clean/stable yet.**
+
+Read the handover before further editing:
+
+```text
+artifex/apps/archetype-object-creator/docs/current-state-v1.35-review.md
+```
+
+The V1.35 badge indicates the code currently loaded by the app. It does not mean the added project-save and Sound Generator integration has completed acceptance testing.
+
+## Required Contracts Before Editing
+
+Read these before making changes:
+
+```text
+docs/artifex/18-color-and-display-rules.md
+docs/artifex/19-project-file-contracts.md
+docs/artifex/19a-project-starter-file-schemas.md
+docs/artifex/20-asset-intake-workflow.md
+docs/artifex/22-sound-archetype-generator.md
+artifex/shared/todo-guide/README.md
+artifex/apps/archetype-object-creator/docs/todo.md
+artifex/apps/archetype-object-creator/docs/current-state-v1.35-review.md
+```
+
+## Current App Files
 
 ```text
 artifex/apps/archetype-object-creator/index.html
 artifex/apps/archetype-object-creator/v1/styles.css
+artifex/apps/archetype-object-creator/v1/right-panel-layout.css
+artifex/apps/archetype-object-creator/v1/object-wizard.css
 artifex/apps/archetype-object-creator/v1/src/
 ```
 
-The first version deliberately keeps the main editor shell architecture from the Effect Editor: top menu bar, left editor panel, central preview workspace, bottom action panel, local browser save, JSON import/export, templates, validation, and canvas snapshot.
-
-The effect-specific systems have been removed. There are no particle engines, emitter dynamics, colour stops, blend modes, glow controls, FX layers, or effect archetype presets.
-
-## Created Data
-
-This module creates and edits Object Archetypes that are intended to be stored in the active project's object/archetype library, for example:
+Current active entry point:
 
 ```text
-projects/<project-id>/library/objects.json
+artifex/apps/archetype-object-creator/v1/src/editor-app.js
 ```
 
-A Scene Editor should place instances of these Object Archetypes into scenes instead of placing only loose static image files.
+The active entry point currently initialises the base editor, project-folder storage, template icons, wizard flow, Step 5 layout, Step 5 enhancements, Reference panel, Frame Fix and asset-package/ZIP behaviour.
 
-## Core Rule
+## Canonical Data Ownership And Save Paths
+
+The canonical contract is now:
+
+```text
+Object archetype file: archetypes/objects/archobj_<slug>.json
+Object index:          archetypes/object-index.json
+Final media/audio:     referenced by registered asset_ IDs only
+```
+
+Object Creator owns:
+
+- reusable non-FX object archetypes;
+- referenced final asset IDs for object visual/action/audio behaviour;
+- its object-index entry when deliberately saving a final object record.
+
+Object Creator must not own:
+
+- scene instances or scene layout;
+- Quest or Puzzle internals;
+- FX definitions;
+- copied procedural sound recipes;
+- permanent references to unpromoted browser preview/source files.
+
+The intended workflow from the central contract is:
+
+- connected project-folder save is the normal final save route once verified;
+- browser/local storage is draft and recovery only;
+- JSON/ZIP downloads are backup/fallback only.
+
+## Core Rule: Dialogue Is Not A Gameplay Sprite Action
 
 Talk is not a gameplay sprite action.
 
-Dialogue/talking is handled by a separate close-up Dialogue Portrait system. Gameplay sprite sheets only need full-body gameplay actions such as idle, walk, turn, pick up, hold, throw, use item, sing/cast, take damage, death, enter door, or exit door.
+Dialogue/talking is handled by a separate close-up Dialogue Portrait system. Gameplay sprite sheets use full-body gameplay actions such as idle, walk, turn, pick up, hold, throw, use item, sing/cast, take damage, death, enter door or exit door.
 
-If a visible full-body dialogue moment is needed, use gameplay actions such as gesture, give item, receive item, or interact/assist. Do not create a tiny body-sprite mouth-loop action.
+A visible full-body dialogue moment should use gameplay actions such as gesture, give item, receive item or interact/assist, not a tiny body-sprite mouth-loop action.
 
 ## Object Archetype Types
 
@@ -83,7 +135,7 @@ Hazard
 
 ## Gameplay Sprite Actions
 
-Gameplay sprite actions are full-body actions used in scenes, travel, battle, and interaction.
+Gameplay sprite actions are full-body actions used in scenes, travel, battle and interaction.
 
 ```text
 idle
@@ -141,13 +193,13 @@ green eye overlay
 custom expression
 ```
 
-## Example Data Created By The Tool
+## Object Data Fields
 
-Each Object Archetype may define:
+An Object Archetype may define:
 
 ```text
 schema version
-archetype ID
+archobj_ ID
 name
 category
 role/template
@@ -165,53 +217,72 @@ runtime behaviour flags
 gameplay sprite actions
 portrait actions
 placement defaults
-export target
+productionAssets requirements and requirementOrder
+export target / export paths
 notes
 ```
+
+## Implemented V1.34 Work Requiring Verification
+
+V1.34 attempted the Step 5 regression repair and compact layout pass:
+
+- Step 5 task state stores under `productionAssets.requirements[requirementId]`.
+- Task order stores under `productionAssets.requirementOrder`.
+- The first new-checklist tasks are `Gameplay Sprite Asset ID` and `Dialogue Portrait Asset ID`.
+- The returned instruction line was removed.
+- Left-list task labels and metadata were separated visually.
+- Desktop Step 5 overflow/clipping was reduced.
+- Frame Fix was retained with its two-column correction layout.
+
+This requires persistence and browser verification before being regarded as safe.
+
+## Provisional V1.35 Work Requiring Audit
+
+V1.35 currently includes code for:
+
+- equal-size Step 5 lower buttons and a `Backup ZIP` label;
+- a renamed `Mark Task Ready` task-level checkbox;
+- File menu project-folder actions;
+- Step 5 `Save Draft`, `Save Project` and `Finish` controls;
+- a new active `object-project-storage.js` module intended to write the canonical object file and update `archetypes/object-index.json`;
+- a `🎛️` Sound Events control intended to open the shared Procedural Sound Generator and assign a registered `asset_sfx_...` ID.
+
+These changes are **not accepted as complete**. The frame-upload/project-save handling is particularly provisional: current code removes browser image data from the project-save object and adds preview/draft handling fields. That must be audited against the approved Asset Library/promotion workflow before it becomes a settled data contract.
 
 ## Relationship To Other Modules
 
 ```text
-Asset Library = stores raw files and asset groups.
-Archetype Object Creator = creates reusable non-FX Object Archetypes.
-Object/Archetype Library = stores the created Object Archetypes.
-Scene Editor = places Object Instances into scenes.
-FX Editor = creates FX Archetypes, not Object Archetypes.
-Build Game = audits, resolves, and compiles archetype references into runtime data.
+Asset Library = owns promoted final assets and registered generated audio assets.
+Archetype Object Creator = owns reusable non-FX Object Archetypes.
+Scene Editor = places Object Instances that reference archetype IDs.
+Quest Builder / Puzzle Creator = reference stable object IDs where needed; do not author object internals.
+Effect Editor = owns reusable FX Archetypes, not Object Archetypes.
+Shared Procedural Sound Generator = creates/registers synth audio assets; callers store asset_ IDs only.
+Build Game / Health Guide = validate and package references; they do not author Object Creator data.
 ```
 
-## First-Version Scope
+## Do Not Add More Patch Layers
 
-The first version is intentionally a clean, practical shell.
+The current V1.35 work already leaves Step 5 assembled across multiple modules. Before adding any feature or repair:
 
-It should support:
+- do not add another overlay, patch or wrapper file;
+- audit the active module ownership first;
+- decide which existing owner should render/layout/save the relevant behaviour;
+- integrate cleanly in that owner or revert the provisional change;
+- do not report completion until syntax and browser/project-folder testing has actually passed.
 
-```text
-choosing an archetype template
-editing object identity
-editing asset IDs
-editing size and scene-layer defaults
-editing collision and interaction data
-selecting gameplay sprite actions
-selecting separate dialogue portrait actions
-setting runtime flags
-previewing bounds on canvas
-validating common mistakes
-saving locally in browser
-importing JSON
-exporting JSON
-capturing a preview snapshot
-```
+## Verification Required Next
 
-It should not yet attempt to:
+Before further feature work, verify:
 
-```text
-write directly to GitHub
-edit final project object libraries automatically
-parse sprite sheets
-cut animation frames
-connect to the Scene Editor live
-create FX archetypes
-manage particle systems
-replace the Asset Library
-```
+- Step 5 readiness, frame and order persistence through task switches and saved-session resume;
+- no desktop overflow or Frame Fix regression;
+- project-folder save using only a disposable starter project;
+- no unrelated object-index entries are lost on save;
+- correct handling of uploaded preview frames and final registered Asset IDs;
+- Sound Generator opening, recipe/index registration and ID assignment in a disposable project;
+- console/network absence of failed or retired module requests.
+
+## Historical/Stale Material
+
+`APPLY_INSTRUCTIONS.txt` records older wizard history only. It is no longer a current implementation/install guide and must not be followed as if it describes V1.35.
