@@ -1,133 +1,122 @@
-# Advanced Object Library
+# Archetype Object Creator / Object Library
 
-## Name Status
+## Current Name And Implementation Status
 
-Advanced Object Library is a placeholder name and is not locked yet.
+The active authoring module is named **Archetype Object Creator** and lives at:
 
-Possible replacement names:
+```text
+artifex/apps/archetype-object-creator/
+```
 
-- Object Library
-- Archetype Library
-- Blueprint Library
-- Prefab Library
-- Object Forge
-- Component Library
-- Game Object Library
-- Object Workshop
+The concept may still be described generically as the **Object Library** when referring to the reusable collection of saved object definitions, but implementation work must use the active module name **Archetype Object Creator**.
+
+Current visible app version: `V1.35`  
+Current status: V1.35 code exists on `main`, but its project-folder saving and Procedural Sound Generator integration are unverified and require audit before more feature work.
+
+Current app-specific handover:
+
+```text
+artifex/apps/archetype-object-creator/docs/current-state-v1.35-review.md
+```
 
 ## Purpose
 
-The Advanced Object Library defines reusable game things and their behaviours.
+The Archetype Object Creator defines reusable non-FX game things and their behaviours. It is separate from the Asset Library and from the Scene Editor:
 
-It is separate from the basic Asset Library inside the Scene Editor.
+- **Asset Library** owns promoted final media assets and registered generated audio assets.
+- **Archetype Object Creator** owns reusable object archetype definitions and their final `asset_` references.
+- **Scene Editor** places instances of saved archetypes into scenes.
+- **Effect Editor** owns reusable FX definitions, not object archetypes.
 
-The Scene Editor’s Asset Library is for choosing and placing files.
-
-The Advanced Object Library is for defining what a thing is, how it behaves, and how it can be reused.
-
-## Module Boundary
-
-The Advanced Object Library is its own app/module.
-
-It is not inside the Project Editor.
-
-The Project Editor can reference Object Library definitions when building structure and route logic, but the reusable definitions themselves belong here.
-
-Example:
-
-- Object Library defines `bronze_key` as an Item Archetype.
-- Quest Builder can use `bronze_key` as a quest objective or condition.
-- Project Editor can use `bronze_key` as a requirement on a locked Route.
-
-The key is defined once here, then reused elsewhere.
-
-## What It Manages
-
-The Advanced Object Library should manage:
-
-- characters
-- NPCs
-- enemies
-- villains
-- items
-- keys
-- pickups
-- props
-- markers
-- doors
-- interactable objects
-- reusable object templates
-- object properties
-- object behaviours
-- object metadata
-
-## Archetype
-
-Archetype is not locked yet.
-
-Possible related terms:
-
-- prefab
-- blueprint
-- archetype
-
-An Archetype is a reusable definition of a game thing.
+The creator should define a game thing once, then reuse it wherever it appears.
 
 Examples:
 
 - Bronze Key
 - Locked Door
 - Forest Wolf
-- Villain
 - Merchant NPC
 - Save Marker
 - Health Potion
 
-Archetype is elegant, but Blueprint may be clearer for beginners.
+## Canonical Project Storage Contract
 
-## Instance
+The canonical object-archetype files are:
 
-An Instance is a specific placed copy of an Archetype.
+```text
+archetypes/object-index.json
+archetypes/objects/archobj_<slug>.json
+```
 
-Example: Bronze Key is the Archetype. The actual key placed on the table in the forest hut is an Instance.
+Final visual and audio resources referenced by an object archetype must be registered final assets using stable `asset_` IDs. Browser-uploaded draft/preview files are not automatically final project assets.
 
-## Why This Module Matters
+The intended save model is:
 
-The creator should not need to redefine the same object every time it appears.
+- deliberate connected project-folder save for final object records;
+- browser/local storage for draft/recovery only;
+- JSON or ZIP download as backup/fallback rather than ordinary save.
 
-Examples:
+The current V1.35 code attempts this model but has not been accepted as correctly integrated or fully tested. See the current-state handover before relying on it.
 
-- define a character once, then place that character in multiple scenes
-- define a key once, then use it in different locks or quests
-- define an enemy type once, then place copies in different scenes
-- define a marker type once, then place markers around the game
-- define a reusable object once, then duplicate it wherever needed
+## Module Boundary
+
+Archetype Object Creator owns:
+
+- characters and NPCs;
+- enemies and creatures;
+- items, keys and pickups;
+- props, markers and doors;
+- interactable/searchable/throwable/hazard objects;
+- reusable object templates;
+- object properties, behaviours, action definitions and metadata;
+- final asset-ID references used by object behaviour and presentation.
+
+It does not own:
+
+- scene instance placement or scene visual layout;
+- Quest or Puzzle internals;
+- Project Editor route/flatplan authoring;
+- Effect Editor FX archetypes;
+- Asset Library file promotion;
+- copied procedural-sound recipes.
+
+## Archetype And Instance
+
+An **Archetype** is a reusable definition of a game thing.
+
+An **Instance** is a specific placed occurrence of that archetype in a scene.
+
+Example: `archobj_bronze_key` is the reusable Bronze Key archetype. The actual key sitting on a table in a forest hut is a Scene Editor instance that references that archetype.
 
 ## Relationship To Scene Editor
 
-The Scene Editor places objects visually.
+Scene Editor places objects visually and should reference saved Object Archetypes by stable object-archetype ID rather than redefining the object each time.
 
-The Advanced Object Library defines the reusable object data behind those placed objects.
+Example:
 
-The Scene Editor may place an image of a key.
+- Archetype Object Creator defines `archobj_bronze_key`.
+- Scene Editor places an instance of `archobj_bronze_key` in a scene.
+- The placed instance may add scene-specific position/state while the reusable definition stays in the object archetype record.
 
-The Advanced Object Library defines that key as an item with a name, icon, behaviour, quest usage, unlock logic, and reusable identity.
+Scene Editor integration that consumes object archetype IDs is separate work and must not be faked inside Object Creator.
 
-## Relationship To Quest Builder
+## Relationship To Quest Builder And Puzzle Creator
 
-The Quest Builder should be able to reference objects from the Advanced Object Library.
+Quest Builder and Puzzle Creator may reference stable object IDs where gameplay requires an item, enemy, marker, door or interactable object.
 
-For example:
+Examples:
 
-- has item: Bronze Key
-- defeat enemy: Forest Wolf
-- talk to character: Merchant NPC
-- unlock object: Locked Door
-- activate marker: Save Marker
+- has item: Bronze Key;
+- defeat enemy: Forest Wolf;
+- talk to character: Merchant NPC;
+- unlock object: Locked Door;
+- activate marker: Save Marker.
+
+They must not duplicate or author the reusable object internals owned by Archetype Object Creator.
 
 ## Relationship To Project Editor
 
-The Project Editor should be able to reference Object Library archetypes when assigning route logic, station logic, conditions, or gates.
+Project Editor may reference Object Archetypes when structural route logic or world-level conditions need them.
 
 Examples:
 
@@ -136,24 +125,49 @@ Examples:
 - Route opens after enemy defeated: Forest Wolf.
 - Waypoint activates object: Save Marker.
 
-The Project Editor should not fully author these objects. It should only reference them and use them in structure logic.
+Project Editor should not fully author object definitions. It references saved archetypes; Object Creator owns their content.
+
+## Relationship To Procedural Sound Generator
+
+Generated synth sounds are final registered Asset Library resources, not sound archetypes owned by Object Creator.
+
+Expected flow:
+
+```text
+Create Synth Sound popup
+→ saves recipe under assets/audio/sfx/synth_<slug>.json
+→ registers asset_sfx_<slug> in assets/asset-index.json
+→ Object Creator stores only that returned asset_ ID in the appropriate object behaviour/event field
+```
+
+V1.35 currently contains a provisional `🎛️` Sound Events hookup for this flow. It must be tested against `docs/artifex/22-sound-archetype-generator.md` before being regarded as accepted.
 
 ## Object Categories
 
-Possible object categories:
+Supported/relevant object categories include:
 
-- Character Archetype
+- Character / Person Archetype
 - NPC Archetype
-- Enemy Archetype
-- Item Archetype
-- Door Archetype
+- Enemy / Foe Archetype
+- Creature / Animal Archetype
+- Boss / Bellator Archetype
+- Item / Pickup Archetype
+- Door / Exit Archetype
 - Marker Archetype
 - Prop Archetype
-- Pickup Archetype
-- Quest Object Archetype
+- Searchable Cache Archetype
+- Throwable Object Archetype
+- Hazard Archetype
+- Interactable Object Archetype
 
-## Placeholder / Dummy
+## Current Implementation Notes
 
-Dummy is not locked yet and may be better replaced with Placeholder.
+V1.34 attempted to repair Step 5 task persistence and layout regressions by restoring canonical `productionAssets.requirements` / `productionAssets.requirementOrder` storage, initial asset-ID task ordering, clean left-list display and compact two-column behaviour.
 
-A Placeholder is a temporary asset, object, scene, or setting used until the creator replaces it with final content.
+V1.35 added provisional work for project-folder saving, `Save Draft` / `Save Project` / `Finish`, `Mark Task Ready`, equal-size asset/ZIP controls and the shared synth-sound hookup.
+
+No further feature implementation should occur until the V1.35 pass has been audited and either cleanly integrated or rolled back. Do not add new patch/overlay/wrapper layers to repair it.
+
+## Placeholder Assets
+
+A **Placeholder** is a temporary asset, object, scene or setting used until the creator replaces it with final content. Placeholder or browser-preview content must not silently become a permanent final asset reference in a saved object archetype.
