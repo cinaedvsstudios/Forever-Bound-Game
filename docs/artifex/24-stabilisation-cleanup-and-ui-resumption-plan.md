@@ -51,66 +51,71 @@ Phase 1 confirmed:
 - Archetype Object Creator V1.35 has active Step 5 enhancement/layout/frame/package layers and must be validated before any consolidation or archive work.
 - Effect Editor must first resolve which route is the accepted baseline: index.html V3.38 Emergency or index2.html INDEX2-CLEAN-0.2.3.
 - Creation Guide has live wrapper debt on current main independently of abandoned PR #20, including app-bootstrap.js loading/patching module-app.js.
-- Project Editor has a live current bootstrap plus apparently superseded old HTML/bootstrap files that are suitable candidates for a narrow archive-only verification pass.
+- Project Editor had a live current bootstrap plus superseded old HTML/bootstrap files suitable for a narrow archive-only verification pass.
 - Puzzle Creator remains a possible first full-app UI lane after a short smoke check, while its current consolidation loader remains active and must not be removed during UI polish.
 - Sound Generator preview is intentional test-harness code and must be retained; it is a likely low-risk small UI lane after a smoke check.
 ```
 
-Important limitation: the Phase 1 Codex run reported no local `main` ref or remotes in its checkout. Therefore, all proposed archive or implementation passes must verify the specific file state again against live GitHub `main` before changes are made.
+Important limitation: the Phase 1 Codex run reported no local `main` ref or remotes in its checkout. Therefore, each proposed archive or implementation pass must verify its named file state again against live GitHub `main` before changes are made.
 
-### Next proposed implementation: Phase 2A — Project Editor archive-only pass
+### Completed: Phase 2A — Project Editor archive-only pass 01
 
-The first recommended repository cleanup change is a narrow archive-only pass for Project Editor. It is chosen because the candidate files are reportedly disconnected from the current live entry path, and moving them does not require changing active behaviour if verification succeeds.
+PR #22, **Archive superseded Project Editor static files**, was reviewed and merged into `main` on 1 June 2026.
 
-Candidate files to verify and move only if no current reference exists:
+```text
+PR: #22
+Merge commit: 07fb19c7d8d01a8d7068d7f2b00ac5fb7900738d
+Scope: Archive-only; no active runtime behaviour change.
+```
+
+Archived files:
 
 ```text
 artifex/apps/project-editor/index.split.html
+  → artifex/apps/project-editor/archive/pre-v0132-contract/index.split.html
+
 artifex/apps/project-editor/index.v7.html
+  → artifex/apps/project-editor/archive/pre-v0132-contract/index.v7.html
+
 artifex/apps/project-editor/index.monolith.backup.html
+  → artifex/apps/project-editor/archive/pre-split-monolith/index.monolith.backup.html
+
 artifex/apps/project-editor/src/project-app.js
+  → artifex/apps/project-editor/archive/pre-v7-split/project-app.js
 ```
 
-Proposed archive locations:
+Archive documentation added:
 
 ```text
-artifex/apps/project-editor/archive/pre-v0132-contract/
-artifex/apps/project-editor/archive/pre-split-monolith/
-artifex/apps/project-editor/archive/pre-v7-split/
+artifex/apps/project-editor/archive/pre-v0132-contract/README.md
+artifex/apps/project-editor/archive/pre-split-monolith/README.md
+artifex/apps/project-editor/archive/pre-v7-split/README.md
 ```
 
-Required boundaries:
+Verification recorded before merge:
 
 ```text
-- Do not alter active Project Editor behaviour.
-- Do not alter current index.html or src/project-app.v7.js.
-- Do not rename current modules.
-- Do not change Project Editor naming, folder-save behaviour, schemas, UI, tasks or any other app.
-- Do not archive a candidate unless current-main import/link/dynamic-load verification proves it is inactive.
-- Add archive README documentation for moved files and why they were moved.
-- Run a Project Editor load/smoke check after the move.
+- All four moved files were confirmed inactive/superseded before archiving.
+- The active Project Editor entry remains artifex/apps/project-editor/index.html.
+- The active entry still loads ./src/project-app.v7.js?v=0.1.32-contract.
+- No current UI/CSS, schema, save/load behaviour, shared service or other app was changed.
+- The PR diff contained only four archive moves and three archive README files.
+- An attempted root npm build failed due to pre-existing unrelated root TypeScript/CSS declaration and target-lib issues, not this archive-only pass.
 ```
 
-This pass is **proposed but not yet approved**. It may start only after the user explicitly approves the Project Editor archive-only pass.
+### Next decision point — no new work authorised yet
 
-### First later stabilisation code pass — Scene Editor ownership consolidation
-
-The first required behavioural repair remains:
+The completed archive pass does not automatically authorise another task. The user must now choose one controlled direction:
 
 ```text
-Scene Editor: consolidate Object Inspector and transform ownership.
+A. Continue low-risk cleanup with a separate Quest Builder archive-only verification/pass.
+B. Begin the first required behavioural stabilisation pass: Scene Editor Object Inspector and transform ownership consolidation.
+C. Reopen a tightly restricted UI lane after a quick baseline smoke check:
+   - smallest/lowest-risk visual surface: Sound Generator preview/shared popup; or
+   - first fuller app visual surface: Puzzle Creator V1.32.
 ```
 
-This is required because Scene Editor has a confirmed live correctness failure. It is not bundled into Phase 2A and must be separately approved when the user chooses to stabilise Scene Editor.
-
-### First possible UI-only lanes after a quick baseline check
-
-```text
-Smallest/lowest-risk visual surface: Sound Generator preview/shared popup.
-First fuller app visual surface: Puzzle Creator V1.32.
-```
-
-Neither initial UI-only lane may include schema, connected-folder/save, caller integration, runtime-engine or new wrapper/hotfix work.
+Any selected direction must be separately scoped and approved before implementation starts.
 
 ## Current Authority Set
 
