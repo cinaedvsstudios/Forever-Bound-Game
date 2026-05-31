@@ -1,6 +1,6 @@
 # Puzzle Creator · Maze / Labyrinth Update Steps
 
-Status: V1.32 live test required — Scatter supports Random, Equal Distribution and Around Main Solution Path placement modes
+Status: V1.32 approved — Scatter supports Random, Equal Distribution and Around Main Solution Path placement modes; secondary light coverage set queued
 Owner: Puzzle Creator
 Related modules: Project Manager, Scene Editor, Quest Builder, Archetype Object Creator, Asset Library, Build Game
 Last updated: 2026-05-31
@@ -105,13 +105,13 @@ Implemented behaviour retained in V1.32:
 - Scatter has `collision: "none"` in export and never changes maze solving or Walk Test movement.
 - Export stores authored slots and cells even while `visualAssetId` is null.
 
-## V1.32 implemented · Scatter placement modes live test required
+## V1.32 implemented and approved · Scatter placement modes
 
 V1.32 responds to the live test feedback that random placement is inappropriate for functional lighting and can create over-concentrated decorative clusters.
 
 Implemented behaviour:
 
-- Every Scatter slot now has its own **Placement** selector.
+- Every Scatter slot has its own **Placement** selector.
 - **Decorative Lights** defaults to **Equal Distribution**.
 - New decoration slots default to **Random**.
 - Any light or decoration slot can use one of three modes:
@@ -120,26 +120,48 @@ Implemented behaviour:
   - **Around Main Solution Path** — spaces markers along the calculated start-to-exit route, adding nearby markers only where more positions are requested than can be placed directly on the route.
 - Around Main Solution Path calculates its route independently of the visible solution overlay, so hiding the maker solution does not disable route-based placement.
 - If no valid main route exists, Around Main Solution Path reports that it fell back to Equal Distribution rather than pretending it used a route.
-- Placement mode is stored per slot in export as `placementMode`, and the Scatter schema advances to `artifex.mazeScatter.v2`.
+- Placement mode is stored per slot in export as `placementMode`, and the Scatter schema is `artifex.mazeScatter.v2`.
 
 Important limitation: Scatter placements remain authoring markers in **Overview only**. Actual linked asset images and light effects are not yet rendered in the large playable preview.
 
-### V1.32 focused live test
+Approval note: on 2026-05-31 the user tested the V1.32 distribution-mode build and confirmed it was good.
 
-1. Confirm the header displays **V1.32**.
-2. Open **Surface + Edit → Scatter · Decoration + Light** and turn Scatter on.
-3. Confirm **Decorative Lights** has a **Placement** selector defaulting to **Equal Distribution**.
-4. Set lights to a visible amount such as `20` or `30`, regenerate, and confirm the markers are substantially more evenly spread through walkable corridors than the previous clustered random result.
-5. Change lights to **Random**, regenerate, and confirm it produces a different, looser seeded scatter pattern.
-6. Change lights to **Around Main Solution Path**, regenerate, and confirm the light markers follow the visible solution route pattern rather than covering unrelated branches.
-7. Add a Decoration Asset slot and confirm its Placement selector defaults to **Random** and can independently be changed to either other mode.
-8. Change the Seed, regenerate, then reuse the same Seed and mode; confirm the generated positions repeat.
-9. Confirm markers continue to avoid entrance, exit, Collect items and Door/Portal endpoints.
-10. Download JSON and confirm `puzzle.scatterDecorations` uses schema `artifex.mazeScatter.v2` and each slot stores a `placementMode` value.
-11. Briefly confirm Door/Portal Walk Test transfer, Collect linking and Rounded/Organic Wall Form remain normal.
+## Queued Scatter enhancement · Secondary Light Set / coverage fill
+
+The next requested Scatter enhancement is a dedicated **second set of lights** for filling illumination gaps. This is not simply a fourth generic placement mode for any decoration: it is an additional functional light layer that depends on the primary **Decorative Lights** set.
+
+Required behaviour:
+
+- Add a control such as **+ Second Light Set** underneath or alongside the primary Decorative Lights slot.
+- The second light set control must not be selectable until the primary Decorative Lights set exists with generated/authored light positions.
+- The second light set is authored independently: it has its own amount control and optional registered final `asset_` light visual link, while still allowing placeholder-first placement.
+- Its default placement behaviour is equal coverage that deliberately avoids areas already covered by the first light set.
+- It must never place on the same cells as Light Set 1, start, exit, Collect objects, Door endpoints or Portal endpoints.
+- Its placement algorithm should treat the first set's existing light cells as coverage anchors and choose the furthest valid corridor cells first, so it fills gaps rather than doubling up in already-lit areas.
+- Where the maze no longer has sufficiently distant unlit space, it may place the furthest remaining valid cells, but the UI should report that full separation is limited by available corridor space.
+- Changes to the first light set positions, maze layout or seed must safely regenerate or invalidate the second set so its avoid-first-set guarantee remains true.
+- Export must store the second light set separately from the first, including its cells, optional final visual asset reference, and a relationship/placement status showing that it is a secondary coverage layer avoiding the primary light set.
+- This remains marker-only authoring until playable-preview image/light rendering exists.
+
+Suggested export direction when implemented:
+
+```json
+{
+  "light": {
+    "id": "scatter_light",
+    "placementMode": "equal_distribution"
+  },
+  "secondaryLight": {
+    "id": "scatter_light_secondary",
+    "placementMode": "coverage_fill_avoiding_primary",
+    "avoidsSlotId": "scatter_light"
+  }
+}
+```
 
 ## Still unimplemented
 
+- Secondary Light Set / coverage-fill placement avoiding the primary light set.
 - Rendering selected Door images inside the playable preview.
 - Rendering Scatter linked asset images or real light effects inside the playable preview.
 - Portal registered visual/effect selection and shared global Portal Registry integration.
@@ -156,14 +178,15 @@ Important limitation: Scatter placements remain authoring markers in **Overview 
 - **Doors:** movement belongs to `maze-connections.js`; optional appearance is a registered final `visualAssetId` resolving to `asset_`.
 - **Portals:** local transfer remains interim; later visual/effect references and global endpoint relationships belong to the Portal Registry design.
 - **Scatter decorations/lights:** decorative non-collision authored cells may exist as placeholders first; optional later visual references must resolve to registered final `asset_` records. Placement distribution is stored per slot.
+- **Secondary Light Set:** a second decorative-light layer only, dependent on existing primary light placements and responsible for filling underlit corridor areas without duplicating the first layer's coverage.
 
 ## Core workflow rule: Features first, Completion Rules second
 
-Features define content in the maze. Completion Rules decides which gameplay features are mandatory. Scatter does not appear in Completion Rules because it is decorative only.
+Features define content in the maze. Completion Rules decides which gameplay features are mandatory. Scatter and its light layers do not appear in Completion Rules because they are decorative only.
 
-## Next implementation order after V1.32 test
+## Next implementation order after V1.32 approval
 
-1. Verify Scatter placement modes, placeholder-first placement, deterministic positions, exclusion rules and JSON export.
+1. Implement and test the Secondary Light Set / coverage-fill workflow within `maze-scatter-decorations.js`.
 2. Implement Traboule as a hidden pass-through wall feature.
 3. Implement shared/global Portal Registry integration across apps.
 4. Define and implement Foe/Hazard feature behaviour.
@@ -176,6 +199,7 @@ Features define content in the maze. Completion Rules decides which gameplay fea
 - Features and Completion Rules remain separate.
 - Scatter remains decoration-only and must not affect collision or completion rules.
 - Scatter placeholder positions must remain usable without requiring fake or temporary final asset links.
+- Secondary Light Set must not be enabled before primary light positions exist, and must avoid primary light coverage when implemented.
 - Collect placement and registered Archetype Object linking remain functional.
 - Door and local Portal transfer remain functional in Walk Test.
 - Foe, Hazard and Traboule remain disabled unless real behaviour exists.
