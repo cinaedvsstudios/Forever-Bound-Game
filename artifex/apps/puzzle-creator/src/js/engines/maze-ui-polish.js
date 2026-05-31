@@ -14,8 +14,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
 function markVisibleBuildVersion() {
   const pill = document.querySelector('.version-pill');
-  if (pill) pill.textContent = 'V1.30';
-  document.title = 'Artifex Puzzle Creator V1.30 · Forever Bound';
+  if (pill) pill.textContent = 'V1.31';
+  document.title = 'Artifex Puzzle Creator V1.31 · Forever Bound';
 }
 
 function removeVerboseHelperText() {
