@@ -23,6 +23,8 @@ These three terms must not be merged together:
 - `05-creation-guide.md` — onboarding, connected-folder initialisation, setup checklist, project overview, health and task tracking.
 - `06-object-library.md` — advanced reusable object definitions, archetypes, instances, characters, items, enemies, and props.
 - `07-quest-builder.md` — quests, side quests, branches, flags, conditions, rewards, unlocks, and progression.
+- `07a-quest-builder-structured-authoring.md` — Quest Builder action/condition/outcome authoring and contextual quest-scoped dialogue/Capra records.
+- `07b-puzzle-creator-quest-integration.md` — boundary and handoff contract for standalone Puzzle Creator records used as Quest Builder flow steps.
 - `08-playtest-and-build.md` — playtesting, previewing scenes, testing routes/quests, and building/exporting the finished game.
 - `09-terminology.md` — working terminology list, including synonyms and not-yet-locked terms.
 - `10-naming-brainstorm.md` — naming research from publishing, game development, transport, and logistics.
@@ -48,8 +50,13 @@ These three terms must not be merged together:
 4. Creation Guide.
 5. Advanced Object Library.
 6. Quest Builder.
-7. Playtest.
-8. Build Game.
+7. Puzzle Creator.
+8. Playtest.
+9. Build Game.
+
+## Locked User-Facing Name
+
+The high-level structural/Flatplan tool is named **Project Editor** in user-facing documentation and UI. Historical filenames, code slugs or task identifiers that still contain `project-manager` are migration items; they do not establish a second official tool name.
 
 ## Working Principle
 
