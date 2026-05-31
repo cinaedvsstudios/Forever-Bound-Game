@@ -1,9 +1,9 @@
 # Puzzle Creator · Maze / Labyrinth Update Steps
 
-Status: V1.30 live test required — Door visual asset linking is wired through the shared registered-content picker
+Status: V1.31 live test required — Scatter decorations and lights are wired as collision-free authored placements
 Owner: Puzzle Creator
 Related modules: Project Manager, Scene Editor, Quest Builder, Archetype Object Creator, Asset Library, Build Game
-Last updated: 2026-05-30
+Last updated: 2026-05-31
 Related global design: `artifex/shared/todo-guide/global-portal-endpoint-registry-design-2026-05-29.md`
 
 ## Stable module rule
@@ -23,20 +23,24 @@ src/js/engines/maze-connections.js
 src/js/engines/maze-door-visual-linking.js
 src/js/engines/maze-ui-polish.js
 src/js/engines/maze-organic-wall-renderer.js
+src/js/engines/maze-scatter-decorations.js
 src/js/engines/maze-labyrinth-consolidation-loader.js
 ```
 
-## Approved baseline through V1.29
+## Approved baseline through V1.30 correction
 
-- Solution contains the live route/difficulty information and maker-only Show/Hide Solution behaviour.
-- Features appears below Solution and Completion Rules remains separate and derived from added features.
-- Collect placement works on valid Overview path cells.
-- Collect rows can link to registered Archetype Object records through the shared project-backed picker.
-- Door and local Portal pairs can be placed and transferred through in Walk Test.
+- Solution contains live route/difficulty information and maker-only Show/Hide Solution behaviour.
+- Features remains separate from Completion Rules.
+- Collect placement works and Collect rows may link to registered `archobj_` Archetype Object records through the shared picker.
+- Door and local Portal pairs can be placed and transfer through in Walk Test.
+- Door endpoint markers now remain aligned with the same cells in Overview and the large preview, including the preview pan/zoom/Warp transform.
+- The visible version override no longer forces the header back to V1.28.
 - Foe, Hazard and Traboule remain disabled until real runtime behaviour exists.
-- Wall Form provides Blocks, Rounded and Organic; Organic is visibly distinct from Rounded.
+- Wall Form provides Blocks, Rounded and Organic; Organic remains visibly distinct from Rounded.
 - Rounded/Organic Walk Test does not flash back to the square-grid rendering layer.
-- The old patch architecture and misleading Close Warped Gaps control are removed.
+- No old numbered patch architecture is active.
+
+Approval note: on 2026-05-31 the user confirmed the Door endpoint alignment and version-display correction were good after testing the corrected V1.30 build.
 
 ## Shared registered-content dependency
 
@@ -56,146 +60,106 @@ archetypes/object-index.json            reusable gameplay objects using archobj_
 archetypes/effect-index.json            reusable effects using archeffect_ IDs
 ```
 
-The shared reader validates schemas, stable ID prefixes and final project-relative paths. It excludes intake files, external/browser URLs and legacy `artifex/assets-library/` catalogue paths from final authored links. The picker reports missing, empty or invalid indexes honestly; it does not offer raw upload or free-text final-link shortcuts.
+The reader/picker validates stable final records and excludes intake files, external/browser URLs and legacy unpromoted catalogue paths. Missing or empty indexes are reported honestly.
 
-## V1.29 approved · Collect Archetype Object linking
+## Implemented registered-link features
 
-`maze-features.js` consumes the shared picker for Collect objects.
+### Collect Archetype Object linking · V1.29 approved
 
-Approved behaviour:
+- Collect rows provide **Link**, **Replace** and **Unlink** as relevant.
+- Selection is restricted to valid registered `archobj_` records.
+- A valid selection stores `archetypeObjectId`, label and `archetypeReferenceSource`.
+- **Clear** removes placement without silently removing its linked Archetype Object.
 
-- Each Collect row provides **Link**, **Replace** and **Unlink** as relevant.
-- The picker is restricted to registered `archobj_` Archetype Object records.
-- A valid selection stores `archetypeObjectId`, display label and `archetypeReferenceSource` on the Collect item.
-- **Clear** removes placement without silently removing the selected Archetype Object.
-- Export records no-links, partial-links or complete-links state.
+### Door visual asset linking · V1.30 implemented
 
-Live approval note: the user tested the Collect setup on 2026-05-30 and confirmed it seemed good. Their screenshot showed active Collect linking controls, placed item markers and the approved Organic Wall Form presentation. The screenshot displayed an older visible header because the base GitHub Pages URL was opened without the release fresh-cache query; use a fresh-cache URL for release checks.
+- A selected Door provides **Door Visual Asset** with **Link Visual**, **Replace Visual** and **Unlink** as relevant.
+- Selection is restricted to final registered `asset_` records.
+- A valid selection stores `visualAssetId`, `visualAssetLabel` and `visualAssetReferenceSource` on the Door pair.
+- Door movement, placement and Walk Test transfer remain independent from visual selection.
+- This is currently a stored/exported visual reference; linked Door artwork is not drawn in the playable preview yet.
 
-## V1.30 implemented · Door visual asset linking live test required
+The Door endpoint positioning correction has been approved. Full Door visual-picker selection/export can still be confirmed when a suitable registered final `asset_` record is available.
+
+## V1.31 implemented · Scatter decorations and lights live test required
 
 New permanent module:
 
 ```text
-src/js/engines/maze-door-visual-linking.js
+src/js/engines/maze-scatter-decorations.js
 ```
 
-This module owns only the registered visual reference attached to an existing Door connection. Door creation, Entry/Exit placement, direction and Walk Test transfer remain owned by `maze-connections.js` and were not replaced.
+Scatter is decoration-only. It does not define objectives, collision, route logic or transfer behaviour.
 
 Implemented behaviour:
 
-- When a Door is selected, its setup card now shows **Door Visual Asset**.
-- An unlinked Door states **No visual asset linked** and provides **Link Visual**.
-- **Link Visual** opens the shared picker restricted to final registered `asset_` records.
-- The picker supports connecting or reauthorising the project folder through the existing project-folder client.
-- A valid selection stores `visualAssetId`, `visualAssetLabel` and `visualAssetReferenceSource` on that Door pair.
-- A linked Door provides **Replace Visual** and **Unlink**.
-- The Door instance list displays a visual-link note when a final asset has been selected.
-- The obsolete generic “Image/FX selection later” message is hidden for a selected Door because Door visual selection now exists; Portal pending messaging remains honest and unchanged.
-- The Door pair is already exported by `maze-connections.js`, so these stored reference fields flow into the exported Door connection record.
+- A new **Scatter · Decoration + Light** card appears in **04 · Surface + Edit**, beneath Wall Form.
+- The card is inactive until the maker clicks **Add**; switching it off clears authored positions.
+- A **Decorative Lights** asset slot exists with an amount control and registered final visual asset selection.
+- Up to five additional **Decoration Assets** slots may be added.
+- Every slot uses the shared registered-content picker restricted to valid final `asset_` records.
+- A deterministic numeric seed and **Regenerate** action place repeatable marker positions on open path cells.
+- Scatter positions exclude the entrance, exit, Collect object cells and Door/Portal endpoint cells.
+- Scatter has `collision: "none"` in export and never changes maze solving or Walk Test movement.
+- **Clear Positions**, **Unlink** and turning Scatter off repaint Overview cleanly so old marker positions do not remain visible.
+- Export stores final asset reference fields, amount and authored cells for lights and decoration slots.
 
-Important limitation: V1.30 links and exports the selected final Door visual asset. It does **not** yet draw the selected Door image over the playable preview; the editor continues showing connection endpoint markers. This is stated directly in the visible Door control and must not be presented as rendered imagery until a rendering pass exists.
+Important limitation: V1.31 displays Scatter placements as small authoring markers in **Overview only**. It does not yet render the selected asset images in the large playable preview. This limitation is stated in the visible UI and recorded in export status.
 
-### V1.30 focused live test
+### V1.31 focused live test
 
-Use a fresh-cache URL and test only this new stage plus essential regressions:
-
-1. Confirm the header shows **V1.30**.
-2. Open Game Logic, add a **Door**, and place its Entry and Exit cells.
-3. With the Door selected, confirm a **Door Visual Asset** block appears with **Link Visual** and an honest “No visual asset linked” state.
-4. Confirm the old generic Door “Image/FX selection later” message is not shown while a Door is selected; when a Portal is selected, Portal pending/global-registry messaging must remain visible.
-5. Click **Link Visual** and confirm the shared picker opens restricted to final assets and includes project-folder connection behaviour.
-6. If there are no valid `asset_` index records, confirm the picker reports this honestly and does not create a visual link.
-7. If a valid final `asset_` record exists, select it and confirm the Door block changes to **Replace Visual** / **Unlink** and the Door list shows the visual label.
-8. Download JSON after linking and verify the Door record contains `visualAssetId` and `visualAssetReferenceSource: "assets/asset-index.json"`.
-9. Use **Unlink** and confirm Entry/Exit placement and direction are preserved.
-10. Briefly verify Door/local Portal transfer in Walk Test, Collect linking, and Rounded/Organic Wall Form remain unbroken.
+1. Confirm the header displays **V1.31**.
+2. Open **Surface + Edit** and confirm a **Scatter · Decoration + Light** card appears beneath **Wall Form**.
+3. Click **Add** and confirm the Decorative Lights row, Decoration Assets section, Seed, Regenerate and Clear Positions controls appear.
+4. Click **Link Light** and confirm the shared picker opens restricted to final registered assets, with honest no-folder/no-record behaviour when applicable.
+5. Add one or more Decoration Assets slots and confirm there can be no more than five.
+6. If a valid final `asset_` record is available, link it, regenerate, and confirm Overview displays small decoration/light markers only on open path cells.
+7. Confirm markers do not occupy entrance, exit, Collect markers or Door/Portal endpoint cells.
+8. Change the seed and regenerate; confirm marker positions change. Reuse the same seed and confirm positions repeat.
+9. Use **Clear Positions**, **Unlink** and toggle Scatter off; confirm removed markers do not remain on Overview.
+10. Download JSON and confirm `puzzle.scatterDecorations` contains `collision: "none"`, linked `visualAssetId` values and generated cells.
+11. Briefly confirm existing Door/Portal Walk Test transfer, Collect linking and Rounded/Organic Wall Form remain unbroken.
 
 ## Still unimplemented
 
-- Rendering a selected linked Door image inside the playable preview, if a later visual pass requires it.
+- Rendering selected Door images inside the playable preview.
+- Rendering Scatter linked asset images/lights inside the playable preview.
 - Portal registered visual/effect selection and shared global Portal Registry integration.
 - Project production/promotion workflows that populate final asset/archetype indexes where missing.
 - Completion Rule enforcement during Walk Test/game runtime.
 - Foe and Hazard placement/setup/runtime behaviour.
 - Traboule as a hidden pass-through wall collision override.
-- Scatter decorations and lights.
 - Tunnel Mode, real first-person/3D renderer and helper pendant/crystal.
 - Texture-aware joined Rounded/Organic surfaces, if later testing requires it.
 
 ## Ownership and linking contracts
 
-### Collect objects
-
-A placed Collect item stores its maze cell and a stable `archetypeObjectId` resolving to an `archobj_` record. The Archetype Object owns gameplay identity and linked visual assets. It must never resolve directly to a temporary upload or intake file.
-
-### Doors
-
-Door behaviour remains owned by `maze-connections.js`. A Door visual stores `visualAssetId` resolving to a registered final `asset_` record; this does not turn the Door into a Portal or global endpoint.
-
-### Portals
-
-Portal transfer is currently local/interim. Later, an endpoint may store registered `asset_` visual and optional `archeffect_` effect references, while destination relationships belong to the shared global Portal Registry.
-
-### Scatter decorations
-
-Scatter is later visual decoration only and should store registered `asset_` visual references, not object archetypes.
+- **Collect objects:** placed cell plus stable `archetypeObjectId` resolving to a registered `archobj_` gameplay object.
+- **Doors:** movement belongs to `maze-connections.js`; optional appearance is a registered final `visualAssetId` resolving to `asset_`.
+- **Portals:** local transfer remains interim; later visual/effect references and global endpoint relationships belong to the Portal Registry design.
+- **Scatter decorations/lights:** decorative non-collision visuals only, each using a registered final `asset_` reference and authored visual cells.
 
 ## Core workflow rule: Features first, Completion Rules second
 
-Features define content added to the maze: Collection objects, Doors, Portals, later Foes, Hazards and Traboules. A feature-specific setup card must not appear until that feature has been added.
+Features define content in the maze. Completion Rules decides which gameplay features are mandatory. Scatter does not appear in Completion Rules because it is decorative only.
 
-Completion Rules remains at the bottom of Quest Data and derives from existing features. Reach Exit is always mandatory. Collection, Door or Portal requirements only appear after those features exist, and the creator chooses whether they are mandatory.
+## Next implementation order after V1.31 test
 
-## Feature status after V1.30
-
-### Collection objects
-
-Current state: placement and registered Archetype Object linking are approved. Completion enforcement remains pending.
-
-### Door
-
-Current state: local pair placement, Walk Test transfer and registered visual asset linking implemented. Live test of visual linking is pending. Linked asset rendering is not yet implemented.
-
-### Portal
-
-Current state: local paired placement and Walk Test transfer implemented as an interim function; global linking and visual/effect selection remain explicitly pending.
-
-### Traboule
-
-Current state: disabled. Later implementation must be a secret pass-through wall, not a Door subtype, Portal subtype or teleport pair.
-
-### Foe and Hazard
-
-Current state: disabled. They require real placement, archetype linkage, runtime behaviour and meaningful completion-rule integration before activation.
-
-## Surface + Edit / Wall Form constraints
-
-V1.28 Wall Form remains the approved presentation baseline:
-
-- **Blocks** retains individual tile preview.
-- **Rounded** shows joined softened continuous wall surfaces.
-- **Organic** shows Warp-influenced flowing hedge/cave-like walls and must remain visibly distinct from Rounded.
-- Wall Form changes visual presentation only; collision, route solving and feature placement remain cell-based.
-- Rounded/Organic must remain opaque in Walk Test so the base square grid does not flash through.
-
-## Next implementation order after V1.30 test
-
-1. Verify Door Link Visual picker, honest empty state, valid asset selection, Replace/Unlink and JSON export.
-2. Implement Scatter decorations/lights in a permanent Maze module using registered visual assets only, unless a separate Door image-rendering pass is prioritised first.
-3. Implement Traboule as a hidden collision override.
-4. Implement shared/global Portal Registry integration across apps.
-5. Define and implement Foe/Hazard feature behaviour.
-6. Resolve Tunnel Mode design and implement renderer/lighting workflow.
-7. Implement helper pendant/crystal after mandatory objective tracking works.
+1. Verify Scatter card, final asset picker/empty state, deterministic marker placement, exclusion rules, clearing and JSON export.
+2. Implement Traboule as a hidden pass-through wall feature.
+3. Implement shared/global Portal Registry integration across apps.
+4. Define and implement Foe/Hazard feature behaviour.
+5. Resolve Tunnel Mode design and implement renderer/lighting workflow.
+6. Implement helper pendant/crystal only after mandatory objective tracking works.
 
 ## Preserved baseline for every future stage
 
 - No numbered patch files or transitional wrapper modules may reappear.
 - Features and Completion Rules remain separate.
-- Collect placement and registered Archetype Object linking must remain functional.
-- Door and local Portal transfer must remain functional in Walk Test.
+- Scatter remains decoration-only and must not affect collision or completion rules.
+- Collect placement and registered Archetype Object linking remain functional.
+- Door and local Portal transfer remain functional in Walk Test.
 - Foe, Hazard and Traboule remain disabled unless real behaviour exists.
 - Organic remains visibly distinct from Rounded.
 - Rounded/Organic Walk Test must not flash the underlying square grid.
-- Final gameplay records must not reference intake assets, arbitrary browser uploads or legacy unpromoted catalogue items as if they were project-final content.
+- Final gameplay/project records must not reference intake assets, browser-only uploads or legacy unpromoted catalogue items as final linked content.
