@@ -3,7 +3,7 @@ import { saveCurrentObjectToProject } from './object-project-storage.js?v=1.35';
 import { autoSaveWizardSession, deleteWizardSession, saveWizardSession } from './object-wizard-sessions.js?v=1.35';
 import { createObjectWizardBuildRequirements } from './object-wizard-build-requirements.js?v=1.35';
 import { createObjectWizardFrameTasks } from './object-wizard-frame-tasks.js?v=1.35';
-import { clampNumber, emojiFor, escapeHtml } from './object-wizard-helpers.js?v=1.34';
+import { clampNumber, emojiFor, escapeHtml } from './object-wizard-helpers.js?v=1.35';
 
 export function createObjectWizardBuildChecklist({ wizardState, setHeader, content, renderBasicChanges }) {
   const requirements = createObjectWizardBuildRequirements({ renderBuildChecklist, updateProgressOrb });
