@@ -5,6 +5,8 @@
 Before changing Quest Builder, always inspect:
 
 ```text
+docs/artifex/07-quest-builder.md
+docs/artifex/07a-quest-builder-structured-authoring.md
 docs/artifex/18-color-and-display-rules.md
 docs/artifex/19-project-file-contracts.md
 artifex/shared/todo-guide/README.md
@@ -17,14 +19,16 @@ Use the global all-apps to-do list for changes that affect every Artifex app. Us
 
 ## Current repository status
 
-Current Quest Builder version in repository: `V1.2.12`
+Current Quest Builder live-app version in repository: `V1.2.12`
 
 Current browser confirmation status:
 
 - `V1.2.9` was tested sufficiently to confirm the live version badge loaded, pencil edit opened the correct block popup, and cards could be manually moved in the central workspace.
 - `V1.2.10` was tested in GitHub Pages and confirmed to load, display explicit coloured connector lines and visible connector ports. Testing identified that unused port circles were cluttered and stacked line routing needed refinement.
 - The user's V1.2.11 live screenshot confirmed the cleaned connector interface was loaded, including the per-card link action and reduced connector clutter. The screenshot also identified the next problem: vertically stacked connected cards were still using left/right attachments rather than the shortest top/bottom route.
-- `V1.2.12` has now been built in the repository for fine-grid snapping and smart shortest-edge connector display. It requires GitHub Pages/browser confirmation.
+- `V1.2.12` has been built in the repository for fine-grid snapping and smart shortest-edge connector display. It still requires GitHub Pages/browser confirmation before further workspace-layout implementation work.
+
+Documentation-only decisions added after the V1.2.12 build do not alter the live-app version. The current documentation now locks structured Quest authoring and Quest-scoped dialogue direction before later implementation begins.
 
 Current active app files:
 
@@ -54,22 +58,29 @@ artifex/apps/quest-builder/v1/quest-builder-v108.js
 
 ## Ownership boundary
 
-Quest Builder owns quest library records, side quest records, branches, player action steps, conditions/flags, rewards/unlocks, progression logic, quest-specific UI/Capra assignments, and links from quest blocks to relevant module IDs.
+Quest Builder owns quest library records, side quest records, branches, player action steps, conditions/flags, rewards/unlocks, progression logic, quest-specific UI/Capra assignments, quest-specific dialogue records, and links from quest blocks to relevant module IDs.
 
-Quest Builder does not own scene/screen visual layout, Scene Editor object placement, Flatplan map positioning, object archetype definitions, FX archetype definitions, raw dialogue library ownership, or raw audio asset ownership.
+Quest Builder does not own scene/screen visual layout, Scene Editor object placement, Flatplan map positioning, object archetype definitions, FX archetype definitions, reusable promoted portrait/voice/audio asset files, or final reusable media asset ownership.
+
+First-version dialogue ownership decision:
+
+- Quest-specific NPC dialogue, Mel dialogue, narration and Capra feedback are edited contextually inside Quest Builder.
+- Do not create a separate top-level Dialogue Library / Dialogue Editor app merely to author dialogue for a Quest.
+- Reusable portrait/audio media remain referenced external assets rather than being duplicated inside Quest data.
+- A global reusable dialogue library is a later option only if cross-Quest reuse, localisation or voice-management requirements prove it is necessary.
 
 ## Export target
 
-Quest Builder exports the quest package targets:
+Quest Builder's eventual connected-folder save targets are:
 
 ```text
-projects/<project-id>/quests/quest-index.json
-projects/<project-id>/quests/quest_<slug>.json
-projects/<project-id>/sidequests/sidequest-index.json
-projects/<project-id>/sidequests/sidequest_<slug>.json
+quests/quest-index.json
+quests/quest_<slug>.json
+sidequests/sidequest-index.json
+sidequests/sidequest_<slug>.json
 ```
 
-Project Manager should reference quest and side quest IDs. It should not author quest internals directly.
+The selected connected folder is already the project root. Do not use `projects/<project-id>/...` as the direct-save destination. Project Manager / Project Editor may reference quest and side quest IDs; it must not author quest internals directly.
 
 ## Completed phases summary
 
@@ -80,7 +91,7 @@ Status: complete/browser-confirmed where previously recorded.
 - Split the app into responsibility-based active modules.
 - Established the approved core Module flyout, simplified File menu, contextual left inspector, dark/green visual shell, popup editors and block taxonomy.
 - Added bundle export, export self-check, export summary and split Quest Builder project-file downloads.
-- User confirmed the project-file export produces the correct quest/sidequest-owned files.
+- User confirmed the project-file export produces the existing quest/sidequest-owned downloads; canonical connected-folder schema/path alignment remains separate pending implementation work.
 
 ### V1.2.3 — floating Quest Flow drag ordering
 
@@ -146,7 +157,7 @@ Implemented:
 - Routing recalculates while cards are moved, so a vertical card stack can switch to bottom-to-top connectors and a horizontal relationship can remain side-to-side.
 - Kept connector line colour derived from the source block.
 - Kept `🔗` link creation and click-attached-circle removal from V1.2.11.
-- Kept logical connections separate from visual routing: the export now records each logical connection with `routingMode: "smart-shortest"`, rather than exporting fixed edge/port placement as quest progression data.
+- Kept logical connections separate from visual routing: export records each logical connection with `routingMode: "smart-shortest"`, rather than exporting fixed edge/port placement as quest progression data.
 - Updated page title, visible badge, CSS cache key, main script key, internal module cache keys, icon asset cache keys and module loaded version text to `V1.2.12` / `1.2.12`.
 - Updated `docs/structure.md` to document `connection-routing.js` as visual routing only, not quest logic.
 
@@ -157,6 +168,28 @@ Not implemented in this pass:
 - Insert Space horizontal guide tool.
 - Obstacle-avoiding connector routing around unrelated overlapping cards.
 - Manual connector side override when a shortest route is visually undesirable.
+
+### Documentation decision — structured authoring and dialogue inside Quest Builder
+
+Status: documented; no live UI implementation yet.
+
+Documentation created/updated:
+
+```text
+docs/artifex/07a-quest-builder-structured-authoring.md
+artifex/apps/quest-builder/docs/block-taxonomy.md
+artifex/apps/quest-builder/docs/structure.md
+artifex/apps/quest-builder/docs/todo.md
+```
+
+Locked direction:
+
+- Do not create a separate Dialogue Library / Dialogue Editor app for the first version.
+- A Quest block remains a meaningful progression event; dialogue lines, conditions, outcomes and most failed-attempt responses live inside the relevant block editor rather than becoming automatic canvas cards.
+- The selected block's editor should eventually provide structured areas for Action, Requirements / Conditions, Success Outcomes, Failure / Capra Feedback, Dialogue / Presentation, Linked Assets and Validation.
+- A larger **Open Dialogue / Feedback** screen may open from a selected block, but it stays inside Quest Builder and authors Quest-owned dialogue records.
+- Reusable portrait/audio assets remain external references and are not duplicated into Quest data.
+- The exact export-safe JSON schema for actions, outcomes and dialogue records must be defined during implementation with validation, not improvised through loose fields.
 
 ## V1.2.12 browser test checklist
 
@@ -176,17 +209,19 @@ Open the fresh test URL after GitHub Pages updates and verify:
 12. JSON Preview contains logical `flow.connections` with `routingMode: "smart-shortest"`, not fixed side placement used as game logic.
 13. View → Reset Saved Layout resets visual positions and snap preference, but does not delete quest connections.
 
-## Next specific-app work after V1.2.12 testing
+## Next specific-app implementation work
 
-Only proceed after browser test results are reported.
+There are now two separate implementation tracks. Do not merge them into one uncontrolled pass.
 
-Likely next version if this interaction works:
+### Track A — workspace layout improvements after V1.2.12 browser confirmation
+
+Likely version if the V1.2.12 interaction tests correctly:
 
 ```text
 V1.2.13 — dynamic workspace expansion and manual layout space management
 ```
 
-Required remaining Quest Builder-specific work:
+Required layout work:
 
 - Grow the logical workspace when cards approach the lower/right boundary and keep comfortable blank padding.
 - Allow START/END endpoints to be positioned consistently in the expanded workspace, without inferring quest logic from position.
@@ -194,6 +229,21 @@ Required remaining Quest Builder-specific work:
 - Consider a vertical equivalent only after the horizontal tool is tested and useful.
 - Consider obstacle-avoiding connector routing only if smart nearest-edge routing still creates unacceptable line collisions in realistic layouts.
 
+### Track B — structured Quest authoring implementation
+
+This track is now specified in documentation and can be planned independently, but actual UI/code changes must be staged carefully against the current app.
+
+Required stages:
+
+1. Define export-safe structured draft data for actions, requirements, success outcomes, failure outcomes and Quest-scoped dialogue/Capra records.
+2. Replace vague free-text block editing with contextual sections inside the existing Quest Builder editor flow.
+3. Add an in-app **Open Dialogue / Feedback** authoring screen linked from relevant blocks, without adding a new top-level editor module.
+4. Validate missing target IDs, broken dialogue references, empty dialogue records, incomplete failure feedback, unknown referenced flags/items/routes/scenes and invalid completion conditions.
+5. Align quest/sidequest saving with the canonical connected-project-root file contracts and typed indexes.
+6. Only reconsider a shared Dialogue Library after repeated real-use cases justify it.
+
 ## Version rule
 
-Every Quest Builder app edit must increase the visible version by `0.01` and update the page title, visible version badge, CSS cache key, JavaScript/module cache keys, renderer asset keys and loaded/fallback text where present.
+Every live Quest Builder app code/UI edit must increase the visible version by `0.01` and update the page title, visible version badge, CSS cache key, JavaScript/module cache keys, renderer asset keys and loaded/fallback text where present.
+
+Documentation-only edits that do not change the loaded app do not require a visible app version increment.
