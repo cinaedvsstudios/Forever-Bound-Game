@@ -1,4 +1,4 @@
-import { createSoundGeneratorUI } from './sound-generator-ui.js';
+import { createSoundGeneratorUI } from './sound-generator-ui-v1.js?v=1.00';
 
 export function mountSoundGenerator(container, options = {}) {
   if (!container) throw new Error('A host element is required to mount Create Synth Sound.');
