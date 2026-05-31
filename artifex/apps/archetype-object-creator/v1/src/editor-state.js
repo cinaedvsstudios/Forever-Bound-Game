@@ -53,7 +53,7 @@ export function createEmptyArchetype() {
       defaultFacing: 'right'
     },
     productionAssets: {
-      version: '1.34',
+      version: '1.35',
       requirements: {},
       requirementOrder: []
     },
@@ -148,7 +148,7 @@ export function applyRoleTemplate(roleId) {
     collision: template.collision,
     behaviour: { preset: template.behaviourPreset, flags: { ...template.flags } },
     animationProfile: { gameplayActions: [...template.gameplayActions], portraitActions: [...template.portraitActions] },
-    productionAssets: { version: '1.34', requirements: {}, requirementOrder: [] }
+    productionAssets: { version: '1.35', requirements: {}, requirementOrder: [] }
   });
   validateCurrentArchetype();
   notifyChange();
@@ -257,7 +257,7 @@ function normalizeProductionAssets(value) {
   const source = value && typeof value === 'object' ? value : {};
   const requirements = source.requirements && typeof source.requirements === 'object' && !Array.isArray(source.requirements) ? source.requirements : {};
   const requirementOrder = Array.isArray(source.requirementOrder) ? source.requirementOrder.map((id) => String(id)).filter(Boolean) : [];
-  return { version: String(source.version || '1.34'), requirements: { ...requirements }, requirementOrder };
+  return { version: String(source.version || '1.35'), requirements: { ...requirements }, requirementOrder };
 }
 function safeId(value) { return String(value || 'object_archetype').trim().toLowerCase().replace(/[^a-z0-9_\-]+/g, '_').replace(/^_+|_+$/g, '') || 'object_archetype'; }
 function finiteNumber(value, fallback) { const number = Number(value); return Number.isFinite(number) ? number : fallback; }
