@@ -32,8 +32,11 @@ export async function saveCurrentObjectToProject({ allowConnect = true } = {}) {
       toast('Saved as a browser recovery draft only. Connect a project folder to write the real object file.', 'warn');
       return false;
     }
-    const index = await readObjectIndex(client);
     const item = editorState.archetype;
+    if (containsBrowserFrameUploads(item)) {
+      throw new Error('Uploaded frame images are still browser draft files. Promote them through Asset Library before saving this final object record, or use Download ZIP as a backup.');
+    }
+    const index = await readObjectIndex(client);
     const objectPath = objectExportTarget(item.id);
     const existingIndex = index.objects.findIndex((record) => record?.id === item.id);
     const previous = existingIndex >= 0 ? index.objects[existingIndex] : {};
@@ -67,6 +70,11 @@ export async function saveCurrentObjectToProject({ allowConnect = true } = {}) {
   } finally {
     projectSaveRunning = false;
   }
+}
+
+function containsBrowserFrameUploads(item) {
+  const requirements = item?.productionAssets?.requirements || {};
+  return Object.values(requirements).some((requirement) => Array.isArray(requirement?.frames) && requirement.frames.some((frame) => Boolean(frame?.dataUrl)));
 }
 
 function bindProjectFileActions() {
