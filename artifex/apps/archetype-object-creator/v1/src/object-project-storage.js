@@ -33,9 +33,7 @@ export async function saveCurrentObjectToProject({ allowConnect = true } = {}) {
       return false;
     }
     const item = editorState.archetype;
-    if (containsBrowserFrameUploads(item)) {
-      throw new Error('Uploaded frame images are still browser draft files. Promote them through Asset Library before saving this final object record, or use Download ZIP as a backup.');
-    }
+    const { value: projectItem, removedPreviewCount } = projectSafeArchetype(item);
     const index = await readObjectIndex(client);
     const objectPath = objectExportTarget(item.id);
     const existingIndex = index.objects.findIndex((record) => record?.id === item.id);
@@ -56,11 +54,15 @@ export async function saveCurrentObjectToProject({ allowConnect = true } = {}) {
     if (existingIndex >= 0) index.objects[existingIndex] = record;
     else index.objects.push(record);
     suppressDraftMark = true;
-    await client.writeJson(objectPath, item);
+    await client.writeJson(objectPath, projectItem);
     await client.writeJson(OBJECT_INDEX_PATH, index);
     suppressDraftMark = false;
     renderProjectFolderStatus();
-    toast(`Saved ${item.name} to the connected project folder.`, 'success');
+    if (removedPreviewCount) {
+      toast(`Saved ${item.name} to the project folder. ${removedPreviewCount} preview image draft${removedPreviewCount === 1 ? '' : 's'} remain in browser recovery/Backup ZIP until final Asset IDs are assigned.`, 'success');
+    } else {
+      toast(`Saved ${item.name} to the connected project folder.`, 'success');
+    }
     return true;
   } catch (error) {
     suppressDraftMark = false;
@@ -72,9 +74,20 @@ export async function saveCurrentObjectToProject({ allowConnect = true } = {}) {
   }
 }
 
-function containsBrowserFrameUploads(item) {
-  const requirements = item?.productionAssets?.requirements || {};
-  return Object.values(requirements).some((requirement) => Array.isArray(requirement?.frames) && requirement.frames.some((frame) => Boolean(frame?.dataUrl)));
+function projectSafeArchetype(item) {
+  const value = JSON.parse(JSON.stringify(item || {}));
+  let removedPreviewCount = 0;
+  const requirements = value?.productionAssets?.requirements || {};
+  Object.values(requirements).forEach((requirement) => {
+    if (!Array.isArray(requirement?.frames)) return;
+    requirement.frames = requirement.frames.map((frame) => {
+      if (!frame?.dataUrl) return frame;
+      removedPreviewCount += 1;
+      const { dataUrl: _previewOnlyDataUrl, ...safeFrame } = frame;
+      return { ...safeFrame, previewOnly: true };
+    });
+  });
+  return { value, removedPreviewCount };
 }
 
 function bindProjectFileActions() {
