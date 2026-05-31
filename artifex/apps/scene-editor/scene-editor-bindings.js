@@ -67,7 +67,7 @@
     document.querySelectorAll('[data-tip]').forEach(node => node.addEventListener('mouseenter', () => deps.setTip(node.dataset.tip)));
     document.getElementById('openLocalBackup')?.addEventListener('click', deps.openLocalBackup);
     document.getElementById('ignoreLocalBackup')?.addEventListener('click', event => { event.currentTarget.closest('.resume-card-inline')?.remove(); deps.toast('Local backup ignored'); });
-    document.getElementById('manualLocalSave')?.addEventListener('click', deps.manualSaveLocal);
+    document.getElementById('manualLocalSave')?.addEventListener('click', deps.manualLocalSave);
     document.getElementById('importBtn')?.addEventListener('click', event => { event.stopPropagation(); deps.toggleImportOpen(); deps.render(); });
     document.getElementById('jsonFile')?.addEventListener('change', deps.importFile);
     document.getElementById('importUrl')?.addEventListener('click', deps.importUrl);
@@ -122,16 +122,25 @@
     document.getElementById('gridCols')?.addEventListener('change', event => { scene.grid.columns = Number(event.target.value) || 16; deps.saveWorkingCopySoon('grid'); deps.render(); });
     document.getElementById('gridRows')?.addEventListener('change', event => { scene.grid.rows = Number(event.target.value) || 9; deps.saveWorkingCopySoon('grid'); deps.render(); });
     document.getElementById('gridShow')?.addEventListener('change', event => { scene.grid.show = event.target.checked; deps.saveWorkingCopySoon('grid'); deps.render(); });
-    const item = deps.getSelectedItem();
-    if (!item) return;
+
+    function displayedItem() {
+      const current = deps.getSelectedItem();
+      const shownId = document.getElementById('itemId')?.value || '';
+      if (!shownId || current?.id === shownId) return current;
+      return [...(scene.layers || []), ...(scene.elements || []), ...(scene.ui || [])].find((entry) => entry.id === shownId) || current;
+    }
+
+    if (!displayedItem()) return;
 
     [['itemId', 'id'], ['itemName', 'name'], ['itemImage', 'image'], ['itemText', 'text']].forEach(([id, key]) => {
       const inputNode = document.getElementById(id);
       inputNode?.addEventListener('input', event => {
+        const item = displayedItem();
+        if (!item) return;
         item[key] = event.target.value;
         if (key === 'id') deps.setSelectedId(item.id);
         if (key === 'name') {
-          const label = document.querySelector('.scene-item.is-selected .item-label');
+          const label = Array.from(document.querySelectorAll('.scene-item[data-stage-id]')).find((node) => node.dataset.stageId === item.id)?.querySelector('.item-label');
           if (label) label.textContent = event.target.value || item.id;
         }
         deps.saveWorkingCopySoon('item field');
@@ -139,10 +148,18 @@
       inputNode?.addEventListener('blur', () => deps.render());
     });
 
-    document.getElementById('itemType')?.addEventListener('change', event => { item.type = event.target.value; deps.saveWorkingCopySoon('type'); deps.render(); });
+    document.getElementById('itemType')?.addEventListener('change', event => {
+      const item = displayedItem();
+      if (!item) return;
+      item.type = event.target.value;
+      deps.saveWorkingCopySoon('type');
+      deps.render();
+    });
 
     [['itemX', 'x'], ['itemY', 'y'], ['itemW', 'width'], ['itemH', 'height'], ['itemZ', 'zDepth']].forEach(([id, key]) => {
       document.getElementById(id)?.addEventListener('input', event => {
+        const item = displayedItem();
+        if (!item) return;
         item[key] = Number(event.target.value);
         if (key === 'zDepth') {
           const zVal = document.getElementById('zVal');
@@ -153,9 +170,14 @@
     });
 
     document.getElementById('itemLayer')?.addEventListener('change', event => deps.updateSelectedLayer(event.target.value, true));
-    document.getElementById('itemVisible')?.addEventListener('change', event => { item.visible = event.target.checked; deps.saveWorkingCopySoon('visibility'); deps.render(); });
+    document.getElementById('itemVisible')?.addEventListener('change', event => {
+      const item = displayedItem();
+      if (!item) return;
+      item.visible = event.target.checked;
+      deps.saveWorkingCopySoon('visibility');
+      deps.render();
+    });
   }
-
 
   function bindObjectInspector(deps) {
     const inspector = document.getElementById('objectInspector');
@@ -229,9 +251,5 @@
   document.addEventListener('input', (event) => { if (!event.target.closest?.('#settingsSearch')) window.requestAnimationFrame(applySettingsSearch); }, true);
   document.addEventListener('click', () => window.requestAnimationFrame(applySettingsSearch), true);
 
-  window.ArtifexSceneEditorBindings = Object.freeze({
-    bindEditor,
-    bindZoomControls,
-    bindStage
-  });
+  window.ArtifexSceneEditorBindings = Object.freeze({ bindEditor, bindZoomControls, bindStage });
 })();
