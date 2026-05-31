@@ -1,7 +1,7 @@
-import '../../../shared/project-folder/project-folder-client.js?v=0.1.0';
+import '../../../../shared/project-folder/project-folder-client.js?v=0.1.0';
 import { editorState, objectExportTarget, onStateChange } from './editor-state.js';
 import { saveCurrentLocal } from './editor-io.js';
-import { validateRegisteredContentRecord } from '../../../shared/registered-content/registered-content-reader.js';
+import { validateRegisteredContentRecord } from '../../../../shared/registered-content/registered-content-reader.js';
 
 const OBJECT_INDEX_PATH = 'archetypes/object-index.json';
 const OBJECT_INDEX_SCHEMA = 'artifex.archetypes.objects.index.v1';
@@ -12,6 +12,7 @@ let suppressDraftMark = false;
 export function initObjectProjectStorage() {
   if (storageInitialised) return;
   storageInitialised = true;
+  injectProjectStorageStyles();
   bindProjectFileActions();
   renderProjectFolderStatus();
   window.addEventListener('artifex:project-folder-state', renderProjectFolderStatus);
@@ -115,6 +116,18 @@ async function readObjectIndex(client) {
     throw new Error(`Expected ${OBJECT_INDEX_PATH} with schema ${OBJECT_INDEX_SCHEMA} and an objects array.`);
   }
   return index;
+}
+
+function injectProjectStorageStyles() {
+  if (document.getElementById('object-project-storage-styles')) return;
+  const style = document.createElement('style');
+  style.id = 'object-project-storage-styles';
+  style.textContent = `
+    .object-project-folder-status { margin: 6px 10px 7px; padding: 7px 9px; border: 1px solid rgba(226,204,167,.18); border-radius: 9px; color: rgba(255,240,206,.7); font-size: 10px; line-height: 1.35; }
+    .object-project-folder-status.is-connected { color: #83d799; border-color: rgba(72,192,113,.38); background: rgba(72,192,113,.11); }
+    .object-project-folder-status.is-warning { color: #e1c073; border-color: rgba(225,192,115,.34); background: rgba(225,192,115,.1); }
+  `;
+  document.head.appendChild(style);
 }
 
 function renderProjectFolderStatus() {
