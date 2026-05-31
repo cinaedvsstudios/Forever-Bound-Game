@@ -210,6 +210,14 @@
     return `# ${project.gameTitle}\n\nThis Artifex project was initialised by Creation Guide.\n\nProject ID: \`${project.projectId}\`\n\nProject files use relative paths only. Source material can be staged under \`intake/\` and must be promoted into final \`assets/\` records before scenes or runtime content reference it.\n`;
   }
 
+
+  function starterFilePackage(project) {
+    return {
+      'README.md': projectReadme(project),
+      ...starterFiles(project)
+    };
+  }
+
   function intakeReadme(project) {
     return `# ${project.gameTitle} Intake Folder\n\nThis is the creator-facing drop zone for unfinished or newly supplied source assets. Files here are staging files only; permanent project content must reference approved assets promoted into the final \`assets/\` structure.\n\n## Folders\n\n- \`backgrounds/\` — scene backgrounds, interiors, landscapes and environmental plates.\n- \`characters/\` — player, NPC, interactive character, enemy, portrait and sprite-sheet source art.\n- \`objects/\` — props, pickups, doors, transitions, furniture and interactable-object source art.\n- \`icons-ui/\` — project logo/title mark, icons, markers, HUD and menu source art.\n- \`music/\` — music tracks and stingers.\n- \`dialogue-sfx/\` — voice, narration, ambience and sound effects.\n\n## Recommended Starting Media\n\n- project logo or temporary title mark\n- at least one scene background\n- at least one player-character asset\n- at least one NPC asset\n- at least one interactable object or pickup\n- at least one door, passage or transition object\n- at least one icon/UI placeholder set\n`;
   }
@@ -239,9 +247,11 @@
     if (includeIntake) directories.push(...await ensureDirectories(INTAKE_DIRECTORIES));
 
     const results = [];
-    results.push(await writeIfMissing('README.md', () => client.writeText('README.md', projectReadme(project))));
-    for (const [path, value] of Object.entries(starterFiles(project))) {
-      results.push(await writeIfMissing(path, () => client.writeJson(path, value)));
+    for (const [path, value] of Object.entries(starterFilePackage(project))) {
+      const writer = typeof value === 'string'
+        ? () => client.writeText(path, value)
+        : () => client.writeJson(path, value);
+      results.push(await writeIfMissing(path, writer));
     }
     if (includeIntake) results.push(await writeIfMissing('intake/README.md', () => client.writeText('intake/README.md', intakeReadme(project))));
 
@@ -270,6 +280,8 @@
     normalizeProjectInput,
     starterProjectJson,
     starterFiles,
+    starterFilePackage,
+    projectReadme,
     initialiseProjectStructure,
     initialiseIntakeOnly
   };

@@ -27,10 +27,9 @@ function setCurrentIntakeSetupState(value) {
 window.getCreationGuideIntakeSetupState = getCurrentIntakeSetupState;
 
 function renderInitialAssetIntakeSection(force = false) {
-  const storage = document.getElementById('project-folder-setup-section');
-  if (!storage) return;
-  let section = document.getElementById('initial-asset-intake-section');
-  if (!section) { section = document.createElement('section'); section.id = 'initial-asset-intake-section'; section.className = 'project-folder-setup-section intake-setup-section'; storage.insertAdjacentElement('afterend', section); }
+  const section = document.getElementById('initial-asset-intake-mount');
+  if (!section) return;
+  section.classList.add('project-folder-setup-section', 'intake-setup-section');
   const connected = window.ArtifexProjectFolder?.getState?.().folderStatus === 'connected';
   const state = getCurrentIntakeSetupState();
   const working = intakeStructureCreating;

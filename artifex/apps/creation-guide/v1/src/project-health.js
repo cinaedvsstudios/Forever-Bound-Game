@@ -27,7 +27,7 @@ function queueHealthRender() {
 }
 
 function renderProjectHealthPanel() {
-  const panel = document.getElementById('project-overview-panel');
+  const panel = document.getElementById('project-health-mount');
   if (!panel) return;
   const checks = getProjectHealthChecks();
   const blocking = checks.filter(check => check.weight > 0);
@@ -102,7 +102,7 @@ function getProjectHealthChecks() {
   const useGithub = Boolean(document.getElementById('use-github-input')?.checked);
   const library = readProjectFlowLibrary();
   const activeId = localStorage.getItem(ACTIVE_PROJECT_KEY_FLOW);
-  const gatesComplete = ['project-index', 'folders', 'manifest', 'flatplan', 'indexes'].every(id => document.querySelector(`[data-gate="${id}"]`)?.classList.contains('complete'));
+  const gatesComplete = ['project-index', 'folders', 'logic', 'layout', 'indexes'].every(id => document.querySelector(`[data-gate="${id}"]`)?.classList.contains('complete'));
   const assignmentText = document.getElementById('assignment-count')?.textContent || '';
   const assignmentCount = Number((assignmentText.match(/\d+/) || ['0'])[0]);
   const folderState = window.ArtifexProjectFolder?.getState?.() || null;

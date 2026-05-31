@@ -19,8 +19,8 @@ function installProjectFolderSetup() {
 }
 
 function wireProjectFolderBaseControls() {
-  document.getElementById('connect-project-folder-toolbar-button')?.addEventListener('click', () => document.getElementById('project-folder-setup-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
-  document.getElementById('choose-local-folder-button')?.addEventListener('click', () => document.getElementById('project-folder-setup-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  document.getElementById('connect-project-folder-toolbar-button')?.addEventListener('click', () => document.getElementById('project-folder-setup-mount')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  document.getElementById('choose-local-folder-button')?.addEventListener('click', () => document.getElementById('project-folder-setup-mount')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
 }
 
 function projectFolderClientAvailable() { return Boolean(window.ArtifexProjectFolder && window.ArtifexProjectStructure); }
@@ -28,6 +28,7 @@ function currentProjectFolderState() {
   return window.ArtifexProjectFolder?.getState?.() || { folderStatus: 'loading', saveStatus: 'No Folder Connected', folderName: null, supported: typeof window.showDirectoryPicker === 'function', lastError: null };
 }
 function readProjectFolderSetupInput() {
+  if (typeof window.getCreationGuideStarterProjectInput === 'function') return window.getCreationGuideStarterProjectInput();
   const title = String(document.getElementById('game-title-input')?.value || 'Untitled Artifex Adventure').trim();
   return {
     gameTitle: title,
@@ -40,15 +41,9 @@ function readProjectFolderSetupInput() {
 }
 
 function renderProjectFolderSetupSection(force = false) {
-  const gatesHeader = document.querySelector('#project-overview-panel .setup-gates-header');
-  if (!gatesHeader) return;
-  let section = document.getElementById('project-folder-setup-section');
-  if (!section) {
-    section = document.createElement('section');
-    section.id = 'project-folder-setup-section';
-    section.className = 'project-folder-setup-section';
-    gatesHeader.insertAdjacentElement('beforebegin', section);
-  }
+  const section = document.getElementById('project-folder-setup-mount');
+  if (!section) return;
+  section.classList.add('project-folder-setup-section');
   const folderState = currentProjectFolderState();
   const supported = folderState.supported !== false;
   const connected = folderState.folderStatus === 'connected';

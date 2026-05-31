@@ -13,15 +13,15 @@ const MODULES = {
 
 const STATES = ['unassigned', 'assigned', 'started', 'snoozing', 'blocked', 'review', 'done', 'archived'];
 const FILTERS = ['undone', 'all', ...STATES];
-const STRUCTURAL_GATES = ['project-index', 'folders', 'manifest', 'flatplan', 'indexes'];
+const STRUCTURAL_GATES = ['project-index', 'folders', 'logic', 'layout', 'indexes'];
 
 const SETUP_GATES = [
   { id: 'identity', icon: '🪪', title: 'Define Project Identity', description: 'Project name, ID, creator, version, template, and description.' },
   { id: 'storage', icon: '📁', title: 'Connect Project Folder', description: 'Connect or re-authorise the real writable project root folder.' },
   { id: 'project-index', icon: '🧭', title: 'Create Primary Project File', description: 'Create project.json as the top-level pointer file.' },
   { id: 'folders', icon: '🗃️', title: 'Create Folder Structure', description: 'Create the starter project, asset, build, health, backup and todo folders.' },
-  { id: 'manifest', icon: '📜', title: 'Create Logic Shell', description: 'Create logic.json for starter structure and route logic.' },
-  { id: 'flatplan', icon: '🕸️', title: 'Create Layout Shell', description: 'Create layout.json for editor layout and map placement state.' },
+  { id: 'logic', icon: '📜', title: 'Create Logic Shell', description: 'Create logic.json for starter structure and route logic.' },
+  { id: 'layout', icon: '🕸️', title: 'Create Layout Shell', description: 'Create layout.json for editor layout and map placement state.' },
   { id: 'indexes', icon: '📚', title: 'Create Index Files', description: 'Create scene, screen, quest, sidequest, puzzle, archetype and asset indexes.' },
   { id: 'modules', icon: '🧰', title: 'Choose Enabled Modules', description: 'Confirm which Artifex apps are active for this project.' },
   { id: 'active-project', icon: '⭐', title: 'Set Active Project', description: 'Save the project to Project Library and make all apps open into it.' },
@@ -61,6 +61,7 @@ function boot() {
   wireMenus();
   wireInputs();
   wireActions();
+  window.addEventListener('artifex:project-folder-state', () => render());
   if (!state.assignments.length) addAssignment(TEMPLATES[0]);
   render();
   toast(`Creation Guide ${VERSION} loaded.`);
@@ -68,6 +69,13 @@ function boot() {
 
 function createProject(patch = {}) {
   const now = new Date().toISOString();
+  const migratedGates = {
+    ...(patch.gates || {})
+  };
+  if (migratedGates.manifest && !migratedGates.logic) migratedGates.logic = migratedGates.manifest;
+  if (migratedGates.flatplan && !migratedGates.layout) migratedGates.layout = migratedGates.flatplan;
+  delete migratedGates.manifest;
+  delete migratedGates.flatplan;
   return {
     projectId: 'untitled-artifex-adventure',
     projectName: 'Untitled Artifex Adventure',
@@ -80,8 +88,8 @@ function createProject(patch = {}) {
     useGithub: false,
     githubUsername: '',
     primaryIndexFile: 'project.json',
-    manifestFile: 'logic.json',
-    flatplanFile: 'layout.json',
+    logicFile: 'logic.json',
+    layoutFile: 'layout.json',
     registryFile: 'registry.json',
     libraryLinksFile: 'library-links.json',
     inputMapFile: 'input-map.json',
@@ -94,11 +102,20 @@ function createProject(patch = {}) {
     activeQuestId: 'q00',
     startSceneId: null,
     enabledModules: ['creation-guide', 'project-editor', 'scene-editor', 'quest-builder', 'object-creator', 'effect-editor'],
-    gates: Object.fromEntries(SETUP_GATES.map((gate) => [gate.id, false])),
+    gates: {
+      ...Object.fromEntries(SETUP_GATES.map((gate) => [gate.id, false])),
+      ...migratedGates
+    },
     createdAt: now,
     updatedAt: now,
     lastOpenedAt: now,
-    ...patch
+    ...patch,
+    logicFile: patch.logicFile || 'logic.json',
+    layoutFile: patch.layoutFile || 'layout.json',
+    gates: {
+      ...Object.fromEntries(SETUP_GATES.map((gate) => [gate.id, false])),
+      ...migratedGates
+    }
   };
 }
 
@@ -110,7 +127,7 @@ function completion(item) { if (!item) return 0; if (item.state === 'done') retu
 
 function isRealProjectName() { return Boolean(state.project.projectName && state.project.projectName !== 'Untitled Artifex Adventure'); }
 function hasIdentity() { return Boolean(isRealProjectName() && state.project.projectId && state.project.creatorName); }
-function hasStorage() { return Boolean(state.project.localProjectPath || state.project.onlineProjectPath || state.project.deployedUrl); }
+function hasConnectedProjectFolder() { return window.ArtifexProjectFolder?.getState?.().folderStatus === 'connected'; }
 function hasModules() { return Array.isArray(state.project.enabledModules) && state.project.enabledModules.length > 0; }
 function isActiveProjectSaved() { const activeId = localStorage.getItem(ACTIVE_PROJECT_KEY); const library = readProjectLibrary(); return Boolean(activeId && activeId === state.project.projectId && library[state.project.projectId]); }
 function requiredGatesWithoutReadinessComplete() { return SETUP_GATES.filter((gate) => gate.id !== 'readiness').every((gate) => gateStatus(gate.id).complete); }
@@ -118,7 +135,7 @@ function requiredGatesWithoutReadinessComplete() { return SETUP_GATES.filter((ga
 function gateStatus(id) {
   const manual = Boolean(state.project.gates?.[id]);
   if (id === 'identity') return { complete: hasIdentity(), source: 'auto', text: hasIdentity() ? 'Auto-complete: project name, ID, and creator are set.' : 'Needs project name, project ID, and creator.' };
-  if (id === 'storage') return { complete: hasStorage(), source: 'auto', text: hasStorage() ? 'Auto-complete: project storage path is set.' : 'Needs a local path, online path, or deployed URL.' };
+  if (id === 'storage') return { complete: hasConnectedProjectFolder(), source: 'auto', text: hasConnectedProjectFolder() ? 'Project folder is connected.' : 'Connect or re-authorise the writable project folder.' };
   if (id === 'modules') return { complete: hasModules(), source: 'auto', text: hasModules() ? 'Auto-complete: enabled modules are defined.' : 'Needs at least one enabled module.' };
   if (id === 'active-project') return { complete: isActiveProjectSaved(), source: 'auto', text: isActiveProjectSaved() ? 'Active project is saved in Project Library.' : 'Click Set Active Project to save this project.' };
   if (id === 'readiness') return { complete: manual || requiredGatesWithoutReadinessComplete(), source: manual ? 'manual' : 'auto', text: (manual || requiredGatesWithoutReadinessComplete()) ? 'Readiness check passed.' : `Needs: ${missingGateLabels().join(', ') || 'nothing'}.` };
@@ -261,17 +278,20 @@ function renderProjectOverview() {
       ${fact('Local file path', state.project.localProjectPath || 'Not set')}
       ${fact('Online file path', state.project.onlineProjectPath || 'Not set')}
       ${fact('Primary index', state.project.primaryIndexFile)}
-      ${fact('Logic', state.project.manifestFile)}
-      ${fact('Layout', state.project.flatplanFile)}
+      ${fact('Logic', state.project.logicFile)}
+      ${fact('Layout', state.project.layoutFile)}
       ${fact('Active target', `${state.project.activeChronicleId} / ${state.project.activeQuestId}`)}
     </section>
-    <section class="setup-gates-header"><h3>Setup gates</h3><p>${gatesDone}/${SETUP_GATES.length} complete. Identity, storage, modules, active project, and readiness can complete automatically.</p></section>
+    <section id="project-folder-setup-mount" class="project-overview-mount" aria-label="Connected Project Folder"></section>
+    <section id="initial-asset-intake-mount" class="project-overview-mount" aria-label="Initial Asset Intake Setup"></section>
+    <section class="setup-gates-header"><h3>Setup gates</h3><p>${gatesDone}/${SETUP_GATES.length} complete. Identity, connected folder, modules, active project, and readiness can complete automatically.</p></section>
     <section class="setup-gates">
       ${SETUP_GATES.map((gate) => {
         const status = gateStatus(gate.id);
         return `<button type="button" class="setup-gate ${status.complete ? 'complete' : ''} ${status.source}" data-gate="${gate.id}"><span>${gate.icon}</span><strong>${gate.title}</strong><em>${gate.description}<br><small>${escapeHtml(status.text)}</small></em></button>`;
       }).join('')}
     </section>
+    <section id="project-health-mount" class="project-overview-mount" aria-label="Health"></section>
   `;
   target.querySelectorAll('[data-gate]').forEach((button) => button.addEventListener('click', () => handleGateClick(button.dataset.gate)));
 }
@@ -341,7 +361,7 @@ function wireActions() {
   byId('export-project-files-button')?.addEventListener('click', exportProjectFiles);
   byId('export-json-button')?.addEventListener('click', () => { exportProjectFiles(); closeMenus(); });
   byId('project-flow-toolbar-button')?.addEventListener('click', () => { if (typeof showProjectFlow === 'function') showProjectFlow('new'); });
-  byId('connect-project-folder-toolbar-button')?.addEventListener('click', () => document.getElementById('project-folder-setup-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  byId('connect-project-folder-toolbar-button')?.addEventListener('click', () => document.getElementById('project-folder-setup-mount')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
   byId('project-health-toolbar-button')?.addEventListener('click', () => { if (typeof queueHealthRender === 'function') queueHealthRender(); setTimeout(() => document.getElementById('project-health-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 40); });
   byId('view-local-button')?.addEventListener('click', () => { closeMenus(); if (typeof showProjectFlow === 'function') showProjectFlow('open'); else showProjectLibrary(); });
   byId('open-project-library-button')?.addEventListener('click', () => { if (typeof showProjectFlow === 'function') showProjectFlow('open'); else showProjectLibrary(); });
@@ -381,13 +401,19 @@ async function chooseLocalFolder() {
 }
 
 function exportProjectFiles() {
+  let files;
+  try {
+    files = buildCanonicalStarterFiles();
+  } catch (error) {
+    toast(error.message || 'Canonical starter exporter is not available yet.', 'warn');
+    return;
+  }
   STRUCTURAL_GATES.forEach((gateId) => state.project.gates[gateId] = true);
   updateProjectStatusFromGates();
-  const files = buildCanonicalStarterFiles();
   if (window.JSZip) exportZipWithLibrary(files);
-  else downloadJson('artifex-project-backup.json', { project: buildProjectIndex(), logic: buildManifest(), layout: buildFlatplan(), assignments: state.assignments });
+  else download(`${state.project.projectId}-starter-package.json`, JSON.stringify(files, null, 2), 'application/json');
   render();
-  toast('Backup ZIP prepared. Use the connected Project Folder as the normal saved-data source of truth.');
+  toast('Backup ZIP prepared from the same canonical starter builders used by connected-folder creation. Use Project Folder as the normal saved-data source of truth.');
 }
 
 async function exportZipWithLibrary(files) {
@@ -405,67 +431,36 @@ function clearCreationGuideTestData() {
   location.reload();
 }
 
-function buildCanonicalStarterFiles() {
-  const emptyIndex = () => JSON.stringify([], null, 2);
+function buildStarterProjectInput() {
   return {
-    'project.json': JSON.stringify(buildProjectIndex(), null, 2),
-    'logic.json': JSON.stringify(buildManifest(), null, 2),
-    'layout.json': JSON.stringify(buildFlatplan(), null, 2),
-    'registry.json': JSON.stringify({ schemaVersion: 'artifex.registry.v1', projectId: state.project.projectId, records: [] }, null, 2),
-    'library-links.json': JSON.stringify({ schemaVersion: 'artifex.library-links.v1', projectId: state.project.projectId, links: [] }, null, 2),
-    'input-map.json': JSON.stringify({ schemaVersion: 'artifex.input-map.v1', projectId: state.project.projectId, profiles: [{ profileId: 'default', label: 'Default', bindings: [] }] }, null, 2),
-    'README.md': `# ${state.project.projectName}\n\nBlank Starter Project created by Artifex Creation Guide ${VERSION}.\n\nThis package is a backup/fallback export. The connected project folder is the normal saved-data source of truth.\n`,
-    'scenes/scene-index.json': emptyIndex(),
-    'screens/screen-index.json': emptyIndex(),
-    'quests/quest-index.json': emptyIndex(),
-    'sidequests/sidequest-index.json': emptyIndex(),
-    'puzzles/puzzle-index.json': emptyIndex(),
-    'archetypes/object-index.json': emptyIndex(),
-    'archetypes/effect-index.json': emptyIndex(),
-    'assets/asset-index.json': emptyIndex(),
-    'todos/project-manager-todos.json': JSON.stringify([], null, 2),
-    'health/README.md': '# Health Reports\n\nGenerated validation output belongs here.\n',
-    'build/README.md': '# Build Output\n\nPrepared build output belongs here.\n',
-    'backups/README.md': '# Backups\n\nBackup exports belong here.\n'
+    gameTitle: state.project.projectName,
+    projectName: state.project.projectName,
+    projectSlug: state.project.projectId,
+    creator: state.project.creatorName,
+    version: state.project.version,
+    projectLogo: state.project.projectLogo || null,
+    enabledModules: state.project.enabledModules
   };
 }
 
-function buildProjectIndex() {
-  return {
-    schemaVersion: 'artifex.project.v1',
-    projectId: state.project.projectId,
-    projectName: state.project.projectName,
-    projectKind: 'blank-starter-project',
-    status: state.project.status,
-    creatorName: state.project.creatorName,
-    version: state.project.version,
-    paths: {
-      logic: 'logic.json',
-      layout: 'layout.json',
-      registry: 'registry.json',
-      libraryLinks: 'library-links.json',
-      inputMap: 'input-map.json',
-      assets: 'assets/',
-      health: 'health/',
-      build: 'build/',
-      backups: 'backups/',
-      todos: 'todos/'
-    },
-    indexes: {
-      scenes: 'scenes/scene-index.json',
-      screens: 'screens/screen-index.json',
-      quests: 'quests/quest-index.json',
-      sidequests: 'sidequests/sidequest-index.json',
-      puzzles: 'puzzles/puzzle-index.json',
-      objects: 'archetypes/object-index.json',
-      effects: 'archetypes/effect-index.json',
-      assets: 'assets/asset-index.json'
-    },
-    startScreenId: null
-  };
+function canonicalStructureService() {
+  return window.ArtifexProjectStructure || null;
 }
-function buildManifest() { return { schemaVersion: 'artifex.logic.v1', projectId: state.project.projectId, startScreenId: null, routes: [], flags: [], variables: [] }; }
-function buildFlatplan() { return { schemaVersion: 'artifex.layout.v1', projectId: state.project.projectId, nodes: [], routes: [], viewport: { x: 0, y: 0, zoom: 1 } }; }
+
+function buildCanonicalStarterFiles() {
+  const service = canonicalStructureService();
+  if (!service?.normalizeProjectInput || !service?.starterFilePackage) {
+    throw new Error('Canonical project-structure initializer has not loaded yet.');
+  }
+  const project = service.normalizeProjectInput(buildStarterProjectInput());
+  return Object.fromEntries(Object.entries(service.starterFilePackage(project)).map(([path, value]) => [
+    path,
+    typeof value === 'string' ? value : JSON.stringify(value, null, 2)
+  ]));
+}
+
+window.getCreationGuideStarterProjectInput = buildStarterProjectInput;
+
 
 function showProjectLibrary() { const library = readProjectLibrary(); const target = byId('project-library-list'); if (!target) return; const entries = Object.values(library); target.innerHTML = entries.length ? entries.map((project) => `<button type="button" class="project-library-item" data-project="${escapeHtml(project.projectId)}"><strong>${escapeHtml(project.projectName)}</strong><span>${escapeHtml(project.projectId)} · ${escapeHtml(project.status || 'setup')} · ${escapeHtml(project.lastOpenedAt || '')}</span></button>`).join('') : '<p class="empty-note">No saved projects yet. Use Set Active Project to add one.</p>'; target.querySelectorAll('[data-project]').forEach((button) => button.addEventListener('click', () => { const project = library[button.dataset.project]; if (project) { state.project = createProject(project); localStorage.setItem(ACTIVE_PROJECT_KEY, state.project.projectId); byId('project-library-dialog')?.close(); render(); toast('Active project changed.'); } })); byId('project-library-dialog')?.showModal(); }
 function showAssignments() { render(); byId('assignments-dialog')?.showModal(); }

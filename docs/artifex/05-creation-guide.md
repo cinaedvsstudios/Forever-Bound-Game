@@ -55,7 +55,7 @@ The live V1.1.12 implementation currently provides a clean base runtime (`creati
 - visible working/status feedback while starter structure writes are running;
 - **Initial Asset Intake Setup** with Create Intake Folders, Skip for Now and health reporting for ready/skipped/not-set-up states.
 
-The connected-folder/starter-structure and intake setup features have been browser-smoke-tested against the clean V1.1.12 runtime. The active script stack no longer loads `app-bootstrap.js` or `module-app.js`; those legacy files remain only as inactive historical reference until a later confirmed deletion pass.
+The clean V1.1.12 runtime is ready for browser confirmation. The active script stack no longer loads `app-bootstrap.js` or `module-app.js`; those legacy files remain only as inactive historical reference until a later confirmed deletion pass. Connected-folder starter writes, intake setup and the clean runtime still require manual browser verification before their todo tasks move from review to done.
 
 Still future Creation Guide UI work:
 
