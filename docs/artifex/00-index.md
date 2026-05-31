@@ -29,7 +29,7 @@ These three terms must not be merged together:
 - `11-portal-hub.md` — Artifex portal, wedge layout, centre hub, utilities wedge, and portal asset notes.
 - `12-project-settings.md` — project profiles, active project selector, URLs, save paths, import/export settings, and autosave limitations.
 - `13-effects-library.md` — CG Effects Library, reusable fog/sparks/magic/rain/smoke effects, effect JSON, and Scene Editor integration.
-- `14-asset-library.md` — searchable asset library, tags, metadata, asset groups, character animation groups, and Scene Editor integration.
+- `14-asset-library.md` — searchable asset library, tags, metadata, asset groups, audio resources and Scene Editor integration.
 - `15-template-system.md` — template-system concepts and reusable starter-template workflow.
 - `16-dev-status-and-risks.md` — current repo/editor state, known problems, phase plan, risks, important files, and immediate priorities.
 - `17-codex-prompts.md` — preserved Codex prompt material.
@@ -38,6 +38,7 @@ These three terms must not be merged together:
 - `19a-project-starter-file-schemas.md` — canonical minimum JSON shapes for files Creation Guide creates and Project Editor subsequently reads/writes.
 - `20-asset-intake-workflow.md` — creator-facing asset staging and promotion workflow from `intake/` to final indexed `assets/`.
 - `21-template-game-project-contract.md` — populated connected reference-project contract, kept separate from a Blank Starter Project and Artifacts Adventures production work.
+- `22-sound-archetype-generator.md` — shared in-context Procedural Sound Generator popup, friendly controls, Web Audio recipe JSON, and registration of generated sounds through the existing Asset Library.
 
 ## Current Simplified Module List
 
