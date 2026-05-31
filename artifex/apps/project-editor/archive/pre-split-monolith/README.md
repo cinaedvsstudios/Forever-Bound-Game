@@ -1,6 +1,6 @@
 # Project Editor pre-split monolith archive
 
-Archive pass date: 2026-05-31
+Archive pass date: 2026-06-01
 
 ## Files archived in this folder
 
