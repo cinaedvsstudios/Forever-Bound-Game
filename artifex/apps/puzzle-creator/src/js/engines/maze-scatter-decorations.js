@@ -79,7 +79,7 @@ function renderCard() {
     </div>
     <div class="scatter-body" ${scatterState.enabled ? '' : 'hidden'}>
       <div class="scatter-slot scatter-light-slot">
-        <div class="scatter-slot-title"><strong>Decorative Lights</strong><small>${assetStatus(scatterState.light)}</small></div>
+        <div class="scatter-slot-title"><strong>Decorative Lights</strong><small>${escapeHtml(assetStatus(scatterState.light))}</small></div>
         <div class="scatter-controls">
           <label title="Number of decorative light markers generated on available path cells."><span>Amount</span><input type="number" min="0" max="30" value="${scatterState.light.amount}" data-scatter-amount="${scatterState.light.id}" /></label>
           <button type="button" data-scatter-link="${scatterState.light.id}" title="Choose a final registered asset_ visual for decorative lights.">${scatterState.light.visualAssetId ? 'Replace' : 'Link Light'}</button>
@@ -108,7 +108,7 @@ function renderCard() {
 function decorationHtml(slot, index) {
   return `
     <div class="scatter-slot">
-      <div class="scatter-slot-title"><strong>Decoration ${index + 1}</strong><small>${assetStatus(slot)}</small></div>
+      <div class="scatter-slot-title"><strong>Decoration ${index + 1}</strong><small>${escapeHtml(assetStatus(slot))}</small></div>
       <div class="scatter-controls">
         <label title="Number of markers generated for this decoration asset."><span>Amount</span><input type="number" min="0" max="20" value="${slot.amount}" data-scatter-amount="${slot.id}" /></label>
         <button type="button" data-scatter-link="${slot.id}" title="Choose a final registered asset_ visual for this decoration.">${slot.visualAssetId ? 'Replace' : 'Link Asset'}</button>
@@ -129,6 +129,7 @@ function bindCardActions(card) {
     if (!scatterState.enabled) clearPlacements('Scatter is off.');
     else scatterState.status = 'Link visual assets, then regenerate placement markers.';
     renderCard();
+    repaintOverviewAndMarkers();
   });
   card.querySelector('[data-scatter-add-slot]')?.addEventListener('click', () => {
     if (scatterState.decorations.length >= MAX_DECORATION_SLOTS) return;
@@ -140,14 +141,14 @@ function bindCardActions(card) {
   card.querySelectorAll('[data-scatter-link]').forEach((button) => button.addEventListener('click', () => openAssetPicker(button.dataset.scatterLink)));
   card.querySelectorAll('[data-scatter-unlink]').forEach((button) => button.addEventListener('click', () => unlinkSlot(button.dataset.scatterUnlink)));
   card.querySelectorAll('[data-scatter-remove]').forEach((button) => button.addEventListener('click', () => removeDecoration(button.dataset.scatterRemove)));
-  card.querySelectorAll('[data-scatter-amount]').forEach((input) => input.addEventListener('input', () => {
+  card.querySelectorAll('[data-scatter-amount]').forEach((input) => input.addEventListener('change', () => {
     const slot = findSlot(input.dataset.scatterAmount);
     if (!slot) return;
     slot.amount = clampAmount(Number(input.value || 0), slot.type === 'light' ? 30 : 20);
     scatterState.status = 'Amount updated. Regenerate to update marker positions.';
     renderCard();
   }));
-  card.querySelector('[data-scatter-seed]')?.addEventListener('input', (event) => {
+  card.querySelector('[data-scatter-seed]')?.addEventListener('change', (event) => {
     scatterState.seed = Math.max(1, Math.min(999999, Math.floor(Number(event.target.value || 1))));
     scatterState.status = 'Seed updated. Regenerate to apply it.';
     renderCard();
@@ -156,6 +157,7 @@ function bindCardActions(card) {
   card.querySelector('[data-scatter-clear]')?.addEventListener('click', () => {
     clearPlacements('Generated positions cleared. Linked visual assets are retained.');
     renderCard();
+    repaintOverviewAndMarkers();
   });
 }
 
@@ -189,6 +191,7 @@ function unlinkSlot(slotId) {
   slot.cells = [];
   scatterState.status = `${slot.label} unlinked; its generated positions were removed.`;
   renderCard();
+  repaintOverviewAndMarkers();
 }
 
 function removeDecoration(slotId) {
@@ -219,12 +222,14 @@ function regeneratePlacements() {
   if (!scatterState.enabled) {
     scatterState.status = 'Enable Scatter before generating decoration positions.';
     renderCard();
+    repaintOverviewAndMarkers();
     return;
   }
   const slots = linkedSlots();
   if (!slots.length) {
     clearPlacements('No positions generated: link at least one registered final visual asset.');
     renderCard();
+    repaintOverviewAndMarkers();
     return;
   }
   const available = availableCells();
@@ -242,7 +247,7 @@ function regeneratePlacements() {
     ? 'Decoration markers regenerated on unoccupied path cells.'
     : 'No available path cells remain for decoration markers.';
   renderCard();
-  drawOverviewMarkers();
+  repaintOverviewAndMarkers();
 }
 
 function availableCells() {
@@ -301,6 +306,11 @@ function regenerateIfPlaced() {
   if (scatterState.enabled && linkedSlots().some((slot) => slot.cells.length)) regeneratePlacements();
 }
 
+function repaintOverviewAndMarkers() {
+  window.__artifexMazeRuntimeControls?.repaintAll?.();
+  window.setTimeout(drawOverviewMarkers, 35);
+}
+
 function overviewDimensions(width, height, currentState) {
   const scaleX = Math.max(0.6, Number(currentState.stretchX || 100) / 100);
   const scaleY = Math.max(0.6, Number(currentState.stretchY || 100) / 100);
@@ -324,7 +334,7 @@ function drawOverviewMarkers() {
   });
 }
 
-function drawMarker(ctx, dims, cell, text, color) {
+function drawMarker(ctx, dims, cell, markerText, color) {
   const x = dims.ox + cell.x * dims.cellW + dims.cellW / 2;
   const y = dims.oy + cell.y * dims.cellH + dims.cellH / 2;
   const radius = Math.max(4.5, Math.min(dims.cellW, dims.cellH) * 0.28);
@@ -340,7 +350,7 @@ function drawMarker(ctx, dims, cell, text, color) {
   ctx.font = `800 ${Math.max(7, radius * 1.15)}px Inter, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, x, y + 0.4);
+  ctx.fillText(markerText, x, y + 0.4);
   ctx.restore();
 }
 
