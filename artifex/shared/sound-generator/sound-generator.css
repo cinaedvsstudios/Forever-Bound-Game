@@ -1,0 +1,123 @@
+:root {
+  --sg-bg: #070506;
+  --sg-panel: rgba(25, 16, 13, .98);
+  --sg-surface: rgba(14, 10, 9, .72);
+  --sg-border: rgba(182, 106, 60, .42);
+  --sg-line: rgba(248, 240, 200, .13);
+  --sg-gold: #d6a24c;
+  --sg-copper: #b66a3c;
+  --sg-peach: #e89068;
+  --sg-cream: #fff6d9;
+  --sg-parchment: #f8f0c8;
+  --sg-muted: rgba(248, 240, 200, .62);
+  --sg-good: #87dfff;
+  --sg-error: #e26767;
+}
+
+.sound-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(0, 0, 0, .76);
+  backdrop-filter: blur(4px);
+}
+.sound-modal-mount { width: min(1450px, calc(100vw - 44px)); }
+.sound-generator-card {
+  width: min(1450px, calc(100vw - 44px));
+  max-height: calc(100vh - 44px);
+  min-height: min(780px, calc(100vh - 44px));
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  overflow: hidden;
+  border: 1px solid var(--sg-border);
+  border-radius: 22px;
+  color: var(--sg-cream);
+  background: radial-gradient(circle at 50% 0, rgba(214,162,76,.08), transparent 35%), linear-gradient(135deg, #231712, #0b0807);
+  box-shadow: 0 27px 85px rgba(0,0,0,.8), 0 0 42px rgba(182,106,60,.13);
+  font-family: Inter, Arial, sans-serif;
+}
+.sound-generator-card *, .sound-generator-card *::before, .sound-generator-card *::after { box-sizing: border-box; }
+.sound-generator-card button, .sound-generator-card input, .sound-generator-card select, .sound-generator-card textarea { font: inherit; }
+.sound-header {
+  min-height: 70px;
+  padding: 13px 19px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 1px solid var(--sg-line);
+}
+.sound-brand { min-width: 0; display: flex; align-items: center; gap: 13px; }
+.sound-rune {
+  width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(214,162,76,.55); border-radius: 50%; color: var(--sg-gold);
+  transform: rotate(45deg); font: 700 27px Georgia, serif; text-shadow: 0 0 15px rgba(214,162,76,.48);
+}
+.sound-kicker { margin: 0 0 2px; color: var(--sg-muted); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .2em; }
+.sound-brand h1 { margin: 0; color: var(--sg-parchment); font: 700 clamp(20px, 2vw, 27px) Cinzel, Georgia, serif; letter-spacing: .07em; }
+.sound-version { padding: 6px 10px; border: 1px solid rgba(214,162,76,.38); border-radius: 999px; background: rgba(214,162,76,.09); color: var(--sg-gold); font-size: 11px; font-weight: 800; }
+.sound-close { width: 38px; height: 38px; padding: 0 !important; font-size: 25px !important; line-height: 1; }
+.sound-source-row {
+  padding: 9px 19px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--sg-line); background: rgba(0,0,0,.16); font-size: 11px;
+}
+.sound-source-row > span:first-child { color: var(--sg-muted); font-weight: 800; text-transform: uppercase; letter-spacing: .14em; }
+.sound-source-row strong { padding: 4px 11px; border: 1px solid rgba(214,162,76,.26); border-radius: 999px; background: rgba(214,162,76,.09); color: var(--sg-parchment); }
+.sound-state { margin-left: auto; color: var(--sg-muted); }
+.sound-layout { min-height: 0; display: grid; grid-template-columns: 278px minmax(420px, 1fr) minmax(300px, 365px); }
+.sound-library, .sound-editor, .sound-record { min-height: 0; overflow: auto; padding: 15px; }
+.sound-library { border-right: 1px solid var(--sg-line); background: rgba(0,0,0,.13); }
+.sound-record { border-left: 1px solid var(--sg-line); background: rgba(0,0,0,.16); }
+.sound-mode-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 13px; padding: 4px; border: 1px solid var(--sg-line); border-radius: 13px; background: rgba(0,0,0,.26); }
+.sound-mode-tabs button { border: 0; background: transparent; box-shadow: none; padding: 9px 6px; }
+.sound-mode-tabs button.is-active { background: rgba(214,162,76,.17); box-shadow: inset 0 0 0 1px rgba(214,162,76,.35); color: var(--sg-parchment); }
+.sound-select-label { display: grid; gap: 6px; margin-bottom: 11px; color: var(--sg-muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .14em; }
+.sound-help { margin: 2px 0 12px; color: var(--sg-muted); font-size: 11px; line-height: 1.45; }
+.sound-preset-list { display: grid; gap: 8px; }
+.sound-preset-list button { width: 100%; display: grid; gap: 5px; padding: 10px 11px; text-align: left; border-radius: 13px; background: rgba(0,0,0,.18); }
+.sound-preset-list button.is-selected { border-color: var(--sg-gold); background: rgba(214,162,76,.13); box-shadow: 0 0 16px rgba(214,162,76,.12); }
+.sound-preset-list strong { color: var(--sg-parchment); font-size: 12px; }
+.sound-preset-list small { color: var(--sg-muted); font-size: 10px; line-height: 1.35; }
+.sound-editor { display: grid; align-content: start; gap: 14px; }
+.sound-identity { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.sound-identity .wide { grid-column: 1 / -1; }
+.sound-identity label, .sound-pattern-row label { display: grid; gap: 5px; color: var(--sg-muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .11em; }
+.sound-generator-card input[type="text"], .sound-generator-card select, .sound-generator-card textarea {
+  width: 100%; border: 1px solid rgba(182,106,60,.32); border-radius: 10px; background: rgba(0,0,0,.32);
+  color: var(--sg-cream); padding: 8px 10px; outline: none;
+}
+.sound-generator-card input:focus, .sound-generator-card select:focus, .sound-generator-card textarea:focus { border-color: var(--sg-gold); box-shadow: 0 0 0 2px rgba(214,162,76,.19); }
+.sound-pitch-change { margin: 0; padding: 9px 11px; display: grid; grid-template-columns: auto repeat(3, minmax(70px, 102px)); gap: 7px; align-items: center; border: 1px solid var(--sg-line); border-radius: 14px; }
+.sound-pitch-change legend { display: none; }
+.sound-pitch-change::before { content: "Pitch Change"; margin-right: 7px; color: var(--sg-muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .14em; }
+.sound-pitch-change button.is-active { border-color: var(--sg-gold); color: var(--sg-parchment); box-shadow: inset 0 0 0 1px rgba(214,162,76,.3), 0 0 13px rgba(214,162,76,.12); }
+.sound-control-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px 18px; padding: 14px; border: 1px solid var(--sg-line); border-radius: 16px; background: var(--sg-surface); }
+.sound-slider { display: grid; gap: 7px; }
+.sound-slider span { display: flex; justify-content: space-between; color: var(--sg-muted); font-size: 11px; }
+.sound-slider output { color: var(--sg-parchment); font-variant-numeric: tabular-nums; }
+.sound-slider input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--sg-gold); }
+.sound-pattern-row { padding: 11px 14px; display: flex; align-items: end; gap: 18px; border: 1px solid var(--sg-line); border-radius: 14px; }
+.sound-pattern-row label:first-child { width: 132px; }
+.sound-pattern-row .check { padding-bottom: 9px; display: flex; flex-direction: row; align-items: center; gap: 8px; }
+.sound-pattern-row input[type="checkbox"] { accent-color: var(--sg-gold); }
+.sound-record h2 { margin: 0 0 12px; color: var(--sg-parchment); font: 700 16px Cinzel, Georgia, serif; letter-spacing: .08em; text-transform: uppercase; }
+.sound-record-summary { display: grid; gap: 8px; margin: 0 0 13px; }
+.sound-record-summary dt { color: var(--sg-muted); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .15em; }
+.sound-record-summary dd { margin: 4px 0 0; color: var(--sg-cream); font-size: 11px; overflow-wrap: anywhere; }
+.sound-json-label { display: grid; gap: 7px; color: var(--sg-muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .14em; }
+.sound-json-label textarea { min-height: 290px; height: calc(100vh - 400px); max-height: 455px; resize: vertical; font: 10px/1.4 Consolas, "Courier New", monospace; color: rgba(248,240,200,.82); }
+.sound-library-note { margin: 11px 0 0; padding: 10px; border: 1px dashed rgba(214,162,76,.31); border-radius: 11px; color: var(--sg-muted); font-size: 10px; line-height: 1.48; }
+.sound-actions { padding: 12px 17px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px 16px; border-top: 1px solid var(--sg-line); background: rgba(0,0,0,.15); }
+.sound-preview-actions, .sound-file-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+.sound-generator-card button { min-height: 34px; padding: 7px 11px; border: 1px solid rgba(182,106,60,.4); border-radius: 10px; background: linear-gradient(180deg, rgba(64,42,27,.76), rgba(28,18,14,.92)); color: var(--sg-cream); cursor: pointer; font-size: 11px; font-weight: 650; transition: border-color .14s ease, box-shadow .14s ease, transform .14s ease; }
+.sound-generator-card button:hover { border-color: var(--sg-gold); box-shadow: 0 0 14px rgba(214,162,76,.15); transform: translateY(-1px); }
+.sound-generator-card button.primary, .sound-generator-card button.assign-action { border-color: rgba(214,162,76,.64); color: var(--sg-parchment); background: linear-gradient(180deg, rgba(137,91,34,.82), rgba(57,35,19,.96)); }
+.sound-message { min-height: 31px; margin: 0; padding: 8px 19px; border-top: 1px solid var(--sg-line); color: var(--sg-muted); font-size: 11px; }
+.sound-message[data-kind="good"] { color: var(--sg-good); }
+.sound-message[data-kind="warning"] { color: var(--sg-peach); }
+.sound-message[data-kind="error"] { color: var(--sg-error); }
+@media (max-width: 1160px) { .sound-generator-card { max-height: none; } .sound-layout { grid-template-columns: 260px 1fr; } .sound-record { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--sg-line); } .sound-json-label textarea { height: 230px; min-height: 180px; } }
+@media (max-width: 790px) { .sound-modal-backdrop { padding: 8px; align-items: start; overflow: auto; } .sound-generator-card { width: calc(100vw - 16px); min-height: 0; border-radius: 16px; } .sound-layout { display: block; } .sound-library { border-right: 0; border-bottom: 1px solid var(--sg-line); } .sound-control-grid { grid-template-columns: 1fr; } .sound-pitch-change { grid-template-columns: repeat(3, 1fr); } .sound-pitch-change::before { grid-column: 1 / -1; } }
