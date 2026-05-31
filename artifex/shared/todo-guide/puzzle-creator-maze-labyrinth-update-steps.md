@@ -1,6 +1,6 @@
 # Puzzle Creator · Maze / Labyrinth Update Steps
 
-Status: V1.31 live test required — Scatter positions can now be authored before optional final visual asset linking
+Status: V1.32 live test required — Scatter supports Random, Equal Distribution and Around Main Solution Path placement modes
 Owner: Puzzle Creator
 Related modules: Project Manager, Scene Editor, Quest Builder, Archetype Object Creator, Asset Library, Build Game
 Last updated: 2026-05-31
@@ -81,7 +81,7 @@ The reader/picker validates stable final records and excludes intake files, exte
 
 The Door endpoint positioning correction has been approved. Full Door visual-picker selection/export can still be confirmed when a suitable registered final `asset_` record is available.
 
-## V1.31 implemented · Scatter decorations and lights live test required
+## V1.31 implemented · Scatter placeholder-first authoring
 
 New permanent module:
 
@@ -91,43 +91,57 @@ src/js/engines/maze-scatter-decorations.js
 
 Scatter is decoration-only. It does not define objectives, collision, route logic or transfer behaviour.
 
-Implemented behaviour:
+Implemented behaviour retained in V1.32:
 
-- A new **Scatter · Decoration + Light** card appears in **04 · Surface + Edit**, beneath Wall Form.
+- A **Scatter · Decoration + Light** card appears in **04 · Surface + Edit**, beneath Wall Form.
 - The card is inactive until the maker clicks **Add**; switching it off clears authored positions.
 - A **Decorative Lights** marker slot exists with an amount control and optional registered final visual asset selection.
 - Up to five additional **Decoration Assets** marker slots may be added.
-- **Regenerate** creates repeatable placeholder markers from configured amounts even when no visual asset has been linked yet.
-- The optional **Link Light** / **Link Asset** actions use the shared registered-content picker restricted to valid final `asset_` records.
-- Linking or unlinking a final asset does not delete or move existing authored marker positions.
+- **Regenerate** creates repeatable placeholder markers even when no visual asset has been linked.
+- Optional **Link Light** / **Link Asset** actions use the registered-content picker restricted to final `asset_` records.
+- Linking or unlinking a final asset preserves existing authored marker positions.
 - Unlinked marker slots display honestly as placeholders pending a final visual asset.
-- A deterministic numeric seed and **Regenerate** action place repeatable marker positions on open path cells.
 - Scatter positions exclude the entrance, exit, Collect object cells and Door/Portal endpoint cells.
 - Scatter has `collision: "none"` in export and never changes maze solving or Walk Test movement.
-- **Clear Positions** and turning Scatter off repaint Overview cleanly so old marker positions do not remain visible.
-- Export stores the authored light/decoration slots and cells even while `visualAssetId` is null, with `visualLinkStatus: "placeholder_pending_final_asset"`; linked slots store final asset reference fields.
+- Export stores authored slots and cells even while `visualAssetId` is null.
 
-Important limitation: V1.31 displays Scatter placements as small authoring markers in **Overview only**. It does not yet render linked asset images in the large playable preview. This limitation is stated in the visible UI and recorded in export status.
+## V1.32 implemented · Scatter placement modes live test required
 
-### V1.31 focused live test
+V1.32 responds to the live test feedback that random placement is inappropriate for functional lighting and can create over-concentrated decorative clusters.
 
-1. Confirm the header displays **V1.31**.
-2. Open **Surface + Edit** and confirm a **Scatter · Decoration + Light** card appears beneath **Wall Form**.
-3. Click **Add** and confirm the Decorative Lights row, Decoration Assets section, Seed, Regenerate and Clear Positions controls appear.
-4. Without linking any asset, set the light amount and click **Regenerate**. Confirm placeholder light markers appear in Overview.
-5. Add one or more Decoration Assets slots, set their amount and click **Regenerate**. Confirm their placeholder markers appear without requiring an asset link; no more than five decoration slots may exist.
-6. Confirm markers do not occupy entrance, exit, Collect markers or Door/Portal endpoint cells.
-7. Change the seed and regenerate; confirm marker positions change. Reuse the same seed and confirm positions repeat.
-8. Optionally click **Link Light** or **Link Asset** and confirm the shared picker opens restricted to final registered assets, with honest no-folder/no-record behaviour when applicable.
-9. Where a valid final `asset_` record exists, link or unlink it and confirm the existing marker positions remain in place.
-10. Use **Clear Positions** and toggle Scatter off; confirm removed markers do not remain on Overview.
-11. Download JSON and confirm `puzzle.scatterDecorations` contains `collision: "none"`, generated cells and honest null/pending visual links where assets were not selected.
-12. Briefly confirm existing Door/Portal Walk Test transfer, Collect linking and Rounded/Organic Wall Form remain unbroken.
+Implemented behaviour:
+
+- Every Scatter slot now has its own **Placement** selector.
+- **Decorative Lights** defaults to **Equal Distribution**.
+- New decoration slots default to **Random**.
+- Any light or decoration slot can use one of three modes:
+  - **Random** — seeded random distribution that avoids placing the same slot's markers immediately beside one another where enough space exists.
+  - **Equal Distribution** — spreads markers across walkable corridors using corridor distance so functional lighting is not bunched into one area.
+  - **Around Main Solution Path** — spaces markers along the calculated start-to-exit route, adding nearby markers only where more positions are requested than can be placed directly on the route.
+- Around Main Solution Path calculates its route independently of the visible solution overlay, so hiding the maker solution does not disable route-based placement.
+- If no valid main route exists, Around Main Solution Path reports that it fell back to Equal Distribution rather than pretending it used a route.
+- Placement mode is stored per slot in export as `placementMode`, and the Scatter schema advances to `artifex.mazeScatter.v2`.
+
+Important limitation: Scatter placements remain authoring markers in **Overview only**. Actual linked asset images and light effects are not yet rendered in the large playable preview.
+
+### V1.32 focused live test
+
+1. Confirm the header displays **V1.32**.
+2. Open **Surface + Edit → Scatter · Decoration + Light** and turn Scatter on.
+3. Confirm **Decorative Lights** has a **Placement** selector defaulting to **Equal Distribution**.
+4. Set lights to a visible amount such as `20` or `30`, regenerate, and confirm the markers are substantially more evenly spread through walkable corridors than the previous clustered random result.
+5. Change lights to **Random**, regenerate, and confirm it produces a different, looser seeded scatter pattern.
+6. Change lights to **Around Main Solution Path**, regenerate, and confirm the light markers follow the visible solution route pattern rather than covering unrelated branches.
+7. Add a Decoration Asset slot and confirm its Placement selector defaults to **Random** and can independently be changed to either other mode.
+8. Change the Seed, regenerate, then reuse the same Seed and mode; confirm the generated positions repeat.
+9. Confirm markers continue to avoid entrance, exit, Collect items and Door/Portal endpoints.
+10. Download JSON and confirm `puzzle.scatterDecorations` uses schema `artifex.mazeScatter.v2` and each slot stores a `placementMode` value.
+11. Briefly confirm Door/Portal Walk Test transfer, Collect linking and Rounded/Organic Wall Form remain normal.
 
 ## Still unimplemented
 
 - Rendering selected Door images inside the playable preview.
-- Rendering Scatter linked asset images/lights inside the playable preview.
+- Rendering Scatter linked asset images or real light effects inside the playable preview.
 - Portal registered visual/effect selection and shared global Portal Registry integration.
 - Project production/promotion workflows that populate final asset/archetype indexes where missing.
 - Completion Rule enforcement during Walk Test/game runtime.
@@ -141,15 +155,15 @@ Important limitation: V1.31 displays Scatter placements as small authoring marke
 - **Collect objects:** placed cell plus stable `archetypeObjectId` resolving to a registered `archobj_` gameplay object.
 - **Doors:** movement belongs to `maze-connections.js`; optional appearance is a registered final `visualAssetId` resolving to `asset_`.
 - **Portals:** local transfer remains interim; later visual/effect references and global endpoint relationships belong to the Portal Registry design.
-- **Scatter decorations/lights:** decorative non-collision authored cells may exist as placeholders first; optional later visual references must resolve to registered final `asset_` records.
+- **Scatter decorations/lights:** decorative non-collision authored cells may exist as placeholders first; optional later visual references must resolve to registered final `asset_` records. Placement distribution is stored per slot.
 
 ## Core workflow rule: Features first, Completion Rules second
 
 Features define content in the maze. Completion Rules decides which gameplay features are mandatory. Scatter does not appear in Completion Rules because it is decorative only.
 
-## Next implementation order after V1.31 test
+## Next implementation order after V1.32 test
 
-1. Verify Scatter placeholder-first placement, optional final asset linking, deterministic positions, exclusion rules, clearing and JSON export.
+1. Verify Scatter placement modes, placeholder-first placement, deterministic positions, exclusion rules and JSON export.
 2. Implement Traboule as a hidden pass-through wall feature.
 3. Implement shared/global Portal Registry integration across apps.
 4. Define and implement Foe/Hazard feature behaviour.
