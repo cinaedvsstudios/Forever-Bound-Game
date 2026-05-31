@@ -25,7 +25,16 @@
   }
 
   function selectedItem() {
-    return api()?.getSelectedItem?.() || null;
+    const editor = api();
+    const shownId = document.getElementById('itemId')?.getAttribute('value') || '';
+    if (shownId) {
+      const shown = editor?.getAllItems?.().find((item) => item.id === shownId);
+      if (shown) {
+        const scene = editor?.getScene?.();
+        return [...(scene?.layers || []), ...(scene?.elements || []), ...(scene?.ui || [])].find((item) => item.id === shownId) || shown;
+      }
+    }
+    return editor?.getSelectedItem?.() || null;
   }
 
   function clamp(value, min, max) {
