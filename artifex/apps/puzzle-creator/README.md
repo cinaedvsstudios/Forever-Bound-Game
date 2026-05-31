@@ -1,87 +1,131 @@
-# Artifex Maze Maker
+# Artifex Puzzle Creator
 
-This is a cleaned-up, split-file version of the uploaded `maze.html` prototype, rebuilt as an Artifex Puzzle Maker module for Forever Bound.
+## Purpose
 
-## What it does
+Puzzle Creator is the Artifex module for authoring a self-contained playable challenge: for example a Maze / Labyrinth, Symbol Assembly, Item Order puzzle, Obstacle Course, Hazard challenge or Arena Trial.
 
-- Loads or generates a 2D maze.
-- Parses image regions into wall/path cells.
-- Shows a 2D analyzer matrix.
-- Builds a Three.js 3D preview.
-- Allows simple paint, section paint, and draw/erase editing.
-- Solves the maze with breadth-first search.
-- Exports game-readable JSON using schema `cinaedvs.artifex.maze.v1`.
-- Keeps the exported JSON data-driven so the game can read the grid, completion trigger, collision, render hints, start point, exit point, and optional solution path.
+A completed puzzle may be inserted into Quest Builder as a meaningful Quest flow step. Puzzle Creator defines how the challenge works; Quest Builder defines why it happens in the Quest and what story/progression outcomes follow completion.
 
-## File structure
+Required companion contracts:
 
 ```text
-index.html
-src/css/artifex-theme.css
-src/js/config.js
-src/js/state.js
-src/js/dom.js
-src/js/textures.js
-src/js/maze-generator.js
-src/js/maze-parser.js
-src/js/renderer.js
-src/js/solver.js
-src/js/editor-tools.js
-src/js/exporter.js
-src/js/ui.js
-src/js/main.js
-data/maze-artifex.schema.json
-data/sample-maze.json
+docs/artifex/07b-puzzle-creator-quest-integration.md
+docs/artifex/19-project-file-contracts.md
+docs/artifex/19a-project-starter-file-schemas.md
+docs/artifex/20-asset-intake-workflow.md
+docs/artifex/22-sound-archetype-generator.md
 ```
 
-## How to run
+## Locked Module Relationship
 
-Because the app uses JavaScript modules, open it through a local server rather than double-clicking the HTML file.
-
-```bash
-npm install
-npm run dev
+```text
+Puzzle Creator = creates and saves the contained challenge.
+Quest Builder = references the saved puzzle by puzzleId as a flow step.
+Project Editor = connects wider route/Flatplan structure and may consume public completion results.
 ```
 
-Then open the local Vite URL shown in the terminal.
+Use **Project Editor** as the user-facing structural-tool name. Any remaining `Project Manager` labels in older code or documentation are migration items, not the preferred name.
 
-## Game-readable export
+## Ownership Boundary
 
-Use **Download Game JSON**. The exported file contains:
+Puzzle Creator owns:
 
-- `schema`
-- `moduleId`
-- `gameplayMode`
-- `puzzle.type`
-- `puzzle.callingText`
-- `puzzle.completionCondition.flag`
-- `grid.matrix`
-- `collision`
-- `renderHints`
-- `entities` for entry and exit
-- optional BFS `solution.path`
+- puzzle definition and internal playable configuration;
+- puzzle-engine type and settings;
+- internal layout, route, cells, features, start/exit and local completion rules;
+- puzzle-local feedback required during the challenge;
+- final referenced assets/archetypes/effects/audio IDs used inside the puzzle;
+- eventual puzzle index/content-file registration.
 
-The game engine can treat `grid.matrix[y][x] === 1` as solid wall collision and `0` as navigable path.
+Puzzle Creator must not own:
 
-## Notes
+- whole Quest chains, Calling flow or Quest rewards;
+- Quest-level dialogue/Capra narrative surrounding the puzzle;
+- Project Editor route/Flatplan structure;
+- reusable object/effect definitions owned by their libraries;
+- copied media files or procedural audio recipes;
+- permanent links to `intake/` source files.
 
-This version intentionally avoids direct GitHub writing. It follows the manual Artifex workflow: edit visually, download JSON, upload the JSON into the repo, then test in the game.
+## Canonical Future Project Files
 
-## 2026-05-26 typography pass
+When connected-project saving is implemented, Puzzle Creator must register and save puzzle content under the selected project root:
 
-Updated the Artifex interface typography scale so the tool follows a clearer production-editor hierarchy:
+```text
+puzzles/puzzle-index.json
+puzzles/puzzle_<slug>.json
+```
 
-- Added Cinzel for titles and Inter for UI text, with safe fallbacks.
-- Added central typography tokens in `src/css/artifex-theme.css`.
-- Increased labels, buttons, helper text, output values, panel headings, status pills, legends, and mobile controls.
-- Added larger coarse-pointer touch targets while keeping the desktop workspace compact.
-- Kept the existing game-readable maze JSON export format unchanged.
+The canonical empty index created by Creation Guide is:
 
-## 2026-05-26 layout update
+```json
+{
+  "schemaVersion": "artifex.puzzles.index.v1",
+  "projectId": "project_forever_bound",
+  "puzzles": []
+}
+```
 
-- Reworked the interface into the requested top title bar, left control panel, and right preview panel.
-- Added a sticky icon bar at the top of the left panel.
-- Moved Build Maze into the first left-panel card and combined source generation with parser controls.
-- Reduced image upload from a main feature to a secondary “Use image as map reference” button.
-- Split controls into Build, Display, Game Logic, Materials, Paint/Edit, and Help sections.
-- Kept the game-readable JSON export schema unchanged.
+Quest Builder should then select a stable `puzzle_` ID from that index. It must not copy the complete puzzle definition into a Quest block.
+
+## Current Live V1.30 State
+
+The current Puzzle Creator V1.30 interface is an evolving authoring app rather than completed connected-project integration.
+
+Current functionality includes:
+
+- multiple planned puzzle-engine choices, currently surfaced through the Puzzle menu;
+- Maze / Labyrinth editing and preview workflow;
+- 2D overview plus rendered playable preview/walk testing where supported;
+- features and completion-rule controls for the currently implemented Maze work;
+- Game Logic fields including Puzzle Type, Integration Context, Completion Flag and Calling Text;
+- JSON import/export/download workflow;
+- registered-content linking for selected current Maze features where implemented and documented in its current todo record.
+
+Current limitations relevant to integration:
+
+- the app still uses an export/download workflow rather than canonical connected-folder saving to `puzzles/`;
+- its current runtime/export format has not yet been converted into the canonical `puzzle_` registration workflow required for Quest Builder picking;
+- Quest Builder does not yet contain a live `Puzzle` flow block or `puzzleId` selector;
+- the live Puzzle Creator header still contains old module wording that should be corrected in a future versioned UI pass.
+
+Do not present the Quest Builder handoff as live until both apps have received the necessary versioned implementation and browser testing.
+
+## Puzzle Creator to Quest Builder Handoff
+
+Example future use:
+
+```text
+Puzzle Creator
+  saves puzzle_chalice_pedestal
+
+Quest Builder
+  flow block: Solve the Chalice Pedestal
+  puzzleId: puzzle_chalice_pedestal
+  on complete: set flag_chalice_pedestal_solved, trigger dialogue, grant item, continue Quest
+```
+
+Puzzle Creator determines whether its own challenge is complete. Quest Builder consumes that public completion result and authors Quest-level outcomes around it.
+
+For the full handoff rules, including conditions, Capra feedback, public results and validation, use:
+
+```text
+docs/artifex/07b-puzzle-creator-quest-integration.md
+```
+
+## Asset and Audio References
+
+Puzzle Creator may reference final registered assets and reusable definitions:
+
+```text
+asset_       final images/audio/generated sound recipes
+archobj_     reusable objects where supported
+archeffect_  reusable effects where supported
+```
+
+Imported or generated sounds must resolve through `assets/asset-index.json` using `asset_` IDs. Do not create `archsound_` IDs or copy procedural sound recipes into a puzzle file.
+
+## Current Implementation Note
+
+The current active app includes older and newer Maze-related implementation files while V1.30 testing continues. Continue the existing cleanup rule: do not stack random patch layers or rebuild the app when a controlled normal-module change is sufficient.
+
+Any live Puzzle Creator UI/data edit must use that app's visible version/cache-key update rule and requires browser confirmation before being described as working.
