@@ -1,0 +1,128 @@
+import '../../../../shared/project-folder/project-folder-client.js?v=0.1.0';
+import { editorState, objectExportTarget, onStateChange } from './editor-state.js';
+import { saveCurrentLocal } from './editor-io.js';
+import { validateRegisteredContentRecord } from '../../../../shared/registered-content/registered-content-reader.js';
+
+const OBJECT_INDEX_PATH = 'archetypes/object-index.json';
+const OBJECT_INDEX_SCHEMA = 'artifex.archetypes.objects.index.v1';
+let storageInitialised = false;
+let projectSaveRunning = false;
+
+export function initObjectProjectStorage() {
+  if (storageInitialised) return;
+  storageInitialised = true;
+  bindProjectFileActions();
+  renderProjectFolderStatus();
+  window.addEventListener('artifex:project-folder-state', renderProjectFolderStatus);
+  onStateChange(() => {
+    window.ArtifexProjectFolder?.markLocalDraftOnly?.();
+    renderProjectFolderStatus();
+  });
+}
+
+export async function saveCurrentObjectToProject({ allowConnect = true } = {}) {
+  if (projectSaveRunning) return false;
+  projectSaveRunning = true;
+  try {
+    saveCurrentLocal();
+    const client = await obtainWritableProjectFolder(allowConnect);
+    if (!client) {
+      toast('Saved as a browser recovery draft only. Connect a project folder to write the real object file.', 'warn');
+      return false;
+    }
+    const index = await readObjectIndex(client);
+    const item = editorState.archetype;
+    const objectPath = objectExportTarget(item.id);
+    const existingIndex = index.objects.findIndex((record) => record?.id === item.id);
+    const previous = existingIndex >= 0 ? index.objects[existingIndex] : {};
+    const record = {
+      ...previous,
+      id: item.id,
+      name: item.name,
+      type: item.category || item.role || 'object',
+      category: item.category,
+      role: item.role,
+      file: objectPath,
+      tags: Array.isArray(item.tags) ? [...item.tags] : [],
+      updatedAt: new Date().toISOString()
+    };
+    const validation = validateRegisteredContentRecord('archetype-objects', record);
+    if (!validation.valid) throw new Error(validation.errors.join(' '));
+    if (existingIndex >= 0) index.objects[existingIndex] = record;
+    else index.objects.push(record);
+    await client.writeJson(objectPath, item);
+    await client.writeJson(OBJECT_INDEX_PATH, index);
+    renderProjectFolderStatus();
+    toast(`Saved ${item.name} to the connected project folder.`, 'success');
+    return true;
+  } catch (error) {
+    toast(`Project save failed: ${error.message || String(error)}`, 'error');
+    renderProjectFolderStatus();
+    return false;
+  } finally {
+    projectSaveRunning = false;
+  }
+}
+
+function bindProjectFileActions() {
+  document.getElementById('connect-project-folder-button')?.addEventListener('click', async () => {
+    try {
+      await connectOrReauthoriseFolder();
+      renderProjectFolderStatus();
+    } catch (error) {
+      toast(error.message || 'Could not connect the project folder.', 'error');
+    }
+  });
+  document.getElementById('save-project-button')?.addEventListener('click', async () => {
+    await saveCurrentObjectToProject({ allowConnect: true });
+  });
+}
+
+async function obtainWritableProjectFolder(allowConnect) {
+  const client = window.ArtifexProjectFolder;
+  if (!client) throw new Error('Shared project-folder service did not load.');
+  let state = client.getState();
+  if (state.folderStatus === 'connected') return client;
+  if (!allowConnect) return null;
+  state = await connectOrReauthoriseFolder();
+  return state?.folderStatus === 'connected' ? client : null;
+}
+
+async function connectOrReauthoriseFolder() {
+  const client = window.ArtifexProjectFolder;
+  if (!client) throw new Error('Shared project-folder service did not load.');
+  const state = client.getState();
+  if (state.folderStatus === 'permission-required') return client.reauthoriseProjectFolder();
+  if (state.folderStatus === 'connected') return state;
+  return client.connectProjectFolder();
+}
+
+async function readObjectIndex(client) {
+  let index;
+  try {
+    index = await client.readJson(OBJECT_INDEX_PATH);
+  } catch (error) {
+    if (error?.name === 'NotFoundError') {
+      throw new Error('The project is missing archetypes/object-index.json. Create the starter structure in Creation Guide first.');
+    }
+    throw error;
+  }
+  if (!index || index.schemaVersion !== OBJECT_INDEX_SCHEMA || !Array.isArray(index.objects)) {
+    throw new Error(`Expected ${OBJECT_INDEX_PATH} with schema ${OBJECT_INDEX_SCHEMA} and an objects array.`);
+  }
+  return index;
+}
+
+function renderProjectFolderStatus() {
+  const statusNode = document.getElementById('object-project-folder-status');
+  if (!statusNode) return;
+  const state = window.ArtifexProjectFolder?.getState?.() || { saveStatus: 'No Folder Connected', folderStatus: 'no-folder-connected' };
+  statusNode.textContent = state.folderStatus === 'connected' && state.folderName
+    ? `${state.saveStatus} · ${state.folderName}`
+    : state.saveStatus || 'No Folder Connected';
+  statusNode.className = `object-project-folder-status ${state.folderStatus === 'connected' ? 'is-connected' : state.folderStatus === 'permission-required' ? 'is-warning' : ''}`;
+}
+
+function toast(message, type = 'success') {
+  window.dispatchEvent(new CustomEvent('artifex:toast', { detail: { message, type } }));
+}
