@@ -4,7 +4,7 @@
 
 The **Template Game** is a small populated connected Artifex reference project. It exists to prove that Artifex apps can read, write and reference one another's outputs inside one coherent project package using the same contracts as a real game.
 
-Template Game should use existing SVG, image, audio and test assets wherever practical. It is not a replacement for **Artifacts Adventures**, and it does not need to become a polished final game before real production begins.
+Template Game should use existing SVG, image, audio and test assets wherever practical. It may later include one generated procedural synth sound when the shared sound generator and runtime playback exist. It is not a replacement for **Artifacts Adventures**, and it does not need to become a polished final game before real production begins.
 
 After the connected reference flow works, **Artifacts Adventures** is the first real production project authored through the proven Artifex toolchain.
 
@@ -15,12 +15,14 @@ docs/artifex/05-creation-guide.md
 docs/artifex/19-project-file-contracts.md
 docs/artifex/19a-project-starter-file-schemas.md
 docs/artifex/20-asset-intake-workflow.md
+docs/artifex/22-sound-archetype-generator.md        [when generated-audio validation is included]
 artifex/shared/todo-guide/all-apps-todos.json
 ```
 
 - `19-project-file-contracts.md` remains authoritative for ownership, save behaviour, relative paths and cross-app boundaries.
 - `19a-project-starter-file-schemas.md` remains authoritative for the exact blank-starter JSON shapes.
-- `20-asset-intake-workflow.md` remains authoritative for intake-to-final-asset promotion.
+- `20-asset-intake-workflow.md` remains authoritative for intake-to-final-asset promotion of supplied resources.
+- `22-sound-archetype-generator.md` defines the generated-audio asset and playback flow if the Template Game tests procedural synth sound.
 - This document defines the minimum later populated reference content required for Template Game.
 
 ## Three Different Layers
@@ -63,7 +65,7 @@ required empty folders
 optional intake folders/README when the user approves that step
 ```
 
-Creation Guide must not populate sample scenes, screens, quests, puzzles, archetypes, effects or promoted assets merely because Template Game will later require them.
+Creation Guide must not populate sample scenes, screens, quests, puzzles, archetypes, effects or promoted/generated assets merely because Template Game will later require them.
 
 Generated health reports, build results, backup manifests and app-authored task/content files are created by their owning systems only when those systems are exercised.
 
@@ -132,6 +134,7 @@ Generated health reports, build results, backup manifests and app-authored task/
     audio/
       music/
       sfx/
+        synth_<slug>.json       [generated sound asset, only when created]
       voice/
     fonts/
     video/
@@ -151,7 +154,7 @@ Generated health reports, build results, backup manifests and app-authored task/
     project-manager-todos.json
 ```
 
-This hierarchy describes a possible complete connected project package. Not every output file exists immediately after Blank Starter creation.
+This hierarchy describes a possible complete connected project package. Not every output file exists immediately after Blank Starter creation. A generated synth JSON file is an optional final audio asset created later through the shared sound-generator flow; it is not a new blank-starter requirement or a sound-archetype index.
 
 ## Minimum Populated Template Game Content
 
@@ -159,13 +162,14 @@ This hierarchy describes a possible complete connected project package. Not ever
 |---|---|
 | Creation Guide | Project identity, active-project setup, blank starter foundations and enabled-module/index references. |
 | Project Editor | Valid Flatplan/route structure in `logic.json`, editor layout in `layout.json`, registry/library-link data where required, and visible save/connection state. |
-| Asset Library | Populated `assets/asset-index.json`, at least one asset group where useful, and registered test visual/audio assets. |
+| Asset Library | Populated `assets/asset-index.json`, at least one asset group where useful, and registered test visual/audio assets. Imported audio and generated procedural audio use the same asset-library reference method. |
 | Scene Editor | At least one playable scene file registered in `scenes/scene-index.json`. |
 | Screens / UI flow | At least one real title/start screen registered in `screens/screen-index.json`. |
 | Archetype Object Creator | At least one used object archetype; ideally a player, interactable and exit/transition when supported. |
 | Effect Editor | At least one reusable effect archetype visibly used or referenced by the scene. |
 | Quest Builder | At least one minimal quest/calling connected to the scene or project flow. |
 | Puzzle Creator | One simple referenced puzzle when included in the integration pass, or an intentionally valid empty index while deferred. |
+| Procedural Sound Generator | Optional in the initial pass; once implemented, one generated sound recipe registered as an audio asset and referenced by an object, scene or puzzle event. |
 | Health Guide / Build Game | Generated validation/build output only when testing those systems; missing references reported honestly. |
 
 ## Minimum Reference Scenario
@@ -181,6 +185,7 @@ The first connected Template Game may be tiny. It should prove:
 - one door/exit/transition;
 - one visible effect;
 - one audio/music record where supported;
+- once procedural audio playback is implemented, preferably one `assets/audio/sfx/synth_<slug>.json` asset selected through `assets/asset-index.json`;
 - one short quest/calling;
 - one simple puzzle or intentionally deferred valid empty puzzle index;
 - one Health/Build validation pass when those systems are ready.
@@ -202,6 +207,7 @@ Before declaring Template Game connected, verify that:
 - [ ] Puzzle records resolve if included.
 - [ ] No permanent authored content references `intake/` source files.
 - [ ] All stored project paths are project-relative.
+- [ ] If a procedural synth sound is included, it is registered as an `asset_` audio record, its JSON recipe exists under `assets/audio/sfx/`, and its calling record stores only that asset ID.
 - [ ] Health/Build identifies unresolved IDs/files rather than silently accepting them.
 - [ ] Preview/runtime launch works when runtime/build support exists.
 
@@ -219,6 +225,7 @@ docs/artifex/05-creation-guide.md
 docs/artifex/19-project-file-contracts.md
 docs/artifex/19a-project-starter-file-schemas.md
 docs/artifex/20-asset-intake-workflow.md
+docs/artifex/22-sound-archetype-generator.md        [where procedural audio is involved]
 artifex/shared/project-folder/project-structure-initializer.js
 artifex/shared/todo-guide/README.md
 artifex/shared/todo-guide/all-apps-todos.json
