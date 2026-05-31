@@ -24,7 +24,11 @@
   }
 
   function inspectorId() {
-    return document.getElementById('itemId')?.value || core()?.getSelectedId?.() || '';
+    const inspector = document.getElementById('objectInspector');
+    if (inspector && !inspector.dataset.inspectedId) {
+      inspector.dataset.inspectedId = document.getElementById('itemId')?.defaultValue || core()?.getSelectedId?.() || '';
+    }
+    return inspector?.dataset.inspectedId || core()?.getSelectedId?.() || '';
   }
 
   function selectedTarget() {
