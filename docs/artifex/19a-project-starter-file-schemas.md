@@ -1,6 +1,6 @@
 # Artifex Canonical Starter File Schemas
 
-Date: 2026-05-30
+Date: 2026-05-31  
 Status: Canonical companion to `docs/artifex/19-project-file-contracts.md`
 
 ## Purpose
@@ -17,6 +17,7 @@ These shapes prevent Creation Guide and Project Editor from independently creati
 4. Existing project files are not silently overwritten during initialisation.
 5. IDs use the prefixes in `docs/artifex/19-project-file-contracts.md`.
 6. Typed index collections are canonical; do not replace them with a generic `items` collection when writing the project file.
+7. A **Blank Starter Project** has no populated screen records, so its `startScreenId` must be `null` until a real screen is authored/registered or a populated Template Game supplies one.
 
 ## `project.json`
 
@@ -30,7 +31,7 @@ These shapes prevent Creation Guide and Project Editor from independently creati
   "version": "0.1.0",
   "createdBy": "creation-guide",
   "projectLogo": null,
-  "startScreenId": "screen_title_main",
+  "startScreenId": null,
   "enabledModules": [],
   "roots": {
     "intake": "intake/",
@@ -67,6 +68,8 @@ These shapes prevent Creation Guide and Project Editor from independently creati
 
 `projectLogo`, when supplied, must point to a final promoted asset under `assets/`, not an `intake/` source file.
 
+`startScreenId: null` is deliberate for a Blank Starter Project. A populated Template Game or real production project may later replace it with a valid registered `screen_` ID.
+
 ## `logic.json`
 
 ```json
@@ -76,11 +79,11 @@ These shapes prevent Creation Guide and Project Editor from independently creati
   "nodes": [],
   "routes": [],
   "conditions": [],
-  "startScreenId": "screen_title_main"
+  "startScreenId": null
 }
 ```
 
-Project Editor owns the graph content after creation.
+Project Editor owns the graph content after creation. It may set `startScreenId` only when the chosen screen exists in the project's registered screen records.
 
 ## `layout.json`
 
@@ -137,6 +140,8 @@ Use the hyphenated schema name exactly as written above.
 ## `input-map.json`
 
 Creation Guide owns the initial starter map. Project Editor validates/displays it and must retain the same shape when packaging or saving.
+
+Input-map `actionId` values represent player controls. They are not Quest Builder event operations such as speak, collect, give, solve or defeat.
 
 ```json
 {
@@ -274,6 +279,8 @@ The following are the canonical empty index shapes created during project initia
 }
 ```
 
-## Migration Note For Files Already Created During V1.1.11 Testing
+## Migration Note For Files Already Created During Earlier Testing
 
-Creation Guide intentionally does not overwrite files already present in a connected project folder. A folder initialised before this schema alignment may contain the earlier `input-map.json` object form or earlier `layout.json` camera form. It must later be validated/migrated explicitly rather than silently replaced. For a disposable test folder, deleting the earlier generated starter JSON files and running starter creation again is acceptable.
+Creation Guide intentionally does not overwrite files already present in a connected project folder. A folder initialised before this schema alignment may contain an earlier `input-map.json` object form, earlier `layout.json` camera form, or an invalid non-null starter `startScreenId`. It must be validated/migrated explicitly rather than silently replaced. For a disposable test folder, deleting the earlier generated starter JSON files and running starter creation again is acceptable.
+
+The shared initializer already generates `startScreenId: null` and canonical typed empty indexes for newly created Blank Starter Project files. This document now matches that implemented initializer behaviour.
