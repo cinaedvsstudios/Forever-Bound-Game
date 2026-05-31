@@ -24,10 +24,13 @@
         <div class="menu-panel" id="menu-file">
           <button id="quickstart-wizard-button" type="button">Quick Start Wizard</button>
           <button id="new-archetype-button" type="button">New Object Archetype</button>
+          <button id="connect-project-folder-button" type="button">Connect Project Folder</button>
+          <button id="save-project-button" type="button">Save Object to Project</button>
+          <p id="object-project-folder-status" class="object-project-folder-status">No Folder Connected</p>
           <label class="menu-file-label">Import Object JSON<input id="import-json-input" type="file" accept=".json,application/json" hidden /></label>
-          <button id="export-json-button" type="button">Export Object Archetype JSON</button>
-          <button id="save-local-button" type="button">Save Locally in Browser</button>
-          <button id="view-local-button" type="button">Manage Local Archetypes</button>
+          <button id="export-json-button" type="button">Export Object JSON Backup</button>
+          <button id="save-local-button" type="button">Save Browser Draft</button>
+          <button id="view-local-button" type="button">Manage Browser Drafts</button>
         </div>
       </div>
       <div class="menu">
@@ -179,7 +182,7 @@
 
   <dialog id="local-dialog">
     <form method="dialog">
-      <header class="dialog-header"><h2>Local Object Archetypes</h2><button value="close">×</button></header>
+      <header class="dialog-header"><h2>Browser Draft Object Archetypes</h2><button value="close">×</button></header>
       <div id="local-files-output" class="library-grid"></div>
     </form>
   </dialog>
@@ -187,7 +190,7 @@
   <dialog id="object-library-dialog">
     <form method="dialog">
       <header class="dialog-header"><h2>Archetype Object Library</h2><button value="close">×</button></header>
-      <p class="hint">Templates are starter archetypes. Local objects are saved browser copies that can be loaded or cloned as a new version.</p>
+      <p class="hint">Templates are starter archetypes. Browser drafts can be loaded or cloned; final project records are saved through the connected project folder.</p>
       <div id="object-library-content" class="library-sections"></div>
     </form>
   </dialog>
