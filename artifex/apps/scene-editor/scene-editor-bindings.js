@@ -67,7 +67,7 @@
     document.querySelectorAll('[data-tip]').forEach(node => node.addEventListener('mouseenter', () => deps.setTip(node.dataset.tip)));
     document.getElementById('openLocalBackup')?.addEventListener('click', deps.openLocalBackup);
     document.getElementById('ignoreLocalBackup')?.addEventListener('click', event => { event.currentTarget.closest('.resume-card-inline')?.remove(); deps.toast('Local backup ignored'); });
-    document.getElementById('manualLocalSave')?.addEventListener('click', deps.manualLocalSave);
+    document.getElementById('manualLocalSave')?.addEventListener('click', deps.manualSaveLocal);
     document.getElementById('importBtn')?.addEventListener('click', event => { event.stopPropagation(); deps.toggleImportOpen(); deps.render(); });
     document.getElementById('jsonFile')?.addEventListener('change', deps.importFile);
     document.getElementById('importUrl')?.addEventListener('click', deps.importUrl);
@@ -137,10 +137,11 @@
       inputNode?.addEventListener('input', event => {
         const item = displayedItem();
         if (!item) return;
+        const oldId = item.id;
         item[key] = event.target.value;
         if (key === 'id') deps.setSelectedId(item.id);
         if (key === 'name') {
-          const label = Array.from(document.querySelectorAll('.scene-item[data-stage-id]')).find((node) => node.dataset.stageId === item.id)?.querySelector('.item-label');
+          const label = Array.from(document.querySelectorAll('.scene-item[data-stage-id]')).find((node) => node.dataset.stageId === oldId)?.querySelector('.item-label');
           if (label) label.textContent = event.target.value || item.id;
         }
         deps.saveWorkingCopySoon('item field');
@@ -169,7 +170,13 @@
       });
     });
 
-    document.getElementById('itemLayer')?.addEventListener('change', event => deps.updateSelectedLayer(event.target.value, true));
+    document.getElementById('itemLayer')?.addEventListener('change', event => {
+      const item = displayedItem();
+      if (!item) return;
+      item.layer = Number(event.target.value) || 0;
+      deps.saveWorkingCopySoon('layer');
+      deps.render();
+    });
     document.getElementById('itemVisible')?.addEventListener('change', event => {
       const item = displayedItem();
       if (!item) return;
