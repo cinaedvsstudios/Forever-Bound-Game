@@ -128,15 +128,25 @@ Those may be useful sources or previews, but they are not valid permanent gamepl
 
 ## Puzzle Creator integration status
 
-Puzzle Creator Maze V1.29 is the first consumer of this dependency:
+Puzzle Creator Maze currently consumes this dependency for two feature-linking workflows:
+
+### V1.29 · Collect Archetype Object linking
 
 - Collect rows open the picker on the **Archetype Objects** source only.
 - A selected valid `archobj_` record stores `archetypeObjectId`, its display label and the canonical index source in the Collect item export record.
 - Collect supports **Replace** and **Unlink** independently from its placed maze cell.
 - When no folder is connected or no final object index records exist, the picker remains honest and no link is stored.
 
+### V1.30 · Door visual asset linking
+
+- A selected Door displays a **Door Visual Asset** control and opens the picker on the **Final Assets** source only.
+- A selected valid `asset_` record stores `visualAssetId`, `visualAssetLabel` and `visualAssetReferenceSource` on the Door connection record.
+- Door visual linking supports **Replace Visual** and **Unlink** independently from Entry/Exit placement, direction and Walk Test transfer behaviour.
+- The selection is an authored reference/export feature only at this stage; the current maze preview continues to show endpoint markers rather than rendering the selected Door image.
+- When no folder is connected or no final asset index records exist, the picker remains honest and no visual link is stored.
+
 Still pending:
 
-- Door connections selecting registered `asset_` visual assets and storing `visualAssetId`.
+- Rendering selected Door images in the playable preview, if required by a future visual-rendering stage.
 - Portal registered visual/effect selection and global Portal Registry linkage.
 - Scatter decoration registered asset selection.
