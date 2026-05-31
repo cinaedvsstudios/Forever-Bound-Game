@@ -47,7 +47,7 @@ Default design frame:
 
 ## Artifex Tool UI Branding Rules
 
-These rules apply to Artifex editor tools, including Project Manager, Creation Guide, Scene Editor, Quest Builder, Puzzle Creator, Effect Editor, Archetype Object Creator, Sprite Wizard, and future mini-apps.
+These rules apply to Artifex editor tools, including Project Editor, Creation Guide, Scene Editor, Quest Builder, Puzzle Creator, Effect Editor, Archetype Object Creator, Sprite Wizard, and future mini-apps.
 
 ### Global app mark / fallback logo
 
@@ -95,7 +95,7 @@ The main menu should use compact pill-style menu buttons where space allows.
 Use these exact module accent meanings:
 
 ```text
-Project Manager / Project Editor: yellow-gold accent
+Project Editor: yellow-gold accent
 Creation Guide / creator setup tools: grey / neutral accent
 Scene Editor: purple accent
 Quest Builder: green accent
@@ -105,7 +105,7 @@ Archetype Object Creator: red accent
 Hub / global shell: bronze / copper Artifex accent unless a specific hub treatment is defined
 ```
 
-The earlier phrase “Project / Library tools: gold-green accent” should not be used because it is ambiguous. Project Manager is yellow/gold. Quest and Puzzle tools are green. Shared library surfaces inside Project Manager may use the Project Manager gold chrome while showing green status/details for quest or puzzle content where useful.
+The earlier phrase “Project / Library tools: gold-green accent” should not be used because it is ambiguous. Project Editor is yellow/gold. Quest and Puzzle tools are green. Shared library surfaces inside Project Editor may use the Project Editor gold chrome while showing green status/details for quest or puzzle content where useful.
 
 Accent colour should appear on active states, selected borders, glowing indicators, helper dots, and key module identity details. It should not replace the base bronze/gold Artifex look.
 
