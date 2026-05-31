@@ -15,11 +15,12 @@ docs/artifex/18-color-and-display-rules.md
 docs/artifex/19a-project-starter-file-schemas.md
 docs/artifex/20-asset-intake-workflow.md
 docs/artifex/21-template-game-project-contract.md
+docs/artifex/22-sound-archetype-generator.md
 artifex/shared/todo-guide/README.md
 artifex/shared/todo-guide/all-apps-todos.json
 ```
 
-This document defines ownership, folder paths, save rules and cross-app boundaries. `19a-project-starter-file-schemas.md` defines the exact minimum JSON shapes that Creation Guide creates and Project Editor must retain. `20-asset-intake-workflow.md` defines staging/promotion of source assets. `21-template-game-project-contract.md` defines the later populated cross-app reference project.
+This document defines ownership, folder paths, save rules and cross-app boundaries. `19a-project-starter-file-schemas.md` defines the exact minimum JSON shapes that Creation Guide creates and Project Editor must retain. `20-asset-intake-workflow.md` defines staging/promotion of supplied source assets. `21-template-game-project-contract.md` defines the later populated cross-app reference project. `22-sound-archetype-generator.md` defines the shared popup that creates procedural synth sound recipes as registered final audio assets.
 
 ## Three Distinct Project Layers
 
@@ -45,6 +46,7 @@ Creation Guide must not populate module-owned scene, quest, puzzle, archetype, e
 8. ZIP export remains backup, transfer and no-permission fallback, not the intended everyday save route.
 9. Generated Health, Build, backup and app-authored task outputs are created by their owning systems when needed; the blank initializer must not pretend they already exist.
 10. Build Game validates and packages modular files; it does not replace authoring apps.
+11. Imported audio files and generated procedural synth sounds are both registered final audio assets in `assets/asset-index.json`; procedural synth sounds do not create a second sound-archetype library.
 
 ## Connected Project Folder and Direct-Save Contract
 
@@ -86,6 +88,7 @@ logic.json
 scenes/scene_forest_path.json
 archetypes/objects/archobj_mel.json
 assets/asset-index.json
+assets/audio/sfx/synth_locked_door_buzz.json
 health/latest-health-report.json
 build/runtime-project.json
 ```
@@ -205,6 +208,7 @@ The selected folder itself is `<project-root>/`:
     audio/
       music/
       sfx/
+        synth_<slug>.json        [generated procedural sound asset, when created]
       voice/
     fonts/
     video/
@@ -224,7 +228,7 @@ The selected folder itself is `<project-root>/`:
     project-manager-todos.json
 ```
 
-This is the possible complete connected package, not a promise that every listed output file exists immediately. Blank Starter Project initialisation creates starter top-level files, required directories and empty index files only. Intake folders may be a separate optional setup step. Health reports, build outputs, backup manifests and populated app content are produced later by their owners.
+This is the possible complete connected package, not a promise that every listed output file exists immediately. Blank Starter Project initialisation creates starter top-level files, required directories and empty index files only. Intake folders may be a separate optional setup step. Health reports, build outputs, backup manifests, generated synth recipes and populated app content are produced later by their owners.
 
 ## Starter File and Index Schemas
 
@@ -265,9 +269,20 @@ intake/
   dialogue-sfx/
 ```
 
-Creation Guide owns first-time explanation and optional creation/validation of this structure, including **Create Intake Folders** and **Skip for Now**. Asset Library/import tooling later preserves source metadata, assigns stable `asset_` IDs, copies/renames approved material into final `assets/` destinations and updates registered asset/group records.
+Creation Guide owns first-time explanation and optional creation/validation of this structure, including **Create Intake Folders** and **Skip for Now**. Asset Library/import tooling later preserves source metadata, assigns stable `asset_` IDs, copies/renames approved supplied material into final `assets/` destinations and updates registered asset/group records.
 
 No scene, screen, quest, archetype or runtime content may permanently reference `intake/` source files.
+
+### Generated Procedural Sound Assets
+
+The shared Procedural Sound Generator is a creation workflow, not an intake import workflow. A sound generated and approved inside Artifex may be written directly as a final registered resource:
+
+```text
+assets/audio/sfx/synth_<slug>.json
+assets/asset-index.json → asset_sfx_<slug>
+```
+
+It uses the same Asset Library registration and sound-selector flow as an imported `.wav`, `.ogg` or `.mp3` sound effect. Other apps reference only its `asset_` ID. Do not create `archetypes/sound-index.json`, `archetypes/sounds/` or `archsound_` IDs for procedural audio. See `docs/artifex/22-sound-archetype-generator.md`.
 
 ## Ownership Matrix
 
@@ -275,15 +290,16 @@ No scene, screen, quest, archetype or runtime content may permanently reference 
 |---|---|---|
 | Creation Guide | initial blank project files/folders/empty indexes, project registration, setup status, future intake explanation and media readiness, starter input map | populated scene/quest/puzzle/archetype/FX/asset/build content |
 | Project Editor | structural graph/route/layout/registry/library-link data and project-level structural validation | scene interiors, quest internals, object/FX authoring, raw asset promotion |
-| Scene Editor | scenes, screens, layout/placements and scene instance references | project route graph |
+| Scene Editor | scenes, screens, layout/placements and scene instance references, including referenced sound asset IDs | project route graph; sound recipe creation internals |
 | Quest Builder | quests, sidequests, branches, flags, conditions, rewards | visual scene layout |
-| Puzzle Creator | puzzle definitions/index records | structural route graph except references it consumes |
-| Archetype Object Creator | reusable non-FX object archetypes and index entries | scene instances and FX definitions |
+| Puzzle Creator | puzzle definitions/index records and referenced feedback sound asset IDs | structural route graph except references it consumes; sound recipe creation internals |
+| Archetype Object Creator | reusable non-FX object archetypes and referenced sound asset IDs for object behaviours | scene instances, FX definitions and copied procedural recipes |
 | Effect Editor | reusable effect archetypes and index entries | object archetypes and scene placement |
-| Asset Library | promoted final asset files, metadata and groups | gameplay behaviour |
+| Asset Library | promoted final supplied asset files, metadata/groups, and registered generated audio recipes | gameplay behaviour |
+| Shared Procedural Sound Generator | generated synth recipe authoring, preview/playback mapping and asset-registration requests | object/scene/puzzle behaviour records |
 | Shared Project Folder Service | handles, permission state, shared relative-path reads/writes and draft/save guards | decisions about module-authored content |
 | Health Guide | generated health/audit reports | silent content correction or overwriting conflicts |
-| Build Game | generated runtime/build output | authoring app internals |
+| Build Game | generated runtime/build output and validation of audio playback resources | authoring app internals |
 
 ## Canonical ID Prefixes
 
@@ -304,7 +320,7 @@ archobj_       Reusable object archetype
 objinst_       Scene instance of object archetype
 archeffect_    Reusable effect archetype
 fxinst_        Scene instance of effect archetype
-asset_         Final registered asset
+asset_         Final registered asset, including generated synth audio recipes
 assetgroup_    Asset group/sprite group
 template_      Template project/package item
 health_        Health item/report item
@@ -319,10 +335,13 @@ milestone_     Creation Guide milestone
 - No app should keep more than two active transitional patch/wrapper layers.
 - Every app should keep shared Module menu names/order stable: Hub, Creation Guide, Project Editor, Scene Editor, Quest Builder, Puzzle Creator, Effect Editor, Archetype Object Creator.
 - Every active app README should state what it owns, reads, writes/exports and must not own.
+- Shared embedded tools such as the Procedural Sound Generator may be opened from several apps without becoming a full navigation module.
 
 ## Template Game Contract Boundary
 
 Template Game is not created merely by running the blank initializer. It is a later populated test/reference project using this same hierarchy and schemas. It should prove real cross-app references through a minimal screen, scene, structural route, promoted assets, app-owned archetype/effect/quest records where included and honest Health/Build validation.
+
+When procedural-sound playback and Asset Library registration exist, Template Game should preferably include one generated synth sound to prove that a JSON audio recipe can be registered, assigned and played through the same resource flow as imported audio.
 
 Artifacts Adventures is separate production work and must not be renamed or treated as the Template Game.
 
@@ -333,5 +352,6 @@ Artifacts Adventures is separate production work and must not be renamed or trea
 - Integrate the connected project-folder service into Project Editor and other authoring apps.
 - Implement draft-versus-file state and unsaved-navigation guards consistently.
 - Make apps load active project files instead of unrelated demo/default state when a project is connected.
+- Build the shared Procedural Sound Generator, audio-asset registration and calling-editor hooks defined in `docs/artifex/22-sound-archetype-generator.md`.
 - Build and validate the separate Template Game reference flow.
 - Keep ZIP/package exports as backup/fallback rather than normal editing workflow.
