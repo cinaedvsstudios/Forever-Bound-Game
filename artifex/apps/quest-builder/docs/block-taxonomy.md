@@ -2,12 +2,13 @@
 
 ## Purpose
 
-Quest Builder blocks describe quest progression. They should not blur together player tasks, referenced assets, scene locations, logic and UI feedback.
+Quest Builder blocks describe quest progression. They should not blur together player tasks, referenced assets, scene locations, contained puzzles, logic and UI feedback.
 
-For the structured authoring decision behind dialogue, conditions and outcomes, also read:
+For the structured authoring and linked-puzzle decisions, also read:
 
 ```text
 docs/artifex/07a-quest-builder-structured-authoring.md
+docs/artifex/07b-puzzle-creator-quest-integration.md
 ```
 
 ## Core rule
@@ -17,6 +18,7 @@ A block type answers one main question:
 ```text
 scene       = where the quest step happens
 activity    = what the player does
+puzzle      = which saved contained challenge occurs here
 content     = what quest text or referenced asset is used
 logic       = what condition/flag gates progression
 feedback    = what UI, dialogue or Capra response appears
@@ -32,12 +34,13 @@ A canvas block should represent a meaningful Quest event. Ordinary dialogue line
 | --- | --- | --- | --- | --- |
 | scene | Playable scene/screen reference | sceneId | sceneId | Scene Editor |
 | action | Player task such as speak/use/collect/trigger | action | action | Quest Builder |
-| travel | Route or movement section | action | action | Project Manager / Project Editor reference |
+| travel | Route or movement section | action | action | Project Editor reference |
+| puzzle | Saved self-contained challenge used as a Quest step | puzzleId | puzzleId | Puzzle Creator reference |
 | dialogue | Quest-scoped conversation, narration or scripted feedback record | dialogueId | dialogueId | Quest Builder |
 | object | Object/NPC interaction | objectId | objectId, action | Archetype Object Creator reference |
 | information | Clue, inspection, discovery, decoded knowledge | action | action | Quest Builder |
 | condition | Flag or logic gate | condition | condition | Quest Builder |
-| route | Route/map/path unlock reference | action | action | Project Manager / Project Editor reference |
+| route | Route/map/path unlock reference | action | action | Project Editor reference |
 | ritual | Ritual sequence, ingredient placement, Songspell use | action | action | Quest Builder |
 | combat | Combat or Foe objective | action | action | Quest Builder |
 | companion | Companion-based help or interaction | objectId | objectId, action | Quest Builder |
@@ -61,6 +64,18 @@ action: speak:archobj_vitus
 
 A `Dialogue` block is used only when the conversation or scripted reveal is itself a meaningful visible flow event. For ordinary talk attached to an action, use the Action block and edit the linked dialogue record from its Dialogue / Feedback area.
 
+## Quest block versus puzzle definition
+
+A `Puzzle` block means the player must encounter or complete a saved puzzle as part of Quest flow. It links to a record owned by Puzzle Creator:
+
+```text
+puzzleId: puzzle_chalice_pedestal
+```
+
+The Puzzle block may contain Quest-level requirements and outcomes, such as introducing the challenge, setting a progression flag after completion, granting a reward or continuing to dialogue. It must not contain a copied maze grid, symbol-board layout, internal puzzle feature setup or the full puzzle definition.
+
+Use a Puzzle block only when the puzzle is a meaningful flow event. Small internal checks within a puzzle remain owned by Puzzle Creator and are not converted into Quest blocks.
+
 ## Dialogue ownership decision
 
 Quest-specific dialogue, Capra feedback and short scripted lines are authored inside Quest Builder for the first version. They may be stored within the quest file or a Quest Builder-owned companion record explicitly tied to that quest once the export schema is implemented.
@@ -83,6 +98,8 @@ Linked Assets and IDs
 Validation
 ```
 
+For a `Puzzle` block, Linked Assets and IDs must provide a real `puzzleId` selector sourced from `puzzles/puzzle-index.json` once connected-project integration exists. Puzzle editing itself remains in Puzzle Creator.
+
 These internal sections do not each need their own canvas block. Use separate connected blocks only when the creator needs to arrange a meaningful progression step or branch on the workspace.
 
 ## Validation meaning
@@ -94,6 +111,8 @@ Examples:
 ```text
 scene block without sceneId = warning
 action block without action = warning
+puzzle block without puzzleId = warning
+puzzle block referencing no registered puzzle record = warning
 object block without objectId or action = warning
 dialogue block without dialogueId or dialogue record = warning
 condition block without a usable condition = warning
@@ -111,6 +130,7 @@ Examples:
 ```text
 scene       primary edits sceneId
 action      primary edits action
+puzzle      primary edits puzzleId
 dialogue    primary edits dialogueId
 object      primary edits objectId
 capra       primary edits capraFeedback
@@ -118,7 +138,7 @@ ui          primary edits uiOverlay
 completion  primary edits condition
 ```
 
-The quick-edit field is not the full structured authoring interface. Detailed action, logic, outcome and dialogue editing should open the selected block's contextual editor rather than expanding the left inspector into a separate application.
+The quick-edit field is not the full structured authoring interface. Detailed action, logic, outcome, dialogue and puzzle-link editing should open the selected block's contextual editor rather than expanding the left inspector into a separate application.
 
 ## Future notes
 
@@ -134,4 +154,4 @@ This taxonomy can be extended, but new types need:
 - requiredFields
 - hint
 
-Do not add vague types that duplicate an existing purpose. If the desired thing is a player task, use `action` and link the content, conditions, outcomes and referenced assets it needs.
+Do not add vague types that duplicate an existing purpose. If the desired thing is a player task, use `action` and link the content, conditions, outcomes and referenced assets it needs. If it is an existing contained challenge, use `puzzle` and reference the saved Puzzle Creator record.
