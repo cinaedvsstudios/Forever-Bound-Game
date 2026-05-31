@@ -10,6 +10,7 @@ const TYPES = {
   portal: { label: 'Portal', markerIn: '#b58cff', markerOut: '#87dfff', description: 'Portal endpoint pair. Local transfer works now; global destination linking is queued.' }
 };
 const connectionState = { pairs: [], selectedId: null, placementMode: null, teleportCooldownUntil: 0 };
+const previewMarkerTransform = { panX: 0, panY: 0, dragging: false, lastX: 0, lastY: 0 };
 
 window.__artifexMazeConnections = connectionState;
 
@@ -18,6 +19,7 @@ window.addEventListener('DOMContentLoaded', () => {
   bindFeatureRequests();
   bindOverviewPlacement();
   bindWalkTransfer();
+  bindPreviewTransformMirror();
   bindMarkerRefresh();
   patchExportPayload();
 });
@@ -181,9 +183,9 @@ function cellFromEvent(event, currentState) {
   const y = Math.floor((py - dims.oy) / dims.cellH);
   return x >= 0 && y >= 0 && x < currentState.gridSize && y < currentState.gridSize ? { x, y } : null;
 }
-function dimensions(width, height, currentState) {
+function dimensions(width, height, currentState, zoom = 1) {
   const scaleX = Math.max(.6, Number(currentState.stretchX || 100) / 100), scaleY = Math.max(.6, Number(currentState.stretchY || 100) / 100);
-  const base = Math.min(width / (currentState.gridSize * scaleX + 3), height / (currentState.gridSize * scaleY + 3));
+  const base = Math.min(width / (currentState.gridSize * scaleX + 3), height / (currentState.gridSize * scaleY + 3)) * Number(zoom || 1);
   return { cellW: base * scaleX, cellH: base * scaleY, ox: width / 2 - currentState.gridSize * base * scaleX / 2, oy: height / 2 - currentState.gridSize * base * scaleY / 2 };
 }
 function isOpenPathCell(currentState, cell) { return currentState.matrix[cell.y]?.[cell.x] === 0 && isInsideShape(cell.x, cell.y, currentState.gridSize, currentState.layout, currentState.stretchX, currentState.stretchY) && !sameCell(cell, currentState.start) && !sameCell(cell, currentState.exit); }
@@ -208,6 +210,31 @@ function transfer(pair, destination) {
   window.__artifexMazeRuntimeControls?.repaintAll?.();
 }
 
+function bindPreviewTransformMirror() {
+  const surface = document.querySelector('.render-viewport') || $('threejs-container');
+  if (!surface) return;
+  surface.addEventListener('mousedown', (event) => {
+    if (event.button !== 1 && event.button !== 2) return;
+    previewMarkerTransform.dragging = true;
+    previewMarkerTransform.lastX = event.clientX;
+    previewMarkerTransform.lastY = event.clientY;
+  }, true);
+  window.addEventListener('mousemove', (event) => {
+    if (!previewMarkerTransform.dragging) return;
+    previewMarkerTransform.panX += event.clientX - previewMarkerTransform.lastX;
+    previewMarkerTransform.panY += event.clientY - previewMarkerTransform.lastY;
+    previewMarkerTransform.lastX = event.clientX;
+    previewMarkerTransform.lastY = event.clientY;
+    drawMarkersSoon();
+  }, true);
+  window.addEventListener('mouseup', () => { previewMarkerTransform.dragging = false; }, true);
+  $('btn-zoom-reset')?.addEventListener('click', () => {
+    previewMarkerTransform.panX = 0;
+    previewMarkerTransform.panY = 0;
+    drawMarkersSoon();
+  }, true);
+}
+
 function bindMarkerRefresh() { ['click', 'input', 'change', 'keydown'].forEach((name) => document.addEventListener(name, drawMarkersSoon, true)); setInterval(drawMarkers, 180); }
 function drawMarkersSoon() { requestAnimationFrame(() => setTimeout(drawMarkers, 25)); }
 function drawMarkers() { drawOnCanvas($('analysis-canvas'), false); drawOnCanvas($('maze-preview-canvas'), true); }
@@ -215,15 +242,30 @@ function drawOnCanvas(canvas, preview) {
   const currentState = state(); if (!canvas || !currentState || !connectionState.pairs.length || (preview && currentState.view === '3d')) return;
   const rect = preview ? canvas.getBoundingClientRect() : null, width = preview ? rect.width : canvas.width, height = preview ? rect.height : canvas.height;
   if (!width || !height) return;
-  const ratio = preview ? window.devicePixelRatio || 1 : 1, dims = dimensions(width, height, currentState), ctx = canvas.getContext('2d');
+  const zoom = preview ? Number(currentState.zoom || 1) : 1;
+  const offset = preview ? previewMarkerTransform : { panX: 0, panY: 0 };
+  const ratio = preview ? window.devicePixelRatio || 1 : 1, dims = dimensions(width, height, currentState, zoom), ctx = canvas.getContext('2d');
   ctx.save(); if (preview) ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-  connectionState.pairs.forEach((pair) => { const type = TYPES[pair.type]; if (pair.entry) drawMarker(ctx, dims, pair.entry, pair.label, type.markerIn, 'I'); if (pair.exit) drawMarker(ctx, dims, pair.exit, pair.label, type.markerOut, 'O'); });
+  connectionState.pairs.forEach((pair) => { const type = TYPES[pair.type]; if (pair.entry) drawMarker(ctx, dims, currentState, pair.entry, pair.label, type.markerIn, 'I', offset); if (pair.exit) drawMarker(ctx, dims, currentState, pair.exit, pair.label, type.markerOut, 'O', offset); });
   ctx.restore();
 }
-function drawMarker(ctx, dims, cell, label, color, suffix) {
-  const x = dims.ox + cell.x * dims.cellW + dims.cellW / 2, y = dims.oy + cell.y * dims.cellH + dims.cellH / 2, r = Math.max(7, Math.min(dims.cellW, dims.cellH) * .44);
+function drawMarker(ctx, dims, currentState, cell, label, color, suffix, offset) {
+  const pos = warpedPoint(cell, dims, currentState);
+  const x = dims.ox + offset.panX + pos.x + dims.cellW / 2;
+  const y = dims.oy + offset.panY + pos.y + dims.cellH / 2;
+  const r = Math.max(7, Math.min(dims.cellW, dims.cellH) * .44);
   ctx.fillStyle = color; ctx.strokeStyle = '#06140b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
   ctx.fillStyle = '#06140b'; ctx.font = `900 ${Math.max(8, r * .82)}px Inter, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(`${label}${suffix}`, x, y + .5);
+}
+function warpedPoint(cell, dims, currentState) {
+  let x = cell.x * dims.cellW;
+  let y = cell.y * dims.cellH;
+  const warp = Number(currentState.warp || 0) / 100;
+  if (warp) {
+    x += Math.sin(cell.y * 1.37 + cell.x * 0.31) * dims.cellW * 0.42 * warp;
+    y += Math.cos(cell.x * 1.21 + cell.y * 0.27) * dims.cellH * 0.42 * warp;
+  }
+  return { x, y };
 }
 
 function patchExportPayload() {
