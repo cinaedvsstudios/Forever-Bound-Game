@@ -52,6 +52,7 @@ Phase 1 confirmed:
 - Effect Editor must first resolve which route is the accepted baseline: index.html V3.38 Emergency or index2.html INDEX2-CLEAN-0.2.3.
 - Creation Guide has live wrapper debt on current main independently of abandoned PR #20, including app-bootstrap.js loading/patching module-app.js.
 - Project Editor had a live current bootstrap plus superseded old HTML/bootstrap files suitable for a narrow archive-only verification pass.
+- Quest Builder had superseded files suitable for archive review, but its older-named CSS and module-config file required active-reference verification before any move.
 - Puzzle Creator remains a possible first full-app UI lane after a short smoke check, while its current consolidation loader remains active and must not be removed during UI polish.
 - Sound Generator preview is intentional test-harness code and must be retained; it is a likely low-risk small UI lane after a smoke check.
 ```
@@ -103,19 +104,80 @@ Verification recorded before merge:
 - An attempted root npm build failed due to pre-existing unrelated root TypeScript/CSS declaration and target-lib issues, not this archive-only pass.
 ```
 
-### Next decision point — no new work authorised yet
+### Completed: Phase 2B — Quest Builder archive-only pass 01
 
-The completed archive pass does not automatically authorise another task. The user must now choose one controlled direction:
+PR #23, **Archive inactive Quest Builder legacy files (v1.0.8 + pre-v1.2.12 module-app)**, was reviewed and merged into `main` on 1 June 2026.
 
 ```text
-A. Continue low-risk cleanup with a separate Quest Builder archive-only verification/pass.
+PR: #23
+Merge commit: c0a82d69f08338a19447e26d28ba7fbcbbb5be28
+Scope: Archive-only; no active runtime behaviour change.
+```
+
+Archived files:
+
+```text
+artifex/apps/quest-builder/v1/quest-builder-v108.js
+  → artifex/apps/quest-builder/archive/v108-monolith/quest-builder-v108.js
+
+artifex/apps/quest-builder/v1/styles.css
+  → artifex/apps/quest-builder/archive/pre-v1212-module-app/styles.css
+
+artifex/apps/quest-builder/v1/src/module-app.js
+  → artifex/apps/quest-builder/archive/pre-v1212-module-app/module-app.js
+
+artifex/apps/quest-builder/v1/src/module-io.js
+  → artifex/apps/quest-builder/archive/pre-v1212-module-app/module-io.js
+
+artifex/apps/quest-builder/v1/src/module-renderer.js
+  → artifex/apps/quest-builder/archive/pre-v1212-module-app/module-renderer.js
+
+artifex/apps/quest-builder/v1/src/module-state.js
+  → artifex/apps/quest-builder/archive/pre-v1212-module-app/module-state.js
+```
+
+Archive documentation added:
+
+```text
+artifex/apps/quest-builder/archive/v108-monolith/README.md
+artifex/apps/quest-builder/archive/pre-v1212-module-app/README.md
+```
+
+Active files deliberately retained:
+
+```text
+artifex/apps/quest-builder/v1/quest-builder-v108.css
+  Retained because artifex/apps/quest-builder/v1/quest-builder.css still imports it as active base styling.
+
+artifex/apps/quest-builder/v1/src/module-config.js
+  Retained because current V1.2.12 runtime modules still import it.
+```
+
+Verification recorded before merge:
+
+```text
+- The active Quest Builder entry remains artifex/apps/quest-builder/index.html.
+- The active style path remains v1/quest-builder.css?v=1.2.12 → quest-builder-v108.css?v=1.2.12-base.
+- The active runtime path remains v1/src/quest-builder-app.js?v=1.2.12.
+- The two still-active candidate files were excluded rather than incorrectly archived.
+- No active Quest Builder HTML, CSS entry, current runtime module, schema, export/import behaviour, connected-project behaviour, puzzle handoff, dialogue behaviour, shared service or other app was changed.
+- The PR diff contained only six archive moves and two archive README files.
+- An attempted root npm build failed due to pre-existing unrelated root TypeScript/CSS issues, not this archive-only pass.
+```
+
+### Current decision point — no new work authorised yet
+
+Two low-risk archive passes have now been completed and recorded. The next task must be chosen and separately scoped before any work starts:
+
+```text
+A. Continue limited archive cleanup for another app only after reviewing a new narrow candidate list from the Phase 1 inventory.
 B. Begin the first required behavioural stabilisation pass: Scene Editor Object Inspector and transform ownership consolidation.
 C. Reopen a tightly restricted UI lane after a quick baseline smoke check:
    - smallest/lowest-risk visual surface: Sound Generator preview/shared popup; or
    - first fuller app visual surface: Puzzle Creator V1.32.
 ```
 
-Any selected direction must be separately scoped and approved before implementation starts.
+Practical recommendation: with two archive-only passes complete, stop expanding archive work by default. Either choose the Scene Editor stabilisation repair when ready for functional testing, or choose a controlled UI lane in Sound Generator/Puzzle Creator to return to visible design work.
 
 ## Current Authority Set
 
