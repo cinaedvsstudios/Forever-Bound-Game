@@ -25,10 +25,10 @@ export function createObjectWizardBuildChecklist({ wizardState, setHeader, conte
       wizardState.selectedRequirementId = activeRequirements[0]?.id || '';
     }
     const node = content();
-    node.innerHTML = `<div class="wizard-toolbar wizard-step5-toolbar"><button type="button" data-back title="Return to basic changes">← Back</button><button type="button" data-session title="Save this wizard draft to resume later">💾 Save Draft</button><button type="button" data-save title="Save this object archetype to the connected project folder">📁 Save Project</button><button type="button" data-finish title="Finish setup without writing to the project folder">🏁 Finish</button></div><div class="wizard-build-shell"><aside class="wizard-build-left"><div class="wizard-build-nav"></div></aside><section class="wizard-build-detail-panel"></section></div>`;
+    node.innerHTML = `<div class="wizard-toolbar wizard-step5-toolbar"><button type="button" data-back title="Return to basic changes">← Back</button><button type="button" data-draft-save title="Save this wizard draft to resume later">💾 Save Draft</button><button type="button" data-project-save title="Save this object archetype to the connected project folder">📁 Save Project</button><button type="button" data-finish title="Finish setup without writing to the project folder">🏁 Finish</button></div><div class="wizard-build-shell"><aside class="wizard-build-left"><div class="wizard-build-nav"></div></aside><section class="wizard-build-detail-panel"></section></div>`;
     node.querySelector('[data-back]').addEventListener('click', renderBasicChanges);
-    node.querySelector('[data-session]').addEventListener('click', saveAndResumeLater);
-    node.querySelector('[data-save]').addEventListener('click', finishAndSaveToProject);
+    node.querySelector('[data-draft-save]').addEventListener('click', saveAndResumeLater);
+    node.querySelector('[data-project-save]').addEventListener('click', finishAndSaveToProject);
     node.querySelector('[data-finish]').addEventListener('click', finishWithoutSaving);
     autoSaveWizardSession();
     renderRequirementList(activeRequirements);
