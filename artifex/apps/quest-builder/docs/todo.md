@@ -7,8 +7,13 @@ Before changing Quest Builder, always inspect:
 ```text
 docs/artifex/07-quest-builder.md
 docs/artifex/07a-quest-builder-structured-authoring.md
+docs/artifex/07b-puzzle-creator-quest-integration.md
 docs/artifex/18-color-and-display-rules.md
 docs/artifex/19-project-file-contracts.md
+docs/artifex/19a-project-starter-file-schemas.md
+docs/artifex/20-asset-intake-workflow.md
+docs/artifex/21-template-game-project-contract.md
+docs/artifex/22-sound-archetype-generator.md
 artifex/shared/todo-guide/README.md
 artifex/shared/todo-guide/all-apps-todos.json
 artifex/apps/quest-builder/docs/structure.md
@@ -26,9 +31,9 @@ Current browser confirmation status:
 - `V1.2.9` was tested sufficiently to confirm the live version badge loaded, pencil edit opened the correct block popup, and cards could be manually moved in the central workspace.
 - `V1.2.10` was tested in GitHub Pages and confirmed to load, display explicit coloured connector lines and visible connector ports. Testing identified that unused port circles were cluttered and stacked line routing needed refinement.
 - The user's V1.2.11 live screenshot confirmed the cleaned connector interface was loaded, including the per-card link action and reduced connector clutter. The screenshot also identified the next problem: vertically stacked connected cards were still using left/right attachments rather than the shortest top/bottom route.
-- `V1.2.12` has been built in the repository for fine-grid snapping and smart shortest-edge connector display. It still requires GitHub Pages/browser confirmation before further workspace-layout implementation work.
+- The user's V1.2.12 live screenshot and reply confirmed the fine-grid/smart-routing presentation appeared acceptable, including visible top/bottom connection routing and the new snap control. Full checklist regression testing was not separately reported for every action.
 
-Documentation-only decisions added after the V1.2.12 build do not alter the live-app version. The current documentation now locks structured Quest authoring and Quest-scoped dialogue direction before later implementation begins.
+Documentation-only decisions added after the V1.2.12 build do not alter the live-app version. The current documentation now locks structured Quest authoring, Quest-scoped dialogue direction, Project Editor naming and the Puzzle Creator-to-Quest Builder handoff before later implementation begins.
 
 Current active app files:
 
@@ -56,18 +61,33 @@ artifex/apps/quest-builder/v1/quest-builder-v108.css
 artifex/apps/quest-builder/v1/quest-builder-v108.js
 ```
 
+## Locked naming direction
+
+The structural/Flatplan app is named **Project Editor** in user-facing UI and documentation.
+
+- Do not add new user-facing **Project Manager** labels.
+- The current live Quest Builder Module flyout still displays **Project Manager** and must be corrected in a later normal versioned app edit.
+- Historical code identifiers, stored todo filenames and machine-readable task IDs using `project-manager` require deliberate migration/compatibility handling; do not bulk rename them without checking reads/writes.
+
 ## Ownership boundary
 
-Quest Builder owns quest library records, side quest records, branches, player action steps, conditions/flags, rewards/unlocks, progression logic, quest-specific UI/Capra assignments, quest-specific dialogue records, and links from quest blocks to relevant module IDs.
+Quest Builder owns Quest and Side Quest records, branches, player/game-event operations, progression conditions/flags, rewards/unlocks, Quest-specific UI/Capra assignments, Quest-scoped dialogue records, and meaningful linked puzzle steps that reference a saved `puzzleId`.
 
-Quest Builder does not own scene/screen visual layout, Scene Editor object placement, Flatplan map positioning, object archetype definitions, FX archetype definitions, reusable promoted portrait/voice/audio asset files, or final reusable media asset ownership.
+Quest Builder does not own scene/screen visual layout, Scene Editor object placement, Project Editor Flatplan positioning/routes, object archetype definitions, FX archetype definitions, reusable promoted portrait/voice/audio assets, final reusable media asset ownership, or the internal authored definition of a puzzle.
 
 First-version dialogue ownership decision:
 
 - Quest-specific NPC dialogue, Mel dialogue, narration and Capra feedback are edited contextually inside Quest Builder.
 - Do not create a separate top-level Dialogue Library / Dialogue Editor app merely to author dialogue for a Quest.
-- Reusable portrait/audio media remain referenced external assets rather than being duplicated inside Quest data.
-- A global reusable dialogue library is a later option only if cross-Quest reuse, localisation or voice-management requirements prove it is necessary.
+- Reusable portrait/audio media remain registered external assets rather than being duplicated inside Quest data.
+- A global reusable dialogue library is a later option only if cross-Quest reuse, localisation or voice-management requirements prove it necessary.
+
+Puzzle handoff decision:
+
+- Puzzle Creator authors a self-contained challenge and eventually registers it as `puzzles/puzzle_<slug>.json` in `puzzles/puzzle-index.json`.
+- Quest Builder must eventually provide a meaningful `Puzzle` flow block using a stable `puzzleId` selected from the real puzzle index.
+- The Quest block owns Quest-level requirements and outcomes around the challenge; it must not copy maze cells, symbol layouts, puzzle features or full puzzle data.
+- Project Editor may consume public Quest/flag/puzzle completion results only when wider route structure needs them.
 
 ## Export target
 
@@ -80,7 +100,9 @@ sidequests/sidequest-index.json
 sidequests/sidequest_<slug>.json
 ```
 
-The selected connected folder is already the project root. Do not use `projects/<project-id>/...` as the direct-save destination. Project Manager / Project Editor may reference quest and side quest IDs; it must not author quest internals directly.
+The selected connected folder is already the project root. Do not use `projects/<project-id>/...` as the direct-save destination. Project Editor may reference Quest and Side Quest IDs, completion flags and public result references; it must not author Quest internals directly.
+
+Quest Builder may later read `puzzles/puzzle-index.json` to select and validate linked puzzles. It must not write `puzzles/` content.
 
 ## Completed phases summary
 
@@ -105,7 +127,7 @@ Status: built; retain as a separate list-order behaviour.
 Status: complete/browser-confirmed for pencil action fix.
 
 - Reduced panel/control density.
-- Changed START/END to dark circular icon nodes using the custom endpoint assets.
+- Changed START/END to dark circular icon nodes using custom endpoint assets.
 - Styled the left Editing strip consistently with the dark workspace.
 - Added and fixed pencil edit controls; user confirmed the correct block editor opens from the workspace.
 
@@ -130,50 +152,43 @@ Status: browser-tested; required usability cleanup progressed in V1.2.11.
 
 ### V1.2.11 — connector usability and routing cleanup
 
-Status: displayed in live browser screenshot; further routing improvement requested.
+Status: displayed in live browser screenshot; further routing improvement requested and addressed in V1.2.12.
 
 - Removed permanently displayed spare connector-circle clutter; only attached connector circles are shown.
 - Added a `🔗` connect action beside the pencil on each workspace card.
 - Added a START connection handle.
 - Made attached connector circles directly removable while retaining Delete/Backspace line removal.
 - Allowed new links to create required destination attachment circles automatically.
-- Initial left/right side-routing cleanup still did not solve vertically stacked card layouts cleanly.
 
 ### V1.2.12 — fine grid, snap mode and smart shortest-edge connectors
 
-Status: built in repository; awaiting browser testing.
-
-Purpose: implement the requested smaller grid and make connector attachment follow the card positions rather than being forced onto left/right edges.
+Status: live presentation accepted by user; full regression checklist remains available if later debugging is needed.
 
 Implemented:
 
-- Changed the visual workspace grid to a finer `40` design-pixel spacing, retaining slightly stronger lines every `80` pixels for readability.
-- Added a compact `🧲` Snap to Grid control beside the hand/pan control in the top-right viewport controls.
-- Added saved layout preference `snapToGrid`, defaulting to off so existing positions are not unexpectedly rearranged.
-- When snap is enabled, cards snap to the smaller grid as they are dragged; existing cards remain where they are until moved.
-- Re-clamped snapped positions after rounding so cards cannot be pushed beyond the currently fixed canvas bounds.
-- Added normal module `connection-routing.js`, rather than a patch layer, for connector display routing responsibilities.
-- Smart connector routing now evaluates left, right, top and bottom edges and chooses the shortest visible edge pair for each existing logical connection.
-- Routing recalculates while cards are moved, so a vertical card stack can switch to bottom-to-top connectors and a horizontal relationship can remain side-to-side.
-- Kept connector line colour derived from the source block.
-- Kept `🔗` link creation and click-attached-circle removal from V1.2.11.
-- Kept logical connections separate from visual routing: export records each logical connection with `routingMode: "smart-shortest"`, rather than exporting fixed edge/port placement as quest progression data.
-- Updated page title, visible badge, CSS cache key, main script key, internal module cache keys, icon asset cache keys and module loaded version text to `V1.2.12` / `1.2.12`.
-- Updated `docs/structure.md` to document `connection-routing.js` as visual routing only, not quest logic.
+- Finer `40` design-pixel grid with slightly stronger lines every `80` pixels.
+- Compact `🧲` Snap to Grid control beside the hand/pan control.
+- Saved `snapToGrid` layout preference, defaulting off so existing positions are not unexpectedly rearranged.
+- Card snap behaviour during dragging, with positions clamped inside the current fixed canvas.
+- Normal `connection-routing.js` module for visual connector routing.
+- Smart connector routing evaluating left, right, top and bottom edges and selecting the shortest visible connection for each logical connection.
+- Connector colour retained from the source block.
+- Existing `🔗` link creation and attached-circle disconnection behaviour retained.
+- Logical connections kept separate from visual routing through `routingMode: "smart-shortest"` export metadata.
 
 Not implemented in this pass:
 
 - Dynamic workspace/canvas expansion near lower or right edges.
 - Moveable/saved START and END positions.
 - Insert Space horizontal guide tool.
-- Obstacle-avoiding connector routing around unrelated overlapping cards.
-- Manual connector side override when a shortest route is visually undesirable.
+- Obstacle-avoiding connector routing around unrelated cards.
+- Manual connector-side override where a shortest route is visually undesirable.
 
 ### Documentation decision — structured authoring and dialogue inside Quest Builder
 
 Status: documented; no live UI implementation yet.
 
-Documentation created/updated:
+Documentation:
 
 ```text
 docs/artifex/07a-quest-builder-structured-authoring.md
@@ -184,63 +199,88 @@ artifex/apps/quest-builder/docs/todo.md
 
 Locked direction:
 
-- Do not create a separate Dialogue Library / Dialogue Editor app for the first version.
+- No separate Dialogue Library / Dialogue Editor app for the first version.
 - A Quest block remains a meaningful progression event; dialogue lines, conditions, outcomes and most failed-attempt responses live inside the relevant block editor rather than becoming automatic canvas cards.
-- The selected block's editor should eventually provide structured areas for Action, Requirements / Conditions, Success Outcomes, Failure / Capra Feedback, Dialogue / Presentation, Linked Assets and Validation.
-- A larger **Open Dialogue / Feedback** screen may open from a selected block, but it stays inside Quest Builder and authors Quest-owned dialogue records.
-- Reusable portrait/audio assets remain external references and are not duplicated into Quest data.
-- The exact export-safe JSON schema for actions, outcomes and dialogue records must be defined during implementation with validation, not improvised through loose fields.
+- The selected block editor should eventually provide structured Action, Requirements / Conditions, Success Outcomes, Failure / Capra Feedback, Dialogue / Presentation, Linked Assets and Validation sections.
+- An **Open Dialogue / Feedback** screen may open from a block but remains inside Quest Builder.
+- Reusable portrait/audio assets remain external registered references.
+- Exact export-safe JSON for actions, outcomes and dialogue records must be defined during implementation with validation.
 
-## V1.2.12 browser test checklist
+### Documentation decision — Puzzle Creator handoff and Project Editor terminology
 
-Open the fresh test URL after GitHub Pages updates and verify:
+Status: documented; no live Quest Builder Puzzle block or navigation-label implementation yet.
 
-1. The badge shows `V1.2.12` and the page loads normally.
-2. The workspace grid is visibly smaller/finer than V1.2.11.
-3. A `🧲` button appears directly beside the hand/pan button and shows an active glow when enabled.
-4. With snap off, a dragged card moves freely; with snap on, a dragged card aligns to the smaller grid.
-5. Enabling snap does not suddenly rearrange existing cards before they are moved.
-6. Vertically arranged connected cards, such as Enter Church / Collect Chalice / Update Codice when stacked, attach using top/bottom edges when those are shortest.
-7. Moving a connected card changes its visible connector edge automatically when another edge becomes shortest, without changing the logical source/destination.
-8. Horizontal routes remain readable and use the colour of the source block.
-9. The `🔗` create-connection action still creates a line, and clicking an attached circle still removes its connection.
-10. Pencil edit controls still open the correct editor popup.
-11. Hand/pan mode still pans instead of moving cards or creating links.
-12. JSON Preview contains logical `flow.connections` with `routingMode: "smart-shortest"`, not fixed side placement used as game logic.
-13. View → Reset Saved Layout resets visual positions and snap preference, but does not delete quest connections.
+Documentation:
 
-## Next specific-app implementation work
+```text
+docs/artifex/07b-puzzle-creator-quest-integration.md
+docs/artifex/02-module-architecture.md
+docs/artifex/07-quest-builder.md
+docs/artifex/10-artifex-tool-hierarchy.md
+docs/artifex/19-project-file-contracts.md
+docs/artifex/19a-project-starter-file-schemas.md
+artifex/apps/puzzle-creator/README.md
+artifex/apps/quest-builder/docs/block-taxonomy.md
+artifex/apps/quest-builder/docs/structure.md
+```
 
-There are now two separate implementation tracks. Do not merge them into one uncontrolled pass.
+Locked direction:
 
-### Track A — workspace layout improvements after V1.2.12 browser confirmation
+- User-facing module name is **Project Editor**, not Project Manager.
+- Puzzle Creator owns self-contained puzzle definitions and future canonical `puzzle_` records.
+- Quest Builder must eventually insert a completed saved puzzle as a meaningful `Puzzle` flow block with `puzzleId`.
+- Quest Builder owns progression/story outcomes around puzzle completion, not the puzzle's internal mechanics.
+- Audio assigned by Quest or Puzzle data resolves through registered `asset_` IDs; do not create an `archsound_` system.
+- Blank Starter schema examples use `startScreenId: null`, matching the shared initializer.
 
-Likely version if the V1.2.12 interaction tests correctly:
+## Remaining UI/code implementation tracks
+
+Do not merge the tracks below into one uncontrolled pass.
+
+### Track A — workspace layout improvements
+
+Candidate later version:
 
 ```text
 V1.2.13 — dynamic workspace expansion and manual layout space management
 ```
 
-Required layout work:
+Required work:
 
-- Grow the logical workspace when cards approach the lower/right boundary and keep comfortable blank padding.
-- Allow START/END endpoints to be positioned consistently in the expanded workspace, without inferring quest logic from position.
-- Add a horizontal `Insert Space` tool: place/drag a temporary guide line, then move every node below that line downward together while preserving connections.
-- Consider a vertical equivalent only after the horizontal tool is tested and useful.
-- Consider obstacle-avoiding connector routing only if smart nearest-edge routing still creates unacceptable line collisions in realistic layouts.
+- Grow the logical workspace when cards approach lower/right boundaries and keep comfortable blank padding.
+- Allow START/END endpoints to be positioned consistently in expanded workspace without inferring Quest logic from position.
+- Add a horizontal `Insert Space` guide that moves nodes below it downward while preserving connections.
+- Consider vertical equivalent or obstacle-avoiding routing only after tested need.
 
-### Track B — structured Quest authoring implementation
-
-This track is now specified in documentation and can be planned independently, but actual UI/code changes must be staged carefully against the current app.
+### Track B — structured Quest authoring
 
 Required stages:
 
-1. Define export-safe structured draft data for actions, requirements, success outcomes, failure outcomes and Quest-scoped dialogue/Capra records.
-2. Replace vague free-text block editing with contextual sections inside the existing Quest Builder editor flow.
-3. Add an in-app **Open Dialogue / Feedback** authoring screen linked from relevant blocks, without adding a new top-level editor module.
-4. Validate missing target IDs, broken dialogue references, empty dialogue records, incomplete failure feedback, unknown referenced flags/items/routes/scenes and invalid completion conditions.
-5. Align quest/sidequest saving with the canonical connected-project-root file contracts and typed indexes.
-6. Only reconsider a shared Dialogue Library after repeated real-use cases justify it.
+1. Define export-safe structured data for operations, requirements, outcomes and Quest-scoped dialogue/Capra records.
+2. Replace vague free-text block editing with contextual sections in the existing Quest Builder editing flow.
+3. Add in-app **Open Dialogue / Feedback** authoring from relevant blocks.
+4. Validate target IDs, dialogue references, empty dialogue records, feedback and completion conditions.
+5. Align Quest/Sidequest saving with canonical connected-project-root typed indexes.
+6. Only reconsider a shared Dialogue Library after repeated real reuse justifies it.
+
+### Track C — linked Puzzle blocks
+
+Required stages:
+
+1. Wait until Puzzle Creator has canonical connected-project registration/loading for `puzzles/puzzle-index.json` and `puzzles/puzzle_<slug>.json`, or coordinate that prerequisite in a clearly staged cross-app pass.
+2. Add a Quest Builder `Puzzle` block type with `puzzleId` primary/required field.
+3. Read/select real registered puzzles from the active connected project.
+4. Author Quest-level requirements, success outcomes and failure/story feedback around the linked puzzle without copying its internal record.
+5. Add missing-puzzle and invalid-public-result validation.
+6. Confirm Project Editor can consume public Quest/puzzle results only for wider route gating.
+
+### Track D — terminology and live navigation migration
+
+Required stages:
+
+1. Change the live Quest Builder Module flyout from **Project Manager** to **Project Editor** in a versioned app pass.
+2. Audit other active app UI for user-visible **Project Manager** labels and update each app through its own versioned/tested pass.
+3. Safely migrate any stored todo filename or machine-readable internal identifier only where reading/writing compatibility is preserved; do not bulk rename project data blindly.
 
 ## Version rule
 
