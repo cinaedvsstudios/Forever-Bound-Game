@@ -12,6 +12,11 @@ const $ = (id) => document.getElementById(id);
 const STYLE_ID = 'maze-scatter-decorations-style';
 const CARD_ID = 'maze-scatter-card';
 const MAX_DECORATION_SLOTS = 5;
+const PLACEMENT_MODES = {
+  random: { label: 'Random', help: 'Loosely random placement with immediate clusters avoided where space allows.' },
+  equal_distribution: { label: 'Equal Distribution', help: 'Spreads markers across walkable corridors for more consistent coverage.' },
+  solution_path: { label: 'Around Main Solution Path', help: 'Spaces markers along the calculated start-to-exit route, with nearby overflow placement when needed.' }
+};
 const scatterState = {
   enabled: false,
   seed: 1842,
@@ -46,6 +51,7 @@ function createSlot(id, label, amount, type) {
     label,
     type,
     amount,
+    placementMode: type === 'light' ? 'equal_distribution' : 'random',
     visualAssetId: null,
     visualAssetLabel: null,
     visualAssetReferenceSource: null,
@@ -82,6 +88,7 @@ function renderCard() {
         <div class="scatter-slot-title"><strong>Decorative Lights</strong><small>${escapeHtml(assetStatus(scatterState.light))}</small></div>
         <div class="scatter-controls">
           <label title="Number of decorative light placeholder markers generated on available path cells."><span>Amount</span><input type="number" min="0" max="30" value="${scatterState.light.amount}" data-scatter-amount="${scatterState.light.id}" /></label>
+          ${placementControl(scatterState.light)}
           <button type="button" data-scatter-link="${scatterState.light.id}" title="Optionally choose a final registered asset_ visual for decorative lights.">${scatterState.light.visualAssetId ? 'Replace' : 'Link Light'}</button>
           ${scatterState.light.visualAssetId ? `<button type="button" data-scatter-unlink="${scatterState.light.id}" title="Remove the linked light asset while retaining placeholder positions.">Unlink</button>` : ''}
         </div>
@@ -95,11 +102,11 @@ function renderCard() {
       </div>
       <div class="scatter-generation">
         <label title="Seed used to regenerate repeatable decorative placement positions."><span>Seed</span><input type="number" min="1" max="999999" value="${scatterState.seed}" data-scatter-seed /></label>
-        <button type="button" data-scatter-regenerate title="Generate placeholder decoration markers on available path cells without collision.">Regenerate</button>
+        <button type="button" data-scatter-regenerate title="Generate placeholder decoration markers using each slot’s selected placement mode.">Regenerate</button>
         <button type="button" data-scatter-clear title="Clear generated decoration marker positions while keeping any linked assets.">Clear Positions</button>
       </div>
       <p class="scatter-status">${escapeHtml(scatterState.status)} ${placedCount ? `· ${placedCount} marker${placedCount === 1 ? '' : 's'} in Overview.` : ''}</p>
-      <p class="scatter-render-note">Overview markers are authored placeholders. Linked images are not yet drawn in the playable preview.</p>
+      <p class="scatter-render-note">Overview markers are authored placeholders. Linked images and actual light effects are not yet drawn in the playable preview.</p>
     </div>
   `;
   bindCardActions(card);
@@ -111,12 +118,23 @@ function decorationHtml(slot, index) {
       <div class="scatter-slot-title"><strong>Decoration ${index + 1}</strong><small>${escapeHtml(assetStatus(slot))}</small></div>
       <div class="scatter-controls">
         <label title="Number of placeholder markers generated for this decoration slot."><span>Amount</span><input type="number" min="0" max="20" value="${slot.amount}" data-scatter-amount="${slot.id}" /></label>
+        ${placementControl(slot)}
         <button type="button" data-scatter-link="${slot.id}" title="Optionally choose a final registered asset_ visual for this decoration.">${slot.visualAssetId ? 'Replace' : 'Link Asset'}</button>
         ${slot.visualAssetId ? `<button type="button" data-scatter-unlink="${slot.id}" title="Remove the linked asset while retaining marker positions.">Unlink</button>` : ''}
         <button type="button" data-scatter-remove="${slot.id}" title="Delete this decoration slot and its marker positions.">Remove</button>
       </div>
     </div>
   `;
+}
+
+function placementControl(slot) {
+  const mode = validPlacementMode(slot.placementMode);
+  const title = PLACEMENT_MODES[mode].help;
+  return `<label class="scatter-placement-control" title="${escapeHtml(title)}"><span>Placement</span><select data-scatter-placement="${slot.id}">${Object.entries(PLACEMENT_MODES).map(([value, item]) => `<option value="${value}" ${value === mode ? 'selected' : ''}>${item.label}</option>`).join('')}</select></label>`;
+}
+
+function validPlacementMode(mode) {
+  return PLACEMENT_MODES[mode] ? mode : 'random';
 }
 
 function assetStatus(slot) {
@@ -127,7 +145,7 @@ function bindCardActions(card) {
   card.querySelector('[data-scatter-toggle]')?.addEventListener('click', () => {
     scatterState.enabled = !scatterState.enabled;
     if (!scatterState.enabled) clearPlacements('Scatter is off.');
-    else scatterState.status = 'Set amounts and regenerate placeholder markers; link visuals whenever available.';
+    else scatterState.status = 'Set amounts and placement modes, then regenerate markers; link visuals whenever available.';
     renderCard();
     repaintOverviewAndMarkers();
   });
@@ -135,7 +153,7 @@ function bindCardActions(card) {
     if (scatterState.decorations.length >= MAX_DECORATION_SLOTS) return;
     const number = scatterState.decorations.length + 1;
     scatterState.decorations.push(createSlot(`scatter_decoration_${number}`, `Decoration ${number}`, 3, 'decoration'));
-    scatterState.status = 'Decoration marker slot added. Regenerate now or link its final visual later.';
+    scatterState.status = 'Decoration marker slot added. Random placement is selected by default; regenerate now or adjust the mode.';
     renderCard();
   });
   card.querySelectorAll('[data-scatter-link]').forEach((button) => button.addEventListener('click', () => openAssetPicker(button.dataset.scatterLink)));
@@ -146,6 +164,13 @@ function bindCardActions(card) {
     if (!slot) return;
     slot.amount = clampAmount(Number(input.value || 0), slot.type === 'light' ? 30 : 20);
     scatterState.status = 'Amount updated. Regenerate to update marker positions.';
+    renderCard();
+  }));
+  card.querySelectorAll('[data-scatter-placement]').forEach((select) => select.addEventListener('change', () => {
+    const slot = findSlot(select.dataset.scatterPlacement);
+    if (!slot) return;
+    slot.placementMode = validPlacementMode(select.value);
+    scatterState.status = `${slot.label} will use ${PLACEMENT_MODES[slot.placementMode].label}. Regenerate to apply it.`;
     renderCard();
   }));
   card.querySelector('[data-scatter-seed]')?.addEventListener('change', (event) => {
@@ -224,6 +249,7 @@ function clearPlacements(message) {
 }
 
 function regeneratePlacements() {
+  const currentState = runtimeState();
   if (!scatterState.enabled) {
     scatterState.status = 'Enable Scatter before generating decoration positions.';
     renderCard();
@@ -231,28 +257,169 @@ function regeneratePlacements() {
     return;
   }
   const slots = authoredSlots().filter((slot) => clampAmount(slot.amount, slot.type === 'light' ? 30 : 20) > 0);
-  if (!slots.length) {
-    clearPlacements('No positions generated: all marker amounts are zero.');
+  if (!slots.length || !currentState?.matrix?.length) {
+    clearPlacements(!slots.length ? 'No positions generated: all marker amounts are zero.' : 'No maze exists for marker placement.');
     renderCard();
     repaintOverviewAndMarkers();
     return;
   }
   const available = availableCells();
-  const random = seededRandom(scatterState.seed);
-  shuffle(available, random);
+  const occupied = [];
+  let usedSolutionFallback = false;
   authoredSlots().forEach((slot) => { slot.cells = []; });
-  let cursor = 0;
-  slots.forEach((slot) => {
+  slots.forEach((slot, index) => {
     const amount = clampAmount(slot.amount, slot.type === 'light' ? 30 : 20);
-    for (let index = 0; index < amount && cursor < available.length; index += 1, cursor += 1) {
-      slot.cells.push(available[cursor]);
-    }
+    const pool = available.filter((cell) => !occupied.some((existing) => sameCell(existing, cell)));
+    const random = seededRandom(scatterState.seed + ((index + 1) * 7919));
+    const selection = chooseCells(slot, amount, pool, occupied, currentState, random);
+    slot.cells = selection.cells;
+    occupied.push(...selection.cells);
+    usedSolutionFallback = usedSolutionFallback || selection.solutionFallback;
   });
-  scatterState.status = cursor
-    ? 'Placeholder markers regenerated on unoccupied path cells.'
-    : 'No available path cells remain for decoration markers.';
+  if (usedSolutionFallback) {
+    scatterState.status = 'No valid main route exists; Around Main Solution Path fell back to Equal Distribution.';
+  } else if (occupied.length) {
+    scatterState.status = 'Placeholder markers regenerated using the selected placement modes.';
+  } else {
+    scatterState.status = 'No available path cells remain for decoration markers.';
+  }
   renderCard();
   repaintOverviewAndMarkers();
+}
+
+function chooseCells(slot, amount, candidates, occupied, currentState, random) {
+  const mode = validPlacementMode(slot.placementMode);
+  if (mode === 'equal_distribution') return { cells: chooseEvenDistribution(candidates, amount, occupied, currentState, random), solutionFallback: false };
+  if (mode === 'solution_path') return chooseAroundSolutionPath(candidates, amount, occupied, currentState, random);
+  return { cells: chooseRandomSpread(candidates, amount, random), solutionFallback: false };
+}
+
+function chooseRandomSpread(candidates, amount, random) {
+  const shuffled = [...candidates];
+  shuffle(shuffled, random);
+  const chosen = [];
+  shuffled.forEach((cell) => {
+    if (chosen.length >= amount) return;
+    if (chosen.every((existing) => manhattanDistance(existing, cell) > 1)) chosen.push(cell);
+  });
+  shuffled.forEach((cell) => {
+    if (chosen.length >= amount || chosen.some((existing) => sameCell(existing, cell))) return;
+    chosen.push(cell);
+  });
+  return chosen;
+}
+
+function chooseEvenDistribution(candidates, amount, occupied, currentState, random) {
+  const pool = [...candidates];
+  const chosen = [];
+  if (!pool.length || amount < 1) return chosen;
+  if (!occupied.length) {
+    const firstIndex = Math.floor(random() * pool.length);
+    chosen.push(pool.splice(firstIndex, 1)[0]);
+  }
+  while (chosen.length < amount && pool.length) {
+    const anchors = [...occupied, ...chosen];
+    const distances = distanceFromSources(currentState, anchors);
+    let bestScore = -1;
+    let tied = [];
+    pool.forEach((cell) => {
+      const score = distances.get(cellKey(cell)) ?? 0;
+      if (score > bestScore) {
+        bestScore = score;
+        tied = [cell];
+      } else if (score === bestScore) {
+        tied.push(cell);
+      }
+    });
+    const selected = tied[Math.floor(random() * tied.length)] || pool[0];
+    chosen.push(selected);
+    pool.splice(pool.findIndex((cell) => sameCell(cell, selected)), 1);
+  }
+  return chosen.slice(0, amount);
+}
+
+function chooseAroundSolutionPath(candidates, amount, occupied, currentState, random) {
+  const route = findSolutionPath(currentState);
+  if (!route.length) {
+    return { cells: chooseEvenDistribution(candidates, amount, occupied, currentState, random), solutionFallback: true };
+  }
+  const candidateKeys = new Set(candidates.map(cellKey));
+  const routeCandidates = route.filter((cell) => candidateKeys.has(cellKey(cell)));
+  const selected = evenlySampleOrdered(routeCandidates, Math.min(amount, routeCandidates.length));
+  if (selected.length < amount) {
+    const selectedKeys = new Set(selected.map(cellKey));
+    const remainder = candidates.filter((cell) => !selectedKeys.has(cellKey(cell)));
+    const byRouteDistance = remainder
+      .map((cell) => ({ cell, distance: nearestManhattanDistance(cell, route), tie: random() }))
+      .sort((a, b) => a.distance - b.distance || a.tie - b.tie)
+      .map((item) => item.cell);
+    const needed = amount - selected.length;
+    const nearPool = byRouteDistance.slice(0, Math.max(needed, needed * 4));
+    selected.push(...chooseEvenDistribution(nearPool, needed, [...occupied, ...selected], currentState, random));
+  }
+  return { cells: selected.slice(0, amount), solutionFallback: false };
+}
+
+function evenlySampleOrdered(cells, amount) {
+  if (amount >= cells.length) return [...cells];
+  if (amount < 1) return [];
+  return Array.from({ length: amount }, (_, index) => {
+    const cellIndex = Math.min(cells.length - 1, Math.floor(((index + 0.5) * cells.length) / amount));
+    return cells[cellIndex];
+  });
+}
+
+function findSolutionPath(currentState) {
+  if (!currentState?.start || !currentState?.exit) return [];
+  const queue = [[currentState.start]];
+  const seen = new Set([cellKey(currentState.start)]);
+  while (queue.length) {
+    const path = queue.shift();
+    const cell = path[path.length - 1];
+    if (sameCell(cell, currentState.exit)) return path;
+    openNeighbours(cell).forEach((next) => {
+      if (seen.has(cellKey(next)) || !isOpenCell(currentState, next)) return;
+      seen.add(cellKey(next));
+      queue.push([...path, next]);
+    });
+  }
+  return [];
+}
+
+function distanceFromSources(currentState, sources) {
+  const distances = new Map();
+  const queue = [];
+  sources.forEach((source) => {
+    if (!source || distances.has(cellKey(source)) || !isOpenCell(currentState, source)) return;
+    distances.set(cellKey(source), 0);
+    queue.push(source);
+  });
+  while (queue.length) {
+    const cell = queue.shift();
+    const distance = distances.get(cellKey(cell));
+    openNeighbours(cell).forEach((next) => {
+      if (distances.has(cellKey(next)) || !isOpenCell(currentState, next)) return;
+      distances.set(cellKey(next), distance + 1);
+      queue.push(next);
+    });
+  }
+  return distances;
+}
+
+function openNeighbours(cell) {
+  return [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => ({ x: cell.x + dx, y: cell.y + dy }));
+}
+
+function isOpenCell(currentState, cell) {
+  return cell.x >= 0 && cell.y >= 0 && cell.x < currentState.gridSize && cell.y < currentState.gridSize && currentState.matrix[cell.y]?.[cell.x] === 0 && isInsideShape(cell.x, cell.y, currentState.gridSize, currentState.layout, currentState.stretchX, currentState.stretchY);
+}
+
+function nearestManhattanDistance(cell, cells) {
+  return cells.reduce((minimum, other) => Math.min(minimum, manhattanDistance(cell, other)), Infinity);
+}
+
+function manhattanDistance(first, second) {
+  return Math.abs(first.x - second.x) + Math.abs(first.y - second.y);
 }
 
 function availableCells() {
@@ -271,8 +438,7 @@ function availableCells() {
   for (let y = 0; y < currentState.gridSize; y += 1) {
     for (let x = 0; x < currentState.gridSize; x += 1) {
       const cell = { x, y };
-      if (currentState.matrix[y]?.[x] !== 0 || blocked.has(cellKey(cell))) continue;
-      if (!isInsideShape(x, y, currentState.gridSize, currentState.layout, currentState.stretchX, currentState.stretchY)) continue;
+      if (!isOpenCell(currentState, cell) || blocked.has(cellKey(cell))) continue;
       cells.push(cell);
     }
   }
@@ -367,6 +533,7 @@ function exportSlot(slot) {
   return {
     id: slot.id,
     type: slot.type,
+    placementMode: validPlacementMode(slot.placementMode),
     visualAssetId: slot.visualAssetId,
     visualAssetLabel: slot.visualAssetLabel,
     visualAssetReferenceSource: slot.visualAssetReferenceSource,
@@ -378,7 +545,7 @@ function exportSlot(slot) {
 
 function exportScatter() {
   return {
-    schemaVersion: 'artifex.mazeScatter.v1',
+    schemaVersion: 'artifex.mazeScatter.v2',
     enabled: scatterState.enabled,
     seed: scatterState.seed,
     collision: 'none',
@@ -405,11 +572,15 @@ function injectStyles() {
   style.textContent = `
     .maze-scatter-card{margin:9px 0 12px;padding:10px;border:1px solid rgba(158,230,164,.2);border-radius:13px;background:rgba(5,18,11,.88)}
     .scatter-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.scatter-head strong{display:block;color:#eadfc6;font-size:.72rem}.scatter-head small{display:block;margin-top:2px;color:#a9b59e;font-size:.59rem;line-height:1.35}.scatter-toggle{min-width:44px;min-height:28px;padding:4px 8px;border-radius:9px;border:1px solid rgba(158,230,164,.27);background:rgba(12,54,28,.6);color:#eadfc6;font-size:.61rem;font-weight:800;cursor:pointer}.scatter-toggle.is-on{border-color:rgba(158,230,164,.53);background:rgba(40,92,47,.45);color:#d7ffdb}
-    .scatter-body{margin-top:9px;display:grid;gap:7px}.scatter-slot{padding:7px;border:1px solid rgba(158,230,164,.13);border-radius:9px;background:rgba(0,0,0,.14)}.scatter-light-slot{border-color:rgba(225,192,115,.23)}.scatter-slot-title{display:flex;justify-content:space-between;gap:7px;align-items:baseline;margin-bottom:6px}.scatter-slot-title strong{color:#eadfc6;font-size:.64rem}.scatter-slot-title small{max-width:175px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#a9b59e;font-size:.55rem}.scatter-controls{display:flex;gap:5px;align-items:end;flex-wrap:wrap}.scatter-controls label,.scatter-generation label{display:grid;gap:2px;color:#d8d0ba;font-size:.56rem}.scatter-controls input{width:54px}.scatter-controls input,.scatter-generation input{min-height:26px;box-sizing:border-box;border-radius:7px;border:1px solid rgba(158,230,164,.18);background:#07190e;color:#eadfc6;padding:3px 5px;font-size:.62rem}.scatter-controls button,.scatter-decoration-heading button,.scatter-generation button{min-height:27px;padding:4px 7px;border-radius:7px;border:1px solid rgba(158,230,164,.22);background:rgba(12,54,28,.65);color:#eadfc6;font-size:.58rem;font-weight:700;cursor:pointer}.scatter-controls button:disabled,.scatter-decoration-heading button:disabled{opacity:.42;cursor:not-allowed}
+    .scatter-body{margin-top:9px;display:grid;gap:7px}.scatter-slot{padding:7px;border:1px solid rgba(158,230,164,.13);border-radius:9px;background:rgba(0,0,0,.14)}.scatter-light-slot{border-color:rgba(225,192,115,.23)}.scatter-slot-title{display:flex;justify-content:space-between;gap:7px;align-items:baseline;margin-bottom:6px}.scatter-slot-title strong{color:#eadfc6;font-size:.64rem}.scatter-slot-title small{max-width:175px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#a9b59e;font-size:.55rem}.scatter-controls{display:flex;gap:5px;align-items:end;flex-wrap:wrap}.scatter-controls label,.scatter-generation label{display:grid;gap:2px;color:#d8d0ba;font-size:.56rem}.scatter-controls input{width:54px}.scatter-controls input,.scatter-controls select,.scatter-generation input{min-height:26px;box-sizing:border-box;border-radius:7px;border:1px solid rgba(158,230,164,.18);background:#07190e;color:#eadfc6;padding:3px 5px;font-size:.62rem;color-scheme:dark}.scatter-placement-control{flex:1 1 145px}.scatter-placement-control select{width:100%;max-width:190px}.scatter-controls button,.scatter-decoration-heading button,.scatter-generation button{min-height:27px;padding:4px 7px;border-radius:7px;border:1px solid rgba(158,230,164,.22);background:rgba(12,54,28,.65);color:#eadfc6;font-size:.58rem;font-weight:700;cursor:pointer}.scatter-controls button:disabled,.scatter-decoration-heading button:disabled{opacity:.42;cursor:not-allowed}
     .scatter-decoration-heading{display:flex;justify-content:space-between;align-items:center}.scatter-decoration-heading strong{color:#d8d0ba;font-size:.64rem}.scatter-decoration-list{display:grid;gap:5px}.scatter-empty{margin:0;padding:8px;border:1px dashed rgba(158,230,164,.17);border-radius:8px;color:#a9b59e;font-size:.58rem;text-align:center}.scatter-generation{display:flex;align-items:end;gap:5px;flex-wrap:wrap;padding-top:4px}.scatter-generation input{width:78px}
     .scatter-status{margin:2px 0 0;padding:6px;border-radius:8px;border:1px solid rgba(158,230,164,.16);color:#9ee6a4;background:rgba(20,72,37,.16);font-size:.57rem;line-height:1.35}.scatter-render-note{margin:0;color:#d8c185;font-size:.56rem;line-height:1.35}
   `;
   document.head.appendChild(style);
+}
+
+function sameCell(first, second) {
+  return !!first && !!second && first.x === second.x && first.y === second.y;
 }
 
 function cellKey(cell) {
