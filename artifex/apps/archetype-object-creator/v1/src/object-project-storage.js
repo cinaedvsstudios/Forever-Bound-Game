@@ -83,8 +83,8 @@ function projectSafeArchetype(item) {
     requirement.frames = requirement.frames.map((frame) => {
       if (!frame?.dataUrl) return frame;
       removedPreviewCount += 1;
-      const { dataUrl: _previewOnlyDataUrl, ...safeFrame } = frame;
-      return { ...safeFrame, previewOnly: true };
+      const { dataUrl: _previewOnlyDataUrl, assetId: _draftAssetId, ...safeFrame } = frame;
+      return { ...safeFrame, assetId: '', draftSourceName: frame.name || _draftAssetId || '', previewOnly: true };
     });
   });
   return { value, removedPreviewCount };
