@@ -1,4 +1,4 @@
-import { openSoundGeneratorModal } from '../../../shared/sound-generator/sound-generator-window.js?v=0.1.0';
+import { openSoundGeneratorModal } from '../../../../shared/sound-generator/sound-generator-window.js?v=0.1.0';
 
 let soundIntegrationObserver = null;
 let soundIntegrationQueued = false;
