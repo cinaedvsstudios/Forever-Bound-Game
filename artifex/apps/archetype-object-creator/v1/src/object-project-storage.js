@@ -1,12 +1,13 @@
-import '../../../../shared/project-folder/project-folder-client.js?v=0.1.0';
+import '../../../shared/project-folder/project-folder-client.js?v=0.1.0';
 import { editorState, objectExportTarget, onStateChange } from './editor-state.js';
 import { saveCurrentLocal } from './editor-io.js';
-import { validateRegisteredContentRecord } from '../../../../shared/registered-content/registered-content-reader.js';
+import { validateRegisteredContentRecord } from '../../../shared/registered-content/registered-content-reader.js';
 
 const OBJECT_INDEX_PATH = 'archetypes/object-index.json';
 const OBJECT_INDEX_SCHEMA = 'artifex.archetypes.objects.index.v1';
 let storageInitialised = false;
 let projectSaveRunning = false;
+let suppressDraftMark = false;
 
 export function initObjectProjectStorage() {
   if (storageInitialised) return;
@@ -15,7 +16,7 @@ export function initObjectProjectStorage() {
   renderProjectFolderStatus();
   window.addEventListener('artifex:project-folder-state', renderProjectFolderStatus);
   onStateChange(() => {
-    window.ArtifexProjectFolder?.markLocalDraftOnly?.();
+    if (!suppressDraftMark) window.ArtifexProjectFolder?.markLocalDraftOnly?.();
     renderProjectFolderStatus();
   });
 }
@@ -50,12 +51,15 @@ export async function saveCurrentObjectToProject({ allowConnect = true } = {}) {
     if (!validation.valid) throw new Error(validation.errors.join(' '));
     if (existingIndex >= 0) index.objects[existingIndex] = record;
     else index.objects.push(record);
+    suppressDraftMark = true;
     await client.writeJson(objectPath, item);
     await client.writeJson(OBJECT_INDEX_PATH, index);
+    suppressDraftMark = false;
     renderProjectFolderStatus();
     toast(`Saved ${item.name} to the connected project folder.`, 'success');
     return true;
   } catch (error) {
+    suppressDraftMark = false;
     toast(`Project save failed: ${error.message || String(error)}`, 'error');
     renderProjectFolderStatus();
     return false;
