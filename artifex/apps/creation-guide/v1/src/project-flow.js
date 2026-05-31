@@ -1,4 +1,4 @@
-const PROJECT_FLOW_VERSION = 'V1.1.11';
+const PROJECT_FLOW_VERSION = 'V1.1.12';
 const PROJECT_LIBRARY_KEY_FLOW = 'artifex.projectLibrary';
 const ACTIVE_PROJECT_KEY_FLOW = 'artifex.activeProjectId';
 const HEALTH_ACTIONS_KEY_PREFIX = 'artifex.creationGuide.healthAssignmentsCreated.';
@@ -136,7 +136,7 @@ function renderProjectFlowDialog() {
 function newProjectFlowHtml(suggested) {
   return `
     <section class="project-flow-body">
-      <article class="project-flow-note"><strong>What this does</strong><p>This starts a blank project setup. After creating it, use the new Project Folder section to connect a real folder and create the starter structure directly there. ZIP export remains available as backup or fallback.</p></article>
+      <article class="project-flow-note"><strong>What this does</strong><p>This starts a Blank Starter Project setup. After creating it, connect a real folder and create the starter structure directly there. You can then create optional intake drop folders for source media, or skip that step until later. ZIP export remains backup/fallback.</p></article>
       <div class="project-flow-grid">
         <label>Project name<input id="flow-project-name" value="" placeholder="Forever Bound" /></label>
         <label>Project ID / slug<input id="flow-project-id" value="${safeFlow(suggested)}" placeholder="forever-bound" /></label>
@@ -215,7 +215,7 @@ function openProjectFromFlow(projectId) {
   localStorage.setItem(ACTIVE_PROJECT_KEY_FLOW, projectId);
   library[projectId].lastOpenedAt = new Date().toISOString();
   localStorage.setItem(PROJECT_LIBRARY_KEY_FLOW, JSON.stringify(library, null, 2));
-  window.location.href = `${window.location.pathname}?fresh=creation-guide-1.1.11-open-${Date.now()}`;
+  window.location.href = `${window.location.pathname}?fresh=creation-guide-1.1.12-open-${Date.now()}`;
 }
 
 function setFlowField(id, value) {

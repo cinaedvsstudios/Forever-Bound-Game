@@ -1,12 +1,13 @@
 export const MODULE_SLUG = 'quest-builder';
 export const MODULE_LABEL = 'Quest Builder';
 export const MODULE_KIND = 'quest-builder';
-export const MODULE_VERSION = 'V1.2.11';
+export const MODULE_VERSION = 'V1.2.12';
 export const MODULE_STORAGE_KEY = 'artifex_quest_builder_local_saves';
 export const LAYOUT_STORAGE_KEY = 'artifex_quest_builder_layout_v109';
 
 export const DESIGN_WIDTH = 1280;
 export const DESIGN_HEIGHT = 720;
+export const GRID_SIZE = 40;
 
 export const MODULE_THEME = {
   accent: '#3eb489',

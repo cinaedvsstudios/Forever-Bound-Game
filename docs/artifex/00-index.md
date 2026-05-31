@@ -23,13 +23,15 @@ These three terms must not be merged together:
 - `05-creation-guide.md` — onboarding, connected-folder initialisation, setup checklist, project overview, health and task tracking.
 - `06-object-library.md` — advanced reusable object definitions, archetypes, instances, characters, items, enemies, and props.
 - `07-quest-builder.md` — quests, side quests, branches, flags, conditions, rewards, unlocks, and progression.
+- `07a-quest-builder-structured-authoring.md` — Quest Builder action/condition/outcome authoring and contextual quest-scoped dialogue/Capra records.
+- `07b-puzzle-creator-quest-integration.md` — boundary and handoff contract for standalone Puzzle Creator records used as Quest Builder flow steps.
 - `08-playtest-and-build.md` — playtesting, previewing scenes, testing routes/quests, and building/exporting the finished game.
 - `09-terminology.md` — working terminology list, including synonyms and not-yet-locked terms.
 - `10-naming-brainstorm.md` — naming research from publishing, game development, transport, and logistics.
 - `11-portal-hub.md` — Artifex portal, wedge layout, centre hub, utilities wedge, and portal asset notes.
 - `12-project-settings.md` — project profiles, active project selector, URLs, save paths, import/export settings, and autosave limitations.
 - `13-effects-library.md` — CG Effects Library, reusable fog/sparks/magic/rain/smoke effects, effect JSON, and Scene Editor integration.
-- `14-asset-library.md` — searchable asset library, tags, metadata, asset groups, character animation groups, and Scene Editor integration.
+- `14-asset-library.md` — searchable asset library, tags, metadata, asset groups, audio resources and Scene Editor integration.
 - `15-template-system.md` — template-system concepts and reusable starter-template workflow.
 - `16-dev-status-and-risks.md` — current repo/editor state, known problems, phase plan, risks, important files, and immediate priorities.
 - `17-codex-prompts.md` — preserved Codex prompt material.
@@ -38,6 +40,7 @@ These three terms must not be merged together:
 - `19a-project-starter-file-schemas.md` — canonical minimum JSON shapes for files Creation Guide creates and Project Editor subsequently reads/writes.
 - `20-asset-intake-workflow.md` — creator-facing asset staging and promotion workflow from `intake/` to final indexed `assets/`.
 - `21-template-game-project-contract.md` — populated connected reference-project contract, kept separate from a Blank Starter Project and Artifacts Adventures production work.
+- `22-sound-archetype-generator.md` — shared in-context Procedural Sound Generator popup, friendly controls, Web Audio recipe JSON, and registration of generated sounds through the existing Asset Library.
 
 ## Current Simplified Module List
 
@@ -47,8 +50,13 @@ These three terms must not be merged together:
 4. Creation Guide.
 5. Advanced Object Library.
 6. Quest Builder.
-7. Playtest.
-8. Build Game.
+7. Puzzle Creator.
+8. Playtest.
+9. Build Game.
+
+## Locked User-Facing Name
+
+The high-level structural/Flatplan tool is named **Project Editor** in user-facing documentation and UI. Historical filenames, code slugs or task identifiers that still contain `project-manager` are migration items; they do not establish a second official tool name.
 
 ## Working Principle
 

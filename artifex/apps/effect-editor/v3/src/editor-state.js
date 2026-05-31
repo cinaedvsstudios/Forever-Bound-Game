@@ -2,27 +2,9 @@ export const DESIGN_WIDTH = 1280;
 export const DESIGN_HEIGHT = 720;
 
 export const MODULE_THEMES = {
-  effects: {
-    label: 'Effects',
-    accent: '#00aeea',
-    accentSoft: 'rgba(0, 174, 234, 0.18)',
-    accentStrong: '#27d7ff',
-    glow: 'rgba(0, 174, 234, 0.42)'
-  },
-  archetype: {
-    label: 'Archetype',
-    accent: '#d84545',
-    accentSoft: 'rgba(216, 69, 69, 0.18)',
-    accentStrong: '#ff7474',
-    glow: 'rgba(216, 69, 69, 0.42)'
-  },
-  project: {
-    label: 'Project',
-    accent: '#9dbb3f',
-    accentSoft: 'rgba(157, 187, 63, 0.18)',
-    accentStrong: '#d9e979',
-    glow: 'rgba(157, 187, 63, 0.42)'
-  }
+  effects: { label: 'Effects', accent: '#00aeea', accentSoft: 'rgba(0, 174, 234, 0.18)', accentStrong: '#27d7ff', glow: 'rgba(0, 174, 234, 0.42)' },
+  archetype: { label: 'Archetype', accent: '#d84545', accentSoft: 'rgba(216, 69, 69, 0.18)', accentStrong: '#ff7474', glow: 'rgba(216, 69, 69, 0.42)' },
+  project: { label: 'Project', accent: '#9dbb3f', accentSoft: 'rgba(157, 187, 63, 0.18)', accentStrong: '#d9e979', glow: 'rgba(157, 187, 63, 0.42)' }
 };
 
 export const editorState = {
@@ -34,21 +16,19 @@ export const editorState = {
   showHelpers: true,
   workspaceMode: 'dark',
   referenceMedia: createEmptyReferenceMedia(),
+  viewOffset: { x: 0, y: 0 },
   zoom: 1,
   lowPerformanceMode: false,
+  emergencyLiteMode: false,
   moduleTheme: 'effects',
-  renderStats: {
-    fps: 0,
-    particles: 0,
-    particleCap: 900,
-    performanceMode: 'Full'
-  }
+  renderStats: { fps: 0, particles: 0, particleCap: 900, performanceMode: 'Full' }
 };
 
 export function createEmptyComposition() {
   return {
     id: `fx_${Date.now().toString(36)}`,
     name: 'Untitled Effect Archetype',
+    tags: [],
     designWidth: DESIGN_WIDTH,
     designHeight: DESIGN_HEIGHT,
     createdAt: new Date().toISOString(),
@@ -58,30 +38,11 @@ export function createEmptyComposition() {
 }
 
 export function createEmptyReferenceMedia() {
-  return {
-    type: '',
-    name: '',
-    dataUrl: '',
-    opacity: 0.55,
-    visible: false,
-    frame: 0
-  };
+  return { type: '', name: '', dataUrl: '', opacity: 0.55, visible: false, frame: 0, scale: 1 };
 }
-
-export function getDesignWidth() {
-  return finiteNumber(editorState.composition?.designWidth, DESIGN_WIDTH);
-}
-
-export function getDesignHeight() {
-  return finiteNumber(editorState.composition?.designHeight, DESIGN_HEIGHT);
-}
-
-export function getDesignSize() {
-  return {
-    width: getDesignWidth(),
-    height: getDesignHeight()
-  };
-}
+export function getDesignWidth() { return finiteNumber(editorState.composition?.designWidth, DESIGN_WIDTH); }
+export function getDesignHeight() { return finiteNumber(editorState.composition?.designHeight, DESIGN_HEIGHT); }
+export function getDesignSize() { return { width: getDesignWidth(), height: getDesignHeight() }; }
 
 export function resetComposition() {
   editorState.composition = createEmptyComposition();
@@ -89,33 +50,31 @@ export function resetComposition() {
   editorState.particles = [];
   notifyChange();
 }
-
 export function loadComposition(composition) {
   editorState.composition = normalizeComposition(composition);
   editorState.activeLayerIndex = editorState.composition.layers.length ? 0 : -1;
   editorState.particles = [];
   notifyChange();
 }
-
 export function normalizeComposition(input) {
   const base = createEmptyComposition();
   const layers = Array.isArray(input?.layers) ? input.layers : [];
   return {
     ...base,
     ...input,
+    tags: normalizeTags(input?.tags),
     designWidth: finiteNumber(input?.designWidth, DESIGN_WIDTH),
     designHeight: finiteNumber(input?.designHeight, DESIGN_HEIGHT),
     layers: layers.map(normalizeLayer)
   };
 }
 
-export function normalizeLayer(layer) {
+export function normalizeLayer(layer = {}) {
   const lifetime = finiteNumber(layer.lifetime, 80);
   const normalizedStops = normalizeAppearanceStops(layer.appearanceStops, layer);
   const activeAppearanceStopIndex = clamp(Math.round(finiteNumber(layer.activeAppearanceStopIndex, 0)), 0, Math.max(0, normalizedStops.length - 1));
   const firstStop = normalizedStops[0];
   const lastStop = normalizedStops[normalizedStops.length - 1] || firstStop;
-
   return {
     id: layer.id || `layer_${cryptoRandom()}`,
     name: layer.name || 'Effect Layer',
@@ -137,6 +96,8 @@ export function normalizeLayer(layer) {
     angle: finiteNumber(layer.angle, -90),
     spread: finiteNumber(layer.spread, 60),
     gravity: finiteNumber(layer.gravity, 0.04),
+    gravityBoost: Boolean(layer.gravityBoost),
+    gravityScaleVersion: layer.gravityScaleVersion === 'ui' ? 'ui' : '',
     lifetime,
     emitterX: finiteNumber(layer.emitterX, getDesignWidth() / 2),
     emitterY: finiteNumber(layer.emitterY, getDesignHeight() * 0.64),
@@ -221,34 +182,16 @@ export function normalizeLayer(layer) {
 }
 
 export function addLayer(layerConfig) {
-  const layer = normalizeLayer({
-    ...layerConfig,
-    id: `layer_${cryptoRandom()}`
-  });
+  const layer = normalizeLayer({ ...layerConfig, id: `layer_${cryptoRandom()}` });
   editorState.composition.layers.push(layer);
   editorState.activeLayerIndex = editorState.composition.layers.length - 1;
   editorState.composition.updatedAt = new Date().toISOString();
   notifyChange();
   return layer;
 }
-
-export function addLayers(layers) {
-  for (const layer of layers) {
-    addLayer(layer);
-  }
-  notifyChange();
-}
-
-export function getActiveLayer() {
-  return editorState.composition.layers[editorState.activeLayerIndex] || null;
-}
-
-export function selectLayer(index) {
-  if (index < 0 || index >= editorState.composition.layers.length) return;
-  editorState.activeLayerIndex = index;
-  notifyChange();
-}
-
+export function addLayers(layers) { for (const layer of layers) addLayer(layer); notifyChange(); }
+export function getActiveLayer() { return editorState.composition.layers[editorState.activeLayerIndex] || null; }
+export function selectLayer(index) { if (index >= 0 && index < editorState.composition.layers.length) { editorState.activeLayerIndex = index; notifyChange(); } }
 export function updateActiveLayer(patch) {
   const layer = getActiveLayer();
   if (!layer || layer.locked) return;
@@ -261,64 +204,25 @@ export function updateActiveLayer(patch) {
   editorState.composition.updatedAt = new Date().toISOString();
   notifyChange();
 }
-
 export function updateSyncedLayers(syncGroup, patch) {
   const group = String(syncGroup || '').trim();
   if (!group) return;
-  for (const layer of editorState.composition.layers) {
-    if (layer.syncGroup !== group || layer.locked) continue;
-    Object.assign(layer, patch);
-  }
+  editorState.composition.layers.forEach((layer) => { if (layer.syncGroup === group && !layer.locked) Object.assign(layer, patch); });
   editorState.composition.updatedAt = new Date().toISOString();
   notifyChange();
 }
-
-export function setLayerVisibility(index, visible) {
-  const layer = editorState.composition.layers[index];
-  if (!layer) return;
-  layer.visible = Boolean(visible);
-  editorState.composition.updatedAt = new Date().toISOString();
-  notifyChange();
-}
-
-export function toggleLayerVisibility(index = editorState.activeLayerIndex) {
-  const layer = editorState.composition.layers[index];
-  if (!layer) return;
-  layer.visible = layer.visible === false;
-  editorState.composition.updatedAt = new Date().toISOString();
-  notifyChange();
-}
-
-export function toggleLayerLock(index = editorState.activeLayerIndex) {
-  const layer = editorState.composition.layers[index];
-  if (!layer) return;
-  layer.locked = !layer.locked;
-  editorState.composition.updatedAt = new Date().toISOString();
-  notifyChange();
-}
-
-export function showAllLayers() {
-  for (const layer of editorState.composition.layers) layer.visible = true;
-  editorState.composition.updatedAt = new Date().toISOString();
-  notifyChange();
-}
-
+export function setLayerVisibility(index, visible) { const layer = editorState.composition.layers[index]; if (layer) { layer.visible = Boolean(visible); touch(); } }
+export function toggleLayerVisibility(index = editorState.activeLayerIndex) { const layer = editorState.composition.layers[index]; if (layer) { layer.visible = layer.visible === false; touch(); } }
+export function toggleLayerLock(index = editorState.activeLayerIndex) { const layer = editorState.composition.layers[index]; if (layer) { layer.locked = !layer.locked; touch(); } }
+export function showAllLayers() { editorState.composition.layers.forEach((layer) => { layer.visible = true; }); touch(); }
 export function soloLayer(index = editorState.activeLayerIndex) {
   const layers = editorState.composition.layers;
   if (index < 0 || index >= layers.length) return;
-  const alreadySolo = layers.every((layer, layerIndex) => layer.visible === (layerIndex === index));
-  if (alreadySolo) {
-    for (const layer of layers) layer.visible = true;
-  } else {
-    layers.forEach((layer, layerIndex) => {
-      layer.visible = layerIndex === index;
-    });
-    editorState.activeLayerIndex = index;
-  }
-  editorState.composition.updatedAt = new Date().toISOString();
-  notifyChange();
+  const alreadySolo = layers.every((layer, i) => layer.visible === (i === index));
+  layers.forEach((layer, i) => { layer.visible = alreadySolo || i === index; });
+  if (!alreadySolo) editorState.activeLayerIndex = index;
+  touch();
 }
-
 export function moveLayer(fromIndex, toIndex) {
   const layers = editorState.composition.layers;
   if (fromIndex < 0 || fromIndex >= layers.length) return;
@@ -326,30 +230,13 @@ export function moveLayer(fromIndex, toIndex) {
   if (nextIndex === fromIndex) return;
   const [layer] = layers.splice(fromIndex, 1);
   layers.splice(nextIndex, 0, layer);
-  if (editorState.activeLayerIndex === fromIndex) {
-    editorState.activeLayerIndex = nextIndex;
-  } else if (editorState.activeLayerIndex > fromIndex && editorState.activeLayerIndex <= nextIndex) {
-    editorState.activeLayerIndex -= 1;
-  } else if (editorState.activeLayerIndex < fromIndex && editorState.activeLayerIndex >= nextIndex) {
-    editorState.activeLayerIndex += 1;
-  }
-  editorState.composition.updatedAt = new Date().toISOString();
-  notifyChange();
+  if (editorState.activeLayerIndex === fromIndex) editorState.activeLayerIndex = nextIndex;
+  else if (editorState.activeLayerIndex > fromIndex && editorState.activeLayerIndex <= nextIndex) editorState.activeLayerIndex -= 1;
+  else if (editorState.activeLayerIndex < fromIndex && editorState.activeLayerIndex >= nextIndex) editorState.activeLayerIndex += 1;
+  touch();
 }
-
-export function moveActiveLayer(delta) {
-  moveLayer(editorState.activeLayerIndex, editorState.activeLayerIndex + delta);
-}
-
-export function renameLayer(index, name) {
-  const layer = editorState.composition.layers[index];
-  const nextName = String(name || '').trim();
-  if (!layer || !nextName || layer.locked) return;
-  layer.name = nextName;
-  editorState.composition.updatedAt = new Date().toISOString();
-  notifyChange();
-}
-
+export function moveActiveLayer(delta) { moveLayer(editorState.activeLayerIndex, editorState.activeLayerIndex + delta); }
+export function renameLayer(index, name) { const layer = editorState.composition.layers[index]; const nextName = String(name || '').trim(); if (layer && nextName && !layer.locked) { layer.name = nextName; touch(); } }
 export function setDesignSize(width, height, options = {}) {
   const oldWidth = getDesignWidth();
   const oldHeight = getDesignHeight();
@@ -357,46 +244,26 @@ export function setDesignSize(width, height, options = {}) {
   const nextHeight = clamp(finiteNumber(height, oldHeight), 180, 4096);
   const scaleX = nextWidth / oldWidth;
   const scaleY = nextHeight / oldHeight;
-
   editorState.composition.designWidth = Math.round(nextWidth);
   editorState.composition.designHeight = Math.round(nextHeight);
-  editorState.composition.updatedAt = new Date().toISOString();
-
-  if (options.scaleContent) {
-    for (const layer of editorState.composition.layers) {
-      layer.emitterX = finiteNumber(layer.emitterX, oldWidth / 2) * scaleX;
-      layer.emitterY = finiteNumber(layer.emitterY, oldHeight / 2) * scaleY;
-      layer.targetX = finiteNumber(layer.targetX, oldWidth / 2) * scaleX;
-      layer.targetY = finiteNumber(layer.targetY, oldHeight / 2) * scaleY;
-      if (layer.emitterWidthUnit !== 'percent') {
-        layer.emitterWidth = finiteNumber(layer.emitterWidth, 0) * ((scaleX + scaleY) / 2);
-      }
+  editorState.composition.layers.forEach((layer) => {
+    if (options.scaleContent) {
+      layer.emitterX *= scaleX; layer.emitterY *= scaleY; layer.targetX *= scaleX; layer.targetY *= scaleY;
+      if (layer.emitterWidthUnit !== 'percent') layer.emitterWidth *= (scaleX + scaleY) / 2;
+    } else {
+      layer.emitterX = clamp(layer.emitterX, 0, nextWidth); layer.emitterY = clamp(layer.emitterY, 0, nextHeight);
+      layer.targetX = clamp(layer.targetX, 0, nextWidth); layer.targetY = clamp(layer.targetY, 0, nextHeight);
     }
-  } else {
-    for (const layer of editorState.composition.layers) {
-      layer.emitterX = clamp(finiteNumber(layer.emitterX, nextWidth / 2), 0, nextWidth);
-      layer.emitterY = clamp(finiteNumber(layer.emitterY, nextHeight / 2), 0, nextHeight);
-      layer.targetX = clamp(finiteNumber(layer.targetX, nextWidth / 2), 0, nextWidth);
-      layer.targetY = clamp(finiteNumber(layer.targetY, nextHeight / 2), 0, nextWidth);
-    }
-  }
-
-  notifyChange();
+  });
+  touch();
 }
-
 export function deleteActiveLayer() {
   if (editorState.activeLayerIndex < 0) return;
-  const [deletedLayer] = editorState.composition.layers.splice(editorState.activeLayerIndex, 1);
-  if (deletedLayer?.id) {
-    editorState.particles = editorState.particles.filter((item) => item.layerId !== deletedLayer.id);
-  }
-  editorState.activeLayerIndex = editorState.composition.layers.length
-    ? Math.min(editorState.activeLayerIndex, editorState.composition.layers.length - 1)
-    : -1;
-  editorState.composition.updatedAt = new Date().toISOString();
-  notifyChange();
+  const [deleted] = editorState.composition.layers.splice(editorState.activeLayerIndex, 1);
+  if (deleted?.id) editorState.particles = editorState.particles.filter((item) => item.layerId !== deleted.id);
+  editorState.activeLayerIndex = editorState.composition.layers.length ? Math.min(editorState.activeLayerIndex, editorState.composition.layers.length - 1) : -1;
+  touch();
 }
-
 export function duplicateActiveLayer() {
   const layer = getActiveLayer();
   if (!layer) return;
@@ -406,103 +273,28 @@ export function duplicateActiveLayer() {
   clone.locked = false;
   editorState.composition.layers.splice(editorState.activeLayerIndex + 1, 0, clone);
   editorState.activeLayerIndex += 1;
-  notifyChange();
+  touch();
 }
-
-export function centerActiveEmitter() {
-  updateActiveLayer({ emitterX: getDesignWidth() / 2, emitterY: getDesignHeight() / 2 });
-}
-
-export function moveActiveEmitter(x, y) {
-  const layer = getActiveLayer();
-  if (layer?.locked) return;
-  updateActiveLayer({
-    emitterX: clamp(Number(x), 0, getDesignWidth()),
-    emitterY: clamp(Number(y), 0, getDesignHeight())
-  });
-}
-
-export function setPaused(value) {
-  editorState.isPaused = Boolean(value);
-  notifyChange();
-}
-
-export function setWorkspaceMode(mode) {
-  const normalized = mode === 'reference' ? 'underlay' : mode;
-  editorState.workspaceMode = ['dark', 'white', 'underlay'].includes(normalized) ? normalized : 'dark';
-  if (editorState.workspaceMode === 'underlay') {
-    editorState.referenceMedia.visible = Boolean(editorState.referenceMedia?.dataUrl);
-  }
-  notifyChange();
-}
-
-export function setReferenceMedia(patch) {
-  editorState.referenceMedia = {
-    ...createEmptyReferenceMedia(),
-    ...(editorState.referenceMedia || {}),
-    ...patch
-  };
-  notifyChange();
-}
-
-export function setZoom(value) {
-  editorState.zoom = clamp(Number(value), 0.4, 3);
-  notifyChange();
-}
-
-export function setLowPerformanceMode(value) {
-  editorState.lowPerformanceMode = Boolean(value);
-  editorState.renderStats.performanceMode = editorState.lowPerformanceMode ? 'Low' : 'Full';
-  editorState.renderStats.particleCap = editorState.lowPerformanceMode ? 260 : 900;
-  if (editorState.particles.length > editorState.renderStats.particleCap) {
-    editorState.particles = editorState.particles.slice(-editorState.renderStats.particleCap);
-  }
-  notifyChange();
-}
-
-export function toggleLowPerformanceMode() {
-  setLowPerformanceMode(!editorState.lowPerformanceMode);
-}
-
-export function setModuleTheme(themeName) {
-  editorState.moduleTheme = MODULE_THEMES[themeName] ? themeName : 'effects';
-  notifyChange();
-}
-
-export function toggleGrid() {
-  editorState.showGrid = !editorState.showGrid;
-  notifyChange();
-}
-
-export function toggleHelpers() {
-  editorState.showHelpers = !editorState.showHelpers;
-  notifyChange();
-}
-
-export function clearParticles() {
-  editorState.particles = [];
-  notifyChange();
-}
-
-export function serializeComposition() {
-  return JSON.stringify(editorState.composition, null, 2);
-}
+export function centerActiveEmitter() { updateActiveLayer({ emitterX: getDesignWidth() / 2, emitterY: getDesignHeight() / 2 }); }
+export function moveActiveEmitter(x, y) { if (!getActiveLayer()?.locked) updateActiveLayer({ emitterX: clamp(Number(x), 0, getDesignWidth()), emitterY: clamp(Number(y), 0, getDesignHeight()) }); }
+export function setPaused(value) { editorState.isPaused = Boolean(value); notifyChange(); }
+export function setWorkspaceMode(mode) { editorState.workspaceMode = ['dark', 'white', 'underlay'].includes(mode) ? mode : 'dark'; if (editorState.workspaceMode === 'underlay') editorState.referenceMedia.visible = Boolean(editorState.referenceMedia?.dataUrl); notifyChange(); }
+export function setReferenceMedia(patch) { editorState.referenceMedia = { ...createEmptyReferenceMedia(), ...(editorState.referenceMedia || {}), ...patch }; notifyChange(); }
+export function setZoom(value) { editorState.zoom = clamp(Number(value), 0.4, 3); notifyChange(); }
+export function setLowPerformanceMode(value) { editorState.lowPerformanceMode = Boolean(value); editorState.renderStats.performanceMode = editorState.lowPerformanceMode ? 'Low' : 'Full'; editorState.renderStats.particleCap = editorState.lowPerformanceMode ? 260 : 900; if (editorState.particles.length > editorState.renderStats.particleCap) editorState.particles = editorState.particles.slice(-editorState.renderStats.particleCap); notifyChange(); }
+export function toggleLowPerformanceMode() { setLowPerformanceMode(!editorState.lowPerformanceMode); }
+export function setModuleTheme(themeName) { editorState.moduleTheme = MODULE_THEMES[themeName] ? themeName : 'effects'; notifyChange(); }
+export function toggleGrid() { editorState.showGrid = !editorState.showGrid; notifyChange(); }
+export function toggleHelpers() { editorState.showHelpers = !editorState.showHelpers; notifyChange(); }
+export function clearParticles() { editorState.particles = []; notifyChange(); }
+export function serializeComposition() { return JSON.stringify(editorState.composition, null, 2); }
 
 let changeListeners = [];
+export function onStateChange(listener) { changeListeners.push(listener); return () => { changeListeners = changeListeners.filter((item) => item !== listener); }; }
+export function notifyChange() { changeListeners.forEach((listener) => listener(editorState)); }
 
-export function onStateChange(listener) {
-  changeListeners.push(listener);
-  return () => {
-    changeListeners = changeListeners.filter((item) => item !== listener);
-  };
-}
-
-export function notifyChange() {
-  for (const listener of changeListeners) {
-    listener(editorState);
-  }
-}
-
+function touch() { editorState.composition.updatedAt = new Date().toISOString(); notifyChange(); }
+function normalizeTags(tags) { return [...new Set((Array.isArray(tags) ? tags : []).map((tag) => String(tag).trim().toLowerCase()).filter(Boolean))]; }
 function normalizeAppearanceStops(stops, layer = {}) {
   const fallback = createDefaultAppearanceStops(layer);
   const rawStops = Array.isArray(stops) && stops.length ? stops : fallback;
@@ -514,85 +306,24 @@ function normalizeAppearanceStops(stops, layer = {}) {
     size: clamp(finiteNumber(stop.size, index === 0 ? finiteNumber(layer.sizeStart, 20) : finiteNumber(layer.sizeEnd, 4)), 0, 180),
     glow: clamp(finiteNumber(stop.glow, index === 0 ? finiteNumber(layer.glow, 12) : 0), 0, 80)
   })).sort((a, b) => a.position - b.position);
-
   if (!mapped.length) return fallback;
   mapped[0].position = 0;
   if (mapped.length > 1) mapped[mapped.length - 1].position = 1;
-
   for (let index = 1; index < mapped.length - 1; index += 1) {
-    const min = mapped[index - 1].position + 0.1;
-    const max = mapped[index + 1].position - 0.1;
-    mapped[index].position = snap01(clamp(mapped[index].position, min, max));
+    mapped[index].position = snap01(clamp(mapped[index].position, mapped[index - 1].position + 0.1, mapped[index + 1].position - 0.1));
   }
-
   return mapped;
 }
-
 function createDefaultAppearanceStops(layer = {}) {
   return [
-    {
-      id: `stop_start_${cryptoRandom()}`,
-      position: 0,
-      color: normalizeHex(layer.colorA || '#ffcc66'),
-      opacity: clamp(finiteNumber(layer.alphaStart, 1), 0, 1),
-      size: clamp(finiteNumber(layer.sizeStart, 20), 0, 180),
-      glow: clamp(finiteNumber(layer.glow, 12), 0, 80)
-    },
-    {
-      id: `stop_end_${cryptoRandom()}`,
-      position: 1,
-      color: normalizeHex(layer.colorB || '#ff6600'),
-      opacity: clamp(finiteNumber(layer.alphaEnd, 0), 0, 1),
-      size: clamp(finiteNumber(layer.sizeEnd, 4), 0, 180),
-      glow: 0
-    }
+    { id: `stop_start_${cryptoRandom()}`, position: 0, color: normalizeHex(layer.colorA || '#ffcc66'), opacity: clamp(finiteNumber(layer.alphaStart, 1), 0, 1), size: clamp(finiteNumber(layer.sizeStart, 20), 0, 180), glow: clamp(finiteNumber(layer.glow, 12), 0, 80) },
+    { id: `stop_end_${cryptoRandom()}`, position: 1, color: normalizeHex(layer.colorB || '#ff6600'), opacity: clamp(finiteNumber(layer.alphaEnd, 0), 0, 1), size: clamp(finiteNumber(layer.sizeEnd, 4), 0, 180), glow: 0 }
   ];
 }
-
-function syncLegacyAppearanceFields(layer) {
-  const stops = normalizeAppearanceStops(layer.appearanceStops, layer);
-  const first = stops[0];
-  const last = stops[stops.length - 1] || first;
-  layer.colorA = first.color;
-  layer.colorB = last.color;
-  layer.alphaStart = first.opacity;
-  layer.alphaEnd = last.opacity;
-  layer.sizeStart = first.size;
-  layer.sizeEnd = last.size;
-  layer.glow = first.glow;
-}
-
-function defaultBlendMode(engine) {
-  return ['gas', 'refraction', 'heatdistortion'].includes(engine) ? 'source-over' : 'lighter';
-}
-
-function finiteNumber(value, fallback) {
-  const number = Number(value);
-  return Number.isFinite(number) ? number : fallback;
-}
-
-function cryptoRandom() {
-  if (globalThis.crypto?.getRandomValues) {
-    const buffer = new Uint32Array(1);
-    crypto.getRandomValues(buffer);
-    return buffer[0].toString(36);
-  }
-  return Math.random().toString(36).slice(2);
-}
-
-function normalizeHex(value) {
-  const string = String(value || '').trim();
-  if (/^#[0-9a-f]{6}$/iu.test(string)) return string;
-  if (/^#[0-9a-f]{3}$/iu.test(string)) {
-    return `#${string.slice(1).split('').map((char) => char + char).join('')}`;
-  }
-  return '#ffcc66';
-}
-
-function snap01(value) {
-  return clamp(Math.round(Number(value) * 10) / 10, 0, 1);
-}
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
+function syncLegacyAppearanceFields(layer) { const stops = normalizeAppearanceStops(layer.appearanceStops, layer); const first = stops[0]; const last = stops[stops.length - 1] || first; layer.colorA = first.color; layer.colorB = last.color; layer.alphaStart = first.opacity; layer.alphaEnd = last.opacity; layer.sizeStart = first.size; layer.sizeEnd = last.size; layer.glow = first.glow; }
+function defaultBlendMode(engine) { return ['gas', 'refraction', 'heatdistortion'].includes(engine) ? 'source-over' : 'lighter'; }
+function finiteNumber(value, fallback) { const number = Number(value); return Number.isFinite(number) ? number : fallback; }
+function cryptoRandom() { if (globalThis.crypto?.getRandomValues) { const buffer = new Uint32Array(1); crypto.getRandomValues(buffer); return buffer[0].toString(36); } return Math.random().toString(36).slice(2); }
+function normalizeHex(value) { const string = String(value || '').trim(); if (/^#[0-9a-f]{6}$/iu.test(string)) return string; if (/^#[0-9a-f]{3}$/iu.test(string)) return `#${string.slice(1).split('').map((char) => char + char).join('')}`; return '#ffcc66'; }
+function snap01(value) { return clamp(Math.round(Number(value) * 10) / 10, 0, 1); }
+function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }

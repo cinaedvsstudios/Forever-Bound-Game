@@ -1,7 +1,7 @@
 import { applyRoleTemplate, loadArchetype } from './editor-state.js';
 import { OBJECT_TEMPLATE_IDS, PEOPLE_TEMPLATE_IDS, ROLE_TEMPLATES } from './templates.js';
 import { listLocalArchetypes } from './editor-io.js';
-import { escapeHtml, safeId } from './object-wizard-helpers.js?v=1.33';
+import { escapeHtml, safeId } from './object-wizard-helpers.js?v=1.35';
 
 export function createObjectWizardStart({ wizardState, setHeader, content, renderAbilityChoice }) {
   function renderStartChoice() {

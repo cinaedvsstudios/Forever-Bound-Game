@@ -16,7 +16,7 @@ Items to add or refine:
 - Reduce the vertical gap between the preview window and the play / frame navigation buttons.
 - Add a fixed-height, scrollable **Reference** box under the preview controls, separated by a horizontal line.
 - The Reference box should list every scene, quest, or object file that references the current character/object/action, so the editor can be used to check whether files are correctly connected.
-- The Reference box should not use fake placeholder links. It needs a real source of truth from Project Manager, Scene Editor, Quest Builder, or an exported project index.
+- The Reference box should not use fake placeholder links. It needs a real source of truth from Project Editor, Scene Editor, Quest Builder, or an exported project index.
 - In the Frame Fix popup, change the title to show the exact frame being edited, e.g. `Frame Correction – Frame 03`.
 - Add a reset button beside the close button in Frame Fix.
 - Add a brightness slider to Frame Fix, stored per frame alongside scale, X offset, and Y offset.
@@ -28,4 +28,4 @@ Notes:
 
 - The object package should remain one main `archetype.json` plus `asset_manifest.json`, images, sounds, and generated folders in the ZIP.
 - Avoid adding more overlay/patch files. Keep the object creator at no more than two overlay modules unless the older patch is properly folded into the base code.
-- Any reference-index work probably belongs partly in Project Manager or the shared Artifex project model, not only in Archetype Object Creator.
+- Any reference-index work probably belongs partly in Project Editor or the shared Artifex project model, not only in Archetype Object Creator.

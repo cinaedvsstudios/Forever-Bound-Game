@@ -14,6 +14,8 @@ function injectStep5ColumnStyles() {
   style.textContent = `
     #quickstart-dialog .wizard-step5-toolbar{display:flex!important;flex-wrap:wrap!important;gap:6px!important;margin:0 0 10px!important}
     #quickstart-dialog .wizard-step5-toolbar button{min-height:28px!important;padding:4px 9px!important;font-size:11px!important;white-space:nowrap!important}
+    #quickstart-dialog .wizard-build-shell{grid-template-columns:minmax(210px,260px) minmax(0,1fr)!important;gap:12px!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+    #quickstart-dialog .wizard-build-left{min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
     #quickstart-dialog .wizard-build-nav button{grid-template-columns:auto auto minmax(0,1fr) auto!important;gap:7px!important;padding:7px 8px!important;min-width:0!important;font-size:11px!important}
     #quickstart-dialog .wizard-task-copy{display:block!important;min-width:0!important;overflow:hidden!important}
     #quickstart-dialog .wizard-task-copy strong{display:block!important;white-space:normal!important;overflow-wrap:anywhere!important;line-height:1.25!important;font-size:11px!important}
@@ -46,7 +48,7 @@ function injectStep5ColumnStyles() {
     #quickstart-dialog .wizard-build-detail-panel>.wizard-frame-strip,#quickstart-dialog .wizard-build-detail-panel>.wizard-build-actions,#quickstart-dialog .wizard-build-detail-panel>.wizard-frame-file-table-wrap{grid-column:1/-1!important;grid-row:auto!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
     #quickstart-dialog .wizard-build-detail-panel>.wizard-frame-strip{margin-top:2px!important}
     #quickstart-dialog .wizard-build-detail-panel>.wizard-build-actions{margin-top:0!important}
-    @media(max-width:1100px){#quickstart-dialog .wizard-build-detail-panel{grid-template-columns:1fr!important}#quickstart-dialog .wizard-step5-left,#quickstart-dialog .wizard-step5-right,#quickstart-dialog .wizard-build-detail-panel>.wizard-frame-strip,#quickstart-dialog .wizard-build-detail-panel>.wizard-build-actions,#quickstart-dialog .wizard-build-detail-panel>.wizard-frame-file-table-wrap{grid-column:1!important;grid-row:auto!important}}
+    @media(max-width:1100px){#quickstart-dialog .wizard-build-shell{grid-template-columns:1fr!important}#quickstart-dialog .wizard-build-detail-panel{grid-template-columns:1fr!important}#quickstart-dialog .wizard-step5-left,#quickstart-dialog .wizard-step5-right,#quickstart-dialog .wizard-build-detail-panel>.wizard-frame-strip,#quickstart-dialog .wizard-build-detail-panel>.wizard-build-actions,#quickstart-dialog .wizard-build-detail-panel>.wizard-frame-file-table-wrap{grid-column:1!important;grid-row:auto!important}}
     @media(max-width:680px){#quickstart-dialog .wizard-step5-right .wizard-build-fields,#quickstart-dialog .wizard-step5-right .wizard-behaviour-grid,#quickstart-dialog .wizard-step5-right .wizard-sound-row,#quickstart-dialog .wizard-step5-right .wizard-frame-event-row{grid-template-columns:1fr!important}}
   `;
   document.head.appendChild(style);

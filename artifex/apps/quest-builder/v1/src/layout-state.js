@@ -10,6 +10,7 @@ export const DEFAULT_LAYOUT = {
   panX: 0,
   panY: 0,
   panMode: false,
+  snapToGrid: false,
   blockPositions: {}
 };
 

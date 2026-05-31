@@ -2,39 +2,53 @@
 
 ## Purpose
 
-This document defines the simple creator-facing folder where people can drop new artwork, icons, music, dialogue, sound effects, and other source assets before Artifex sorts them into the final project package.
+This document defines the creator-facing staging area for newly supplied artwork, icons, music, dialogue, sound effects and other source assets before Artifex promotes approved content into final indexed asset locations.
 
-The intake folder is not the final game/library folder structure. It is a temporary staging area for unfinished or newly supplied files.
+`intake/` is not the final game/library structure. It is the incoming source-material drop zone. A creator can place a file into an obvious bucket, then Artifex later reviews, renames, copies, indexes, groups and references it correctly.
 
-A creator should be able to make a file, save it into one obvious bucket, and let Artifex handle the later admin: review, rename, copy, index, group, and reference it correctly.
+Assets generated inside Artifex, such as a future procedural synth sound recipe, are not incoming source files and do not need to pass through `intake/` before they are registered as final created assets.
+
+## Related Contracts
+
+Read this together with:
+
+```text
+docs/artifex/05-creation-guide.md
+docs/artifex/19-project-file-contracts.md
+docs/artifex/19a-project-starter-file-schemas.md
+docs/artifex/21-template-game-project-contract.md
+docs/artifex/22-sound-archetype-generator.md
+```
+
+## Project-Type Distinction
+
+| Project type | Relationship to intake |
+|---|---|
+| **Blank Starter Project** | Creation Guide may offer to create an empty root-level `intake/` staging structure as a visible optional setup step. |
+| **Template Game** | The later populated connected reference project may contain staged/source examples and final promoted or generated registered assets to prove asset use across apps. |
+| **Artifacts Adventures** | The real production project uses its own project-root intake area for actual supplied production source material. It is not the Template Game. |
 
 ## Folder Location Rule
 
-A complete playable template game owns its own intake folder inside its own project folder.
-
-Do **not** place a game's intake folder inside `artifex/templates/`, because that folder is reserved for generic blank reusable starter templates such as scene, screen, UI, or SVG/JSON templates.
-
-For Artifex Adventures, the intake folder is:
-
-```text
-artifex/artifex-adventures/intake/
-```
-
-For any newly created game project, Creation Guide should initialise the same root-level staging folder relative to that selected project root:
+A project's intake folder belongs inside that project's own connected root:
 
 ```text
 <project-root>/intake/
 ```
 
-Generic blank templates remain under:
+Do not put a project's live intake folder inside `artifex/templates/`. That location is for generic reusable template resources, not the source-material staging folder of a connected project.
+
+Where an in-repository example or development project exists, its intake area is still relative to that project's own root. The current Artifacts Adventures working location may therefore use:
 
 ```text
-artifex/templates/
+artifex/artifex-adventures/intake/
 ```
+
+but that does not make Artifacts Adventures the Template Game.
 
 ## Simple Intake Folders
 
-Use only these first-level buckets inside a game project's `intake/` folder:
+Use these first-level buckets inside a project's `intake/` folder:
 
 ```text
 intake/
@@ -47,95 +61,88 @@ intake/
   dialogue-sfx/
 ```
 
-These buckets are intentionally broad. The app can do the finer sorting later.
+These buckets are intentionally broad. Fine classification belongs later in the Asset Library/import workflow.
 
 ## What Goes Where
 
-| Intake folder | What users should put there |
+| Intake folder | Source material placed here |
 |---|---|
-| `backgrounds/` | Full scene backgrounds, title/ending backgrounds, interiors, landscapes, station/platform views, scenery loops, window tiles, parallax plates and environmental plates. |
-| `characters/` | Hero art, NPCs, interactive characters, villains, enemies, portraits, turnarounds, sprite sheets, animation frames and character reference images. |
-| `objects/` | Props, clue items, collectibles, keys, disguises, doors, drawers, furniture state overlays, pickups and interactable object art. |
-| `icons-ui/` | Inventory icons, action icons, interaction prompts, map markers, menu icons, HUD pieces, buttons, panels, UI frames, logo files and status symbols. |
-| `music/` | Title themes, exploration music, danger cues, location music, victory music, menu music and musical stingers. |
-| `dialogue-sfx/` | Voice lines, narration, ambience, footsteps, door/drawer sounds, item pickup sounds, UI sounds and environmental sound effects. |
+| `backgrounds/` | Full scene backgrounds, title/ending backgrounds, interiors, landscapes, scenery loops, parallax plates and environmental plates. |
+| `characters/` | Hero/player art, NPCs, interactive characters, enemies, portraits, turnarounds, sprite sheets and animation frames. |
+| `objects/` | Props, clue items, collectibles, keys, doors, furniture states, pickups and interactable object art. |
+| `icons-ui/` | Project logo/title mark, inventory/action icons, prompts, markers, menu/HUD pieces, frames and status symbols. |
+| `music/` | Themes, exploration/location/menu tracks, danger/victory cues and musical stingers. |
+| `dialogue-sfx/` | Supplied voice/dialogue, narration, ambience, footsteps, interaction sounds, UI sounds and environmental SFX files. |
 
-If an asset is ambiguous, place it in the closest bucket. The importer can ask for confirmation before promoting it into the final project package.
+When a source file is ambiguous, place it in the closest intake bucket; later import/classification can ask for confirmation before promotion.
 
 ## Creation Guide Setup Integration
 
-Creation Guide owns the initial explanation and setup of the intake folders. When a new project is created and the user connects a writable project folder, Creation Guide should offer an **Initial Asset Intake Setup** section that:
+Creation Guide owns the initial explanation and optional creation of intake folders. After a writable project folder is connected, a visible **Initial Asset Intake Setup** section should:
 
-1. explains that `intake/` is the source-material drop zone, not the final runtime asset library;
-2. shows each intake folder with a plain-language explanation of what belongs there;
-3. creates the `intake/` folder, its six buckets and an `intake/README.md` in the connected project folder when the user approves;
-4. offers **Skip for Now** without preventing the project from being created;
-5. marks intake setup as incomplete/skipped in Project Overview and Health until the user later completes or dismisses it deliberately;
-6. links to the final Asset Library/import step, where files are copied into `assets/` and registered.
+1. Explain that `intake/` is staging, not final runtime asset storage.
+2. Show each bucket with a plain-language explanation.
+3. Offer **Create Intake Folders**, which writes `intake/README.md` and the six folders in the connected project root.
+4. Offer **Skip for Now**, without preventing project creation.
+5. Show incomplete/skipped state in Project Overview and Health until deliberately completed or dismissed.
+6. Lead into Asset Library/import promotion for approved supplied content.
 
-This setup belongs in its own Creation Guide section. It must not be hidden inside the New Project modal or treated as an unexplained background action.
+This section remains future Creation Guide UI work after the V1.1.11 connected-folder/starter-structure feature. It must not be treated as already live until implemented and tested.
 
-## Recommended Basic Asset Readiness Checklist
+## Recommended Starting Media Checklist
 
-Creation Guide should include a non-blocking **Recommended Starting Media** checklist. It helps the creator know whether enough source material exists to begin a simple first scene. The checklist should initially include:
+Creation Guide should eventually provide a non-blocking checklist for enough source material to assemble a simple first scene:
 
 | Recommended starting asset | Intake destination | Purpose |
 |---|---|---|
-| Project logo or temporary title mark | `intake/icons-ui/` | Identifies the project in Creation Guide, title/menu planning and exports. |
-| At least 1 scene background | `intake/backgrounds/` | Allows a first playable or test scene to be composed. |
-| At least 1 player-character source image or sprite sheet | `intake/characters/` | Provides the playable character placeholder or final art. |
-| At least 1 NPC source image or sprite sheet | `intake/characters/` | Allows basic interaction/dialogue testing. |
-| At least 1 interactable object or pickup | `intake/objects/` | Allows object interaction testing. |
-| At least 1 door, passage or transition object | `intake/objects/` | Allows movement between scenes/screens to be planned. |
-| At least 1 icon/UI placeholder set | `intake/icons-ui/` | Allows HUD/menu and interaction prompts to be tested. |
+| Project logo or temporary title mark | `intake/icons-ui/` | Identity and title/menu planning. |
+| At least one scene background | `intake/backgrounds/` | First playable/test scene. |
+| At least one player-character image or sprite sheet | `intake/characters/` | Playable placeholder/final art. |
+| At least one NPC image or sprite sheet | `intake/characters/` | Basic interaction/dialogue testing. |
+| At least one interactable object or pickup | `intake/objects/` | Object-interaction testing. |
+| At least one door, passage or transition object | `intake/objects/` | Movement/transition planning. |
+| At least one icon/UI placeholder set | `intake/icons-ui/` | HUD/menu/prompt testing. |
 
-The following should be shown as useful next additions, but should not be required for first-scene readiness:
+Useful but not required next additions include music or ambience, a supplied dialogue/SFX sample, enemy/hazard source art and FX source material.
 
-| Useful additional asset | Intake destination |
-|---|---|
-| Background/area music or ambience | `intake/music/` or `intake/dialogue-sfx/` |
-| Dialogue or voice-line sample | `intake/dialogue-sfx/` |
-| Enemy or hazard source art | `intake/characters/` or `intake/objects/` |
-| FX source sheet or magical overlay | `intake/objects/` until promoted/classified by the importer |
-
-The checklist reports readiness; it does not make permanent references to intake files and does not block project creation.
+This checklist reports readiness only. It neither blocks project creation nor creates permanent references to intake source files.
 
 ## Import and Promotion Rule
 
-Files in `intake/` are staging files only. Permanent scene, screen, object, quest and runtime records must not point directly to intake files.
+Files in `intake/` are staging files only. Permanent scene, screen, quest, puzzle, object, effect and runtime records must not point directly to them.
 
-When a creator approves/imports a file, Artifex should:
+When a creator approves/imports a supplied source file, the Asset Library/import workflow should:
 
 1. Preserve the original source filename in metadata.
-2. Ask for or confirm the asset type and intended use.
+2. Confirm asset type and intended use.
 3. Assign a stable `asset_` ID.
-4. Rename the final copy using safe consistent naming.
-5. Copy it from `intake/` into the appropriate final `assets/` folder inside that game project.
-6. Add or update its Asset Library record in `assets/asset-index.json`.
-7. Create or update an `assets/groups/assetgroup_<slug>.json` record when related assets form a set, such as a character sprite group or object-state animation group.
-8. Use the final asset ID/path when the Scene Editor, Object Library, Effect Editor, Quest Builder or runtime references it.
+4. Copy/rename the approved final file into the appropriate final `assets/` destination.
+5. Add or update its record in `assets/asset-index.json`.
+6. Create or update an `assets/groups/assetgroup_<slug>.json` record when a related set is needed.
+7. Expose the final asset ID/project-relative path to authoring apps.
 
 ## Example Promotion
 
-A creator drops a raw music file into:
+A production creator could drop source music into an Artifacts Adventures project folder:
 
 ```text
 artifex/artifex-adventures/intake/music/Hero Theme Final FINAL.mp3
 ```
 
-After import, Artifex may copy it to:
+After approval/import, the final registered copy may be:
 
 ```text
 artifex/artifex-adventures/assets/audio/music/music_hero_theme.mp3
 ```
 
-and register it as:
+with an asset record such as:
 
 ```json
 {
   "id": "asset_music_hero_theme",
   "name": "Hero Theme",
   "type": "music",
+  "assetKind": "audio-file",
   "file": "assets/audio/music/music_hero_theme.mp3",
   "sourceFileName": "Hero Theme Final FINAL.mp3",
   "status": "draft",
@@ -143,10 +150,34 @@ and register it as:
 }
 ```
 
+## Generated Asset Exception: Procedural Synth Sounds
+
+A sound created in the shared Procedural Sound Generator is already being created and approved inside Artifex. It does **not** need to be written into `intake/dialogue-sfx/` and re-imported.
+
+Instead it is saved directly into the final asset area and registered through the same Asset Library index as imported audio:
+
+```text
+assets/audio/sfx/synth_locked_door_buzz.json
+assets/asset-index.json → asset_sfx_locked_door_buzz
+```
+
+```json
+{
+  "id": "asset_sfx_locked_door_buzz",
+  "name": "Locked Door Buzz",
+  "type": "sound-effect",
+  "assetKind": "procedural-synth",
+  "file": "assets/audio/sfx/synth_locked_door_buzz.json",
+  "playbackEngine": "web-audio",
+  "status": "ready",
+  "tags": ["sound-effect", "door", "locked", "buzz", "procedural"]
+}
+```
+
+Objects, scenes and puzzles select this resource by `asset_` ID in exactly the same way they select an imported audio file. Do not add a parallel sound-archetype index for generated sounds. Detailed generator/UI/recipe rules belong in `docs/artifex/22-sound-archetype-generator.md`.
+
 ## Module Ownership Relationship
 
-The Asset Library owns raw asset metadata and asset groups. The Scene Editor owns visual placement in scenes and screens. The Archetype Object Creator owns reusable normal object definitions. The Effect Editor owns reusable effect definitions. Quest Builder owns quests, flags, conditions, rewards, branches and unlocks. Project Manager links the game structure together.
+Creation Guide owns first-time intake explanation/setup and readiness reporting. Asset Library owns promotion of approved supplied assets and registration of final generated audio resources into final `assets/` metadata/groups. The shared Procedural Sound Generator creates and previews synth recipes for Asset Library registration. Scene Editor owns visual/scene placement and references; Archetype Object Creator owns reusable object definitions and references; Puzzle Creator owns puzzle definitions and references; Effect Editor owns reusable effect definitions; Quest Builder owns progression content; Project Editor links structural references. Build Game and Health Guide validate or generate their own output only when invoked.
 
-Creation Guide owns first-time intake explanation, project-folder initialisation, media readiness reporting and links into the import workflow. It does not own the final classification or placement of approved assets.
-
-The intake folder sits before those module outputs: it is simply where creators drop source files before Artifex promotes them into the proper indexed project structure.
+The intake folder sits before imported outputs: it is where creators drop supplied source material before Artifex promotes it into the proper indexed project structure. It is not required for final resources created entirely inside Artifex.

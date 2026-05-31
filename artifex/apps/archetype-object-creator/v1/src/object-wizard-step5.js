@@ -1,6 +1,7 @@
 import { editorState, updateArchetype } from './editor-state.js';
+import { openSoundGeneratorModal } from '../../../../shared/sound-generator/sound-generator-window.js?v=0.1.0';
 
-const VERSION = '1.29';
+const VERSION = '1.35';
 
 const ACTION_INFO = {
   idle: 'Default resting state. Usually loops and is returned to after short one-shot actions finish.',
@@ -45,13 +46,15 @@ const DEFAULT_PLAYBACK = { loop: false, pingPong: false, holdLastFrame: false, r
 const DEFAULT_TRIGGER = { source: 'auto', inputAction: '', keyboard: '', gamepad: '', touch: '', aiState: '', sceneEvent: '' };
 const FRAME_EVENT_TYPES = ['play_sound', 'hitbox_on', 'hitbox_off', 'spawn_object', 'release_projectile', 'complete_action', 'transition', 'custom'];
 const TRIGGER_SOURCES = ['auto', 'player_input', 'ai_state', 'interaction_button', 'collision_contact', 'quest_event', 'scene_script', 'timer', 'cutscene'];
-
 let step5Observer = null;
 let step5Queued = false;
 
 export function initObjectWizardStep5() {
   injectStep5CoreStyles();
-  startStep5Observer();
+  if (!step5Observer) {
+    step5Observer = new MutationObserver(scheduleStep5Refresh);
+    step5Observer.observe(document.body, { childList: true, subtree: true });
+  }
   scheduleStep5Refresh();
 }
 
@@ -60,121 +63,26 @@ function injectStep5CoreStyles() {
   const style = document.createElement('style');
   style.id = 'object-wizard-step5-core-styles';
   style.textContent = `
-    #quickstart-dialog .wizard-right-stack {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 10px;
-      min-width: 0;
-      align-content: start;
-    }
-
-    #quickstart-dialog .wizard-action-info-button {
-      width: 28px !important;
-      height: 28px !important;
-      min-width: 28px !important;
-      min-height: 28px !important;
-      padding: 0 !important;
-      border-radius: 999px !important;
-      font-size: 13px !important;
-      line-height: 1 !important;
-    }
-
-    #quickstart-dialog .wizard-action-info-text {
-      grid-column: 2;
-      margin: -2px 0 4px;
-      color: rgba(255, 240, 206, 0.72);
-      font-size: 12px;
-      line-height: 1.35;
-    }
-
-    #quickstart-dialog .wizard-title-complete {
-      margin-left: auto !important;
-      min-width: 0 !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      gap: 8px !important;
-      padding: 6px 10px !important;
-      border: 1px solid rgba(226, 204, 167, 0.18) !important;
-      border-radius: 999px !important;
-      background: rgba(0, 0, 0, 0.16) !important;
-      font-size: 11px !important;
-      letter-spacing: 0 !important;
-      text-transform: none !important;
-    }
-
-    #quickstart-dialog .wizard-field-hidden {
-      display: none !important;
-    }
-
-    #quickstart-dialog .wizard-action-meta {
-      margin: -2px 0 8px;
-      color: rgba(255, 240, 206, 0.62);
-      font-size: 11px;
-    }
-
-    #quickstart-dialog .wizard-sound-list,
-    #quickstart-dialog .wizard-action-behaviour-panel {
-      border: 1px solid rgba(226, 204, 167, 0.18);
-      border-radius: 14px;
-      background: rgba(0, 0, 0, 0.14);
-      padding: 8px 10px;
-    }
-
-    #quickstart-dialog .wizard-sound-list summary,
-    #quickstart-dialog .wizard-action-behaviour-panel summary {
-      cursor: pointer;
-      color: #fff0ce;
-      font-weight: 800;
-    }
-
-    #quickstart-dialog .wizard-behaviour-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px 10px;
-      margin-top: 8px;
-    }
-
-    #quickstart-dialog .wizard-check-line {
-      display: flex !important;
-      flex-direction: row !important;
-      align-items: center !important;
-      gap: 8px !important;
-    }
-
-    #quickstart-dialog .wizard-sound-row,
-    #quickstart-dialog .wizard-frame-event-row {
-      display: grid;
-      grid-template-columns: 24px minmax(120px, 1.2fr) minmax(86px, .7fr) 72px 72px 72px 30px;
-      gap: 6px;
-      align-items: center;
-      margin-top: 7px;
-    }
-
-    #quickstart-dialog .wizard-frame-event-row {
-      grid-template-columns: 24px 72px minmax(110px, .7fr) minmax(150px, 1fr) 30px;
-    }
-
-    #quickstart-dialog .wizard-sound-row > span,
-    #quickstart-dialog .wizard-frame-event-row > span {
-      color: rgba(255, 240, 206, 0.64);
-      text-align: center;
-    }
-
-    @media (max-width: 900px) {
-      #quickstart-dialog .wizard-behaviour-grid,
-      #quickstart-dialog .wizard-sound-row,
-      #quickstart-dialog .wizard-frame-event-row {
-        grid-template-columns: 1fr;
-      }
-    }
+    #quickstart-dialog .wizard-right-stack{display:grid;grid-template-columns:1fr;gap:10px;min-width:0;align-content:start}
+    #quickstart-dialog .wizard-action-info-button{width:28px!important;height:28px!important;min-width:28px!important;min-height:28px!important;padding:0!important;border-radius:999px!important;font-size:13px!important;line-height:1!important}
+    #quickstart-dialog .wizard-action-info-text{grid-column:2;margin:-2px 0 4px;color:rgba(255,240,206,.72);font-size:12px;line-height:1.35}
+    #quickstart-dialog .wizard-title-complete{margin-left:auto!important;min-width:0!important;display:inline-flex!important;align-items:center!important;gap:8px!important;padding:6px 10px!important;border:1px solid rgba(126,212,150,.38)!important;border-radius:999px!important;background:rgba(72,192,113,.12)!important;font-size:11px!important;letter-spacing:0!important;text-transform:none!important}
+    #quickstart-dialog .wizard-title-complete span{font-size:11px!important;font-weight:700!important;white-space:nowrap!important}
+    #quickstart-dialog .wizard-field-hidden{display:none!important}
+    #quickstart-dialog .wizard-action-meta{margin:-2px 0 8px;color:rgba(255,240,206,.62);font-size:11px}
+    #quickstart-dialog .wizard-sound-list,#quickstart-dialog .wizard-action-behaviour-panel{border:1px solid rgba(226,204,167,.18);border-radius:14px;background:rgba(0,0,0,.14);padding:8px 10px}
+    #quickstart-dialog .wizard-sound-list summary,#quickstart-dialog .wizard-action-behaviour-panel summary{cursor:pointer;color:#fff0ce;font-weight:800}
+    #quickstart-dialog .wizard-sound-list summary{display:flex;align-items:center;gap:7px;min-width:0}
+    #quickstart-dialog .wizard-sound-summary-label{flex:1;min-width:0}
+    #quickstart-dialog .wizard-create-sound-button{flex:none;display:inline-flex;align-items:center;justify-content:center;width:29px!important;min-width:29px!important;height:29px!important;min-height:29px!important;padding:0!important;border-radius:8px!important;font-size:14px!important}
+    #quickstart-dialog .wizard-behaviour-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 10px;margin-top:8px}
+    #quickstart-dialog .wizard-check-line{display:flex!important;flex-direction:row!important;align-items:center!important;gap:8px!important}
+    #quickstart-dialog .wizard-sound-row,#quickstart-dialog .wizard-frame-event-row{display:grid;grid-template-columns:24px minmax(120px,1.2fr) minmax(86px,.7fr) 72px 72px 72px 30px;gap:6px;align-items:center;margin-top:7px}
+    #quickstart-dialog .wizard-frame-event-row{grid-template-columns:24px 72px minmax(110px,.7fr) minmax(150px,1fr) 30px}
+    #quickstart-dialog .wizard-sound-row>span,#quickstart-dialog .wizard-frame-event-row>span{color:rgba(255,240,206,.64);text-align:center}
+    @media(max-width:900px){#quickstart-dialog .wizard-behaviour-grid,#quickstart-dialog .wizard-sound-row,#quickstart-dialog .wizard-frame-event-row{grid-template-columns:1fr}}
   `;
   document.head.appendChild(style);
-}
-
-function startStep5Observer() {
-  if (step5Observer) return;
-  step5Observer = new MutationObserver(() => scheduleStep5Refresh());
-  step5Observer.observe(document.body, { childList: true, subtree: true });
 }
 
 function scheduleStep5Refresh() {
@@ -188,17 +96,13 @@ function scheduleStep5Refresh() {
 
 function enhanceStep5WizardPanel() {
   const root = document.querySelector('#quickstart-dialog .wizard-content');
-  if (!root) return;
-  enhanceWizardButtons(root);
-
-  const panel = root.querySelector('.wizard-build-detail-panel');
+  const panel = root?.querySelector('.wizard-build-detail-panel');
   if (!panel) return;
+  enhancePlayerControls(root);
   const selectedId = selectedRequirementId();
   if (!selectedId) return;
-
   const metaText = panel.querySelector(':scope > p.hint')?.textContent?.trim() || '';
   enhanceActionTitle(panel, selectedId);
-
   const fields = panel.querySelector(':scope > .wizard-build-fields, .wizard-right-stack > .wizard-build-fields');
   if (!fields) return;
   let rightStack = panel.querySelector('.wizard-right-stack');
@@ -209,23 +113,19 @@ function enhanceStep5WizardPanel() {
   }
   if (fields.parentElement !== rightStack) rightStack.appendChild(fields);
   arrangeFields(fields, metaText);
-
   enhanceSoundList(rightStack, fields.querySelector('[data-build="soundAssetId"]'));
   enhanceActionBehaviour(rightStack, selectedId);
-
   const notesField = panel.querySelector('textarea[data-build="notes"]')?.closest('label');
   if (notesField) {
     notesField.classList.add('wizard-notes-field');
     if (notesField.parentElement !== rightStack) rightStack.appendChild(notesField);
   }
-
   const strip = panel.querySelector('[data-frame-strip]');
   if (strip) {
     strip.classList.add('wizard-frame-drop-zone');
     const hint = strip.querySelector('.hint');
     if (hint && !strip.querySelector('.wizard-frame-box')) hint.textContent = 'Drop image files here, or use 🖼️ Add Images below.';
   }
-
   const actions = panel.querySelector('.wizard-build-actions');
   if (actions) {
     const addImages = actions.querySelector('label.button-like');
@@ -240,7 +140,7 @@ function arrangeFields(fields, metaText) {
   const fps = fields.querySelector('[data-build="fps"]')?.closest('label');
   const asset = fields.querySelector('[data-build="spriteSheetAssetId"]')?.closest('label');
   const sound = fields.querySelector('[data-build="soundAssetId"]')?.closest('label');
-  const complete = fields.querySelector('[data-build="complete"]')?.closest('label');
+  const ready = fields.querySelector('[data-build="complete"]')?.closest('label');
   [mode, frameCount, fps, asset].filter(Boolean).forEach((node) => fields.appendChild(node));
   asset?.classList.add('wizard-field-asset-path');
   let meta = fields.querySelector('.wizard-action-meta');
@@ -251,7 +151,7 @@ function arrangeFields(fields, metaText) {
   }
   if (meta) meta.textContent = metaText;
   sound?.classList.add('wizard-field-hidden');
-  complete?.classList.add('wizard-field-hidden');
+  ready?.classList.add('wizard-field-hidden');
 }
 
 function enhanceActionTitle(panel, requirementId) {
@@ -269,13 +169,13 @@ function enhanceActionTitle(panel, requirementId) {
       if (text) text.hidden = !text.hidden;
     });
   }
-  const completeField = panel.querySelector('[data-build="complete"]')?.closest('label');
-  if (completeField && !h3.querySelector('.wizard-title-complete')) {
-    completeField.classList.add('wizard-title-complete');
-    completeField.childNodes.forEach((node) => {
-      if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) node.textContent = 'Complete ';
-    });
-    h3.appendChild(completeField);
+  const readyField = panel.querySelector('[data-build="complete"]')?.closest('label');
+  if (readyField) {
+    readyField.classList.add('wizard-title-complete');
+    readyField.title = 'Mark this selected task as ready. This does not finish or save the whole object.';
+    const label = readyField.querySelector('span');
+    if (label) label.textContent = 'Mark Task Ready';
+    if (!h3.contains(readyField)) h3.appendChild(readyField);
   }
   let info = panel.querySelector(':scope > .wizard-action-info-text');
   if (!info) {
@@ -288,11 +188,7 @@ function enhanceActionTitle(panel, requirementId) {
   info.hidden = true;
 }
 
-function enhanceWizardButtons(root) {
-  setButtonText(root.querySelector('[data-back]'), '← Back');
-  setButtonText(root.querySelector('[data-session]'), '💾 Save');
-  setButtonText(root.querySelector('[data-save]'), '✅ Save Local');
-  setButtonText(root.querySelector('[data-finish]'), '🏁 Finish');
+function enhancePlayerControls(root) {
   const play = root.querySelector('[data-play-toggle]');
   if (play && !/^▶|^⏸/.test(play.textContent.trim())) play.textContent = `${play.textContent.trim().toLowerCase().includes('pause') ? '⏸️' : '▶️'} ${play.textContent.trim()}`;
   setButtonText(root.querySelector('[data-prev-frame]'), '◀ Frame');
@@ -308,9 +204,10 @@ function enhanceSoundList(container, soundField) {
     details = document.createElement('details');
     details.className = 'wizard-sound-list';
     details.open = false;
-    details.innerHTML = '<summary>🔊 Sound Events</summary><div class="wizard-sound-primary"></div><div class="wizard-sound-rows"></div><button type="button" class="wizard-add-sound-button" title="Add another sound event row">➕ Add Sound</button>';
+    details.innerHTML = '<summary><span class="wizard-sound-summary-label">🔊 Sound Events</span><button type="button" class="wizard-create-sound-button" title="Create Synth Sound and assign its registered asset ID here" aria-label="Create Synth Sound">🎛️</button></summary><div class="wizard-sound-primary"></div><div class="wizard-sound-rows"></div><button type="button" class="wizard-add-sound-button" title="Add another sound event row">➕ Add Sound</button>';
     container.insertBefore(details, container.querySelector('.wizard-notes-field'));
   }
+  bindCreateSoundButton(details);
   const primary = details.querySelector('.wizard-sound-primary');
   const soundLabel = soundField.closest('label');
   if (soundLabel && soundLabel.parentElement !== primary) {
@@ -322,20 +219,19 @@ function enhanceSoundList(container, soundField) {
   const data = getRequirementData(selectedId);
   const soundEvents = Array.isArray(data.soundEvents)
     ? data.soundEvents
-    : splitSoundValues(soundField.value).map((path) => ({ path, trigger: 'frame', frame: '', volume: 1, pitchVariance: 0, spatial: false, loop: false, stopOnEnd: true, cooldown: 0 }));
+    : splitSoundValues(soundField.value).map((assetId) => ({ assetId, trigger: 'frame', frame: '', volume: 1, pitchVariance: 0, spatial: false, loop: false, stopOnEnd: true, cooldown: 0 }));
   const signature = `${selectedId}:${JSON.stringify(soundEvents)}`;
   if (rows.dataset.renderedFor !== signature) {
     rows.dataset.renderedFor = signature;
     rows.innerHTML = '';
-    (soundEvents.length ? soundEvents : [{ path: '', trigger: 'frame', frame: '', volume: 1, pitchVariance: 0, spatial: false, loop: false, stopOnEnd: true, cooldown: 0 }])
-      .forEach((event, index) => addSoundRow(rows, soundField, event, index));
+    (soundEvents.length ? soundEvents : [{ assetId: '', trigger: 'frame', frame: '', volume: 1, pitchVariance: 0, spatial: false, loop: false, stopOnEnd: true, cooldown: 0 }]).forEach((event, index) => addSoundRow(rows, soundField, event, index));
   }
   const addButton = details.querySelector('.wizard-add-sound-button');
   if (addButton && !addButton.dataset.boundStep5Core) {
     addButton.dataset.boundStep5Core = 'true';
     addButton.addEventListener('click', () => {
       const current = readSoundRows(rows);
-      current.push({ path: '', trigger: 'frame', frame: '', volume: 1, pitchVariance: 0, spatial: false, loop: false, stopOnEnd: true, cooldown: 0 });
+      current.push({ assetId: '', trigger: 'frame', frame: '', volume: 1, pitchVariance: 0, spatial: false, loop: false, stopOnEnd: true, cooldown: 0 });
       writeRequirementData(selectedRequirementId(), { soundEvents: current });
       rows.dataset.renderedFor = '';
       enhanceSoundList(container, soundField);
@@ -343,10 +239,40 @@ function enhanceSoundList(container, soundField) {
   }
 }
 
+function bindCreateSoundButton(details) {
+  const button = details.querySelector('.wizard-create-sound-button');
+  if (!button || button.dataset.boundSoundCreator) return;
+  button.dataset.boundSoundCreator = 'true';
+  button.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    openSoundGeneratorModal({
+      sourceLabel: `Archetype Object Creator > ${humanize(actionIdFromRequirement(selectedRequirementId()))} > Sound Events`,
+      onAssign: ({ assetId }) => assignGeneratedSound(details, assetId)
+    });
+  });
+}
+
+function assignGeneratedSound(details, assetId) {
+  if (!assetId) return;
+  const rows = details.querySelector('.wizard-sound-rows');
+  const soundField = details.querySelector('[data-build="soundAssetId"]');
+  if (!rows || !soundField) return;
+  let input = Array.from(rows.querySelectorAll('[data-sound="assetId"]')).find((field) => !field.value.trim());
+  if (!input) {
+    details.querySelector('.wizard-add-sound-button')?.click();
+    input = Array.from(rows.querySelectorAll('[data-sound="assetId"]')).find((field) => !field.value.trim());
+  }
+  if (input) input.value = assetId;
+  syncSoundRows(rows, soundField);
+  toast(`Assigned generated sound: ${assetId}`, 'success');
+}
+
 function addSoundRow(rows, soundField, event, index) {
+  const assetId = event.assetId || event.path || '';
   const row = document.createElement('div');
   row.className = 'wizard-sound-row';
-  row.innerHTML = `<span>${index + 1}</span><input data-sound="path" value="${escapeHtml(event.path || '')}" placeholder="assets/audio/sfx/${safeId(actionFromSelected())}_${String(index + 1).padStart(2, '0')}.ogg" title="Sound file path" /><select data-sound="trigger" title="When this sound plays"><option value="frame">frame</option><option value="start">start</option><option value="end">end</option><option value="loop">loop</option><option value="random">random</option></select><input data-sound="frame" type="number" min="0" value="${escapeHtml(event.frame ?? '')}" placeholder="Frame" title="Frame number to trigger on" /><input data-sound="volume" type="number" min="0" max="2" step="0.05" value="${escapeHtml(event.volume ?? 1)}" title="Volume" /><input data-sound="pitchVariance" type="number" min="0" max="1" step="0.01" value="${escapeHtml(event.pitchVariance ?? 0)}" title="Pitch variance" /><button type="button" title="Remove this sound row">×</button>`;
+  row.innerHTML = `<span>${index + 1}</span><input data-sound="assetId" value="${escapeHtml(assetId)}" placeholder="asset_sfx_object_action" title="Registered sound asset ID" /><select data-sound="trigger" title="When this sound plays"><option value="frame">frame</option><option value="start">start</option><option value="end">end</option><option value="loop">loop</option><option value="random">random</option></select><input data-sound="frame" type="number" min="0" value="${escapeHtml(event.frame ?? '')}" placeholder="Frame" title="Frame number to trigger on" /><input data-sound="volume" type="number" min="0" max="2" step="0.05" value="${escapeHtml(event.volume ?? 1)}" title="Volume" /><input data-sound="pitchVariance" type="number" min="0" max="1" step="0.01" value="${escapeHtml(event.pitchVariance ?? 0)}" title="Pitch variance" /><button type="button" title="Remove this sound row">×</button>`;
   row.querySelector('[data-sound="trigger"]').value = event.trigger || 'frame';
   row.querySelectorAll('[data-sound]').forEach((input) => input.addEventListener('input', () => syncSoundRows(rows, soundField)));
   row.querySelectorAll('select[data-sound]').forEach((input) => input.addEventListener('change', () => syncSoundRows(rows, soundField)));
@@ -361,7 +287,7 @@ function addSoundRow(rows, soundField, event, index) {
 
 function readSoundRows(rows) {
   return Array.from(rows.querySelectorAll('.wizard-sound-row')).map((row) => ({
-    path: row.querySelector('[data-sound="path"]')?.value.trim() || '',
+    assetId: row.querySelector('[data-sound="assetId"]')?.value.trim() || '',
     trigger: row.querySelector('[data-sound="trigger"]')?.value || 'frame',
     frame: row.querySelector('[data-sound="frame"]')?.value || '',
     volume: Number(row.querySelector('[data-sound="volume"]')?.value || 1),
@@ -370,12 +296,12 @@ function readSoundRows(rows) {
     loop: false,
     stopOnEnd: true,
     cooldown: 0
-  })).filter((item) => item.path || item.frame);
+  })).filter((item) => item.assetId || item.frame);
 }
 
 function syncSoundRows(rows, soundField) {
   const values = readSoundRows(rows);
-  soundField.value = values.map((item) => item.path).filter(Boolean).join(', ');
+  soundField.value = values.map((item) => item.assetId).filter(Boolean).join(', ');
   writeRequirementData(selectedRequirementId(), { soundEvents: values, soundAssetId: soundField.value });
   soundField.dispatchEvent(new Event('input', { bubbles: true }));
   soundField.dispatchEvent(new Event('change', { bubbles: true }));
@@ -432,7 +358,7 @@ function renderFrameEvents(section, requirementId, frameEvents) {
   (frameEvents.length ? frameEvents : [{ frame: '', eventType: 'custom', payload: '' }]).forEach((event, index) => {
     const row = document.createElement('div');
     row.className = 'wizard-frame-event-row';
-    row.innerHTML = `<span>${index + 1}</span><input data-frame-event="frame" type="number" min="0" value="${escapeHtml(event.frame ?? '')}" placeholder="Frame" /><select data-frame-event="eventType">${FRAME_EVENT_TYPES.map((item) => `<option value="${item}">${humanize(item)}</option>`).join('')}</select><input data-frame-event="payload" value="${escapeHtml(event.payload || '')}" placeholder="sound path, object id, note" /><button type="button" title="Remove this frame event">×</button>`;
+    row.innerHTML = `<span>${index + 1}</span><input data-frame-event="frame" type="number" min="0" value="${escapeHtml(event.frame ?? '')}" placeholder="Frame" /><select data-frame-event="eventType">${FRAME_EVENT_TYPES.map((item) => `<option value="${item}">${humanize(item)}</option>`).join('')}</select><input data-frame-event="payload" value="${escapeHtml(event.payload || '')}" placeholder="sound asset ID, object ID, note" /><button type="button" title="Remove this frame event">×</button>`;
     row.querySelector('[data-frame-event="eventType"]').value = event.eventType || 'custom';
     row.querySelectorAll('[data-frame-event]').forEach((input) => input.addEventListener('input', () => writeRequirementData(requirementId, { frameEvents: readFrameEvents(section) })));
     row.querySelectorAll('select[data-frame-event]').forEach((input) => input.addEventListener('change', () => writeRequirementData(requirementId, { frameEvents: readFrameEvents(section) })));
@@ -457,68 +383,16 @@ function readFrameEvents(section) {
 function writeRequirementData(requirementId, updates) {
   if (!requirementId) return;
   const current = editorState.archetype?.productionAssets || { version: VERSION, requirements: {}, requirementOrder: [] };
-  const productionAssets = {
-    ...current,
-    version: VERSION,
-    requirements: {
-      ...(current.requirements || {}),
-      [requirementId]: {
-        ...((current.requirements || {})[requirementId] || {}),
-        ...updates
-      }
-    }
-  };
-  updateArchetype({ productionAssets });
+  updateArchetype({ productionAssets: { ...current, version: VERSION, requirements: { ...(current.requirements || {}), [requirementId]: { ...((current.requirements || {})[requirementId] || {}), ...updates } } } });
 }
 
-function selectedRequirementId() {
-  return document.querySelector('#quickstart-dialog .wizard-build-nav button.is-selected')?.dataset.requirementId || '';
-}
-
-function getRequirementData(requirementId) {
-  return editorState.archetype?.productionAssets?.requirements?.[requirementId] || {};
-}
-
-function actionIdFromRequirement(requirementId) {
-  return String(requirementId || '').split(':')[1] || String(requirementId || 'asset');
-}
-
-function actionFromSelected() {
-  return actionIdFromRequirement(selectedRequirementId() || 'sound');
-}
-
-function splitSoundValues(value) {
-  return String(value || '').split(/[\n,]+/).map((item) => item.trim()).filter(Boolean);
-}
-
-function renumberRows(root, selector) {
-  root.querySelectorAll(selector).forEach((span, index) => { span.textContent = `${index + 1}`; });
-}
-
-function setButtonText(button, text) {
-  if (button && button.textContent.trim() !== text) button.textContent = text;
-}
-
-function setLabelButtonText(label, text) {
-  const input = label.querySelector('input');
-  label.textContent = text;
-  if (input) label.appendChild(input);
-}
-
-function safeId(value) {
-  return String(value || 'object').trim().toLowerCase().replace(/[^a-z0-9_\-]+/g, '_').replace(/^_+|_+$/g, '') || 'object';
-}
-
-function humanize(value) {
-  return String(value || '').replace(/[_-]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>'"]/g, (char) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    "'": '&#39;',
-    '"': '&quot;'
-  }[char]));
-}
+function selectedRequirementId() { return document.querySelector('#quickstart-dialog .wizard-build-nav button.is-selected')?.dataset.requirementId || ''; }
+function getRequirementData(requirementId) { return editorState.archetype?.productionAssets?.requirements?.[requirementId] || {}; }
+function actionIdFromRequirement(requirementId) { return String(requirementId || '').split(':')[1] || String(requirementId || 'asset'); }
+function splitSoundValues(value) { return String(value || '').split(/[\n,]+/).map((item) => item.trim()).filter(Boolean); }
+function renumberRows(root, selector) { root.querySelectorAll(selector).forEach((span, index) => { span.textContent = `${index + 1}`; }); }
+function setButtonText(button, text) { if (button && button.textContent.trim() !== text) button.textContent = text; }
+function setLabelButtonText(label, text) { const input = label.querySelector('input'); label.textContent = text; if (input) label.appendChild(input); }
+function humanize(value) { return String(value || '').replace(/[_-]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()); }
+function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char])); }
+function toast(message, type) { window.dispatchEvent(new CustomEvent('artifex:toast', { detail: { message, type } })); }

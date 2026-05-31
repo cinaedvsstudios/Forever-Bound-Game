@@ -42,7 +42,7 @@
         slider.max = String(MAX_POS);
         slider.value = field.value || 0;
       }
-      if (readout) readout.textContent = field.value || '0';
+      if (readout && document.activeElement !== readout) readout.value = field.value || '0';
     });
   }
 
@@ -87,7 +87,7 @@
 
   function begin(event) {
     const handle = event.target.closest?.('.move-handle');
-    if (!handle || event.button === 2) return;
+    if (!handle || event.button !== 0) return;
     const node = handle.closest?.('.scene-item[data-stage-id]');
     if (!node) return;
     activeOffscreenDrag = {

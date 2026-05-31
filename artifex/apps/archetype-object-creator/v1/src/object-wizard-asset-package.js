@@ -1,6 +1,6 @@
 import { editorState } from './editor-state.js';
 
-const VERSION = '1.30';
+const VERSION = '1.35';
 const textEncoder = new TextEncoder();
 let assetObserver = null;
 let assetQueued = false;
@@ -17,6 +17,29 @@ function injectAssetPackageStyles() {
   const style = document.createElement('style');
   style.id = 'object-wizard-asset-package-styles';
   style.textContent = `
+    #quickstart-dialog .wizard-build-actions {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      align-items: stretch !important;
+      gap: 9px !important;
+    }
+
+    #quickstart-dialog .wizard-build-actions > button,
+    #quickstart-dialog .wizard-build-actions > .button-like {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 188px !important;
+      min-width: 188px !important;
+      height: 40px !important;
+      min-height: 40px !important;
+      padding: 7px 12px !important;
+      box-sizing: border-box !important;
+      white-space: nowrap !important;
+      font-size: 11px !important;
+      line-height: 1.2 !important;
+    }
+
     #quickstart-dialog .wizard-frame-file-table-wrap {
       grid-column: 1 / -1;
       margin-top: 8px;
@@ -66,6 +89,14 @@ function injectAssetPackageStyles() {
     #quickstart-dialog .wizard-download-zip-button {
       white-space: nowrap;
     }
+
+    @media (max-width: 680px) {
+      #quickstart-dialog .wizard-build-actions > button,
+      #quickstart-dialog .wizard-build-actions > .button-like {
+        width: 100% !important;
+        min-width: 0 !important;
+      }
+    }
   `;
   document.head.appendChild(style);
 }
@@ -97,8 +128,8 @@ function refreshAssetPackageControls() {
     button.type = 'button';
     button.className = 'wizard-download-zip-button';
     button.dataset.downloadAssetZip = 'true';
-    button.textContent = '📦 Download ZIP';
-    button.title = 'Download this object archetype package as a ZIP with frames, metadata, and manifest files';
+    button.textContent = '📦 Backup ZIP';
+    button.title = 'Backup/fallback export: download this object package with uploaded frames and metadata';
     button.addEventListener('click', downloadAssetZip);
     actions.appendChild(button);
   }
@@ -148,7 +179,7 @@ function downloadAssetZip() {
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
-    toast('Asset ZIP created from uploaded frames.', 'success');
+    toast('Backup ZIP created from uploaded frames.', 'success');
   } catch (error) {
     toast(`Could not create ZIP: ${error.message}`, 'error');
   }
@@ -345,28 +376,24 @@ function removeExtension(name) {
   return String(name || '').replace(/\.[^.]+$/, '');
 }
 
+function dosTime() {
+  const now = new Date();
+  return (now.getHours() << 11) | (now.getMinutes() << 5) | Math.floor(now.getSeconds() / 2);
+}
+
+function dosDate() {
+  const now = new Date();
+  return ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+}
+
 function safeId(value) {
   return String(value || 'object').trim().toLowerCase().replace(/[^a-z0-9_\-]+/g, '_').replace(/^_+|_+$/g, '') || 'object';
 }
 
 function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>'"]/g, (char) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    "'": '&#39;',
-    '"': '&quot;'
-  }[char]));
+  return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 }
 
-function dosTime(date = new Date()) {
-  return (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2);
-}
-
-function dosDate(date = new Date()) {
-  return ((date.getFullYear() - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate();
-}
-
-function toast(message, type = 'info') {
+function toast(message, type) {
   window.dispatchEvent(new CustomEvent('artifex:toast', { detail: { message, type } }));
 }

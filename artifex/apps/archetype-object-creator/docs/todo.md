@@ -18,9 +18,41 @@ Status: open
 Priority: low-medium  
 Source: V1.33 line-count audit
 
-`object-wizard-step5.js` is still 524 lines. It is a named Step 5 core module rather than a legacy overlay, but a future pass should consider separating Action Behaviour and Sound Events into smaller named modules if the file grows further.
+`object-wizard-step5.js` is a named Step 5 core module rather than a legacy overlay, but a future pass should consider separating Action Behaviour and Sound Events into smaller named modules if the file grows further.
 
 ## Done
+
+### Align Step 5 project saving, sound generation, and compact asset controls
+
+Status: done  
+Completed in: V1.35  
+Source: Step 5 live review after V1.34
+
+Completed changes:
+
+- Made `Add Images`, `Add Empty Frame Slot`, and `Backup ZIP` the same visible size in Step 5, with the ZIP action clearly identified as a backup/fallback export rather than the main save path.
+- Replaced the unclear selected-task completion wording with `Mark Task Ready`, including a tooltip clarifying that it affects only the current task and is not the same as Finish or saving the object.
+- Added connected project-folder saving for object archetypes, writing the canonical object file under `archetypes/objects/` and updating `archetypes/object-index.json`.
+- Kept browser drafts as recovery data and retained Backup ZIP for uploaded preview-frame recovery/export.
+- Prevented browser-only image data URLs and temporary filename references from being written as final registered object asset references; final objects wait for registered Asset IDs.
+- Added a `🎛️` Create Synth Sound button beside Sound Events and connected it to the shared Sound Generator so generated registered `asset_sfx_` IDs can be assigned back to the selected task.
+- Updated Sound Events storage to treat generated sound links as registered asset IDs rather than raw paths.
+- Bumped the Object Creator shell and Step 5 modules to V1.35.
+
+### Repair Step 5 persistence contract and compact layout regressions
+
+Status: done  
+Completed in: V1.34  
+Source: V1.33 checklist module regression / live Step 5 review
+
+Completed changes:
+
+- Repaired the canonical Step 5 persistence contract so task, frame, completion, ordering, and related action data all store under `productionAssets.requirements` with `productionAssets.requirementOrder`.
+- Restored `Gameplay Sprite Asset ID` and `Dialogue Portrait Asset ID` wording and made them the initial first two checklist tasks while preserving user-driven reordering.
+- Removed the returned Step 5 instruction line and restored compact toolbar button labels with tooltips.
+- Separated left-list task labels and metadata into stacked block text.
+- Fixed desktop Step 5 horizontal overflow and clipped right-side fields using shrinkable detail columns and compact controls.
+- Retained the Frame Fix two-column correction layout, current-frame title, Reset / Close controls, and brightness matching action.
 
 ### Split `object-wizard-flow.js` into smaller wizard modules
 
@@ -39,7 +71,6 @@ Completed changes:
 - Reduced `object-wizard-flow.js` to a thin 117-line wizard router/orchestrator.
 - Bumped the app to V1.33.
 - Local browser verification passed for load, menus, wizard source paths, Step 2 icons/colours, Steps 3–5, Frame Fix, Reference safe empty state, Step 5 panels, Save & Resume Later, Finish + Save Local, Finish, reload, and retired-file request checks.
-
 
 ### Split object wizard workflow modules
 
@@ -70,7 +101,6 @@ Completed changes:
 - Removed `template-card-enhancements.js` from the live `v1/src/` folder and recorded its blob SHA in the archive manifest.
 - Bumped the app to V1.31.
 - Local browser verification covered page load, version badge, menus, the template route through Step 5, Step 5 extracted panels, Frame Fix, and network requests for retired files.
-
 
 ### Archive or remove old patch files from live source folder
 

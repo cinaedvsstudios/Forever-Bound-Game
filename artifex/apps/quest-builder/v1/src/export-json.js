@@ -1,5 +1,5 @@
-import { getBlockType } from './block-types.js?v=1.2.10';
-import { START_NODE_ID, END_NODE_ID } from './quest-schema.js?v=1.2.10';
+import { getBlockType } from './block-types.js?v=1.2.12';
+import { START_NODE_ID, END_NODE_ID } from './quest-schema.js?v=1.2.12';
 
 export function exportQuestFile(doc) {
   return JSON.stringify(buildQuestExportBundle(doc), null, 2);
@@ -170,8 +170,7 @@ export function buildRuntimeConnection(connection) {
     id: connection.id,
     sourceNodeId: connection.sourceNodeId,
     targetNodeId: connection.targetNodeId,
-    sourcePort: connection.sourcePort || 'out:0',
-    targetPort: connection.targetPort || 'in:0',
+    routingMode: connection.routingMode || 'smart-shortest',
     condition: connection.condition,
     label: connection.label
   });
@@ -199,25 +198,13 @@ export function validateQuestFile(doc) {
       if (!block.type) addWarning(warnings, 'warning', blockTarget, 'Block is missing type.', questTarget);
       if (block.type && blockType.category === 'custom') addWarning(warnings, 'info', blockTarget, `Block uses custom/unknown type: ${block.type}`, questTarget);
       (blockType.requiredFields || []).forEach((field) => {
-        if (!String(block[field] || '').trim()) {
-          addWarning(warnings, 'warning', blockTarget, `${blockType.name} is missing required field: ${field}`, questTarget);
-        }
+        if (!String(block[field] || '').trim()) addWarning(warnings, 'warning', blockTarget, `${blockType.name} is missing required field: ${field}`, questTarget);
       });
-      if (block.type === 'action' && block.dialogueId && !block.objectId) {
-        addWarning(warnings, 'info', blockTarget, 'Player Action links dialogue but has no object/NPC ID.', questTarget);
-      }
-      if (block.type === 'action' && /^(speak|talk|give|use|inspect|collect|interact):/.test(block.action || '') && !block.objectId) {
-        addWarning(warnings, 'warning', blockTarget, 'Player Action appears to target an object/NPC but objectId is empty.', questTarget);
-      }
-      if (block.type === 'dialogue' && (block.action || block.condition)) {
-        addWarning(warnings, 'info', blockTarget, 'Dialogue block should usually be a linked content asset; use Player Action for the player task.', questTarget);
-      }
-      if (block.type === 'completion' && !block.condition && !quest.completionFlag) {
-        addWarning(warnings, 'warning', blockTarget, 'Completion block needs a condition or quest completion flag.', questTarget);
-      }
-      if (needsProjectResolution(block) && !hasProjectResolvableReference(block)) {
-        addWarning(warnings, 'warning', blockTarget, 'Block has no Project Manager-resolvable scene/object/dialogue/audio ID.', questTarget);
-      }
+      if (block.type === 'action' && block.dialogueId && !block.objectId) addWarning(warnings, 'info', blockTarget, 'Player Action links dialogue but has no object/NPC ID.', questTarget);
+      if (block.type === 'action' && /^(speak|talk|give|use|inspect|collect|interact):/.test(block.action || '') && !block.objectId) addWarning(warnings, 'warning', blockTarget, 'Player Action appears to target an object/NPC but objectId is empty.', questTarget);
+      if (block.type === 'dialogue' && (block.action || block.condition)) addWarning(warnings, 'info', blockTarget, 'Dialogue block should usually be a linked content asset; use Player Action for the player task.', questTarget);
+      if (block.type === 'completion' && !block.condition && !quest.completionFlag) addWarning(warnings, 'warning', blockTarget, 'Completion block needs a condition or quest completion flag.', questTarget);
+      if (needsProjectResolution(block) && !hasProjectResolvableReference(block)) addWarning(warnings, 'warning', blockTarget, 'Block has no Project Manager-resolvable scene/object/dialogue/audio ID.', questTarget);
     });
     validateConnections(quest, questTarget, blockIds, warnings);
   });
@@ -251,9 +238,7 @@ function validateConnections(quest, questTarget, blockIds, warnings) {
   (quest.blocks || []).forEach((block) => {
     if (!incoming.has(block.id) && !outgoing.has(block.id)) addWarning(warnings, 'warning', block.id || block.name, 'Block is unconnected in the flow workspace.', questTarget);
     else if (!reachable.has(block.id)) addWarning(warnings, 'warning', block.id || block.name, 'Block has connections but no route from START.', questTarget);
-    if (block.type === 'completion' && !(outgoing.get(block.id) || []).includes(END_NODE_ID)) {
-      addWarning(warnings, 'warning', block.id || block.name, 'Calling Fulfilled block is not connected to END.', questTarget);
-    }
+    if (block.type === 'completion' && !(outgoing.get(block.id) || []).includes(END_NODE_ID)) addWarning(warnings, 'warning', block.id || block.name, 'Calling Fulfilled block is not connected to END.', questTarget);
   });
   if (!reachable.has(END_NODE_ID)) addWarning(warnings, 'warning', questTarget, 'No valid connection route currently reaches END.', questTarget);
 }
@@ -300,20 +285,12 @@ export function verifyExportBundleShape(bundle) {
     pass(`connections-${file.content?.id || file.path}`, Boolean(file.content?.flow && Array.isArray(file.content.flow.connections)), `${file.path} includes explicit runtime flow connections.`);
     pass(`links-${file.content?.id || file.path}`, Boolean(file.content?.links), `${file.path} includes resolved links bucket.`);
   });
-  return {
-    status: checks.every((check) => check.ok) ? 'pass' : 'fail',
-    checkedAt: new Date().toISOString(),
-    checks
-  };
+  return { status: checks.every((check) => check.ok) ? 'pass' : 'fail', checkedAt: new Date().toISOString(), checks };
 }
 
 export function downloadProjectPackageFiles(bundle) {
   const files = bundle.files || [];
-  files.forEach((file, index) => {
-    setTimeout(() => {
-      downloadJson(pathToDownloadName(file.path), JSON.stringify(file.content, null, 2));
-    }, index * 180);
-  });
+  files.forEach((file, index) => { setTimeout(() => { downloadJson(pathToDownloadName(file.path), JSON.stringify(file.content, null, 2)); }, index * 180); });
   return files.length;
 }
 
@@ -325,57 +302,15 @@ export function downloadJson(filename, contents) {
   URL.revokeObjectURL(link.href);
 }
 
-export function slugify(value) {
-  return String(value || 'quest-file').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-}
-
-function pathToDownloadName(path) {
-  return String(path || 'quest-file.json').replace(/\//g, '__');
-}
-
-function runtimeQuestPath(file) {
-  const side = file.type === 'side' || file.type === 'errand';
-  return `${side ? 'sidequests/sidequest' : 'quests/quest'}_${file.slug}.json`;
-}
-
-function isSideQuest(quest) {
-  return quest.type === 'side' || quest.type === 'errand';
-}
-
-function unique(values) {
-  return [...new Set((values || []).filter((value) => String(value || '').trim()))];
-}
-
-function compactObject(object) {
-  return Object.fromEntries(Object.entries(object).filter(([, value]) => String(value || '').trim()));
-}
-
-function addWarning(warnings, level, target, message, questId) {
-  warnings.push({ level, target, questId, message });
-}
-
-function validationStatusForQuest(quest) {
-  const warnings = validateQuestFile({ quests: [quest] });
-  if (warnings.some((warning) => warning.level === 'error')) return 'error';
-  if (warnings.some((warning) => warning.level === 'warning')) return 'warning';
-  return 'ready';
-}
-
-function summariseWarnings(warnings) {
-  return warnings.reduce((summary, warning) => {
-    summary[warning.level] = (summary[warning.level] || 0) + 1;
-    return summary;
-  }, { error: 0, warning: 0, info: 0 });
-}
-
-function needsProjectResolution(block) {
-  return ['scene', 'action', 'object', 'dialogue', 'travel', 'route', 'combat', 'companion'].includes(block.type);
-}
-
-function hasProjectResolvableReference(block) {
-  return Boolean(block.sceneId || block.objectId || block.dialogueId || block.audioId);
-}
-
-function hasFile(bundle, path) {
-  return (bundle.files || []).some((file) => file.path === path);
-}
+export function slugify(value) { return String(value || 'quest-file').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''); }
+function pathToDownloadName(path) { return String(path || 'quest-file.json').replace(/\//g, '__'); }
+function runtimeQuestPath(file) { const side = file.type === 'side' || file.type === 'errand'; return `${side ? 'sidequests/sidequest' : 'quests/quest'}_${file.slug}.json`; }
+function isSideQuest(quest) { return quest.type === 'side' || quest.type === 'errand'; }
+function unique(values) { return [...new Set((values || []).filter((value) => String(value || '').trim()))]; }
+function compactObject(object) { return Object.fromEntries(Object.entries(object).filter(([, value]) => String(value || '').trim())); }
+function addWarning(warnings, level, target, message, questId) { warnings.push({ level, target, questId, message }); }
+function validationStatusForQuest(quest) { const warnings = validateQuestFile({ quests: [quest] }); if (warnings.some((warning) => warning.level === 'error')) return 'error'; if (warnings.some((warning) => warning.level === 'warning')) return 'warning'; return 'ready'; }
+function summariseWarnings(warnings) { return warnings.reduce((summary, warning) => { summary[warning.level] = (summary[warning.level] || 0) + 1; return summary; }, { error: 0, warning: 0, info: 0 }); }
+function needsProjectResolution(block) { return ['scene', 'action', 'object', 'dialogue', 'travel', 'route', 'combat', 'companion'].includes(block.type); }
+function hasProjectResolvableReference(block) { return Boolean(block.sceneId || block.objectId || block.dialogueId || block.audioId); }
+function hasFile(bundle, path) { return (bundle.files || []).some((file) => file.path === path); }

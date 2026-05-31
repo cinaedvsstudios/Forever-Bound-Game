@@ -18,7 +18,7 @@ archetypes/object-index.json            owned by Archetype Object Creator
 archetypes/effect-index.json            owned by Effect Editor
 ```
 
-The authoring app that opens the picker still decides where the selected stable reference is stored and what that reference means in its own authored data.
+The authoring app that opens the picker still decides where the selected stable reference is stored and what that reference means in its authored data.
 
 ## Current implementation
 
@@ -50,12 +50,19 @@ The picker controller:
 - displays empty, missing, invalid, unreadable and partially-rejected states honestly;
 - shows selected record details before confirmation;
 - only returns a stable reference after a validated final record is selected;
+- includes a **Connect Folder / Authorise Folder / Folder Connected** action when the consuming app loads `window.ArtifexProjectFolder`;
 - offers no raw upload button and no free-text final-link field.
 
-Typical app integration direction:
+A consuming app that wants the built-in project folder connection action must load:
 
 ```js
-import { openRegisteredContentPicker } from '../../../shared/registered-content/registered-content-picker.js';
+import '../../path/to/shared/project-folder/project-folder-client.js';
+```
+
+It can then open the picker:
+
+```js
+import { openRegisteredContentPicker } from '../../path/to/shared/registered-content/registered-content-picker.js';
 
 openRegisteredContentPicker({
   initialKind: 'archetype-objects',
@@ -68,7 +75,7 @@ openRegisteredContentPicker({
 });
 ```
 
-The importing app must use the correct relative path for its own folder depth and must only expose a visible active selection control when the resulting reference is stored correctly in its own data model.
+The importing app must use the correct relative path for its own folder depth and must only expose an active selection control when the resulting reference is stored correctly in its own data model.
 
 ## Accepted record types
 
@@ -119,13 +126,27 @@ C:/... or /Users/...
 
 Those may be useful sources or previews, but they are not valid permanent gameplay references until promoted into the canonical project indexes.
 
-## Puzzle Creator integration direction
+## Puzzle Creator integration status
 
-The reusable reader and picker controller now exist, but Puzzle Creator is not yet importing them. The next Maze integration stage can wire one genuine consumer at a time:
+Puzzle Creator Maze currently consumes this dependency for two feature-linking workflows:
 
-- Collect rows select registered `archobj_` object archetypes and store `archetypeObjectId` in the placed item record.
-- Door connections select registered `asset_` visual assets and store `visualAssetId` in the connection record.
-- Portal endpoints may later select registered `asset_` visuals and optional `archeffect_` effects, while global endpoint relationships remain owned by the Portal Registry contract.
-- Scatter decorations may select registered `asset_` visuals only.
+### V1.29 · Collect Archetype Object linking
 
-Until an individual Maze control is wired to store its reference and export it correctly, that visible control must remain disabled/pending.
+- Collect rows open the picker on the **Archetype Objects** source only.
+- A selected valid `archobj_` record stores `archetypeObjectId`, its display label and the canonical index source in the Collect item export record.
+- Collect supports **Replace** and **Unlink** independently from its placed maze cell.
+- When no folder is connected or no final object index records exist, the picker remains honest and no link is stored.
+
+### V1.30 · Door visual asset linking
+
+- A selected Door displays a **Door Visual Asset** control and opens the picker on the **Final Assets** source only.
+- A selected valid `asset_` record stores `visualAssetId`, `visualAssetLabel` and `visualAssetReferenceSource` on the Door connection record.
+- Door visual linking supports **Replace Visual** and **Unlink** independently from Entry/Exit placement, direction and Walk Test transfer behaviour.
+- The selection is an authored reference/export feature only at this stage; the current maze preview continues to show endpoint markers rather than rendering the selected Door image.
+- When no folder is connected or no final asset index records exist, the picker remains honest and no visual link is stored.
+
+Still pending:
+
+- Rendering selected Door images in the playable preview, if required by a future visual-rendering stage.
+- Portal registered visual/effect selection and global Portal Registry linkage.
+- Scatter decoration registered asset selection.

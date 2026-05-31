@@ -1,6 +1,6 @@
 import { editorState, updateArchetype } from './editor-state.js';
 import { GAMEPLAY_ACTIONS, PORTRAIT_ACTIONS } from './templates.js';
-import { appendNote, labelFor, WIZARD_DATA_VERSION } from './object-wizard-helpers.js?v=1.34';
+import { appendNote, labelFor, WIZARD_DATA_VERSION } from './object-wizard-helpers.js?v=1.35';
 
 export function createObjectWizardBuildRequirements({ renderBuildChecklist, updateProgressOrb }) {
   function buildRequirements(item) {
@@ -65,7 +65,7 @@ export function createObjectWizardBuildRequirements({ renderBuildChecklist, upda
     if (key === 'frameCount') data.frameCount = Number(value) || 0;
     if (key === 'fps') data.fps = Number(value) || 0;
     if (key === 'notes') data.notes = value;
-    if (key === 'complete' && value) data.notes = appendNote(data.notes, 'Marked complete in Quick Start Wizard.');
+    if (key === 'complete' && value) data.notes = appendNote(data.notes, 'Marked ready in Quick Start Wizard.');
     setRequirementData(id, data);
     syncVisualAssetFromTask(id, data);
     updateProgressOrb();

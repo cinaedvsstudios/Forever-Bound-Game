@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Artifex Creation Guide V1.1.11</title>
-  <link rel="stylesheet" href="./v1/styles.css?v=creation-guide-1.1.11" />
+  <title>Artifex Creation Guide V1.1.12</title>
+  <link rel="stylesheet" href="./v1/styles.css?v=creation-guide-1.1.12" />
 </head>
 <body>
   <header class="topbar">
@@ -12,7 +12,7 @@
       <div class="brand-mark" id="brand-mark">✦</div>
       <div>
         <h1>ARTIFEX</h1>
-        <p><span id="module-label">Creation Guide</span> <span id="version-badge">V1.1.11</span></p>
+        <p><span id="module-label">Creation Guide</span> <span id="version-badge">V1.1.12</span></p>
       </div>
     </section>
 
@@ -73,9 +73,9 @@
         <div class="menu">
           <button class="menu-button" data-menu="open">Open ▾</button>
           <div class="menu-panel right" id="menu-open">
-            <a href="../../index.html?v=creation-guide-1.1.11">Artifex Portal</a>
-            <a href="../scene-editor/?v=creation-guide-1.1.11">Scene Editor</a>
-            <a href="../module-boilerplate/?v=creation-guide-1.1.11">Blank Module Boilerplate</a>
+            <a href="../../index.html?v=creation-guide-1.1.12">Artifex Portal</a>
+            <a href="../scene-editor/?v=creation-guide-1.1.12">Scene Editor</a>
+            <a href="../module-boilerplate/?v=creation-guide-1.1.12">Blank Module Boilerplate</a>
           </div>
         </div>
 
@@ -99,44 +99,21 @@
       <div class="side-panel-content">
         <section class="card">
           <header><h2>Project Setup</h2><span id="setup-percent">0%</span></header>
-
-          <label>Project Name
-            <div class="validated-field"><input id="game-title-input" placeholder="Forever Bound" /><span id="project-name-status" class="field-status empty">⭕</span></div>
-          </label>
-
-          <label>Project ID / Slug
-            <div class="validated-field"><input id="project-id-input" placeholder="forever-bound" /><span id="project-id-status" class="field-status empty">⭕</span></div>
-          </label>
+          <label>Project Name<div class="validated-field"><input id="game-title-input" placeholder="Forever Bound" /><span id="project-name-status" class="field-status empty">⭕</span></div></label>
+          <label>Project ID / Slug<div class="validated-field"><input id="project-id-input" placeholder="forever-bound" /><span id="project-id-status" class="field-status empty">⭕</span></div></label>
           <button id="use-suggested-slug-button" class="helper-button" type="button">Use suggested slug</button>
           <p id="slug-suggestion-text" class="field-help">Suggested slug appears after you type a project name.</p>
-
-          <label>Creator / Studio
-            <div class="validated-field"><input id="creator-input" placeholder="Cinaedvs Studios" /><span id="creator-status" class="field-status empty">⭕</span></div>
-          </label>
-
-          <label>Local Project Folder
-            <div class="validated-field"><input id="project-folder-input" placeholder="Connect a project folder or enter its name" /><span id="local-path-status" class="field-status empty">⭕</span></div>
-          </label>
+          <label>Creator / Studio<div class="validated-field"><input id="creator-input" placeholder="Cinaedvs Studios" /><span id="creator-status" class="field-status empty">⭕</span></div></label>
+          <label>Local Project Folder<div class="validated-field"><input id="project-folder-input" placeholder="Connect a project folder or enter its name" /><span id="local-path-status" class="field-status empty">⭕</span></div></label>
           <button id="choose-local-folder-button" class="helper-button" type="button">Choose Local Folder</button>
           <input id="local-folder-picker" type="file" webkitdirectory directory multiple hidden />
           <p class="field-help">Use the Connected Project Folder section to grant real read/write access. Only the portable folder name is stored in project metadata.</p>
-
           <label class="checkbox-row"><input id="use-github-input" type="checkbox" /> Use GitHub repo path</label>
-
-          <label>GitHub Username
-            <div class="validated-field"><input id="github-username-input" placeholder="cinaedvsstudios" /><span id="github-username-status" class="field-status empty">⭕</span></div>
-          </label>
-
-          <label>Online File Path (GitHub repo URL)
-            <div class="validated-field"><input id="online-path-input" placeholder="https://github.com/cinaedvsstudios/forever-bound" /><span id="online-path-status" class="field-status empty">⭕</span></div>
-          </label>
+          <label>GitHub Username<div class="validated-field"><input id="github-username-input" placeholder="cinaedvsstudios" /><span id="github-username-status" class="field-status empty">⭕</span></div></label>
+          <label>Online File Path (GitHub repo URL)<div class="validated-field"><input id="online-path-input" placeholder="https://github.com/cinaedvsstudios/forever-bound" /><span id="online-path-status" class="field-status empty">⭕</span></div></label>
           <button id="open-online-path-button" class="helper-button" type="button">Open GitHub / Online Path</button>
-
-          <label>Deployed URL
-            <div class="validated-field"><input id="deployed-url-input" placeholder="https://cinaedvsstudios.github.io/forever-bound/" /><span id="deployed-url-status" class="field-status empty">⭕</span></div>
-          </label>
+          <label>Deployed URL<div class="validated-field"><input id="deployed-url-input" placeholder="https://cinaedvsstudios.github.io/forever-bound/" /><span id="deployed-url-status" class="field-status empty">⭕</span></div></label>
           <button id="check-deployed-url-button" class="helper-button" type="button">Check Deployed URL</button>
-
           <label>Build Target<select id="build-target-input"><option>Chronicle 0</option><option>Quest 0.5</option><option>Chronicle 1</option><option>Custom</option></select></label>
         </section>
 
@@ -146,10 +123,7 @@
           <label>Primary Module<select id="assignment-module-input"></select></label>
           <label>Workflow State<select id="assignment-state-input"></select></label>
           <label>Owner<input id="assignment-owner-input" placeholder="Unassigned" /></label>
-          <div class="split-fields">
-            <label>Priority<input id="assignment-priority-input" type="number" min="1" max="5" /></label>
-            <label>Effort<input id="assignment-effort-input" type="number" min="1" max="5" /></label>
-          </div>
+          <div class="split-fields"><label>Priority<input id="assignment-priority-input" type="number" min="1" max="5" /></label><label>Effort<input id="assignment-effort-input" type="number" min="1" max="5" /></label></div>
           <label>Milestone<input id="assignment-milestone-input" /></label>
           <label>Zone / Scene<input id="assignment-zone-input" /></label>
           <label>Notes<textarea id="assignment-notes-input" rows="5"></textarea></label>
@@ -165,23 +139,15 @@
     </aside>
 
     <div id="side-resizer" class="side-resizer" title="Drag to resize side panel"></div>
-
     <section class="workspace-column viewing-panel">
       <section class="workspace-toolbar">
         <button id="set-active-project-button">✅ Set Active</button>
         <button id="export-project-files-button">📦 Export ZIP</button>
         <button id="open-assignments-toolbar-button">📋 Assignments</button>
         <button id="clear-project-data-toolbar-button" onclick="if(confirm('Clear Artifex project test data from this browser?')){localStorage.removeItem('artifex.projectLibrary');localStorage.removeItem('artifex.activeProjectId');location.reload();}">🧹 Clear Test Data</button>
-        <select id="todo-sort-input" title="Dashboard sort">
-          <option value="easy-wins">Easy Wins</option>
-          <option value="most-important">Most Important</option>
-          <option value="not-touched">Not Touched</option>
-          <option value="almost-complete">Almost Complete</option>
-          <option value="by-module">By Module</option>
-        </select>
+        <select id="todo-sort-input" title="Dashboard sort"><option value="easy-wins">Easy Wins</option><option value="most-important">Most Important</option><option value="not-touched">Not Touched</option><option value="almost-complete">Almost Complete</option><option value="by-module">By Module</option></select>
         <span id="status-text">Ready.</span>
       </section>
-
       <section id="workspace" class="workspace project-workspace">
         <canvas id="module-canvas" width="1280" height="720" aria-hidden="true"></canvas>
         <div id="project-overview-panel" class="project-overview-panel"></div>
@@ -190,49 +156,20 @@
     </section>
   </main>
 
-  <dialog id="assignments-dialog" class="assignments-dialog">
-    <form method="dialog">
-      <header class="dialog-header accent-dialog-header">
-        <div>
-          <h2>📋 Assignments</h2>
-          <p id="assignment-count">0 assignments</p>
-        </div>
-        <button value="close">×</button>
-      </header>
-      <div class="assignment-tabs" id="assignment-tabs"></div>
-      <div id="assignment-list" class="assignment-list popup-assignment-list"></div>
-    </form>
-  </dialog>
-
-  <dialog id="assignment-dialog">
-    <form method="dialog">
-      <header class="dialog-header accent-dialog-header"><h2 id="assignment-dialog-title">Assignment Detail</h2><button value="close">×</button></header>
-      <div id="assignment-dialog-body" class="dialog-body"></div>
-    </form>
-  </dialog>
-
-  <dialog id="project-library-dialog" class="assignments-dialog">
-    <form method="dialog">
-      <header class="dialog-header accent-dialog-header"><h2>🗂️ Project Library</h2><button value="close">×</button></header>
-      <div id="project-library-list" class="project-library-list"></div>
-    </form>
-  </dialog>
-
-  <dialog id="help-dialog">
-    <form method="dialog">
-      <header class="dialog-header"><h2 id="help-dialog-title">Help</h2><button value="close">×</button></header>
-      <div id="help-dialog-body" class="dialog-body"></div>
-    </form>
-  </dialog>
+  <dialog id="assignments-dialog" class="assignments-dialog"><form method="dialog"><header class="dialog-header accent-dialog-header"><div><h2>📋 Assignments</h2><p id="assignment-count">0 assignments</p></div><button value="close">×</button></header><div class="assignment-tabs" id="assignment-tabs"></div><div id="assignment-list" class="assignment-list popup-assignment-list"></div></form></dialog>
+  <dialog id="assignment-dialog"><form method="dialog"><header class="dialog-header accent-dialog-header"><h2 id="assignment-dialog-title">Assignment Detail</h2><button value="close">×</button></header><div id="assignment-dialog-body" class="dialog-body"></div></form></dialog>
+  <dialog id="project-library-dialog" class="assignments-dialog"><form method="dialog"><header class="dialog-header accent-dialog-header"><h2>🗂️ Project Library</h2><button value="close">×</button></header><div id="project-library-list" class="project-library-list"></div></form></dialog>
+  <dialog id="help-dialog"><form method="dialog"><header class="dialog-header"><h2 id="help-dialog-title">Help</h2><button value="close">×</button></header><div id="help-dialog-body" class="dialog-body"></div></form></dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-  <script src="./v1/src/app-bootstrap.js?v=creation-guide-1.1.11-runtime"></script>
-  <script src="./v1/src/onboarding-guide.js?v=creation-guide-1.1.11-onboarding-guide"></script>
-  <script src="./v1/src/project-flow.js?v=creation-guide-1.1.11-project-flow"></script>
-  <script src="./v1/src/project-health.js?v=creation-guide-1.1.11-project-health"></script>
-  <script src="./v1/src/health-actions.js?v=creation-guide-1.1.11-health-actions"></script>
-  <script src="../../shared/project-folder/project-folder-client.js?v=creation-guide-1.1.11-project-folder-client"></script>
-  <script src="../../shared/project-folder/project-structure-initializer.js?v=creation-guide-1.1.11-canonical-project-structure"></script>
-  <script src="./v1/src/project-folder-setup.js?v=creation-guide-1.1.11-project-folder-progress-toast"></script>
+  <script src="./v1/src/app-bootstrap.js?v=creation-guide-1.1.12-runtime"></script>
+  <script src="./v1/src/onboarding-guide.js?v=creation-guide-1.1.12-intake-coach-final"></script>
+  <script src="./v1/src/project-flow.js?v=creation-guide-1.1.12-toolbar-restore"></script>
+  <script src="./v1/src/project-health.js?v=creation-guide-1.1.12-intake-health-final"></script>
+  <script src="./v1/src/health-actions.js?v=creation-guide-1.1.12-health-actions"></script>
+  <script src="../../shared/project-folder/project-folder-client.js?v=creation-guide-1.1.12-project-folder-client"></script>
+  <script src="../../shared/project-folder/project-structure-initializer.js?v=creation-guide-1.1.12-blank-starter-null-start-screen"></script>
+  <script src="./v1/src/project-folder-setup.js?v=creation-guide-1.1.12-project-folder-progress-toast"></script>
+  <script src="./v1/src/intake-setup.js?v=creation-guide-1.1.12-intake-clear-confirmed"></script>
 </body>
 </html>

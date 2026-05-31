@@ -3,7 +3,7 @@
 // Connection feature setup is rendered by maze-connections.js inside the shared setup host.
 
 import '../../../../../shared/project-folder/project-folder-client.js?v=0.1.0';
-import { openRegisteredContentPicker } from '../../../../../shared/registered-content/registered-content-picker.js?v=1.29';
+import { openRegisteredContentPicker } from '../../../../../shared/registered-content/registered-content-picker.js?v=1.29.1';
 import { isInsideShape } from './maze-shape-generator.js';
 
 const $ = (id) => document.getElementById(id);
@@ -174,12 +174,8 @@ function renderCollectionCard() {
     featureState.collection.placingItemId = button.dataset.placeCollect;
     renderCollectionCard();
   }));
-  card.querySelectorAll('[data-link-collect]').forEach((button) => button.addEventListener('click', () => {
-    openCollectionArchetypePicker(button.dataset.linkCollect);
-  }));
-  card.querySelectorAll('[data-unlink-collect]').forEach((button) => button.addEventListener('click', () => {
-    unlinkCollectionArchetype(button.dataset.unlinkCollect);
-  }));
+  card.querySelectorAll('[data-link-collect]').forEach((button) => button.addEventListener('click', () => openCollectionArchetypePicker(button.dataset.linkCollect)));
+  card.querySelectorAll('[data-unlink-collect]').forEach((button) => button.addEventListener('click', () => unlinkCollectionArchetype(button.dataset.unlinkCollect)));
   card.querySelectorAll('[data-clear-collect]').forEach((button) => button.addEventListener('click', () => {
     const item = featureState.collection.items.find((row) => row.id === button.dataset.clearCollect);
     if (!item) return;
@@ -222,9 +218,7 @@ function unlinkCollectionArchetype(itemId) {
 function itemHtml(item) {
   const placing = featureState.collection.placingItemId === item.id;
   const placed = item.cell ? `${item.cell.x}, ${item.cell.y}` : 'Not placed';
-  const linkedText = item.archetypeObjectId
-    ? `${item.archetypeLabel || 'Linked Object'} · ${item.archetypeObjectId}`
-    : 'No Archetype Object linked';
+  const linkedText = item.archetypeObjectId ? `${item.archetypeLabel || 'Linked Object'} · ${item.archetypeObjectId}` : 'No Archetype Object linked';
   return `<article class="feature-item ${placing ? 'is-placing' : ''}">
     <div><strong>${escapeHtml(item.label)}</strong><small>Cell: ${escapeHtml(placed)}</small><small class="feature-item-link ${item.archetypeObjectId ? 'is-linked' : ''}">${escapeHtml(linkedText)}</small></div>
     <div class="feature-item-actions">
@@ -311,14 +305,7 @@ function exportFeatures() {
     schemaVersion: 'artifex.mazeFeatures.v1',
     enabled: Object.entries(featureState.enabled).filter(([, value]) => value).map(([key]) => key),
     collection: featureState.enabled.collection ? {
-      items: featureState.collection.items.map((item) => ({
-        id: item.id,
-        label: item.label,
-        cell: item.cell,
-        archetypeObjectId: item.archetypeObjectId,
-        archetypeObjectLabel: item.archetypeLabel,
-        archetypeReferenceSource: item.archetypeReferenceSource
-      })),
+      items: featureState.collection.items.map((item) => ({ id: item.id, label: item.label, cell: item.cell, archetypeObjectId: item.archetypeObjectId, archetypeObjectLabel: item.archetypeLabel, archetypeReferenceSource: item.archetypeReferenceSource })),
       objectLinksStatus: collectionLinksStatus()
     } : null
   };
