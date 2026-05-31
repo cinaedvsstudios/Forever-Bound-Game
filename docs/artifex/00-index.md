@@ -42,6 +42,7 @@ These three terms must not be merged together:
 - `21-template-game-project-contract.md` — populated connected reference-project contract, kept separate from a Blank Starter Project and Artifacts Adventures production work.
 - `22-sound-archetype-generator.md` — shared in-context Procedural Sound Generator popup, friendly controls, Web Audio recipe JSON, and registration of generated sounds through the existing Asset Library.
 - `23-current-main-scan-and-pr20-recovery.md` — stop/recovery record for conflicted PR #20, current-main truth before the full scan, and the clean post-scan task sequence.
+- `24-stabilisation-cleanup-and-ui-resumption-plan.md` — controlled route back to UI work, with audit gates, unused-file archiving, hotfix/wrapper consolidation and app-by-app acceptance rules.
 
 ## Current Simplified Module List
 
