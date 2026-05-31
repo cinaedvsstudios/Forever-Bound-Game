@@ -4,10 +4,10 @@ import { createProjectEditorStateManager } from './project-state.js?v=0.1.32-con
 import { createProjectCanvasController } from './project-canvas.js?v=0.1.31-tasks';
 import { createProjectRenderer } from './project-renderer.js?v=0.1.31-tasks';
 import { createProjectUI } from './project-ui.js?v=0.1.31-tasks';
-import { enhanceProjectUI } from './project-integration-ui.js?v=0.1.31-tasks';
-import { enhanceNodeLinkInspector } from './project-node-links-ui.js?v=0.1.31-tasks';
-import { enhanceProjectHealthUI } from './project-health-ui.js?v=0.1.31-tasks';
-import { enhanceProjectIO } from './project-io.js?v=0.1.32-contract';
+import { createAssetBrowserRenderer, wireProjectIntegrationControls } from './project-integration-ui.js?v=0.1.31-tasks';
+import { createNodeLinksInspectorExtension } from './project-node-links-ui.js?v=0.1.31-tasks';
+import { createGettingStartedRenderer } from './project-health-ui.js?v=0.1.31-tasks';
+import { createProjectIOController, wireProjectIO } from './project-io.js?v=0.1.32-contract';
 import { renderStitcherWorkspace } from './project-stitcher.js?v=0.1.31-tasks';
 import { renderBuildPrepWorkspace } from './project-buildprep.js?v=0.1.31-tasks';
 import { getTypeStyle } from './data/type-styles.js?v=0.1.31-tasks';
@@ -103,29 +103,31 @@ function init() {
     onInteractionEnd: () => redrawGraphOnly()
   });
 
-  ui = enhanceProjectIO({
-    ui: enhanceProjectHealthUI({
-      ui: enhanceProjectUI({
-        ui: enhanceNodeLinkInspector({
-          ui: createProjectUI({
-            stateManager: state,
-            getTypeStyle,
-            renderer,
-            canvasController: canvas,
-            onRefresh: (opts) => refresh(opts),
-            onGraphChanged: () => redrawGraphOnly(),
-            renderStitcher,
-            renderBuildPrep
-          }),
-          stateManager: state
-        }),
-        stateManager: state
-      }),
-      stateManager: state
-    }),
+  const io = createProjectIOController({ stateManager: state, onRefresh: () => refresh() });
+  const workspaceRenderers = {
+    assetbrowser: createAssetBrowserRenderer({ stateManager: state, getUI: () => ui }),
+    wizard: createGettingStartedRenderer({ stateManager: state })
+  };
+
+  ui = createProjectUI({
     stateManager: state,
-    onRefresh: () => refresh()
+    getTypeStyle,
+    renderer,
+    canvasController: canvas,
+    onRefresh: (opts) => refresh(opts),
+    onGraphChanged: () => redrawGraphOnly(),
+    renderStitcher,
+    renderBuildPrep,
+    workspaceRenderers,
+    inspectorExtensions: [createNodeLinksInspectorExtension({ stateManager: state, getUI: () => ui })],
+    afterWireTopCanvasControls: [
+      () => wireProjectIntegrationControls({ ui }),
+      () => wireProjectIO({ stateManager: state, onRefresh: () => refresh() })
+    ]
   });
+
+  ui.exportProjectPackage = io.exportProjectPackage;
+  ui.importProjectFiles = io.importProjectFiles;
 
   ui.setWorkspace(state.activeWorkspace || 'flatplan');
   refresh();

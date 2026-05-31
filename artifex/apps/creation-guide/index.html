@@ -33,7 +33,7 @@
             <button id="export-json-button">Export Project Folder ZIP</button>
             <button id="save-local-button">Save + Set Active Project</button>
             <button id="view-local-button">Project Library</button>
-            <button id="clear-project-data-button" onclick="if(confirm('Clear Artifex project test data from this browser?')){localStorage.removeItem('artifex.projectLibrary');localStorage.removeItem('artifex.activeProjectId');location.reload();}">Clear Project Test Data</button>
+            <button id="clear-project-data-button">Clear Project Test Data</button>
           </div>
         </div>
 
@@ -141,10 +141,13 @@
     <div id="side-resizer" class="side-resizer" title="Drag to resize side panel"></div>
     <section class="workspace-column viewing-panel">
       <section class="workspace-toolbar">
+        <button id="project-flow-toolbar-button" type="button">🗂️ New / Open</button>
+        <button id="connect-project-folder-toolbar-button" type="button">📁 Project Folder</button>
         <button id="set-active-project-button">✅ Set Active</button>
         <button id="export-project-files-button">📦 Export ZIP</button>
         <button id="open-assignments-toolbar-button">📋 Assignments</button>
-        <button id="clear-project-data-toolbar-button" onclick="if(confirm('Clear Artifex project test data from this browser?')){localStorage.removeItem('artifex.projectLibrary');localStorage.removeItem('artifex.activeProjectId');location.reload();}">🧹 Clear Test Data</button>
+        <button id="project-health-toolbar-button" type="button">🩺 Health</button>
+        <button id="clear-project-data-toolbar-button">🧹 Clear Test Data</button>
         <select id="todo-sort-input" title="Dashboard sort"><option value="easy-wins">Easy Wins</option><option value="most-important">Most Important</option><option value="not-touched">Not Touched</option><option value="almost-complete">Almost Complete</option><option value="by-module">By Module</option></select>
         <span id="status-text">Ready.</span>
       </section>
@@ -162,7 +165,7 @@
   <dialog id="help-dialog"><form method="dialog"><header class="dialog-header"><h2 id="help-dialog-title">Help</h2><button value="close">×</button></header><div id="help-dialog-body" class="dialog-body"></div></form></dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-  <script src="./v1/src/app-bootstrap.js?v=creation-guide-1.1.12-runtime"></script>
+  <script src="./v1/src/creation-guide-app.js?v=creation-guide-1.1.12-clean-base-runtime"></script>
   <script src="./v1/src/onboarding-guide.js?v=creation-guide-1.1.12-intake-coach-final"></script>
   <script src="./v1/src/project-flow.js?v=creation-guide-1.1.12-toolbar-restore"></script>
   <script src="./v1/src/project-health.js?v=creation-guide-1.1.12-intake-health-final"></script>

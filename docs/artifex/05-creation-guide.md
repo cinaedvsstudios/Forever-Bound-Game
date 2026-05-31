@@ -38,10 +38,10 @@ artifex/shared/todo-guide/all-apps-todos.json
 Current visible Creation Guide version:
 
 ```text
-V1.1.11
+V1.1.12
 ```
 
-The live V1.1.11 implementation currently provides:
+The live V1.1.12 implementation currently provides a clean base runtime (`creation-guide-app.js`) instead of the old `app-bootstrap.js` → `module-app.js` compatibility chain. It directly renders the current shell, Project Overview, canonical setup gates and toolbar controls. It provides:
 
 - Project Overview and collapsed left setup panel;
 - setup coach and module-intro popup;
@@ -52,13 +52,13 @@ The live V1.1.11 implementation currently provides:
 - **Connect Project Folder** through the shared folder service;
 - **Re-authorise Folder** support;
 - **Create Starter Structure** writing canonical starter folders/files to the connected project root without overwriting existing files;
-- visible working/status feedback while starter structure writes are running.
+- visible working/status feedback while starter structure writes are running;
+- **Initial Asset Intake Setup** with Create Intake Folders, Skip for Now and health reporting for ready/skipped/not-set-up states.
 
-The connected-folder/starter-structure feature has been browser-tested. The canonical starter-schema correction in `19a-project-starter-file-schemas.md` and the aligned initializer apply to newly created starter files and require fresh-folder verification; existing previously generated test files are intentionally not silently overwritten.
+The connected-folder/starter-structure and intake setup features have been browser-smoke-tested against the clean V1.1.12 runtime. The active script stack no longer loads `app-bootstrap.js` or `module-app.js`; those legacy files remain only as inactive historical reference until a later confirmed deletion pass.
 
 Still future Creation Guide UI work:
 
-- Initial Asset Intake Setup section with **Create Intake Folders** and **Skip for Now**;
 - Recommended Starting Media checklist;
 - project logo intake/promotion/display support;
 - Template Game choice once the reference project exists;

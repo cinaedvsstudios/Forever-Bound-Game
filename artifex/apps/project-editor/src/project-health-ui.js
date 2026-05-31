@@ -83,10 +83,6 @@ function renderGettingStartedWizardFromSharedHealth({ stateManager }) {
   if (window.lucide) window.lucide.createIcons();
 }
 
-export function enhanceProjectHealthUI({ ui, stateManager }) {
-  if (!ui || !stateManager) return ui;
-
-  ui.renderGettingStartedWizard = () => renderGettingStartedWizardFromSharedHealth({ stateManager });
-
-  return ui;
+export function createGettingStartedRenderer({ stateManager }) {
+  return () => renderGettingStartedWizardFromSharedHealth({ stateManager });
 }

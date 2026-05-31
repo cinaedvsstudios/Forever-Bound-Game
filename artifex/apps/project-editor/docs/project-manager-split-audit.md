@@ -1,8 +1,8 @@
 # Project Manager split and patch audit
 
-Status: second audit / Phase 2 verification pass
+Status: cleanup consolidation pass complete
 Scope: Project Manager / Project Editor
-Current Project Manager version: `v0.1.31 TASKS`
+Current Project Editor version: `v0.1.32 CONTRACT`
 Source task: `todo_project_manager_15_project_manager_split_patch_audit`
 
 ## Current structure
@@ -54,15 +54,11 @@ It displays generated date, title, description, status, priority, effort, fix ow
 
 ## Wrapper / patch status
 
-No new global enhancer layer was added for the task workspace. The existing composition remains:
+The active Project Editor entry no longer constructs the app through nested enhancer wrappers. `project-app.v7.js` now creates the state/canvas/renderer, registers Asset Browser and Getting Started workspace renderers explicitly, registers the linked-library inspector section through an inspector extension contract, and wires import/browser-draft/backup-export actions in one explicit action wiring stage.
 
-1. `createProjectUI(...)`
-2. `enhanceNodeLinkInspector(...)`
-3. `enhanceProjectUI(...)`
-4. `enhanceProjectHealthUI(...)`
-5. `enhanceProjectIO(...)`
+`project-theme-overrides.css` was replaced by `project-theme-styles.css`, a permanent live theme stylesheet for tokens and classes still consumed by current markup. Temporary monolith-compatibility comments and unused purple/pink override blocks were removed.
 
-New substantial functionality should continue to be added through focused modules rather than another wrapper layer.
+New substantial functionality should continue to be added through focused modules rather than wrapper layers.
 
 ## Remaining future work
 
@@ -70,8 +66,14 @@ New substantial functionality should continue to be added through focused module
 - Split `project-integration-ui.js` further later if Asset Browser display, preview, or search logic grows.
 - Possibly rename `project-app.v7.js` to `project-app.js` later once entry-file naming is stable.
 - Optionally mirror node-specific tasks into the selected-node inspector later.
-- Continue implementing new work in focused modules, not additional wrapper layers.
+- Continue implementing new work in focused modules, not wrapper layers.
+- Keep connected-folder loading/saving open for the next pass; Project Editor remains browser-draft/backup-ZIP only.
 
 ## Verification note
 
 Live deployment verification for `v0.1.31 TASKS` has been completed successfully on the GitHub Pages deployment. The verified pass confirmed that Flatplan, the Project Tasks / To-Do Board workspace, inspector drag/reset, menus, and workspace switching are working. The Asset Browser was verified to open correctly and show its proper empty state because no asset index has yet been imported. No console errors or blank screens were reported. Asset Browser item search/link/unlink remains untested until a real imported index and library item exist; this is untested, not broken.
+
+
+## 2026-05-31 cleanup verification
+
+Local browser smoke testing used `http://127.0.0.1:4173/artifex/apps/project-editor/?fresh=project-editor-clean-module-composition-test`. The page loaded without local 404s or console errors, kept the `v0.1.32 CONTRACT` title/version, and rendered Asset Browser, Getting Started/shared Health and Project Tasks workspaces after the explicit composition refactor.

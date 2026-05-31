@@ -1,0 +1,65 @@
+/* Artifex Project Editor — permanent Project / Library gold theme layer.
+   This stylesheet holds live project-editor theme tokens and small class rules
+   still consumed by the current renderer and shell markup. */
+
+:root {
+  --project-bg-black: #070506;
+  --project-obsidian: #0a0a0f;
+  --project-deep-brown: #1f1410;
+  --project-panel: #12121a;
+  --project-card: #181824;
+  --project-parchment: #f8f0c8;
+  --project-text-cream: #fff6d9;
+  --project-bronze: #a97a36;
+  --project-copper: #b66a3c;
+  --project-gold: #d6a24c;
+  --project-gold-soft: #f4c76a;
+  --project-gold-deep: #5a3a12;
+  --project-gold-glow: rgba(214, 162, 76, 0.45);
+  --project-grid: rgba(214, 162, 76, 0.08);
+  --project-green: #9fba5a;
+  --project-green-soft: #c4df79;
+  --project-green-glow: rgba(159, 186, 90, 0.35);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--project-gold);
+}
+
+.infinite-grid {
+  background-image:
+    linear-gradient(to right, var(--project-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--project-grid) 1px, transparent 1px) !important;
+}
+
+.neon-card-active {
+  border-color: var(--project-gold) !important;
+  box-shadow: 0 0 12px var(--project-gold-glow) !important;
+}
+
+.shadow-neon-glow,
+.shadow-neon-glow-pink {
+  box-shadow: 0 0 15px var(--project-gold-glow) !important;
+}
+
+
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--project-gold) !important;
+  box-shadow: 0 0 0 1px rgba(214, 162, 76, 0.35) !important;
+}
+
+#activeWorkspaceBtn {
+  border-color: rgba(214, 162, 76, 0.65) !important;
+}
+
+#projectionIcon,
+#customToast [data-lucide="info"] {
+  color: var(--project-gold-soft) !important;
+}
+
+.edge-path {
+  filter: drop-shadow(0 0 4px rgba(214, 162, 76, 0.35));
+}

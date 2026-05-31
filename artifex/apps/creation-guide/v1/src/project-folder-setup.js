@@ -1,5 +1,4 @@
-const PROJECT_FOLDER_SETUP_VERSION = 'V1.1.11';
-let projectFolderSetupObserver = null;
+const PROJECT_FOLDER_SETUP_VERSION = 'V1.1.12';
 let projectFolderSetupInstalled = false;
 let projectFolderStructureWrittenThisSession = false;
 let projectFolderStructureCreating = false;
@@ -10,84 +9,18 @@ function installProjectFolderSetup() {
   if (projectFolderSetupInstalled) return;
   projectFolderSetupInstalled = true;
   injectProjectFolderSetupStyles();
-  installProjectFolderLegacyControlOverrides();
-  addProjectFolderToolbarButton();
-  polishProjectFolderFacingLabels();
+  wireProjectFolderBaseControls();
   renderProjectFolderSetupSection();
   window.addEventListener('artifex:project-folder-state', () => {
     renderProjectFolderSetupSection(true);
     if (typeof queueHealthRender === 'function') queueHealthRender();
   });
-  const overview = document.getElementById('project-overview-panel');
-  if (overview) {
-    projectFolderSetupObserver = new MutationObserver(() => {
-      installProjectFolderLegacyControlOverrides();
-      addProjectFolderToolbarButton();
-      polishProjectFolderFacingLabels();
-      renderProjectFolderSetupSection();
-    });
-    projectFolderSetupObserver.observe(overview, { childList: true, subtree: true });
-  }
+  window.addEventListener('creation-guide:overview-rendered', () => renderProjectFolderSetupSection(true));
 }
 
-function installProjectFolderLegacyControlOverrides() {
-  const chooseButton = document.getElementById('choose-local-folder-button');
-  if (chooseButton && chooseButton.dataset.projectFolderRouted !== 'true') {
-    chooseButton.dataset.projectFolderRouted = 'true';
-    chooseButton.textContent = 'Go to Project Folder Section';
-    chooseButton.title = 'Use the connected project folder controls in Project Overview';
-    chooseButton.addEventListener('click', event => {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      document.getElementById('project-folder-setup-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, true);
-  }
-  const quickStart = document.getElementById('quick-start-button');
-  if (quickStart && quickStart.dataset.projectFolderRouted !== 'true') {
-    quickStart.dataset.projectFolderRouted = 'true';
-    quickStart.addEventListener('click', event => {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      if (typeof closeMenus === 'function') closeMenus();
-      if (typeof showHelp === 'function') showHelp('Quick Start Guide', '<p>Enter the project name, ID and creator, then open <strong>Project Folder</strong> and connect the real writable project folder. Click <strong>Create Starter Structure</strong> to write the canonical project files there. Use <strong>Export ZIP</strong> only as backup or fallback, then click <strong>Set Active</strong>.</p>');
-    }, true);
-  }
-}
-
-function updateTextIfChanged(element, text) {
-  if (element && element.textContent !== text) element.textContent = text;
-}
-
-function polishProjectFolderFacingLabels() {
-  const cardText = {
-    storage: ['Connect Project Folder', 'Connect or re-authorise the real writable project root folder.'],
-    'project-index': ['Create Primary Project File', 'Create project.json as the top-level pointer file.'],
-    folders: ['Create Folder Structure', 'Create the starter project, asset, build, health and backup folders.'],
-    manifest: ['Create Logic Shell', 'Create logic.json for starter structure and route logic.'],
-    flatplan: ['Create Layout Shell', 'Create layout.json for editor layout and map placement state.'],
-    indexes: ['Create Index Files', 'Create scene, screen, quest, archetype and asset indexes.']
-  };
-  Object.entries(cardText).forEach(([id, values]) => {
-    const card = document.querySelector(`[data-gate="${id}"]`);
-    const title = card?.querySelector('strong');
-    const details = card?.querySelector('em');
-    const status = details?.querySelector('small');
-    if (!card || !title || !details || !status) return;
-    updateTextIfChanged(title, values[0]);
-    const statusText = card.classList.contains('complete')
-      ? 'Marked created or supplied as a backup package.'
-      : id === 'storage' ? 'Use the Connected Project Folder controls above.' : 'Click Create Starter Structure after connecting a folder.';
-    updateTextIfChanged(status, statusText);
-    if (details.childNodes[0]?.textContent !== values[1]) details.childNodes[0].textContent = values[1];
-  });
-  document.querySelectorAll('.project-facts article').forEach(article => {
-    const label = article.querySelector('span');
-    const value = article.querySelector('strong');
-    if (!label || !value) return;
-    if (label.textContent === 'Primary index') updateTextIfChanged(value, 'project.json');
-    if (label.textContent === 'Manifest') { updateTextIfChanged(label, 'Logic'); updateTextIfChanged(value, 'logic.json'); }
-    if (label.textContent === 'Flatplan') { updateTextIfChanged(label, 'Layout'); updateTextIfChanged(value, 'layout.json'); }
-  });
+function wireProjectFolderBaseControls() {
+  document.getElementById('connect-project-folder-toolbar-button')?.addEventListener('click', () => document.getElementById('project-folder-setup-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  document.getElementById('choose-local-folder-button')?.addEventListener('click', () => document.getElementById('project-folder-setup-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
 }
 
 function projectFolderClientAvailable() { return Boolean(window.ArtifexProjectFolder && window.ArtifexProjectStructure); }
@@ -104,19 +37,6 @@ function readProjectFolderSetupInput() {
     version: '0.1.0',
     enabledModules: ['creation-guide', 'project-editor', 'scene-editor', 'quest-builder', 'puzzle-creator', 'archetype-object-creator', 'effect-editor', 'asset-library', 'build-game']
   };
-}
-
-function addProjectFolderToolbarButton() {
-  if (document.getElementById('connect-project-folder-toolbar-button')) return;
-  const newOpenButton = document.getElementById('project-flow-toolbar-button');
-  if (!newOpenButton) return;
-  const button = document.createElement('button');
-  button.id = 'connect-project-folder-toolbar-button';
-  button.type = 'button';
-  button.textContent = '📁 Project Folder';
-  button.title = 'Connect or initialise the real project folder';
-  button.addEventListener('click', () => document.getElementById('project-folder-setup-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
-  newOpenButton.insertAdjacentElement('afterend', button);
 }
 
 function renderProjectFolderSetupSection(force = false) {
@@ -141,7 +61,7 @@ function renderProjectFolderSetupSection(force = false) {
     : connected ? `Connected to “${safeFolderText(folderState.folderName || 'project folder')}”. Creation Guide can create the starter structure directly in this folder.`
     : needsPermission ? `“${safeFolderText(folderState.folderName || 'Project folder')}” is remembered, but write access must be re-authorised before saving.`
     : 'Connect the real project root folder. It will become the normal saved location for project files; ZIP export remains a backup/fallback option.';
-  const html = `<header class="project-folder-setup-header"><div><p class="project-folder-eyebrow">Project storage</p><h3>Connected Project Folder</h3></div><span class="project-folder-state ${stateClass}">${safeFolderText(visibleState)}</span></header><p class="project-folder-copy">${description}</p><div class="project-folder-actions"><button type="button" id="connect-real-project-folder-button" ${supported && !projectFolderStructureCreating ? '' : 'disabled'}>${connected ? 'Change Project Folder' : 'Connect Project Folder'}</button><button type="button" id="reauthorise-project-folder-button" ${needsPermission && !projectFolderStructureCreating ? '' : 'disabled'}>Re-authorise Folder</button><button type="button" id="initialise-project-structure-button" ${connected && !projectFolderStructureCreating ? '' : 'disabled'}>${projectFolderStructureCreating ? 'Creating Starter Structure…' : 'Create Starter Structure'}</button></div><p class="project-folder-footnote">This creates canonical starter files and folders without overwriting existing files. The separate <strong>intake/</strong> explanation and media-readiness step is the next Creation Guide feature.</p>${folderState.lastError ? `<p class="project-folder-error">${safeFolderText(folderState.lastError)}</p>` : ''}`;
+  const html = `<header class="project-folder-setup-header"><div><p class="project-folder-eyebrow">Project storage</p><h3>Connected Project Folder</h3></div><span class="project-folder-state ${stateClass}">${safeFolderText(visibleState)}</span></header><p class="project-folder-copy">${description}</p><div class="project-folder-actions"><button type="button" id="connect-real-project-folder-button" ${supported && !projectFolderStructureCreating ? '' : 'disabled'}>${connected ? 'Change Project Folder' : 'Connect Project Folder'}</button><button type="button" id="reauthorise-project-folder-button" ${needsPermission && !projectFolderStructureCreating ? '' : 'disabled'}>Re-authorise Folder</button><button type="button" id="initialise-project-structure-button" ${connected && !projectFolderStructureCreating ? '' : 'disabled'}>${projectFolderStructureCreating ? 'Creating Starter Structure…' : 'Create Starter Structure'}</button></div><p class="project-folder-footnote">This creates canonical blank-starter files and folders without overwriting existing files. Use Initial Asset Intake Setup below for optional raw source-material drop folders.</p>${folderState.lastError ? `<p class="project-folder-error">${safeFolderText(folderState.lastError)}</p>` : ''}`;
   if (!force && section.dataset.lastHtml === html) return;
   section.dataset.lastHtml = html;
   section.innerHTML = html;
@@ -193,7 +113,6 @@ function markConnectedStructureGatesComplete() {
       STRUCTURAL_GATES.forEach(gateId => { state.project.gates[gateId] = true; });
       if (typeof updateProjectStatusFromGates === 'function') updateProjectStatusFromGates();
       if (typeof render === 'function') render();
-      polishProjectFolderFacingLabels();
       renderProjectFolderSetupSection(true);
       if (typeof queueHealthRender === 'function') queueHealthRender();
     }

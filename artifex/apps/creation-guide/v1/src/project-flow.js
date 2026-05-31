@@ -9,7 +9,6 @@ let projectFlowInstalled = false;
 window.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     installProjectFlow();
-    applyProjectFlowVersion();
   }, 0);
 });
 
@@ -17,70 +16,18 @@ function installProjectFlow() {
   if (projectFlowInstalled) return;
   projectFlowInstalled = true;
   injectProjectFlowStyles();
-  polishOverviewToolbar();
-  addProjectFlowToolbarButton();
-  if (typeof addHealthToolbarButton === 'function') addHealthToolbarButton();
-  wireProjectFlowInterceptors();
+  wireProjectFlowControls();
   if (typeof queueHealthRender === 'function') queueHealthRender();
 
-  const observer = new MutationObserver(() => {
-    applyProjectFlowVersion();
-    polishOverviewToolbar();
-    addProjectFlowToolbarButton();
-    if (typeof addHealthToolbarButton === 'function') addHealthToolbarButton();
-    if (typeof queueHealthRender === 'function') queueHealthRender();
-  });
-  observer.observe(document.body, { childList: true, subtree: true, characterData: true });
 }
 
-function applyProjectFlowVersion() {
-  const badge = document.getElementById('version-badge');
-  if (badge && badge.textContent !== PROJECT_FLOW_VERSION) badge.textContent = PROJECT_FLOW_VERSION;
-  const wantedTitle = `Artifex Creation Guide ${PROJECT_FLOW_VERSION}`;
-  if (document.title !== wantedTitle) document.title = wantedTitle;
-}
-
-function polishOverviewToolbar() {
-  document.querySelector('.workspace-toolbar .toolbar-title')?.remove();
-  setToolbarButton('set-active-project-button', '✅ Set Active');
-  setToolbarButton('export-project-files-button', '📦 Export ZIP');
-  setToolbarButton('open-assignments-toolbar-button', '📋 Assignments');
-  setToolbarButton('clear-project-data-toolbar-button', '🧹 Clear Test Data');
-}
-
-function setToolbarButton(id, text) {
-  const button = document.getElementById(id);
-  if (button && button.textContent !== text) button.textContent = text;
-}
-
-function addProjectFlowToolbarButton() {
-  if (document.getElementById('project-flow-toolbar-button')) return;
-  const toolbar = document.querySelector('.workspace-toolbar');
-  const setActive = document.getElementById('set-active-project-button');
-  if (!toolbar || !setActive) return;
-  const button = document.createElement('button');
-  button.id = 'project-flow-toolbar-button';
-  button.type = 'button';
-  button.textContent = '🗂️ New / Open';
-  button.addEventListener('click', () => showProjectFlow('new'));
-  toolbar.insertBefore(button, setActive);
-}
-
-function wireProjectFlowInterceptors() {
-  const interceptNew = (event) => {
+function wireProjectFlowControls() {
+  document.getElementById('project-flow-toolbar-button')?.addEventListener('click', () => showProjectFlow('new'));
+  document.getElementById('new-guide-button')?.addEventListener('click', (event) => {
     if (projectFlowBypassNativeNew) return;
     event.preventDefault();
-    event.stopImmediatePropagation();
     showProjectFlow('new');
-  };
-  const interceptOpen = (event) => {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    showProjectFlow('open');
-  };
-  document.getElementById('new-guide-button')?.addEventListener('click', interceptNew, true);
-  document.getElementById('view-local-button')?.addEventListener('click', interceptOpen, true);
-  document.getElementById('open-project-library-button')?.addEventListener('click', interceptOpen, true);
+  });
 }
 
 function showProjectFlow(tab = 'new') {

@@ -9,21 +9,9 @@ function installInitialAssetIntakeSetup() {
   if (intakeSetupInstalled) return;
   intakeSetupInstalled = true;
   injectInitialAssetIntakeStyles();
-  wireIntakeTestDataCleanup();
   renderInitialAssetIntakeSection();
   window.addEventListener('artifex:project-folder-state', () => { renderInitialAssetIntakeSection(true); if (typeof queueHealthRender === 'function') queueHealthRender(); });
-  const overview = document.getElementById('project-overview-panel');
-  if (overview) new MutationObserver(() => { wireIntakeTestDataCleanup(); renderInitialAssetIntakeSection(); }).observe(overview, { childList: true, subtree: true });
-}
-
-function wireIntakeTestDataCleanup() {
-  const action = "if(confirm('Clear Artifex project test data from this browser?')){localStorage.removeItem('artifex.projectLibrary');localStorage.removeItem('artifex.activeProjectId');Object.keys(localStorage).filter(function(key){return key.indexOf('artifex.creationGuide.intakeSetup.')===0;}).forEach(function(key){localStorage.removeItem(key);});location.reload();}";
-  ['clear-project-data-button', 'clear-project-data-toolbar-button'].forEach(id => {
-    const button = document.getElementById(id);
-    if (!button || button.dataset.intakeCleanupWired === 'true') return;
-    button.dataset.intakeCleanupWired = 'true';
-    button.setAttribute('onclick', action);
-  });
+  window.addEventListener('creation-guide:overview-rendered', () => renderInitialAssetIntakeSection(true));
 }
 
 function getCurrentIntakeSetupState() {
@@ -41,9 +29,6 @@ window.getCreationGuideIntakeSetupState = getCurrentIntakeSetupState;
 function renderInitialAssetIntakeSection(force = false) {
   const storage = document.getElementById('project-folder-setup-section');
   if (!storage) return;
-  const oldNote = storage.querySelector('.project-folder-footnote');
-  const newNote = 'This creates canonical blank-starter files and folders without overwriting existing files. Use Initial Asset Intake Setup below for optional raw source-material drop folders.';
-  if (oldNote && oldNote.textContent !== newNote) oldNote.textContent = newNote;
   let section = document.getElementById('initial-asset-intake-section');
   if (!section) { section = document.createElement('section'); section.id = 'initial-asset-intake-section'; section.className = 'project-folder-setup-section intake-setup-section'; storage.insertAdjacentElement('afterend', section); }
   const connected = window.ArtifexProjectFolder?.getState?.().folderStatus === 'connected';

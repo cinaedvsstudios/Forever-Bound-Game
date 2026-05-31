@@ -99,7 +99,7 @@ function renderPreview({ preview, item, activeMode, stateManager }) {
   });
 }
 
-function renderAssetBrowser({ stateManager, ui }) {
+export function renderAssetBrowser({ stateManager, ui }) {
   const container = document.getElementById('assetBrowserWorkspace');
   if (!container) return;
 
@@ -187,49 +187,13 @@ function renderAssetBrowser({ stateManager, ui }) {
   if (window.lucide) window.lucide.createIcons();
 }
 
-export function enhanceProjectUI({ ui, stateManager }) {
-  if (!ui || !stateManager) return ui;
-
-  const baseSetWorkspace = ui.setWorkspace.bind(ui);
-  const baseWireTopCanvasControls = ui.wireTopCanvasControls.bind(ui);
-
-  ui.renderAssetBrowser = () => renderAssetBrowser({ stateManager, ui });
-
-  ui.setWorkspace = (workspace) => {
-    baseSetWorkspace(workspace);
-    const stages = {
-      assetbrowser: document.getElementById('assetBrowserWorkspace'),
-      wizard: document.getElementById('wizardWorkspace'),
-      flatplan: document.getElementById('flatplanCanvas'),
-      manifest: document.getElementById('manifestWorkspace'),
-      stitcher: document.getElementById('stitcherWorkspace'),
-      buildprep: document.getElementById('buildPrepWorkspace'),
-      tasks: document.getElementById('tasksWorkspace')
-    };
-    Object.entries(stages).forEach(([key, element]) => element?.classList.toggle('hidden', key !== workspace));
-
-    const workspaceLabel = document.getElementById('activeWorkspaceName');
-    if (workspaceLabel) {
-      workspaceLabel.textContent = workspace === 'assetbrowser'
-        ? 'ASSET BROWSER'
-        : workspace === 'wizard'
-          ? 'SETUP WIZARD'
-          : workspace === 'tasks'
-            ? 'PROJECT TASKS'
-            : workspace.toUpperCase();
-    }
-
-    if (workspace === 'assetbrowser') ui.renderAssetBrowser();
-    if (workspace === 'wizard') ui.renderGettingStartedWizard?.();
-  };
-
-  ui.wireTopCanvasControls = () => {
-    baseWireTopCanvasControls();
-    wireProjectMenuBehaviourOnce();
-    wireLibraryMenuTargets({ ui, storageKey: INTEGRATION_STORAGE_KEYS.assetBrowserMode });
-  };
-
-  ui.closeMenus = closeProjectMenus;
-
-  return ui;
+export function createAssetBrowserRenderer({ stateManager, getUI }) {
+  return () => renderAssetBrowser({ stateManager, ui: getUI?.() });
 }
+
+export function wireProjectIntegrationControls({ ui }) {
+  wireProjectMenuBehaviourOnce();
+  wireLibraryMenuTargets({ ui, storageKey: INTEGRATION_STORAGE_KEYS.assetBrowserMode });
+}
+
+export { closeProjectMenus };

@@ -79,7 +79,7 @@ function removeNodeLink({ stateManager, node, token }) {
   stateManager.saveToStorage?.();
 }
 
-function injectNodeLinksPanel({ ui, stateManager }) {
+export function renderNodeLinksInspectorSection({ ui, stateManager }) {
   const node = getSelectedNode(stateManager);
   if (!node) return;
 
@@ -113,15 +113,6 @@ function injectNodeLinksPanel({ ui, stateManager }) {
   if (window.lucide) window.lucide.createIcons();
 }
 
-export function enhanceNodeLinkInspector({ ui, stateManager }) {
-  if (!ui || !stateManager || ui.__nodeLinkInspectorEnhanced) return ui;
-  ui.__nodeLinkInspectorEnhanced = true;
-
-  const baseRenderInspectorPreview = ui.renderInspectorPreview.bind(ui);
-  ui.renderInspectorPreview = () => {
-    baseRenderInspectorPreview();
-    injectNodeLinksPanel({ ui, stateManager });
-  };
-
-  return ui;
+export function createNodeLinksInspectorExtension({ stateManager, getUI }) {
+  return () => renderNodeLinksInspectorSection({ ui: getUI?.(), stateManager });
 }

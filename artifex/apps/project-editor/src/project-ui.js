@@ -14,7 +14,10 @@ export function createProjectUI({
   canvasController,
   onRefresh,
   renderStitcher,
-  renderBuildPrep
+  renderBuildPrep,
+  workspaceRenderers = {},
+  inspectorExtensions = [],
+  afterWireTopCanvasControls = []
 }) {
   const refs = {
     sidebar: getById('sidebarAccordion'),
@@ -57,6 +60,7 @@ export function createProjectUI({
 
   function renderInspectorPreview() {
     inspector.renderInspectorPreview();
+    inspectorExtensions.forEach((extension) => extension?.());
   }
 
   function renderManifest() {
@@ -102,21 +106,17 @@ export function createProjectUI({
   }
 
   function renderAssetBrowser() {
-    if (refs.assetBrowserStage) {
-      refs.assetBrowserStage.innerHTML = '<div class="h-full p-6 text-xs text-zinc-500">Asset Browser module loading...</div>';
-    }
+    workspaceRenderers.assetbrowser?.();
   }
 
   function renderGettingStartedWizard() {
-    if (refs.wizardStage) {
-      refs.wizardStage.innerHTML = '<div class="h-full p-6 text-xs text-zinc-500">Getting Started Wizard loading...</div>';
-    }
+    workspaceRenderers.wizard?.();
   }
 
   function setWorkspace(workspace) {
     stateManager.activeWorkspace = workspace;
     if (refs.workspaceLabel) {
-      refs.workspaceLabel.textContent = workspace === 'tasks' ? 'PROJECT TASKS' : workspace.toUpperCase();
+      refs.workspaceLabel.textContent = workspace === 'assetbrowser' ? 'ASSET BROWSER' : workspace === 'wizard' ? 'SETUP WIZARD' : workspace === 'tasks' ? 'PROJECT TASKS' : workspace.toUpperCase();
     }
     refs.manifestStage?.classList.toggle('hidden', workspace !== 'manifest');
     refs.flatplanStage?.classList.toggle('hidden', workspace !== 'flatplan');
@@ -176,6 +176,7 @@ export function createProjectUI({
 
     jsonPreview.wireSplitStatePreviewToggle({ closeMenus: closeAllMenus });
     wireWorkspaceButtons();
+    afterWireTopCanvasControls.forEach((wire) => wire?.());
   }
 
   return {
@@ -187,6 +188,7 @@ export function createProjectUI({
     renderAssetBrowser,
     renderGettingStartedWizard,
     setWorkspace,
-    wireTopCanvasControls
+    wireTopCanvasControls,
+    closeMenus: closeAllMenus
   };
 }

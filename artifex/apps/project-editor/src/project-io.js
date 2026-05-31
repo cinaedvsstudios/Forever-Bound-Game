@@ -336,28 +336,25 @@ function saveCurrentProject({ stateManager }) {
   showIOToast('Saved current Project Editor draft to browser storage only. Direct project-folder save is not yet connected here.');
 }
 
-export function enhanceProjectIO({ ui, stateManager, onRefresh }) {
-  if (!ui || !stateManager) return ui;
 
-  const baseWireTopCanvasControls = ui.wireTopCanvasControls.bind(ui);
-
-  ui.wireTopCanvasControls = () => {
-    baseWireTopCanvasControls();
-
-    document.querySelectorAll('[data-project-io-action]').forEach(button => {
-      button.onclick = () => {
-        const action = button.dataset.projectIoAction;
-        if (action === 'import') importProjectFiles({ stateManager, onRefresh });
-        if (action === 'save-local') saveCurrentProject({ stateManager });
-        if (action === 'export-package') exportProjectPackage({ stateManager });
-      };
-    });
-  };
-
-  ui.exportProjectPackage = () => exportProjectPackage({ stateManager });
-  ui.importProjectFiles = () => importProjectFiles({ stateManager, onRefresh });
-
-  return ui;
+export function wireProjectIO({ stateManager, onRefresh }) {
+  document.querySelectorAll('[data-project-io-action]').forEach(button => {
+    button.onclick = () => {
+      const action = button.dataset.projectIoAction;
+      if (action === 'import') importProjectFiles({ stateManager, onRefresh });
+      if (action === 'save-local') saveCurrentProject({ stateManager });
+      if (action === 'export-package') exportProjectPackage({ stateManager });
+    };
+  });
 }
+
+export function createProjectIOController({ stateManager, onRefresh }) {
+  return {
+    wireActions: () => wireProjectIO({ stateManager, onRefresh }),
+    exportProjectPackage: () => exportProjectPackage({ stateManager }),
+    importProjectFiles: () => importProjectFiles({ stateManager, onRefresh })
+  };
+}
+
 
 export { PROJECT_PACKAGE_FILES };

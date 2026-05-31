@@ -136,7 +136,7 @@ support unsaved-navigation guards
 provide import/export fallback
 ```
 
-Current implementation status: Creation Guide V1.1.11 now uses the initial shared folder client and structure initializer to connect a folder and create blank starter structure. Project Editor v0.1.32 CONTRACT has been aligned to the canonical schema shapes but still saves browser drafts until direct-folder integration is built.
+Current implementation status: Creation Guide V1.1.12 uses a clean current base runtime plus the initial shared folder client and structure initializer to connect a folder, create blank starter structure and optionally create intake folders. Project Editor v0.1.32 CONTRACT has been aligned to the canonical schema shapes and now uses explicit feature registration rather than live nested UI enhancers, but still saves browser drafts until direct-folder integration is built.
 
 ## Canonical Project Folder Hierarchy
 
