@@ -92,4 +92,4 @@ A small browser test harness is available at:
 artifex/apps/sound-generator-preview/
 ```
 
-The popup has not yet been wired into Object Creator, Scene Editor or Puzzle Creator by this implementation pass. Those caller apps should later open this same component from their sound fields and store only the returned registered audio asset ID.
+Current `main` also includes **Archetype Object Creator V1.35** caller integration: its Sound Events area can open this shared popup and receive the registered `asset_sfx_` ID in the current object draft after **Save and Assign Here**. Scene Editor and Puzzle Creator remain later caller integrations.
