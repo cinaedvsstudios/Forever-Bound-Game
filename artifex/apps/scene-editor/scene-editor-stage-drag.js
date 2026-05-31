@@ -1,22 +1,53 @@
 (() => {
   'use strict';
 
+  const PAN_KEY = 'artifex.sceneEditor.workspacePan.v1';
+  let workspacePan = readWorkspacePan();
+
+  function readWorkspacePan() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(PAN_KEY) || '{}');
+      return { x: Number(saved.x || 0), y: Number(saved.y || 0) };
+    } catch {
+      return { x: 0, y: 0 };
+    }
+  }
+
+  function saveWorkspacePan() {
+    try { localStorage.setItem(PAN_KEY, JSON.stringify(workspacePan)); } catch {}
+  }
+
+  function applyWorkspacePan() {
+    const scale = document.querySelector('.stage-scale');
+    if (scale) scale.style.translate = `${workspacePan.x}px ${workspacePan.y}px`;
+  }
+
   function stageNodeFor(id) {
     return Array.from(document.querySelectorAll('.scene-item[data-stage-id]')).find(node => node.dataset.stageId === id) || null;
   }
 
+  function syncNumericField(id, value) {
+    const source = document.getElementById(id);
+    if (!source) return;
+    source.value = value;
+    const control = source.closest('.value-slider-field-v18');
+    const readout = control?.querySelector('.value-slider-readout-v18');
+    const range = control?.querySelector('.value-slider-range-v18');
+    if (readout && document.activeElement !== readout) readout.value = value;
+    if (range) range.value = value;
+  }
+
   function syncSelectedInputs(item) {
-    const x = document.getElementById('itemX');
-    const y = document.getElementById('itemY');
-    if (x) x.value = item.x ?? 0;
-    if (y) y.value = item.y ?? 0;
+    syncNumericField('itemX', item.x ?? 0);
+    syncNumericField('itemY', item.y ?? 0);
   }
 
   function createCoreMoveDragController(deps) {
     let drag = null;
+    let panDrag = null;
 
     function start(event, node) {
-      if (event.button === 2) return;
+      if (event.button !== 0) return;
       deps.selectSilently(node.dataset.stageKind || 'element', node.dataset.stageId || '');
       const item = deps.getSelectedItem();
       if (!item) return;
@@ -67,35 +98,83 @@
       if (shouldRender) deps.render();
     }
 
+    function beginPan(event) {
+      if (event.button !== 1 || !event.target.closest?.('.stage-wrap')) return false;
+      panDrag = { startX: event.clientX, startY: event.clientY, x: workspacePan.x, y: workspacePan.y };
+      document.querySelector('.stage-wrap')?.classList.add('is-panning');
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      return true;
+    }
+
+    function movePan(event) {
+      if (!panDrag) return false;
+      workspacePan.x = Number((panDrag.x + event.clientX - panDrag.startX).toFixed(2));
+      workspacePan.y = Number((panDrag.y + event.clientY - panDrag.startY).toFixed(2));
+      applyWorkspacePan();
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      return true;
+    }
+
+    function endPan(event) {
+      if (!panDrag) return false;
+      panDrag = null;
+      saveWorkspacePan();
+      document.querySelector('.stage-wrap')?.classList.remove('is-panning');
+      event?.preventDefault?.();
+      event?.stopPropagation?.();
+      event?.stopImmediatePropagation?.();
+      return true;
+    }
+
     function wire() {
       if (document.body.dataset.artifexCoreMoveEvents === 'true') return;
       document.body.dataset.artifexCoreMoveEvents = 'true';
+      applyWorkspacePan();
+      const app = document.getElementById('editor-app');
+      if (app && app.dataset.workspacePanObserver !== 'true') {
+        app.dataset.workspacePanObserver = 'true';
+        new MutationObserver(() => applyWorkspacePan()).observe(app, { childList: true, subtree: true });
+      }
+      document.addEventListener('auxclick', event => {
+        if (event.button === 1 && event.target.closest?.('.stage-wrap')) event.preventDefault();
+      }, true);
       document.addEventListener('pointerdown', event => {
+        if (beginPan(event)) return;
         const handle = event.target.closest?.('.move-handle');
         const node = handle?.closest?.('.scene-item[data-stage-id]');
         if (handle && node) start(event, node);
       }, true);
       document.addEventListener('pointermove', event => {
+        if (movePan(event)) return;
         if (!drag) return;
         update(event);
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
       }, true);
-      document.addEventListener('pointerup', event => end(event), true);
-      document.addEventListener('pointercancel', event => end(event), true);
-      document.addEventListener('mouseleave', event => {
-        if (event.target === document || event.target === document.documentElement) end(event);
+      document.addEventListener('pointerup', event => {
+        if (endPan(event)) return;
+        end(event);
       }, true);
-      window.addEventListener('blur', () => end(null));
+      document.addEventListener('pointercancel', event => {
+        if (endPan(event)) return;
+        end(event);
+      }, true);
+      document.addEventListener('mouseleave', event => {
+        if (event.target === document || event.target === document.documentElement) {
+          endPan(event);
+          end(event);
+        }
+      }, true);
+      window.addEventListener('blur', () => { endPan(null); end(null); });
     }
 
     return { wire, end };
   }
 
-  window.ArtifexSceneEditorStageDrag = Object.freeze({
-    createCoreMoveDragController,
-    stageNodeFor,
-    syncSelectedInputs
-  });
+  window.ArtifexSceneEditorStageDrag = Object.freeze({ createCoreMoveDragController, stageNodeFor, syncSelectedInputs });
 })();

@@ -1,304 +1,152 @@
 (() => {
   'use strict';
+  const VERSION = 'v0.34-live-acceptance-repair';
+  const KEY = 'artifex.sceneEditor.aspectControls.v23';
+  const MIN = 1;
+  const MAX = 200;
+  let resize = null;
+  let state = read();
+  state.aspectLock = !!state.aspectLock;
+  state.wrapBoundingBox = !!state.wrapBoundingBox;
+  state.ratios = state.ratioSpace === 'pixels-v034' && state.ratios ? state.ratios : {};
+  state.ratioSpace = 'pixels-v034';
 
-  const VERSION = 'v0.23';
-  const RATIO_KEY = 'artifex.sceneEditor.aspectControls.v23';
-  const MIN_SIZE = 1;
-  const MAX_SIZE = 200;
-  const MIN_POS = -100;
-  const MAX_POS = 200;
-  let activeResize = null;
-
-  function api() { return window.ArtifexSceneEditorCore || null; }
-  function toast(message) {
-    document.querySelector('.artifex-toast')?.remove();
-    const node = document.createElement('div');
-    node.className = 'artifex-toast';
-    node.textContent = `${VERSION}: ${message}`;
-    document.body.appendChild(node);
-    setTimeout(() => node.remove(), 2200);
+  function core() { return window.ArtifexSceneEditorCore || null; }
+  function item() { return core()?.getSelectedItem?.() || null; }
+  function node() {
+    const id = core()?.getSelectedId?.();
+    return id ? Array.from(document.querySelectorAll('.scene-item[data-stage-id]')).find(n => n.dataset.stageId === id) || null : null;
   }
-  function safeRead() { try { return JSON.parse(localStorage.getItem(RATIO_KEY) || '{}'); } catch { return {}; } }
-  function safeWrite(value) { try { localStorage.setItem(RATIO_KEY, JSON.stringify(value)); } catch {} }
-
-  const settings = safeRead();
-  settings.wrapBoundingBox = !!settings.wrapBoundingBox;
-  settings.aspectLock = !!settings.aspectLock;
-  settings.ratios = settings.ratios && typeof settings.ratios === 'object' ? settings.ratios : {};
-
-  function selectedItem() { return api()?.getSelectedItem?.() || null; }
-  function selectedNode() {
-    const id = api()?.getSelectedId?.();
-    if (!id) return null;
-    return Array.from(document.querySelectorAll('.scene-item[data-stage-id]')).find((node) => node.dataset.stageId === id) || null;
+  function read() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+  function clamp(n, min = MIN, max = MAX) { return Math.max(min, Math.min(max, Number(n || 0))); }
+  function stageRatio() { const r = document.getElementById('stage')?.getBoundingClientRect(); return r?.width && r?.height ? r.width / r.height : 1; }
+  function toast(text) { core()?.toast?.(text); }
+  function shownRatio(selected) { return clamp(selected?.width || 10) * stageRatio() / clamp(selected?.height || 10); }
+  function lockedRatio(selected) {
+    const id = selected?.id || 'selected';
+    if (!Number.isFinite(Number(state.ratios[id]))) state.ratios[id] = shownRatio(selected);
+    return Number(state.ratios[id]) || 1;
   }
-  function clamp(value, min, max) { return Math.max(min, Math.min(max, Number(value || 0))); }
-  function dispatchInput(input) {
-    input?.dispatchEvent(new Event('input', { bubbles: true }));
-    input?.dispatchEvent(new Event('change', { bubbles: true }));
-  }
+  function remember(selected, ratio) { if (selected?.id) { state.ratios[selected.id] = ratio || shownRatio(selected); save(); } }
   function setField(id, value) {
-    const field = document.getElementById(id);
-    if (!field) return;
-    field.value = value;
-    const wrap = field.closest('.value-slider-field-v18');
-    const slider = wrap?.querySelector('.value-slider-range-v18');
-    const readout = wrap?.querySelector('.value-slider-readout-v18');
-    if (slider) {
-      slider.value = value;
-      const min = Number(slider.min || field.min || 0);
-      const max = Number(slider.max || field.max || 100);
-      const pct = max === min ? 0 : ((Number(value) - min) / (max - min)) * 100;
-      slider.style.setProperty('--value-slider-percent', `${clamp(pct, 0, 100)}%`);
-      slider.setAttribute('aria-valuenow', String(value));
-    }
-    if (readout) readout.textContent = String(value);
+    const source = document.getElementById(id);
+    if (!source) return;
+    source.value = value;
+    const field = source.closest('.value-slider-field-v18');
+    const range = field?.querySelector('.value-slider-range-v18');
+    const readout = field?.querySelector('.value-slider-readout-v18');
+    if (range) range.value = value;
+    if (readout && document.activeElement !== readout) readout.value = value;
   }
-  function syncBodyClasses() {
-    document.body.classList.toggle('aspect-lock-enabled-v23', settings.aspectLock);
-    document.body.classList.toggle('wrap-box-enabled-v23', settings.wrapBoundingBox && settings.aspectLock);
+  function fit() {
+    document.body.classList.toggle('aspect-lock-enabled-v23', state.aspectLock);
+    document.body.classList.toggle('wrap-box-enabled-v23', state.wrapBoundingBox && state.aspectLock);
+    const preserve = state.aspectLock ? 'xMidYMid meet' : 'none';
+    document.querySelectorAll('.scene-item .scene-image-v33').forEach(svg => {
+      svg.dataset.aspectFit = state.aspectLock ? 'contain' : 'fill';
+      svg.setAttribute('preserveAspectRatio', preserve);
+      svg.querySelector('image')?.setAttribute('preserveAspectRatio', preserve);
+    });
+    document.querySelectorAll('.aspect-lock-btn-v23').forEach(b => b.classList.toggle('is-enabled-v23', state.aspectLock));
+    document.querySelectorAll('.wrap-image-btn').forEach(b => b.classList.toggle('is-enabled-v23', state.wrapBoundingBox && state.aspectLock));
   }
-  function applyImageFit() {
-    syncBodyClasses();
-    const fit = settings.aspectLock ? 'contain' : 'fill';
-    document.querySelectorAll('.scene-item img, .scene-item .small, .scene-item .scene-image-v33').forEach((node) => {
-      node.style.objectFit = fit;
-      node.dataset.aspectFit = fit;
-      node.style.width = '100%';
-      node.style.height = '100%';
-      if (node.matches?.('.scene-image-v33')) {
-        node.setAttribute('preserveAspectRatio', settings.aspectLock ? 'xMidYMid meet' : 'none');
-        node.querySelector('image')?.setAttribute('preserveAspectRatio', settings.aspectLock ? 'xMidYMid meet' : 'none');
-      }
+  function drawBox(selected) {
+    const el = node();
+    if (!selected || !el) return;
+    el.style.left = `${selected.x ?? 0}%`;
+    el.style.top = `${selected.y ?? 0}%`;
+    el.style.width = `${selected.width ?? 10}%`;
+    el.style.height = `${selected.height ?? 10}%`;
+    setField('itemX', selected.x ?? 0); setField('itemY', selected.y ?? 0);
+    setField('itemW', selected.width ?? 10); setField('itemH', selected.height ?? 10);
+    fit();
+  }
+  function sourceRatio(done) {
+    const source = node()?.querySelector('.scene-image-v33 image')?.getAttribute('href') || node()?.querySelector('img')?.src;
+    if (!source) return toast('No image available to wrap');
+    const image = new Image();
+    image.onload = () => done(image.naturalWidth / image.naturalHeight);
+    image.onerror = () => toast('Could not read image proportions');
+    image.src = source;
+  }
+  function wrapBox() {
+    const selected = item();
+    if (!selected) return;
+    sourceRatio(ratio => {
+      if (!ratio || !Number.isFinite(ratio)) return;
+      const axis = stageRatio();
+      const shown = shownRatio(selected);
+      if (shown > ratio) selected.width = Number((clamp(selected.height) * ratio / axis).toFixed(3));
+      else selected.height = Number((clamp(selected.width) * axis / ratio).toFixed(3));
+      remember(selected, ratio);
+      drawBox(selected);
+      core()?.saveWorkingCopySoon?.('wrap bounding box to image');
+      toast('Bounding box wrapped to image');
     });
   }
-  function applyItemBox(item) {
-    const node = selectedNode();
-    if (!item || !node) return;
-    node.style.left = `${item.x ?? 0}%`;
-    node.style.top = `${item.y ?? 0}%`;
-    node.style.width = `${item.width ?? 10}%`;
-    node.style.height = `${item.height ?? 10}%`;
-    setField('itemX', item.x ?? 0);
-    setField('itemY', item.y ?? 0);
-    setField('itemW', item.width ?? 10);
-    setField('itemH', item.height ?? 10);
-    applyImageFit();
-  }
-  function ratioFor(item) {
-    if (!item) return 1;
-    const id = item.id || 'selected';
-    const stored = Number(settings.ratios[id]);
-    if (stored && Number.isFinite(stored)) return stored;
-    const ratio = Math.max(MIN_SIZE, Number(item.width || 10)) / Math.max(MIN_SIZE, Number(item.height || 10));
-    settings.ratios[id] = ratio;
-    saveSettings();
-    return ratio;
-  }
-  function rememberRatio(item) {
-    if (!item?.id) return;
-    const ratio = Math.max(MIN_SIZE, Number(item.width || 10)) / Math.max(MIN_SIZE, Number(item.height || 10));
-    if (ratio && Number.isFinite(ratio)) settings.ratios[item.id] = ratio;
-  }
-  function saveSettings() { safeWrite(settings); }
-  function setButtonState() {
-    syncBodyClasses();
-    document.querySelectorAll('.wrap-image-btn').forEach((button) => {
-      button.title = 'Wrap Bounding Box to Image';
-      button.setAttribute('aria-label', 'Wrap Bounding Box to Image');
-      button.classList.toggle('is-enabled-v23', settings.wrapBoundingBox && settings.aspectLock);
-    });
-    document.querySelectorAll('.aspect-lock-btn-v23').forEach((button) => {
-      button.classList.toggle('is-enabled-v23', settings.aspectLock);
-      button.title = 'Aspect Ratio Lock';
-      button.setAttribute('aria-label', 'Aspect Ratio Lock');
-    });
-    applyImageFit();
-  }
-  function naturalRatio(callback) {
-    const path = document.getElementById('itemImage')?.value || document.querySelector('.scene-item.is-selected img')?.src || '';
-    if (!path) return;
-    const img = new Image();
-    img.onload = () => {
-      const ratio = img.naturalWidth / img.naturalHeight;
-      if (ratio && Number.isFinite(ratio)) callback(ratio);
-    };
-    img.src = path;
-  }
-  function wrapBoundingBoxToImage() {
-    const w = document.getElementById('itemW');
-    const h = document.getElementById('itemH');
-    const item = selectedItem();
-    if (!w || !h || !item) return;
-    naturalRatio((ratio) => {
-      const currentW = Number(w.value || item.width || 1);
-      const currentH = Number(h.value || item.height || 1);
-      if (ratio >= 1) {
-        item.width = Number(currentW.toFixed(3));
-        item.height = Number(Math.max(MIN_SIZE, currentW / ratio).toFixed(3));
-      } else {
-        item.height = Number(currentH.toFixed(3));
-        item.width = Number(Math.max(MIN_SIZE, currentH * ratio).toFixed(3));
-      }
-      setField('itemW', item.width);
-      setField('itemH', item.height);
-      dispatchInput(w);
-      dispatchInput(h);
-      applyItemBox(item);
-      api()?.saveWorkingCopySoon?.('wrap bounding box to image');
-    });
-  }
-  function toggleWrap(event) {
-    const button = event.target.closest?.('.wrap-image-btn');
-    if (!button) return false;
-    event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation();
-    settings.wrapBoundingBox = !settings.wrapBoundingBox;
-    if (settings.wrapBoundingBox && !settings.aspectLock) {
-      settings.aspectLock = true;
-      toast('Aspect Ratio Lock enabled for Wrap Bounding Box to Image');
-    } else {
-      toast(`Wrap Bounding Box to Image ${settings.wrapBoundingBox ? 'enabled' : 'disabled'}`);
-    }
-    saveSettings();
-    setButtonState();
-    if (settings.wrapBoundingBox) wrapBoundingBoxToImage();
-    return true;
-  }
-  function toggleAspectLock(event) {
-    const button = event.target.closest?.('.aspect-lock-btn-v23');
-    if (!button) return false;
-    event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation();
-    settings.aspectLock = !settings.aspectLock;
-    if (settings.aspectLock) rememberRatio(selectedItem());
-    if (!settings.aspectLock) settings.wrapBoundingBox = false;
-    saveSettings();
-    setButtonState();
-    toast(`Aspect Ratio Lock ${settings.aspectLock ? 'enabled' : 'disabled'}`);
-    return true;
-  }
-  function addAspectButton() {
+  function installButton() {
     const slot = document.querySelector('.aspect-lock-slot-v33');
-    if (!slot || slot.dataset.v23AspectButton === 'true') return;
-    slot.dataset.v23AspectButton = 'true';
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'aspect-lock-btn-v23 metric-icon-button';
-    button.textContent = '⛓';
-    button.title = 'Aspect Ratio Lock';
-    slot.replaceChildren(button);
-    setButtonState();
-  }
-  function interceptButtonClicks(event) { if (toggleWrap(event)) return; toggleAspectLock(event); }
-
-  function beginResize(event) {
-    const handle = event.target.closest?.('.resize-handle');
-    if (!handle || event.button === 2) return;
-    const item = selectedItem();
-    const stage = document.getElementById('stage');
-    const rect = stage?.getBoundingClientRect();
-    if (!item || !rect?.width || !rect?.height) return;
-    activeResize = {
-      item,
-      dir: handle.dataset.sizeDir || '',
-      startX: ((event.clientX - rect.left) / rect.width) * 100,
-      startY: ((event.clientY - rect.top) / rect.height) * 100,
-      x: Number(item.x || 0),
-      y: Number(item.y || 0),
-      w: Math.max(MIN_SIZE, Number(item.width || 10)),
-      h: Math.max(MIN_SIZE, Number(item.height || 10)),
-      ratio: ratioFor(item)
-    };
-    document.body.classList.add('is-resizing-object');
-    event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation();
-  }
-  function moveResize(event) {
-    if (!activeResize) return;
-    const rect = document.getElementById('stage')?.getBoundingClientRect();
-    if (!rect?.width || !rect?.height) return;
-    const dx = ((event.clientX - rect.left) / rect.width) * 100 - activeResize.startX;
-    const dy = ((event.clientY - rect.top) / rect.height) * 100 - activeResize.startY;
-    const dir = activeResize.dir;
-    const ratio = activeResize.ratio || 1;
-    let x = activeResize.x, y = activeResize.y, w = activeResize.w, h = activeResize.h;
-    if (dir.includes('e')) w = activeResize.w + dx;
-    if (dir.includes('w')) w = activeResize.w - dx;
-    if (dir.includes('s')) h = activeResize.h + dy;
-    if (dir.includes('n')) h = activeResize.h - dy;
-    if (settings.aspectLock) {
-      if (dir === 'n' || dir === 's') w = h * ratio;
-      else if (dir === 'e' || dir === 'w') h = w / ratio;
-      else {
-        const fromW = Math.abs(w - activeResize.w);
-        const fromH = Math.abs(h - activeResize.h);
-        if (fromW >= fromH) h = w / ratio;
-        else w = h * ratio;
-      }
+    if (slot && !slot.querySelector('.aspect-lock-btn-v23')) {
+      const button = document.createElement('button');
+      button.type = 'button'; button.className = 'aspect-lock-btn-v23 metric-icon-button'; button.textContent = '⛓'; button.title = 'Aspect Ratio Lock';
+      slot.replaceChildren(button);
     }
-    w = clamp(w, MIN_SIZE, MAX_SIZE);
-    h = clamp(h, MIN_SIZE, MAX_SIZE);
-    if (dir.includes('w')) x = activeResize.x + (activeResize.w - w);
-    if (dir.includes('n')) y = activeResize.y + (activeResize.h - h);
-    activeResize.item.x = Number(clamp(x, MIN_POS, MAX_POS).toFixed(3));
-    activeResize.item.y = Number(clamp(y, MIN_POS, MAX_POS).toFixed(3));
-    activeResize.item.width = Number(w.toFixed(3));
-    activeResize.item.height = Number(h.toFixed(3));
-    applyItemBox(activeResize.item);
-    api()?.saveWorkingCopySoon?.('resize');
-    event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation();
+    fit();
   }
-  function endResize(event) {
-    if (!activeResize) return;
-    activeResize = null;
-    document.body.classList.remove('is-resizing-object');
-    api()?.saveWorkingCopySoon?.('resize');
-    window.requestAnimationFrame(applyImageFit);
-    event?.preventDefault?.(); event?.stopPropagation?.(); event?.stopImmediatePropagation?.();
+  function click(event) {
+    if (event.target.closest?.('.wrap-image-btn')) {
+      event.preventDefault(); event.stopImmediatePropagation();
+      state.wrapBoundingBox = !state.wrapBoundingBox;
+      if (state.wrapBoundingBox) state.aspectLock = true;
+      save(); fit(); if (state.wrapBoundingBox) wrapBox();
+      return;
+    }
+    if (event.target.closest?.('.aspect-lock-btn-v23')) {
+      event.preventDefault(); event.stopImmediatePropagation();
+      state.aspectLock = !state.aspectLock;
+      if (state.aspectLock) remember(item()); else state.wrapBoundingBox = false;
+      save(); fit(); toast(`Aspect Ratio Lock ${state.aspectLock ? 'enabled' : 'disabled'}`);
+    }
   }
-  function enforceLockedSizeInput(event) {
-    if (!settings.aspectLock || document.body.classList.contains('is-resizing-object')) return;
-    const input = event.target.closest?.('#itemW, #itemH');
-    if (!input) return;
-    window.clearTimeout(enforceLockedSizeInput.timer);
-    enforceLockedSizeInput.timer = window.setTimeout(() => {
-      const item = selectedItem();
-      if (!item) return;
-      const ratio = ratioFor(item);
-      if (input.id === 'itemW') item.height = Number(clamp(Number(item.width || input.value || 1) / ratio, MIN_SIZE, MAX_SIZE).toFixed(3));
-      if (input.id === 'itemH') item.width = Number(clamp(Number(item.height || input.value || 1) * ratio, MIN_SIZE, MAX_SIZE).toFixed(3));
-      applyItemBox(item);
-      api()?.saveWorkingCopySoon?.('aspect locked size');
-    }, 0);
+  function start(event) {
+    const handle = event.target.closest?.('.resize-handle');
+    const selected = item();
+    const rect = document.getElementById('stage')?.getBoundingClientRect();
+    if (!handle || event.button !== 0 || !selected || !rect?.width || !rect?.height) return;
+    resize = { selected, dir: handle.dataset.sizeDir || '', sx: event.clientX, sy: event.clientY, x: Number(selected.x || 0), y: Number(selected.y || 0), w: clamp(selected.width || 10), h: clamp(selected.height || 10), ratio: lockedRatio(selected), rect };
+    event.preventDefault(); event.stopImmediatePropagation();
   }
-  function keepAspectFitFresh(event) {
-    if (event?.target?.closest?.('#itemW, #itemH, .value-slider-range-v18, .value-slider-step-v18, .value-slider-readout-v18')) window.requestAnimationFrame(applyImageFit);
+  function move(event) {
+    if (!resize) return;
+    const dx = (event.clientX - resize.sx) / resize.rect.width * 100;
+    const dy = (event.clientY - resize.sy) / resize.rect.height * 100;
+    let { x, y, w, h } = resize; const d = resize.dir; const axis = stageRatio();
+    if (d.includes('e')) w += dx; if (d.includes('w')) w -= dx; if (d.includes('s')) h += dy; if (d.includes('n')) h -= dy;
+    if (state.aspectLock) {
+      if (d === 'n' || d === 's') w = h * resize.ratio / axis; else h = w * axis / resize.ratio;
+    }
+    w = clamp(w); h = clamp(h); if (d.includes('w')) x += resize.w - w; if (d.includes('n')) y += resize.h - h;
+    Object.assign(resize.selected, { x: Number(x.toFixed(3)), y: Number(y.toFixed(3)), width: Number(w.toFixed(3)), height: Number(h.toFixed(3)) });
+    drawBox(resize.selected); event.preventDefault(); event.stopImmediatePropagation();
   }
-
-  function enforceWrapAfterSizeInput(event) {
-    if (!settings.wrapBoundingBox || !settings.aspectLock) return;
-    const input = event.target.closest?.('#itemW, #itemH');
-    if (!input || document.body.classList.contains('is-resizing-object')) return;
-    window.clearTimeout(enforceWrapAfterSizeInput.timer);
-    enforceWrapAfterSizeInput.timer = window.setTimeout(wrapBoundingBoxToImage, 120);
-  }
-  function install() {
-    document.querySelectorAll('.wrap-image-btn').forEach((button) => {
-      button.title = 'Wrap Bounding Box to Image';
-      button.setAttribute('aria-label', 'Wrap Bounding Box to Image');
-    });
-    addAspectButton();
-    setButtonState();
-    applyImageFit();
+  function end() { if (resize) { core()?.saveWorkingCopySoon?.('resize'); resize = null; } }
+  function lockInput(event) {
+    const field = event.target.closest?.('#itemW, #itemH'); const selected = item();
+    if (!state.aspectLock || !field || !selected || resize) return;
+    const ratio = lockedRatio(selected); const axis = stageRatio();
+    if (field.id === 'itemW') selected.height = Number((clamp(selected.width) * axis / ratio).toFixed(3)); else selected.width = Number((clamp(selected.height) * ratio / axis).toFixed(3));
+    drawBox(selected); core()?.saveWorkingCopySoon?.('aspect locked size');
   }
 
-  document.addEventListener('click', interceptButtonClicks, true);
-  document.addEventListener('pointerdown', beginResize, true);
-  document.addEventListener('pointermove', moveResize, true);
-  document.addEventListener('pointerup', endResize, true);
-  document.addEventListener('pointercancel', endResize, true);
-  document.addEventListener('input', (event) => { enforceLockedSizeInput(event); enforceWrapAfterSizeInput(event); keepAspectFitFresh(event); }, true);
-  document.addEventListener('change', (event) => { enforceLockedSizeInput(event); enforceWrapAfterSizeInput(event); keepAspectFitFresh(event); }, true);
-  window.addEventListener('load', install);
-  window.addEventListener('blur', endResize);
-  setInterval(install, 800);
-  install();
+  document.addEventListener('click', click, true);
+  document.addEventListener('pointerdown', start, true);
+  document.addEventListener('pointermove', move, true);
+  document.addEventListener('pointerup', end, true);
+  document.addEventListener('pointercancel', end, true);
+  document.addEventListener('input', lockInput, true);
+  document.addEventListener('change', lockInput, true);
+  window.addEventListener('load', installButton);
+  setInterval(installButton, 800);
+  installButton();
 })();
