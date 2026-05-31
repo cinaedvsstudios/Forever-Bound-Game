@@ -1,31 +1,37 @@
-Artifex Archetype Object Creator - Quickstart + Library Update
+Artifex Archetype Object Creator - Historical Apply Instructions / Current Handover Pointer
 
-Copy these files into the repo, replacing the existing files:
+STATUS: HISTORICAL ONLY. DO NOT USE THIS FILE AS CURRENT IMPLEMENTATION GUIDANCE.
 
-1. artifex/apps/archetype-object-creator/index.html
-2. artifex/apps/archetype-object-creator/v1/styles.css
-3. artifex/apps/archetype-object-creator/v1/src/editor-ui.js
+The older instructions below described an early Quick Start + Library update, before the V1.33 module split and before the unverified V1.34/V1.35 Step 5 and project-save work.
 
-What this update adds:
+Current documentation to read before any Object Creator editing:
 
-- Centers the File / Edit / View / Templates / Library / Help menu row in the top bar on wide screens.
-- Adds File -> Quick Start Wizard.
-- Adds a Library menu with:
-  - Open Archetype Object Library
-  - Start From Existing Object
-  - Browse Template Library
-- Adds an Archetype Object Library dialog.
-- Shows every object/person template as a card with a deliberately simple placeholder SVG image.
-- Shows saved local archetypes in the library and lets them be loaded or copied as a new object.
-- Adds a guided wizard flow:
+1. artifex/apps/archetype-object-creator/README.md
+2. artifex/apps/archetype-object-creator/docs/current-state-v1.35-review.md
+3. artifex/apps/archetype-object-creator/docs/todo.md
+4. docs/artifex/19-project-file-contracts.md
+5. docs/artifex/20-asset-intake-workflow.md
+6. docs/artifex/22-sound-archetype-generator.md
+
+Current important status:
+
+- The live app currently reports V1.35.
+- V1.34 attempted to repair the Step 5 productionAssets requirements/requirementOrder contract and layout regressions.
+- V1.35 added provisional project-folder saving, Save Draft / Save Project / Finish wording, Backup ZIP treatment, Mark Task Ready wording, and a Sound Events synth-generator hook.
+- V1.35 has NOT been accepted as clean/stable integration and requires audit and browser/disposable-project testing.
+- Do not add any new overlay, wrapper or patch module to repair this work.
+
+Older historical update record:
+
+- Added File -> Quick Start Wizard.
+- Added the Library menu, Archetype Object Library dialog and starter template cards.
+- Added the original guided wizard route:
   1. Choose Template or Existing Object
   2. Choose object type/template or saved existing object
-  3. Choose what it can do: runtime flags, gameplay actions, portrait actions
-  4. Make basic changes: ID, name, subtype, tags, sprite asset, portrait asset
+  3. Choose runtime flags, gameplay actions and portrait actions
+  4. Make basic changes: ID, name, subtype, tags, sprite asset and portrait asset
   5. Finish or Finish + Save Local
+- Used existing template/action definitions and kept dialogue/mouth movement in portrait actions, not gameplay sprite actions.
+- Existing-object copying generated a variant ID so the original local archetype was not overwritten.
 
-Notes:
-
-- This does not change templates.js. It uses the existing ROLE_TEMPLATES, PEOPLE_TEMPLATE_IDS, OBJECT_TEMPLATE_IDS, GAMEPLAY_ACTIONS, PORTRAIT_ACTIONS, and RUNTIME_FLAGS already in the module.
-- Talk remains excluded from gameplay sprite actions. Dialogue/mouth movement stays in portrait actions.
-- Existing object copying creates a new ID using the original ID plus a variant suffix, so the original local archetype is not overwritten.
+That original route wording is no longer the current V1.35 behaviour and is preserved here only as history.
