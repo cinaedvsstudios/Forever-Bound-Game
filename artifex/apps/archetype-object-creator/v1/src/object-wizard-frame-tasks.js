@@ -1,4 +1,4 @@
-import { appendNote, clampNumber, escapeHtml } from './object-wizard-helpers.js?v=1.34';
+import { appendNote, clampNumber, escapeHtml } from './object-wizard-helpers.js?v=1.35';
 
 export function createObjectWizardFrameTasks({ wizardState, content, getRequirementData, setRequirementData, findRequirementById, renderRequirementDetail }) {
   function renderFrames(requirementId) {
