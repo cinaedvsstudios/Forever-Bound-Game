@@ -4,12 +4,17 @@
   const MIN_POS = -100;
   const MAX_POS = 200;
   const DEFAULT_RATIO = 1;
+  const BORDER_KEY = 'artifex.sceneEditor.borderHidden.v1';
   let activeSize = null;
   let activeRotate = null;
 
   function api() { return window.ArtifexSceneEditorCore || null; }
   function selectedItem() { return api()?.getSelectedItem?.() || null; }
   function clamp(value, min, max) { return Math.max(min, Math.min(max, Number(value || 0))); }
+  function stageRatio() {
+    const rect = document.getElementById('stage')?.getBoundingClientRect();
+    return rect?.width && rect?.height ? rect.width / rect.height : 1;
+  }
   function stageNodeForItem(item) {
     if (!item?.id) return null;
     return Array.from(document.querySelectorAll('.scene-item[data-stage-id]')).find((node) => node.dataset.stageId === item.id) || null;
@@ -51,6 +56,28 @@
     setField('itemSkewY', item.skewY ?? 0);
     const aspect = document.getElementById('itemAspectLock');
     if (aspect) aspect.checked = item.aspectRatioLocked === true;
+    const aspectButton = document.querySelector('[data-transform-action="toggle-aspect"]');
+    if (aspectButton) {
+      aspectButton.classList.toggle('is-active', item.aspectRatioLocked === true);
+      aspectButton.setAttribute('aria-pressed', item.aspectRatioLocked === true ? 'true' : 'false');
+    }
+  }
+  function readBorders() { try { return JSON.parse(localStorage.getItem(BORDER_KEY) || '{}'); } catch { return {}; } }
+  function writeBorders(state) { try { localStorage.setItem(BORDER_KEY, JSON.stringify(state)); } catch {} }
+  function applyBorders() {
+    const state = readBorders();
+    document.querySelectorAll('.scene-item[data-stage-id]').forEach((node) => node.classList.toggle('border-hidden', !!state[node.dataset.stageId]));
+    const item = selectedItem();
+    const checkbox = document.getElementById('itemBorderVisible');
+    if (checkbox && item) checkbox.checked = !state[item.id];
+  }
+  function setBorderVisible(item, visible) {
+    if (!item?.id) return;
+    const state = readBorders();
+    state[item.id] = !visible;
+    writeBorders(state);
+    applyBorders();
+    api()?.toast?.(visible ? 'Border shown' : 'Border hidden');
   }
   function paintItem(item) {
     const node = stageNodeForItem(item);
@@ -66,16 +93,15 @@
     const preserve = item.aspectRatioLocked === true ? 'xMidYMid meet' : 'none';
     node.querySelectorAll('.scene-image-v33, .scene-image-v33 image').forEach((image) => image.setAttribute('preserveAspectRatio', preserve));
   }
-  function paintAll() { api()?.getAllItems?.().forEach(paintItem); }
-  function rememberRatio(item) {
-    const width = Number(item?.width || 0);
-    const height = Number(item?.height || 0);
-    if (width > 0 && height > 0) item.aspectRatio = width / height;
-    return item.aspectRatio || DEFAULT_RATIO;
+  function paintAll() { api()?.getAllItems?.().forEach(paintItem); applyBorders(); }
+  function shownRatio(item) {
+    const width = Math.max(1, Number(item?.width || 1));
+    const height = Math.max(1, Number(item?.height || 1));
+    return width * stageRatio() / height;
   }
-  function dispatchSingleInput(input) {
-    input?.dispatchEvent(new Event('input', { bubbles: true }));
-    input?.dispatchEvent(new Event('change', { bubbles: true }));
+  function rememberRatio(item, ratio = shownRatio(item)) {
+    if (item && Number.isFinite(Number(ratio)) && Number(ratio) > 0) item.aspectRatio = Number(ratio);
+    return Number(item?.aspectRatio) > 0 ? Number(item.aspectRatio) : DEFAULT_RATIO;
   }
   function loadImageSize(item) {
     return new Promise((resolve, reject) => {
@@ -93,12 +119,12 @@
     if (!item) return;
     loadImageSize(item).then(({ width, height }) => {
       if (!width || !height) return;
-      const ratio = width / height;
-      item.aspectRatio = ratio;
+      const ratio = rememberRatio(item, width / height);
+      const axis = stageRatio();
       const currentW = Math.max(1, Number(item.width || 10));
       const currentH = Math.max(1, Number(item.height || 10));
-      if (ratio >= 1) item.height = Number(Math.max(1, currentW / ratio).toFixed(3));
-      else item.width = Number(Math.max(1, currentH * ratio).toFixed(3));
+      if (shownRatio(item) > ratio) item.width = Number(Math.max(1, currentH * ratio / axis).toFixed(3));
+      else item.height = Number(Math.max(1, currentW * axis / ratio).toFixed(3));
       syncFields(item);
       paintItem(item);
       api()?.saveWorkingCopySoon?.('wrap bounding box');
@@ -110,8 +136,8 @@
     if (!item) return;
     const ratio = item.aspectRatioLocked === true ? rememberRatio(item) : null;
     item.width = Number(Math.max(1, Number(item.width || 10) + delta).toFixed(3));
-    item.height = Number(Math.max(1, Number(item.height || 10) + delta).toFixed(3));
-    if (ratio) item.height = Number(Math.max(1, item.width / ratio).toFixed(3));
+    if (ratio) item.height = Number(Math.max(1, item.width * stageRatio() / ratio).toFixed(3));
+    else item.height = Number(Math.max(1, Number(item.height || 10) + delta).toFixed(3));
     syncFields(item);
     paintItem(item);
     api()?.saveWorkingCopySoon?.('scale selected');
@@ -120,7 +146,7 @@
     const item = captured;
     if (!item) return;
     item.aspectRatioLocked = !item.aspectRatioLocked;
-    if (item.aspectRatioLocked) rememberRatio(item);
+    if (item.aspectRatioLocked) rememberRatio(item, shownRatio(item));
     syncFields(item);
     paintItem(item);
     api()?.saveWorkingCopySoon?.('aspect ratio lock');
@@ -166,20 +192,19 @@
       const action = event.target.closest?.('[data-transform-action]')?.dataset.transformAction;
       if (!action) return;
       const captured = selectedItem();
+      if (!captured) return;
       event.preventDefault();
       event.stopPropagation();
       if (action === 'scale-up') scaleSelected(1, captured);
       if (action === 'scale-down') scaleSelected(-1, captured);
       if (action === 'wrap-image') wrapSelectedImage(captured);
       if (action === 'toggle-aspect') toggleAspect(captured);
-      if (action === 'reset-skew') { captured.skewX = 0; captured.skewY = 0; syncFields(captured); paintItem(captured); api()?.saveWorkingCopySoon?.('reset skew'); }
     }, true);
     card.addEventListener('input', (event) => {
       const target = event.target;
       const current = selectedItem();
       if (!current) return;
       if (target.id === 'itemRotation') current.rotation = Number(target.value || 0);
-      else if (target.id === 'itemRotationOrigin') current.rotationOrigin = target.value || 'centre';
       else if (target.id === 'itemSkewX') current.skewX = Number(target.value || 0);
       else if (target.id === 'itemSkewY') current.skewY = Number(target.value || 0);
       else return;
@@ -188,22 +213,34 @@
       addVisualHandles();
       api()?.saveWorkingCopySoon?.('transform controls');
     }, true);
+    card.addEventListener('change', (event) => {
+      const current = selectedItem();
+      if (!current) return;
+      if (event.target.id === 'itemRotationOrigin') {
+        current.rotationOrigin = event.target.value || 'centre';
+        paintItem(current);
+        addVisualHandles();
+        api()?.saveWorkingCopySoon?.('rotation origin');
+      }
+      if (event.target.id === 'itemBorderVisible') setBorderVisible(current, event.target.checked);
+    }, true);
     syncFields(item);
+    applyBorders();
   }
   function handleAspectSizedInput(event) {
     const target = event.target;
     if (!target || !['itemW', 'itemH'].includes(target.id)) return;
     const item = selectedItem();
     if (!item?.aspectRatioLocked) return;
-    const ratio = item.aspectRatio || rememberRatio(item);
-    if (!ratio) return;
+    const ratio = rememberRatio(item);
+    const axis = stageRatio();
     event.stopImmediatePropagation();
     if (target.id === 'itemW') {
       item.width = Number(target.value || 1);
-      item.height = Number(Math.max(1, item.width / ratio).toFixed(3));
+      item.height = Number(Math.max(1, item.width * axis / ratio).toFixed(3));
     } else {
       item.height = Number(target.value || 1);
-      item.width = Number(Math.max(1, item.height * ratio).toFixed(3));
+      item.width = Number(Math.max(1, item.height * ratio / axis).toFixed(3));
     }
     syncFields(item);
     paintItem(item);
@@ -233,8 +270,9 @@
     if (dir.includes('n')) { y = activeSize.y + dy; h = activeSize.h - dy; }
     w = Math.max(1, w); h = Math.max(1, h);
     if (activeSize.ratio) {
-      if (dir === 'n' || dir === 's') w = h * activeSize.ratio;
-      else h = w / activeSize.ratio;
+      const axis = stageRatio();
+      if (dir === 'n' || dir === 's') w = h * activeSize.ratio / axis;
+      else h = w * axis / activeSize.ratio;
     }
     activeSize.item.x = Number(clamp(x, MIN_POS, MAX_POS).toFixed(3));
     activeSize.item.y = Number(clamp(y, MIN_POS, MAX_POS).toFixed(3));
@@ -285,6 +323,27 @@
     activeRotate = null;
     api()?.saveWorkingCopySoon?.('rotate handle');
   }
+  function handleContextTransformAction(event) {
+    const action = event.target.closest?.('[data-context-transform-action]')?.dataset.contextTransformAction;
+    if (!action) return;
+    const item = selectedItem();
+    if (!item) return;
+    if (action === 'flip-x') item.flipX = !item.flipX;
+    if (action === 'flip-y') item.flipY = !item.flipY;
+    if (action === 'reset-transform') {
+      item.rotation = 0;
+      item.rotationOrigin = 'centre';
+      item.flipX = false;
+      item.flipY = false;
+      item.skewX = 0;
+      item.skewY = 0;
+    }
+    syncFields(item);
+    paintItem(item);
+    api()?.saveWorkingCopySoon?.('transform action');
+    event.preventDefault();
+    event.stopPropagation();
+  }
   function sync() {
     const item = selectedItem();
     if (item) { syncFields(item); paintAll(); }
@@ -303,7 +362,7 @@
   document.addEventListener('pointerup', () => { endRotate(); endSize(); requestAnimationFrame(sync); }, true);
   document.addEventListener('pointercancel', () => { endRotate(); endSize(); }, true);
   document.addEventListener('input', handleAspectSizedInput, true);
-  document.addEventListener('click', () => requestAnimationFrame(sync), true);
+  document.addEventListener('click', (event) => { handleContextTransformAction(event); requestAnimationFrame(sync); }, true);
   document.addEventListener('change', () => requestAnimationFrame(sync), true);
   window.addEventListener('load', sync);
   requestAnimationFrame(sync);
