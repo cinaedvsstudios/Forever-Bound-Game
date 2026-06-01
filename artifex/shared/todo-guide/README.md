@@ -1,347 +1,169 @@
-# Artifex Shared To-Do Guide
+# Artifex Shared To-Do Guide — Live Work Dashboard
 
 ## Purpose
 
-This guide defines how Artifex tracks work without confusing project problems, platform work and app-specific implementation tasks.
-
-Artifex uses three connected task scopes:
-
-| Scope | What it tracks | Typical location |
-|---|---|---|
-| Current project tasks | Missing/broken content or references inside one connected game project. | `<project-root>/todos/project-editor-todos.json` when generated. |
-| All-app platform tasks | Changes required across the Artifex suite or shared services. | `artifex/shared/todo-guide/all-apps-todos.json` |
-| Specific-app tasks | Work needed only in one app/module. | `artifex/apps/<app-slug>/docs/todo.md` or app-specific JSON where needed. |
-
-Existing code or older generated files may still use `todos/project-manager-todos.json`. That is a migration/compatibility case: readers must be able to recover earlier files before a stored filename change is made live. The locked user-facing tool name for new documentation and UI is **Project Editor**.
-
-## Required Contract Documents
-
-Before updating project-file, Quest/Puzzle integration, intake, Template Game, generated-audio or save-system tasks, check:
+This is the single human-readable live status and work dashboard for Artifex platform and app tasks. Its machine-readable companion is:
 
 ```text
-docs/artifex/05-creation-guide.md
-docs/artifex/07-quest-builder.md
-docs/artifex/07a-quest-builder-structured-authoring.md
-docs/artifex/07b-puzzle-creator-quest-integration.md
-docs/artifex/18-color-and-display-rules.md
-docs/artifex/19-project-file-contracts.md
-docs/artifex/19a-project-starter-file-schemas.md
-docs/artifex/20-asset-intake-workflow.md
-docs/artifex/21-template-game-project-contract.md
-docs/artifex/22-sound-archetype-generator.md     [where procedural audio is involved]
 artifex/shared/todo-guide/all-apps-todos.json
 ```
 
-## Project Terminology
+Historical handoffs, completed stabilisation reports and old planning files may explain why a decision was made, but they are **not** live work queues. App-local design/reference documents may remain available while their specialist detail is still useful, but current action status must be recorded here and in `all-apps-todos.json`.
 
-Do not collapse these into one task concept:
+## How tasks are tracked
 
-| Term | Meaning |
-|---|---|
-| **Blank Starter Project** | Empty valid starter project created by Creation Guide: structural JSON, required directories and empty indexes, plus optional intake setup. |
-| **Template Game** | Later small populated connected reference project proving cross-app file/reference integration. |
-| **Artifacts Adventures** | First real production project made through Artifex after Template Game flow works. |
+| Scope | What it tracks | Current authority |
+|---|---|---|
+| All-app platform work | Shared services, contracts, menu/branding rules, project-folder adoption and cross-app integration. | This dashboard + `all-apps-todos.json`. |
+| Specific-app work | Current actionable work for one editor/tool. | This dashboard + `all-apps-todos.json`; supporting app docs may hold detailed design/acceptance material only. |
+| Connected game-project validation | Broken/missing authored content inside one selected project. | Future generated project task file under `<project-root>/todos/`; not a replacement for this platform queue. |
 
-## Locked App Handoff: Puzzle Creator, Quest Builder and Project Editor
-
-A completed puzzle is not authored inside Quest Builder and is not a Project Editor route record.
-
-```text
-Puzzle Creator
-  owns a self-contained challenge and future canonical puzzle_ records
-  writes puzzles/puzzle-index.json and puzzles/puzzle_<slug>.json when connected-project saving is implemented
-
-Quest Builder
-  inserts a saved puzzle into Quest flow as a meaningful Puzzle block using puzzleId
-  owns Quest requirements, dialogue/Capra/story feedback, flags, rewards and outcomes around that puzzle
-
-Project Editor
-  consumes public Quest/flag/puzzle results only where wider route/Flatplan structure needs them
-  does not author Quest internals or puzzle internals
-```
-
-A Quest record must not copy the puzzle's maze grid, symbol-board layout, internal features or full definition. A project task about a missing linked puzzle belongs to Quest Builder/Health display, while fixing or supplying the missing puzzle record belongs to Puzzle Creator.
-
-## Gameplay Action / Input Mapping Decision
-
-Gameplay input mapping is setup data. Creation Guide creates the initial default profile; Project Editor inspects/validates it; a future settings/controls editor may later own detailed remapping.
-
-Canonical relative file path inside the selected connected project root:
-
-```text
-input-map.json
-```
-
-The exact canonical schema belongs in:
-
-```text
-docs/artifex/19a-project-starter-file-schemas.md
-```
-
-Current schema name and input-action prefix:
-
-```text
-artifex.input-map.v1
-action_
-```
-
-`action_` identifies mapped player controls such as Invoke / Interact. It is not the same as a Quest/Puzzle operation such as `speak`, `give`, `collect`, `solve` or `defeat`.
-
-Do not restore the older `artifex.inputMap.v1` name or a `projects/<project-id>/input-map.json` assumption. The connected folder itself is `<project-root>/`.
-
-## Procedural Sound Generator / Generated Audio Decision
-
-The future shared Procedural Sound Generator is an embedded popup callable from Archetype Object Creator, Scene Editor, Puzzle Creator, Quest Builder and later sound-assigning tools. It creates electronic sound recipes through understandable controls and Web Audio preview/playback.
-
-Its generated sounds use the existing Asset Library model:
-
-```text
-assets/audio/sfx/synth_<slug>.json
-assets/asset-index.json → asset_sfx_<slug>
-```
-
-Imported audio files and generated synth recipes must appear in the same audio/sound-effects selector. Calling records store only their registered `asset_` ID.
-
-Do not create:
-
-```text
-archetypes/sound-index.json
-archetypes/sounds/
-archsound_
-```
-
-The generator is shared platform work; hooking it into an individual editor is app-specific work; a missing or invalid generated sound reference inside a game is a current-project validation task. See `docs/artifex/22-sound-archetype-generator.md`.
-
-## Scope 1: Current Project Tasks
-
-Project-level tasks answer:
-
-```text
-What is missing or broken inside this connected project?
-Which owned project file needs editing?
-Which module owns the fix?
-What blocks preview, validation or build?
-```
-
-Examples include:
-
-- missing `project.json` or `input-map.json`;
-- a blank project referring to a start screen that does not exist in an older/migrated project folder;
-- broken Flatplan routes or linked scene/screen/Quest/puzzle/archetype IDs;
-- a Quest Puzzle block referring to a missing `puzzle_` record;
-- missing asset registrations, including procedural synth JSON recipes referenced by an `asset_` ID;
-- required gameplay inputs not mapped;
-- local drafts not yet written to the project folder;
-- Build or Health output reporting unresolved references.
-
-When generated, the preferred project-specific task file is relative to the connected project root:
+Preferred future project-level task filename:
 
 ```text
 todos/project-editor-todos.json
 ```
 
-A legacy `todos/project-manager-todos.json` file must be treated as a recoverable/migratable prior format until the implementing apps support compatible migration.
+Legacy stored paths or code identifiers using `project-manager` must be migrated compatibly rather than treated as a second official user-facing app name.
 
-This task file may be generated or displayed by Project Editor, Creation Guide or Shared Health Guide, but it describes one project rather than the Artifex platform.
+## Required contract documents before implementation
 
-## Scope 2: All-Apps Platform Tasks
-
-All-app tasks answer:
+Use the relevant current specifications before changing an app:
 
 ```text
-Which shared contract or shared service is missing?
-Which apps still use old file paths, old schemas, local-only saving or unrelated demo state?
-What must change across the Artifex suite?
-```
-
-Examples include:
-
-- build/use the shared connected-project-folder service;
-- integrate direct-save and recovery-draft status across apps;
-- ensure every app loads the selected active connected project;
-- implement the Puzzle Creator to Quest Builder `puzzleId` handoff against canonical connected indexes;
-- build the shared Procedural Sound Generator and register generated sounds through Asset Library;
-- standardise module menus, versions and branding rules;
-- migrate remaining user-facing Project Manager labels to Project Editor without breaking legacy stored data;
-- prove cross-app references through Template Game;
-- audit file ownership/module split/patch-layer rules.
-
-Machine-readable location:
-
-```text
+docs/artifex/18-color-and-display-rules.md
+docs/artifex/19-project-file-contracts.md
+docs/artifex/19a-project-starter-file-schemas.md       when project/starter JSON is involved
+docs/artifex/20-asset-intake-workflow.md               when assets/intake are involved
+docs/artifex/21-template-game-project-contract.md       when reference-project work is involved
+docs/artifex/22-sound-archetype-generator.md            when sound/generator work is involved
+docs/artifex/07a-quest-builder-structured-authoring.md  when Quest authoring is involved
+docs/artifex/07b-puzzle-creator-quest-integration.md    when Quest/Puzzle handoff is involved
+artifex/shared/todo-guide/README.md
 artifex/shared/todo-guide/all-apps-todos.json
 ```
 
-## Scope 3: Specific-App Tasks
-
-Specific-app tasks concern one module only, for example:
-
-- Creation Guide: implement intake setup, media checklist, logo support or Template Game selection.
-- Project Editor: connect real folder reads/writes, asset browser/index integration or route tools.
-- Scene Editor: save scene/screen files and references through the shared folder contract; later expose sound assignment hooks.
-- Quest Builder: structured actions/dialogue/Capra authoring, canonical Quest saving and linked `puzzleId` flow blocks.
-- Puzzle Creator: canonical `puzzles/` saving/index registration, puzzle-local gameplay features and later sound feedback assignment.
-- Archetype Object Creator: add Choose Sound/Create Synth Sound/Save and Assign hooks for object events.
-- Effect Editor: build a specific FX engine or remove legacy live patches.
-
-Recommended locations:
+## Locked decisions
 
 ```text
-artifex/apps/<app-slug>/docs/todo.md
-artifex/apps/<app-slug>/docs/todo.json
+- Current main is the only implementation baseline unless the user explicitly approves otherwise.
+- Project Editor is the locked user-facing name; historical project-manager identifiers are migration/compatibility data only.
+- Connected project-folder files are the intended authored source of truth where the app has a verified write path; localStorage is recovery/draft state rather than proof of project saving.
+- ZIP/download export is backup/fallback unless an app is expressly still operating in import/export-only mode.
+- Creation Guide owns Blank Starter Project creation.
+- Template Game is a populated reference project; Artifacts Adventures is later real production work; they are not the same thing.
+- Quest Builder owns Quest progression and Quest-scoped dialogue/Capra content; Puzzle Creator owns self-contained puzzle definitions linked by stable puzzleId references.
+- Procedural synth sounds are final audio assets registered through assets/audio/sfx/ and assets/asset-index.json, not a new archetypes/sounds system.
+- Audit/research tasks report only. They do not authorise code changes, merges, archive moves or refactors.
+- One app and one concern per implementation pass. No silent multi-hour implementation and no normal reliance on patch/hotfix/wrapper layers.
 ```
 
-## Shared Task Shape
+## Current accepted baseline — 1 June 2026
 
-Use one general task shape for machine-readable task sets:
+| Surface | Accepted position | Current action gate |
+|---|---|---|
+| Project Editor | Obsolete static/bootstrap files archived through PR #22; live runtime remains v0.1.32 CONTRACT. Direct project-folder authoring is not confirmed live. | Later save/export and terminology verification. |
+| Quest Builder | Inactive legacy files archived through PR #23; V1.2.12 active styling/config files correctly retained. | Later presentation and contract/save checks; correct visible Project Manager wording when editing the app. |
+| Puzzle Creator | Obsolete maze patch files archived through PR #24; V1.32 active loader route retained and app-specific build passed. | Safe first fuller UI lane after a short current-main baseline check; keep engine/save/integration out of that UI pass. |
+| Effect Editor | User confirmed the complete rewrite at `index2.html` is the good baseline; Hub now opens it through PR #25. Emergency `index.html` remains untouched as reference/rollback. | Map and later port three missing parity items only: rotation-direction controls, orbital control and ALL CAPS text conversion. |
+| Scene Editor | v0.34 remains blocked by confirmed selected-object/wrong-object behaviour risk and overlapping ownership. | First required behavioural repair: consolidate Object Inspector and transform ownership, with ball/box manual acceptance gate. |
+| Archetype Object Creator | V1.35 active but unverified. | Validate Step 5, project save/index update, browser recovery and Sound Generator callback before changes. |
+| Creation Guide | Connected-folder foundation exists, but live wrapper and contract verification remain. | Verify bootstrap/folder setup and starter ZIP/package/schema alignment when selected. |
+| Sound Generator preview/shared popup | Retained active shared tool; not save-free because it participates in recipe/index save and caller assignment. | Safe small visual-only lane after smoke test; save/index/callback integration excluded. |
+| Hub | Effect Editor route corrected; wider icon/name/version tidy-up is presentation work, not urgent while direct URLs are used. | Audit only when Hub visual work becomes worthwhile. |
 
-```json
-{
-  "taskId": "todo_project_editor_missing_input_map",
-  "scope": "specific-app",
-  "owningModule": "project-editor",
-  "relatedModules": ["creation-guide"],
-  "title": "Report missing input map",
-  "description": "The connected project does not include the canonical input-map.json file.",
-  "status": "open",
-  "priority": 4,
-  "effort": 2,
-  "source": "health-guide",
-  "projectFile": "input-map.json",
-  "appFile": null,
-  "fixOwner": "creation-guide",
-  "tags": ["setup", "controls", "validation"]
-}
-```
+## Completed stabilisation decisions
 
-Required fields:
-
-```text
-taskId
-scope
-owningModule
-title
-status
-priority
-effort
-source
-fixOwner
-```
-
-Recommended status values:
-
-```text
-unassigned
-assigned
-started
-snoozing
-blocked
-review
-done
-archived
-open
-warning
-failed
-passed
-not-needed
-```
-
-## Ownership Rules For Tasks
-
-A task should distinguish where it appears from who owns the actual fix. A missing Quest reference may appear in Project Editor/Health because it breaks the project graph, while the missing Quest content belongs to Quest Builder. A missing linked `puzzleId` may appear when validating a Quest; providing/fixing the puzzle definition belongs to Puzzle Creator, while correcting the link or Quest outcome belongs to Quest Builder. A missing scene record may appear in a project audit, while Scene Editor owns the correction. Creation Guide owns initial blank starter data and input map, not later authored module content.
-
-A generated synth recipe is owned/registered as final audio by Asset Library with creation supplied through the shared Procedural Sound Generator. An object, scene, Quest or puzzle task may report a broken sound reference, but it must not copy the recipe into that content record or invent another sound library.
-
-## App Roles Relevant To Tasks
-
-| App/service | Task responsibility |
+| Completed work | Result |
 |---|---|
-| Creation Guide | New project setup, connected folder initialisation, future intake/media/logo setup, project registration and early setup Health. |
-| Project Editor | Existing project structure, Flatplan/routes/registry/library links, structural audit display and later connected-folder structural save. |
-| Scene Editor | Scene/screen authored content, related index entries and referenced final sound asset IDs. |
-| Quest Builder | Quest/Sidequest/branch/condition/reward content, Quest-scoped dialogue/Capra records and linked puzzle flow use. |
-| Puzzle Creator | Puzzle definitions, internal puzzle features/rules, related index entries and referenced final feedback asset IDs. |
-| Archetype Object Creator | Reusable object archetype content and referenced behaviour sound asset IDs. |
-| Effect Editor | Reusable FX archetype content. |
-| Asset Library | Promotion/registration of supplied source files and registration/selection of generated synth recipes in final `assets/`. |
-| Shared Procedural Sound Generator | Popup UI, Web Audio preview/playback recipe generation and asset-registration request flow. |
-| Shared Health Guide | Generated audit/readiness reporting, including missing puzzle/Quest links and invalid procedural-audio resources; never silent content overwrite. |
-| Build Game | Generated validated build output and referenced-resource validation; never authored module content. |
+| Master current-main and rules-compliance analysis | Recorded in `audits/2026-06-01-master-rules-compliance-and-stability-audit.md`. |
+| PR #22 | Project Editor archive-only cleanup merged; no active behaviour change. |
+| PR #23 | Quest Builder archive-only cleanup merged; two still-active files retained. |
+| PR #24 | Puzzle Creator archive-only cleanup merged; V1.32 route unchanged. |
+| Effect Editor route decision | Recorded in `audits/2026-06-01-effect-editor-route-decision-audit.md`; `index2.html` accepted. |
+| PR #25 | Hub Effect Editor target changed to `apps/effect-editor/index2.html?from=hub` only. |
 
-## Current Creation Guide / Project Editor Status
+## Current ranked work queue
 
-Current verified/aligned state:
+### Priority 1 — Behavioural blocker
+
+| App | Task | Scope rule |
+|---|---|---|
+| Scene Editor | Consolidate Object Inspector and transform ownership to repair selected-object/wrong-object behaviour. | Codex implementation only after approval; test ball and box selection independently; do not mix with UI redesign or save-contract work. |
+
+### Priority 2 — Finish recovered Effect Editor baseline
+
+| App | Task | Scope rule |
+|---|---|---|
+| Effect Editor `index2` | Read-only mapping of old/current locations for rotation random/within degrees/lock direction, orbital control and convert-to-ALL-CAPS. | Research only first; old emergency route is not the repair target and is not to be archived yet. |
+| Effect Editor `index2` | Port the three accepted parity features after mapping is approved. | Single later Codex parity pass limited to permanent index2 owners. |
+
+### Priority 3 — Safe visible UI lanes
+
+| App | Task | Scope rule |
+|---|---|---|
+| Puzzle Creator V1.32 | Baseline check followed by UI-only visual pass. | Do not touch maze engine, active loader, schema, save/project-folder or registered-content integration. |
+| Sound Generator popup | Smoke check followed by visual-only polish. | Do not touch recipe save, asset-index registration, JSON fallback or caller callback. |
+
+### Priority 4 — Required app validation / contract research
+
+| App | Task |
+|---|---|
+| Archetype Object Creator | Validate V1.35 wizard flow, Step 5 ownership, connected save/index update, recovery and Sound Generator callback. |
+| Project Editor | Verify save/export behaviour, connected-folder status and remaining visible Project Manager terminology. |
+| Creation Guide | Verify wrapper debt and starter ZIP/package/schema alignment. |
+| Hub | Later link/icon/version/module-name audit when Hub polish is prioritised. |
+
+### Priority 5 — Platform backlog retained
 
 ```text
-Creation Guide V1.1.11
-  Connected Project Folder and Create Starter Structure are implemented and browser-tested.
-  The shared initializer writes canonical typed empty indexes and startScreenId: null for newly created Blank Starter Project files.
-  Intake/media/logo/Template Game selection remain pending.
-
-Project Editor v0.1.32 CONTRACT
-  Default/package schema shapes align with canonical starter schemas.
-  Direct connected-folder authoring and compatible project-editor-todo filename migration remain future work.
+- Create/maintain a machine-readable app index at artifex/apps/app-index.json.
+- Complete connected-project-folder adoption and honest draft/save-state handling across apps.
+- Implement unsaved-navigation guard where authored changes remain local only.
+- Standardise app header/menu/version/cache/branding behaviour under the display rules.
+- Build shared reference-index and later Portal registry work only as separately approved integration passes.
+- Build and validate the populated Template Game only after real connected flows are verified.
 ```
 
-Existing earlier test folders are not silently overwritten. If they contain the former non-null blank starter screen reference or earlier task filename, they need deliberate validation/migration.
+## App-specific supporting references retained temporarily
 
-## Machine-Readable App Index
-
-Artifex should maintain one machine-readable app index so audits know which apps are active, draft, archived, experimental or template-only:
+The documents below retain detailed feature/verification material and are not independent live priority queues. They must not override this dashboard or `all-apps-todos.json`:
 
 ```text
-artifex/apps/app-index.json
+artifex/shared/todo-guide/puzzle-creator-maze-labyrinth-update-steps.md
+artifex/apps/quest-builder/docs/todo.md
+artifex/apps/archetype-object-creator/docs/todo.md
+artifex/apps/archetype-object-creator/docs/current-state-v1.35-review.md
+artifex/apps/effect-editor/docs/compare-versions.md
+artifex/apps/effect-editor/docs/PHASE_2_UI_CLEANUP.md
+artifex/apps/scene-editor/scene-editor-core-split-todos.json
 ```
 
-This is platform metadata, not a file inside any connected game project.
+Retain them until their useful acceptance/detail content is extracted or no longer relevant; then archive them through a separate verified documentation pass.
 
-## Audit Reports
+## Evidence and archive rule
 
-Repo-wide Artifex audits should be written under:
+Audit reports belong in:
 
 ```text
 artifex/shared/todo-guide/audits/
 ```
 
-Suggested filenames:
+Superseded status/handoff/planning documents belong in:
 
 ```text
-YYYY-MM-DD-global-app-audit.md
-YYYY-MM-DD-<app-slug>-audit.md
+artifex/shared/todo-guide/archive/
+docs/archive/artifex-status-and-handoffs/
 ```
 
-An audit report is an inspection record, not permission to refactor or overwrite runtime code. It should identify source contract files, apps/files inspected, compliance gaps, risk level, recommended task scope and whether a change needs human approval.
+Archived records are evidence only. They do not re-open tasks or override current decisions.
 
-## Inspection Prompt Rule
+## Task record rule
 
-When inspecting an app, begin with the central contracts and report before refactoring:
+Machine-readable current task records live only in `all-apps-todos.json`. New entries must identify:
 
 ```text
-Inspect this app against docs/artifex/19-project-file-contracts.md,
-docs/artifex/19a-project-starter-file-schemas.md where starter/project JSON is involved,
-docs/artifex/07a-quest-builder-structured-authoring.md and docs/artifex/07b-puzzle-creator-quest-integration.md where Quest/Puzzle work is involved,
-docs/artifex/20-asset-intake-workflow.md where assets/intake are involved,
-docs/artifex/21-template-game-project-contract.md where reference-project work is involved,
-docs/artifex/22-sound-archetype-generator.md where sound selection or generated-audio assets are involved,
-and artifex/shared/todo-guide/README.md.
-
-Report:
-1. files owned/read/written and files it must not own;
-2. schema/path/ID compatibility;
-3. save state and connected-folder compatibility;
-4. whether work belongs to project, all-app or specific-app scope;
-5. exact safe changes before editing.
+taskId, scope, owningModule, title, description, status, priority, effort, source, fixOwner
 ```
 
-## Locked Decisions
-
-- New Blank Starter Project creation belongs in Creation Guide.
-- Project Editor assembles/validates/edits existing structural project files; it does not create populated games by itself.
-- Project Editor is the locked user-facing name; old `project-manager` filenames/IDs require compatible migration rather than establishing a second name.
-- Quest Builder authors Quest progression and Quest-scoped dialogue/Capra content; Puzzle Creator authors self-contained puzzle definitions connected by stable `puzzleId` references.
-- Connected project-folder data becomes the intended saved source of truth; localStorage is recovery draft only.
-- ZIP/package output is backup/fallback, not normal everyday saving.
-- Starter JSON shapes are canonical only in `docs/artifex/19a-project-starter-file-schemas.md`.
-- `intake/` is staging only; final authored/runtime references resolve through final registered `assets/` content.
-- Procedural synth sounds are generated final audio assets in `assets/audio/sfx/`, registered in `assets/asset-index.json`, not a separate archetype library.
-- Template Game and Artifacts Adventures are separate projects with different purposes.
+Use `open`, `blocked`, `review`, `planned`, `done` or `archived` as normal status values. Completed work remains recorded only where needed to explain current baseline or prevent it being mistakenly redone.
