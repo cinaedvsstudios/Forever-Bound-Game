@@ -53,7 +53,7 @@ Phase 1 confirmed:
 - Creation Guide has live wrapper debt on current main independently of abandoned PR #20, including app-bootstrap.js loading/patching module-app.js.
 - Project Editor had a live current bootstrap plus superseded old HTML/bootstrap files suitable for a narrow archive-only verification pass.
 - Quest Builder had superseded files suitable for archive review, but its older-named CSS and module-config file required active-reference verification before any move.
-- Puzzle Creator remains a possible first full-app UI lane after a short smoke check, while its current consolidation loader remains active and must not be removed during UI polish.
+- Puzzle Creator had two versioned maze patch files suitable for a narrow archive-only verification pass while its active V1.32 loader remained protected from changes.
 - Sound Generator preview is intentional test-harness code and must be retained; it is a likely low-risk small UI lane after a smoke check.
 ```
 
@@ -165,19 +165,59 @@ Verification recorded before merge:
 - An attempted root npm build failed due to pre-existing unrelated root TypeScript/CSS issues, not this archive-only pass.
 ```
 
-### Current decision point — no new work authorised yet
+### Completed: Phase 2C — Puzzle Creator archive-only pass 01
 
-Two low-risk archive passes have now been completed and recorded. The next task must be chosen and separately scoped before any work starts:
+PR #24, **Archive superseded Puzzle Creator maze patch files (pre-v1.32)**, was reviewed and merged into `main` on 1 June 2026.
 
 ```text
-A. Continue limited archive cleanup for another app only after reviewing a new narrow candidate list from the Phase 1 inventory.
-B. Begin the first required behavioural stabilisation pass: Scene Editor Object Inspector and transform ownership consolidation.
-C. Reopen a tightly restricted UI lane after a quick baseline smoke check:
-   - smallest/lowest-risk visual surface: Sound Generator preview/shared popup; or
-   - first fuller app visual surface: Puzzle Creator V1.32.
+PR: #24
+Merge commit: ce26b1c2cd42cd36ec6ba9c341ec360df8261c29
+Scope: Archive-only; no active runtime behaviour change.
 ```
 
-Practical recommendation: with two archive-only passes complete, stop expanding archive work by default. Either choose the Scene Editor stabilisation repair when ready for functional testing, or choose a controlled UI lane in Sound Generator/Puzzle Creator to return to visible design work.
+Archived files:
+
+```text
+artifex/apps/puzzle-creator/src/js/engines/maze-v109-controls.js
+  → artifex/apps/puzzle-creator/archive/legacy-maze-pre-v132/maze-v109-controls.js
+
+artifex/apps/puzzle-creator/src/js/engines/maze-v110-fixes.js
+  → artifex/apps/puzzle-creator/archive/legacy-maze-pre-v132/maze-v110-fixes.js
+```
+
+Archive documentation added:
+
+```text
+artifex/apps/puzzle-creator/archive/legacy-maze-pre-v132/README.md
+```
+
+Verification recorded before merge:
+
+```text
+- Both moved files were confirmed inactive and superseded before archiving.
+- The active Puzzle Creator entry remains artifex/apps/puzzle-creator/index.html, visibly labelled V1.32.
+- The active module route remains src/js/main.js?v=1.28 plus src/js/engines/maze-labyrinth-consolidation-loader.js?v=1.32.
+- No active HTML entry, JavaScript, CSS, loader chain, schema, save/load/export/import behaviour, quest handoff, shared service, UI layout or maze/labyrinth runtime behaviour was changed.
+- The PR diff contained only two archive moves and one archive README file.
+- JavaScript syntax checks and a Puzzle Creator-specific Vite production build passed.
+- An attempted root npm build failed due to pre-existing unrelated root TypeScript/CSS issues, not this archive-only pass.
+```
+
+### Current decision point — no new work authorised yet
+
+Three low-risk archive passes have now been completed and recorded. The active runtime folders for Project Editor, Quest Builder and Puzzle Creator have been reduced without changing their live behaviour.
+
+The next task must be chosen and separately scoped before any work starts:
+
+```text
+A. Begin the first required behavioural stabilisation pass: Scene Editor Object Inspector and transform ownership consolidation.
+B. Reopen a tightly restricted UI lane after a quick baseline smoke check:
+   - smallest/lowest-risk visual surface: Sound Generator preview/shared popup; or
+   - first fuller app visual surface: Puzzle Creator V1.32.
+C. Continue limited archive cleanup only if a new app-specific candidate has a clear benefit and is independently verified before movement.
+```
+
+Practical recommendation: stop archive cleanup by default now. Puzzle Creator is cleaner and its app-specific build has passed, so it is the stronger candidate for a first fuller UI lane after a short visual/manual baseline check. Scene Editor remains the first functional blocker to repair when ready for a higher-risk tested implementation pass.
 
 ## Current Authority Set
 
@@ -206,7 +246,7 @@ App-local docs remain useful, but any conflict with the authority set must be fl
 
 1. **Current `main` is the only implementation baseline.** Old PRs and branches may be inspected as evidence, but may not be used as implementation bases unless the user explicitly approves an exception.
 2. **Audit work is read-only.** Audits must not edit files, update docs, create branches, merge PRs or perform cleanup while investigating.
-3. **Implementation occurs only after the user approves a named pass.** Each pass must state the app, exact purpose, permitted file area, prohibited changes and manual acceptance checks before edits begin.
+3. **Implementation occurs only after the user approves a named pass.** Each pass must state the app, exact purpose, permitted file area, prohibited changes and manual acceptance checks before editing begins.
 4. **One app and one concern per implementation pass.** UI, save-contract integration, schema work and hotfix consolidation are separate workstreams unless an unavoidable dependency is explicitly approved.
 5. **No new patch/hotfix/wrapper files as the normal fix route.** Valid behaviour must move into permanent ownership rather than receiving another overlay.
 6. **No silent multi-hour implementation.** Every task must stop with a report after the agreed pass.
