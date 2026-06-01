@@ -6,6 +6,11 @@ function finite(value, fallback) {
   return Number.isFinite(number) ? number : fallback;
 }
 
+function setText(id, value) {
+  const element = document.getElementById(id);
+  if (element) element.textContent = String(value);
+}
+
 export function initEditorDynamicsControls() {
   bindMetadataFields();
   bindGravityControls();
