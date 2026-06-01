@@ -63,9 +63,6 @@
 #index2-display-state.index2-status-paused { color: #ffd3d3; background: rgba(201,54,54,.21); border-color: rgba(229,69,69,.54); }
 #index2-display-state.index2-status-playing { color: #cef6ff; background: rgba(0,174,234,.18); border-color: rgba(0,174,234,.56); }
 .index2-diagnostics { color: var(--module-accent-strong); font-family: 'Fira Code', monospace; font-size: 12px; line-height: 1.55; white-space: pre-wrap; }
-.index2-selected-layer-details { overflow: auto; padding-left: 14px; }
-.index2-bottom-details-content.card { height: 100%; margin: 0; padding: 10px 11px; overflow: auto; border-radius: 14px; }
-.index2-bottom-details-content.card header { margin-bottom: 9px; padding-bottom: 8px; }
 .layer-list { margin-top: 0 !important; display: grid !important; grid-template-columns: repeat(auto-fit,minmax(270px,1fr)); gap: 8px !important; align-items: start; }
 .layer-item { position: relative; cursor: pointer; min-width: 0 !important; padding: 11px 142px 11px 40px !important; min-height: 56px; }
 .layer-item.selected { border-color: var(--module-accent-strong) !important; background: linear-gradient(135deg, rgba(0,174,234,.58), rgba(0,74,114,.84)) !important; box-shadow: inset 0 0 0 1px rgba(39,215,255,.35), 0 0 16px rgba(0,174,234,.34) !important; }
