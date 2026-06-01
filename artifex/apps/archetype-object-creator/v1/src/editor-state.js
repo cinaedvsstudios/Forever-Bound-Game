@@ -4,6 +4,7 @@ export const DESIGN_WIDTH = 1280;
 export const DESIGN_HEIGHT = 720;
 export const STORAGE_PREFIX = 'artifex.objectArchetype.';
 export const OBJECT_ARCHETYPE_PREFIX = 'archobj_';
+export const AUTHORING_STATUS = Object.freeze({ IN_PROGRESS: 'in_progress', READY: 'ready' });
 export const OBJECT_INDEX_TARGET = 'archetypes/object-index.json';
 
 export const editorState = {
@@ -53,10 +54,11 @@ export function createEmptyArchetype() {
       defaultFacing: 'right'
     },
     productionAssets: {
-      version: '1.35',
+      version: '1.36',
       requirements: {},
       requirementOrder: []
     },
+    authoringStatus: AUTHORING_STATUS.IN_PROGRESS,
     exportTarget: objectExportTarget(id),
     exportPaths: createExportPaths(id),
     notes: ''
@@ -113,6 +115,7 @@ export function normalizeArchetype(input = {}) {
       defaultFacing: input.placement?.defaultFacing || 'right'
     },
     productionAssets: normalizeProductionAssets(input.productionAssets),
+    authoringStatus: normalizeAuthoringStatus(input),
     exportTarget: objectExportTarget(id),
     exportPaths: createExportPaths(id),
     notes: String(input.notes || ''),
@@ -148,7 +151,7 @@ export function applyRoleTemplate(roleId) {
     collision: template.collision,
     behaviour: { preset: template.behaviourPreset, flags: { ...template.flags } },
     animationProfile: { gameplayActions: [...template.gameplayActions], portraitActions: [...template.portraitActions] },
-    productionAssets: { version: '1.35', requirements: {}, requirementOrder: [] }
+    productionAssets: { version: '1.36', requirements: {}, requirementOrder: [] }
   });
   validateCurrentArchetype();
   notifyChange();
@@ -255,9 +258,54 @@ function normalizeTags(tags) { if (Array.isArray(tags)) return tags.map((tag) =>
 function normalizeActionList(actions) { return [...new Set((Array.isArray(actions) ? actions : []).map((item) => String(item).trim()).filter(Boolean).filter((item) => item !== 'talk'))]; }
 function normalizeProductionAssets(value) {
   const source = value && typeof value === 'object' ? value : {};
-  const requirements = source.requirements && typeof source.requirements === 'object' && !Array.isArray(source.requirements) ? source.requirements : {};
+  const rawRequirements = source.requirements && typeof source.requirements === 'object' && !Array.isArray(source.requirements) ? source.requirements : {};
+  const requirements = {};
+  Object.entries(rawRequirements).forEach(([id, raw]) => {
+    const requirement = raw && typeof raw === 'object' && !Array.isArray(raw) ? { ...raw } : {};
+    const frames = Array.isArray(requirement.frames) ? requirement.frames.map((frame) => ({ ...(frame || {}) })) : [];
+    requirement.frames = frames;
+    requirement.frameCorrections = normalizeFrameCorrections(requirement, frames.length);
+    delete requirement.correction;
+    requirements[id] = requirement;
+  });
   const requirementOrder = Array.isArray(source.requirementOrder) ? source.requirementOrder.map((id) => String(id)).filter(Boolean) : [];
-  return { version: String(source.version || '1.35'), requirements: { ...requirements }, requirementOrder };
+  return { version: String(source.version || '1.36'), requirements, requirementOrder };
+}
+function normalizeFrameCorrections(requirement, frameCount) {
+  const output = {};
+  const source = requirement.frameCorrections && typeof requirement.frameCorrections === 'object' && !Array.isArray(requirement.frameCorrections) ? requirement.frameCorrections : {};
+  Object.entries(source).forEach(([index, value]) => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return;
+    output[String(Math.max(0, Number(index) || 0))] = normalizeCorrection(value);
+  });
+  if (Object.keys(output).length) return output;
+  if (requirement.correction && typeof requirement.correction === 'object' && !Array.isArray(requirement.correction)) {
+    const correction = normalizeCorrection(requirement.correction);
+    const count = Math.max(1, Number(frameCount) || 0);
+    for (let index = 0; index < count; index += 1) output[String(index)] = { ...correction };
+  }
+  return output;
+}
+function normalizeCorrection(value = {}) {
+  return {
+    scale: finiteNumber(value.scale, 0),
+    x: finiteNumber(value.x, 0),
+    y: finiteNumber(value.y, 0),
+    brightness: finiteNumber(value.brightness, 0)
+  };
+}
+function normalizeAuthoringStatus(input = {}) {
+  const requested = input.authoringStatus === AUTHORING_STATUS.READY ? AUTHORING_STATUS.READY : AUTHORING_STATUS.IN_PROGRESS;
+  return hasUnresolvedAuthoringMedia(input) ? AUTHORING_STATUS.IN_PROGRESS : requested;
+}
+function hasUnresolvedAuthoringMedia(input = {}) {
+  const requirements = input.productionAssets?.requirements || {};
+  return Object.values(requirements).some((requirement) => Array.isArray(requirement?.frames) && requirement.frames.some((frame) => {
+    if (!frame || typeof frame !== 'object') return false;
+    if (frame.previewOnly || frame.draftSourceName || frame.dataUrl || frame.staging?.path) return true;
+    if ('assetId' in frame && !String(frame.assetId || '').startsWith('asset_')) return true;
+    return false;
+  }));
 }
 function safeId(value) { return String(value || 'object_archetype').trim().toLowerCase().replace(/[^a-z0-9_\-]+/g, '_').replace(/^_+|_+$/g, '') || 'object_archetype'; }
 function finiteNumber(value, fallback) { const number = Number(value); return Number.isFinite(number) ? number : fallback; }

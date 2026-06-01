@@ -144,3 +144,8 @@ Use a fresh-cache URL when testing the live app. Test in two phases.
 - `docs/artifex/06-object-library.md` should identify Archetype Object Creator as the active authoring module and point here for implementation status.
 - `docs/artifex/19-project-file-contracts.md` remains the architecture contract; it is not evidence that V1.35 has passed testing.
 - `docs/artifex/22-sound-archetype-generator.md` remains the shared sound contract; Object Creator usage is provisional until verified.
+
+
+## V1.36 follow-up
+
+A later approved V1.36 implementation pass supersedes the provisional V1.35 runtime behaviour for Step 5 ownership, authoring status, in-progress project save, ready finalisation, sound assignment targeting and frame-correction state. This V1.35 document remains a historical record of the risks that prompted that pass.

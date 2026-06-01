@@ -8,25 +8,24 @@ Current review/handover document:
 artifex/apps/archetype-object-creator/docs/current-state-v1.35-review.md
 ```
 
-## Current status — audit before more feature work
+## Current status — V1.36 consolidation delivered
 
 ### Audit and either integrate or revert the provisional V1.35 pass
 
-Status: open / required before more feature work  
-Priority: critical  
+Status: resolved by V1.36 Step 5 ownership and save-lifecycle consolidation
+Priority: completed for the confirmed defects
 Source: V1.35 implementation review on 2026-05-31
 
 V1.35 is active on `main`, but it is not accepted as clean/stable integration. The code pass added project-folder saving, new Step 5 save semantics, `Mark Task Ready`, equal-size lower action buttons, Backup ZIP wording and a Procedural Sound Generator launch/assignment hook. These changes were made without first completing a clean ownership/integration review and without completing the required browser/disposable-project tests.
 
-Required audit work:
+Completed V1.36 implementation outcome:
 
-- Inspect the active Step 5 ownership split across `object-wizard-build-checklist.js`, `object-wizard-step5.js`, `object-wizard-step5-layout.js`, `object-wizard-asset-package.js` and `object-project-storage.js`.
-- Do **not** add another overlay, wrapper or patch module; integrate into existing owners or revert provisional V1.35 behaviour.
-- Decide and approve the intended meaning of `Save Draft`, `Save Project`, `Finish` and `Mark Task Ready` before keeping that UX.
-- Audit `object-project-storage.js` against `docs/artifex/19-project-file-contracts.md` using only a disposable starter project for testing.
-- Resolve uploaded-frame handling against the Asset Library/promotion contract; do not treat provisional `previewOnly` / `draftSourceName` fields as approved final schema.
-- Verify the Sound Events `🎛️` hook uses the existing shared Procedural Sound Generator and stores only returned registered `asset_` IDs in the object task.
-- Run syntax checks and full browser checks before changing this item to done.
+- `object-wizard-build-checklist.js` now owns stable Step 5 DOM, toolbar and left/right layout.
+- `object-wizard-step5-layout.js` and `object-wizard-frame-correction.js` are no longer active imports.
+- Save Browser Draft, Save Project (In Progress), Finish / Mark Object Ready and Mark Task Ready now have distinct lifecycle meanings.
+- Uploaded frames are staged under `intake/objects/<archobj_id>/...` for in-progress saves and promoted to registered final `asset_` records only during readiness finalisation.
+- The Sound Events `🎛️` callback captures the initiating requirement target so selection changes cannot redirect assignment.
+- Syntax and disposable browser/project validation were run for V1.36.
 
 Verification checklist:
 
@@ -41,8 +40,8 @@ Verification checklist:
 
 ### Verify the V1.34 Step 5 persistence and layout repair
 
-Status: implemented in code / verification still required  
-Priority: high  
+Status: implemented in code / verification still required
+Priority: high
 Source: V1.33 checklist state-contract regression and Step 5 live review
 
 Implemented changes:
@@ -58,16 +57,16 @@ This must be verified with persistence testing, not signed off from screenshots 
 
 ### Future maintainability cleanup for `editor-ui.js`
 
-Status: open  
-Priority: medium  
+Status: open
+Priority: medium
 Source: V1.33 line-count audit
 
 `editor-ui.js` is still 821 lines. It is outside the current wizard-flow split and was not refactored in V1.33 because doing so was not necessary to prevent a regression. Plan a separate focused pass to split general editor UI/menu/dialog/library responsibilities into smaller named modules without changing the accepted UI.
 
 ### Future maintainability cleanup for `object-wizard-step5.js`
 
-Status: open  
-Priority: high after V1.35 audit  
+Status: open
+Priority: high after V1.35 audit
 Source: V1.33 line-count audit plus V1.35 integration review
 
 `object-wizard-step5.js` is a named Step 5 core module rather than a legacy overlay, but V1.35 added Sound Events integration and readiness UI into the same observer-driven enhancement module. After deciding what V1.35 behaviour remains, separate or consolidate responsibilities only through a planned ownership cleanup, not by adding patch layers.
@@ -76,8 +75,8 @@ Source: V1.33 line-count audit plus V1.35 integration review
 
 ### V1.35 provisional project save, sound generator and compact-control pass
 
-Status: active in code / unverified / subject to integration or rollback  
-Implemented in: V1.35  
+Status: active in code / unverified / subject to integration or rollback
+Implemented in: V1.35
 Source: Step 5 live review after V1.34
 
 Changes presently in the codebase:
@@ -102,8 +101,8 @@ Known concerns:
 
 ### Split `object-wizard-flow.js` into smaller wizard modules
 
-Status: done  
-Completed in: V1.33  
+Status: done
+Completed in: V1.33
 Source: review feedback after V1.32 cleanup
 
 Completed changes:
@@ -120,8 +119,8 @@ Important later finding: the V1.33 split introduced the Step 5 `productionAssets
 
 ### Split object wizard workflow modules
 
-Status: done  
-Completed in: V1.32  
+Status: done
+Completed in: V1.32
 Source: source folder review after V1.30 cleanup
 
 Completed changes:
@@ -135,8 +134,8 @@ Completed changes:
 
 ### Retire `template-card-enhancements.js` and older patch files
 
-Status: done  
-Completed in: V1.31 cleanup  
+Status: done
+Completed in: V1.31 cleanup
 Source: source folder review after V1.30 cleanup
 
 Completed changes:
@@ -148,8 +147,8 @@ Completed changes:
 
 ### Complete current overlay module extraction
 
-Status: done  
-Completed in: V1.30  
+Status: done
+Completed in: V1.30
 Source: project file contracts / patch-layer rule
 
 Completed changes:
@@ -160,8 +159,8 @@ Completed changes:
 
 ### Extract wizard Step 5, Frame Correction and Reference modules
 
-Status: done  
-Completed in: V1.26–V1.29  
+Status: done
+Completed in: V1.26–V1.29
 Source: `docs/artifex/19-project-file-contracts.md`
 
 Completed changes:
@@ -173,7 +172,7 @@ Completed changes:
 
 ### Template icon/card density and export-path work
 
-Status: done  
+Status: done
 Completed in: V1.19–V1.25
 
 Completed changes:
@@ -186,8 +185,18 @@ Completed changes:
 
 ### Real scene/quest/reference listing
 
-Status: blocked  
-Priority: high  
+Status: blocked
+Priority: high
 Blocked by: `todo_all_apps_project_reference_index`
 
 The Reference panel is present, but real results require the shared project reference index to exist. That index is tracked globally in `artifex/shared/todo-guide/all-apps-todos.json` because Project Editor, Scene Editor, Quest Builder, Effect Editor, Build Game and Archetype Object Creator need the same project graph source of truth.
+
+
+### V1.36 follow-up acceptance notes
+
+Status: pending user/manual acceptance after PR review
+Priority: high
+
+- Manually review the V1.36 browser flow in a real disposable Blank Starter Project folder using the File System Access picker.
+- Confirm the new `authoringStatus` wording is acceptable in Object Creator and Object Library contexts.
+- Confirm the generated final image asset naming/location under `assets/objects/<archobj_id>/...` is the desired permanent convention before production use.

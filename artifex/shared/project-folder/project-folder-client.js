@@ -271,10 +271,24 @@
   }
 
   async function writeText(path, content) {
+    return writeBlob(path, new Blob([String(content ?? '')], { type: 'text/plain;charset=utf-8' }));
+  }
+
+  async function readBytes(path) {
+    const handle = await getFileHandle(path, false);
+    const file = await handle.getFile();
+    return new Uint8Array(await file.arrayBuffer());
+  }
+
+  async function writeBytes(path, bytes) {
+    return writeBlob(path, bytes instanceof Blob ? bytes : new Blob([bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || [])]));
+  }
+
+  async function writeBlob(path, content) {
     try {
       const handle = await getFileHandle(path, true);
       const writable = await handle.createWritable();
-      await writable.write(String(content ?? ''));
+      await writable.write(content);
       await writable.close();
       setState({ saveStatus: SAVE_STATUS.SAVED, lastError: null });
       return path;
@@ -329,6 +343,9 @@
     ensureDirectory,
     readText,
     writeText,
+    readBytes,
+    writeBytes,
+    writeBlob,
     readJson,
     writeJson,
     fileExists,

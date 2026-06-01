@@ -1,12 +1,13 @@
 import { editorState } from './editor-state.js';
 
-let referenceObserver = null;
-let referenceQueued = false;
-
 export function initObjectWizardReferencePanel() {
   injectReferenceStyles();
-  startReferenceObserver();
-  scheduleReferenceRefresh();
+}
+
+export function renderObjectWizardReferencePanel(panel, requirementId) {
+  const reference = panel?.querySelector('.wizard-reference-panel');
+  const box = reference?.querySelector('.wizard-reference-scroll');
+  if (box) box.innerHTML = renderReferenceList(requirementId);
 }
 
 function injectReferenceStyles() {
@@ -60,43 +61,6 @@ function injectReferenceStyles() {
     }
   `;
   document.head.appendChild(style);
-}
-
-function startReferenceObserver() {
-  if (referenceObserver) return;
-  referenceObserver = new MutationObserver(() => scheduleReferenceRefresh());
-  referenceObserver.observe(document.body, { childList: true, subtree: true });
-}
-
-function scheduleReferenceRefresh() {
-  if (referenceQueued) return;
-  referenceQueued = true;
-  window.requestAnimationFrame(() => {
-    referenceQueued = false;
-    refreshReferencePanel();
-  });
-}
-
-function refreshReferencePanel() {
-  const panel = document.querySelector('#quickstart-dialog .wizard-build-detail-panel');
-  const controls = document.querySelector('#quickstart-dialog .wizard-preview-controls');
-  if (!panel || !controls) return;
-
-  let reference = panel.querySelector('.wizard-reference-panel');
-  if (!reference) {
-    reference = document.createElement('section');
-    reference.className = 'wizard-reference-panel';
-    reference.innerHTML = '<h4>Reference</h4><div class="wizard-reference-scroll"></div>';
-    controls.after(reference);
-  }
-
-  const selectedId = selectedRequirementId();
-  const box = reference.querySelector('.wizard-reference-scroll');
-  if (box) box.innerHTML = renderReferenceList(selectedId);
-}
-
-function selectedRequirementId() {
-  return document.querySelector('#quickstart-dialog .wizard-build-nav button.is-selected')?.dataset.requirementId || '';
 }
 
 function renderReferenceList(requirementId) {

@@ -25,7 +25,7 @@ The popup opens in context, previews live browser-generated audio, saves the rec
 6. The first implementation uses the browser Web Audio API for preview and runtime playback.
 7. The normal controls use understandable game-sound labels. Detailed technical synthesis controls may be added later behind an Advanced section.
 8. Replace the unclear label **Direction** with **Pitch Change**, shown as `Drops`, `Steady` and `Rises`.
-9. **Save and Assign Here** registers the generated audio asset, saves its recipe, and inserts its ID into the caller's current draft. The caller's normal Save action remains responsible for writing the object/scene/puzzle record.
+9. **Save and Assign Here** registers the generated audio asset, saves its recipe, and inserts its ID into the caller's initiating field/task target, even if the caller UI selection changes while the popup is open. The caller's normal Save action remains responsible for writing the object/scene/puzzle record.
 10. This design already fits the existing `assets/audio/sfx/` and `assets/asset-index.json` structure. It does not require a new blank-starter folder, empty index or starter initializer change.
 
 ## Relationship to Normal Sound Files

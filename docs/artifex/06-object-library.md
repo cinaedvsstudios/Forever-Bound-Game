@@ -10,8 +10,8 @@ artifex/apps/archetype-object-creator/
 
 The concept may still be described generically as the **Object Library** when referring to the reusable collection of saved object definitions, but implementation work must use the active module name **Archetype Object Creator**.
 
-Current visible app version: `V1.35`  
-Current status: V1.35 code exists on `main`, but its project-folder saving and Procedural Sound Generator integration are unverified and require audit before more feature work.
+Current visible app version: `V1.36`
+Current status: Step 5 ownership and project-save lifecycle consolidation is implemented for review. V1.36 adds explicit in-progress vs ready object authoring status, staged uploaded-frame saves and final asset promotion on readiness.
 
 Current app-specific handover:
 
@@ -56,7 +56,7 @@ The intended save model is:
 - browser/local storage for draft/recovery only;
 - JSON or ZIP download as backup/fallback rather than ordinary save.
 
-The current V1.35 code attempts this model but has not been accepted as correctly integrated or fully tested. See the current-state handover before relying on it.
+V1.36 implements this model with explicit `authoringStatus` values. In-progress records may carry authoring-only staging metadata; ready records must reference only final registered `asset_` IDs.
 
 ## Module Boundary
 
@@ -140,7 +140,7 @@ Create Synth Sound popup
 → Object Creator stores only that returned asset_ ID in the appropriate object behaviour/event field
 ```
 
-V1.35 currently contains a provisional `🎛️` Sound Events hookup for this flow. It must be tested against `docs/artifex/22-sound-archetype-generator.md` before being regarded as accepted.
+V1.36 keeps the `🎛️` Sound Events hookup and captures the initiating requirement target before opening the shared popup, so the returned `asset_sfx_...` ID is written only to the requesting task.
 
 ## Object Categories
 
@@ -164,9 +164,7 @@ Supported/relevant object categories include:
 
 V1.34 attempted to repair Step 5 task persistence and layout regressions by restoring canonical `productionAssets.requirements` / `productionAssets.requirementOrder` storage, initial asset-ID task ordering, clean left-list display and compact two-column behaviour.
 
-V1.35 added provisional work for project-folder saving, `Save Draft` / `Save Project` / `Finish`, `Mark Task Ready`, equal-size asset/ZIP controls and the shared synth-sound hookup.
-
-No further feature implementation should occur until the V1.35 pass has been audited and either cleanly integrated or rolled back. Do not add new patch/overlay/wrapper layers to repair it.
+V1.36 supersedes the provisional V1.35 save flow: Save Draft is browser recovery, Save Project writes in-progress project records and stages uploaded frames, and Finish / Mark Object Ready promotes staged media into final registered assets before writing a ready object/index entry. Do not add new patch/overlay/wrapper layers on top of this ownership model.
 
 ## Placeholder Assets
 

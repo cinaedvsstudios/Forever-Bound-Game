@@ -1,4 +1,4 @@
-export const WIZARD_DATA_VERSION = '1.35';
+export const WIZARD_DATA_VERSION = '1.36';
 
 const EMOJI = {
   idle: '🧍', turn_face: '↔️', walk: '👟', patrol_walk: '🚶', move: '➡️', jump: '🦘', crouch_hide: '🫥', pickup: '🤲', hold_carry: '📦', throw: '🪨', use_item: '🛠️', gesture: '👋', give_item: '🎁', receive_item: '📥', interact_assist: '🤝', sing_magic_cast: '🎵', cast_ritual: '✨', channel: '🔮', attack: '⚔️', special_attack: '💥', take_damage: '💢', stunned: '💫', phase_change: '🌀', death: '☠️', enter_door: '🚪', exit_door: '🚪', open: '🔓', close: '🔒', locked: '🔐', collect: '🪙', searched_opened: '🔍', activate: '⚡', trigger: '🎚️', reset: '↩️', land_break: '💥', possession_overlay: '👁️', blink: '😉', expression_neutral: '😐', expression_happy: '🙂', expression_angry: '😠', expression_sad: '😟', mouth_loop: '🗣️', gameplay_sprite_asset: '🧩', dialogue_portrait_asset: '🖼️', collision: '📐', interaction: '💬'

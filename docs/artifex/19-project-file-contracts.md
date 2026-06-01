@@ -202,6 +202,24 @@ assets/asset-index.json → asset_sfx_<slug>
 
 Imported audio and generated synth recipes appear through the same Asset Library and are assigned by `asset_` ID. Other apps store only the registered asset ID; they never copy the synth recipe into their content record.
 
+## Object Authoring Status and Staged Frames
+
+Archetype Object Creator object records and matching `archetypes/object-index.json` entries may use:
+
+```json
+"authoringStatus": "in_progress"
+"authoringStatus": "ready"
+```
+
+`in_progress` records are project-backed authoring work. They may include authoring-only staging metadata for uploaded frames under:
+
+```text
+intake/objects/<archobj_id>/<requirement_or_action>/<stable_frame_filename>
+```
+
+Staged `intake/` files are not final assets and must not be registered in `assets/asset-index.json` or treated as runtime media. `ready` object records must not depend on `dataUrl`, `previewOnly`, `draftSourceName`, `intake/` staging paths, blank required asset IDs or unregistered media IDs. Finalisation promotes required staged media into appropriate `assets/` paths and registers final `asset_` records.
+
+
 ## Quest Dialogue and Puzzle Handoff Contract
 
 Quest Builder may store quest-specific dialogue/narration/Capra records inside its Quest content because those lines are part of that Quest's event script. It may reference portrait or audio `asset_` IDs, but it does not own those reusable files.

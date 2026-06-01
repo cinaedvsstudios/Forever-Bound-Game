@@ -10,16 +10,16 @@ It is not the Effect Editor. Effect Editor owns reusable FX definitions; Object 
 
 ## Current Implementation Status
 
-Current visible build: `V1.35`  
-Status: **implemented on `main`, but V1.35 integration is unverified and not accepted as clean/stable yet.**
+Current visible build: `V1.36`
+Status: **approved implementation of Step 5 ownership and project-save lifecycle consolidation.**
 
-Read the handover before further editing:
+V1.36 supersedes the provisional V1.35 runtime behaviour while preserving the V1.35 handover as a historical record:
 
 ```text
 artifex/apps/archetype-object-creator/docs/current-state-v1.35-review.md
 ```
 
-The V1.35 badge indicates the code currently loaded by the app. It does not mean the added project-save and Sound Generator integration has completed acceptance testing.
+The active lifecycle is now browser recovery draft → in-progress project save → explicit `Finish / Mark Object Ready` finalisation.
 
 ## Required Contracts Before Editing
 
@@ -52,7 +52,26 @@ Current active entry point:
 artifex/apps/archetype-object-creator/v1/src/editor-app.js
 ```
 
-The active entry point currently initialises the base editor, project-folder storage, template icons, wizard flow, Step 5 layout, Step 5 enhancements, Reference panel, Frame Fix and asset-package/ZIP behaviour.
+The active entry point currently initialises the base editor, project-folder storage, template icons, wizard flow, Step 5 behaviour binding, Reference panel styles and asset-package/ZIP behaviour. Step 5 layout and Frame Fix are now rendered by the checklist/frame-task owners rather than observer-installed modules.
+
+
+## V1.36 Authoring Lifecycle
+
+Object records carry `authoringStatus`:
+
+- `in_progress` — normal working state for new objects, browser drafts, JSON imports without status, and any object that still has uploaded/staged/unregistered frame work.
+- `ready` — finalised state written only by **Finish / Mark Object Ready** after validation, staged media promotion and `assets/asset-index.json` registration.
+
+Save meanings:
+
+| Control | Meaning |
+|---|---|
+| Save Browser Draft | Browser recovery only. Preserves local draft data and does not write project files or final assets. |
+| Save Project (In Progress) | Writes `archetypes/objects/archobj_<slug>.json`, updates `archetypes/object-index.json`, stages uploaded frames under `intake/objects/<archobj_id>/...`, and keeps `authoringStatus: "in_progress"`. |
+| Finish / Mark Object Ready | Validates required object media, promotes staged frames into `assets/objects/...`, registers final `asset_` records in `assets/asset-index.json`, strips preview/staging dependencies, and writes object/index entries with `authoringStatus: "ready"`. |
+| Mark Task Ready | Marks only the selected Step 5 requirement; it cannot save/finalise the whole object. |
+
+A ready object must not depend on `dataUrl`, `previewOnly`, `draftSourceName`, `intake/` staging paths, blank required asset IDs or unregistered media IDs.
 
 ## Canonical Data Ownership And Save Paths
 
@@ -68,7 +87,7 @@ Object Creator owns:
 
 - reusable non-FX object archetypes;
 - referenced final asset IDs for object visual/action/audio behaviour;
-- its object-index entry when deliberately saving a final object record.
+- its object-index entry when saving in-progress or ready object records.
 
 Object Creator must not own:
 

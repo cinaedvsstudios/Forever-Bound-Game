@@ -111,6 +111,9 @@ This checklist reports readiness only. It neither blocks project creation nor cr
 
 Files in `intake/` are staging files only. Permanent scene, screen, quest, puzzle, object, effect and runtime records must not point directly to them.
 
+Archetype Object Creator may write temporary uploaded-frame working files under `intake/objects/<archobj_id>/...` when saving an `in_progress` object to a connected project folder. Those files remain authoring source material until **Finish / Mark Object Ready** promotes them into final `assets/` locations and registers `asset_` IDs.
+
+
 When a creator approves/imports a supplied source file, the Asset Library/import workflow should:
 
 1. Preserve the original source filename in metadata.

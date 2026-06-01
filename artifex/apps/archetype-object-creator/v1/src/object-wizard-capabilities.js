@@ -1,6 +1,6 @@
 import { editorState, toggleGameplayAction, togglePortraitAction, updateFlag } from './editor-state.js';
 import { GAMEPLAY_ACTIONS, PORTRAIT_ACTIONS, RUNTIME_FLAGS } from './templates.js';
-import { escapeHtml } from './object-wizard-helpers.js?v=1.35';
+import { escapeHtml } from './object-wizard-helpers.js?v=1.36';
 
 export function createObjectWizardCapabilities({ wizardState, setHeader, content, renderTemplateChoice, renderExistingChoice, renderBasicChanges }) {
   function renderAbilityChoice() {

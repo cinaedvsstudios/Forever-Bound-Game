@@ -1,6 +1,6 @@
 import { editorState, updateArchetype } from './editor-state.js';
 import { GAMEPLAY_ACTIONS, PORTRAIT_ACTIONS } from './templates.js';
-import { appendNote, labelFor, WIZARD_DATA_VERSION } from './object-wizard-helpers.js?v=1.35';
+import { appendNote, labelFor, WIZARD_DATA_VERSION } from './object-wizard-helpers.js?v=1.36';
 
 export function createObjectWizardBuildRequirements({ renderBuildChecklist, updateProgressOrb }) {
   function buildRequirements(item) {
