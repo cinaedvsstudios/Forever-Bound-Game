@@ -32,8 +32,10 @@ const TEXT_CONTROLS = [
   { property: 'textKeepBlockTogether', label: 'Keep Block Together', type: 'checkbox' }
 ];
 let renderedKey = '';
+let detailsMoved = false;
 
 export function syncEffectControls() {
+  moveControlsToBottomRightDetailsPane();
   const body = document.getElementById('effect-specific-controls-body');
   if (!body) return;
   const layer = getActiveLayer();
@@ -43,6 +45,21 @@ export function syncEffectControls() {
     renderControls(body, layer);
   }
   syncValues(body, layer);
+}
+
+function moveControlsToBottomRightDetailsPane() {
+  if (detailsMoved) return;
+  const card = document.getElementById('effect-specific-controls-card');
+  const diagnostics = document.getElementById('index2-diagnostics');
+  const detailsPane = diagnostics?.parentElement;
+  if (!card || !detailsPane) return;
+  detailsPane.replaceChildren(card);
+  detailsPane.classList.remove('index2-diagnostics-card');
+  detailsPane.classList.add('index2-selected-layer-details');
+  card.classList.add('index2-bottom-details-content');
+  const heading = card.querySelector('h2');
+  if (heading) heading.textContent = 'Selected Layer Details';
+  detailsMoved = true;
 }
 
 function renderControls(body, layer) {
@@ -57,7 +74,7 @@ function renderControls(body, layer) {
     return;
   }
   if (isTextLayer(layer)) {
-    const note = paragraph('Text controls use bounded emission and conservative defaults to avoid runaway multiline drawing.');
+    const note = paragraph('Type text here to render it in the preview. Use ALL CAPS to convert the selected layer text.');
     note.className = 'index2-control-note';
     body.append(note);
   }
@@ -83,6 +100,7 @@ function buildControl(control, layer) {
     input = document.createElement('textarea');
     input.rows = control.rows || 3;
     input.value = layer[control.property] || '';
+    input.placeholder = 'Enter text to render…';
     if (control.action === 'uppercase') {
       const action = document.createElement('button');
       action.type = 'button';
