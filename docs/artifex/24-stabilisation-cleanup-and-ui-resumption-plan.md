@@ -2,62 +2,61 @@
 
 ## Purpose
 
-This plan records the controlled path back to safe visible UI work after the large volume of changes and incomplete reporting on 31 May 2026.
+This document is the current progress tracker and decision gate for restoring safe Artifex UI work after the large mixed integration period on 31 May 2026.
 
-The goal is **not** to stop Artifex development or demand a full rewrite before any design work continues. The goal is to restore a known, reviewable baseline so that UI changes can resume without silently stacking more structural debt underneath them.
+The objective is not to pause all development until every app is perfect. The objective is to ensure that work resumes app-by-app from a known current-main baseline, without silently stacking new UI work over broken behaviour, ambiguous save paths, obsolete files or temporary patch layers.
 
-The two central cleanup goals are:
+Central cleanup goals:
 
-1. **Move genuinely unused, superseded and obsolete files into clearly labelled archive folders rather than leaving dead implementation mixed with active runtime code.**
-2. **Integrate small hotfixes, patch layers and transitional wrappers into the permanent modules that should own that behaviour, then archive the replaced files after verification.**
+1. Move genuinely unused, superseded and obsolete files into documented archive folders rather than leaving dead code mixed with active runtime code.
+2. Integrate active hotfixes, patch layers and transitional wrappers into permanent owning modules only after their behaviour is understood and tested.
+3. Reopen UI-only work only in apps whose current baseline is known and whose initial UI scope explicitly excludes unapproved schema, save, integration and architectural changes.
 
-This document is a plan and progress tracker. It does not authorise a repo-wide automatic cleanup, blind PR merges, mass file moves or hidden implementation work.
+This plan does not authorise implementation by itself. Each new pass requires explicit user approval.
 
 ## Current Progress Status — Updated 1 June 2026
 
 ### Completed: Phase 0 — Preserve current truth and stop hidden drift
 
-The read-only Phase 0 audit has been reviewed and recorded in:
+Recorded audit files:
 
 ```text
 artifex/shared/todo-guide/audits/2026-06-01-change-timeline.md
 artifex/shared/todo-guide/audits/2026-06-01-current-main-baseline-matrix.md
 ```
 
-Phase 0 confirmed:
+Confirmed outcome:
 
 ```text
 - A large mixed merge on 31 May brought runtime, shared-service, documentation and asset work into main across several apps.
-- Scene Editor v0.34 is on main but failed manual acceptance and requires ownership consolidation before further UI implementation.
-- Archetype Object Creator V1.35 is on main but explicitly unverified.
-- Effect Editor has baseline ambiguity between its emergency primary route and the index2 clean route.
+- Scene Editor v0.34 reached main but failed manual acceptance and requires ownership consolidation before UI work there.
+- Archetype Object Creator V1.35 reached main but remains unverified.
+- Effect Editor has unresolved baseline ambiguity between its emergency primary route and index2 clean-route candidate.
 - PR #20 is unsafe/abandoned as a merge target and must not be used as a development base.
-- PR #9 requires diff-based salvage review only if Project Editor stabilisation is selected later.
-- PR #17 is historical evidence only and should not be merged.
+- PR #9 is diff-based salvage evidence only if Project Editor is selected later.
+- PR #17 is historical Effect Editor evidence only and should not be merged.
 ```
 
 ### Completed: Phase 1 — Archive and hotfix consolidation inventory
 
-The read-only Phase 1 inventory has been reviewed and recorded in:
+Recorded audit file:
 
 ```text
 artifex/shared/todo-guide/audits/2026-06-01-archive-and-hotfix-inventory.md
 ```
 
-Phase 1 confirmed:
+Confirmed outcome:
 
 ```text
-- Scene Editor contains live overlapping owners for Object Inspector structure, transform input, aspect/wrap, movement, numeric sliders and card/visual rendering. These files cannot simply be archived; the valid behaviour must first be consolidated into permanent owners.
-- Archetype Object Creator V1.35 has active Step 5 enhancement/layout/frame/package layers and must be validated before any consolidation or archive work.
-- Effect Editor must first resolve which route is the accepted baseline: index.html V3.38 Emergency or index2.html INDEX2-CLEAN-0.2.3.
-- Creation Guide has live wrapper debt on current main independently of abandoned PR #20, including app-bootstrap.js loading/patching module-app.js.
-- Project Editor had a live current bootstrap plus superseded old HTML/bootstrap files suitable for a narrow archive-only verification pass.
-- Quest Builder had superseded files suitable for archive review, but its older-named CSS and module-config file required active-reference verification before any move.
-- Puzzle Creator had two versioned maze patch files suitable for a narrow archive-only verification pass while its active V1.32 loader remained protected from changes.
-- Sound Generator preview is intentional test-harness code and must be retained; it is a likely low-risk small UI lane after a smoke check.
+- Scene Editor contains live overlapping ownership across inspector structure, transform input, aspect/wrap, movement, numeric sliders and card/visual rendering; these modules cannot simply be archived.
+- Archetype Object Creator has active Step 5 enhancement/layout/frame/package layers and must be validated before consolidation or UI implementation.
+- Effect Editor must receive an accepted-route decision before rescue-layer consolidation or UI implementation.
+- Creation Guide has live current-main wrapper debt independently of abandoned PR #20.
+- Project Editor, Quest Builder and Puzzle Creator each contained narrow inactive/superseded archive candidates suitable for separately verified archive-only passes.
+- Sound Generator preview/shared popup is intentional retained code and remains a likely small UI-only lane after a smoke check.
 ```
 
-Important limitation: the Phase 1 Codex run reported no local `main` ref or remotes in its checkout. Therefore, each proposed archive or implementation pass must verify its named file state again against live GitHub `main` before changes are made.
+Important limitation retained from the Phase 1 audit: Codex reported no local `main` ref or remotes in that checkout. Every implementation/archive pass was therefore required to re-check its named files from the current GitHub baseline before movement or code change.
 
 ### Completed: Phase 2A — Project Editor archive-only pass 01
 
@@ -66,43 +65,23 @@ PR #22, **Archive superseded Project Editor static files**, was reviewed and mer
 ```text
 PR: #22
 Merge commit: 07fb19c7d8d01a8d7068d7f2b00ac5fb7900738d
-Scope: Archive-only; no active runtime behaviour change.
+Scope: archive-only; no active runtime behaviour change.
 ```
 
-Archived files:
+Archived:
 
 ```text
 artifex/apps/project-editor/index.split.html
   → artifex/apps/project-editor/archive/pre-v0132-contract/index.split.html
-
 artifex/apps/project-editor/index.v7.html
   → artifex/apps/project-editor/archive/pre-v0132-contract/index.v7.html
-
 artifex/apps/project-editor/index.monolith.backup.html
   → artifex/apps/project-editor/archive/pre-split-monolith/index.monolith.backup.html
-
 artifex/apps/project-editor/src/project-app.js
   → artifex/apps/project-editor/archive/pre-v7-split/project-app.js
 ```
 
-Archive documentation added:
-
-```text
-artifex/apps/project-editor/archive/pre-v0132-contract/README.md
-artifex/apps/project-editor/archive/pre-split-monolith/README.md
-artifex/apps/project-editor/archive/pre-v7-split/README.md
-```
-
-Verification recorded before merge:
-
-```text
-- All four moved files were confirmed inactive/superseded before archiving.
-- The active Project Editor entry remains artifex/apps/project-editor/index.html.
-- The active entry still loads ./src/project-app.v7.js?v=0.1.32-contract.
-- No current UI/CSS, schema, save/load behaviour, shared service or other app was changed.
-- The PR diff contained only four archive moves and three archive README files.
-- An attempted root npm build failed due to pre-existing unrelated root TypeScript/CSS declaration and target-lib issues, not this archive-only pass.
-```
+The active entry remains `artifex/apps/project-editor/index.html` loading `./src/project-app.v7.js?v=0.1.32-contract`.
 
 ### Completed: Phase 2B — Quest Builder archive-only pass 01
 
@@ -111,58 +90,31 @@ PR #23, **Archive inactive Quest Builder legacy files (v1.0.8 + pre-v1.2.12 modu
 ```text
 PR: #23
 Merge commit: c0a82d69f08338a19447e26d28ba7fbcbbb5be28
-Scope: Archive-only; no active runtime behaviour change.
+Scope: archive-only; no active runtime behaviour change.
 ```
 
-Archived files:
+Archived:
 
 ```text
 artifex/apps/quest-builder/v1/quest-builder-v108.js
   → artifex/apps/quest-builder/archive/v108-monolith/quest-builder-v108.js
-
 artifex/apps/quest-builder/v1/styles.css
   → artifex/apps/quest-builder/archive/pre-v1212-module-app/styles.css
-
 artifex/apps/quest-builder/v1/src/module-app.js
   → artifex/apps/quest-builder/archive/pre-v1212-module-app/module-app.js
-
 artifex/apps/quest-builder/v1/src/module-io.js
   → artifex/apps/quest-builder/archive/pre-v1212-module-app/module-io.js
-
 artifex/apps/quest-builder/v1/src/module-renderer.js
   → artifex/apps/quest-builder/archive/pre-v1212-module-app/module-renderer.js
-
 artifex/apps/quest-builder/v1/src/module-state.js
   → artifex/apps/quest-builder/archive/pre-v1212-module-app/module-state.js
 ```
 
-Archive documentation added:
-
-```text
-artifex/apps/quest-builder/archive/v108-monolith/README.md
-artifex/apps/quest-builder/archive/pre-v1212-module-app/README.md
-```
-
-Active files deliberately retained:
+Deliberately retained as active:
 
 ```text
 artifex/apps/quest-builder/v1/quest-builder-v108.css
-  Retained because artifex/apps/quest-builder/v1/quest-builder.css still imports it as active base styling.
-
 artifex/apps/quest-builder/v1/src/module-config.js
-  Retained because current V1.2.12 runtime modules still import it.
-```
-
-Verification recorded before merge:
-
-```text
-- The active Quest Builder entry remains artifex/apps/quest-builder/index.html.
-- The active style path remains v1/quest-builder.css?v=1.2.12 → quest-builder-v108.css?v=1.2.12-base.
-- The active runtime path remains v1/src/quest-builder-app.js?v=1.2.12.
-- The two still-active candidate files were excluded rather than incorrectly archived.
-- No active Quest Builder HTML, CSS entry, current runtime module, schema, export/import behaviour, connected-project behaviour, puzzle handoff, dialogue behaviour, shared service or other app was changed.
-- The PR diff contained only six archive moves and two archive README files.
-- An attempted root npm build failed due to pre-existing unrelated root TypeScript/CSS issues, not this archive-only pass.
 ```
 
 ### Completed: Phase 2C — Puzzle Creator archive-only pass 01
@@ -172,56 +124,43 @@ PR #24, **Archive superseded Puzzle Creator maze patch files (pre-v1.32)**, was 
 ```text
 PR: #24
 Merge commit: ce26b1c2cd42cd36ec6ba9c341ec360df8261c29
-Scope: Archive-only; no active runtime behaviour change.
+Scope: archive-only; no active runtime behaviour change.
 ```
 
-Archived files:
+Archived:
 
 ```text
 artifex/apps/puzzle-creator/src/js/engines/maze-v109-controls.js
   → artifex/apps/puzzle-creator/archive/legacy-maze-pre-v132/maze-v109-controls.js
-
 artifex/apps/puzzle-creator/src/js/engines/maze-v110-fixes.js
   → artifex/apps/puzzle-creator/archive/legacy-maze-pre-v132/maze-v110-fixes.js
 ```
 
-Archive documentation added:
+The active Puzzle Creator route remains V1.32 with `src/js/main.js?v=1.28` and `src/js/engines/maze-labyrinth-consolidation-loader.js?v=1.32`. JavaScript syntax checks and a Puzzle Creator-specific Vite production build passed during this archive-only pass.
+
+### Completed: Phase 3 — Corrected master rules-compliance and stability analysis
+
+Recorded audit file:
 
 ```text
-artifex/apps/puzzle-creator/archive/legacy-maze-pre-v132/README.md
+artifex/shared/todo-guide/audits/2026-06-01-master-rules-compliance-and-stability-audit.md
 ```
 
-Verification recorded before merge:
+This master audit reconciles the global display/file-contract review with the accepted current-main baseline and completed archive passes. It confirms:
 
 ```text
-- Both moved files were confirmed inactive and superseded before archiving.
-- The active Puzzle Creator entry remains artifex/apps/puzzle-creator/index.html, visibly labelled V1.32.
-- The active module route remains src/js/main.js?v=1.28 plus src/js/engines/maze-labyrinth-consolidation-loader.js?v=1.32.
-- No active HTML entry, JavaScript, CSS, loader chain, schema, save/load/export/import behaviour, quest handoff, shared service, UI layout or maze/labyrinth runtime behaviour was changed.
-- The PR diff contained only two archive moves and one archive README file.
-- JavaScript syntax checks and a Puzzle Creator-specific Vite production build passed.
-- An attempted root npm build failed due to pre-existing unrelated root TypeScript/CSS issues, not this archive-only pass.
+- Three archive-only passes are complete and should not be expanded or treated as behavioural fixes.
+- Scene Editor is still the first required behavioural repair and is blocked from UI redesign until selected-object ownership is fixed and tested.
+- Effect Editor still requires a read-only route/feature-parity decision before UI work.
+- Archetype Object Creator V1.35 still requires functional validation before changes.
+- Creation Guide and Project Editor still require app-specific wrapper/save/contract verification when selected, but do not block independent safe UI lanes.
+- Puzzle Creator V1.32 is the recommended first fuller UI-only lane after a quick baseline check.
+- Sound Generator preview/shared popup is the recommended smallest low-risk UI-only lane after a quick baseline check, with save/asset-index/caller integration explicitly excluded.
 ```
-
-### Current decision point — no new work authorised yet
-
-Three low-risk archive passes have now been completed and recorded. The active runtime folders for Project Editor, Quest Builder and Puzzle Creator have been reduced without changing their live behaviour.
-
-The next task must be chosen and separately scoped before any work starts:
-
-```text
-A. Begin the first required behavioural stabilisation pass: Scene Editor Object Inspector and transform ownership consolidation.
-B. Reopen a tightly restricted UI lane after a quick baseline smoke check:
-   - smallest/lowest-risk visual surface: Sound Generator preview/shared popup; or
-   - first fuller app visual surface: Puzzle Creator V1.32.
-C. Continue limited archive cleanup only if a new app-specific candidate has a clear benefit and is independently verified before movement.
-```
-
-Practical recommendation: stop archive cleanup by default now. Puzzle Creator is cleaner and its app-specific build has passed, so it is the stronger candidate for a first fuller UI lane after a short visual/manual baseline check. Scene Editor remains the first functional blocker to repair when ready for a higher-risk tested implementation pass.
 
 ## Current Authority Set
 
-All stabilisation and later implementation work must use current `main` and check against:
+All later analysis and implementation work must use current `main` and check against:
 
 ```text
 docs/artifex/00-index.md
@@ -238,94 +177,92 @@ artifex/shared/todo-guide/all-apps-todos.json
 artifex/shared/todo-guide/audits/2026-06-01-change-timeline.md
 artifex/shared/todo-guide/audits/2026-06-01-current-main-baseline-matrix.md
 artifex/shared/todo-guide/audits/2026-06-01-archive-and-hotfix-inventory.md
+artifex/shared/todo-guide/audits/2026-06-01-master-rules-compliance-and-stability-audit.md
 ```
 
-App-local docs remain useful, but any conflict with the authority set must be flagged and decided rather than silently followed.
+App-local docs remain useful, but any conflict with this authority set must be flagged and decided rather than silently followed.
+
+## Remaining Read-Only Analysis Work
+
+The master audit is complete, but focused analysis is still needed before work begins in particular unresolved apps:
+
+| Priority | Surface | Required read-only work | Blocks UI where? | Recommended owner |
+|---:|---|---|---|---|
+| 1 | Effect Editor | Compare `index.html` V3.38 Emergency with `index2.html` INDEX2-CLEAN-0.2.3 for routing and feature parity; recommend accepted baseline. | Effect Editor only. | Agent/research. |
+| 2 | Archetype Object Creator | Validate V1.35 wizard flow, save/index update, browser recovery and Sound Generator callback behaviour. | Object Creator only. | Agent plus manual testing. |
+| 3 | Project Editor | Verify current save/export behaviour and remaining user-facing Project Manager terminology drift. | Project Editor expansion only. | Agent/research. |
+| 4 | Hub | Check module links, current route targets, version labels and project-selection behaviour. | Hub UI only. | Agent/research. |
+| 5 | Creation Guide | Verify starter ZIP/package output and starter-schema alignment from current main. | Creation Guide/project-start reliability only; not unrelated UI lanes. | Agent/research. |
+
+## First Required Behavioural Repair
+
+Scene Editor remains the first required functional repair:
+
+```text
+Scene Editor: consolidate Object Inspector and transform ownership to repair the selected-object / wrong-object failure.
+```
+
+This pass must not be mixed with visual redesign or broad save-contract changes. It must establish stable selected-object ownership and pass the recorded ball-versus-box acceptance gate:
+
+```text
+- Editing the ball changes only the ball.
+- Editing the box changes only the box.
+- Alternating selections does not apply stale values to the wrong object.
+- Move, resize, rotate, skew, aspect-lock and wrap-to-image affect only the selected item.
+- Visual adjustments remain selected-object specific.
+- Inspector cards render once without accumulated repair controls.
+- Save/autosave, reload and preview remain functional.
+- No replacement patch/helper/wrapper layer is introduced.
+```
+
+## Safe UI-Only Resumption Lanes
+
+| Candidate | Required gate | Initial allowed scope | Initial prohibited scope | Decision |
+|---|---|---|---|---|
+| Puzzle Creator V1.32 | Short current-main visual/manual baseline with version/entry route recorded. | Panel layout, spacing, typography, card/toolbar/button/icon presentation and visible wording corrections. | Maze engine, active loader consolidation, schemas, save paths, project-folder/registered-content integration and new wrappers. | **Recommended first fuller UI-only lane.** |
+| Sound Generator preview/shared popup V1.00 | Short modal/control/preview smoke test. | Popup/card layout, typography, spacing, control readability and visual accessibility. | Project-folder recipe save, asset-index registration, JSON import/export behaviour, Save and Assign callback and Object Creator integration. | **Recommended smallest low-risk UI-only lane.** |
+| Quest Builder V1.2.12 | Quick entry/runtime/style and visible-flow check. | Presentation-only cards/flow/menu/control styling. | Schema, connection logic, export/save integration and new wrappers. | Later safe visual lane. |
+| Hub V1.1.4 | Link/version/project-selection baseline. | Branding, spacing, typography and app-card presentation. | Route restructuring and active-project/local-storage behaviour. | Later small UI candidate. |
+
+## Current Decision Point — No New Implementation Authorised Yet
+
+The stabilisation audit and initial archive cleanup stage is complete. The user must now choose the next separately scoped pass:
+
+```text
+A. Reopen visible UI work through a quick Puzzle Creator V1.32 baseline check, followed by a UI-only pass if accepted.
+B. Reopen the smallest visual UI lane through a Sound Generator preview/shared-popup baseline check, followed by a visual-only pass if accepted.
+C. Begin the first required behavioural repair: Scene Editor Object Inspector and transform ownership consolidation, with full manual acceptance testing.
+D. Continue focused read-only analysis for one unresolved app, such as Effect Editor route selection or Object Creator V1.35 validation.
+```
+
+Recommendation after the audit stage:
+
+```text
+- For visible progress: choose Puzzle Creator baseline/UI-only work.
+- For highest-priority functional stabilisation: choose Scene Editor ownership repair.
+- Do not continue archive cleanup by default.
+```
 
 ## Non-Negotiable Working Controls
 
-1. **Current `main` is the only implementation baseline.** Old PRs and branches may be inspected as evidence, but may not be used as implementation bases unless the user explicitly approves an exception.
-2. **Audit work is read-only.** Audits must not edit files, update docs, create branches, merge PRs or perform cleanup while investigating.
-3. **Implementation occurs only after the user approves a named pass.** Each pass must state the app, exact purpose, permitted file area, prohibited changes and manual acceptance checks before editing begins.
-4. **One app and one concern per implementation pass.** UI, save-contract integration, schema work and hotfix consolidation are separate workstreams unless an unavoidable dependency is explicitly approved.
-5. **No new patch/hotfix/wrapper files as the normal fix route.** Valid behaviour must move into permanent ownership rather than receiving another overlay.
-6. **No silent multi-hour implementation.** Every task must stop with a report after the agreed pass.
-7. **Archive rather than delete obsolete work initially.** Archiving preserves history while clearing active folders.
-8. **A manual acceptance gate is required before the next implementation pass starts.** Static checks do not replace user review of visible behaviour.
-
-## Stable Enough for UI Work
-
-An app may resume UI-only implementation only when:
-
-```text
-- Its current-main entry point and visible version are recorded.
-- Its core function has a short manual smoke-test result.
-- No unresolved runtime blocker invalidates the proposed UI work.
-- Overlapping branches/PRs have been classified.
-- Active patch/wrapper files affecting the UI area have been consolidated or explicitly accepted as temporary and non-conflicting.
-- Unused files affecting the app have been inventoried and archived where approved.
-- The UI scope explicitly excludes unrelated save/schema/integration refactors.
-- A rollback or pre-change baseline is recorded.
-```
-
-Stability is approved app-by-app; the whole platform does not need to be complete before one controlled UI lane reopens.
-
-## Archive Pass Rules
-
-Recommended archive locations:
-
-```text
-artifex/apps/<app-slug>/archive/legacy-2026-06-01/
-artifex/shared/archive/legacy-2026-06-01/
-docs/archive/<area>/
-```
-
-Rules:
-
-1. Move only files confirmed as unused, superseded or evidence-only.
-2. Do not archive an active wrapper until equivalent permanent behaviour is verified.
-3. Keep a README inside each new archive folder listing moved files, former locations, reason for archiving, active replacement if any, and commit/manual-test reference.
-4. Update imports, HTML loading and cache references only as part of an approved app-specific pass.
-5. Run static reference checks and manual app smoke checks after each archive pass.
-6. Archive one app at a time; never run a mass repo move.
-
-## Hotfix Consolidation Rules
-
-For every approved app pass, prepare a consolidation map first:
-
-| Current hotfix/wrapper behaviour | Permanent owner module | Files to retire/archive after success | Manual acceptance gate |
-|---|---|---|---|
-| Example: controls injected after render | Real UI renderer/control owner | Patch module | Controls exist once and affect selected item only |
-
-Rules:
-
-1. Consolidate behaviour into existing permanent owning modules; do not add a new consolidation wrapper.
-2. Preserve intended current behaviour before adding new capability or redesign.
-3. Remove the retired import/script load only after the permanent owner passes checks.
-4. Move retired files to the approved archive folder in the same reviewed pass or an immediately following archive-only pass.
-5. Record exactly which behaviours moved and which were deliberately removed.
-6. Stop for user testing after each app pass.
-
-## Reopening Controlled UI Changes App-by-App
-
-Once one app satisfies the stability rules:
-
-1. The user chooses one app and one visible design goal.
-2. A baseline screenshot/test URL and version are recorded before edits.
-3. The implementation brief prohibits schema, save, integration and architecture changes unless explicitly approved.
-4. Changes are made in permanent owning UI/CSS modules only; no patch files are added.
-5. The agent reports every changed file, checks run and an exact live test URL.
-6. The user accepts or rejects the pass before more work starts.
+1. Current `main` is the only implementation baseline. Old PRs and branches may be inspected as evidence but must not be used as implementation bases unless explicitly approved.
+2. Audit work is read-only. It must not edit files, create branches, merge PRs or perform cleanup while investigating.
+3. Implementation occurs only after the user approves a named pass, permitted file area, prohibited changes and acceptance checks.
+4. One app and one concern per implementation pass. UI, save-contract integration, schema work and hotfix consolidation are separate workstreams unless explicitly approved as unavoidable.
+5. No new patch/hotfix/wrapper files as the normal fix route. Valid behaviour moves into permanent ownership.
+6. No silent multi-hour implementation. Every pass stops with a report and review gate.
+7. Archive rather than delete obsolete work initially, and only after verified inactivity or successful replacement.
+8. A manual acceptance gate is required before another implementation pass begins.
 
 ## What Is Explicitly Not Authorised
 
 ```text
 - a repo-wide automatic cleanup;
-- moving every old-looking file into archive without reference/behaviour evidence;
+- moving old-looking files into archive without reference/behaviour evidence;
 - deleting old implementations instead of initially archiving them;
 - merging PR #20 or using it as a development base;
 - blindly merging PR #9 or PR #17;
 - a mass save-schema or connected-folder rewrite;
-- bundling architecture work into a UI pass;
+- bundling architecture work into a UI-only pass;
 - continuing implementation work without a stop-and-report checkpoint.
 ```
