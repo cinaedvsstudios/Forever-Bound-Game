@@ -31,6 +31,7 @@ const TEXT_CONTROLS = [
   { property: 'textLifetimeBias', label: 'Lifetime Bias', type: 'select', options: [['short', 'Short'], ['normal', 'Normal'], ['long', 'Long']] },
   { property: 'textKeepBlockTogether', label: 'Keep Block Together', type: 'checkbox' }
 ];
+const DEFAULT_SAMPLE_TEXT = 'Lorem ipsum dolor sit amet\nconsectetur adipiscing elit';
 let renderedKey = '';
 let detailsMoved = false;
 
@@ -39,6 +40,7 @@ export function syncEffectControls() {
   const body = document.getElementById('effect-specific-controls-body');
   if (!body) return;
   const layer = getActiveLayer();
+  if (isTextLayer(layer) && layer.textContent === DEFAULT_SAMPLE_TEXT) updateActiveLayer({ textContent: '' });
   const key = layer ? `${layer.id}|${isTextLayer(layer) ? 'text' : layer.engine}|${layer.textRevealMode || ''}` : 'none';
   if (key !== renderedKey) {
     renderedKey = key;
