@@ -1,6 +1,11 @@
 import { editorState, getActiveLayer, onStateChange, updateActiveLayer } from './editor-state.js';
 import { describeGravityScale, fromGravityControlValue, toGravityControlValue } from './physics-scale.js';
 
+function finite(value, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
 export function initEditorDynamicsControls() {
   bindMetadataFields();
   bindGravityControls();
