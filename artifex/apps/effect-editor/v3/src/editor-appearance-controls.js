@@ -2,7 +2,7 @@ import { getActiveLayer, onStateChange, updateActiveLayer } from './editor-state
 
 const SHAPE_CHOICES = [['circle', 'Circle / Soft Orb'], ['square', 'Square'], ['diamond', 'Diamond'], ['star', 'Star Spark'], ['slash', 'Slash Stroke']];
 const BRUSH_CHOICES = [['spark', 'Spark'], ['soft-dot', 'Soft Dot'], ['smoke-puff', 'Smoke Puff'], ['slash', 'Slash Stroke'], ['flare', 'Flare Cross']];
-const CONTROL_IDS = ['appearance-mode-select', 'render-choice-button', 'blend-mode-select', 'tint-mode-select', 'texture-fit-select', 'reverse-toggle', 'rotation-input', 'rotation-jitter-input', 'edge-blur-input', 'texture-alpha-input', 'custom-texture-input', 'stop-color-input', 'stop-opacity-input', 'stop-size-input', 'stop-glow-input', 'add-stop-button', 'delete-stop-button'];
+const CONTROL_IDS = ['appearance-mode-select', 'render-choice-button', 'blend-mode-select', 'tint-mode-select', 'texture-fit-select', 'reverse-toggle', 'rotation-input', 'rotation-mode-select', 'rotation-jitter-input', 'edge-blur-input', 'texture-alpha-input', 'custom-texture-input', 'stop-color-input', 'stop-opacity-input', 'stop-size-input', 'stop-glow-input', 'add-stop-button', 'delete-stop-button'];
 let toast = () => {};
 
 export function initEditorAppearanceControls(showToast = () => {}) {
@@ -20,7 +20,8 @@ function bindControls() {
   const reverse = document.getElementById('reverse-toggle');
   reverse?.addEventListener('change', () => updateActiveLayer({ reverseColor: reverse.checked }));
   bindRange('rotation-input', 'rotation-output', 'angle');
-  bindRange('rotation-jitter-input', 'rotation-jitter-output', 'spread');
+  bindChange('rotation-mode-select', updateEmissionDirectionMode);
+  bindDegreeRange();
   bindRange('edge-blur-input', 'edge-blur-output', 'edgeBlur');
   bindRange('texture-alpha-input', 'texture-alpha-output', 'textureAlpha');
   document.getElementById('stop-color-input')?.addEventListener('input', (event) => updateActiveStop({ color: event.target.value }));
@@ -43,6 +44,22 @@ function bindRange(id, outputId, property) {
     document.getElementById(outputId).textContent = input.value;
     updateActiveLayer({ [property]: Number(input.value) });
   });
+}
+function bindDegreeRange() {
+  const input = document.getElementById('rotation-jitter-input');
+  input?.addEventListener('input', () => {
+    setText('rotation-jitter-output', input.value);
+    if (document.getElementById('rotation-mode-select')?.value === 'range') {
+      updateActiveLayer({ spread: Number(input.value) * 2 });
+    }
+  });
+}
+function updateEmissionDirectionMode(value) {
+  const input = document.getElementById('rotation-jitter-input');
+  const degreeRange = finite(input?.value, 30);
+  if (value === 'random') updateActiveLayer({ spread: 360 });
+  else if (value === 'fixed') updateActiveLayer({ spread: 0 });
+  else updateActiveLayer({ spread: degreeRange * 2 });
 }
 
 function openRenderChoice() {
@@ -129,16 +146,32 @@ function syncAppearanceControls() {
   setValue('tint-mode-select', layer.tintMode || 'tint');
   setValue('texture-fit-select', layer.textureFit || 'contain');
   setValue('rotation-input', finite(layer.angle, -90));
-  setValue('rotation-jitter-input', finite(layer.spread, 60));
+  const directionMode = emissionDirectionModeFromSpread(layer.spread);
+  setValue('rotation-mode-select', directionMode);
+  if (directionMode === 'range') {
+    const degreeRange = Math.min(180, Math.max(0, finite(layer.spread, 60) / 2));
+    setValue('rotation-jitter-input', degreeRange);
+    setText('rotation-jitter-output', degreeRange);
+  }
   setValue('edge-blur-input', finite(layer.edgeBlur, 0));
   setValue('texture-alpha-input', finite(layer.textureAlpha, 1));
   const reverse = document.getElementById('reverse-toggle');
   if (reverse) reverse.checked = Boolean(layer.reverseColor);
   setText('rotation-output', finite(layer.angle, -90));
-  setText('rotation-jitter-output', finite(layer.spread, 60));
+  syncDegreeRangeVisibility(directionMode);
   setText('edge-blur-output', finite(layer.edgeBlur, 0));
   setText('texture-alpha-output', finite(layer.textureAlpha, 1));
   syncChoiceButton(layer);
+}
+function emissionDirectionModeFromSpread(spread) {
+  const value = finite(spread, 60);
+  if (value <= 0) return 'fixed';
+  if (value >= 360) return 'random';
+  return 'range';
+}
+function syncDegreeRangeVisibility(mode) {
+  const rangeLabel = document.getElementById('rotation-jitter-label');
+  if (rangeLabel) rangeLabel.toggleAttribute('hidden', mode !== 'range');
 }
 function syncChoiceButton(layer) {
   const mode = layer.appearanceMode || 'shape';
