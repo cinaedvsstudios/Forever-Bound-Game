@@ -19,9 +19,9 @@ function bindControls() {
   bindChange('texture-fit-select', (value) => updateActiveLayer({ textureFit: value }));
   const reverse = document.getElementById('reverse-toggle');
   reverse?.addEventListener('change', () => updateActiveLayer({ reverseColor: reverse.checked }));
-  bindRange('rotation-input', 'rotation-output', 'rotation');
-  bindChange('rotation-mode-select', (value) => updateActiveLayer({ rotationMode: normalizeRotationMode(value) }));
-  bindRange('rotation-jitter-input', 'rotation-jitter-output', 'rotationJitter');
+  bindRange('rotation-input', 'rotation-output', 'angle');
+  bindChange('rotation-mode-select', updateEmissionDirectionMode);
+  bindDegreeRange();
   bindRange('edge-blur-input', 'edge-blur-output', 'edgeBlur');
   bindRange('texture-alpha-input', 'texture-alpha-output', 'textureAlpha');
   document.getElementById('stop-color-input')?.addEventListener('input', (event) => updateActiveStop({ color: event.target.value }));
@@ -44,6 +44,22 @@ function bindRange(id, outputId, property) {
     document.getElementById(outputId).textContent = input.value;
     updateActiveLayer({ [property]: Number(input.value) });
   });
+}
+function bindDegreeRange() {
+  const input = document.getElementById('rotation-jitter-input');
+  input?.addEventListener('input', () => {
+    setText('rotation-jitter-output', input.value);
+    if (document.getElementById('rotation-mode-select')?.value === 'range') {
+      updateActiveLayer({ spread: Number(input.value) * 2 });
+    }
+  });
+}
+function updateEmissionDirectionMode(value) {
+  const input = document.getElementById('rotation-jitter-input');
+  const degreeRange = finite(input?.value, 30);
+  if (value === 'random') updateActiveLayer({ spread: 360 });
+  else if (value === 'fixed') updateActiveLayer({ spread: 0 });
+  else updateActiveLayer({ spread: degreeRange * 2 });
 }
 
 function openRenderChoice() {
@@ -129,19 +145,33 @@ function syncAppearanceControls() {
   setValue('blend-mode-select', layer.blendMode || defaultBlendMode(layer.engine));
   setValue('tint-mode-select', layer.tintMode || 'tint');
   setValue('texture-fit-select', layer.textureFit || 'contain');
-  setValue('rotation-input', finite(layer.rotation, 0));
-  setValue('rotation-mode-select', normalizeRotationMode(layer.rotationMode));
-  setValue('rotation-jitter-input', finite(layer.rotationJitter, 5));
+  setValue('rotation-input', finite(layer.angle, -90));
+  const directionMode = emissionDirectionModeFromSpread(layer.spread);
+  setValue('rotation-mode-select', directionMode);
+  if (directionMode === 'range') {
+    const degreeRange = Math.min(180, Math.max(0, finite(layer.spread, 60) / 2));
+    setValue('rotation-jitter-input', degreeRange);
+    setText('rotation-jitter-output', degreeRange);
+  }
   setValue('edge-blur-input', finite(layer.edgeBlur, 0));
   setValue('texture-alpha-input', finite(layer.textureAlpha, 1));
   const reverse = document.getElementById('reverse-toggle');
   if (reverse) reverse.checked = Boolean(layer.reverseColor);
-  setText('rotation-output', finite(layer.rotation, 0));
-  setText('rotation-jitter-output', finite(layer.rotationJitter, 5));
-  syncRotationControlVisibility(layer);
+  setText('rotation-output', finite(layer.angle, -90));
+  syncDegreeRangeVisibility(directionMode);
   setText('edge-blur-output', finite(layer.edgeBlur, 0));
   setText('texture-alpha-output', finite(layer.textureAlpha, 1));
   syncChoiceButton(layer);
+}
+function emissionDirectionModeFromSpread(spread) {
+  const value = finite(spread, 60);
+  if (value <= 0) return 'fixed';
+  if (value >= 360) return 'random';
+  return 'range';
+}
+function syncDegreeRangeVisibility(mode) {
+  const rangeLabel = document.getElementById('rotation-jitter-label');
+  if (rangeLabel) rangeLabel.toggleAttribute('hidden', mode !== 'range');
 }
 function syncChoiceButton(layer) {
   const mode = layer.appearanceMode || 'shape';
@@ -223,14 +253,6 @@ function setValue(id, value) { const element = document.getElementById(id); if (
 function setText(id, value) { const element = document.getElementById(id); if (element) element.textContent = String(value); }
 function normalizeHex(value) { const text = String(value || '').trim(); return /^#[0-9a-f]{6}$/i.test(text) ? text : '#ffcc66'; }
 function defaultBlendMode(engine) { return ['gas', 'refraction', 'heatdistortion'].includes(engine) ? 'source-over' : 'lighter'; }
-function normalizeRotationMode(value) { return ['random', 'range', 'fixed'].includes(value) ? value : 'random'; }
-function syncRotationControlVisibility(layer) {
-  const mode = normalizeRotationMode(layer.rotationMode);
-  const rotationLabel = document.getElementById('rotation-input')?.closest('label');
-  const jitterLabel = document.getElementById('rotation-jitter-label');
-  if (rotationLabel) rotationLabel.toggleAttribute('hidden', mode === 'random');
-  if (jitterLabel) jitterLabel.toggleAttribute('hidden', mode !== 'range');
-}
 function finite(value, fallback) { const number = Number(value); return Number.isFinite(number) ? number : fallback; }
 function clamp(value, min, max) { const number = Number.isFinite(Number(value)) ? Number(value) : min; return Math.min(max, Math.max(min, number)); }
 function clampIndex(value, stops) { return Math.min(Math.max(0, Math.round(Number(value) || 0)), Math.max(0, stops.length - 1)); }

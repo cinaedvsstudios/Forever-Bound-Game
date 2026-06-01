@@ -1,13 +1,15 @@
-.topbar { display: grid; grid-template-columns: minmax(280px, 1fr) auto minmax(420px, 1fr); gap: 18px; }
+.topbar { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 18px; }
 .brand { justify-self: start; }
-.index2-action-strip { align-self: center; justify-self: center; display: flex; align-items: center; gap: 8px; }
+.brand-mark-rune { display: inline-block; transform: rotate(45deg); transform-origin: 50% 50%; line-height: 1; }
+.topbar-tools { align-self: center; justify-self: center; display: flex; align-items: center; justify-content: center; gap: 14px; min-width: 0; }
+.index2-action-strip { display: flex; align-items: center; gap: 8px; }
 .index2-action-button { width: 40px; height: 40px; min-width: 40px; padding: 0; display: grid; place-items: center; border-radius: 13px; font-size: 17px; }
 .index2-action-button:nth-child(1) { color: #b6ed72; }
 .index2-action-button:nth-child(2) { color: #ff88be; }
 .index2-action-button:nth-child(3) { color: #f7bf55; }
 .index2-action-button:nth-child(4) { color: #ff7397; }
 .index2-action-button:nth-child(5) { color: #e15583; }
-.menu-bar { justify-self: end; }
+.menu-bar { justify-content: flex-start; }
 #base-layer-list button { width: 100%; display: block; text-align: left; margin-bottom: 7px; }
 #base-layer-list button span { display: block; margin-top: 3px; color: var(--gold-muted); font-size: 10px; line-height: 1.25; font-weight: 400; }
 .index2-card-hidden { display: none !important; }
@@ -88,4 +90,4 @@
 body.index2-resizing, body.index2-resizing * { user-select: none !important; }
 body.index2-resizing-side { cursor: col-resize; }
 body.index2-resizing-bottom { cursor: row-resize; }
-@media (max-width:1120px) { .topbar { display: flex; flex-wrap: wrap; height: auto; } .index2-action-strip { order: 3; width: 100%; justify-content: center; } .app-shell { height: calc(100vh - 116px); } .index2-stage-status { display: none; } .index2-bottom-grid { grid-template-columns: 1fr; } }
+@media (max-width:1120px) { .topbar { display: flex; flex-wrap: wrap; height: auto; } .topbar-tools { order: 3; width: 100%; flex-wrap: wrap; } .index2-action-strip { justify-content: center; } .app-shell { height: calc(100vh - 116px); } .index2-stage-status { display: none; } .index2-bottom-grid { grid-template-columns: 1fr; } }
