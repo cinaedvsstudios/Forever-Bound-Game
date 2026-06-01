@@ -34,8 +34,7 @@ const ENGINES = [
 const INPUT_BINDINGS = [
   ['layer-name-input', 'name', false], ['engine-select', 'engine', false],
   ['spawn-rate-input', 'spawnRate', true], ['speed-min-input', 'speedMin', true],
-  ['speed-max-input', 'speedMax', true], ['angle-input', 'angle', true],
-  ['spread-input', 'spread', true], ['lifetime-input', 'lifetime', true]
+  ['speed-max-input', 'speedMax', true], ['lifetime-input', 'lifetime', true]
 ];
 let toast = () => {};
 let version = 'INDEX2-WORK';
@@ -203,8 +202,6 @@ function syncBoundInputs() {
   setOutput('spawn-rate-output', layer?.spawnRate);
   setOutput('speed-min-output', layer?.speedMin);
   setOutput('speed-max-output', layer?.speedMax);
-  setOutput('angle-output', layer?.angle);
-  setOutput('spread-output', layer?.spread);
   setOutput('lifetime-output', layer?.lifetime);
 }
 function syncStatusText() {

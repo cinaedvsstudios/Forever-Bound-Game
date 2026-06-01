@@ -3,34 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Artifex Effect Editor Index2 Clean V0.2.4</title>
-  <link rel="stylesheet" href="./v3/styles.css?v=index2-024-clean" />
-  <link rel="stylesheet" href="./v3/index2-workspace-ui.css?v=024-clean" />
-  <link rel="stylesheet" href="./v3/editor-appearance-controls.css?v=024-clean" />
+  <title>Artifex Effect Editor Index2 Clean V0.2.5</title>
+  <link rel="stylesheet" href="./v3/styles.css?v=index2-025-clean" />
+  <link rel="stylesheet" href="./v3/index2-workspace-ui.css?v=025-clean" />
+  <link rel="stylesheet" href="./v3/editor-appearance-controls.css?v=025-clean" />
 </head>
 <body>
   <header class="topbar">
     <section class="brand">
-      <div class="brand-mark">✦</div>
+      <div class="brand-mark"><span class="brand-mark-rune">ᚠ</span></div>
       <div>
         <h1>ARTIFEX</h1>
-        <p>Visual Effects Editor <span id="version-badge">INDEX2-CLEAN-0.2.4</span></p>
+        <p>Visual Effects Editor <span id="version-badge">INDEX2-CLEAN-0.2.5</span></p>
       </div>
     </section>
-    <nav class="index2-action-strip" aria-label="Control panel shortcuts">
-      <button type="button" class="index2-action-button" data-jump-card="index2-card-assets" title="Jump to assets">🧩</button>
-      <button type="button" class="index2-action-button" data-jump-card="index2-card-appearance" title="Jump to appearance">🎨</button>
-      <button type="button" class="index2-action-button" data-jump-card="index2-card-dynamics" title="Jump to dynamics">🪄</button>
-      <button type="button" class="index2-action-button" data-jump-card="effect-specific-controls-card" title="Jump to effect controls">🚀</button>
-      <button type="button" class="index2-action-button" data-jump-card="effect-specific-controls-card" title="Jump to specialised controls">💥</button>
-    </nav>
-    <nav class="menu-bar" aria-label="Editor menus">
+    <div class="topbar-tools">
+      <nav class="index2-action-strip" aria-label="Control panel shortcuts">
+        <button type="button" class="index2-action-button" data-jump-card="index2-card-assets" title="Jump to assets">🧩</button>
+        <button type="button" class="index2-action-button" data-jump-card="index2-card-appearance" title="Jump to appearance">🎨</button>
+        <button type="button" class="index2-action-button" data-jump-card="index2-card-dynamics" title="Jump to dynamics">🪄</button>
+        <button type="button" class="index2-action-button" data-jump-card="effect-specific-controls-card" title="Jump to effect controls">🚀</button>
+        <button type="button" class="index2-action-button" data-jump-card="effect-specific-controls-card" title="Jump to specialised controls">💥</button>
+      </nav>
+      <nav class="menu-bar" aria-label="Editor menus">
       <div class="menu"><button class="menu-button" data-menu="file">File ▾</button><div class="menu-panel" id="menu-file"><button id="new-effect-button">New Effect Archetype</button><button id="export-json-button">Export Composition JSON</button><label class="menu-file-label">Import Composition JSON<input id="import-json-input" type="file" accept=".json,application/json" hidden /></label><button id="save-local-button">Save Locally</button><button id="load-local-button">Load Local Effect</button><button id="clear-particles-button">Clear Particles</button><button id="snapshot-button-menu">Snapshot</button></div></div>
       <div class="menu"><button class="menu-button" data-menu="edit">Edit ▾</button><div class="menu-panel" id="menu-edit"><button id="duplicate-layer-button">Duplicate Layer</button><button id="delete-layer-button">Delete Layer</button><button id="center-emitter-button">Center Origin</button></div></div>
       <div class="menu"><button class="menu-button" data-menu="view">View ▾</button><div class="menu-panel" id="menu-view"><button data-workspace-mode="dark">Background: Dark</button><button data-workspace-mode="white">Background: White</button><button id="toggle-grid-button">Toggle Grid</button><button id="toggle-helpers-button">Toggle Guides</button></div></div>
       <div class="menu"><button class="menu-button primary" data-menu="insert">Insert ▾</button><div class="menu-panel wide" id="menu-insert"><section class="insert-section"><h3>Base Layer</h3><div id="base-layer-list" class="insert-list"></div></section></div></div>
-      <div class="menu"><button class="menu-button" data-menu="help">Help ▾</button><div class="menu-panel right" id="menu-help"><button id="about-button">About INDEX2-CLEAN-0.2.4</button></div></div>
-    </nav>
+      <div class="menu"><button class="menu-button" data-menu="help">Help ▾</button><div class="menu-panel right" id="menu-help"><button id="about-button">About INDEX2-CLEAN-0.2.5</button></div></div>
+      </nav>
+    </div>
   </header>
   <main class="app-shell">
     <aside id="left-panel" class="side-panel">
@@ -69,7 +71,7 @@
           <label>Blend Mode<select id="blend-mode-select"><option value="lighter">Additive Glow</option><option value="source-over">Normal Alpha</option><option value="screen">Screen Lighten</option><option value="multiply">Multiply Darken</option></select></label>
           <label>Tint Mode<select id="tint-mode-select"><option value="tint">Tint visible pixels</option><option value="original">Keep original colours</option><option value="alpha-mask">Use as alpha mask</option></select></label>
           <label>Texture Fit<select id="texture-fit-select"><option value="contain">Fit inside particle</option><option value="cover">Fill particle area</option><option value="stretch">Stretch to square</option></select></label>
-          <label>Rotate<input id="rotation-input" type="range" min="-180" max="180" step="1" value="0" /><output id="rotation-output">0</output></label><label>Rotation Direction<select id="rotation-mode-select"><option value="random">Random Rotation</option><option value="range">Within Degree Range</option><option value="fixed">Lock Direction</option></select></label><label id="rotation-jitter-label">Degree Range<input id="rotation-jitter-input" type="range" min="0" max="180" step="1" value="5" /><output id="rotation-jitter-output">5</output></label>
+          <label>Rotate<input id="rotation-input" type="range" min="-180" max="180" step="1" value="-90" /><output id="rotation-output">-90</output></label><label id="rotation-jitter-label">Degree Range<input id="rotation-jitter-input" type="range" min="0" max="360" step="1" value="60" /><output id="rotation-jitter-output">60</output></label>
           <label>Soft Edge<input id="edge-blur-input" type="range" min="0" max="5" step="0.1" value="0" /><output id="edge-blur-output">0</output></label>
           <label>Texture Opacity<input id="texture-alpha-input" type="range" min="0" max="1" step="0.01" value="1" /><output id="texture-alpha-output">1</output></label>
         </div>
@@ -79,12 +81,11 @@
         <header><h2>Effect Layer Dynamics</h2><button type="button" class="index2-card-collapse" data-card-collapse title="Collapse Effect Layer Dynamics">⬆️</button></header>
         <div class="index2-field-pair"><label>Origin X<input id="emitter-x-input" type="number" min="0" max="1280" value="640" /></label><label>Origin Y<input id="emitter-y-input" type="number" min="0" max="720" value="450" /></label></div>
         <label>Density<input id="spawn-rate-input" type="range" min="1" max="80" step="1" value="16" /><output id="spawn-rate-output">16</output></label>
-        <label>Spread<input id="spread-input" type="range" min="0" max="360" step="1" value="60" /><output id="spread-output">60</output></label>
         <div class="index2-field-pair"><label>Speed Min<input id="speed-min-input" type="range" min="0" max="30" step="0.1" value="1.5" /><output id="speed-min-output">1.5</output></label><label>Speed Max<input id="speed-max-input" type="range" min="0" max="30" step="0.1" value="6" /><output id="speed-max-output">6</output></label></div>
         <label>Lifetime<input id="lifetime-input" type="range" min="10" max="240" step="1" value="80" /><output id="lifetime-output">80</output></label>
         <div class="index2-gravity-row"><label>Gravity Strength<input id="gravity-input" type="range" min="-100" max="100" step="1" value="100" /><output id="gravity-output">100</output></label><label class="index2-boost-toggle">Boost<input id="gravity-boost-input" type="checkbox" /></label></div>
         <p class="index2-gravity-note">0 = none · 100 = earth · Boost = ×2</p>
-        <label>Direction Angle<input id="angle-input" type="range" min="-180" max="180" step="1" value="-90" /><output id="angle-output">-90</output></label><label>Orbital Force<input id="orbital-force-input" type="range" min="-0.1" max="0.1" step="0.001" value="0" /><output id="orbital-force-output">0</output></label>
+        <label>Orbital Force<input id="orbital-force-input" type="range" min="-0.1" max="0.1" step="0.001" value="0" /><output id="orbital-force-output">0</output></label>
       </section>
       <section id="effect-specific-controls-card" class="card index2-effect-specific-card" data-search-card="Effect Specific Controls engine arc flare distortion shockwave lens gas text font letter spacing wrapping line timing reveal direction density scatter lifetime all caps uppercase"><header><h2>Effect Specific Controls</h2><button type="button" class="index2-card-collapse" data-card-collapse title="Collapse Effect Specific Controls">⬆️</button></header><div id="effect-specific-controls-body">Select a layer to see engine controls.</div></section>
     </aside>
@@ -92,6 +93,6 @@
     <section class="workspace-column"><section id="workspace" class="workspace index2-workspace"><div class="index2-workspace-controls index2-playback-controls" aria-label="Preview controls"><button id="pause-button" title="Pause or resume"><span class="index2-paused-icon" aria-hidden="true">▶️</span></button><button id="snapshot-button" title="Snapshot">📸</button></div><div class="index2-workspace-controls index2-zoom-controls" aria-label="Zoom controls"><button id="zoom-out-button">−</button><span id="zoom-readout">100%</span><button id="zoom-in-button">+</button><button id="zoom-reset-button" title="Reset Zoom">🎯</button></div><span id="status-text" class="index2-stage-status">Ready.</span><canvas id="fx-canvas" width="1280" height="720"></canvas><div id="toast-area" aria-live="polite"></div></section><div id="bottom-resizer" class="bottom-resizer" title="Drag to resize layer panel"></div><section id="bottom-panel" class="bottom-panel"></section></section>
   </main>
   <dialog id="appearance-choice-dialog"><form method="dialog"><header class="dialog-header"><h2 id="appearance-choice-title">Choose Shape</h2><button value="close" title="Close chooser">×</button></header><div id="appearance-choice-list" class="appearance-choice-grid"></div></form></dialog>
-  <script type="module" src="./v3/src/index2-app.js?v=024-clean"></script>
+  <script type="module" src="./v3/src/index2-app.js?v=025-clean"></script>
 </body>
 </html>
