@@ -54,7 +54,7 @@
 @keyframes index2-playing-spin { to { transform: rotate(360deg); } }
 .index2-paused-flash { animation: index2-pause-flash .7s ease-out; }
 @keyframes index2-pause-flash { 0%, 40% { border-color: rgba(229,69,69,.8); box-shadow: 0 0 17px rgba(229,69,69,.45); } 100% { box-shadow: none; } }
-.index2-stage-status { position: absolute; top: 17px; left: 50%; max-width: min(470px,35vw); transform: translateX(-50%); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; z-index: 5; padding: 8px 12px; border-radius: 999px; background: rgba(5,4,5,.55); color: var(--module-accent-strong); font-size: 12px; }
+.index2-stage-status { display: none; }
 .index2-bottom-grid { display: grid; grid-template-columns: minmax(430px,1.7fr) minmax(138px,.4fr) minmax(260px,.82fr); gap: 10px; min-height: 100%; }
 .index2-bottom-card { min-width: 0; border-left: 1px solid rgba(56,42,33,.75); padding-left: 14px; }
 .index2-bottom-card:first-child { border-left: 0; padding-left: 0; }
@@ -63,9 +63,6 @@
 #index2-display-state.index2-status-paused { color: #ffd3d3; background: rgba(201,54,54,.21); border-color: rgba(229,69,69,.54); }
 #index2-display-state.index2-status-playing { color: #cef6ff; background: rgba(0,174,234,.18); border-color: rgba(0,174,234,.56); }
 .index2-diagnostics { color: var(--module-accent-strong); font-family: 'Fira Code', monospace; font-size: 12px; line-height: 1.55; white-space: pre-wrap; }
-.index2-selected-layer-details { overflow: auto; padding-left: 14px; }
-.index2-bottom-details-content.card { height: 100%; margin: 0; padding: 10px 11px; overflow: auto; border-radius: 14px; }
-.index2-bottom-details-content.card header { margin-bottom: 9px; padding-bottom: 8px; }
 .layer-list { margin-top: 0 !important; display: grid !important; grid-template-columns: repeat(auto-fit,minmax(270px,1fr)); gap: 8px !important; align-items: start; }
 .layer-item { position: relative; cursor: pointer; min-width: 0 !important; padding: 11px 142px 11px 40px !important; min-height: 56px; }
 .layer-item.selected { border-color: var(--module-accent-strong) !important; background: linear-gradient(135deg, rgba(0,174,234,.58), rgba(0,74,114,.84)) !important; box-shadow: inset 0 0 0 1px rgba(39,215,255,.35), 0 0 16px rgba(0,174,234,.34) !important; }
