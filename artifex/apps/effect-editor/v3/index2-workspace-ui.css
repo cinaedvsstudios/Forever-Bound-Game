@@ -54,7 +54,7 @@
 @keyframes index2-playing-spin { to { transform: rotate(360deg); } }
 .index2-paused-flash { animation: index2-pause-flash .7s ease-out; }
 @keyframes index2-pause-flash { 0%, 40% { border-color: rgba(229,69,69,.8); box-shadow: 0 0 17px rgba(229,69,69,.45); } 100% { box-shadow: none; } }
-.index2-stage-status { position: absolute; top: 17px; left: 50%; max-width: min(470px,35vw); transform: translateX(-50%); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; z-index: 5; padding: 8px 12px; border-radius: 999px; background: rgba(5,4,5,.55); color: var(--module-accent-strong); font-size: 12px; }
+.index2-stage-status { display: none; }
 .index2-bottom-grid { display: grid; grid-template-columns: minmax(430px,1.7fr) minmax(138px,.4fr) minmax(260px,.82fr); gap: 10px; min-height: 100%; }
 .index2-bottom-card { min-width: 0; border-left: 1px solid rgba(56,42,33,.75); padding-left: 14px; }
 .index2-bottom-card:first-child { border-left: 0; padding-left: 0; }
