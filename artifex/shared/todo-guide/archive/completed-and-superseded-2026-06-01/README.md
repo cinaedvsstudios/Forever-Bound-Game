@@ -19,6 +19,16 @@ artifex/shared/todo-guide/audits/
 
 The files in this folder are retained as historical evidence and detailed handover context only. They must not be treated as the current queue or as permission to start implementation.
 
+## Preserved previous queue snapshot
+
+The pre-consolidation machine-readable task file has been preserved unchanged at:
+
+```text
+artifex/shared/todo-guide/archive/completed-and-superseded-2026-06-01/all-apps-todos-pre-consolidation-2026-05-30.json
+```
+
+The new live JSON queue records the accepted current priorities and decisions after the 1 June stabilisation work. The snapshot preserves older granular task wording so nothing is silently lost. Before any remaining detailed app task file is archived, its still-relevant specialist items must be checked against the live queue and either retained as supporting reference or promoted into the live queue.
+
 ## Moved records
 
 | Former location | Reason archived | Current live replacement / retained decision |
