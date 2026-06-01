@@ -34,9 +34,11 @@ const TEXT_CONTROLS = [
 const DEFAULT_SAMPLE_TEXT = 'Lorem ipsum dolor sit amet\nconsectetur adipiscing elit';
 let renderedKey = '';
 let detailsMoved = false;
+let layerCloseBound = false;
 
 export function syncEffectControls() {
   moveControlsToBottomRightDetailsPane();
+  bindLayerCloseButton();
   const body = document.getElementById('effect-specific-controls-body');
   if (!body) return;
   const layer = getActiveLayer();
@@ -61,7 +63,27 @@ function moveControlsToBottomRightDetailsPane() {
   card.classList.add('index2-bottom-details-content');
   const heading = card.querySelector('h2');
   if (heading) heading.textContent = 'Selected Layer Details';
+  const collapse = card.querySelector('[data-card-collapse]');
+  if (collapse) collapse.hidden = true;
   detailsMoved = true;
+}
+
+function bindLayerCloseButton() {
+  if (layerCloseBound) return;
+  const list = document.getElementById('layer-list');
+  const menuAction = document.getElementById('delete-layer-button');
+  if (!list || !menuAction) return;
+  list.addEventListener('click', (event) => {
+    const action = event.target.closest('.layer-inline-action');
+    if (!action || action.textContent.trim() !== '×') return;
+    const card = action.closest('.layer-item');
+    if (!card) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    card.click();
+    window.requestAnimationFrame(() => menuAction.click());
+  }, true);
+  layerCloseBound = true;
 }
 
 function renderControls(body, layer) {
