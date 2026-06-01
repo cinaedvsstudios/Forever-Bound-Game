@@ -113,30 +113,6 @@
     syncSlider(input);
     closeResetMenu();
   }
-  function valueFromPointer(track, clientX, cfg) {
-    const rect = track.getBoundingClientRect();
-    if (!rect.width) return cfg.min;
-    return snap(cfg.min + clamp((clientX - rect.left) / rect.width, 0, 1) * (cfg.max - cfg.min), cfg);
-  }
-  function startCustomDrag(event, input, track) {
-    if (event.button === 2) return;
-    const cfg = configFor(input);
-    const apply = (clientX) => { setInputValue(input, formatValue(valueFromPointer(track, clientX, cfg), cfg.step), { live: true, commit: false }); syncSlider(input); };
-    apply(event.clientX);
-    const move = (moveEvent) => { apply(moveEvent.clientX); moveEvent.preventDefault(); moveEvent.stopPropagation(); moveEvent.stopImmediatePropagation?.(); };
-    const end = () => {
-      window.removeEventListener('pointermove', move, true);
-      window.removeEventListener('pointerup', end, true);
-      window.removeEventListener('pointercancel', end, true);
-      input.dispatchEvent(new Event('change', { bubbles: true }));
-    };
-    window.addEventListener('pointermove', move, true);
-    window.addEventListener('pointerup', end, true);
-    window.addEventListener('pointercancel', end, true);
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation?.();
-  }
   function showResetMenu(event, input) {
     closeResetMenu();
     resetMenu = document.createElement('div');
@@ -175,7 +151,6 @@
     readoutInput?.addEventListener('focus', () => { readoutInput.type = 'text'; readoutInput.inputMode = 'decimal'; readoutInput.dataset.userTyping = 'true'; delete readoutInput.dataset.lastCommitted; });
     range.addEventListener('input', () => { setInputValue(input, range.value, { live: true, commit: false }); syncSlider(input); });
     range.addEventListener('change', () => { setInputValue(input, range.value, { live: false, commit: true }); syncSlider(input); });
-    range.addEventListener('pointerdown', (event) => startCustomDrag(event, input, range));
     range.addEventListener('contextmenu', (event) => showResetMenu(event, input));
     readoutInput?.addEventListener('input', () => {
       if (!isCompleteNumericText(readoutInput.value)) return;
