@@ -21,6 +21,9 @@ export class Particle {
     this.seed = Math.random();
 
     if (layer.rotationMode === 'fixed') {
+      this.rotation = degreesToRadians(finite(layer.rotation, 0));
+      this.rotationSpeed = 0;
+    } else if (layer.rotationMode === 'range') {
       const jitterDegrees = finite(layer.rotationJitter, 5);
       this.rotation = degreesToRadians(finite(layer.rotation, 0) + randomRange(-jitterDegrees, jitterDegrees));
       this.rotationSpeed = 0;

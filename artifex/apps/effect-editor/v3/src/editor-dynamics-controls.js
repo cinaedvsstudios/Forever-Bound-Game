@@ -30,11 +30,20 @@ function bindMetadataFields() {
 
 function bindGravityControls() {
   const gravityInput = document.getElementById('gravity-input');
+  const orbitalInput = document.getElementById('orbital-force-input');
   const boostInput = document.getElementById('gravity-boost-input');
   if (gravityInput && gravityInput.dataset.dynamicsBound !== 'true') {
     gravityInput.dataset.dynamicsBound = 'true';
     gravityInput.addEventListener('input', applyGravityFromControls, true);
     gravityInput.addEventListener('change', applyGravityFromControls, true);
+  }
+  if (orbitalInput && orbitalInput.dataset.dynamicsBound !== 'true') {
+    orbitalInput.dataset.dynamicsBound = 'true';
+    orbitalInput.addEventListener('input', () => {
+      updateActiveLayer({ orbitalForce: Number(orbitalInput.value) });
+      setText('orbital-force-output', orbitalInput.value);
+    });
+    orbitalInput.addEventListener('change', () => updateActiveLayer({ orbitalForce: Number(orbitalInput.value) }));
   }
   if (boostInput && boostInput.dataset.dynamicsBound !== 'true') {
     boostInput.dataset.dynamicsBound = 'true';
@@ -65,11 +74,14 @@ function syncDynamicsControls() {
   }
   if (!layer) return;
   const gravityInput = document.getElementById('gravity-input');
+  const orbitalInput = document.getElementById('orbital-force-input');
   const boostInput = document.getElementById('gravity-boost-input');
   const output = document.getElementById('gravity-output');
   const note = document.querySelector('.index2-gravity-note');
   const controlValue = toGravityControlValue(layer.gravity, layer.gravityScaleVersion);
   if (gravityInput && document.activeElement !== gravityInput) gravityInput.value = String(controlValue);
+  if (orbitalInput && document.activeElement !== orbitalInput) orbitalInput.value = String(finite(layer.orbitalForce, 0));
+  setText('orbital-force-output', finite(layer.orbitalForce, 0));
   if (boostInput && document.activeElement !== boostInput) boostInput.checked = Boolean(layer.gravityBoost);
   const effective = controlValue * (layer.gravityBoost ? 2 : 1);
   if (output) output.textContent = String(effective);
