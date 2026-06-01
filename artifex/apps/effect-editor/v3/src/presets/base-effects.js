@@ -314,7 +314,7 @@ export const PRESETS_REGISTRY = {
         engine: 'text',
         appearanceMode: 'shape',
         particleShape: 'text',
-        textContent: 'Lorem ipsum dolor sit amet\nconsectetur adipiscing elit',
+        textContent: '',
         textAlign: 'center',
         textFont: 'Cinzel, Georgia, serif',
         textWeight: '700',

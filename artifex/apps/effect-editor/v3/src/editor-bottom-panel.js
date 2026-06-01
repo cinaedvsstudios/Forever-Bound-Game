@@ -1,5 +1,5 @@
 import {
-  deleteActiveLayer,
+  deleteLayer,
   duplicateActiveLayer,
   editorState,
   moveLayer,
@@ -128,7 +128,7 @@ function runLayerAction(index, action) {
   else if (action === 'down' && index < editorState.composition.layers.length - 1) moveLayer(index, index + 1);
   else if (action === 'visibility') toggleLayerVisibility(index);
   else if (action === 'duplicate') { selectLayer(index); duplicateActiveLayer(); toast('Layer duplicated.', 'success'); }
-  else if (action === 'delete') { selectLayer(index); deleteActiveLayer(); toast('Layer deleted.', 'warn'); }
+  else if (action === 'delete') { deleteLayer(index); toast('Layer deleted.', 'warn'); }
 }
 
 function runDisplayAction(action) {

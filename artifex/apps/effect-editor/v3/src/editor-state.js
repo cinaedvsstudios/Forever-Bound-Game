@@ -153,7 +153,7 @@ export function normalizeLayer(layer = {}) {
     flareOverlayOpacity: finiteNumber(layer.flareOverlayOpacity, 0.8),
     flareOverlayUrl: layer.flareOverlayUrl || '',
     flareOverlayDataUrl: layer.flareOverlayDataUrl || '',
-    textContent: layer.textContent || 'AETHERA',
+    textContent: typeof layer.textContent === 'string' ? layer.textContent : '',
     textAlign: layer.textAlign || 'center',
     textFont: layer.textFont || 'Cinzel, Georgia, serif',
     textWeight: layer.textWeight || '700',
@@ -257,13 +257,17 @@ export function setDesignSize(width, height, options = {}) {
   });
   touch();
 }
-export function deleteActiveLayer() {
-  if (editorState.activeLayerIndex < 0) return;
-  const [deleted] = editorState.composition.layers.splice(editorState.activeLayerIndex, 1);
+export function deleteLayer(index = editorState.activeLayerIndex) {
+  const deleteIndex = Math.round(Number(index));
+  if (deleteIndex < 0 || deleteIndex >= editorState.composition.layers.length) return;
+  const [deleted] = editorState.composition.layers.splice(deleteIndex, 1);
   if (deleted?.id) editorState.particles = editorState.particles.filter((item) => item.layerId !== deleted.id);
-  editorState.activeLayerIndex = editorState.composition.layers.length ? Math.min(editorState.activeLayerIndex, editorState.composition.layers.length - 1) : -1;
+  if (!editorState.composition.layers.length) editorState.activeLayerIndex = -1;
+  else if (editorState.activeLayerIndex === deleteIndex) editorState.activeLayerIndex = Math.min(deleteIndex, editorState.composition.layers.length - 1);
+  else if (editorState.activeLayerIndex > deleteIndex) editorState.activeLayerIndex -= 1;
   touch();
 }
+export function deleteActiveLayer() { deleteLayer(editorState.activeLayerIndex); }
 export function duplicateActiveLayer() {
   const layer = getActiveLayer();
   if (!layer) return;

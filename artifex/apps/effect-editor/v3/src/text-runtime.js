@@ -69,7 +69,7 @@ export function drawTextParticle(ctx, particle, layer, scale) {
   ctx.textBaseline = 'middle';
   ctx.textAlign = layer.textAlign || 'center';
 
-  const rawText = String(particle.textToken ?? layer.textContent ?? 'AETHERA').slice(0, 420);
+  const rawText = String(particle.textToken ?? layer.textContent ?? '').slice(0, 420);
   const blockWidth = Math.max(0, finite(layer.textBlockWidth, 0)) * scale;
   const maxLines = normalizeEmissionMode(layer.textEmissionMode) === 'continuous' ? 6 : 10;
   const lines = prepareLinesCached(ctx, rawText, blockWidth, maxLines).slice(0, maxLines);
@@ -145,7 +145,7 @@ function applyTextMotionProfile(layer) {
 }
 
 function chooseTextToken(layer, state, reveal) {
-  const text = String(layer.textContent || 'AETHERA').slice(0, 600);
+  const text = String(layer.textContent ?? '').slice(0, 600);
   if (reveal === 'line') {
     const lines = text.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean);
     if (!lines.length) return { text, completedCycle: true };

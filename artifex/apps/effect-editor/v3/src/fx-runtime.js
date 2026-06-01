@@ -465,7 +465,8 @@ function drawTextShape(ctx, x, y, size, color, rotation, layer) {
   ctx.font = `${layer.textWeight || '700'} ${Math.max(8, textSize)}px ${layer.textFont || 'Cinzel, Georgia, serif'}`;
   ctx.textAlign = layer.textAlign || 'center';
   ctx.textBaseline = 'middle';
-  const text = String(layer.textContent || 'AETHERA');
+  const text = String(layer.textContent ?? '');
+  if (!text) return;
   if (layer.textStroke) {
     ctx.lineWidth = Math.max(0.5, finite(layer.textStrokeWidth, 2));
     ctx.strokeStyle = 'rgba(0,0,0,0.7)';
