@@ -10,10 +10,10 @@
   function locks() { try { return JSON.parse(localStorage.getItem(LAYER_LOCK_KEY) || '{}'); } catch { return {}; } }
   function saveLocks(next) { try { localStorage.setItem(LAYER_LOCK_KEY, JSON.stringify(next)); } catch {} }
   function layerRows() { return Array.from(document.querySelectorAll('.layer-stack-table-v14 .layer-stack-row')); }
-  function selectedId() { return api()?.getSelectedId?.() || document.getElementById('itemId')?.value || ''; }
-  function selectRow(row) {
-    const button = row?.querySelector('.item-row[data-select-id]');
-    if (button) api()?.select?.(button.dataset.selectKind || 'element', button.dataset.selectId || '');
+  function liveItems() {
+    const scene = api()?.getScene?.();
+    if (!scene) return [];
+    return [...(scene.layers || []), ...(scene.elements || []), ...(scene.ui || [])];
   }
   function renumberLayerSlots() {
     layerRows().forEach((row, index) => {
@@ -23,7 +23,7 @@
     });
   }
   function setLayerForItem(id, layer) {
-    const item = api()?.getAllItems?.().find((entry) => entry.id === id);
+    const item = liveItems().find((entry) => entry.id === id);
     if (!item) return;
     item.layer = layer;
     item.z = layer;
@@ -35,7 +35,11 @@
     applyingLayers = true;
     const lockMap = locks();
     const total = rows.length;
-    const rowData = rows.map((row, index) => ({ id: row.querySelector('.item-row')?.dataset.selectId || '', slot: Number(row.dataset.slot || index + 1), locked: lockMap[row.querySelector('.item-row')?.dataset.selectId || ''] === true })).filter((row) => row.id);
+    const rowData = rows.map((row, index) => ({
+      id: row.querySelector('.item-row')?.dataset.selectId || '',
+      slot: Number(row.dataset.slot || index + 1),
+      locked: lockMap[row.querySelector('.item-row')?.dataset.selectId || ''] === true
+    })).filter((row) => row.id);
     const assignments = [];
     rowData.filter((row) => row.locked).forEach((row) => assignments.push({ id: row.id, layer: total - row.slot + 1 }));
     let nextUnlocked = 0;
@@ -67,11 +71,10 @@
     list.dataset.layerOwnerBound = 'true';
     list.addEventListener('click', (event) => {
       const lock = event.target.closest?.('.layer-lock-btn');
-      if (lock) {
-        event.preventDefault();
-        event.stopPropagation();
-        toggleLayerLock(lock.closest('.layer-stack-row'));
-      }
+      if (!lock) return;
+      event.preventDefault();
+      event.stopPropagation();
+      toggleLayerLock(lock.closest('.layer-stack-row'));
     }, true);
     list.addEventListener('dragstart', (event) => {
       const row = event.target.closest?.('.layer-stack-row');
