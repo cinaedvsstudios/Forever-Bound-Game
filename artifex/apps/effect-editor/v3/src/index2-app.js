@@ -1,14 +1,16 @@
 import { initEditorCore } from './editor-core.js';
 import { initEditorAppearanceControls } from './editor-appearance-controls.js';
+import { initBrushAssetLibrary } from './brush-asset-library.js';
 import { initEditorDynamicsControls } from './editor-dynamics-controls.js';
 import { initEditorQuickEditControls } from './editor-quick-edit-controls.js';
 import { initEditorWorkspaceUI } from './editor-workspace-ui.js';
 
-const VERSION_LABEL = 'INDEX2-CLEAN-0.2.5';
+const VERSION_LABEL = 'INDEX2-CLEAN-0.2.6';
 
 window.addEventListener('DOMContentLoaded', () => {
   initEditorCore({ versionLabel: VERSION_LABEL, showToast });
   initEditorAppearanceControls(showToast);
+  initBrushAssetLibrary(showToast);
   initEditorWorkspaceUI({ versionLabel: VERSION_LABEL, showToast });
   initEditorDynamicsControls();
   initEditorQuickEditControls(showToast);
