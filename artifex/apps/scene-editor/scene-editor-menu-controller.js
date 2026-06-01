@@ -28,24 +28,6 @@
     openMenu = null;
   }
 
-  function item(label, action, disabled = false) {
-    return `<button type="button" class="editor-menu-item-v25" data-menu-action-v25="${action}" ${disabled ? 'disabled' : ''}>${label}</button>`;
-  }
-
-  function menu(label, action, body) {
-    return `<div class="editor-menu-v25" data-menu-v25="${action}"><button type="button" class="editor-menu-button-v25" data-open-menu-v25="${action}">${label}</button><div class="editor-menu-dropdown-v25">${body}</div></div>`;
-  }
-
-  function markup() {
-    return `<nav class="editor-menubar-v25" aria-label="Scene editor menu">
-      ${menu('File', 'file', `${item('New Blank Scene', 'newBlank')}${item('New from Template', 'newTemplate')}${item('Download JSON', 'download')}${item('Settings', 'settings')}`)}
-      ${menu('Edit', 'edit', `${item('Undo', 'placeholder', true)}${item('Redo', 'placeholder', true)}${item('Duplicate Selected', 'duplicate')}`)}
-      ${menu('View', 'view', `${item('Toggle Guides', 'toggleGuides')}${item('Reset Zoom', 'resetZoom')}${item('Preview Selected', 'preview')}`)}
-      ${menu('Effects', 'effects', `${item('Visual Adjustments', 'placeholder', true)}${item('Glow Colour', 'placeholder', true)}`)}
-      ${menu('Help', 'help', `${item('Help', 'help')}${item('Shortcuts', 'placeholder', true)}`)}
-    </nav>`;
-  }
-
   function run(action) {
     closeMenus();
     if (action === 'newBlank') return trigger('#blankBtn');
@@ -58,18 +40,6 @@
     if (action === 'preview') return trigger('.object-preview-btn-v24');
     if (action === 'help') return toast('Help menu placeholder. Tutorial/help window will be restored here.');
     toast('Menu placeholder');
-  }
-
-  function install() {
-    const bar = document.querySelector('.top-bar');
-    if (!bar || bar.querySelector('.editor-menubar-v25')) return;
-    bar.classList.add('has-menubar-v25');
-    const divider = bar.querySelector('.title-divider') || bar.querySelector('.brand');
-    const wrap = document.createElement('div');
-    wrap.innerHTML = markup();
-    const nav = wrap.firstElementChild;
-    if (divider?.nextSibling) bar.insertBefore(nav, divider.nextSibling);
-    else bar.appendChild(nav);
   }
 
   document.addEventListener('click', (event) => {
@@ -102,9 +72,4 @@
     if (event.key === 'Escape') closeMenus();
   }, true);
 
-  window.addEventListener('load', install);
-  document.addEventListener('click', () => requestAnimationFrame(install), true);
-  document.addEventListener('input', () => requestAnimationFrame(install), true);
-  setInterval(install, 800);
-  install();
 })();

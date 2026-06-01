@@ -2,6 +2,8 @@
   'use strict';
 
   const PAN_KEY = 'artifex.sceneEditor.workspacePan.v1';
+  const MIN_POS = -100;
+  const MAX_POS = 200;
   let workspacePan = readWorkspacePan();
 
   function readWorkspacePan() {
@@ -42,6 +44,21 @@
     syncNumericField('itemY', item.y ?? 0);
   }
 
+
+  function updateNumberBounds() {
+    ['itemX', 'itemY'].forEach((id) => {
+      const field = document.getElementById(id);
+      if (!field) return;
+      field.min = String(MIN_POS);
+      field.max = String(MAX_POS);
+      const control = field.closest('.value-slider-field-v18');
+      const range = control?.querySelector('.value-slider-range-v18');
+      const readout = control?.querySelector('.value-slider-readout-v18');
+      if (range) { range.min = String(MIN_POS); range.max = String(MAX_POS); }
+      if (readout) { readout.min = String(MIN_POS); readout.max = String(MAX_POS); }
+    });
+  }
+
   function createCoreMoveDragController(deps) {
     let drag = null;
     let panDrag = null;
@@ -73,8 +90,8 @@
       if (!rect.width || !rect.height) return;
       const width = Number(drag.item.width || 0);
       const height = Number(drag.item.height || 0);
-      const nextX = deps.clamp(((event.clientX - rect.left) / rect.width) * 100 - width / 2, 0, 100);
-      const nextY = deps.clamp(((event.clientY - rect.top) / rect.height) * 100 - height / 2, 0, 100);
+      const nextX = deps.clamp(((event.clientX - rect.left) / rect.width) * 100 - width / 2, MIN_POS, MAX_POS);
+      const nextY = deps.clamp(((event.clientY - rect.top) / rect.height) * 100 - height / 2, MIN_POS, MAX_POS);
       drag.item.x = Number(nextX.toFixed(3));
       drag.item.y = Number(nextY.toFixed(3));
       const node = stageNodeFor(drag.id);
@@ -113,6 +130,7 @@
       workspacePan.x = Number((panDrag.x + event.clientX - panDrag.startX).toFixed(2));
       workspacePan.y = Number((panDrag.y + event.clientY - panDrag.startY).toFixed(2));
       applyWorkspacePan();
+      updateNumberBounds();
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
@@ -142,6 +160,8 @@
       document.addEventListener('auxclick', event => {
         if (event.button === 1 && event.target.closest?.('.stage-wrap')) event.preventDefault();
       }, true);
+      document.addEventListener('input', updateNumberBounds, true);
+      document.addEventListener('change', updateNumberBounds, true);
       document.addEventListener('pointerdown', event => {
         if (beginPan(event)) return;
         const handle = event.target.closest?.('.move-handle');

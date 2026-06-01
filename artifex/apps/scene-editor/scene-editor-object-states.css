@@ -1,0 +1,5 @@
+/* Permanent Scene Editor object-state styling for inspector-owned display controls. */
+.scene-item.border-hidden {
+  border-color: transparent !important;
+  background: transparent !important;
+}

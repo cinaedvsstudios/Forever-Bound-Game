@@ -83,7 +83,6 @@
     document.getElementById('addLayer')?.addEventListener('click', deps.addLayer);
     document.getElementById('highlightBtn')?.addEventListener('click', deps.toggleHighlight);
     document.getElementById('deleteItem')?.addEventListener('click', deps.removeSelected);
-    document.getElementById('layerPill')?.addEventListener('change', event => deps.updateSelectedLayer(event.target.value, true));
     bindSceneFields(deps);
     bindSettingsSearch();
     bindPathButtons(deps);
@@ -152,7 +151,6 @@
       });
     });
 
-    document.getElementById('itemLayer')?.addEventListener('change', event => deps.updateSelectedLayer(event.target.value, true));
     document.getElementById('itemVisible')?.addEventListener('change', event => { item.visible = event.target.checked; deps.saveWorkingCopySoon('visibility'); deps.render(); });
   }
 
