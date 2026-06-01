@@ -2,7 +2,7 @@ import { getActiveLayer, onStateChange, updateActiveLayer } from './editor-state
 
 const SHAPE_CHOICES = [['circle', 'Circle / Soft Orb'], ['square', 'Square'], ['diamond', 'Diamond'], ['star', 'Star Spark'], ['slash', 'Slash Stroke']];
 const BRUSH_CHOICES = [['spark', 'Spark'], ['soft-dot', 'Soft Dot'], ['smoke-puff', 'Smoke Puff'], ['slash', 'Slash Stroke'], ['flare', 'Flare Cross']];
-const CONTROL_IDS = ['appearance-mode-select', 'render-choice-button', 'blend-mode-select', 'tint-mode-select', 'texture-fit-select', 'reverse-toggle', 'rotation-input', 'edge-blur-input', 'texture-alpha-input', 'custom-texture-input', 'stop-color-input', 'stop-opacity-input', 'stop-size-input', 'stop-glow-input', 'add-stop-button', 'delete-stop-button'];
+const CONTROL_IDS = ['appearance-mode-select', 'render-choice-button', 'blend-mode-select', 'tint-mode-select', 'texture-fit-select', 'reverse-toggle', 'rotation-input', 'rotation-mode-select', 'rotation-jitter-input', 'edge-blur-input', 'texture-alpha-input', 'custom-texture-input', 'stop-color-input', 'stop-opacity-input', 'stop-size-input', 'stop-glow-input', 'add-stop-button', 'delete-stop-button'];
 let toast = () => {};
 
 export function initEditorAppearanceControls(showToast = () => {}) {
@@ -20,6 +20,8 @@ function bindControls() {
   const reverse = document.getElementById('reverse-toggle');
   reverse?.addEventListener('change', () => updateActiveLayer({ reverseColor: reverse.checked }));
   bindRange('rotation-input', 'rotation-output', 'rotation');
+  bindChange('rotation-mode-select', (value) => updateActiveLayer({ rotationMode: normalizeRotationMode(value) }));
+  bindRange('rotation-jitter-input', 'rotation-jitter-output', 'rotationJitter');
   bindRange('edge-blur-input', 'edge-blur-output', 'edgeBlur');
   bindRange('texture-alpha-input', 'texture-alpha-output', 'textureAlpha');
   document.getElementById('stop-color-input')?.addEventListener('input', (event) => updateActiveStop({ color: event.target.value }));
@@ -128,11 +130,15 @@ function syncAppearanceControls() {
   setValue('tint-mode-select', layer.tintMode || 'tint');
   setValue('texture-fit-select', layer.textureFit || 'contain');
   setValue('rotation-input', finite(layer.rotation, 0));
+  setValue('rotation-mode-select', normalizeRotationMode(layer.rotationMode));
+  setValue('rotation-jitter-input', finite(layer.rotationJitter, 5));
   setValue('edge-blur-input', finite(layer.edgeBlur, 0));
   setValue('texture-alpha-input', finite(layer.textureAlpha, 1));
   const reverse = document.getElementById('reverse-toggle');
   if (reverse) reverse.checked = Boolean(layer.reverseColor);
   setText('rotation-output', finite(layer.rotation, 0));
+  setText('rotation-jitter-output', finite(layer.rotationJitter, 5));
+  syncRotationControlVisibility(layer);
   setText('edge-blur-output', finite(layer.edgeBlur, 0));
   setText('texture-alpha-output', finite(layer.textureAlpha, 1));
   syncChoiceButton(layer);
@@ -217,6 +223,14 @@ function setValue(id, value) { const element = document.getElementById(id); if (
 function setText(id, value) { const element = document.getElementById(id); if (element) element.textContent = String(value); }
 function normalizeHex(value) { const text = String(value || '').trim(); return /^#[0-9a-f]{6}$/i.test(text) ? text : '#ffcc66'; }
 function defaultBlendMode(engine) { return ['gas', 'refraction', 'heatdistortion'].includes(engine) ? 'source-over' : 'lighter'; }
+function normalizeRotationMode(value) { return ['random', 'range', 'fixed'].includes(value) ? value : 'random'; }
+function syncRotationControlVisibility(layer) {
+  const mode = normalizeRotationMode(layer.rotationMode);
+  const rotationLabel = document.getElementById('rotation-input')?.closest('label');
+  const jitterLabel = document.getElementById('rotation-jitter-label');
+  if (rotationLabel) rotationLabel.toggleAttribute('hidden', mode === 'random');
+  if (jitterLabel) jitterLabel.toggleAttribute('hidden', mode !== 'range');
+}
 function finite(value, fallback) { const number = Number(value); return Number.isFinite(number) ? number : fallback; }
 function clamp(value, min, max) { const number = Number.isFinite(Number(value)) ? Number(value) : min; return Math.min(max, Math.max(min, number)); }
 function clampIndex(value, stops) { return Math.min(Math.max(0, Math.round(Number(value) || 0)), Math.max(0, stops.length - 1)); }

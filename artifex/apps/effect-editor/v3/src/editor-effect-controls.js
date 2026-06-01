@@ -13,7 +13,7 @@ const ENGINE_CONTROLS = {
   projectile: [['friction', 'Friction', 0, 1, 0.01], ['targetX', 'Target X', 0, 1280, 1], ['targetY', 'Target Y', 0, 720, 1]]
 };
 const TEXT_CONTROLS = [
-  { property: 'textContent', label: 'Text Content', type: 'textarea', rows: 4 },
+  { property: 'textContent', label: 'Text Content', type: 'textarea', rows: 4, action: 'uppercase' },
   { property: 'textFont', label: 'Font', type: 'select', options: [['Cinzel, Georgia, serif', 'Cinzel / Fantasy Serif'], ['Georgia, serif', 'Georgia Serif'], ['Garamond, serif', 'Garamond Serif'], ['Arial, sans-serif', 'Arial Sans'], ['monospace', 'Monospace']] },
   { property: 'textWeight', label: 'Font Weight', type: 'select', options: [['400', 'Regular'], ['500', 'Medium'], ['700', 'Bold'], ['900', 'Black']] },
   { property: 'textLetterSpacing', label: 'Letter Spacing', type: 'range', min: 0, max: 18, step: 0.1 },
@@ -83,6 +83,15 @@ function buildControl(control, layer) {
     input = document.createElement('textarea');
     input.rows = control.rows || 3;
     input.value = layer[control.property] || '';
+    if (control.action === 'uppercase') {
+      const action = document.createElement('button');
+      action.type = 'button';
+      action.className = 'index2-inline-action';
+      action.textContent = 'ALL CAPS';
+      action.title = 'Convert this text layer content to uppercase.';
+      action.addEventListener('click', () => convertTextToUppercase(input));
+      heading.append(action);
+    }
   } else if (control.type === 'select') {
     input = document.createElement('select');
     control.options.forEach(([value, text]) => {
@@ -113,6 +122,12 @@ function buildControl(control, layer) {
   input.addEventListener('change', () => updateFromInput(input));
   label.append(heading, input);
   return label;
+}
+
+function convertTextToUppercase(input) {
+  const upper = String(input.value || '').toUpperCase();
+  input.value = upper;
+  updateActiveLayer({ [input.dataset.effectProperty]: upper });
 }
 
 function updateFromInput(input) {

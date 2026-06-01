@@ -106,7 +106,7 @@ export function normalizeLayer(layer = {}) {
     blendMode: layer.blendMode || defaultBlendMode(layer.engine),
     reverseColor: Boolean(layer.reverseColor),
     rotation: finiteNumber(layer.rotation, 0),
-    rotationMode: layer.rotationMode || 'random',
+    rotationMode: normalizeRotationMode(layer.rotationMode),
     rotationJitter: finiteNumber(layer.rotationJitter, 5),
     edgeBlur: finiteNumber(layer.edgeBlur, 0),
     textureAlpha: finiteNumber(layer.textureAlpha, 1),
@@ -322,6 +322,7 @@ function createDefaultAppearanceStops(layer = {}) {
 }
 function syncLegacyAppearanceFields(layer) { const stops = normalizeAppearanceStops(layer.appearanceStops, layer); const first = stops[0]; const last = stops[stops.length - 1] || first; layer.colorA = first.color; layer.colorB = last.color; layer.alphaStart = first.opacity; layer.alphaEnd = last.opacity; layer.sizeStart = first.size; layer.sizeEnd = last.size; layer.glow = first.glow; }
 function defaultBlendMode(engine) { return ['gas', 'refraction', 'heatdistortion'].includes(engine) ? 'source-over' : 'lighter'; }
+function normalizeRotationMode(value) { return ['random', 'range', 'fixed'].includes(value) ? value : 'random'; }
 function finiteNumber(value, fallback) { const number = Number(value); return Number.isFinite(number) ? number : fallback; }
 function cryptoRandom() { if (globalThis.crypto?.getRandomValues) { const buffer = new Uint32Array(1); crypto.getRandomValues(buffer); return buffer[0].toString(36); } return Math.random().toString(36).slice(2); }
 function normalizeHex(value) { const string = String(value || '').trim(); if (/^#[0-9a-f]{6}$/iu.test(string)) return string; if (/^#[0-9a-f]{3}$/iu.test(string)) return `#${string.slice(1).split('').map((char) => char + char).join('')}`; return '#ffcc66'; }
