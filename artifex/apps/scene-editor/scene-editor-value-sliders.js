@@ -113,52 +113,6 @@
     });
   }
 
-  function applyTransformDirect(input, value) {
-    const id = input.id || '';
-    if (!['itemX', 'itemY', 'itemW', 'itemH', 'itemLayer', 'layerPill', 'itemZ', 'itemRotation', 'itemSkewX', 'itemSkewY'].includes(id)) return;
-    const editor = core();
-    const item = editor?.getSelectedItem?.();
-    if (!item) return;
-    const node = selectedNode();
-    const numeric = Number(value || 0);
-
-    if (id === 'itemX') {
-      item.x = numeric;
-      if (node) node.style.left = `${numeric}%`;
-    } else if (id === 'itemY') {
-      item.y = numeric;
-      if (node) node.style.top = `${numeric}%`;
-    } else if (id === 'itemW') {
-      item.width = numeric;
-      if (node) node.style.width = `${numeric}%`;
-    } else if (id === 'itemH') {
-      item.height = numeric;
-      if (node) node.style.height = `${numeric}%`;
-    } else if (id === 'itemLayer' || id === 'layerPill') {
-      item.layer = numeric;
-      item.z = numeric;
-      if (node) node.style.zIndex = String(numeric);
-      const layer = document.getElementById(id === 'itemLayer' ? 'layerPill' : 'itemLayer');
-      if (layer && layer.value !== String(value)) layer.value = value;
-    } else if (id === 'itemZ') {
-      item.zDepth = numeric;
-      const zVal = document.getElementById('zVal');
-      if (zVal) zVal.textContent = String(value);
-      if (node && !/rotate|skew/i.test(node.style.transform || '')) {
-        const scale = clamp(1 + numeric * 0.035, 0.45, 2.15);
-        node.style.transform = `scale(${scale})`;
-      }
-    } else if (id === 'itemRotation') {
-      item.rotation = numeric;
-    } else if (id === 'itemSkewX') {
-      item.skewX = numeric;
-    } else if (id === 'itemSkewY') {
-      item.skewY = numeric;
-    }
-
-    editor?.saveWorkingCopySoon?.('transform slider');
-  }
-
   function resetInput(input) {
     const cfg = configFor(input);
     const raw = resetValueFor(input);
@@ -199,10 +153,8 @@
 
   function setInputValue(input, value, options = {}) {
     input.value = value;
-    applyTransformDirect(input, value);
     input.dispatchEvent(new Event('input', { bubbles: true }));
     if (options.commit !== false) input.dispatchEvent(new Event('change', { bubbles: true }));
-    applyTransformDirect(input, value);
   }
 
   function commitReadout(input, readout) {
@@ -377,9 +329,8 @@
 
   window.addEventListener('load', decorateAll);
   document.addEventListener('click', decorateAll, true);
-  document.addEventListener('input', (event) => { if (!event.target.closest?.('.value-slider-control-v18')) decorateAll(); }, true);
-  document.addEventListener('change', (event) => { if (!event.target.closest?.('.value-slider-control-v18')) decorateAll(); }, true);
+  document.addEventListener('input', (event) => { if (!event.target.closest?.('.value-slider-control-v18')) requestAnimationFrame(decorateAll); }, true);
+  document.addEventListener('change', (event) => { if (!event.target.closest?.('.value-slider-control-v18')) requestAnimationFrame(decorateAll); }, true);
   document.addEventListener('pointerup', decorateAll, true);
-  setInterval(decorateAll, 900);
   decorateAll();
 })();

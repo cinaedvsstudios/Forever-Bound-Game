@@ -3,7 +3,6 @@
   const ASSET_MANIFEST = '../../assets-library/asset-library.json';
   let assetManifest = null;
   let pickerTarget = 'item';
-  let patchQueued = false;
   let importWarningBypass = false;
   let dirty = false;
 
@@ -75,12 +74,6 @@
     });
   }
 
-  function queuePatch() {
-    if (patchQueued) return;
-    patchQueued = true;
-    requestAnimationFrame(() => requestAnimationFrame(patch));
-  }
-
   function markDirty(reason = 'changed') {
     dirty = true;
     setTip(`Unsaved changes: ${reason}.`);
@@ -98,26 +91,6 @@
     if (!response.ok) throw new Error(`Asset manifest ${response.status}`);
     assetManifest = await response.json();
     return assetManifest;
-  }
-
-  function addAssetsOptionToPathMenus() {
-    document.querySelectorAll('.path-menu').forEach((menu) => {
-      const toggle = menu.querySelector('[data-path-menu]');
-      const target = toggle?.dataset.pathMenu || 'item';
-      const dropdown = menu.querySelector('.path-dropdown');
-      if (!dropdown || dropdown.querySelector('[data-assets]')) return;
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.dataset.assets = target;
-      button.textContent = 'Assets';
-      button.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        pickerTarget = target;
-        showAssetPicker(target);
-      });
-      dropdown.appendChild(button);
-    });
   }
 
   function assetPreview(asset) {
@@ -219,62 +192,6 @@
     }
     markDirty(`asset selected: ${asset.id}`);
     toast(`Asset selected: ${asset.id}`);
-    queuePatch();
-  }
-
-  function addWrapImageButton() {
-    const widthField = document.getElementById('itemW')?.closest('.field');
-    const heightField = document.getElementById('itemH')?.closest('.field');
-    if (!widthField || !heightField || heightField.parentElement?.classList.contains('fit-tools-row')) return;
-    const row = heightField.parentElement;
-    if (!row || !row.classList.contains('field-row')) return;
-    row.classList.add('fit-tools-row');
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'wrap-image-btn';
-    button.textContent = '📐';
-    button.setAttribute('aria-label', 'Wrap image');
-    button.title = 'Match this object box to the selected image aspect ratio.';
-    button.addEventListener('click', wrapSelectedImage);
-    row.appendChild(button);
-  }
-
-  function stageSelectedImage() {
-    const id = document.getElementById('itemId')?.value;
-    if (!id) return null;
-    return document.querySelector(`.scene-item[data-stage-id="${CSS.escape(id)}"] img`);
-  }
-
-  function wrapSelectedImage() {
-    const imageInput = document.getElementById('itemImage');
-    const widthInput = document.getElementById('itemW');
-    const heightInput = document.getElementById('itemH');
-    if (!imageInput || !widthInput || !heightInput) return toast('No selected image to wrap');
-
-    const stageImg = stageSelectedImage();
-    const image = new Image();
-    image.onload = () => {
-      const naturalW = image.naturalWidth || stageImg?.naturalWidth;
-      const naturalH = image.naturalHeight || stageImg?.naturalHeight;
-      if (!naturalW || !naturalH) return toast('Could not read image size');
-      const ratio = naturalW / naturalH;
-      const currentW = Number(widthInput.value || 10);
-      const currentH = Number(heightInput.value || 10);
-      if (ratio >= 1) {
-        heightInput.value = Math.max(1, +(currentW / ratio).toFixed(3));
-      } else {
-        widthInput.value = Math.max(1, +(currentH * ratio).toFixed(3));
-      }
-      widthInput.dispatchEvent(new Event('input', { bubbles: true }));
-      heightInput.dispatchEvent(new Event('input', { bubbles: true }));
-      widthInput.dispatchEvent(new Event('change', { bubbles: true }));
-      heightInput.dispatchEvent(new Event('change', { bubbles: true }));
-      markDirty('wrapped image dimensions');
-      toast(`Wrapped image ratio ${naturalW}×${naturalH}`);
-      queuePatch();
-    };
-    image.onerror = () => toast('Could not load selected image for wrap');
-    image.src = stageImg?.src || imageInput.value;
   }
 
   function wireImportWarning() {
@@ -344,7 +261,7 @@
     }, true);
     document.addEventListener('click', (event) => {
       if (event.target?.closest?.('#blankBtn, #downloadJson, #importBtn')) return;
-      if (event.target?.closest?.('#addElement, #addLayer, #deleteItem, [data-action="duplicate"], [data-action="remove"], .path-dropdown button, .asset-card-btn, .wrap-image-btn')) markDirty('object changed');
+      if (event.target?.closest?.('#addElement, #addLayer, #deleteItem, [data-action="duplicate"], [data-action="remove"], .path-dropdown button, .asset-card-btn')) markDirty('object changed');
     }, true);
   }
 
@@ -391,10 +308,7 @@
     });
   }
 
-  function patch() {
-    patchQueued = false;
-    addAssetsOptionToPathMenus();
-    addWrapImageButton();
+  function setupAssetPathTools() {
     wireImportWarning();
     wireCleanOnDownload();
     wireDirtyTracking();
@@ -402,14 +316,15 @@
     document.querySelectorAll('.floating-side-popup').forEach(wirePopupDrag);
   }
 
-  window.addEventListener('load', () => {
-    patch();
-    toast('Asset picker + wrap image loaded');
-  });
-
-  document.addEventListener('click', queuePatch, true);
-  document.addEventListener('change', queuePatch, true);
-  document.addEventListener('pointerup', queuePatch, true);
-  setInterval(queuePatch, 1400);
-  patch();
+  document.addEventListener('click', (event) => {
+    const button = event.target.closest?.('[data-assets]');
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    pickerTarget = button.dataset.assets || 'item';
+    showAssetPicker(pickerTarget);
+  }, true);
+  window.addEventListener('load', setupAssetPathTools);
+  document.addEventListener('click', () => requestAnimationFrame(setupAssetPathTools), true);
+  setupAssetPathTools();
 })();

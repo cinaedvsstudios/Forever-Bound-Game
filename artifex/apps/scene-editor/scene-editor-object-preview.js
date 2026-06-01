@@ -49,12 +49,19 @@
     return { w: Math.max(12, Math.min(480, Number(item?.width || 12) * 5.2)), h: Math.max(12, Math.min(390, Number(item?.height || 12) * 5.2)) };
   }
 
+  function resolveAssetPath(path) {
+    if (!path) return '';
+    if (/^(https?:|data:|blob:|\/|\.\.\/)/i.test(path)) return path;
+    const prefix = location.pathname.includes('/Forever-Bound-Game/') ? '/Forever-Bound-Game/' : '/';
+    return prefix + String(path).replace(/^\.\//, '');
+  }
+
   function imageSourceFor(item) {
     const candidates = [item?.image, item?.sprite, item?.src, item?.path, item?.asset, item?.assetPath, item?.imagePath].filter(Boolean);
     const stageImg = selectedNode()?.querySelector('img');
     if (stageImg?.currentSrc) candidates.unshift(stageImg.currentSrc);
     if (stageImg?.src) candidates.unshift(stageImg.src);
-    return candidates.find(Boolean) || '';
+    return resolveAssetPath(candidates.find(Boolean) || '');
   }
 
   function applyPanZoom() {
@@ -164,30 +171,22 @@
     applyPanZoom();
   }
 
-  function installButton() {
-    const wrap = document.querySelector('.stage-wrap') || document.getElementById('stageWrap') || document.querySelector('.editor-stage-wrap, .work-panel');
-    if (!wrap) return;
-    if (!STATE.button || !document.body.contains(STATE.button)) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'object-preview-btn-v24';
-      button.title = 'Preview selected object cleanly';
-      button.setAttribute('aria-label', 'Preview selected object cleanly');
-      button.textContent = '👁';
-      button.addEventListener('click', () => { if (STATE.open) closePreview(); else openPreview(); });
-      wrap.appendChild(button);
-      STATE.button = button;
-    }
+  function bindButton() {
+    const button = document.querySelector('.object-preview-btn-v24');
+    if (!button) return;
+    STATE.button = button;
     STATE.button.disabled = !selectedItem();
+    if (button.dataset.previewOwnerBound === 'true') return;
+    button.dataset.previewOwnerBound = 'true';
+    button.addEventListener('click', () => { if (STATE.open) closePreview(); else openPreview(); });
   }
 
-  function tick() { installButton(); if (STATE.open) renderPreview(); }
+  function syncPreview() { bindButton(); if (STATE.open) renderPreview(); }
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && STATE.open) closePreview(); }, true);
-  window.addEventListener('load', tick);
-  document.addEventListener('click', () => requestAnimationFrame(tick), true);
-  document.addEventListener('input', () => requestAnimationFrame(tick), true);
-  document.addEventListener('change', () => requestAnimationFrame(tick), true);
-  document.addEventListener('pointerup', () => requestAnimationFrame(tick), true);
-  setInterval(tick, 700);
-  tick();
+  window.addEventListener('load', syncPreview);
+  document.addEventListener('click', () => requestAnimationFrame(syncPreview), true);
+  document.addEventListener('input', () => requestAnimationFrame(syncPreview), true);
+  document.addEventListener('change', () => requestAnimationFrame(syncPreview), true);
+  document.addEventListener('pointerup', () => requestAnimationFrame(syncPreview), true);
+  requestAnimationFrame(syncPreview);
 })();

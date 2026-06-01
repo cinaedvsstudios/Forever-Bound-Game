@@ -1,213 +1,130 @@
 (() => {
-  const coreFlag = 'artifexCoreMove' + 'Drag';
-  const helperFlag = 'v15Centre' + 'Drag';
-  if (document.body.dataset[coreFlag] === 'true') {
-    document.body.dataset[helperFlag] = 'true';
-  }
+  'use strict';
 
-  const origins = ['centre', 'top-left', 'top-right', 'bottom-left', 'bottom-right'];
-  const originPoints = {
-    centre: [0.5, 0.5],
-    'top-left': [0, 0],
-    'top-right': [1, 0],
-    'bottom-left': [0, 1],
-    'bottom-right': [1, 1]
-  };
+  const MIN_POS = -100;
+  const MAX_POS = 200;
+  const DEFAULT_RATIO = 1;
   let activeSize = null;
-  let activeRotate = false;
-  let skewPanelOpen = false;
+  let activeRotate = null;
 
-  function api() {
-    return window.ArtifexSceneEditorCore || null;
+  function api() { return window.ArtifexSceneEditorCore || null; }
+  function selectedItem() { return api()?.getSelectedItem?.() || null; }
+  function clamp(value, min, max) { return Math.max(min, Math.min(max, Number(value || 0))); }
+  function stageNodeForItem(item) {
+    if (!item?.id) return null;
+    return Array.from(document.querySelectorAll('.scene-item[data-stage-id]')).find((node) => node.dataset.stageId === item.id) || null;
   }
-
-  function selectedItem() {
-    return api()?.getSelectedItem?.() || null;
-  }
-
-  function clamp(n, min, max) {
-    return Math.max(min, Math.min(max, n));
-  }
-
   function originPoint(value) {
-    return originPoints[value] || originPoints.centre;
+    const map = { topLeft: [0, 0], top: [.5, 0], topRight: [1, 0], left: [0, .5], centre: [.5, .5], center: [.5, .5], right: [1, .5], bottomLeft: [0, 1], bottom: [.5, 1], bottomRight: [1, 1] };
+    return map[value] || map.centre;
   }
-
-  function originCss(value) {
-    return String(value || 'centre').replace('centre', 'center').replace('-', ' ');
-  }
-
-  function setField(id, value) {
-    const field = document.getElementById(id);
-    if (field && document.activeElement !== field) field.value = value;
-  }
-
   function transformFor(item) {
-    const scale = clamp(1 + Number(item.zDepth || 0) * 0.035, 0.45, 2.15);
-    const sx = item.flipX ? -scale : scale;
-    const sy = item.flipY ? -scale : scale;
-    const rotation = Number(item.rotation || 0);
+    const zDepth = Number(item.zDepth || 0);
+    const scale = clamp(1 + zDepth * .035, .45, 2.15);
+    const rotate = Number(item.rotation || 0);
     const skewX = Number(item.skewX || 0);
     const skewY = Number(item.skewY || 0);
-    return `scale(${sx}, ${sy}) rotate(${rotation}deg) skew(${skewX}deg, ${skewY}deg)`;
+    const flipX = item.flipX ? -1 : 1;
+    const flipY = item.flipY ? -1 : 1;
+    return `scale(${scale}) rotate(${rotate}deg) skew(${skewX}deg, ${skewY}deg) scale(${flipX}, ${flipY})`;
   }
-
-  function paintItems() {
-    const editor = api();
-    if (!editor) return;
-    document.querySelectorAll('.scene-item[data-stage-id]').forEach((node) => {
-      const item = editor.getAllItems?.().find((entry) => entry.id === node.dataset.stageId);
-      if (!item) return;
-      const [ox, oy] = originPoint(item.rotationOrigin);
-      node.style.left = `${item.x ?? 10}%`;
-      node.style.top = `${item.y ?? 10}%`;
-      node.style.width = `${item.width ?? 10}%`;
-      node.style.height = `${item.height ?? 10}%`;
-      node.style.transform = transformFor(item);
-      node.style.transformOrigin = originCss(item.rotationOrigin);
-      const marker = node.querySelector('.origin-marker-v17');
-      if (marker) {
-        marker.style.left = `${ox * 100}%`;
-        marker.style.top = `${oy * 100}%`;
-      }
-    });
+  function setField(id, value) {
+    const input = document.getElementById(id);
+    if (!input || document.activeElement === input) return;
+    input.value = value;
+    const control = input.closest('.value-slider-field-v18');
+    const range = control?.querySelector('.value-slider-range-v18');
+    const readout = control?.querySelector('.value-slider-readout-v18');
+    if (range) range.value = value;
+    if (readout && document.activeElement !== readout) readout.value = value;
   }
-
   function syncFields(item) {
     if (!item) return;
-    setField('itemX', item.x ?? 0);
-    setField('itemY', item.y ?? 0);
-    setField('itemW', item.width ?? 1);
-    setField('itemH', item.height ?? 1);
     setField('itemRotation', item.rotation ?? 0);
-    setField('itemRotationSlider', item.rotation ?? 0);
     setField('itemRotationOrigin', item.rotationOrigin || 'centre');
+    setField('itemX', item.x ?? 10);
+    setField('itemY', item.y ?? 10);
+    setField('itemW', item.width ?? 10);
+    setField('itemH', item.height ?? 10);
+    setField('itemZ', item.zDepth ?? 0);
     setField('itemSkewX', item.skewX ?? 0);
     setField('itemSkewY', item.skewY ?? 0);
+    const aspect = document.getElementById('itemAspectLock');
+    if (aspect) aspect.checked = item.aspectRatioLocked === true;
   }
-
-  function installTransformStyle() {
-    if (document.getElementById('v17-transform-tools-style')) return;
-    const style = document.createElement('style');
-    style.id = 'v17-transform-tools-style';
-    style.textContent = `
-      .scene-item .origin-marker-v17 { position: absolute; width: 18px; height: 18px; transform: translate(-50%, -50%); border: 2px solid rgba(255,255,255,.95); border-radius: 999px; background: #10aee8; box-shadow: 0 0 12px rgba(16,174,232,.82), 0 0 18px rgba(195,0,255,.48); z-index: 26; pointer-events: none; }
-      .scene-item .rotate-arm-v17 { position: absolute; left: 50%; top: -48px; width: 2px; height: 42px; transform: translateX(-50%); background: rgba(255,255,255,.72); box-shadow: 0 0 8px rgba(102,199,255,.55); z-index: 25; pointer-events: none; }
-      .scene-item .rotate-knob-v17 { position: absolute; left: 50%; top: -62px; width: 24px; height: 24px; transform: translateX(-50%); border: 2px solid rgba(255,255,255,.96); border-radius: 999px; background: #10aee8; box-shadow: 0 0 12px rgba(16,174,232,.82), 0 0 18px rgba(195,0,255,.48); z-index: 27; cursor: grab; }
-      .scene-item .rotate-knob-v17:active { cursor: grabbing; }
-      .real-rotation-controls-v16 .field { position: relative; }
-      #itemRotation { padding-right: 34px; }
-      .rotate-slider-dot-v17 { position: absolute; right: 8px; top: 27px; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.9); border-radius: 999px; background: #e73838; box-shadow: 0 0 10px rgba(231,56,56,.8); cursor: pointer; }
-      .rotate-slider-popover-v17 { display: none; position: absolute; right: 0; top: 48px; z-index: 2000; width: 190px; padding: 10px; border: 1px solid rgba(184,119,63,.6); border-radius: 12px; background: rgba(9,10,11,.96); box-shadow: 0 12px 28px rgba(0,0,0,.5), 0 0 18px rgba(195,0,255,.25); }
-      .rotate-slider-popover-v17.is-open { display: block; }
-      .rotate-slider-popover-v17 input { width: 100%; }
-      .skew-controls-v19 { margin-top: 10px; }
-      .transform-context-divider-v18 { height: 1px; margin: 6px 0; background: rgba(184,119,63,.32); }
-    `;
-    document.head.appendChild(style);
+  function paintItem(item) {
+    const node = stageNodeForItem(item);
+    if (!node || !item) return;
+    node.style.left = `${item.x ?? 10}%`;
+    node.style.top = `${item.y ?? 10}%`;
+    node.style.width = `${item.width ?? 10}%`;
+    node.style.height = `${item.height ?? 10}%`;
+    node.style.zIndex = String(item.layer ?? item.z ?? 1);
+    const [ox, oy] = originPoint(item.rotationOrigin);
+    node.style.transformOrigin = `${ox * 100}% ${oy * 100}%`;
+    node.style.transform = transformFor(item);
+    const preserve = item.aspectRatioLocked === true ? 'xMidYMid meet' : 'none';
+    node.querySelectorAll('.scene-image-v33, .scene-image-v33 image').forEach((image) => image.setAttribute('preserveAspectRatio', preserve));
   }
-
-  function applyRotationValue(value) {
-    const editor = api();
-    const current = selectedItem();
-    if (!editor || !current) return;
-    current.rotation = Number(value || 0);
-    syncFields(current);
-    paintItems();
-    editor.saveWorkingCopySoon?.('rotation');
+  function paintAll() { api()?.getAllItems?.().forEach(paintItem); }
+  function rememberRatio(item) {
+    const width = Number(item?.width || 0);
+    const height = Number(item?.height || 0);
+    if (width > 0 && height > 0) item.aspectRatio = width / height;
+    return item.aspectRatio || DEFAULT_RATIO;
   }
-
-  function runTransformShell() {
-    installTransformStyle();
-    const editor = api();
-    const item = selectedItem();
-    const body = document.querySelector('[data-card-id="transform-v15"] .card-body');
-    if (!editor || !item || !body) return;
-    item.rotation = Number(item.rotation || 0);
-    item.rotationOrigin ||= 'centre';
-    item.skewX = Number(item.skewX || 0);
-    item.skewY = Number(item.skewY || 0);
-    let block = body.querySelector('.real-rotation-controls-v16');
-    if (!block) {
-      block = document.createElement('div');
-      block.className = 'card-layout-group card-layout-2 real-rotation-controls-v16';
-      block.innerHTML = '<div class="field rotation-field-v17"><label for="itemRotation">Rotate</label><input id="itemRotation" type="number" step="1"><button type="button" class="rotate-slider-dot-v17" title="Open rotate slider" aria-label="Open rotate slider"></button><div class="rotate-slider-popover-v17"><input id="itemRotationSlider" type="range" min="-180" max="180" step="1"></div></div><div class="field"><label for="itemRotationOrigin">Rotation Origin</label><select id="itemRotationOrigin"></select></div>';
-      const old = body.querySelector('.rotate-placeholder-v13e');
-      if (old) old.replaceWith(block); else body.appendChild(block);
-    }
-    const rotation = document.getElementById('itemRotation');
-    const origin = document.getElementById('itemRotationOrigin');
-    const dot = block.querySelector('.rotate-slider-dot-v17');
-    const popover = block.querySelector('.rotate-slider-popover-v17');
-    const slider = document.getElementById('itemRotationSlider');
-    if (origin && !origin.options.length) {
-      origin.innerHTML = origins.map((value) => `<option value="${value}">${value.replace('-', ' ')}</option>`).join('');
-    }
-    if (dot && dot.dataset.v17Bound !== 'true') {
-      dot.dataset.v17Bound = 'true';
-      dot.addEventListener('click', (event) => { event.preventDefault(); event.stopPropagation(); popover?.classList.toggle('is-open'); });
-    }
-    if (slider && slider.dataset.v17Bound !== 'true') {
-      slider.dataset.v17Bound = 'true';
-      slider.addEventListener('input', () => applyRotationValue(slider.value));
-      slider.addEventListener('change', () => applyRotationValue(slider.value));
-    }
-    if (rotation && rotation.dataset.v16Bound !== 'true') {
-      rotation.dataset.v16Bound = 'true';
-      rotation.addEventListener('input', () => applyRotationValue(rotation.value));
-      rotation.addEventListener('change', () => applyRotationValue(rotation.value));
-    }
-    if (origin && origin.dataset.v16Bound !== 'true') {
-      origin.dataset.v16Bound = 'true';
-      origin.addEventListener('change', () => {
-        const current = selectedItem();
-        if (!current) return;
-        current.rotationOrigin = origin.value || 'centre';
-        syncFields(current);
-        paintItems();
-        addVisualHandles();
-        editor.saveWorkingCopySoon?.('rotation origin');
-      });
-    }
-    if (skewPanelOpen || item.skewX || item.skewY) addSkewPanel(body, item);
-    syncFields(item);
-    paintItems();
-    addSizeHandles();
-    addVisualHandles();
-    addContextActions();
+  function dispatchSingleInput(input) {
+    input?.dispatchEvent(new Event('input', { bubbles: true }));
+    input?.dispatchEvent(new Event('change', { bubbles: true }));
   }
-
-  function addSkewPanel(body, item) {
-    let panel = body.querySelector('.skew-controls-v19');
-    if (!panel) {
-      panel = document.createElement('div');
-      panel.className = 'card-layout-group card-layout-2 skew-controls-v19';
-      panel.innerHTML = '<div class="field"><label for="itemSkewX">Skew X</label><input id="itemSkewX" type="number" step="1"></div><div class="field"><label for="itemSkewY">Skew Y</label><input id="itemSkewY" type="number" step="1"></div><div class="button-row"><button type="button" class="btn" data-v17-action="reset-skew">Reset Skew</button></div>';
-      body.appendChild(panel);
-    }
-    ['itemSkewX', 'itemSkewY'].forEach((id) => {
-      const input = document.getElementById(id);
-      if (!input || input.dataset.v19Bound === 'true') return;
-      input.dataset.v19Bound = 'true';
-      input.addEventListener('input', () => {
-        const current = selectedItem();
-        if (!current) return;
-        current.skewX = Number(document.getElementById('itemSkewX')?.value || 0);
-        current.skewY = Number(document.getElementById('itemSkewY')?.value || 0);
-        paintItems();
-        api()?.saveWorkingCopySoon?.('skew');
-      });
-      input.addEventListener('change', () => api()?.saveWorkingCopySoon?.('skew'));
+  function loadImageSize(item) {
+    return new Promise((resolve, reject) => {
+      if (!item?.image) { reject(new Error('No selected image to wrap')); return; }
+      const node = stageNodeForItem(item);
+      const imageHref = node?.querySelector('.scene-image-v33 image')?.getAttribute('href') || item.image;
+      const image = new Image();
+      image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
+      image.onerror = () => reject(new Error('Could not load selected image for wrap'));
+      image.src = imageHref;
     });
+  }
+  function wrapSelectedImage(captured = selectedItem()) {
+    const item = captured;
+    if (!item) return;
+    loadImageSize(item).then(({ width, height }) => {
+      if (!width || !height) return;
+      const ratio = width / height;
+      item.aspectRatio = ratio;
+      const currentW = Math.max(1, Number(item.width || 10));
+      const currentH = Math.max(1, Number(item.height || 10));
+      if (ratio >= 1) item.height = Number(Math.max(1, currentW / ratio).toFixed(3));
+      else item.width = Number(Math.max(1, currentH * ratio).toFixed(3));
+      syncFields(item);
+      paintItem(item);
+      api()?.saveWorkingCopySoon?.('wrap bounding box');
+      api()?.toast?.(`Wrapped selected image ${width}×${height}`);
+    }).catch((error) => api()?.toast?.(error.message));
+  }
+  function scaleSelected(delta, captured = selectedItem()) {
+    const item = captured;
+    if (!item) return;
+    const ratio = item.aspectRatioLocked === true ? rememberRatio(item) : null;
+    item.width = Number(Math.max(1, Number(item.width || 10) + delta).toFixed(3));
+    item.height = Number(Math.max(1, Number(item.height || 10) + delta).toFixed(3));
+    if (ratio) item.height = Number(Math.max(1, item.width / ratio).toFixed(3));
     syncFields(item);
+    paintItem(item);
+    api()?.saveWorkingCopySoon?.('scale selected');
   }
-
-  function safeRunTransformShell(event) {
-    const target = event?.target;
-    if (target?.closest?.('.real-rotation-controls-v16, .skew-controls-v19')) return;
-    runTransformShell();
+  function toggleAspect(captured = selectedItem()) {
+    const item = captured;
+    if (!item) return;
+    item.aspectRatioLocked = !item.aspectRatioLocked;
+    if (item.aspectRatioLocked) rememberRatio(item);
+    syncFields(item);
+    paintItem(item);
+    api()?.saveWorkingCopySoon?.('aspect ratio lock');
   }
-
   function addSizeHandles() {
     document.querySelectorAll('.resize-handle').forEach((node) => node.remove());
     const selected = document.querySelector('.scene-item.is-selected[data-stage-id]');
@@ -220,7 +137,6 @@
       selected.appendChild(handle);
     });
   }
-
   function addVisualHandles() {
     document.querySelectorAll('.origin-marker-v17, .rotate-arm-v17, .rotate-knob-v17').forEach((node) => node.remove());
     const selected = document.querySelector('.scene-item.is-selected[data-stage-id]');
@@ -241,138 +157,154 @@
     knob.title = 'Drag to rotate';
     selected.appendChild(knob);
   }
-
+  function bindTransformCard() {
+    const card = document.querySelector('[data-card-id="transform-v35"]');
+    const item = selectedItem();
+    if (!card || !item || card.dataset.transformOwnerBound === 'true') return;
+    card.dataset.transformOwnerBound = 'true';
+    card.addEventListener('click', (event) => {
+      const action = event.target.closest?.('[data-transform-action]')?.dataset.transformAction;
+      if (!action) return;
+      const captured = selectedItem();
+      event.preventDefault();
+      event.stopPropagation();
+      if (action === 'scale-up') scaleSelected(1, captured);
+      if (action === 'scale-down') scaleSelected(-1, captured);
+      if (action === 'wrap-image') wrapSelectedImage(captured);
+      if (action === 'toggle-aspect') toggleAspect(captured);
+      if (action === 'reset-skew') { captured.skewX = 0; captured.skewY = 0; syncFields(captured); paintItem(captured); api()?.saveWorkingCopySoon?.('reset skew'); }
+    }, true);
+    card.addEventListener('input', (event) => {
+      const target = event.target;
+      const current = selectedItem();
+      if (!current) return;
+      if (target.id === 'itemRotation') current.rotation = Number(target.value || 0);
+      else if (target.id === 'itemRotationOrigin') current.rotationOrigin = target.value || 'centre';
+      else if (target.id === 'itemSkewX') current.skewX = Number(target.value || 0);
+      else if (target.id === 'itemSkewY') current.skewY = Number(target.value || 0);
+      else return;
+      syncFields(current);
+      paintItem(current);
+      addVisualHandles();
+      api()?.saveWorkingCopySoon?.('transform controls');
+    }, true);
+    syncFields(item);
+  }
+  function handleAspectSizedInput(event) {
+    const target = event.target;
+    if (!target || !['itemW', 'itemH'].includes(target.id)) return;
+    const item = selectedItem();
+    if (!item?.aspectRatioLocked) return;
+    const ratio = item.aspectRatio || rememberRatio(item);
+    if (!ratio) return;
+    event.stopImmediatePropagation();
+    if (target.id === 'itemW') {
+      item.width = Number(target.value || 1);
+      item.height = Number(Math.max(1, item.width / ratio).toFixed(3));
+    } else {
+      item.height = Number(target.value || 1);
+      item.width = Number(Math.max(1, item.height * ratio).toFixed(3));
+    }
+    syncFields(item);
+    paintItem(item);
+    api()?.saveWorkingCopySoon?.('aspect-sized transform');
+  }
   function beginSize(event, handle) {
     const item = selectedItem();
     const stage = document.getElementById('stage');
     const rect = stage?.getBoundingClientRect();
     if (!item || !rect?.width || !rect?.height) return;
-    activeSize = { item, dir: handle.dataset.sizeDir || '', startX: ((event.clientX - rect.left) / rect.width) * 100, startY: ((event.clientY - rect.top) / rect.height) * 100, x: Number(item.x || 0), y: Number(item.y || 0), w: Number(item.width || 10), h: Number(item.height || 10) };
+    activeSize = { item, dir: handle.dataset.sizeDir || '', startX: ((event.clientX - rect.left) / rect.width) * 100, startY: ((event.clientY - rect.top) / rect.height) * 100, x: Number(item.x || 0), y: Number(item.y || 0), w: Number(item.width || 10), h: Number(item.height || 10), ratio: item.aspectRatioLocked === true ? rememberRatio(item) : null };
     document.body.classList.add('is-resizing-object');
     event.preventDefault();
     event.stopPropagation();
   }
-
   function moveSize(event) {
     if (!activeSize) return;
     const rect = document.getElementById('stage')?.getBoundingClientRect();
     if (!rect?.width || !rect?.height) return;
     const dx = ((event.clientX - rect.left) / rect.width) * 100 - activeSize.startX;
     const dy = ((event.clientY - rect.top) / rect.height) * 100 - activeSize.startY;
-    let x = activeSize.x;
-    let y = activeSize.y;
-    let w = activeSize.w;
-    let h = activeSize.h;
+    let x = activeSize.x, y = activeSize.y, w = activeSize.w, h = activeSize.h;
     const dir = activeSize.dir;
     if (dir.includes('e')) w = activeSize.w + dx;
     if (dir.includes('s')) h = activeSize.h + dy;
     if (dir.includes('w')) { x = activeSize.x + dx; w = activeSize.w - dx; }
     if (dir.includes('n')) { y = activeSize.y + dy; h = activeSize.h - dy; }
-    if (w < 1) { if (dir.includes('w')) x -= 1 - w; w = 1; }
-    if (h < 1) { if (dir.includes('n')) y -= 1 - h; h = 1; }
-    activeSize.item.x = Number(clamp(x, 0, 100).toFixed(3));
-    activeSize.item.y = Number(clamp(y, 0, 100).toFixed(3));
-    activeSize.item.width = Number(clamp(w, 1, 100).toFixed(3));
-    activeSize.item.height = Number(clamp(h, 1, 100).toFixed(3));
+    w = Math.max(1, w); h = Math.max(1, h);
+    if (activeSize.ratio) {
+      if (dir === 'n' || dir === 's') w = h * activeSize.ratio;
+      else h = w / activeSize.ratio;
+    }
+    activeSize.item.x = Number(clamp(x, MIN_POS, MAX_POS).toFixed(3));
+    activeSize.item.y = Number(clamp(y, MIN_POS, MAX_POS).toFixed(3));
+    activeSize.item.width = Number(clamp(w, 1, 200).toFixed(3));
+    activeSize.item.height = Number(clamp(h, 1, 200).toFixed(3));
     syncFields(activeSize.item);
-    paintItems();
+    paintItem(activeSize.item);
     api()?.saveWorkingCopySoon?.('resize');
     event.preventDefault();
     event.stopPropagation();
   }
-
   function endSize() {
     if (!activeSize) return;
     activeSize = null;
     document.body.classList.remove('is-resizing-object');
     api()?.saveWorkingCopySoon?.('resize');
-    api()?.renderWorkAreaOnly?.();
   }
-
   function rotationOriginClient(item) {
     const rect = document.getElementById('stage')?.getBoundingClientRect();
     if (!rect) return null;
     const [ox, oy] = originPoint(item.rotationOrigin);
     return { x: rect.left + ((Number(item.x || 0) + Number(item.width || 0) * ox) / 100) * rect.width, y: rect.top + ((Number(item.y || 0) + Number(item.height || 0) * oy) / 100) * rect.height };
   }
-
   function beginRotate(event) {
     const item = selectedItem();
     if (!item) return;
-    activeRotate = true;
+    activeRotate = { item };
     moveRotate(event);
     event.preventDefault();
     event.stopPropagation();
   }
-
   function moveRotate(event) {
-    if (!activeRotate) return;
-    const item = selectedItem();
-    const origin = item ? rotationOriginClient(item) : null;
-    if (!item || !origin) return;
+    if (!activeRotate?.item) return;
+    const origin = rotationOriginClient(activeRotate.item);
+    if (!origin) return;
     let angle = Math.atan2(event.clientY - origin.y, event.clientX - origin.x) * 180 / Math.PI + 90;
     while (angle > 180) angle -= 360;
     while (angle < -180) angle += 360;
-    item.rotation = Number(angle.toFixed(1));
-    syncFields(item);
-    paintItems();
+    activeRotate.item.rotation = Number(angle.toFixed(1));
+    syncFields(activeRotate.item);
+    paintItem(activeRotate.item);
     api()?.saveWorkingCopySoon?.('rotate handle');
     event.preventDefault();
     event.stopPropagation();
   }
-
   function endRotate() {
     if (!activeRotate) return;
-    activeRotate = false;
+    activeRotate = null;
     api()?.saveWorkingCopySoon?.('rotate handle');
   }
-
-  function addContextActions() {
-    const menu = document.querySelector('.context-menu');
-    if (!menu || menu.querySelector('.transform-context-actions-v18')) return;
-    const block = document.createElement('div');
-    block.className = 'transform-context-actions-v18';
-    block.innerHTML = '<div class="transform-context-divider-v18"></div><button type="button" data-v17-action="flip-x">Flip Horizontal</button><button type="button" data-v17-action="flip-y">Flip Vertical</button><button type="button" data-v17-action="skew-panel">Skew / Distort</button><button type="button" data-v17-action="reset-transform">Reset Transform</button>';
-    menu.appendChild(block);
-  }
-
-  function handleTransformAction(event) {
-    const button = event.target.closest?.('[data-v17-action]');
-    if (!button) return;
-    const action = button.dataset.v17Action;
+  function sync() {
     const item = selectedItem();
-    if (!item) return;
-    if (action === 'flip-x') item.flipX = !item.flipX;
-    if (action === 'flip-y') item.flipY = !item.flipY;
-    if (action === 'skew-panel') skewPanelOpen = true;
-    if (action === 'reset-skew') { item.skewX = 0; item.skewY = 0; }
-    if (action === 'reset-transform') { item.rotation = 0; item.rotationOrigin = 'centre'; item.flipX = false; item.flipY = false; item.skewX = 0; item.skewY = 0; }
-    syncFields(item);
-    paintItems();
-    api()?.saveWorkingCopySoon?.('transform action');
-    runTransformShell();
-    event.preventDefault();
-    event.stopPropagation();
+    if (item) { syncFields(item); paintAll(); }
+    addSizeHandles();
+    addVisualHandles();
+    bindTransformCard();
   }
 
-  if (document.body.dataset.v17TransformWired !== 'true') {
-    document.body.dataset.v17TransformWired = 'true';
-    document.addEventListener('pointerdown', (event) => {
-      const rotateHandle = event.target.closest?.('.rotate-knob-v17');
-      if (rotateHandle) beginRotate(event);
-    }, true);
-    document.addEventListener('pointermove', (event) => { if (activeRotate) moveRotate(event); }, true);
-    document.addEventListener('pointerup', () => { endRotate(); runTransformShell(); }, true);
-    document.addEventListener('pointercancel', () => { endRotate(); }, true);
-    document.addEventListener('click', handleTransformAction, true);
-    window.addEventListener('blur', () => { endRotate(); });
-  }
-
-  window.addEventListener('load', runTransformShell);
-  document.addEventListener('click', safeRunTransformShell, true);
-  document.addEventListener('input', safeRunTransformShell, true);
-  document.addEventListener('change', safeRunTransformShell, true);
-  document.addEventListener('pointerup', runTransformShell, true);
-  setInterval(runTransformShell, 1000);
-  runTransformShell();
+  document.addEventListener('pointerdown', (event) => {
+    const rotateHandle = event.target.closest?.('.rotate-knob-v17');
+    if (rotateHandle) beginRotate(event);
+    const resizeHandle = event.target.closest?.('.resize-handle');
+    if (resizeHandle) beginSize(event, resizeHandle);
+  }, true);
+  document.addEventListener('pointermove', (event) => { if (activeRotate) moveRotate(event); if (activeSize) moveSize(event); }, true);
+  document.addEventListener('pointerup', () => { endRotate(); endSize(); requestAnimationFrame(sync); }, true);
+  document.addEventListener('pointercancel', () => { endRotate(); endSize(); }, true);
+  document.addEventListener('input', handleAspectSizedInput, true);
+  document.addEventListener('click', () => requestAnimationFrame(sync), true);
+  document.addEventListener('change', () => requestAnimationFrame(sync), true);
+  window.addEventListener('load', sync);
+  requestAnimationFrame(sync);
 })();
