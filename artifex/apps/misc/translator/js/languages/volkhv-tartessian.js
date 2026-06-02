@@ -98,80 +98,33 @@
 
     while (index < text.length) {
       const character = text[index];
-
-      if (character === "{") {
-        pushSeal(tokens, true);
-        index += 1;
-        continue;
-      }
-      if (character === "}") {
-        pushSeal(tokens, false);
-        index += 1;
-        continue;
-      }
-      if (character === ".") {
-        pushSeal(tokens, false);
-        index += 1;
-        continue;
-      }
-      if (character === "\n") {
-        pushLinebreak(tokens);
-        index += 1;
-        continue;
-      }
-      if (/\s/.test(character)) {
-        pushSeal(tokens, false);
-        index += 1;
-        continue;
-      }
-      if (character === "-") {
-        index += 1;
-        continue;
-      }
+      if (character === "{") { pushSeal(tokens, true); index += 1; continue; }
+      if (character === "}") { pushSeal(tokens, false); index += 1; continue; }
+      if (character === ".") { pushSeal(tokens, false); index += 1; continue; }
+      if (character === "\n") { pushLinebreak(tokens); index += 1; continue; }
+      if (/\s/.test(character)) { pushSeal(tokens, false); index += 1; continue; }
+      if (character === "-") { index += 1; continue; }
 
       const pairedToken = twoCharacterTokens.find((token) => text.startsWith(token, index));
-      if (pairedToken) {
-        tokens.push(pairedToken);
-        index += pairedToken.length;
-        continue;
-      }
-      if (oneCharacterTokens.includes(character)) {
-        tokens.push(character);
-        index += 1;
-        continue;
-      }
-
+      if (pairedToken) { tokens.push(pairedToken); index += pairedToken.length; continue; }
+      if (oneCharacterTokens.includes(character)) { tokens.push(character); index += 1; continue; }
       unsupported.push(character);
       index += 1;
     }
-
-    while (tokens[tokens.length - 1] === "linebreak") {
-      tokens.pop();
-    }
+    while (tokens[tokens.length - 1] === "linebreak") tokens.pop();
     return { tokens, unsupported, normalised: text };
   }
 
   function parseTokenSequence(rawText) {
     const tokens = [];
     const unsupported = [];
-    const items = rawText
-      .normalize("NFC")
-      .replace(/\n/g, " __linebreak__ ")
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean);
-
+    const items = rawText.normalize("NFC").replace(/\n/g, " __linebreak__ ").trim().split(/\s+/).filter(Boolean);
     for (const rawItem of items) {
       const item = rawItem.toLocaleLowerCase();
-      if (rawItem === "__linebreak__") {
-        pushLinebreak(tokens);
-      } else if (["space", "seal", "[seal]", "[space]", "."].includes(item)) {
-        pushSeal(tokens, false);
-      } else if (tokenSet.has(item)) {
-        tokens.push(item);
-      } else {
-        unsupported.push(rawItem);
-      }
+      if (rawItem === "__linebreak__") pushLinebreak(tokens);
+      else if (["space", "seal", "[seal]", "[space]", "."].includes(item)) pushSeal(tokens, false);
+      else if (tokenSet.has(item)) tokens.push(item);
+      else unsupported.push(rawItem);
     }
     return { tokens, unsupported, normalised: rawText };
   }
@@ -185,7 +138,7 @@
     direction: "ltr",
     defaultSpriteSheet: "./assets/volkhv-tartessian-glyph-chart.png",
     spriteSheetDescription: "Included finished Volkhv–Tartessian chart loaded.",
-    assetNote: "Upload a replacement chart only when it uses the same glyph-cell positions, or edit the coordinate map in js/languages/volkhv-tartessian.js.",
+    assetNote: "",
     glyphMap,
     tokenSeparatorLabel: "space",
     inputHelp: {
