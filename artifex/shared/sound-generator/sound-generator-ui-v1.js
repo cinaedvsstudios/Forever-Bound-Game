@@ -111,7 +111,7 @@ export function createSoundGeneratorUI(container, options = {}) {
     list.innerHTML = SOUND_TYPE_GROUPS.map((group) => {
       const items = SOUND_TYPES.filter((type) => type.group === group.label && (!term || `${type.label} ${type.description} ${type.group}`.toLowerCase().includes(term)));
       if (!items.length) return '';
-      return `<section class="sound-type-group"><h3>${esc(group.label)}</h3>${items.map((type) => `<button type="button" class="sound-type-row ${type.id === state.soundTypeId ? 'is-active' : ''}" data-type="${esc(type.id)}"><strong>${esc(type.label)}</strong><span>${esc(type.description)}</span></button>`).join('')}</section>`;
+      return `<section class="sound-type-group"><h3>${esc(group.label)}</h3>${items.map((type) => `<button type="button" class="sound-type-row ${type.id === state.soundTypeId ? 'is-active' : ''}" data-type="${esc(type.id)}"><strong>${esc(type.label)}</strong></button>`).join('')}</section>`;
     }).join('') || '<p class="sound-empty">No starting sounds match that search.</p>';
   }
 
