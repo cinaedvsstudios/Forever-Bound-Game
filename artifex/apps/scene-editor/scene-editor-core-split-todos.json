@@ -1,9 +1,9 @@
 {
   "schemaVersion": "artifex.specificAppTodos.v1",
-  "updatedAt": "2026-05-30",
+  "updatedAt": "2026-06-02",
   "appId": "scene-editor",
   "appPath": "artifex/apps/scene-editor/",
-  "purpose": "Track Scene Editor modularisation cleanup and the readiness gate before wider cross-app linking work.",
+  "purpose": "Track Scene Editor modularisation cleanup, merged ownership consolidation and the acceptance gate before wider cross-app linking work.",
   "sourceDocs": [
     "docs/artifex/18-color-and-display-rules.md",
     "docs/artifex/19-project-file-contracts.md",
@@ -11,11 +11,14 @@
     "artifex/shared/todo-guide/all-apps-todos.json",
     "artifex/apps/scene-editor/scene-editor-core-split-plan-2026-05-28.md",
     "artifex/apps/scene-editor/scene-editor-audit-2026-05-28.md",
-    "artifex/apps/scene-editor/scene-editor-cleanup-report-2026-05-29.md"
+    "artifex/apps/scene-editor/scene-editor-cleanup-report-2026-05-29.md",
+    "artifex/apps/scene-editor/scene-editor-v034-failed-acceptance-and-consolidation-plan-2026-05-31.md",
+    "artifex/shared/todo-guide/audits/2026-06-02-code-vs-documentation-current-main-refresh.md"
   ],
-  "currentStableVersion": "v0.32-controls-resize-search (deployed but failed manual acceptance)",
-  "freshTestUrl": "https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/index.html?fresh=v0.33-inspector-controls-repair",
-  "knownGoodState": "PR #13 was merged and deployed as v0.32-controls-resize-search, but manual user acceptance failed slider dragging, editable numeric readout, and aspect-off visible image stretching. v0.33-inspector-controls-repair is the required repair/reorganisation pass and still awaits deployed user verification before any cross-app integration gate can reopen.",
+  "currentImplementedVersion": "v0.35-owner-consolidation",
+  "currentAcceptanceStatus": "implementation_merged_manual_deployed_acceptance_pending",
+  "freshTestUrl": "https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/index.html?fresh=v0.35-owner-consolidation",
+  "currentStatusSummary": "PR #37 is merged on current main and implements the required ownership consolidation after the v0.34 failed acceptance. No checked record yet confirms the deployed post-merge manual acceptance gate. Scene Editor is implemented but not accepted as stable for further expansion until that gate is recorded.",
   "deliveries": [
     {
       "pullRequest": "https://github.com/cinaedvsstudios/Forever-Bound-Game/pull/6",
@@ -29,231 +32,133 @@
       "title": "Scene Editor: rename active runtime modules for v0.31",
       "merged": true,
       "mergeCommit": "0067c0b6275bbe55f86398c3a07bf54e5a66d88a",
-      "result": "Remaining numbered active modules renamed to permanent files and stale helper toast removed; delivered as v0.31-runtime-module-cleanup."
+      "result": "Numbered live feature modules were renamed to ownership-based filenames and stale helper messaging was removed; delivered as v0.31-runtime-module-cleanup."
     },
     {
-      "pullRequest": "draft PR pending Codex UI creation",
-      "title": "Scene Editor v0.32 controls, resize, search and Shadow Blur",
-      "merged": false,
-      "result": "Focused permanent-module pass for unlocked aspect resize, settings search, Shadow Blur and adjustable numeric control styling."
+      "pullRequest": "https://github.com/cinaedvsstudios/Forever-Bound-Game/pull/13",
+      "title": "Scene Editor v0.32 — fix unlocked-aspect resize, settings search, Shadow Blur and numeric control restyle",
+      "merged": true,
+      "mergeCommit": "f89c52e6493aa6b4287e637241c8dda9d9ee2a28",
+      "result": "Delivered v0.32-controls-resize-search, but deployed manual acceptance failed slider dragging, editable numeric value input and aspect-off visible stretching."
+    },
+    {
+      "pullRequest": "https://github.com/cinaedvsstudios/Forever-Bound-Game/pull/16",
+      "title": "v0.33 — Inspector and controls repair",
+      "merged": true,
+      "mergeCommit": "8d9617ebcc58df25a8e8b639d55bcd6b0fe57f65",
+      "result": "Delivered v0.33-inspector-controls-repair with repaired controls and floating Object Inspector before the later v0.34 review cycle."
+    },
+    {
+      "pullRequest": "https://github.com/cinaedvsstudios/Forever-Bound-Game/pull/19",
+      "title": "Scene Editor v0.34 — live acceptance repairs for inspector, wrap, pan and project status",
+      "merged": true,
+      "mergeCommit": "284fab49e7e49328e5d3bbec0182e7c0d684039f",
+      "result": "Delivered v0.34-live-acceptance-repair, but deployed manual acceptance failed because selected-object controls could affect another object."
+    },
+    {
+      "pullRequest": "https://github.com/cinaedvsstudios/Forever-Bound-Game/pull/37",
+      "title": "Consolidate Scene Editor object, movement and UI ownership",
+      "merged": true,
+      "mergeCommit": "d759ae7412779de5689eb202ce9024829af6b58d",
+      "result": "Delivered v0.35-owner-consolidation. Required ownership implementation is present on main; post-merge deployed manual acceptance remains to be recorded."
     }
   ],
-  "blockerRule": "Two failed attempts means the item becomes blocked and moves to uploaded local file, agent/Codex, or proper local branch workflow. No placeholders, no patch-on-patch workaround, no manual reconstruction from truncated chunks.",
-  "implementationRule": "Do not create new helper/patch/override files for follow-up Scene Editor work. Fix or add behaviour in the permanent owning modules and existing stylesheet files only.",
+  "blockerRule": "Do not describe merged implementation as accepted stable behaviour until its required deployed manual acceptance result is recorded. No placeholders, patch-on-patch workaround or manual reconstruction from partial evidence.",
+  "implementationRule": "Do not create new helper, patch or override files for follow-up Scene Editor work. Fix or add behaviour in permanent owning modules and existing stylesheet files only.",
   "tasks": [
     {
-      "taskId": "scene_editor_core_split_00_baseline",
-      "title": "Verify stable baseline before core split",
-      "status": "done",
-      "phase": 0,
-      "description": "Recovered v0.29 baseline verified before refactoring.",
-      "testedByUser": true
-    },
-    {
-      "taskId": "scene_editor_core_split_01_config",
-      "title": "Extract Scene Editor config constants",
+      "taskId": "scene_editor_core_split_and_named_module_cleanup",
+      "title": "Deliver modular Scene Editor core and normalised runtime names",
       "status": "done",
       "phase": 1,
-      "targetFiles": [
-        "scene-editor-config.js"
-      ],
+      "description": "PRs #6 and #11 delivered the modular core split, archived unused legacy files and renamed retained runtime feature files to ownership-based names.",
       "testedByCodex": true,
       "testedByUserLive": true
     },
     {
-      "taskId": "scene_editor_core_split_02_storage",
-      "title": "Extract local storage helpers",
+      "taskId": "scene_editor_v032_failed_acceptance_history",
+      "title": "Record v0.32 deployed acceptance failure",
       "status": "done",
       "phase": 2,
-      "targetFiles": [
-        "scene-editor-storage.js"
-      ],
-      "testedByCodex": true,
+      "description": "PR #13 delivered v0.32-controls-resize-search, but deployed manual acceptance failed for slider dragging, editable numeric values and aspect-off visible stretching.",
       "testedByUserLive": true
     },
     {
-      "taskId": "scene_editor_core_split_03_scene_model",
-      "title": "Extract scene model helpers",
+      "taskId": "scene_editor_v033_inspector_controls_repair",
+      "title": "Deliver v0.33 inspector and controls repair",
       "status": "done",
       "phase": 3,
-      "targetFiles": [
-        "scene-editor-scene-model.js"
-      ],
-      "testedByCodex": true,
-      "testedByUserLive": true
+      "description": "PR #16 delivered repaired slider/readout behaviour, aspect-off correction and the floating Object Inspector organisation as v0.33-inspector-controls-repair.",
+      "testedByCodex": true
     },
     {
-      "taskId": "scene_editor_core_split_04_io",
-      "title": "Extract import/export IO",
+      "taskId": "scene_editor_v034_failed_acceptance_history",
+      "title": "Record v0.34 wrong-object acceptance failure",
       "status": "done",
       "phase": 4,
-      "targetFiles": [
-        "scene-editor-io.js"
-      ],
-      "testedByCodex": true
+      "description": "PR #19 delivered v0.34-live-acceptance-repair. Manual acceptance established that controls for the selected ball could affect the box, requiring ownership consolidation rather than another small repair.",
+      "testedByUserLive": true
     },
     {
-      "taskId": "scene_editor_core_split_05_stage_drag",
-      "title": "Extract core move-drag controller",
+      "taskId": "scene_editor_v035_owner_consolidation_implementation",
+      "title": "Consolidate Scene Editor selected-object, movement and UI ownership",
       "status": "done",
       "phase": 5,
+      "description": "PR #37 merged v0.35-owner-consolidation. Renderer, transform controls, stage drag and focused modules now own their defined behaviours; overlapping aspect/card/offscreen active imports were removed from index.html.",
       "targetFiles": [
-        "scene-editor-stage-drag.js"
-      ],
-      "testedByCodex": true,
-      "testedByUserLive": true
-    },
-    {
-      "taskId": "scene_editor_core_split_06_renderer",
-      "title": "Extract renderer and markup helpers",
-      "status": "done",
-      "phase": 6,
-      "targetFiles": [
-        "scene-editor-renderer.js"
-      ],
-      "testedByCodex": true,
-      "testedByUserLive": true
-    },
-    {
-      "taskId": "scene_editor_core_split_07_bindings",
-      "title": "Extract DOM bindings",
-      "status": "done",
-      "phase": 7,
-      "targetFiles": [
-        "scene-editor-bindings.js"
-      ],
-      "testedByCodex": true,
-      "testedByUserLive": true
-    },
-    {
-      "taskId": "scene_editor_core_split_08_app_api",
-      "title": "Extract app coordinator and public core API",
-      "status": "done",
-      "phase": 8,
-      "targetFiles": [
-        "scene-editor-app.js",
-        "scene-editor-core-api.js",
-        "scene-editor-v2.js"
-      ],
-      "testedByCodex": true,
-      "testedByUserLive": true
-    },
-    {
-      "taskId": "scene_editor_runtime_module_cleanup",
-      "title": "Rename and normalise retained active runtime helper modules",
-      "status": "done",
-      "phase": 9,
-      "description": "Delivered through clean PR #11 after discarding stale-based PR #10. All six numbered live feature modules were renamed to permanent ownership-based filenames, index/cache/version was updated to v0.31-runtime-module-cleanup, and the stale v0.28-consolidation helper message was removed.",
-      "renames": {
-        "scene-editor-v11-helper.js": "scene-editor-asset-path-tools.js",
-        "scene-editor-v15-helper.js": "scene-editor-layer-controls.js",
-        "scene-editor-v20-card-controller.js": "scene-editor-card-controller.js",
-        "scene-editor-v21-visual-adjustments.js": "scene-editor-visual-adjustments.js",
-        "scene-editor-v23-aspect-controls.js": "scene-editor-aspect-controls.js",
-        "scene-editor-v24-object-preview.js": "scene-editor-object-preview.js"
-      },
-      "testedByCodex": true,
-      "testedByUserLive": true
-    },
-    {
-      "taskId": "scene_editor_fix_unlocked_aspect_resize",
-      "title": "Fix independent resize when aspect ratio lock is off",
-      "status": "done",
-      "priority": 5,
-      "phase": 10,
-      "type": "bug",
-      "description": "Fixed in scene-editor-aspect-controls.js by making aspect-off rendering explicitly apply fill sizing to image/text content and reapply it immediately after resize-driven work-area rerenders; locked proportional resize remains controlled by the existing aspect-lock branch.",
-      "targetFiles": [
-        "artifex/apps/scene-editor/scene-editor-aspect-controls.js",
-        "artifex/apps/scene-editor/scene-editor-transform-controls.js",
-        "artifex/apps/scene-editor/scene-editor-renderer.js"
-      ],
-      "implementationConstraint": "Fix within the permanent owning module(s); do not create a new helper, patch or override file.",
-      "testRequired": true,
-      "testedByCodex": true
-    },
-    {
-      "taskId": "scene_editor_add_left_panel_setting_search",
-      "title": "Add search for settings at top of left panel",
-      "status": "done",
-      "priority": 4,
-      "phase": 11,
-      "type": "feature",
-      "description": "Added permanent renderer markup and bindings-driven filtering for a keyboard-accessible left-panel settings search that matches card titles and visible labels, hides nonmatching rows/cards, and shows a no-match message without mutating scene data.",
-      "targetFiles": [
+        "artifex/apps/scene-editor/index.html",
         "artifex/apps/scene-editor/scene-editor-renderer.js",
         "artifex/apps/scene-editor/scene-editor-bindings.js",
-        "artifex/apps/scene-editor/scene-editor-control-cards.css"
-      ],
-      "implementationConstraint": "Integrate into permanent modules and existing CSS only; no helper/patch layer.",
-      "testRequired": true,
-      "testedByCodex": true
-    },
-    {
-      "taskId": "scene_editor_add_shadow_blur_visual_setting",
-      "title": "Add Shadow Blur visual adjustment",
-      "status": "done",
-      "priority": 4,
-      "phase": 12,
-      "type": "feature",
-      "description": "Added item.visual.shadowBlur with default 25, a Shadow Blur control beside Shadow Strength, and drop-shadow blur calculation that keeps Shadow Strength responsible for opacity/intensity.",
-      "targetFiles": [
-        "artifex/apps/scene-editor/scene-editor-visual-adjustments.js"
-      ],
-      "implementationConstraint": "Extend the permanent visual-adjustments module and current visual data object; no helper/patch layer.",
-      "testRequired": true,
-      "testedByCodex": true
-    },
-    {
-      "taskId": "scene_editor_restylable_adjustment_controls",
-      "title": "Restyle adjustable control inputs to reference treatment",
-      "status": "done",
-      "priority": 4,
-      "phase": 13,
-      "type": "ui",
-      "description": "Applied the requested treatment to adjustable numeric controls only: uppercase serif labels, pale horizontal range track/thumb, and dark decrement/value/increment stepper. Text/path/search/select controls remain typed/select controls.",
-      "targetFiles": [
-        "artifex/apps/scene-editor/scene-editor-value-sliders.css",
-        "artifex/apps/scene-editor/scene-editor-control-cards.css",
-        "artifex/apps/scene-editor/scene-editor-renderer.js",
+        "artifex/apps/scene-editor/scene-editor-transform-controls.js",
+        "artifex/apps/scene-editor/scene-editor-stage-drag.js",
+        "artifex/apps/scene-editor/scene-editor-layer-controls.js",
+        "artifex/apps/scene-editor/scene-editor-value-sliders.js",
         "artifex/apps/scene-editor/scene-editor-visual-adjustments.js",
-        "artifex/apps/scene-editor/scene-editor-aspect-controls.js"
+        "artifex/apps/scene-editor/scene-editor-asset-path-tools.js",
+        "artifex/apps/scene-editor/scene-editor-object-preview.js",
+        "artifex/apps/scene-editor/scene-editor-menu-controller.js",
+        "artifex/apps/scene-editor/scene-editor-object-states.css"
       ],
-      "implementationConstraint": "Use existing permanent CSS/modules only; do not add helper/override styling files.",
-      "testRequired": true,
-      "testedByCodex": true
-    },
-    {
-      "taskId": "scene_editor_cross_app_ready_gate",
-      "title": "Confirm Scene Editor is ready for cross-app linking",
-      "status": "ready_after_user_v032_verification",
-      "priority": 5,
-      "phase": 14,
-      "description": "The v0.32 follow-up implementation is complete in permanent Scene Editor modules. Wider cross-app linking should wait for PR review, merge and user deployment verification, then may begin.",
-      "targetFiles": [
-        "artifex/apps/scene-editor/scene-editor-core-api.js",
-        "artifex/apps/scene-editor/scene-editor-app.js"
-      ],
-      "testRequired": true
-    },
-    {
-      "taskId": "scene_editor_archive_unused_legacy_files",
-      "title": "Archive unused legacy Scene Editor files",
-      "status": "done",
-      "phase": 15,
-      "description": "Archived unused unreferenced legacy files into archive/legacy-2026-05-28 after confirming runtime references.",
       "testedByCodex": true,
-      "testedByUserLive": true
+      "testedByUserLive": false
+    },
+    {
+      "taskId": "scene_editor_v035_manual_acceptance_gate",
+      "title": "Confirm v0.35 ownership consolidation in deployed browser",
+      "status": "review",
+      "phase": 6,
+      "description": "Run the deployed manual acceptance gate before declaring Scene Editor stable or beginning new feature/cross-app integration work.",
+      "checks": [
+        "Selecting and editing the ball changes only the ball.",
+        "Selecting and editing the box changes only the box.",
+        "A square image wraps to a visibly square area on the 16:9 stage.",
+        "Border is visible, toggles correctly and is object-specific.",
+        "Layer reorder and Recalculate persist after rerender and save/reload, including locked layers.",
+        "Move-handle drag, editable X/Y, offscreen positions and middle-mouse pan work through the intended route.",
+        "Asset picker, object preview, menu actions, import and Download JSON remain functional.",
+        "Controls do not duplicate or reinstall after waiting, and no console errors appear."
+      ],
+      "testRequired": true,
+      "testedByUserLive": false
     },
     {
       "taskId": "scene_editor_future_scene_events_triggers_contract",
       "title": "Define future Scene Events / Triggers cross-app contract",
       "status": "open",
-      "phase": 16,
-      "description": "Future integration task only: define scene enter, object interact/pickup, portal/exit, conditions, FX/sound triggers, object action/animation triggers and quest-state updates across Scene Editor, Archetype Object Creator, Effect Editor, Quest Builder and Project Manager. Do not implement ad hoc events in v0.33.",
+      "phase": 7,
+      "description": "Future integration task only: define scene enter, object interact/pickup, portal/exit, conditions, FX/sound triggers, object action/animation triggers and quest-state updates across Scene Editor, Archetype Object Creator, Effect Editor, Quest Builder and Project Editor. Do not begin before v0.35 manual acceptance is recorded.",
       "testedByCodex": false,
       "testedByUserLive": false
     }
+  ],
+  "activeRuntimeStyles": [
+    "scene-editor.css",
+    "context-menu.css",
+    "scene-editor-panel-stage.css",
+    "scene-editor-control-cards.css",
+    "scene-editor-value-sliders.css",
+    "scene-editor-ui-polish.css",
+    "scene-editor-object-states.css"
   ],
   "activeRuntimeModules": [
     "scene-editor-config.js",
@@ -270,20 +175,23 @@
     "scene-editor-transform-controls.js",
     "scene-editor-layer-controls.js",
     "scene-editor-value-sliders.js",
-    "scene-editor-card-controller.js",
     "scene-editor-visual-adjustments.js",
-    "scene-editor-offscreen-placement.js",
-    "scene-editor-aspect-controls.js",
     "scene-editor-object-preview.js",
     "scene-editor-menu-controller.js"
+  ],
+  "removedFromActiveRuntimeByV035": [
+    "scene-editor-aspect-controls.js",
+    "scene-editor-card-controller.js",
+    "scene-editor-offscreen-placement.js"
   ],
   "testsExecuted": [
     "Codex v0.30 pass: node --check, served HTTP asset checks, template manifest fetch and temporary Playwright smoke test.",
     "User v0.30 pass: deployed page opened and core split appeared functional.",
-    "Codex v0.31 pass: node --check, served HTTP asset checks, template manifest fetch and Playwright smoke testing over version/toast/selection/transform/feature controls/API compatibility.",
-    "User v0.31 pass: deployed page loaded, restored local scene, displayed v0.31 output instead of stale v0.28 toast, and no other broken behaviours were found except unlocked aspect-ratio resize not visually stretching the image.",
-    "Codex v0.32 pass: static, served HTTP and Playwright smoke checks were run before PR #13, but deployed manual user acceptance failed slider dragging, editable value readout and aspect-off visible stretch.",
-    "Codex v0.33 pass pending in this branch: repair slider dragging/editable numeric readouts, aspect-off/on resize paths, floating Object Inspector, Scene Tags, Scene Audio, active-project presentation, and placeholder removals before draft PR."
+    "Codex v0.31 pass: node --check, served HTTP asset checks, template manifest fetch and Playwright smoke coverage of version, selection, transform, feature controls and API compatibility.",
+    "User v0.31 pass: deployed page loaded, restored local scene and exposed the remaining unlocked aspect-ratio resize defect.",
+    "Codex v0.32 pass: static, served HTTP and Playwright checks were run before PR #13; deployed manual acceptance subsequently failed.",
+    "PR #37 source/diff verification records that ownership consolidation was implemented in permanent files and overlapping active imports were removed.",
+    "No completed deployed manual acceptance result for v0.35-owner-consolidation was found in checked records."
   ],
-  "nextStep": "PR #13 was merged and deployed as v0.32-controls-resize-search, but user acceptance failed. Review v0.33-inspector-controls-repair, merge only after PR approval, then perform deployed user verification at the v0.33 fresh URL before opening cross-app integration."
+  "nextStep": "Run and record deployed manual acceptance for v0.35-owner-consolidation before new Scene Editor feature work or cross-app integration begins."
 }
