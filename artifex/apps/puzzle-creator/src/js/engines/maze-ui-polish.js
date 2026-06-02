@@ -18,8 +18,8 @@ function markVisibleBuildVersion() {
   const eyebrow = document.querySelector('.brand-title-block .eyebrow');
   if (eyebrow) eyebrow.textContent = 'Artifex Puzzle Creator Module';
   const pill = document.querySelector('.version-pill');
-  if (pill) pill.textContent = 'V1.33';
-  document.title = 'Artifex Puzzle Creator V1.33 · Forever Bound';
+  if (pill) pill.textContent = 'V1.34';
+  document.title = 'Artifex Puzzle Creator V1.34 · Forever Bound';
 }
 
 function removeVerboseHelperText() {
@@ -171,12 +171,14 @@ function injectUiPolishStyles() {
   style.textContent = `
     @media(min-width:1241px){.app-header{position:relative!important;}.app-menu{position:absolute!important;left:50%!important;transform:translateX(-50%)!important;justify-self:auto!important;}}
     .engine-purpose[hidden]{display:none!important;}
+    .is-puzzle-chooser .overview-window{display:none!important;}
     .left-icon-bar{position:sticky!important;top:0!important;z-index:30!important;background:linear-gradient(180deg,rgba(3,18,10,.99),rgba(4,26,14,.97))!important;box-shadow:0 12px 20px rgba(0,0,0,.3)!important;border-color:rgba(158,230,164,.16)!important;backdrop-filter:blur(8px);}
     .panel-nav-button{position:relative;background:transparent!important;background-image:none!important;border-color:transparent!important;box-shadow:none!important;overflow:visible!important;font-size:1.75rem!important;}
-    .panel-nav-button::before{content:'';position:absolute;left:50%;top:54%;width:62px;height:38px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(158,230,164,.36),rgba(158,230,164,.12) 42%,transparent 72%);filter:blur(4px);opacity:.9;z-index:-1;}
+    .panel-nav-button::before{content:'';position:absolute;left:50%;top:42%;width:62px;height:38px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(158,230,164,.36),rgba(158,230,164,.12) 42%,transparent 72%);filter:blur(4px);opacity:.9;z-index:-1;}
     .panel-nav-button.is-active::before{background:radial-gradient(circle,rgba(158,230,164,.62),rgba(158,230,164,.2) 45%,transparent 76%);filter:blur(5px);}
     .panel-nav-button.status-yellow::before{background:radial-gradient(circle,rgba(238,196,89,.56),rgba(238,196,89,.18) 45%,transparent 76%);}
     .panel-nav-button.status-red::before{background:radial-gradient(circle,rgba(226,88,88,.58),rgba(226,88,88,.18) 45%,transparent 76%);}
+    .panel-nav-icon{font-size:1.6rem!important;}.panel-nav-label{font-size:.57rem!important;color:var(--muted);}.panel-nav-button.is-active .panel-nav-label{color:var(--green2);}
     .left-panel-body,.tool-panel{font-size:.86rem;}.tool-panel h2{font-size:1.1rem!important;}.tool-panel .eyebrow{font-size:.64rem!important;}.tool-panel .field-block>span,.tool-panel .range-row>span,.tool-panel .toggle-row strong{font-size:.8rem!important;}.tool-panel small,.tool-panel .hint-text{font-size:.66rem!important;}
     .build-quick-actions{gap:13px!important;margin-top:12px!important;margin-bottom:2px!important;}.build-quick-actions + #btn-clear-all{margin-top:13px!important;margin-right:8px!important;}#btn-load-reference{margin-top:13px!important;}
     #btn-random,#btn-start-blank,#btn-clear-all,#btn-load-reference,#dropzone{font-size:.7rem!important;line-height:1.15!important;padding-left:6px!important;padding-right:6px!important;min-height:42px!important;}#btn-clear-all,#btn-load-reference{white-space:nowrap;}
