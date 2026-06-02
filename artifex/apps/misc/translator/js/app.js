@@ -192,17 +192,34 @@
     return line.reduce((sum, token) => sum + glyphWidth(language, token, glyphHeight), 0) + gap * Math.max(0, line.length - 1);
   }
 
+  function wordUnitsFromLine(line) {
+    const units = [];
+    let current = [];
+    for (const token of line) {
+      current.push(token);
+      if (token === "space") {
+        units.push(current);
+        current = [];
+      }
+    }
+    if (current.length) units.push(current);
+    return units;
+  }
+
   function wrappedLines(language, lines, glyphHeight, gap) {
     if (!state.wrap) return lines;
     const output = [];
     for (const sourceLine of lines) {
+      const wordUnits = wordUnitsFromLine(sourceLine);
       let current = [];
-      for (const token of sourceLine) {
-        const proposed = current.concat(token);
+      for (const unit of wordUnits) {
+        const proposed = current.concat(unit);
         if (current.length && lineWidth(language, proposed, glyphHeight, gap) > state.wrapWidth) {
           output.push(current);
-          current = [token];
-        } else current = proposed;
+          current = unit.slice();
+        } else {
+          current = proposed;
+        }
       }
       if (current.length) output.push(current);
     }
