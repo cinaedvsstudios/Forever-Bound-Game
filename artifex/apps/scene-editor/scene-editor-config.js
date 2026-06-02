@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const VERSION = 'v0.36-selection-display-clear-selection';
+  const VERSION = 'v0.37-control-state-inspector-retention';
   const SETTINGS_KEY = 'artifex.sceneEditor.settings.v1';
   const WORKING_COPY_KEY = 'artifex.sceneEditor.workingCopy.v1';
   const DOWNLOAD_KEY = 'artifex.sceneEditor.lastDownload.v1';
