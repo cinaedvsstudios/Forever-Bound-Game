@@ -1,0 +1,205 @@
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js';
+import { patternPaletteColor } from './pattern-lock-templates.js';
+
+const DEFAULT_EMPTY = '#d5dbd6';
+const DEFAULT_GLOW = '#9ee6a4';
+const BASE_SIZE = 0.19;
+
+export class PatternLockRenderer {
+  constructor(host, callbacks = {}) {
+    this.host = host;
+    this.callbacks = callbacks;
+    this.emptyColor = DEFAULT_EMPTY;
+    this.glowColor = DEFAULT_GLOW;
+    this.pointScale = 1;
+    this.nodes = [];
+    this.active = false;
+    this.raycaster = new THREE.Raycaster();
+    this.pointer = new THREE.Vector2();
+    this.pointerStart = null;
+    this.buildScene();
+  }
+
+  buildScene() {
+    this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(0x06100a);
+    this.scene.fog = new THREE.FogExp2(0x06100a, 0.038);
+    this.camera = new THREE.PerspectiveCamera(46, 1, 0.1, 100);
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.host.appendChild(this.renderer.domElement);
+    this.orbit = new OrbitControls(this.camera, this.renderer.domElement);
+    this.orbit.enableDamping = true;
+    this.orbit.dampingFactor = 0.06;
+    this.orbit.enablePan = false;
+    this.orbit.minDistance = 4.4;
+    this.orbit.maxDistance = 16;
+    this.scene.add(new THREE.AmbientLight(0xfff0dc, 0.7));
+    const key = new THREE.DirectionalLight(0xfff2d9, 1.05);
+    key.position.set(6, 9, 10);
+    key.castShadow = true;
+    this.scene.add(key);
+    const fill = new THREE.PointLight(0x7fd2cf, 0.72, 28);
+    fill.position.set(-7, 4, 6);
+    this.scene.add(fill);
+    this.group = new THREE.Group();
+    this.scene.add(this.group);
+    this.resetView();
+    this.bindPointerEvents();
+    if (window.ResizeObserver) {
+      this.resizeObserver = new ResizeObserver(() => this.resize());
+      this.resizeObserver.observe(this.host);
+    }
+    this.resize();
+  }
+
+  bindPointerEvents() {
+    this.renderer.domElement.addEventListener('pointerdown', (event) => {
+      this.pointerStart = { x: event.clientX, y: event.clientY };
+    });
+    this.renderer.domElement.addEventListener('pointerup', (event) => {
+      if (!this.pointerStart) return;
+      const moved = Math.hypot(event.clientX - this.pointerStart.x, event.clientY - this.pointerStart.y);
+      this.pointerStart = null;
+      if (moved < 5) this.pickNode(event);
+    });
+  }
+
+  pickNode(event) {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    this.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    this.raycaster.setFromCamera(this.pointer, this.camera);
+    const hit = this.raycaster.intersectObjects(this.nodes, false)[0];
+    if (hit && this.callbacks.onPointClick) this.callbacks.onPointClick(hit.object.userData.index);
+  }
+
+  load(points, placements, isComplete = false) {
+    this.clear();
+    points.forEach((point, index) => {
+      const geometry = new THREE.SphereGeometry(BASE_SIZE, 14, 14);
+      const material = new THREE.MeshStandardMaterial({ color: this.emptyColor, roughness: 0.34, metalness: 0.06 });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.position.set(point.x, point.y, point.z);
+      mesh.castShadow = true;
+      mesh.userData = { index, expected: point.expected, zone: point.zone, emoji: null, sprite: null };
+      mesh.scale.setScalar(this.pointScale);
+      this.group.add(mesh);
+      this.nodes.push(mesh);
+    });
+    this.paint(placements, isComplete);
+    this.resetView();
+  }
+
+  clear() {
+    this.nodes.forEach((node) => {
+      if (node.userData.sprite) this.disposeSprite(node.userData.sprite);
+      node.geometry.dispose();
+      node.material.dispose();
+      this.group.remove(node);
+    });
+    this.nodes = [];
+  }
+
+  paint(placements, isComplete = false) {
+    this.nodes.forEach((node) => {
+      const emoji = placements.get(node.userData.index) || null;
+      node.userData.emoji = emoji;
+      if (node.userData.sprite) {
+        node.remove(node.userData.sprite);
+        this.disposeSprite(node.userData.sprite);
+        node.userData.sprite = null;
+      }
+      if (isComplete) {
+        node.material.color.set('#79c97b');
+        node.material.emissive.set('#173e20');
+        node.material.emissiveIntensity = 0.54;
+      } else if (emoji) {
+        node.material.color.set(patternPaletteColor(emoji));
+        node.material.emissive.set('#07130b');
+        node.material.emissiveIntensity = 0.13;
+      } else {
+        node.material.color.set(this.emptyColor);
+        node.material.emissive.set('#000000');
+        node.material.emissiveIntensity = 0;
+      }
+      if (emoji) {
+        const sprite = this.createEmojiSprite(emoji);
+        node.add(sprite);
+        node.userData.sprite = sprite;
+      }
+    });
+  }
+
+  createEmojiSprite(emoji) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const context = canvas.getContext('2d');
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.font = '76px "Segoe UI Emoji", "Apple Color Emoji", sans-serif';
+    context.fillText(emoji, 64, 68);
+    const texture = new THREE.CanvasTexture(canvas);
+    const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+    const sprite = new THREE.Sprite(material);
+    sprite.scale.set(0.41, 0.41, 0.41);
+    sprite.renderOrder = 4;
+    return sprite;
+  }
+
+  disposeSprite(sprite) {
+    sprite.material.map?.dispose();
+    sprite.material.dispose();
+  }
+
+  setPointScale(percent) {
+    this.pointScale = percent / 100;
+    this.nodes.forEach((node) => node.scale.setScalar(this.pointScale));
+  }
+
+  setEmptyColor(color, placements, complete) {
+    this.emptyColor = color;
+    this.paint(placements, complete);
+  }
+
+  setGlowColor(color) {
+    this.glowColor = color;
+  }
+
+  resetView() {
+    if (!this.camera || !this.orbit) return;
+    this.camera.position.set(7.4, 5.4, 8.6);
+    this.orbit.target.set(0, 0, 0);
+    this.orbit.update();
+  }
+
+  resize() {
+    const width = Math.max(1, this.host.clientWidth);
+    const height = Math.max(1, this.host.clientHeight);
+    this.camera.aspect = width / height;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(width, height);
+  }
+
+  start() {
+    if (this.active) return;
+    this.active = true;
+    const draw = () => {
+      if (!this.active) return;
+      this.orbit.update();
+      this.renderer.render(this.scene, this.camera);
+      this.frame = window.requestAnimationFrame(draw);
+    };
+    draw();
+  }
+
+  stop() {
+    this.active = false;
+    if (this.frame) window.cancelAnimationFrame(this.frame);
+    this.frame = null;
+  }
+}
