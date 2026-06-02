@@ -57,9 +57,10 @@ function makeCubePoints() {
 
 function makePyramidPoints() {
   const apex = { x: 0, y: 2.65, z: 0 };
+  const baseY = -1.75;
   const corners = [
-    { x: -2.45, y: -1.75, z: -2.45 }, { x: 2.45, y: -1.75, z: -2.45 },
-    { x: 2.45, y: -1.75, z: 2.45 }, { x: -2.45, y: -1.75, z: 2.45 }
+    { x: -2.45, y: baseY, z: -2.45 }, { x: 2.45, y: baseY, z: -2.45 },
+    { x: 2.45, y: baseY, z: 2.45 }, { x: -2.45, y: baseY, z: 2.45 }
   ];
   const points = [{ ...apex, expected: '☀️', zone: 'summit' }];
   for (let face = 0; face < 4; face += 1) {
@@ -76,6 +77,9 @@ function makePyramidPoints() {
       }
     }
   }
+  [-1.45, -0.48, 0.48, 1.45].forEach((x) => {
+    [-1.45, -0.48, 0.48, 1.45].forEach((z) => points.push({ x, y: baseY, z, expected: '🪨', zone: 'base' }));
+  });
   return points;
 }
 
@@ -93,7 +97,7 @@ function makeDiamondPoints() {
         const b = lerpPoint(tip, right, down);
         for (let col = 1; col <= row + 1; col += 1) {
           const point = lerpPoint(a, b, col / (row + 2));
-          const expected = Math.abs(point.y) > 1.18 ? '💎' : Math.abs(point.z) > 0.58 ? '🌙' : Math.abs(point.x) > 0.58 ? '✨' : '🔷';
+          const expected = Math.abs(point.y) > 1.18 ? '💎' : Math.abs(point.z) > 0.85 ? '🌙' : Math.abs(point.x) > 0.85 ? '⭐' : point.y > 0 ? '✨' : '🔷';
           points.push({ ...point, expected, zone: `${half ? 'lower' : 'upper'}-${face}` });
         }
       });
