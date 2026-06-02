@@ -117,7 +117,9 @@ function showPlanningBrief(engineId) {
   activeEngine = null;
   window.__artifexActivePuzzleEngine = null;
   document.body.classList.add('is-puzzle-chooser', 'is-puzzle-brief');
+  $('puzzle-launcher-panel')?.removeAttribute('hidden');
   document.querySelectorAll('.puzzle-type-option').forEach((button) => button.classList.toggle('is-selected', button.dataset.engine === engineId));
+  document.querySelectorAll('.engine-button[data-engine]').forEach((button) => button.classList.toggle('is-active', button.dataset.engine === engineId));
   page.innerHTML = renderBriefPage(engine, brief);
   page.removeAttribute('hidden');
 }
