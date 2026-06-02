@@ -6,7 +6,7 @@ This document defines how a completed puzzle created in **Puzzle Creator** is us
 
 A puzzle is a self-contained playable challenge. A Quest may contain one or more puzzles as meaningful flow steps, but Quest Builder must not absorb or duplicate a puzzle's internal authored mechanics.
 
-This is a design and integration contract. It does not mean the currently live Quest Builder V1.2.12 already exposes a Puzzle block or that Puzzle Creator V1.33 already writes canonical connected-project files.
+This is a design and integration contract. It does not mean the currently live Quest Builder V1.2.12 already exposes a Puzzle block or that Puzzle Creator V1.34 already writes canonical connected-project files.
 
 ## Locked Module Names
 
@@ -209,11 +209,13 @@ The current V1.2.12 Quest Builder does not yet implement this. Adding it is a fu
 
 ## Current Puzzle Creator Status Relevant to Integration
 
-Puzzle Creator V1.33 is the accepted live Maze / Labyrinth presentation and usability baseline. It shows a self-contained authoring model with a **Game logic** section, `Module ID`, `Puzzle Type`, `Integration Context`, `Completion Flag` and `Calling Text`, and it surfaces six planned puzzle engine choices: Maze / Labyrinth, Arena Trial, Obstacle Course, Symbol Assembly, Item Order Puzzle and Hazard Puzzle.
+Puzzle Creator V1.34 is the accepted live UI-shell and Maze / Labyrinth authoring baseline on `main`, merged in PR #42 on 2026-06-02. It surfaces six puzzle-type choices on a landing screen: Maze / Labyrinth, Arena Trial, Obstacle Course, Symbol Assembly, Item Order Puzzle and Hazard Puzzle. It opens a selected workflow with consistent labelled navigation stages of **Setup**, **Display**, **Logic** and **Colors**.
 
-The V1.34 UI-shell candidate changes initial navigation only: it proposes a **Choose a Puzzle Type** landing screen, a blank viewing area until a workflow is selected, and fixed labelled navigation stages of **Setup**, **Display**, **Logic** and **Colors** after selection. V1.34 does not implement new gameplay engines, project saving or Quest linking, and is not a live baseline until browser-tested and merged.
+Maze / Labyrinth remains the currently developed playable editor and retains the accepted V1.33 Maze behaviour, including the organised **Walls → Scatter → Colours** panel and clearer **Place Markers** Scatter workflow. The remaining listed puzzle types continue to represent their existing early workflow state, not completed playable engines.
 
-However, the current Puzzle Creator is not yet canonical connected-project integration for Quest Builder:
+V1.34 changes navigation and presentation only. It does not implement new puzzle gameplay engines, connected-project puzzle saving or Quest linking.
+
+The current Puzzle Creator is not yet canonical connected-project integration for Quest Builder:
 
 - it still operates as its own exported/downloaded JSON workflow;
 - its current naming uses module-oriented/export-oriented fields rather than a confirmed canonical `puzzle_` project record workflow;
@@ -221,7 +223,7 @@ However, the current Puzzle Creator is not yet canonical connected-project integ
 
 ## Required Implementation Order
 
-1. Keep current puzzle editor work stable; do not bolt Quest flow into Puzzle Creator itself.
+1. Keep the accepted V1.34 puzzle editor shell and Maze workflow stable; do not bolt Quest flow into Puzzle Creator itself.
 2. Define/align Puzzle Creator canonical saved-file and index output under `puzzles/`.
 3. Add Puzzle Builder/Quest Builder connected-project loading of the real puzzle index.
 4. Add the Quest Builder `Puzzle` flow block and linked-puzzle selector.
