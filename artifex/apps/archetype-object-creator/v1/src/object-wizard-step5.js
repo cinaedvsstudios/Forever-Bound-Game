@@ -46,33 +46,54 @@ function injectStep5CoreStyles() {
   const style = document.createElement('style');
   style.id = 'object-wizard-step5-core-styles';
   style.textContent = `
-    #quickstart-dialog .wizard-build-detail-panel{display:grid;grid-template-columns:minmax(250px,.82fr) minmax(0,1.18fr);gap:12px;min-width:0;max-width:100%;overflow:visible}
-    #quickstart-dialog .wizard-step5-left,#quickstart-dialog .wizard-step5-right{display:grid;grid-template-columns:1fr;align-content:start;gap:8px;min-width:0;max-width:100%;box-sizing:border-box}
-    #quickstart-dialog .wizard-right-stack{display:grid;grid-template-columns:1fr;gap:8px;min-width:0;align-content:start}
-    #quickstart-dialog .wizard-step5-toolbar{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+    #quickstart-dialog .wizard-step5-toolbar{display:flex!important;flex-wrap:wrap!important;gap:6px!important;margin:0 0 10px!important}
+    #quickstart-dialog .wizard-step5-toolbar button{min-height:28px!important;padding:4px 9px!important;font-size:11px!important;white-space:nowrap!important}
+    #quickstart-dialog .wizard-build-shell{grid-template-columns:minmax(210px,300px) minmax(0,1fr)!important;gap:12px!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+    #quickstart-dialog .wizard-build-left{min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
     #quickstart-dialog .wizard-build-nav button{grid-template-columns:auto auto minmax(0,1fr) auto!important;gap:7px!important;padding:7px 8px!important;min-width:0!important;font-size:11px!important}
-    #quickstart-dialog .wizard-task-copy strong,#quickstart-dialog .wizard-task-copy small{display:block;white-space:normal;overflow-wrap:anywhere;line-height:1.25}
-    #quickstart-dialog .wizard-build-fields{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin:0!important}
+    #quickstart-dialog .wizard-task-copy{display:block!important;min-width:0!important;overflow:hidden!important}
+    #quickstart-dialog .wizard-task-copy strong,#quickstart-dialog .wizard-task-copy small{display:block!important;white-space:normal!important;overflow-wrap:anywhere!important;line-height:1.25}
+    #quickstart-dialog .wizard-task-copy strong{font-size:11px!important}
+    #quickstart-dialog .wizard-task-copy small{margin-top:2px!important;color:rgba(255,240,206,.58)!important;font-size:9px!important}
+    #quickstart-dialog .wizard-build-nav em{white-space:nowrap!important;align-self:center!important;font-size:9px!important}
+    #quickstart-dialog .wizard-build-detail-panel{display:grid!important;grid-template-columns:minmax(250px,.82fr) minmax(330px,1.18fr)!important;grid-auto-rows:min-content!important;align-items:start!important;align-content:start!important;gap:10px 12px!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;overflow:visible!important}
+    #quickstart-dialog .wizard-step5-left,#quickstart-dialog .wizard-step5-right{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-auto-rows:min-content!important;align-content:start!important;gap:8px!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;margin:0!important;position:static!important}
+    #quickstart-dialog .wizard-step5-left{grid-column:1!important;grid-row:1!important}
+    #quickstart-dialog .wizard-step5-right{grid-column:2!important;grid-row:1!important}
+    #quickstart-dialog .wizard-step5-right>.wizard-build-title{grid-column:1!important;grid-row:auto!important;display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:8px!important;min-width:0!important;max-width:100%!important;margin:0 0 4px!important;position:static!important}
+    #quickstart-dialog .wizard-step5-right>.wizard-action-info-text{grid-column:1!important;grid-row:auto!important;display:block!important;position:static!important;float:none!important;clear:both!important;min-width:0!important;max-width:100%!important;margin:0 0 4px!important;color:rgba(255,240,206,.72)!important;font-size:11px!important;line-height:1.35!important}
+    #quickstart-dialog .wizard-step5-right .wizard-right-stack,#quickstart-dialog .wizard-step5-right .wizard-build-fields,#quickstart-dialog .wizard-step5-right .wizard-action-behaviour-panel,#quickstart-dialog .wizard-step5-right .wizard-sound-list,#quickstart-dialog .wizard-step5-right .wizard-notes-field{grid-column:1!important;grid-row:auto!important;display:block;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;margin-left:0!important;margin-right:0!important;position:static!important;float:none!important;clear:both!important}
+    #quickstart-dialog .wizard-right-stack{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:8px!important;margin:0!important;min-width:0!important;align-content:start!important}
+    #quickstart-dialog .wizard-step5-right .wizard-build-fields{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin:0!important}
     #quickstart-dialog .wizard-field-asset-path,#quickstart-dialog .wizard-notes-field{grid-column:1/-1!important}
-    #quickstart-dialog .wizard-action-info-text{margin:-2px 0 4px;color:rgba(255,240,206,.72);font-size:12px;line-height:1.35}
+    #quickstart-dialog .wizard-step5-right label{min-width:0!important;max-width:100%!important;box-sizing:border-box!important;font-size:11px!important}
+    #quickstart-dialog .wizard-step5-right input:not([type='checkbox']):not([type='range']),#quickstart-dialog .wizard-step5-right select,#quickstart-dialog .wizard-step5-right textarea{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;padding:5px 7px!important;font-size:11px!important}
+    #quickstart-dialog .wizard-step5-right textarea{resize:vertical!important}
     #quickstart-dialog .wizard-title-complete{margin-left:auto!important;min-width:0!important;display:inline-flex!important;align-items:center!important;gap:8px!important;padding:6px 10px!important;border:1px solid rgba(126,212,150,.38)!important;border-radius:999px!important;background:rgba(72,192,113,.12)!important;font-size:11px!important;letter-spacing:0!important;text-transform:none!important}
     #quickstart-dialog .wizard-title-complete span{font-size:11px!important;font-weight:700!important;white-space:nowrap!important}
-    #quickstart-dialog .wizard-sound-list,#quickstart-dialog .wizard-action-behaviour-panel{border:1px solid rgba(226,204,167,.18);border-radius:14px;background:rgba(0,0,0,.14);padding:8px 10px;min-width:0;max-width:100%;box-sizing:border-box}
-    #quickstart-dialog .wizard-sound-list summary,#quickstart-dialog .wizard-action-behaviour-panel summary{cursor:pointer;color:#fff0ce;font-weight:800}
-    #quickstart-dialog .wizard-sound-list summary{display:flex;align-items:center;gap:7px;min-width:0}
+    #quickstart-dialog .wizard-sound-list,#quickstart-dialog .wizard-action-behaviour-panel{border:1px solid rgba(226,204,167,.18);border-radius:14px;background:rgba(0,0,0,.14);padding:8px 10px!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+    #quickstart-dialog .wizard-sound-list summary,#quickstart-dialog .wizard-action-behaviour-panel summary{display:block!important;position:static!important;cursor:pointer;color:#fff0ce;font-weight:800;margin:0!important;padding:0!important;line-height:1.35!important}
+    #quickstart-dialog .wizard-sound-list summary{display:flex!important;align-items:center!important;gap:7px!important;min-width:0!important}
     #quickstart-dialog .wizard-sound-summary-label{flex:1;min-width:0}
     #quickstart-dialog .wizard-create-sound-button{flex:none;display:inline-flex;align-items:center;justify-content:center;width:29px!important;min-width:29px!important;height:29px!important;min-height:29px!important;padding:0!important;border-radius:8px!important;font-size:14px!important}
-    #quickstart-dialog .wizard-behaviour-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 10px;margin-top:8px}
+    #quickstart-dialog .wizard-behaviour-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px 10px!important;margin-top:8px!important;min-width:0!important}
     #quickstart-dialog .wizard-check-line{display:flex!important;flex-direction:row!important;align-items:center!important;gap:8px!important}
-    #quickstart-dialog .wizard-sound-row,#quickstart-dialog .wizard-frame-event-row{display:grid;grid-template-columns:20px minmax(0,1.35fr) minmax(64px,.72fr) repeat(3,minmax(45px,.48fr)) 27px;gap:4px;align-items:center;margin-top:7px;min-width:0}
-    #quickstart-dialog .wizard-frame-event-row{grid-template-columns:20px minmax(48px,.42fr) minmax(78px,.72fr) minmax(0,1fr) 27px}
-    #quickstart-dialog .wizard-sound-row>*,#quickstart-dialog .wizard-frame-event-row>*{min-width:0;max-width:100%;box-sizing:border-box}
+    #quickstart-dialog .wizard-action-behaviour-panel h4{margin:12px 0 6px!important}
+    #quickstart-dialog .wizard-action-behaviour-panel .wizard-add-frame-event{margin-top:8px!important}
+    #quickstart-dialog .wizard-empty-events{margin:6px 0 0!important;color:rgba(255,240,206,.62)!important;font-size:11px!important}
+    #quickstart-dialog .wizard-sound-row,#quickstart-dialog .wizard-frame-event-row{display:grid!important;grid-template-columns:20px minmax(0,1.35fr) minmax(64px,.72fr) repeat(3,minmax(45px,.48fr)) 27px!important;gap:4px!important;align-items:center!important;margin-top:7px!important;min-width:0!important}
+    #quickstart-dialog .wizard-frame-event-row{grid-template-columns:20px minmax(48px,.42fr) minmax(78px,.72fr) minmax(0,1fr) 27px!important}
+    #quickstart-dialog .wizard-sound-row>*,#quickstart-dialog .wizard-frame-event-row>*{min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+    #quickstart-dialog .wizard-step5-left .wizard-preview-stage{grid-column:1!important;grid-row:auto!important;width:100%!important;max-width:none!important;height:clamp(250px,34vh,330px)!important;min-height:250px!important;max-height:330px!important;margin:0!important;align-self:start!important}
+    #quickstart-dialog .wizard-step5-left .wizard-preview-controls{grid-column:1!important;grid-row:auto!important;display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:8px!important;margin:2px 0 0!important;position:relative!important;min-width:0!important}
+    #quickstart-dialog .wizard-step5-left .wizard-reference-panel{grid-column:1!important;grid-row:auto!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;margin:2px 0 0!important;padding-top:8px!important;border-top:1px solid rgba(226,204,167,.18)!important}
     #quickstart-dialog .wizard-correction-popover{position:relative;z-index:4;width:min(100%,620px);border:1px solid rgba(226,204,167,.22);border-radius:16px;background:rgba(18,13,11,.98);box-shadow:0 14px 32px rgba(0,0,0,.55);padding:10px}
     #quickstart-dialog .wizard-correction-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}.wizard-correction-title{flex:1;color:#fff0ce;font-weight:800}
     #quickstart-dialog .wizard-correction-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px 12px!important;border-radius:14px!important;padding:10px!important}
     #quickstart-dialog .wizard-correction-grid input[type='range']{width:100%!important}.wizard-correction-grid button[data-match-brightness]{grid-column:1/-1;width:100%}
     #quickstart-dialog .wizard-correction-control{display:grid;grid-template-columns:52px;gap:6px;align-items:center;justify-content:center;margin:6px auto 0}.wizard-correction-control output{text-align:center;color:#fff0ce;border:1px solid rgba(226,204,167,.18);border-radius:999px;padding:3px 7px;background:rgba(0,0,0,.22)}
-    @media(max-width:1100px){#quickstart-dialog .wizard-build-detail-panel{grid-template-columns:1fr}}@media(max-width:680px){#quickstart-dialog .wizard-build-fields,#quickstart-dialog .wizard-behaviour-grid,#quickstart-dialog .wizard-sound-row,#quickstart-dialog .wizard-frame-event-row{grid-template-columns:1fr!important}}
+    @media(max-width:1100px){#quickstart-dialog .wizard-build-shell{grid-template-columns:1fr!important}#quickstart-dialog .wizard-build-detail-panel{grid-template-columns:1fr!important}#quickstart-dialog .wizard-step5-left,#quickstart-dialog .wizard-step5-right{grid-column:1!important;grid-row:auto!important}}
+    @media(max-width:680px){#quickstart-dialog .wizard-step5-right .wizard-build-fields,#quickstart-dialog .wizard-behaviour-grid,#quickstart-dialog .wizard-sound-row,#quickstart-dialog .wizard-frame-event-row{grid-template-columns:1fr!important}}
   `;
   document.head.appendChild(style);
 }
@@ -112,10 +133,7 @@ function bindSoundEvents(container, requirementId) {
     event.preventDefault();
     event.stopPropagation();
     const target = captureSoundTarget(rows, requirementId);
-    openSoundGeneratorModal({
-      sourceLabel: `Archetype Object Creator > ${humanize(actionIdFromRequirement(requirementId))} > Sound Events`,
-      onAssign: ({ assetId }) => assignGeneratedSound(target, assetId)
-    });
+    openSoundGeneratorModal({ sourceLabel: `Archetype Object Creator > ${humanize(actionIdFromRequirement(requirementId))} > Sound Events`, onAssign: ({ assetId }) => assignGeneratedSound(target, assetId) });
   });
 }
 
@@ -157,10 +175,7 @@ function readSoundRows(rows) {
     frame: row.querySelector('[data-sound="frame"]')?.value || '',
     volume: Number(row.querySelector('[data-sound="volume"]')?.value || 1),
     pitchVariance: Number(row.querySelector('[data-sound="pitchVariance"]')?.value || 0),
-    spatial: false,
-    loop: false,
-    stopOnEnd: true,
-    cooldown: 0
+    spatial: false, loop: false, stopOnEnd: true, cooldown: 0
   })).filter((item) => item.assetId || item.frame);
 }
 
@@ -208,19 +223,24 @@ function renderFrameEvents(section, requirementId, frameEvents) {
   const list = section.querySelector('[data-frame-events]');
   if (!list) return;
   list.innerHTML = '';
-  (frameEvents.length ? frameEvents : [{ frame: '', eventType: 'custom', payload: '' }]).forEach((event, index) => {
+  if (!frameEvents.length) {
+    list.innerHTML = '<p class="wizard-empty-events">No frame events added.</p>';
+    return;
+  }
+  frameEvents.forEach((event, index) => {
     const row = document.createElement('div');
     row.className = 'wizard-frame-event-row';
     row.innerHTML = `<span>${index + 1}</span><input data-frame-event="frame" type="number" min="0" value="${escapeHtml(event.frame ?? '')}" placeholder="Frame" /><select data-frame-event="eventType">${FRAME_EVENT_TYPES.map((item) => `<option value="${item}">${humanize(item)}</option>`).join('')}</select><input data-frame-event="payload" value="${escapeHtml(event.payload || '')}" placeholder="sound asset ID, object ID, note" /><button type="button" title="Remove this frame event">×</button>`;
     row.querySelector('[data-frame-event="eventType"]').value = event.eventType || 'custom';
-    row.querySelectorAll('[data-frame-event]').forEach((input) => input.addEventListener('input', () => writeRequirementData(requirementId, { frameEvents: readFrameEvents(section) })));
-    row.querySelectorAll('select[data-frame-event]').forEach((input) => input.addEventListener('change', () => writeRequirementData(requirementId, { frameEvents: readFrameEvents(section) })));
-    row.querySelector('button')?.addEventListener('click', () => { row.remove(); writeRequirementData(requirementId, { frameEvents: readFrameEvents(section) }); });
+    row.querySelectorAll('[data-frame-event]').forEach((input) => input.addEventListener('input', () => writeRequirementData(requirementId, { frameEvents: readFrameEvents(section, true) })));
+    row.querySelectorAll('select[data-frame-event]').forEach((input) => input.addEventListener('change', () => writeRequirementData(requirementId, { frameEvents: readFrameEvents(section, true) })));
+    row.querySelector('button')?.addEventListener('click', () => { row.remove(); const remaining = readFrameEvents(section, true); writeRequirementData(requirementId, { frameEvents: remaining }); renderFrameEvents(section, requirementId, remaining); });
     list.appendChild(row);
   });
 }
-function readFrameEvents(section) {
-  return Array.from(section.querySelectorAll('.wizard-frame-event-row')).map((row) => ({ frame: row.querySelector('[data-frame-event="frame"]')?.value || '', eventType: row.querySelector('[data-frame-event="eventType"]')?.value || 'custom', payload: row.querySelector('[data-frame-event="payload"]')?.value || '' })).filter((item) => item.frame || item.payload || item.eventType !== 'custom');
+function readFrameEvents(section, preserveBlankRows = false) {
+  const events = Array.from(section.querySelectorAll('.wizard-frame-event-row')).map((row) => ({ frame: row.querySelector('[data-frame-event="frame"]')?.value || '', eventType: row.querySelector('[data-frame-event="eventType"]')?.value || 'custom', payload: row.querySelector('[data-frame-event="payload"]')?.value || '' }));
+  return preserveBlankRows ? events : events.filter((item) => item.frame || item.payload || item.eventType !== 'custom');
 }
 function writeRequirementData(requirementId, updates) {
   if (!requirementId) return;
