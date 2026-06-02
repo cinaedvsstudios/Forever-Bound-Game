@@ -8,22 +8,22 @@ Historical review/handover document:
 artifex/apps/archetype-object-creator/docs/current-state-v1.35-review.md
 ```
 
-## Current status — V1.36 in open PR #38, pending acceptance
+## Current status — V1.36 merged on main; lifecycle validation outstanding
 
-Current accepted `main` runtime remains V1.35 until PR #38 is manually accepted and merged.
+Current `main` runtime is V1.36, merged from PR #38 on 2 June 2026 at merge commit `ef4f37ebe5850c6367db59e57c01e2bb89949384`.
 
-PR #38 proposes V1.36 Step 5 ownership and save-lifecycle consolidation. It is **not ready to merge** until the remaining project-folder/finalisation tests pass in a disposable project folder.
+PR #38 delivered the V1.36 Step 5 ownership and save-lifecycle consolidation. The visible UI corrections were manually checked before merge; the project-folder save/finalisation lifecycle must now be validated on merged `main` in a disposable project folder before further Object Creator feature development.
 
-### Accepted in PR preview on 2 June 2026
+### Confirmed before merge on 2 June 2026
 
-Status: visually checked and accepted by the creator for inclusion in PR #38.
+Status: visually checked and accepted by the creator in the PR preview; now present on `main`.
 
 - Step 5 right-side Action Behaviour layout renders without overlapping text/fields.
 - **Add Frame Event** visibly creates an editable event row.
 - **Add Empty Frame Slot** supports clicking an empty slot to choose an image and fill the slot in place without changing its sequence position.
 - The saved-wizard crystal-ball icon is larger and no longer has the unwanted circular button border/background.
 
-### V1.36 functional lifecycle work implemented in PR #38 but not yet accepted
+### V1.36 functional lifecycle work now on main but not yet validated
 
 - Stable Step 5 DOM ownership moved into the checklist/frame-task/Step 5 behaviour owners; active imports for `object-wizard-step5-layout.js` and `object-wizard-frame-correction.js` were removed.
 - Save Browser Draft, Save Project (In Progress), Finish / Mark Object Ready and Mark Task Ready have distinct intended meanings.
@@ -33,7 +33,7 @@ Status: visually checked and accepted by the creator for inclusion in PR #38.
 - Frame corrections use canonical per-frame `frameCorrections` with legacy migration rather than an active duplicate requirement-level correction path.
 - Review amendments preserve open-session previews after in-progress save, validate planned final output before normal final media writes, map primary gameplay/portrait assets to top-level visual IDs and refuse multiple fixed-path primary image inputs.
 
-### Mandatory tests still required before merge
+### Mandatory post-merge validation before more Object Creator features
 
 Use a disposable Blank Starter Project folder only.
 
@@ -46,14 +46,14 @@ Use a disposable Blank Starter Project folder only.
 - Per-frame correction persistence across actions, save/reload, export/import and finalisation.
 - No duplicate Step 5 controls, module-load errors or console errors.
 
-## Open follow-up work after PR #38 acceptance
+## Open follow-up work after V1.36 lifecycle validation
 
 ### General editor UI module maintenance
 
 Status: open  
 Priority: medium
 
-`editor-ui.js` remains large. Plan a separate focused ownership split only after the V1.36 lifecycle has passed acceptance; do not combine that cleanup with the current save/finalisation PR.
+`editor-ui.js` remains large. Plan a separate focused ownership split only after the V1.36 lifecycle has passed validation; do not combine that cleanup with correction of any lifecycle validation failure.
 
 ### Real scene/quest/reference listing
 
@@ -65,6 +65,7 @@ The Reference panel exists, but real results require the shared project referenc
 
 ## Historical implementation record
 
+- V1.36 merged from PR #38 on 2 June 2026, consolidating touched Step 5 ownership and adding the staged-frame/ready lifecycle; its non-UI lifecycle remains subject to post-merge validation.
 - V1.35 introduced provisional project-folder saving, save/finalise controls and shared synth-sound hookup; its problems are documented in `docs/current-state-v1.35-review.md`.
 - V1.34 attempted Step 5 persistence and compact-layout repair.
 - V1.33 split Step 5 requirement/frame modules but introduced a later repaired state-contract regression.
@@ -73,4 +74,4 @@ The Reference panel exists, but real results require the shared project referenc
 
 ## Rule for future work
 
-Do not add patch, rescue, compatibility-overlay or MutationObserver installer modules over Step 5. Complete and accept PR #38 first; then new work must extend the permanent named owners.
+Do not add patch, rescue, compatibility-overlay or MutationObserver installer modules over Step 5. Validate the merged V1.36 lifecycle first; then new work must extend the permanent named owners.
