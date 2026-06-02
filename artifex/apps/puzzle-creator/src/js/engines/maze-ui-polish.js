@@ -18,8 +18,8 @@ function markVisibleBuildVersion() {
   const eyebrow = document.querySelector('.brand-title-block .eyebrow');
   if (eyebrow) eyebrow.textContent = 'Artifex Puzzle Creator Module';
   const pill = document.querySelector('.version-pill');
-  if (pill) pill.textContent = 'V1.34';
-  document.title = 'Artifex Puzzle Creator V1.34 · Forever Bound';
+  if (pill) pill.textContent = 'V1.35';
+  document.title = 'Artifex Puzzle Creator V1.35 · Forever Bound';
 }
 
 function removeVerboseHelperText() {
