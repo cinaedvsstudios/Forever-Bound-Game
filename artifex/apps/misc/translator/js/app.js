@@ -7,9 +7,7 @@
   "use strict";
 
   const languages = window.ScriptRendererLanguages && window.ScriptRendererLanguages.items;
-  if (!languages) {
-    throw new Error("No language renderer modules were loaded.");
-  }
+  if (!languages) throw new Error("No language renderer modules were loaded.");
 
   const elements = {
     languageSelect: document.querySelector("#language-select"),
@@ -39,6 +37,16 @@
     contrastLabel: document.querySelector("#contrast-label"),
     glyphSize: document.querySelector("#glyph-size"),
     glyphSizeOutput: document.querySelector("#glyph-size-output"),
+    characterSpacing: document.querySelector("#character-spacing"),
+    characterSpacingOutput: document.querySelector("#character-spacing-output"),
+    lineSpacing: document.querySelector("#line-spacing"),
+    lineSpacingOutput: document.querySelector("#line-spacing-output"),
+    wrapToggle: document.querySelector("#wrap-toggle"),
+    wrapWidth: document.querySelector("#wrap-width"),
+    wrapWidthOutput: document.querySelector("#wrap-width-output"),
+    wrapWidthSetting: document.querySelector("#wrap-width-setting"),
+    boldToggle: document.querySelector("#bold-toggle"),
+    handdrawnToggle: document.querySelector("#handdrawn-toggle"),
     savePng: document.querySelector("#save-png")
   };
 
@@ -50,25 +58,20 @@
     parsed: null,
     contrast: "dark",
     glyphHeight: Number(elements.glyphSize.value),
+    characterSpacing: Number(elements.characterSpacing.value),
+    lineSpacing: Number(elements.lineSpacing.value),
+    wrap: elements.wrapToggle.checked,
+    wrapWidth: Number(elements.wrapWidth.value),
+    bold: elements.boldToggle.checked,
+    handdrawn: elements.handdrawnToggle.checked,
     rendered: false,
     objectUrl: null,
     rulesLoaded: false
   };
 
-  function activeLanguage() {
-    return languages[state.languageId];
-  }
-
-  function resetWarning() {
-    elements.renderWarning.hidden = true;
-    elements.renderWarning.textContent = "";
-  }
-
-  function showWarning(message) {
-    elements.renderWarning.hidden = false;
-    elements.renderWarning.textContent = message;
-  }
-
+  function activeLanguage() { return languages[state.languageId]; }
+  function resetWarning() { elements.renderWarning.hidden = true; elements.renderWarning.textContent = ""; }
+  function showWarning(message) { elements.renderWarning.hidden = false; elements.renderWarning.textContent = message; }
   function setEmptyState(title, detail) {
     elements.resultCanvas.classList.remove("is-visible");
     elements.emptyMessage.style.display = "block";
@@ -77,13 +80,7 @@
     elements.savePng.disabled = true;
     state.rendered = false;
   }
-
-  function releaseObjectUrl() {
-    if (!state.objectUrl) return;
-    URL.revokeObjectURL(state.objectUrl);
-    state.objectUrl = null;
-  }
-
+  function releaseObjectUrl() { if (state.objectUrl) { URL.revokeObjectURL(state.objectUrl); state.objectUrl = null; } }
   function setInputMode(mode) {
     state.mode = mode;
     const language = activeLanguage();
@@ -126,7 +123,6 @@
   function selectLanguage(languageId) {
     const language = languages[languageId];
     if (!language) return;
-
     state.languageId = languageId;
     state.parsed = null;
     state.image = null;
@@ -143,12 +139,8 @@
     elements.sampleButton.disabled = !language.ready;
     elements.sourceInput.value = language.ready ? (language.examples[state.mode] || "") : "";
     resetWarning();
-
-    if (language.ready) {
-      setEmptyState("Preparing glyph preview…", "The example will appear as soon as the sprite sheet loads.");
-    } else {
-      setEmptyState("Mapping not added yet.", "This script has its own module ready for its glyph sheet and token map.");
-    }
+    if (language.ready) setEmptyState("Preparing glyph preview…", "The example will appear as soon as the sprite sheet loads.");
+    else setEmptyState("Mapping not added yet.", "This script has its own module ready for its glyph sheet and token map.");
     loadDefaultSheet(language);
   }
 
@@ -161,14 +153,10 @@
     const imageData = tileContext.getImageData(0, 0, rect.w, rect.h);
     const pixels = imageData.data;
     const ink = inkColour === "white" ? [255, 255, 255] : [0, 0, 0];
-
     for (let index = 0; index < pixels.length; index += 4) {
       const luminance = (pixels[index] * .2126) + (pixels[index + 1] * .7152) + (pixels[index + 2] * .0722);
       const alpha = Math.max(0, Math.min(255, Math.round((218 - luminance) * 2.75)));
-      pixels[index] = ink[0];
-      pixels[index + 1] = ink[1];
-      pixels[index + 2] = ink[2];
-      pixels[index + 3] = alpha;
+      pixels[index] = ink[0]; pixels[index + 1] = ink[1]; pixels[index + 2] = ink[2]; pixels[index + 3] = alpha;
     }
     tileContext.putImageData(imageData, 0, 0);
     return tileCanvas;
@@ -177,84 +165,121 @@
   function linesFromTokens(tokens) {
     const lines = [[]];
     for (const token of tokens) {
-      if (token === "linebreak") {
-        if (lines[lines.length - 1].length) lines.push([]);
-      } else {
-        lines[lines.length - 1].push(token);
-      }
+      if (token === "linebreak") { if (lines[lines.length - 1].length) lines.push([]); }
+      else lines[lines.length - 1].push(token);
     }
     return lines.filter((line) => line.length);
+  }
+
+  function glyphWidth(language, token, height) {
+    const rect = language.glyphMap[token];
+    return Math.round((rect.w / rect.h) * height);
+  }
+
+  function lineWidth(language, line, glyphHeight, gap) {
+    return line.reduce((sum, token) => sum + glyphWidth(language, token, glyphHeight), 0) + gap * Math.max(0, line.length - 1);
+  }
+
+  function wrappedLines(language, lines, glyphHeight, gap) {
+    if (!state.wrap) return lines;
+    const output = [];
+    for (const sourceLine of lines) {
+      let current = [];
+      for (const token of sourceLine) {
+        const proposed = current.concat(token);
+        if (current.length && lineWidth(language, proposed, glyphHeight, gap) > state.wrapWidth) {
+          output.push(current);
+          current = [token];
+        } else {
+          current = proposed;
+        }
+      }
+      if (current.length) output.push(current);
+    }
+    return output;
+  }
+
+  function jitterFor(lineIndex, tokenIndex) {
+    const seed = ((lineIndex + 1) * 173) + ((tokenIndex + 1) * 91);
+    const waveA = Math.sin(seed * 1.71);
+    const waveB = Math.cos(seed * 1.17);
+    return {
+      x: Math.round(waveA * 2),
+      y: Math.round(waveB * 3),
+      rotation: waveA * 0.035,
+      scale: 1 + (waveB * 0.025)
+    };
+  }
+
+  function drawTile(tile, x, y, width, height, lineIndex, tokenIndex) {
+    const irregular = state.handdrawn ? jitterFor(lineIndex, tokenIndex) : { x: 0, y: 0, rotation: 0, scale: 1 };
+    const drawX = x + irregular.x;
+    const drawY = y + irregular.y;
+    const drawW = width * irregular.scale;
+    const drawH = height * irregular.scale;
+    ctx.save();
+    ctx.translate(drawX + drawW / 2, drawY + drawH / 2);
+    ctx.rotate(irregular.rotation);
+    const left = -drawW / 2;
+    const top = -drawH / 2;
+    if (state.bold) {
+      ctx.drawImage(tile, left - 1, top, drawW, drawH);
+      ctx.drawImage(tile, left + 1, top, drawW, drawH);
+      ctx.drawImage(tile, left, top - 1, drawW, drawH);
+      ctx.drawImage(tile, left, top + 1, drawW, drawH);
+    }
+    ctx.drawImage(tile, left, top, drawW, drawH);
+    ctx.restore();
   }
 
   function renderCurrentInput() {
     const language = activeLanguage();
     resetWarning();
     if (!language.ready) return;
-    if (!state.image) {
-      showWarning("No sprite sheet is loaded for this writing system.");
-      return;
-    }
-
+    if (!state.image) { showWarning("No sprite sheet is loaded for this writing system."); return; }
     const input = elements.sourceInput.value.trim();
-    if (!input) {
-      setEmptyState("Ready to render.", "Paste a glyph phrase or load the example.");
-      return;
-    }
+    if (!input) { setEmptyState("Ready to render.", "Paste a glyph phrase or load the example."); return; }
 
     const parsed = language.parse(input, state.mode);
     state.parsed = parsed;
     const unsupported = parsed.unsupported || [];
     const tokens = parsed.tokens.filter((token) => token === "linebreak" || language.glyphMap[token]);
-
     if (!tokens.length) {
       setEmptyState("Nothing renderable found.", "The input did not contain mapped glyph tokens.");
       if (unsupported.length) showWarning(`Unrecognised input: ${unsupported.join(" ")}`);
       return;
     }
 
-    let lines = linesFromTokens(tokens);
-    if (language.direction === "rtl") {
-      lines = lines.map((line) => line.slice().reverse());
-    }
-
     const glyphHeight = state.glyphHeight;
-    const tileGap = Math.max(1, Math.round(glyphHeight * .025));
-    const lineGap = Math.round(glyphHeight * .29);
-    const padding = Math.max(15, Math.round(glyphHeight * .32));
+    const tileGap = state.characterSpacing;
+    let lines = linesFromTokens(tokens);
+    if (language.direction === "rtl") lines = lines.map((line) => line.slice().reverse());
+    lines = wrappedLines(language, lines, glyphHeight, tileGap);
+    const lineGap = state.lineSpacing;
+    const padding = Math.max(18, Math.round(glyphHeight * .38)) + (state.handdrawn ? 5 : 0);
     const measuredLines = lines.map((line) => {
-      const widths = line.map((token) => {
-        const rect = language.glyphMap[token];
-        return Math.round((rect.w / rect.h) * glyphHeight);
-      });
-      return {
-        tokens: line,
-        widths,
-        width: widths.reduce((total, width) => total + width, 0) + tileGap * Math.max(0, line.length - 1)
-      };
+      const widths = line.map((token) => glyphWidth(language, token, glyphHeight));
+      return { tokens: line, widths, width: widths.reduce((total, width) => total + width, 0) + tileGap * Math.max(0, line.length - 1) };
     });
-
     const maxWidth = Math.max(...measuredLines.map((line) => line.width));
     const canvasWidth = maxWidth + padding * 2;
     const canvasHeight = glyphHeight * measuredLines.length + lineGap * Math.max(0, measuredLines.length - 1) + padding * 2;
     elements.resultCanvas.width = canvasWidth;
     elements.resultCanvas.height = canvasHeight;
-
     const dark = state.contrast === "dark";
     ctx.fillStyle = dark ? "#070709" : "#ffffff";
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
     const inkColour = dark ? "white" : "black";
-
     measuredLines.forEach((line, lineIndex) => {
       let x = padding;
       const y = padding + lineIndex * (glyphHeight + lineGap);
       line.tokens.forEach((token, tokenIndex) => {
         const tile = processTileImage(language.glyphMap[token], inkColour);
         const width = line.widths[tokenIndex];
-        ctx.drawImage(tile, x, y, width, glyphHeight);
+        drawTile(tile, x, y, width, glyphHeight, lineIndex, tokenIndex);
         x += width + tileGap;
       });
     });
-
     elements.resultCanvas.classList.add("is-visible");
     elements.emptyMessage.style.display = "none";
     elements.savePng.disabled = false;
@@ -272,124 +297,32 @@
     if (state.rendered) renderCurrentInput();
   }
 
-  function escapeHtml(value) {
-    return value
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#39;");
-  }
-
-  function renderInlineMarkdown(value) {
-    return escapeHtml(value)
-      .replace(/`([^`]+)`/g, "<code>$1</code>")
-      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
-      .replace(/\*([^*]+)\*/g, "<em>$1</em>");
-  }
-
-  function tableRow(line) {
-    return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((cell) => cell.trim());
-  }
-
+  function escapeHtml(value) { return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;"); }
+  function renderInlineMarkdown(value) { return escapeHtml(value).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>").replace(/\*([^*]+)\*/g, "<em>$1</em>"); }
+  function tableRow(line) { return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((cell) => cell.trim()); }
   function markdownToHtml(markdown) {
     const lines = markdown.replace(/\r\n/g, "\n").split("\n");
-    const html = [];
-    let index = 0;
-    let paragraph = [];
-    let listType = null;
-    let listItems = [];
-
-    function flushParagraph() {
-      if (!paragraph.length) return;
-      html.push(`<p>${renderInlineMarkdown(paragraph.join(" "))}</p>`);
-      paragraph = [];
-    }
-
-    function flushList() {
-      if (!listType || !listItems.length) return;
-      html.push(`<${listType}>${listItems.map((item) => `<li>${renderInlineMarkdown(item)}</li>`).join("")}</${listType}>`);
-      listType = null;
-      listItems = [];
-    }
-
+    const html = []; let index = 0; let paragraph = []; let listType = null; let listItems = [];
+    function flushParagraph() { if (paragraph.length) { html.push(`<p>${renderInlineMarkdown(paragraph.join(" "))}</p>`); paragraph = []; } }
+    function flushList() { if (listType && listItems.length) { html.push(`<${listType}>${listItems.map((item) => `<li>${renderInlineMarkdown(item)}</li>`).join("")}</${listType}>`); listType = null; listItems = []; } }
     while (index < lines.length) {
-      const line = lines[index];
-      const trimmed = line.trim();
-
+      const trimmed = lines[index].trim();
       if (trimmed.startsWith("|") && index + 1 < lines.length && /^\|?\s*:?-{3,}/.test(lines[index + 1].trim())) {
-        flushParagraph();
-        flushList();
-        const headings = tableRow(trimmed);
-        index += 2;
-        const rows = [];
-        while (index < lines.length && lines[index].trim().startsWith("|")) {
-          rows.push(tableRow(lines[index]));
-          index += 1;
-        }
+        flushParagraph(); flushList(); const headings = tableRow(trimmed); index += 2; const rows = [];
+        while (index < lines.length && lines[index].trim().startsWith("|")) { rows.push(tableRow(lines[index])); index += 1; }
         html.push(`<div class="rules-table-wrap"><table><thead><tr>${headings.map((heading) => `<th>${renderInlineMarkdown(heading)}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${renderInlineMarkdown(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`);
         continue;
       }
-
-      if (!trimmed) {
-        flushParagraph();
-        flushList();
-        index += 1;
-        continue;
-      }
-      if (/^---+$/.test(trimmed)) {
-        flushParagraph();
-        flushList();
-        html.push("<hr>");
-        index += 1;
-        continue;
-      }
-      if (/^###\s+/.test(trimmed)) {
-        flushParagraph();
-        flushList();
-        html.push(`<h3>${renderInlineMarkdown(trimmed.replace(/^###\s+/, ""))}</h3>`);
-        index += 1;
-        continue;
-      }
-      if (/^##\s+/.test(trimmed)) {
-        flushParagraph();
-        flushList();
-        html.push(`<h2>${renderInlineMarkdown(trimmed.replace(/^##\s+/, ""))}</h2>`);
-        index += 1;
-        continue;
-      }
-      if (/^#\s+/.test(trimmed)) {
-        flushParagraph();
-        flushList();
-        html.push(`<h1>${renderInlineMarkdown(trimmed.replace(/^#\s+/, ""))}</h1>`);
-        index += 1;
-        continue;
-      }
-      if (/^-\s+/.test(trimmed)) {
-        flushParagraph();
-        if (listType && listType !== "ul") flushList();
-        listType = "ul";
-        listItems.push(trimmed.replace(/^-\s+/, ""));
-        index += 1;
-        continue;
-      }
-      if (/^\d+\.\s+/.test(trimmed)) {
-        flushParagraph();
-        if (listType && listType !== "ol") flushList();
-        listType = "ol";
-        listItems.push(trimmed.replace(/^\d+\.\s+/, ""));
-        index += 1;
-        continue;
-      }
-
-      flushList();
-      paragraph.push(trimmed);
-      index += 1;
+      if (!trimmed) { flushParagraph(); flushList(); index += 1; continue; }
+      if (/^---+$/.test(trimmed)) { flushParagraph(); flushList(); html.push("<hr>"); index += 1; continue; }
+      if (/^###\s+/.test(trimmed)) { flushParagraph(); flushList(); html.push(`<h3>${renderInlineMarkdown(trimmed.replace(/^###\s+/, ""))}</h3>`); index += 1; continue; }
+      if (/^##\s+/.test(trimmed)) { flushParagraph(); flushList(); html.push(`<h2>${renderInlineMarkdown(trimmed.replace(/^##\s+/, ""))}</h2>`); index += 1; continue; }
+      if (/^#\s+/.test(trimmed)) { flushParagraph(); flushList(); html.push(`<h1>${renderInlineMarkdown(trimmed.replace(/^#\s+/, ""))}</h1>`); index += 1; continue; }
+      if (/^-\s+/.test(trimmed)) { flushParagraph(); if (listType && listType !== "ul") flushList(); listType = "ul"; listItems.push(trimmed.replace(/^-\s+/, "")); index += 1; continue; }
+      if (/^\d+\.\s+/.test(trimmed)) { flushParagraph(); if (listType && listType !== "ol") flushList(); listType = "ol"; listItems.push(trimmed.replace(/^\d+\.\s+/, "")); index += 1; continue; }
+      flushList(); paragraph.push(trimmed); index += 1;
     }
-
-    flushParagraph();
-    flushList();
-    return html.join("");
+    flushParagraph(); flushList(); return html.join("");
   }
 
   async function openRulesDialog() {
@@ -398,73 +331,39 @@
       try {
         const response = await fetch("./volkhv-tartessian-rules.md");
         if (!response.ok) throw new Error(`Rules document unavailable (${response.status}).`);
-        const markdown = await response.text();
-        elements.rulesContent.innerHTML = markdownToHtml(markdown);
-        state.rulesLoaded = true;
-      } catch (error) {
-        elements.rulesContent.innerHTML = '<p class="warning">The rules document could not be loaded.</p>';
-      }
+        elements.rulesContent.innerHTML = markdownToHtml(await response.text()); state.rulesLoaded = true;
+      } catch (error) { elements.rulesContent.innerHTML = '<p class="warning">The rules document could not be loaded.</p>'; }
     }
     elements.rulesDialog.showModal();
   }
 
   elements.languageSelect.addEventListener("change", () => selectLanguage(elements.languageSelect.value));
-  elements.modeRadios.forEach((radio) => {
-    radio.addEventListener("change", () => {
-      if (!radio.checked) return;
-      setInputMode(radio.value);
-      const language = activeLanguage();
-      elements.sourceInput.value = language.ready ? (language.examples[state.mode] || "") : "";
-      if (state.image && language.ready) renderCurrentInput();
-    });
-  });
+  elements.modeRadios.forEach((radio) => radio.addEventListener("change", () => {
+    if (!radio.checked) return; setInputMode(radio.value); const language = activeLanguage(); elements.sourceInput.value = language.ready ? (language.examples[state.mode] || "") : ""; if (state.image && language.ready) renderCurrentInput();
+  }));
   elements.renderButton.addEventListener("click", renderCurrentInput);
-  elements.sampleButton.addEventListener("click", () => {
-    const language = activeLanguage();
-    elements.sourceInput.value = language.examples[state.mode] || "";
-    renderCurrentInput();
-  });
-  elements.clearButton.addEventListener("click", () => {
-    elements.sourceInput.value = "";
-    resetWarning();
-    setEmptyState("Ready to render.", "Paste a glyph phrase or load the example.");
-  });
-  elements.sourceInput.addEventListener("keydown", (event) => {
-    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") renderCurrentInput();
-  });
-  elements.spriteUpload.addEventListener("change", (event) => {
-    const file = event.target.files && event.target.files[0];
-    if (!file) return;
-    releaseObjectUrl();
-    state.objectUrl = URL.createObjectURL(file);
-    loadImageSource(state.objectUrl, `Using uploaded sheet: ${file.name}`);
-  });
-  elements.contrastToggle.addEventListener("click", () => {
-    state.contrast = state.contrast === "dark" ? "light" : "dark";
-    setContrast();
-  });
-  elements.glyphSize.addEventListener("input", () => {
-    state.glyphHeight = Number(elements.glyphSize.value);
-    elements.glyphSizeOutput.textContent = String(state.glyphHeight);
-    if (state.rendered) renderCurrentInput();
-  });
+  elements.sampleButton.addEventListener("click", () => { elements.sourceInput.value = activeLanguage().examples[state.mode] || ""; renderCurrentInput(); });
+  elements.clearButton.addEventListener("click", () => { elements.sourceInput.value = ""; resetWarning(); setEmptyState("Ready to render.", "Paste a glyph phrase or load the example."); });
+  elements.sourceInput.addEventListener("keydown", (event) => { if ((event.ctrlKey || event.metaKey) && event.key === "Enter") renderCurrentInput(); });
+  elements.spriteUpload.addEventListener("change", (event) => { const file = event.target.files && event.target.files[0]; if (!file) return; releaseObjectUrl(); state.objectUrl = URL.createObjectURL(file); loadImageSource(state.objectUrl, `Using uploaded sheet: ${file.name}`); });
+  elements.contrastToggle.addEventListener("click", () => { state.contrast = state.contrast === "dark" ? "light" : "dark"; setContrast(); });
+  elements.glyphSize.addEventListener("input", () => { state.glyphHeight = Number(elements.glyphSize.value); elements.glyphSizeOutput.textContent = String(state.glyphHeight); if (state.rendered) renderCurrentInput(); });
+  elements.characterSpacing.addEventListener("input", () => { state.characterSpacing = Number(elements.characterSpacing.value); elements.characterSpacingOutput.textContent = String(state.characterSpacing); if (state.rendered) renderCurrentInput(); });
+  elements.lineSpacing.addEventListener("input", () => { state.lineSpacing = Number(elements.lineSpacing.value); elements.lineSpacingOutput.textContent = String(state.lineSpacing); if (state.rendered) renderCurrentInput(); });
+  elements.wrapToggle.addEventListener("change", () => { state.wrap = elements.wrapToggle.checked; elements.wrapWidth.disabled = !state.wrap; elements.wrapWidthSetting.classList.toggle("is-disabled", !state.wrap); if (state.rendered) renderCurrentInput(); });
+  elements.wrapWidth.addEventListener("input", () => { state.wrapWidth = Number(elements.wrapWidth.value); elements.wrapWidthOutput.textContent = String(state.wrapWidth); if (state.rendered) renderCurrentInput(); });
+  elements.boldToggle.addEventListener("change", () => { state.bold = elements.boldToggle.checked; if (state.rendered) renderCurrentInput(); });
+  elements.handdrawnToggle.addEventListener("change", () => { state.handdrawn = elements.handdrawnToggle.checked; if (state.rendered) renderCurrentInput(); });
   elements.savePng.addEventListener("click", () => {
     if (!state.rendered) return;
-    try {
-      const link = document.createElement("a");
-      link.download = `${state.languageId}-inscription.png`;
-      link.href = elements.resultCanvas.toDataURL("image/png");
-      link.click();
-    } catch (error) {
-      showWarning("PNG export was blocked. Open through a local web server or GitHub Pages rather than directly from a file folder.");
-    }
+    try { const link = document.createElement("a"); link.download = `${state.languageId}-inscription.png`; link.href = elements.resultCanvas.toDataURL("image/png"); link.click(); }
+    catch (error) { showWarning("PNG export was blocked. Open through a local web server or GitHub Pages rather than directly from a file folder."); }
   });
   elements.rulesButton.addEventListener("click", openRulesDialog);
   elements.rulesClose.addEventListener("click", () => elements.rulesDialog.close());
-  elements.rulesDialog.addEventListener("click", (event) => {
-    if (event.target === elements.rulesDialog) elements.rulesDialog.close();
-  });
+  elements.rulesDialog.addEventListener("click", (event) => { if (event.target === elements.rulesDialog) elements.rulesDialog.close(); });
 
+  elements.wrapWidthSetting.classList.add("is-disabled");
   setContrast();
   selectLanguage(state.languageId);
 })();
