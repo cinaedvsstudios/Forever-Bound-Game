@@ -178,9 +178,9 @@
 
   window.ScriptRendererLanguages.items["volkhv-tartessian"] = {
     id: "volkhv-tartessian",
-    title: "Volkhv–Tartessian",
-    kicker: "Nyx’s family ritual script",
-    description: "Active renderer for Nyx’s ancestral/Volkhv inscription system. Enter renderer spelling or paste the exact glyph token sequence.",
+    title: "",
+    kicker: "Volkhv–Tartessian",
+    description: "",
     ready: true,
     direction: "ltr",
     defaultSpriteSheet: "./assets/volkhv-tartessian-glyph-chart.png",
@@ -189,7 +189,7 @@
     glyphMap,
     tokenSeparatorLabel: "space",
     inputHelp: {
-      renderer: "Paste renderer input such as “Khro ueronaŕkee.” or “Khro {Niks}.” Spaces, periods and brace enclosures are rendered as the break/seal glyph.",
+      renderer: "",
       tokens: "Paste tokens separated by spaces, such as “k h r o space n a ŕ ke e space”. Use “space” or “seal” for the break/seal glyph."
     },
     examples: {
