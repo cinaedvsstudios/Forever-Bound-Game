@@ -5,26 +5,32 @@ const scale = (min, max, amount) => min + (max - min) * amount;
 const exponentialScale = (min, max, amount) => min * Math.pow(max / min, amount);
 const patternFromLegacyCount = (count) => Number(count) <= 1 ? 'single' : Number(count) === 2 ? 'double' : Number(count) === 3 ? 'triple' : 'repeat';
 
-export const CONTROL_DEFINITIONS = Object.freeze([
-  { key: 'tone', label: 'Tone', hint: 'Soft and rounded to sharp and buzzy.', min: 0, max: 100, ends: ['Soft', 'Harsh'] },
+export const SIMPLE_CONTROL_DEFINITIONS = Object.freeze([
+  { key: 'tone', label: 'Tone', hint: 'Soft and rounded to sharp and buzzy.', min: 0, max: 100, ends: ['Soft', 'Sharp'] },
   { key: 'pitch', label: 'Pitch', hint: 'How high or low the sound feels.', min: 0, max: 100, ends: ['Low', 'High'] },
   { key: 'length', label: 'Length', hint: 'Very short click to longer sustained cue.', min: 0, max: 100, ends: ['Short', 'Long'] },
-  { key: 'wobble', label: 'Wobble', hint: 'Adds pulsing or mechanical instability.', min: 0, max: 100, ends: ['Still', 'Warbling'] },
-  { key: 'pace', label: 'Pace', hint: 'How quickly repeated steps follow each other.', min: 0, max: 100, ends: ['Slow', 'Fast'] },
-  { key: 'brightness', label: 'Brightness', hint: 'Dark and muffled to crisp and sharp.', min: 0, max: 100, ends: ['Muffled', 'Sharp'] },
-  { key: 'static', label: 'Static', hint: 'Adds generated noise texture.', min: 0, max: 100, ends: ['Clean', 'Noisy'] },
-  { key: 'echo', label: 'Echo', hint: 'Adds a trailing space or shimmer.', min: 0, max: 100, ends: ['Dry', 'Spacious'] },
+  { key: 'brightness', label: 'Brightness', hint: 'Dark and muffled to crisp and bright.', min: 0, max: 100, ends: ['Dark', 'Bright'] },
+  { key: 'static', label: 'Noise', hint: 'Clean oscillator to rough/noise texture.', min: 0, max: 100, ends: ['Clean', 'Rough'] },
+  { key: 'echo', label: 'Echo', hint: 'Dry cue to echoing/shimmering tail.', min: 0, max: 100, ends: ['Dry', 'Echoing'] },
+  { key: 'wobble', label: 'Wobble', hint: 'Stable tone to warbling pitch movement.', min: 0, max: 100, ends: ['Stable', 'Warbling'] },
+  { key: 'impact', label: 'Impact', hint: 'Gentle accent to punchy transient.', min: 0, max: 100, ends: ['Gentle', 'Punchy'] }
+]);
+
+export const ADVANCED_CONTROL_DEFINITIONS = Object.freeze([
+  { key: 'pace', label: 'Repeat Pace', hint: 'How quickly repeated steps follow each other.', min: 0, max: 100, ends: ['Slow', 'Fast'] },
   { key: 'volume', label: 'Preview Volume', hint: 'Capped for safe editor playback.', min: 0, max: 100, ends: ['Quiet', 'Loud'] }
 ]);
 
+export const CONTROL_DEFINITIONS = Object.freeze([...SIMPLE_CONTROL_DEFINITIONS, ...ADVANCED_CONTROL_DEFINITIONS]);
+
 export const DEFAULT_CONTROLS = Object.freeze({
-  name: 'New Sound', category: 'custom', tags: '', tone: 20, pitch: 50, pitchChange: 'steady', brightness: 55,
-  length: 25, static: 0, echo: 10, wobble: 0, pattern: 'single', pace: 62, volume: 50, loop: false
+  name: 'New Sound', category: 'sfx', tags: '', tone: 20, pitch: 50, pitchChange: 'steady', brightness: 55,
+  length: 25, static: 0, echo: 10, wobble: 0, impact: 45, pattern: 'single', pace: 62, volume: 50, loop: false
 });
 
 export function normalizeControls(input = {}) {
   const legacyTone = input.tone ?? input.texture ?? DEFAULT_CONTROLS.tone;
-  const legacyStatic = input.static ?? Math.max(0, Number(legacyTone) - 52);
+  const legacyStatic = input.static ?? input.noise ?? Math.max(0, Number(legacyTone) - 52);
   return {
     ...DEFAULT_CONTROLS,
     name: String(input.name || DEFAULT_CONTROLS.name).trim().slice(0, 80) || DEFAULT_CONTROLS.name,
@@ -38,6 +44,7 @@ export function normalizeControls(input = {}) {
     static: integer(legacyStatic, 0, 100),
     echo: integer(input.echo ?? DEFAULT_CONTROLS.echo, 0, 100),
     wobble: integer(input.wobble ?? DEFAULT_CONTROLS.wobble, 0, 100),
+    impact: integer(input.impact ?? DEFAULT_CONTROLS.impact, 0, 100),
     pattern: ['single', 'double', 'triple', 'repeat'].includes(input.pattern) ? input.pattern : patternFromLegacyCount(input.repetitions || 1),
     pace: integer(input.pace ?? (100 - Number(input.gap ?? 38)), 0, 100),
     volume: integer(input.volume ?? DEFAULT_CONTROLS.volume, 0, 100),
@@ -51,10 +58,10 @@ export function controlsToRecipe(rawControls = {}) {
   const pitchTravel = scale(0.12, 0.64, controls.tone / 100);
   const endFactor = controls.pitchChange === 'drops' ? 1 - pitchTravel : controls.pitchChange === 'rises' ? 1 + pitchTravel : 1;
   const durationMs = Math.round(exponentialScale(55, 2400, controls.length / 100));
-  const attackMs = Math.round(scale(52, 3, controls.tone / 100));
-  const releaseMs = Math.min(Math.round(scale(150, 28, controls.tone / 100)), Math.round(durationMs * 0.46));
+  const attackMs = Math.round(scale(62, 2, Math.max(controls.tone, controls.impact) / 100));
+  const releaseMs = Math.min(Math.round(scale(190, 22, controls.impact / 100)), Math.round(durationMs * 0.5));
   const waveform = controls.tone > 82 ? 'square' : controls.tone > 56 ? 'sawtooth' : controls.tone > 26 ? 'triangle' : 'sine';
-  const outputGain = round(scale(0, 0.26, controls.volume / 100));
+  const outputGain = round(scale(0, 0.26, controls.volume / 100) * scale(0.72, 1.12, controls.impact / 100));
   const repeatCounts = { single: 1, double: 2, triple: 3, repeat: 4 };
 
   return {
@@ -74,7 +81,7 @@ export function controlsToRecipe(rawControls = {}) {
     },
     noise: {
       enabled: controls.static > 0,
-      level: round(scale(0, 0.56, controls.static / 100))
+      level: round(scale(0, 0.62, controls.static / 100) * scale(0.78, 1.18, controls.impact / 100))
     },
     modulation: {
       rateHz: round(scale(0.5, 14, controls.wobble / 100)),
@@ -85,6 +92,10 @@ export function controlsToRecipe(rawControls = {}) {
       delayMs: Math.round(scale(45, 285, controls.echo / 100)),
       feedback: round(scale(0, 0.42, controls.echo / 100)),
       mix: round(scale(0, 0.44, controls.echo / 100))
+    },
+    impact: {
+      transient: round(scale(0.05, 0.95, controls.impact / 100)),
+      punch: round(scale(0.75, 1.28, controls.impact / 100))
     },
     pattern: {
       mode: controls.pattern,
@@ -111,6 +122,7 @@ export function randomVariation(rawControls) {
     static: jitter(controls.static, 10),
     echo: jitter(controls.echo, 10),
     wobble: jitter(controls.wobble, 12),
+    impact: jitter(controls.impact, 10),
     pace: jitter(controls.pace, 10),
     volume: controls.volume
   });
@@ -131,6 +143,7 @@ export function randomSound(rawControls = DEFAULT_CONTROLS) {
     static: integer(Math.random() * 72, 0, 100),
     echo: integer(Math.random() * 58, 0, 100),
     wobble: integer(Math.random() * 72, 0, 100),
+    impact: integer(Math.random() * 100, 0, 100),
     pattern: patterns[Math.floor(Math.random() * patterns.length)],
     pace: integer(Math.random() * 82 + 10, 0, 100),
     loop: false

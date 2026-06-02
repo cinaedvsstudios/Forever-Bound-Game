@@ -3,59 +3,55 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Artifex Create Synth Sound Preview V1.00</title>
+  <title>Artifex Sound Library Preview V1.10</title>
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
-    body {
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 28px;
-      background: radial-gradient(circle at 50% 20%, rgba(182,106,60,.14), transparent 34%), #070506;
-      color: #fff0ce;
-      font-family: Arial, sans-serif;
-    }
-    .preview-host {
-      width: min(760px, calc(100vw - 40px));
-      padding: 28px;
-      border: 1px solid rgba(226,204,167,.25);
-      border-radius: 20px;
-      background: #140f0d;
-      box-shadow: 0 25px 70px rgba(0,0,0,.72);
-    }
+    body { min-height: 100vh; display: grid; place-items: center; padding: 28px; background: radial-gradient(circle at 50% 20%, rgba(182,106,60,.14), transparent 34%), #070506; color: #fff0ce; font-family: Arial, sans-serif; }
+    .preview-host { width: min(920px, calc(100vw - 40px)); padding: 28px; border: 1px solid rgba(226,204,167,.25); border-radius: 20px; background: #140f0d; box-shadow: 0 25px 70px rgba(0,0,0,.72); }
     .preview-host p.kicker { margin: 0 0 7px; color: #cbb18d; font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
     h1 { margin: 0 0 12px; font-family: Georgia, serif; font-size: 30px; letter-spacing: .05em; }
-    p { color: rgba(255,240,206,.72); line-height: 1.55; }
-    .callers { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0; }
-    button {
-      min-height: 40px;
-      border: 1px solid rgba(226,204,167,.42);
-      border-radius: 10px;
-      padding: 9px 14px;
-      background: rgba(132,94,51,.42);
-      color: #fff0ce;
-      cursor: pointer;
-      font: inherit;
-    }
+    h2 { margin: 20px 0 8px; color: #e2cca7; font-size: 16px; }
+    p, li { color: rgba(255,240,206,.72); line-height: 1.55; }
+    .callers, .targets { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0 22px; }
+    button { min-height: 40px; border: 1px solid rgba(226,204,167,.42); border-radius: 10px; padding: 9px 14px; background: rgba(132,94,51,.42); color: #fff0ce; cursor: pointer; font: inherit; }
     button:hover { border-color: #e2cca7; background: rgba(132,94,51,.58); }
-    .note { padding: 12px 14px; border: 1px dashed rgba(226,204,167,.24); border-radius: 11px; font-size: 12px; }
-    code { color: #e2cca7; }
-    #returned-asset { color: #87dfff; }
+    .note, .result-grid { padding: 12px 14px; border: 1px dashed rgba(226,204,167,.24); border-radius: 11px; font-size: 12px; }
+    .result-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+    .result-grid strong { display: block; color: #cbb18d; text-transform: uppercase; font-size: 10px; letter-spacing: .12em; }
+    code, #returned-asset, #captured-target { color: #87dfff; }
+    #external-target { color: #95f2bd; }
+    ol { max-height: 180px; overflow: auto; padding-left: 20px; }
+    @media (max-width: 780px) { .result-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
   <main class="preview-host">
     <p class="kicker">Artifex Shared Utility Preview</p>
-    <h1>Create Synth Sound</h1>
-    <p>This is a test harness for the shared popup, not a new core module. Choose a pretend caller to open the generator in context.</p>
+    <h1>Sound Library + Create Synth Sound</h1>
+    <p>This standalone harness proves the shared Sound Library-first workflow only. It simulates caller context labels but does not wire Object Creator, Quest Builder, Effect Editor, Puzzle Creator or Scene Editor runtime code.</p>
+    <h2>Open Sound Library with a captured caller context</h2>
     <div class="callers">
-      <button type="button" data-source="Puzzle Creator > Correct Input">Puzzle: Correct Input</button>
-      <button type="button" data-source="Archetype Object Creator > Locked > Sound Events">Object: Locked Door</button>
-      <button type="button" data-source="Scene Editor > Ambient Loop">Scene: Ambient Loop</button>
+      <button type="button" data-source="Preview Harness > Object Action Sound">Object Action Sound</button>
+      <button type="button" data-source="Preview Harness > Quest Completed Sound">Quest Completed Sound</button>
+      <button type="button" data-source="Preview Harness > FX Loop Sound">FX Loop Sound</button>
     </div>
-    <p class="note">Preview is safe to test. <strong>Save to Library</strong> writes a recipe and an <code>asset_sfx_</code> index entry only after you deliberately connect a writable project folder. Returned assignment: <span id="returned-asset">none yet</span></p>
+    <h2>Simulated external target ownership test</h2>
+    <p>Open the Sound Library, then change this external simulated target before choosing an asset. The callback should still report the source captured when the library opened.</p>
+    <div class="targets">
+      <button type="button" data-change-target="Preview Harness > Object Action Sound">External target: Object</button>
+      <button type="button" data-change-target="Preview Harness > Quest Completed Sound">External target: Quest</button>
+      <button type="button" data-change-target="Preview Harness > FX Loop Sound">External target: FX</button>
+    </div>
+    <div class="result-grid">
+      <p><strong>Captured at open</strong><span id="captured-target">none yet</span></p>
+      <p><strong>External simulated target</strong><span id="external-target">none</span></p>
+      <p><strong>Returned asset_ ID</strong><span id="returned-asset">none yet</span></p>
+    </div>
+    <p class="note">Use a disposable Blank Starter Project folder. The Sound Library reads <code>assets/asset-index.json</code>. Saving a generated synth writes <code>assets/audio/sfx/synth_&lt;slug&gt;.json</code> and registers one normal <code>asset_sfx_...</code> audio item.</p>
+    <h2>Harness log</h2>
+    <ol id="event-log"></ol>
   </main>
-  <script type="module" src="./sound-generator-preview-host.js?v=1.00"></script>
+  <script type="module" src="./sound-generator-preview-host.js?v=1.10"></script>
 </body>
 </html>

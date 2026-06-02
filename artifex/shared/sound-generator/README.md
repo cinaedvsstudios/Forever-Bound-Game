@@ -1,52 +1,64 @@
-# Shared Procedural Sound Generator Popup
+# Shared Sound Library and Create Synth Sound
 
-## Purpose
+This shared owner contains the Artifex audio-selection foundation:
 
-This folder contains the reusable V1.00 **Create Synth Sound** popup and Web Audio preview runtime defined by `docs/artifex/22-sound-archetype-generator.md`.
+1. **Sound Library** — an audio-filtered selector view of the existing Asset Library records in `assets/asset-index.json`.
+2. **Create Synth Sound** — a game-SFX procedural sound editor opened from Sound Library.
+3. **Procedural synth runtime/store/schema** — Web Audio audition and registered generated-audio persistence.
 
-Generated sounds use the existing Asset Library model. A saved generated sound becomes a normal registered audio asset with an `asset_sfx_` ID and a procedural recipe file under `assets/audio/sfx/`. This tool does not create a separate sound-archetype index or an `archsound_` identifier family.
+Sound Library is not a new sound-archetype database. It does not create `archetypes/sound-index.json`, `archetypes/sounds/`, `archsound_` IDs or copied recipe data inside caller records. Imported audio files and generated synth recipes are both normal registered Audio Asset Library resources.
 
-## Public API
+## Canonical future workflow
 
-```js
-import {
-  mountSoundGenerator,
-  openSoundGeneratorModal
-} from '../../shared/sound-generator/sound-generator-window.js';
+```text
+caller app field/event
+  -> Sound Library
+  -> choose an existing registered audio asset
+     OR Create New Synth Sound
+  -> save generated synth as a normal Audio Library item
+  -> return only the selected registered asset_ ID to the captured caller target
 ```
 
-### Floating caller mode
+This PR exposes the workflow only through the standalone preview harness. Object Creator, Quest Builder, Effect Editor, Puzzle Creator, Scene Editor, Project Editor and Hub routing are not integrated here; their adoption is tracked separately in `artifex/shared/todo-guide/all-apps-todos.json`.
+
+## Files
+
+```text
+sound-library.js                 shared Sound Library modal/API
+sound-generator-window.js         modal/standalone Create Synth Sound wrapper
+sound-generator-ui-v1.js          redesigned game-SFX editor UI
+sound-generator-presets.js        Sound Types catalogue and constrained variation profiles
+sound-generator-controls.js       persisted audible controls -> synth recipe mapping
+procedural-synth-schema.js        generated-audio JSON schema and asset/path IDs
+procedural-synth-runtime.js       Web Audio preview engine
+sound-generator-store.js          save recipe + asset-index registration helpers
+sound-generator.css               shared Sound Library/editor styling
+```
+
+## Sound Library API
 
 ```js
-openSoundGeneratorModal({
-  sourceLabel: 'Puzzle Creator > Correct Input',
+openSoundLibraryModal({
+  sourceLabel: 'Preview Harness > Object Action Sound',
+  currentAssetId: 'asset_sfx_optional_current_selection',
   onAssign: ({ assetId }) => {
-    // Store assetId in the caller's current draft field.
-    // The caller remains responsible for saving its own record.
+    // assetId is the only value future caller apps should persist.
   }
 });
 ```
 
-Closing the popup destroys the preview runtime and stops active or looping sound.
+When opened, Sound Library captures the source label and assignment callback. The preview harness includes a simulated target-change test proving that the returned assignment still resolves to the target captured at open time.
 
-## Active Files
+## Storage contract
+
+Generated synth storage remains:
 
 ```text
-sound-generator-window.js       public mount/open-modal lifecycle API
-sound-generator-ui-v1.js        active V1 popup UI and control bindings
-sound-generator-controls.js     creator-facing controls and recipe mapping
-sound-generator-presets.js      purpose examples and new-sound foundations
-procedural-synth-schema.js      generated-audio JSON schema and asset/path IDs
-procedural-synth-runtime.js     Web Audio preview engine
-sound-generator-store.js        JSON import/export and connected Asset Library save
-sound-generator.css             shared popup styling
+assets/audio/sfx/synth_<slug>.json
+assets/asset-index.json entry with an asset_sfx_... ID
 ```
 
-`sound-generator-ui.js` is an earlier compact popup implementation retained during this staged integration pass; the active window entrypoint loads `sound-generator-ui-v1.js`.
-
-## Generated Audio Record
-
-The popup builds recipe documents using:
+The generated recipe JSON uses:
 
 ```text
 schemaVersion: artifex.audio.procedural-synth.v1
@@ -56,40 +68,17 @@ resourcePath: assets/audio/sfx/synth_<safe_slug>.json
 playbackEngine: web-audio
 ```
 
-The JSON retains both editable creator controls and runtime-ready synthesis values.
+Sound Library reads registered audio through `artifex/shared/registered-content/registered-content-reader.js` and the connected project-folder client. It lists already registered imported WAV/MP3/OGG-style audio files and generated synth recipes together. New external audio import/promotion is intentionally not implemented here because no canonical shared import-new-audio owner was found; that remains an Asset Library todo.
 
-## Save Behaviour
+## Create Synth Sound workflow
 
-**Save to Library** deliberately writes two connected-project changes through the shared project-folder service:
+The normal editor is designed for game SFX creation rather than metadata/JSON editing:
 
-```text
-assets/audio/sfx/synth_<slug>.json        generated procedural recipe
-assets/asset-index.json                   normal asset_sfx_ registration record
-```
+- left **Sound Types** catalogue with search and compact grouped rows;
+- selected type summary plus constrained **Random Variation** button;
+- Preview/Stop, Previous/Next history, variation counter and favourite comparison list;
+- simple audible controls: Tone, Pitch, Length, Brightness, Noise, Echo, Wobble and Impact;
+- Advanced Controls only for supported persisted values: pitch movement, repeat pace, preview volume, pattern and loop;
+- save metadata appears only in the save-confirmation step.
 
-**Save and Assign Here** performs that same save, then returns the registered `asset_sfx_` ID through the caller callback. The popup does not silently write the caller's object, scene or puzzle record.
-
-## V1 Functionality
-
-The active shared popup supports:
-
-```text
-Use Example and Start New modes
-plain-language Tone, Pitch, Length, Pitch Change, Wobble, Pace,
-Brightness, Static, Echo, Pattern, Loop and safe Preview Volume controls
-Preview and Stop through Web Audio
-Random Sound, Variation and Reset
-JSON import and export
-connected-folder Asset Library saving
-Save and Assign caller callback
-```
-
-## Current Integration Boundary
-
-A small browser test harness is available at:
-
-```text
-artifex/apps/sound-generator-preview/
-```
-
-Current `main` also includes **Archetype Object Creator V1.35** caller integration: its Sound Events area can open this shared popup and receive the registered `asset_sfx_` ID in the current object draft after **Save and Assign Here**. Scene Editor and Puzzle Creator remain later caller integrations.
+Every random variation is generated from owned profile data in `sound-generator-presets.js`, so Pickup / Coin stays bright and short, Locked Door stays a refusal cue, Footstep stays a step, Magic Spark stays a shimmer, Portal Loop stays a sustained loop, Quest Complete stays rewarding and Explosion stays noise-heavy with a falling tail.

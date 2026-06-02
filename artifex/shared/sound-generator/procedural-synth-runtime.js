@@ -93,8 +93,11 @@ export class ProceduralSoundRuntime {
     }
 
     const voiceGain = addNode(context.createGain());
+    const punch = Math.max(0.55, Number(recipe.impact?.punch || 1));
+    const transient = Math.max(0.05, Number(recipe.impact?.transient || 0.45));
     voiceGain.gain.setValueAtTime(0.0001, startAt);
-    voiceGain.gain.exponentialRampToValueAtTime(1, startAt + attack);
+    voiceGain.gain.exponentialRampToValueAtTime(Math.min(1.35, punch), startAt + attack);
+    voiceGain.gain.exponentialRampToValueAtTime(Math.max(0.38, 0.68 - transient * 0.22), Math.min(sustainAt, startAt + attack + duration * 0.18));
     voiceGain.gain.setValueAtTime(0.56, sustainAt);
     voiceGain.gain.exponentialRampToValueAtTime(0.0001, endAt);
     voiceGain.connect(filter);

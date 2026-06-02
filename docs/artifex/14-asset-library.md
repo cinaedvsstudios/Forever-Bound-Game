@@ -174,3 +174,21 @@ When adding an object, character, visual asset or sound, the creator should be a
 The selected Project Profile controls which assets appear in the Asset Library.
 
 A project may have its own asset folders, external URLs, templates, effects libraries, and default export folders.
+
+## Shared Sound Library selector — current shared foundation
+
+Sound Library is the shared audio-filtered selector view of the existing Asset Library model. It is not a separate sound archetype database, does not create an `archsound_` ID family, and does not own a separate Sound Library index.
+
+The selector reads registered audio from the connected project’s `assets/asset-index.json` through the shared project-folder and registered-content readers. It browses imported audio files such as WAV, MP3 and OGG together with generated procedural synth sounds, clearly distinguishing **Audio File** entries from **Generated Synth** recipe entries. Both are ordinary registered Asset Library resources and future caller apps should store only the returned registered `asset_` ID.
+
+The canonical future authoring workflow is:
+
+```text
+caller app field/event -> Sound Library -> choose existing registered audio
+                                or -> Create New Synth Sound -> save to Audio Library
+                           -> return selected asset_ ID to the original caller target
+```
+
+Create New Synth Sound now lives inside Sound Library for shared preview/testing. A saved generated synth writes `assets/audio/sfx/synth_<slug>.json` and registers a normal `asset_sfx_...` entry in `assets/asset-index.json`. Individual Object Creator, Quest Builder, Effect Editor, Puzzle Creator and Scene Editor runtime adoption is deliberately deferred to separate app-owned passes tracked in the global todo guide.
+
+No canonical import-new-audio implementation was found in the shared owners during this pass. Sound Library therefore lists and selects already registered imported audio only; importing/promoting new WAV/MP3/OGG files remains a future Asset Library-owned task.

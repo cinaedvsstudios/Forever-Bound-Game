@@ -382,3 +382,45 @@ This design introduces no new starter-project path or new archetype library. `do
 - [ ] Calling files contain only the audio asset ID, not copied recipes.
 - [ ] No sound-archetype index or blank-starter structural requirement is added.
 - [ ] Health/Build can detect invalid or missing generated sound assets when integrated.
+
+## Current shared audio foundation — Sound Library first
+
+The current shared foundation replaces the older direct caller → Create Synth Sound assumption with the canonical future workflow:
+
+```text
+Any authoring app that needs a sound
+  -> opens Sound Library first
+  -> selects an existing registered audio asset
+     OR clicks Create New Synth Sound inside Sound Library
+  -> a newly saved synth is stored as a normal Audio Asset Library item
+  -> the later app-specific pass returns the selected/new asset_ ID to the exact initiating field/event
+```
+
+Sound Library is an audio-filtered view of `assets/asset-index.json`. It lists registered imported audio files and generated procedural synth recipes together while marking them as **Audio File** or **Generated Synth**. It returns only registered `asset_` IDs. It does not create `archetypes/sound-index.json`, `archetypes/sounds/`, `archsound_` IDs, copied recipe data inside app records or any separate Sound Library index.
+
+## Create Synth Sound redesign
+
+Create Synth Sound is now a practical game-SFX editor opened from Sound Library. The normal audition layout shows:
+
+- a **Sound Types** catalogue grouped for UI, Puzzle, Objects, Movement, Combat, Magic / FX, World / Ambience and Quest / Dialogue authoring;
+- searchable compact starting sounds such as Pickup / Coin, Locked Door, Footstep, Magic Spark, Portal Loop, Quest Complete and Explosion;
+- a constrained **Random Variation** action that keeps each sound inside its recognisable profile instead of generating unrelated sounds;
+- temporary unsaved variation history with Previous/Next navigation, variation counters and favourites for comparison;
+- simple audible controls first: Tone, Pitch, Length, Brightness, Noise, Echo, Wobble and Impact;
+- supported Advanced Controls for pitch movement, repeat pace, preview volume, pattern and loop behaviour;
+- a focused save confirmation step where Name, Audio category, Tags, derived `asset_sfx_...` ID preview and `assets/audio/sfx/` location appear only when saving.
+
+Normal audition no longer exposes a permanent Generated Sound Asset panel, permanent JSON, final asset ID/path or required name/category/tags. JSON import/export remains secondary under Advanced Controls for procedural recipes.
+
+## Implementation status after this foundation pass
+
+Implemented and testable in the standalone shared preview harness only:
+
+- shared Sound Library modal/API for registered audio selection;
+- project-folder/registered-content reading of `assets/asset-index.json`;
+- Web Audio preview for generated synth recipes and file-byte preview for registered audio files where the browser can play the format;
+- Sound Library-owned Create New Synth Sound launch;
+- save to `assets/audio/sfx/synth_<slug>.json` plus `assets/asset-index.json` registration;
+- target-capture behaviour in the preview harness proving that an assignment returns to the context captured when Sound Library opened.
+
+Not implemented in this pass: runtime integration in Object Creator, Quest Builder, Effect Editor, Puzzle Creator, Scene Editor, Project Editor or Hub routing. Those app-specific adoptions remain global todo items and must be completed by their active owners in separate scoped passes.
