@@ -1,50 +1,51 @@
-# Effect Editor Route Decision Audit — Accepted Index2 Baseline
+# Effect Editor Route Decision Audit — Accepted Index2 Baseline and Later Refresh
 
 ## Status
 
-Date recorded: 2026-06-01.
+Date originally recorded: 2026-06-01.  
+Current-main refresh recorded: 2026-06-02.
 
-This record captures the read-only Effect Editor route comparison, the user's deployed-browser review, and the approved minimal Hub route cutover. It is a decision and planning record only. It does not authorise feature implementation, route deletion, archive movement or save-contract work.
+This record captures the read-only Effect Editor route comparison, the user's deployed-browser review, the approved minimal Hub route cutover, and the later accepted Index2 work now merged on GitHub `main`.
 
-## Decision summary
+It is a status and planning record only. It does not authorise new feature implementation, route deletion, archive movement or save-contract work.
 
-Accepted good Effect Editor baseline:
+## Decision summary — current accepted baseline
+
+Accepted Effect Editor baseline now on current `main`:
 
 ```text
-artifex/apps/effect-editor/index2.html
-Visible label: INDEX2-CLEAN-0.2.3
+Active route: artifex/apps/effect-editor/index2.html
+Visible/cache label: INDEX2-CLEAN-0.2.6
+Hub route: artifex/apps/effect-editor/index2.html?from=hub
 ```
 
-Old emergency route retained as reference/rollback material:
+Old emergency route retained as reference/rollback material, not as the accepted continued editor route:
 
 ```text
 artifex/apps/effect-editor/index.html
-Observed deployed label during user review: V3.35-EMERGENCY
 ```
 
-The clean `index2.html` route is accepted as the route for continued Effect Editor work because the user manually reviewed both deployed pages and confirmed that index2 is the good complete-rewrite version, while the old default route is the emergency/repair version.
+The clean `index2.html` route remains accepted because the user manually reviewed both deployed pages and confirmed that Index2 is the good complete-rewrite version, while the old default route is the emergency/repair version. Later merged Index2 work has since repaired and extended that accepted route; the original `INDEX2-CLEAN-0.2.3` label is now historical, not current.
 
-## Evidence and route audit finding
+## Original route audit finding and completed cutover
 
 Before manual review, the read-only route audit established:
 
 ```text
-- The Hub was still directing users to apps/effect-editor/?from=hub, which resolved to the old default index route.
-- The default route loads active emergency/rescue debt, including lower-panel cleanup and menu-grid rescue behaviour.
-- index2 loads a cleaner modular route based around index2-app and named functional owners.
+- The Hub was directing users to apps/effect-editor/?from=hub, which resolved to the old default index route.
+- The default route loaded active emergency/rescue debt.
+- index2 loaded a cleaner modular route based around index2-app and named functional owners.
 - index2 retained the core Effect Editor purpose and presented a materially more complete usable editor surface.
-- Neither route should be treated as completing later connected-project save/effect-index contract work.
+- Neither route completed connected-project save/effect-index contract work.
 ```
 
-The user's deployed-browser comparison then confirmed:
+The user's deployed-browser comparison confirmed:
 
 ```text
 - index2 is the good rewritten Effect Editor interface.
 - The old default route is the visibly inferior emergency interface.
-- The rewrite has not been lost; it had simply not been the route opened from the Hub/default navigation.
+- The rewrite had not been lost; it had simply not been the route opened from Hub/default navigation.
 ```
-
-## Completed route cutover
 
 PR #25, **Route Effect Editor hub link to accepted index2 baseline**, was reviewed and merged into `main` on 1 June 2026.
 
@@ -52,67 +53,68 @@ PR #25, **Route Effect Editor hub link to accepted index2 baseline**, was review
 PR: #25
 Merge commit: a4a1bc9f03fe1c3e9ed08c066851adb8743bc520
 Scope: Hub-link-only route cutover; no Effect Editor implementation files changed.
-```
-
-Changed navigation target:
-
-```text
 FROM: apps/effect-editor/?from=hub
 TO:   apps/effect-editor/index2.html?from=hub
 ```
 
-Files changed by PR #25:
+## Later accepted Index2 work now merged on current main
+
+The original route decision identified three missing parity feature areas: Rotation Direction modes, Orbital Force and ALL CAPS text. Those gaps have since been implemented and are no longer pending work.
+
+| PR | Merged current-main outcome |
+|---|---|
+| #27 | Ported Rotation Direction modes, Orbital Force and ALL CAPS text control into accepted Index2 permanent modules. |
+| #28 | Repaired Index2 text-layer and inline layer-delete behaviour; later user corrections to layout/text defaults were applied in #29. |
+| #29 | Restored required Effect Specific Controls placement, bottom-right diagnostics behaviour and intended Rising Spell Text sample; retained the deletion repair. |
+| #30 | Added the missing local `finite` helper needed by Dynamics/Orbital Force display synchronisation and Quick Edit helpers. |
+| #31 | Added the missing `setText` helper in Dynamics controls. |
+| #32 | Restored the ARTIFEX rune/header toolbar grouping and corrected Rotate/Degree Range wiring to emitter direction/spread ownership. |
+| #33 | Restored the already-existing Brush / Shape Library to Index2 and advanced the visible/cache label to `INDEX2-CLEAN-0.2.6`. |
+| #34 | Added Effect Editor backlog items for library browsing, visible Save and emission-guide work. |
+| #35 | Recorded confirmed visual/reference examples and future My Settings / pinned-controls restoration. |
+| #36 | Updated the current-main baseline matrix to recognise the accepted Index2 0.2.6 position. |
+
+Confirmed from the current `index2.html` entry point:
 
 ```text
-artifex/index.html
+- visible badge: INDEX2-CLEAN-0.2.6;
+- ARTIFEX rune mark and grouped toolbar markup;
+- Rotation Direction and Degree Range controls;
+- Orbital Force control;
+- Effect Specific Controls retained in the left settings panel;
+- Brush / Shape Library loaded by the accepted Index2 route through the merged restoration work.
 ```
-
-Files and behaviours explicitly not changed by PR #25:
-
-```text
-- artifex/apps/effect-editor/index.html
-- artifex/apps/effect-editor/index2.html
-- artifex/apps/effect-editor/v3/**
-- emergency/rescue files
-- save/import/export behaviour
-- connected-project or effect-index behaviour
-- parity feature implementation
-```
-
-## Known missing parity features identified by the user
-
-The user reviewed index2 and identified only three main missing feature areas to port later:
-
-```text
-1. Rotation-direction controls:
-   - random rotation;
-   - within degree range;
-   - lock direction.
-
-2. Orbital control.
-
-3. Convert text to ALL CAPS.
-```
-
-These are now the accepted Effect Editor parity backlog. They were not included in the route cutover and require a separate scoped implementation pass.
 
 ## Current Effect Editor position
 
 | Area | Accepted current status |
 |---|---|
-| Continued UI/runtime baseline | `index2.html` / `INDEX2-CLEAN-0.2.3`. |
-| Hub navigation | Now directs to `apps/effect-editor/index2.html?from=hub`. |
-| Old emergency route | Retained untouched for reference/rollback until later separate decision. |
-| Emergency/rescue archive work | Not authorised. Must not occur merely because index2 is now accepted. |
-| Connected-project save/effect-index contract work | Still separate future work; not resolved by baseline choice. |
-| Global display/branding alignment | Still separate later UI/design work. |
-| Missing parity features | Rotation-direction controls, orbital control, ALL CAPS text action. |
+| Continued UI/runtime baseline | `index2.html` / `INDEX2-CLEAN-0.2.6`. |
+| Hub navigation | Directs to `apps/effect-editor/index2.html?from=hub`. |
+| Original missing parity features | Implemented through merged PR #27 and retained through later repairs. |
+| Header/emitter/brush-library repairs | Implemented through merged PRs #32–#33. |
+| Old emergency route | Retained as reference/rollback material; it is not the accepted implementation baseline. |
+| Emergency/rescue archive work | Not automatically authorised merely because Index2 is accepted. |
+| Connected-project save/effect-index contract work | Still separate future work; not resolved by baseline choice or local Save behaviour. |
+| Effect Library thumbnails/previews | Recorded future work. |
+| Emission marker/cone guides | Recorded future work. |
+| Additional FX engines and preset-quality work | Recorded future work. |
+| My Settings / pinned-control restoration | Recorded future work. |
 
-## Recommended next Effect Editor pass
+## Recommended future Effect Editor scope
 
-Before Codex implements parity features, run a narrow read-only feature-location/mapping pass to determine where the three missing behaviours exist in the old route or repository history, how they should map into index2's permanent functional modules, and whether any of them are already partially implemented but hidden or unbound.
+Any later Effect Editor work must start from current `main` and select a fresh bounded feature/save/polish pass. It must not be framed as implementing the original route decision or the three original missing parity behaviours, because those are already present in the accepted Index2 baseline.
 
-That analysis should produce one implementation brief for a later pass limited to the three accepted missing features. It must not reopen emergency-route repair work, archive rescue files or bundle in save-contract/global-branding work.
+Potential later separately approved lanes include:
+
+```text
+- Effect Library browser with thumbnails/previews;
+- visible Effect Archetype Assets save/status and connected-project effect-index integration;
+- emitter width and degree-range visual guides;
+- additional real FX engines and preset quality work;
+- My Settings / pinned-control restoration;
+- separately verified cleanup of legacy/emergency debt where that gives a clear benefit.
+```
 
 ## Out of scope unless separately approved
 
@@ -121,6 +123,6 @@ That analysis should produce one implementation brief for a later pass limited t
 - Moving old rescue files into archive.
 - Connected-folder saving or canonical effect-index integration.
 - Broad Effect Editor redesign.
-- Global aspect/logo conversion.
+- Global aspect/logo conversion beyond already merged accepted Index2 changes.
 - Work in any other app.
 ```
