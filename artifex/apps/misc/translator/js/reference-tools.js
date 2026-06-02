@@ -32,8 +32,8 @@
     },
     runispeleus: {
       label: "Runispeleus",
-      chatUrl: "",
-      rulesUrl: "",
+      chatUrl: "https://chatgpt.com/share/6a1f6248-6b84-83eb-bfd8-1b0d3196c0e1",
+      rulesUrl: "./runispeleus-rules.md",
       rulesTitle: "Runispeleus Rules"
     }
   };
