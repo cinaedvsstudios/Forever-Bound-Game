@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Artifex FX Debug — Atmosphere Volume Engine Prototype V0.2</title>
-  <link rel="stylesheet" href="./styles.css?v=0.2" />
+  <title>Artifex FX Debug — Atmosphere Volume Engine Prototype V0.3</title>
+  <link rel="stylesheet" href="./styles.css?v=0.3" />
 </head>
 <body>
   <header class="topbar">
@@ -12,7 +12,7 @@
       <div class="brand-mark"><span>ᚠ</span></div>
       <div class="brand-copy">
         <h1>ARTIFEX</h1>
-        <p>FX Debug Laboratory <span class="version-pill">ATMOSPHERE-VOLUME-0.2</span></p>
+        <p>FX Debug Laboratory <span class="version-pill">ATMOSPHERE-VOLUME-0.3</span></p>
       </div>
       <div class="divider" aria-hidden="true"></div>
       <div class="prototype-label">Standalone test page · not connected to Effect Editor</div>
@@ -37,14 +37,14 @@
           <select id="preset" title="Load a starting look for the atmosphere volume">
             <option value="ground-fog">Ground Fog</option>
             <option value="forest-mist">Forest Mist</option>
-            <option value="smoke">Smoke / Wisps</option>
+            <option value="smoke">Smoke</option>
             <option value="corruption-haze">Corruption Haze</option>
             <option value="dream-veil">Dream Veil</option>
-            <option value="smoke-bank">Smoke Bank</option>
+            <option value="smoke-bank">Smoke Bank / Low Haze</option>
           </select>
         </label>
         <label>Test Background
-          <select id="scene" title="Preview the fog against different scene contrast conditions">
+          <select id="scene" title="Preview the effect against different scene contrast conditions">
             <option value="forest-gate">Forest Gate</option>
             <option value="ruined-road">Ruined Road</option>
             <option value="underworld">Underworld</option>
@@ -53,7 +53,90 @@
         </label>
       </section>
 
-      <section class="card">
+      <section id="smoke-controls" class="card" hidden>
+        <header><h2>Smoke Texture Prototype</h2></header>
+        <p class="hint">Uses layered translucent smoke textures and flow movement rather than the previous drawn-line wisps.</p>
+        <label>Smoke Mode
+          <select id="smoke-mode" title="Choose the type of smoke presentation to test">
+            <option value="rising">Rising Smoke</option>
+            <option value="vignette">Smoke Vignette</option>
+            <option value="fullscreen">Full Screen Smoke</option>
+            <option value="emission">Emission Point / Chimney Fire</option>
+          </select>
+        </label>
+        <label>Preview Layer
+          <select id="smoke-layer" title="Only tests where smoke renders against the sample scene; Scene Editor will later control final layering">
+            <option value="back">Behind Scene Objects</option>
+            <option value="mid">Between Objects and Figures</option>
+            <option value="front" selected>In Front of Figures</option>
+          </select>
+        </label>
+        <label class="colour-row">Smoke Tint
+          <input id="smoke-colour" type="color" value="#e4e2de" title="Tint of the textured smoke" />
+          <input id="smoke-colour-hex" type="text" value="#e4e2de" maxlength="7" spellcheck="false" title="Smoke tint as hexadecimal colour" />
+        </label>
+        <label>Opacity <output id="smoke-opacity-out">0.46</output>
+          <input id="smoke-opacity" type="range" min="0" max="1" step="0.01" value="0.46" title="Overall opacity of the smoke layers" />
+        </label>
+        <label>Density <output id="smoke-density-out">0.64</output>
+          <input id="smoke-density" type="range" min="0.05" max="1" step="0.01" value="0.64" title="Number and fullness of overlapping smoke masses" />
+        </label>
+        <label>Contrast <output id="smoke-contrast-out">0.61</output>
+          <input id="smoke-contrast" type="range" min="0" max="1" step="0.01" value="0.61" title="Strength of defined white folds within the softer smoke" />
+        </label>
+        <label>Softness <output id="smoke-softness-out">0.42</output>
+          <input id="smoke-softness" type="range" min="0" max="1" step="0.01" value="0.42" title="Blur and diffusion of the smoke textures" />
+        </label>
+        <label>Texture Scale <output id="smoke-scale-out">1.00</output>
+          <input id="smoke-scale" type="range" min="0.3" max="2.2" step="0.01" value="1" title="Size of individual smoke texture masses" />
+        </label>
+        <label>Layer Count <output id="smoke-layers-out">4</output>
+          <input id="smoke-layers" type="range" min="1" max="7" step="1" value="4" title="Number of smoke depth sheets" />
+        </label>
+        <label>Turbulence <output id="smoke-turbulence-out">0.66</output>
+          <input id="smoke-turbulence" type="range" min="0" max="1" step="0.01" value="0.66" title="Organic movement and irregular breakup" />
+        </label>
+        <label>Curl <output id="smoke-curl-out">0.54</output>
+          <input id="smoke-curl" type="range" min="0" max="1" step="0.01" value="0.54" title="Swirling sideways movement inside the smoke" />
+        </label>
+        <label>Drift Speed <output id="smoke-drift-out">0.22</output>
+          <input id="smoke-drift" type="range" min="-1.5" max="1.5" step="0.01" value="0.22" title="Horizontal smoke movement; negative pushes left" />
+        </label>
+        <label>Rise Speed <output id="smoke-rise-out">0.42</output>
+          <input id="smoke-rise" type="range" min="0" max="1.5" step="0.01" value="0.42" title="How quickly rising or emitted smoke climbs" />
+        </label>
+
+        <div id="smoke-vignette-controls" hidden>
+          <label>Centre Opening <output id="smoke-clear-out">0.51</output>
+            <input id="smoke-clear" type="range" min="0.18" max="0.82" step="0.01" value="0.51" title="Size of the clear centre in the vignette smoke" />
+          </label>
+          <label>Edge Thickness <output id="smoke-edge-out">0.63</output>
+            <input id="smoke-edge" type="range" min="0.1" max="1" step="0.01" value="0.63" title="Amount of smoke mass around the vignette border" />
+          </label>
+          <label>Vertical Bias <output id="smoke-bias-out">0.00</output>
+            <input id="smoke-bias" type="range" min="-1" max="1" step="0.01" value="0" title="Pushes the smoky vignette toward the top or bottom" />
+          </label>
+        </div>
+
+        <div id="smoke-emission-controls" hidden>
+          <label>Emission X <output id="smoke-source-x-out">50%</output>
+            <input id="smoke-source-x" type="range" min="0" max="100" step="1" value="50" title="Horizontal source point for chimney, fire or vent smoke" />
+          </label>
+          <label>Emission Y <output id="smoke-source-y-out">72%</output>
+            <input id="smoke-source-y" type="range" min="5" max="100" step="1" value="72" title="Vertical source point for chimney, fire or vent smoke" />
+          </label>
+          <label>Source Width <output id="smoke-source-width-out">42px</output>
+            <input id="smoke-source-width" type="range" min="5" max="260" step="1" value="42" title="Width of the smoke-emitting opening or flame" />
+          </label>
+          <label>Plume Height <output id="smoke-height-out">360px</output>
+            <input id="smoke-height" type="range" min="70" max="680" step="1" value="360" title="Approximate height of the emitted smoke plume" />
+          </label>
+          <label class="toggle"><span>Show Emission Marker</span><input id="smoke-source-marker" type="checkbox" checked title="Show the test origin point used for the smoke emitter" /></label>
+        </div>
+        <button id="smoke-regenerate" class="action-button" type="button" title="Create a new random textured smoke pattern">Regenerate Smoke Pattern</button>
+      </section>
+
+      <section id="fog-appearance" class="card">
         <header><h2>Volume Appearance</h2></header>
         <label class="colour-row">Fog Colour
           <input id="colour" type="color" value="#d9e2dd" title="Main tint applied to the fog volume" />
@@ -77,7 +160,7 @@
         </label>
       </section>
 
-      <section class="card">
+      <section id="fog-shape" class="card">
         <header><h2>Volume Shape</h2></header>
         <label>Ground Coverage <output id="coverage-out">46%</output>
           <input id="coverage" type="range" min="10" max="100" step="1" value="46" title="How much of the stage height may be occupied by fog" />
@@ -94,43 +177,7 @@
         <button id="regenerate" class="action-button" type="button" title="Generate a new random fog mass using the current controls">Regenerate Volume</button>
       </section>
 
-      <section id="smoke-controls" class="card" hidden>
-        <header><h2>Smoke / Wisp Shape</h2></header>
-        <p class="hint">Only visible for Smoke / Wisps. Tests rising curled strands instead of low fog sheets.</p>
-        <label>Smoke Colour
-          <input id="smoke-colour" type="color" value="#bbb6ae" title="Tint of the rising smoke wisps" />
-        </label>
-        <label>Smoke Opacity <output id="smoke-opacity-out">0.48</output>
-          <input id="smoke-opacity" type="range" min="0" max="1" step="0.01" value="0.48" title="Opacity of the rising smoke strands" />
-        </label>
-        <label>Wisp Thinness <output id="smoke-thinness-out">0.66</output>
-          <input id="smoke-thinness" type="range" min="0" max="1" step="0.01" value="0.66" title="Makes strands thinner and less like broad fog banks" />
-        </label>
-        <label>Vertical Stretch <output id="smoke-stretch-out">0.78</output>
-          <input id="smoke-stretch" type="range" min="0" max="1" step="0.01" value="0.78" title="Controls how tall the smoke columns become" />
-        </label>
-        <label>Breakup / Gaps <output id="smoke-breakup-out">0.52</output>
-          <input id="smoke-breakup" type="range" min="0" max="1" step="0.01" value="0.52" title="Separates smoke into uneven broken tendrils" />
-        </label>
-        <label>Curl Amount <output id="smoke-curl-out">0.62</output>
-          <input id="smoke-curl" type="range" min="0" max="1" step="0.01" value="0.62" title="How strongly the smoke curls sideways as it rises" />
-        </label>
-        <label>Rise Speed <output id="smoke-rise-out">0.48</output>
-          <input id="smoke-rise" type="range" min="0" max="1.5" step="0.01" value="0.48" title="Vertical movement speed of the smoke" />
-        </label>
-        <label>Source Width <output id="smoke-source-width-out">150px</output>
-          <input id="smoke-source-width" type="range" min="15" max="500" step="1" value="150" title="Width of the fire or vent producing smoke" />
-        </label>
-        <label>Fade Height <output id="smoke-fade-height-out">0.74</output>
-          <input id="smoke-fade-height" type="range" min="0.2" max="0.98" step="0.01" value="0.74" title="How far smoke rises before fading away" />
-        </label>
-        <label>Wind Push <output id="smoke-wind-out">0.24</output>
-          <input id="smoke-wind" type="range" min="-1" max="1" step="0.01" value="0.24" title="Pushes smoke left or right as it rises" />
-        </label>
-        <button id="smoke-regenerate" class="action-button" type="button" title="Generate new smoke strand positions">Regenerate Wisps</button>
-      </section>
-
-      <section class="card">
+      <section id="fog-motion" class="card">
         <header><h2>Motion</h2></header>
         <label>Drift Speed <output id="speed-out">0.28</output>
           <input id="speed" type="range" min="0" max="2" step="0.01" value="0.28" title="Horizontal drift speed of the atmosphere volume" />
@@ -146,7 +193,7 @@
         </label>
       </section>
 
-      <section class="card">
+      <section id="fog-depth" class="card">
         <header><h2>Depth Test</h2></header>
         <p class="hint">The figures and gate prove whether fog can sit behind, around and in front of scene content. Scene Editor would own final placement and layer order.</p>
         <label class="toggle"><span>Back Fog Layer</span><input id="back-layer" type="checkbox" checked title="Render far fog behind test scene objects" /></label>
@@ -158,7 +205,7 @@
     <section class="workspace-column">
       <section class="workspace" aria-label="Atmosphere volume engine preview">
         <canvas id="preview" width="1280" height="720"></canvas>
-        <div class="stage-note"><strong>ATMOSPHERE VOLUME ENGINE</strong><span>debug preview · generated cloud-sheet test, not particle smoke</span></div>
+        <div class="stage-note"><strong>ATMOSPHERE VOLUME ENGINE</strong><span id="stage-description">debug preview · generated cloud-sheet test, not particle smoke</span></div>
       </section>
       <section class="result-panel">
         <header>
@@ -170,7 +217,6 @@
     </section>
   </main>
   <div id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./atmosphere-volume.js?v=0.2"></script>
-  <script type="module" src="./smoke-wisps.js?v=0.2"></script>
+  <script type="module" src="./atmosphere-volume.js?v=0.3"></script>
 </body>
 </html>
