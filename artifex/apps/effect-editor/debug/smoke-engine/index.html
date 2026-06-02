@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Artifex FX Debug — Smoke Engine Prototype V0.1</title>
+  <link rel="stylesheet" href="../atmosphere-volume/styles.css?v=0.4" />
+</head>
+<body>
+  <header class="topbar">
+    <section class="brand" aria-label="Artifex Smoke Engine debug prototype">
+      <div class="brand-mark"><span>ᚠ</span></div>
+      <div class="brand-copy">
+        <h1>ARTIFEX</h1>
+        <p>FX Debug Laboratory <span class="version-pill">SMOKE-ENGINE-0.1</span></p>
+      </div>
+      <div class="divider" aria-hidden="true"></div>
+      <div class="prototype-label">Standalone smoke test · separate from fog engine</div>
+    </section>
+    <nav class="toolbar" aria-label="Preview actions">
+      <button id="toggle-play" class="tool-button active" type="button" title="Pause or resume smoke preview">⏸</button>
+      <button id="reset-time" class="tool-button" type="button" title="Reset and regenerate the smoke">↺</button>
+      <button id="snapshot" class="tool-button" type="button" title="Download a PNG snapshot">📸</button>
+    </nav>
+  </header>
+
+  <main class="app-shell">
+    <aside class="controls-panel">
+      <section class="card identity-card">
+        <header><h2>Debug Effect</h2></header>
+        <label>Prototype Type
+          <select id="effect-type" title="Switch between separate engine prototypes">
+            <option value="../atmosphere-volume/index.html">Fog / Mist Engine</option>
+            <option value="./index.html" selected>Smoke Engine</option>
+          </select>
+        </label>
+        <label>Smoke Mode
+          <select id="mode" title="Choose a smoke behaviour">
+            <option value="rising">Rising Smoke</option>
+            <option value="wispy" selected>Wispy / Incense Smoke</option>
+            <option value="vignette">Smoke Vignette</option>
+            <option value="fullscreen">Full Screen Smoke</option>
+            <option value="emission">Emission Point / Chimney Fire</option>
+          </select>
+        </label>
+        <label>Test Background
+          <select id="scene" title="Preview against different scene contrast conditions">
+            <option value="forest-gate">Forest Gate</option>
+            <option value="ruined-road">Ruined Road</option>
+            <option value="underworld">Underworld</option>
+            <option value="transparent-check">Transparency Check</option>
+          </select>
+        </label>
+        <label>Preview Layer
+          <select id="layer" title="Scene Editor will own final layer placement later">
+            <option value="back">Behind Scene Objects</option>
+            <option value="mid">Between Objects and Figures</option>
+            <option value="front" selected>In Front of Figures</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="card">
+        <header><h2>Smoke Body</h2></header>
+        <label class="colour-row">Smoke Tint
+          <input id="colour" type="color" value="#dce2e7" />
+          <input id="colour-hex" type="text" value="#dce2e7" maxlength="7" spellcheck="false" />
+        </label>
+        <label>Opacity <output id="opacity-out">0.52</output>
+          <input id="opacity" type="range" min="0" max="1" step="0.01" value="0.52" />
+        </label>
+        <label>Puff Density <output id="density-out">0.40</output>
+          <input id="density" type="range" min="0" max="1" step="0.01" value="0.40" />
+        </label>
+        <label>Puff Size <output id="puff-size-out">0.78</output>
+          <input id="puff-size" type="range" min="0.25" max="2" step="0.01" value="0.78" />
+        </label>
+        <label>Puff Definition <output id="definition-out">0.55</output>
+          <input id="definition" type="range" min="0" max="1" step="0.01" value="0.55" title="Higher creates brighter internal folds" />
+        </label>
+      </section>
+
+      <section class="card">
+        <header><h2>Ribbon Wisps</h2></header>
+        <p class="hint">Wisps now form, grow to a maximum length, deform and fade away before restarting with a different shape.</p>
+        <label>Wisp Amount <output id="wisp-count-out">7</output>
+          <input id="wisp-count" type="range" min="0" max="14" step="1" value="7" />
+        </label>
+        <label>Wisp Brightness <output id="wisp-brightness-out">0.72</output>
+          <input id="wisp-brightness" type="range" min="0" max="1.5" step="0.01" value="0.72" />
+        </label>
+        <label>Ribbon Length <output id="wisp-length-out">0.67</output>
+          <input id="wisp-length" type="range" min="0.15" max="1" step="0.01" value="0.67" />
+        </label>
+        <label>Ribbon Width <output id="wisp-width-out">0.44</output>
+          <input id="wisp-width" type="range" min="0.05" max="1" step="0.01" value="0.44" />
+        </label>
+        <label>End Fade <output id="tail-fade-out">0.74</output>
+          <input id="tail-fade" type="range" min="0.05" max="1" step="0.01" value="0.74" title="Softens the visible beginning and end of every smoke ribbon" />
+        </label>
+        <label>Curl <output id="curl-out">0.69</output>
+          <input id="curl" type="range" min="0" max="1" step="0.01" value="0.69" />
+        </label>
+        <label>Rotation / Fold <output id="rotation-out">0.61</output>
+          <input id="rotation" type="range" min="0" max="1" step="0.01" value="0.61" title="Moves and turns the ribbon shape while it exists" />
+        </label>
+        <label>Form Duration <output id="duration-out">5.20s</output>
+          <input id="duration" type="range" min="1.5" max="12" step="0.1" value="5.2" title="Time before each wisp dissolves and a new one forms" />
+        </label>
+      </section>
+
+      <section class="card">
+        <header><h2>Movement</h2></header>
+        <label>Rise Speed <output id="rise-out">0.31</output>
+          <input id="rise" type="range" min="0" max="1.5" step="0.01" value="0.31" />
+        </label>
+        <label>Side Drift <output id="drift-out">0.13</output>
+          <input id="drift" type="range" min="-1" max="1" step="0.01" value="0.13" />
+        </label>
+        <label>Turbulence <output id="turbulence-out">0.54</output>
+          <input id="turbulence" type="range" min="0" max="1" step="0.01" value="0.54" />
+        </label>
+      </section>
+
+      <section id="vignette-controls" class="card" hidden>
+        <header><h2>Vignette Shape</h2></header>
+        <label>Centre Opening <output id="clear-out">0.54</output>
+          <input id="clear" type="range" min="0.18" max="0.9" step="0.01" value="0.54" />
+        </label>
+        <label>Edge Smoke Depth <output id="edge-out">0.64</output>
+          <input id="edge" type="range" min="0.1" max="1" step="0.01" value="0.64" />
+        </label>
+        <label>Vertical Bias <output id="bias-out">0.00</output>
+          <input id="bias" type="range" min="-1" max="1" step="0.01" value="0" />
+        </label>
+      </section>
+
+      <section id="emission-controls" class="card" hidden>
+        <header><h2>Emission Point</h2></header>
+        <label>Origin X <output id="source-x-out">50%</output>
+          <input id="source-x" type="range" min="0" max="100" step="1" value="50" />
+        </label>
+        <label>Origin Y <output id="source-y-out">76%</output>
+          <input id="source-y" type="range" min="0" max="100" step="1" value="76" />
+        </label>
+        <label>Source Width <output id="source-width-out">34px</output>
+          <input id="source-width" type="range" min="4" max="260" step="1" value="34" />
+        </label>
+        <label>Plume Height <output id="height-out">400px</output>
+          <input id="height" type="range" min="60" max="680" step="1" value="400" />
+        </label>
+        <label class="toggle"><span>Show Test Origin</span><input id="show-marker" type="checkbox" checked /></label>
+      </section>
+
+      <section class="card">
+        <header><h2>Performance / Test</h2></header>
+        <p class="hint">The smoke is rendered to a reduced-size transparent FX buffer, then composited over the sample scene. The FPS readout helps identify whether a mode is too heavy.</p>
+        <button id="regenerate" class="action-button" type="button">Regenerate Smoke Forms</button>
+      </section>
+    </aside>
+
+    <section class="workspace-column">
+      <section class="workspace" aria-label="Smoke engine preview">
+        <canvas id="preview" width="1280" height="720"></canvas>
+        <div class="stage-note"><strong>SMOKE ENGINE</strong><span id="stage-description">wispy / incense ribbons · separate from environmental fog</span><span id="fps">FPS: --</span></div>
+      </section>
+      <section class="result-panel">
+        <header>
+          <h2>Prototype Output Settings</h2>
+          <button id="copy-json" class="action-button compact" type="button">Copy JSON</button>
+        </header>
+        <pre id="json-output"></pre>
+      </section>
+    </section>
+  </main>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./smoke-engine.js?v=0.1"></script>
+</body>
+</html>
