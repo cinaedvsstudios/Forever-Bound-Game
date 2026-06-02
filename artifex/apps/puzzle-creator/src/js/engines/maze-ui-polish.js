@@ -11,6 +11,7 @@ window.addEventListener('DOMContentLoaded', () => {
   reorganiseDisplayCard();
   moveLogicButtonsUnderSolutionBox();
   configureScatterPlacementUi();
+  window.setTimeout(reorganiseSurfaceEditPanel, 0);
 });
 
 function markVisibleBuildVersion() {
@@ -80,6 +81,33 @@ function moveLogicButtonsUnderSolutionBox() {
   const solve = $('btn-solve');
   const buttonGrid = solve?.closest('.button-grid');
   if (statusBox && solve && buttonGrid) statusBox.insertAdjacentElement('afterend', buttonGrid);
+}
+
+function reorganiseSurfaceEditPanel() {
+  const panel = document.querySelector('[data-panel-content="visuals"]');
+  const titleRow = panel?.querySelector('.panel-title-row');
+  const targetGrid = panel?.querySelector('.target-grid');
+  const wallCard = $('maze-wall-form-card');
+  if (!panel || !titleRow || !targetGrid || !wallCard) return;
+
+  const panelTitle = titleRow.querySelector('h2');
+  if (panelTitle) panelTitle.textContent = 'Walls';
+
+  titleRow.insertAdjacentElement('afterend', wallCard);
+  const scatterCard = $('maze-scatter-card');
+  if (scatterCard) wallCard.insertAdjacentElement('afterend', scatterCard);
+
+  let coloursHeading = panel.querySelector('.surface-colours-heading');
+  if (!coloursHeading) {
+    coloursHeading = document.createElement('h3');
+    coloursHeading.className = 'surface-section-heading surface-colours-heading';
+    coloursHeading.textContent = 'Colours';
+  }
+  targetGrid.insertAdjacentElement('beforebegin', coloursHeading);
+
+  const existingColoursHeading = [...panel.querySelectorAll('h3')]
+    .find((heading) => heading !== coloursHeading && heading.textContent.trim() === 'Colours');
+  if (existingColoursHeading) existingColoursHeading.textContent = 'Palette';
 }
 
 function configureScatterPlacementUi() {
@@ -153,7 +181,12 @@ function injectUiPolishStyles() {
     .build-quick-actions{gap:13px!important;margin-top:12px!important;margin-bottom:2px!important;}.build-quick-actions + #btn-clear-all{margin-top:13px!important;margin-right:8px!important;}#btn-load-reference{margin-top:13px!important;}
     #btn-random,#btn-start-blank,#btn-clear-all,#btn-load-reference,#dropzone{font-size:.7rem!important;line-height:1.15!important;padding-left:6px!important;padding-right:6px!important;min-height:42px!important;}#btn-clear-all,#btn-load-reference{white-space:nowrap;}
     .stretch-inline-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;}.stretch-inline-row .range-row{min-width:0;padding:10px 10px;}.stretch-inline-row .range-row span{font-size:.75rem;}.stretch-inline-row input[type='range']{width:100%;}.display-size-row{border-color:rgba(158,230,164,.28)!important;background:rgba(7,31,16,.48)!important;}[data-panel-content='logic'] #difficulty-status-box + .button-grid{margin:8px 0 12px;}
-    .maze-scatter-card .scatter-head strong{font-size:.8rem!important;line-height:1.25;}
+    [data-panel-content='visuals'] .surface-section-heading{margin:10px 0 9px!important;color:var(--green2);font-size:.78rem!important;letter-spacing:.15em;text-transform:uppercase;}
+    [data-panel-content='visuals'] .maze-wall-form-card{margin:6px 0 15px!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;}
+    [data-panel-content='visuals'] .maze-wall-form-card .wall-form-copy strong{display:none!important;}
+    [data-panel-content='visuals'] .maze-scatter-card{margin:0 0 15px!important;padding:15px 0 0!important;border:0!important;border-top:1px solid rgba(158,230,164,.23)!important;border-radius:0!important;background:transparent!important;}
+    [data-panel-content='visuals'] .maze-scatter-card .scatter-head strong{font-size:.8rem!important;line-height:1.25;}
+    [data-panel-content='visuals'] .surface-colours-heading{margin-top:0!important;padding-top:15px;border-top:1px solid rgba(158,230,164,.23);}
     @media(max-width:520px){.stretch-inline-row{grid-template-columns:1fr;}}
   `;
   document.head.appendChild(style);
