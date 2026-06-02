@@ -87,6 +87,40 @@
             </button>
           </header>
 
+          <section class="render-settings" aria-label="Inscription appearance controls">
+            <div class="settings-toggles">
+              <label class="setting-toggle">
+                <input id="wrap-toggle" type="checkbox">
+                <span>Wrap</span>
+              </label>
+              <label class="setting-toggle">
+                <input id="bold-toggle" type="checkbox">
+                <span>Bold</span>
+              </label>
+              <label class="setting-toggle">
+                <input id="handdrawn-toggle" type="checkbox">
+                <span>Hand-drawn</span>
+              </label>
+            </div>
+            <div class="settings-grid">
+              <label class="setting-slider" for="character-spacing">
+                <span>Character spacing</span>
+                <input id="character-spacing" type="range" min="0" max="32" step="1" value="2">
+                <output id="character-spacing-output" for="character-spacing">2</output>
+              </label>
+              <label class="setting-slider" for="line-spacing">
+                <span>Line spacing</span>
+                <input id="line-spacing" type="range" min="0" max="80" step="1" value="17">
+                <output id="line-spacing-output" for="line-spacing">17</output>
+              </label>
+              <label class="setting-slider wrap-setting" for="wrap-width" id="wrap-width-setting">
+                <span>Wrap width</span>
+                <input id="wrap-width" type="range" min="160" max="720" step="10" value="390" disabled>
+                <output id="wrap-width-output" for="wrap-width">390</output>
+              </label>
+            </div>
+          </section>
+
           <div class="canvas-surround is-dark" id="canvas-surround">
             <canvas id="result-canvas" width="430" height="155" aria-label="Rendered inscription"></canvas>
             <div class="empty-message" id="empty-message">
