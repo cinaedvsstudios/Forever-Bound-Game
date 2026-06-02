@@ -3,130 +3,134 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Artifex · Lip-Sync Helper V0.2b</title>
-  <link rel="stylesheet" href="./lipsync-helper.css?v=0.2b">
+  <title>Artifex · Lip-Sync Helper V1 Alpha</title>
+  <link rel="stylesheet" href="./lipsync-helper.css?v=LIPSYNC-HELPER-V1A">
 </head>
 <body>
   <div class="app-shell">
-    <aside class="side-rail">
+    <aside class="side-rail" aria-label="Lip-sync editing controls">
       <header class="brand">
         <img class="brand-symbol" src="../../artifexlogo.png" alt="">
         <div class="brand-copy">
           <img class="brand-title-image" src="../../artifextitle.png" alt="Artifex">
-          <span class="brand-title-fallback">ARTIFEX</span>
-          <span class="brand-subtitle">Lip-Sync Helper · V0.2b</span>
+          <span class="brand-subtitle">Lip-Sync Helper · V1 Alpha</span>
         </div>
       </header>
 
       <section class="rail-panel">
-        <h2>Video</h2>
+        <h2>Source Video</h2>
         <dl class="metadata">
           <dt>Source</dt><dd id="videoName">No video loaded</dd>
+          <dt>Size</dt><dd id="resolutionText">-- × --</dd>
+          <dt>Aspect</dt><dd id="aspectText">--</dd>
           <dt>Duration</dt><dd id="durationText">--:--.---</dd>
         </dl>
         <label class="button primary block">Upload Video<input id="fileInput" type="file" accept="video/*" hidden></label>
         <button id="removeVideoBtn" class="button block" type="button" disabled>Remove Video</button>
+        <label class="field-label" for="workingFps">Working FPS</label>
+        <select id="workingFps" class="input select">
+          <option value="24">24 fps</option><option value="25">25 fps</option><option value="30" selected>30 fps</option><option value="50">50 fps</option><option value="60">60 fps</option>
+        </select>
       </section>
 
-      <section class="rail-panel marker-panel">
+      <section class="rail-panel library-panel">
         <div class="panel-row">
-          <h2>Marked Words</h2>
-          <button id="markWordSideBtn" class="tiny-button primary" type="button" disabled>+ Mark</button>
+          <h2>Character Model</h2>
+          <button id="modelModeBtn" class="tiny-button" type="button" disabled>Build Model</button>
         </div>
-        <p class="help">Pause on the broken word, then press <strong>Mark Word</strong>. A pin appears on the timeline.</p>
-        <div id="markerList" class="marker-list"><p class="empty">No marked words.</p></div>
+        <label class="field-label" for="characterName">Character</label>
+        <input id="characterName" class="input" type="text" value="Mel" autocomplete="off">
+        <p id="modelStatus" class="help">Capture reusable mouth samples by character and viseme as you work.</p>
       </section>
 
-      <section id="selectedPinPanel" class="rail-panel disabled">
+      <section class="rail-panel region-panel">
         <div class="panel-row">
-          <h2>Selected Pin</h2>
-          <button id="deleteMarkerBtn" class="tiny-button danger" type="button" disabled>Delete</button>
+          <h2>Repair Regions</h2>
+          <button id="deleteRegionBtn" class="tiny-button danger" type="button" disabled>Delete</button>
         </div>
-        <p id="noPinMessage" class="empty">Select a pin to edit it.</p>
-        <div id="pinFields" hidden>
-          <div class="pin-time"><span>Pin at</span><strong id="pinTime">--:--.---</strong></div>
-          <label class="field-label" for="phraseInput">Words being said</label>
-          <input id="phraseInput" class="input" type="text" placeholder="End, Laughter, Ohhh, it be">
-          <label class="field-label" for="spanInput">Repair preview span <output id="spanOutput">0.80 s</output></label>
-          <input id="spanInput" type="range" min="0.20" max="2.50" step="0.05" value="0.80">
-          <button id="loopBtn" class="button block" type="button">Loop This Pin: Off</button>
-          <div class="divider"></div>
-          <div class="patch-buttons">
-            <button id="captureBtn" class="button primary block" type="button">Capture Donor Mouth</button>
-            <button id="positionBtn" class="button" type="button" disabled>Position Patch</button>
-            <button id="removePatchBtn" class="button" type="button" disabled>Remove Patch</button>
+        <div class="mark-buttons">
+          <button id="startMarkBtn" class="button primary" type="button" disabled>Start Mark</button>
+          <button id="endMarkBtn" class="button" type="button" disabled>End Mark</button>
+        </div>
+        <div class="pending-mark"><span>Pending start</span><strong id="pendingStartText">None</strong></div>
+        <p class="help">Set the start and end of the mouth section that needs replacing.</p>
+        <div id="regionList" class="region-list"><p class="empty">No repair regions.</p></div>
+      </section>
+
+      <section id="selectedRegionPanel" class="rail-panel disabled">
+        <div class="panel-row">
+          <h2>Selected Region</h2>
+          <button id="loopBtn" class="tiny-button" type="button" disabled>Loop: Off</button>
+        </div>
+        <p id="noRegionMessage" class="empty">Create or select a repair region.</p>
+        <div id="regionFields" hidden>
+          <div class="range-meta">
+            <span>Start <strong id="regionStart">--:--.---</strong></span>
+            <span>End <strong id="regionEnd">--:--.---</strong></span>
+            <span>Frames <strong id="regionFrames">0</strong></span>
           </div>
-          <p id="patchMessage" class="help">Choose a donor frame on the right, then drag a box around its mouth.</p>
-          <div id="patchControls" hidden>
-            <div class="two-cols">
-              <label class="field-label">X<input id="patchX" class="input" type="number" step="1"></label>
-              <label class="field-label">Y<input id="patchY" class="input" type="number" step="1"></label>
-            </div>
-            <label class="field-label" for="patchScale">Scale <output id="scaleOutput">100%</output></label>
-            <input id="patchScale" type="range" min="30" max="220" step="1" value="100">
-            <label class="field-label" for="patchRotate">Rotate <output id="rotateOutput">0°</output></label>
-            <input id="patchRotate" type="range" min="-45" max="45" step="1" value="0">
-            <label class="field-label" for="patchFeather">Edge feather <output id="featherOutput">5 px</output></label>
-            <input id="patchFeather" type="range" min="0" max="30" step="1" value="5">
-            <label class="field-label" for="patchOpacity">Opacity <output id="opacityOutput">100%</output></label>
-            <input id="patchOpacity" type="range" min="0" max="100" step="1" value="100">
-            <label class="checkbox"><input id="showPatch" type="checkbox" checked> Show mouth patch</label>
-            <div class="pin-time"><span>Donor at</span><strong id="donorTime">--:--.---</strong></div>
-          </div>
+          <label class="field-label" for="phraseInput">Correct word / short phrase</label>
+          <input id="phraseInput" class="input" type="text" placeholder="End, Laughter, Ohhh, it be" autocomplete="off">
+          <p class="help">The phrase is converted into editable mouth-shape segments on the right.</p>
         </div>
       </section>
     </aside>
 
     <main class="studio">
-      <section class="editor-column">
-        <section id="dropZone" class="viewer-frame">
-          <canvas id="videoCanvas" width="1280" height="720"></canvas>
-          <div id="dropOverlay" class="drop-overlay">
-            <div class="play-drop">▶</div>
-            <strong>Drop video here</strong>
-            <span>or click to upload</span>
-          </div>
+      <section class="editor-column" aria-label="Video repair editor">
+        <section id="dropZone" class="viewer-frame" aria-label="Video viewer and drop zone">
+          <canvas id="videoCanvas"></canvas>
+          <div id="dropOverlay" class="drop-overlay"><div class="play-drop">▶</div><strong>Drop video here</strong><span>or click to upload</span></div>
           <video id="video" preload="metadata" playsinline hidden></video>
         </section>
-
-        <section class="transport-bar">
-          <div class="transport-buttons">
-            <button id="prevFrameBtn" class="transport" type="button" disabled title="Previous frame">◀</button>
-            <button id="playBtn" class="transport play" type="button" disabled title="Play / Pause">▶</button>
-            <button id="nextFrameBtn" class="transport" type="button" disabled title="Next frame">▶</button>
-          </div>
+        <section class="transport-bar" aria-label="Playback controls">
+          <div class="transport-buttons"><button id="prevFrameBtn" class="transport" type="button" disabled title="Previous frame">◀</button><button id="playBtn" class="transport play" type="button" disabled title="Play / Pause">▶</button><button id="nextFrameBtn" class="transport" type="button" disabled title="Next frame">▶</button></div>
           <div id="statusText" class="status">Drop a video into the player to begin.</div>
           <div class="timecode"><strong id="currentTime">00:00.000</strong><span>/</span><strong id="totalTime">00:00.000</strong></div>
-          <div class="mode">Mode <strong id="modeText">Preview</strong></div>
+          <div class="framecode">Frame <strong id="frameText">0</strong></div>
+          <div class="mode">Mode <strong id="modeText">Repair</strong></div>
         </section>
-
         <section class="timeline-frame">
           <div class="section-heading">
-            <div><h2>Word Timeline</h2><p>Click to seek. Click a numbered pin to select it.</p></div>
-            <button id="markWordBtn" class="button primary" type="button" disabled>Mark Word</button>
+            <div><h2>Repair Timeline</h2><p>Mark a start and end range. Select the coloured region to edit its mouth sequence.</p></div>
+            <div class="timeline-actions"><button id="startMarkMainBtn" class="button primary" type="button" disabled>Start Mark</button><button id="endMarkMainBtn" class="button" type="button" disabled>End Mark</button></div>
           </div>
-          <canvas id="timeline" width="1400" height="138"></canvas>
+          <canvas id="timeline" aria-label="Repair timeline"></canvas>
         </section>
       </section>
 
-      <aside class="right-panels">
+      <aside class="right-panels" aria-label="Viseme and patch controls">
         <section class="gold-panel phrase-panel">
+          <div class="section-heading tight"><div><h2>Phrase / Viseme Reference</h2><p id="phraseSummary">Type a phrase in a selected repair region.</p></div></div>
+          <div id="segmentStrip" class="segment-strip"><p class="empty">No viseme segments yet.</p></div>
+          <figure class="guide-frame"><img id="visemeGuide" src="./viseme-reference-guide.svg?v=1" alt="Reference chart of mouth shapes for viseme groups"></figure>
+          <div id="guideChoices" class="guide-choices" aria-label="Viseme categories"></div>
+        </section>
+        <section class="gold-panel patch-panel">
           <div class="section-heading tight">
-            <h2>Selected Phrase</h2>
+            <div><h2 id="patchPanelTitle">Donor / Patch Editor</h2><p id="patchPanelHelp">Choose a segment, then capture or apply a mouth.</p></div>
             <button id="refreshDonorsBtn" class="circle-button" type="button" disabled title="Refresh donor frames">↻</button>
           </div>
-          <div class="phrase-display"><strong id="selectedPhrase">No marker selected</strong></div>
-        </section>
-        <section class="gold-panel donor-panel">
-          <div class="section-heading donor-heading">
-            <div><h2>Donor Frames</h2><p>Choose a matching pose, then capture the mouth in the viewer.</p></div>
-          </div>
+          <div class="tab-row"><button id="thisVideoTab" class="tab active" type="button">This Video</button><button id="libraryTab" class="tab" type="button">Character Library</button></div>
           <div id="donorStrip" class="donor-strip"><p class="empty">Donor frames appear after a video is loaded.</p></div>
+          <div class="patch-toolbar"><button id="captureBtn" class="button primary" type="button" disabled>Capture Mouth</button><button id="positionBtn" class="button" type="button" disabled>Position</button><button id="removePatchBtn" class="button" type="button" disabled>Remove</button></div>
+          <div id="patchControls" class="patch-controls" hidden>
+            <div class="control-grid thirds"><label>X<input id="patchX" class="input number" type="number" step="1"></label><label>Y<input id="patchY" class="input number" type="number" step="1"></label><label>Scale<input id="patchScale" class="input number" type="number" min="10" max="400" step="1"></label></div>
+            <div class="control-grid thirds"><label>Rotate<input id="patchRotate" class="input number" type="number" min="-180" max="180" step="1"></label><label>Skew X<input id="patchSkewX" class="input number" type="number" min="-80" max="80" step="1"></label><label>Skew Y<input id="patchSkewY" class="input number" type="number" min="-80" max="80" step="1"></label></div>
+            <div class="control-grid half"><label>Width %<input id="patchWidth" class="input number" type="number" min="20" max="300" step="1"></label><label>Height %<input id="patchHeight" class="input number" type="number" min="20" max="300" step="1"></label></div>
+            <label class="field-label" for="patchFeather">Edge Feather <output id="featherOutput">5 px</output></label><input id="patchFeather" type="range" min="0" max="30" step="1" value="5">
+            <label class="field-label" for="patchOpacity">Opacity <output id="opacityOutput">100%</output></label><input id="patchOpacity" type="range" min="0" max="100" step="1" value="100">
+            <div class="control-grid thirds filters"><label>Bright<input id="patchBrightness" class="input number" type="number" min="30" max="200" value="100"></label><label>Contrast<input id="patchContrast" class="input number" type="number" min="30" max="200" value="100"></label><label>Saturate<input id="patchSaturation" class="input number" type="number" min="0" max="220" value="100"></label></div>
+            <label class="field-label" for="patchWarmth">Warmth <output id="warmthOutput">0</output></label><input id="patchWarmth" type="range" min="-100" max="100" step="1" value="0">
+            <label class="checkbox"><input id="showPatch" type="checkbox" checked> Show selected mouth patch</label>
+            <div class="patch-source"><span>Patch source</span><strong id="donorTime">None</strong></div>
+          </div>
+          <p id="modelInstruction" class="help model-instruction" hidden>Select a viseme category above, pause on a good mouth frame, press Capture Mouth, and drag over the character's mouth. The sample will be saved to this character's library.</p>
         </section>
       </aside>
     </main>
   </div>
-  <div id="toast" class="toast"></div>
-  <script src="./lipsync-helper.js?v=0.2b"></script>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="./lipsync-helper.js?v=LIPSYNC-HELPER-V1A"></script>
 </body>
 </html>
