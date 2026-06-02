@@ -16,6 +16,10 @@
     kicker: document.querySelector("#selected-language-kicker"),
     title: document.querySelector("#selected-language-title"),
     description: document.querySelector("#selected-language-description"),
+    rulesButton: document.querySelector("#rules-button"),
+    rulesDialog: document.querySelector("#rules-dialog"),
+    rulesClose: document.querySelector("#rules-close"),
+    rulesContent: document.querySelector("#rules-content"),
     modeRadios: Array.from(document.querySelectorAll('input[name="input-mode"]')),
     sourceLabel: document.querySelector("#source-label"),
     sourceInput: document.querySelector("#source-input"),
@@ -47,7 +51,8 @@
     contrast: "dark",
     glyphHeight: Number(elements.glyphSize.value),
     rendered: false,
-    objectUrl: null
+    objectUrl: null,
+    rulesLoaded: false
   };
 
   function activeLanguage() {
@@ -129,6 +134,7 @@
     elements.kicker.textContent = language.kicker;
     elements.title.textContent = language.title;
     elements.description.textContent = language.description;
+    elements.rulesButton.hidden = languageId !== "volkhv-tartessian";
     elements.sourceLabel.textContent = state.mode === "renderer" ? "Renderer input" : "Glyph token sequence";
     elements.inputHelp.textContent = language.inputHelp[state.mode];
     elements.assetNote.textContent = language.assetNote;
@@ -266,6 +272,142 @@
     if (state.rendered) renderCurrentInput();
   }
 
+  function escapeHtml(value) {
+    return value
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+  }
+
+  function renderInlineMarkdown(value) {
+    return escapeHtml(value)
+      .replace(/`([^`]+)`/g, "<code>$1</code>")
+      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*([^*]+)\*/g, "<em>$1</em>");
+  }
+
+  function tableRow(line) {
+    return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((cell) => cell.trim());
+  }
+
+  function markdownToHtml(markdown) {
+    const lines = markdown.replace(/\r\n/g, "\n").split("\n");
+    const html = [];
+    let index = 0;
+    let paragraph = [];
+    let listType = null;
+    let listItems = [];
+
+    function flushParagraph() {
+      if (!paragraph.length) return;
+      html.push(`<p>${renderInlineMarkdown(paragraph.join(" "))}</p>`);
+      paragraph = [];
+    }
+
+    function flushList() {
+      if (!listType || !listItems.length) return;
+      html.push(`<${listType}>${listItems.map((item) => `<li>${renderInlineMarkdown(item)}</li>`).join("")}</${listType}>`);
+      listType = null;
+      listItems = [];
+    }
+
+    while (index < lines.length) {
+      const line = lines[index];
+      const trimmed = line.trim();
+
+      if (trimmed.startsWith("|") && index + 1 < lines.length && /^\|?\s*:?-{3,}/.test(lines[index + 1].trim())) {
+        flushParagraph();
+        flushList();
+        const headings = tableRow(trimmed);
+        index += 2;
+        const rows = [];
+        while (index < lines.length && lines[index].trim().startsWith("|")) {
+          rows.push(tableRow(lines[index]));
+          index += 1;
+        }
+        html.push(`<div class="rules-table-wrap"><table><thead><tr>${headings.map((heading) => `<th>${renderInlineMarkdown(heading)}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${renderInlineMarkdown(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`);
+        continue;
+      }
+
+      if (!trimmed) {
+        flushParagraph();
+        flushList();
+        index += 1;
+        continue;
+      }
+      if (/^---+$/.test(trimmed)) {
+        flushParagraph();
+        flushList();
+        html.push("<hr>");
+        index += 1;
+        continue;
+      }
+      if (/^###\s+/.test(trimmed)) {
+        flushParagraph();
+        flushList();
+        html.push(`<h3>${renderInlineMarkdown(trimmed.replace(/^###\s+/, ""))}</h3>`);
+        index += 1;
+        continue;
+      }
+      if (/^##\s+/.test(trimmed)) {
+        flushParagraph();
+        flushList();
+        html.push(`<h2>${renderInlineMarkdown(trimmed.replace(/^##\s+/, ""))}</h2>`);
+        index += 1;
+        continue;
+      }
+      if (/^#\s+/.test(trimmed)) {
+        flushParagraph();
+        flushList();
+        html.push(`<h1>${renderInlineMarkdown(trimmed.replace(/^#\s+/, ""))}</h1>`);
+        index += 1;
+        continue;
+      }
+      if (/^-\s+/.test(trimmed)) {
+        flushParagraph();
+        if (listType && listType !== "ul") flushList();
+        listType = "ul";
+        listItems.push(trimmed.replace(/^-\s+/, ""));
+        index += 1;
+        continue;
+      }
+      if (/^\d+\.\s+/.test(trimmed)) {
+        flushParagraph();
+        if (listType && listType !== "ol") flushList();
+        listType = "ol";
+        listItems.push(trimmed.replace(/^\d+\.\s+/, ""));
+        index += 1;
+        continue;
+      }
+
+      flushList();
+      paragraph.push(trimmed);
+      index += 1;
+    }
+
+    flushParagraph();
+    flushList();
+    return html.join("");
+  }
+
+  async function openRulesDialog() {
+    if (!state.rulesLoaded) {
+      elements.rulesContent.innerHTML = '<p class="rules-loading">Loading rules…</p>';
+      try {
+        const response = await fetch("./volkhv-tartessian-rules.md");
+        if (!response.ok) throw new Error(`Rules document unavailable (${response.status}).`);
+        const markdown = await response.text();
+        elements.rulesContent.innerHTML = markdownToHtml(markdown);
+        state.rulesLoaded = true;
+      } catch (error) {
+        elements.rulesContent.innerHTML = '<p class="warning">The rules document could not be loaded.</p>';
+      }
+    }
+    elements.rulesDialog.showModal();
+  }
+
   elements.languageSelect.addEventListener("change", () => selectLanguage(elements.languageSelect.value));
   elements.modeRadios.forEach((radio) => {
     radio.addEventListener("change", () => {
@@ -316,6 +458,11 @@
     } catch (error) {
       showWarning("PNG export was blocked. Open through a local web server or GitHub Pages rather than directly from a file folder.");
     }
+  });
+  elements.rulesButton.addEventListener("click", openRulesDialog);
+  elements.rulesClose.addEventListener("click", () => elements.rulesDialog.close());
+  elements.rulesDialog.addEventListener("click", (event) => {
+    if (event.target === elements.rulesDialog) elements.rulesDialog.close();
   });
 
   setContrast();
