@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Artifex FX Debug — Atmosphere Volume Engine Prototype V0.1</title>
+  <link rel="stylesheet" href="./styles.css?v=0.1" />
+</head>
+<body>
+  <header class="topbar">
+    <section class="brand" aria-label="Artifex Effect Editor debug prototype">
+      <div class="brand-mark"><span>ᚠ</span></div>
+      <div class="brand-copy">
+        <h1>ARTIFEX</h1>
+        <p>FX Debug Laboratory <span class="version-pill">ATMOSPHERE-VOLUME-0.1</span></p>
+      </div>
+      <div class="divider" aria-hidden="true"></div>
+      <div class="prototype-label">Standalone test page · not connected to Effect Editor</div>
+    </section>
+    <nav class="toolbar" aria-label="Preview actions">
+      <button id="toggle-play" class="tool-button active" type="button" title="Pause or resume the atmosphere preview">⏸</button>
+      <button id="reset-time" class="tool-button" type="button" title="Reset the animation time to the beginning">↺</button>
+      <button id="snapshot" class="tool-button" type="button" title="Download a PNG snapshot of the current test frame">📸</button>
+    </nav>
+  </header>
+
+  <main class="app-shell">
+    <aside class="controls-panel">
+      <section class="card identity-card">
+        <header><h2>Debug Effect</h2></header>
+        <label>Prototype Type
+          <select id="effect-type" title="The engine family currently under test">
+            <option value="atmosphere-volume">Atmosphere Volume Engine</option>
+          </select>
+        </label>
+        <label>Preset
+          <select id="preset" title="Load a starting look for the atmosphere volume">
+            <option value="ground-fog">Ground Fog</option>
+            <option value="forest-mist">Forest Mist</option>
+            <option value="corruption-haze">Corruption Haze</option>
+            <option value="dream-veil">Dream Veil</option>
+            <option value="smoke-bank">Smoke Bank</option>
+          </select>
+        </label>
+        <label>Test Background
+          <select id="scene" title="Preview the fog against different scene contrast conditions">
+            <option value="forest-gate">Forest Gate</option>
+            <option value="ruined-road">Ruined Road</option>
+            <option value="underworld">Underworld</option>
+            <option value="transparent-check">Transparency Check</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="card">
+        <header><h2>Volume Appearance</h2></header>
+        <label class="colour-row">Fog Colour
+          <input id="colour" type="color" value="#d9e2dd" title="Main tint applied to the fog volume" />
+          <input id="colour-hex" type="text" value="#d9e2dd" maxlength="7" spellcheck="false" title="Fog tint as hexadecimal colour" />
+        </label>
+        <label>Opacity <output id="opacity-out">0.42</output>
+          <input id="opacity" type="range" min="0" max="1" step="0.01" value="0.42" title="Maximum overall opacity of the fog mass" />
+        </label>
+        <label>Density <output id="density-out">0.64</output>
+          <input id="density" type="range" min="0.05" max="1" step="0.01" value="0.64" title="How filled-in the fog volume becomes" />
+        </label>
+        <label>Softness <output id="softness-out">32</output>
+          <input id="softness" type="range" min="0" max="60" step="1" value="32" title="Blur radius used to soften the cloud banks" />
+        </label>
+        <label>Blend Mode
+          <select id="blend" title="How the fog is composited onto the scene preview">
+            <option value="screen">Screen Lighten</option>
+            <option value="source-over">Normal Alpha</option>
+            <option value="lighter">Additive Light</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="card">
+        <header><h2>Volume Shape</h2></header>
+        <label>Ground Coverage <output id="coverage-out">46%</output>
+          <input id="coverage" type="range" min="10" max="100" step="1" value="46" title="How much of the stage height may be occupied by fog" />
+        </label>
+        <label>Volume Layers <output id="layers-out">3</output>
+          <input id="layers" type="range" min="1" max="5" step="1" value="3" title="Number of overlapping mist depth sheets" />
+        </label>
+        <label>Turbulence <output id="turbulence-out">0.44</output>
+          <input id="turbulence" type="range" min="0" max="1" step="0.01" value="0.44" title="Vertical rolling and undulation in the fog banks" />
+        </label>
+        <label>Detail Scale <output id="scale-out">1.10</output>
+          <input id="scale" type="range" min="0.4" max="2" step="0.01" value="1.1" title="Size of the fog masses: lower produces finer detail, higher broader clouds" />
+        </label>
+        <button id="regenerate" class="action-button" type="button" title="Generate a new random fog mass using the current controls">Regenerate Volume</button>
+      </section>
+
+      <section class="card">
+        <header><h2>Motion</h2></header>
+        <label>Drift Speed <output id="speed-out">0.28</output>
+          <input id="speed" type="range" min="0" max="2" step="0.01" value="0.28" title="Horizontal drift speed of the atmosphere volume" />
+        </label>
+        <label>Direction
+          <select id="direction" title="Horizontal direction of the fog drift">
+            <option value="-1">Drift Left</option>
+            <option value="1" selected>Drift Right</option>
+          </select>
+        </label>
+        <label>Roll Speed <output id="roll-out">0.26</output>
+          <input id="roll" type="range" min="0" max="2" step="0.01" value="0.26" title="Internal rising and settling movement in each cloud band" />
+        </label>
+      </section>
+
+      <section class="card">
+        <header><h2>Depth Test</h2></header>
+        <p class="hint">The figures and gate prove whether fog can sit behind, around and in front of scene content. Scene Editor would own final placement and layer order.</p>
+        <label class="toggle"><span>Back Fog Layer</span><input id="back-layer" type="checkbox" checked title="Render far fog behind test scene objects" /></label>
+        <label class="toggle"><span>Mid Fog Layer</span><input id="mid-layer" type="checkbox" checked title="Render middle fog between the gate and figures" /></label>
+        <label class="toggle"><span>Front Fog Layer</span><input id="front-layer" type="checkbox" checked title="Render foreground fog over the feet of test figures" /></label>
+      </section>
+    </aside>
+
+    <section class="workspace-column">
+      <section class="workspace" aria-label="Atmosphere volume engine preview">
+        <canvas id="preview" width="1280" height="720"></canvas>
+        <div class="stage-note"><strong>ATMOSPHERE VOLUME ENGINE</strong><span>debug preview · generated cloud-sheet test, not particle smoke</span></div>
+      </section>
+      <section class="result-panel">
+        <header>
+          <h2>Prototype Output Settings</h2>
+          <button id="copy-json" class="action-button compact" type="button" title="Copy the current prototype settings as JSON">Copy JSON</button>
+        </header>
+        <pre id="json-output"></pre>
+      </section>
+    </section>
+  </main>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./atmosphere-volume.js?v=0.1"></script>
+</body>
+</html>
