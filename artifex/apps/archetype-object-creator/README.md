@@ -10,32 +10,32 @@ It is not the Effect Editor. Effect Editor owns reusable FX definitions; Object 
 
 ## Current Implementation Status
 
-Accepted `main` status: V1.35 remains the current-main implementation until PR #38 is accepted and merged.
+Current `main` implementation: `V1.36`, merged from PR #38 on 2 June 2026 at merge commit `ef4f37ebe5850c6367db59e57c01e2bb89949384`.
 
-Preview implementation: `V1.36` in open PR #38: **Archetype Object Creator V1.36 — Step 5 ownership, staged-frame saves and ready/promotion lifecycle**.
+V1.36 implements **Archetype Object Creator V1.36 — Step 5 ownership, staged-frame saves and ready/promotion lifecycle**.
 
-PR #38 status: **partially manually checked; pending project-save/finalisation acceptance; do not merge yet.**
+Validation status: **the visible Step 5/toolbar fixes listed below were manually confirmed; project-save/finalisation lifecycle validation remains required on current `main` using a disposable project folder.**
 
-V1.36 is intended to supersede provisional V1.35 behaviour while preserving the V1.35 review as a historical record:
+V1.36 supersedes the provisional V1.35 runtime while preserving the V1.35 review as a historical record:
 
 ```text
 artifex/apps/archetype-object-creator/docs/current-state-v1.35-review.md
 ```
 
-The intended V1.36 lifecycle is browser recovery draft → in-progress project save → explicit `Finish / Mark Object Ready` finalisation.
+The V1.36 lifecycle is browser recovery draft → in-progress project save → explicit `Finish / Mark Object Ready` finalisation.
 
-### Manually accepted in the PR #38 preview — 2 June 2026
+### Manually confirmed during PR #38 acceptance — 2 June 2026
 
-The following visible Step 5/toolbar repairs were checked by the creator in the PR preview and accepted for inclusion in PR #38:
+The following visible Step 5/toolbar repairs were checked by the creator in the PR preview before merge and accepted into `main`:
 
 - Step 5 right-hand Action Behaviour layout no longer overlays text and fields.
-- **Add Frame Event** now visibly creates an editable frame-event row.
+- **Add Frame Event** visibly creates an editable frame-event row.
 - **Add Empty Frame Slot** may be filled in place by clicking the empty thumbnail and choosing an image; the slot order is retained.
 - The saved-wizard crystal-ball icon is enlarged and displayed without the circular button chrome.
 
-These accepted UI interactions do **not** yet approve the project-save or finalisation lifecycle.
+These confirmed UI interactions do **not** validate the project-save or finalisation lifecycle.
 
-### Still required before merge
+### Post-merge validation still required
 
 Test only in a disposable starter-project folder:
 
@@ -79,16 +79,16 @@ Active entry point:
 artifex/apps/archetype-object-creator/v1/src/editor-app.js
 ```
 
-In the V1.36 PR preview, the entry point initialises the base editor, project-folder storage, template icons, wizard flow, Step 5 behaviour binding, Reference panel styles and asset-package/ZIP behaviour. Step 5 layout and Frame Fix are rendered/bound through the checklist/frame-task ownership rather than the retired active layout/frame-correction installer imports.
+In current-main V1.36, the entry point initialises the base editor, project-folder storage, template icons, wizard flow, Step 5 behaviour binding, Reference panel styles and asset-package/ZIP behaviour. Step 5 layout and Frame Fix are rendered/bound through the checklist/frame-task ownership rather than the retired active layout/frame-correction installer imports.
 
-## Proposed V1.36 Authoring Lifecycle — Pending Full Acceptance
+## V1.36 Authoring Lifecycle — On Main, Pending Functional Validation
 
 Object records and matching index entries may carry `authoringStatus`:
 
 - `in_progress` — normal working state for new objects, browser drafts, JSON imports without status and any object still holding uploaded/staged/unregistered frame work.
 - `ready` — finalised state written only by **Finish / Mark Object Ready** after validation, staged-media promotion and `assets/asset-index.json` registration.
 
-Save meanings in the PR preview:
+Save meanings in current-main V1.36:
 
 | Control | Intended meaning |
 |---|---|
@@ -174,9 +174,9 @@ Build Game / Health Guide = validate and package references; they do not author 
 
 ## Ownership And Patch-Layer Rule
 
-V1.35 exposed Step 5 ownership problems because several modules modified the final panel after render. PR #38 consolidates the touched ownership into existing named modules rather than introducing another overlay/patch file. Do not add a new patch, rescue, helper-overlay or MutationObserver installer to extend Step 5.
+V1.35 exposed Step 5 ownership problems because several modules modified the final panel after render. PR #38 consolidated the touched ownership into existing named modules rather than introducing another overlay/patch file. Do not add a new patch, rescue, helper-overlay or MutationObserver installer to extend Step 5.
 
-Before further feature implementation, complete the remaining PR #38 disposable-project tests and either accept/merge the PR or record/reject any failed behaviour precisely.
+Before further feature implementation, complete the remaining V1.36 post-merge disposable-project tests and record any failed behaviour precisely.
 
 ## Historical/Stale Material
 
