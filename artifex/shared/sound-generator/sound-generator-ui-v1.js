@@ -32,9 +32,9 @@ function markup(options) {
       <p class="sound-variation-count" data-variation-count>Variation 1 of 1</p>
       <button type="button" data-act="back">↩️ Library</button>
       <button class="primary" data-act="preview">▶️ Preview</button>
+      <button class="variation-action" data-act="variation">🎲 Random Variation</button>
       <button data-act="stop">⏹️ Stop</button>
       <span class="sound-tool-divider" aria-hidden="true"></span>
-      <button class="variation-action" data-act="variation">🎲 Random Variation</button>
       <button data-act="prev">⬅️ Previous</button>
       <button data-act="next">➡️ Next</button>
       <button data-act="favorite">⭐ Favourite</button>
