@@ -27,7 +27,10 @@
         </div>
 
         <div class="panel-heading">
-          <p class="panel-kicker" id="selected-language-kicker">Volkhv–Tartessian</p>
+          <div class="panel-title-row">
+            <p class="panel-kicker" id="selected-language-kicker">Volkhv–Tartessian</p>
+            <button class="info-button" id="rules-button" type="button" aria-label="Open Volkhv–Tartessian ritual dialect rules" aria-controls="rules-dialog" aria-haspopup="dialog">i</button>
+          </div>
           <h2 class="visually-hidden" id="selected-language-title" aria-hidden="true"></h2>
           <p class="visually-hidden" id="selected-language-description" aria-hidden="true"></p>
         </div>
@@ -67,45 +70,67 @@
         </section>
       </section>
 
-      <section class="result-panel" aria-labelledby="result-title">
-        <header class="result-header">
-          <div>
-            <h2 id="result-title">Rendered inscription</h2>
-            <p class="result-subtitle">Screenshot or export the clean glyph strip</p>
+      <aside class="preview-column" aria-label="Rendered inscription and references">
+        <nav class="reference-bar" aria-label="Reference tools">
+          <a class="reference-button" href="https://chatgpt.com/share/6a1f37fa-0614-83eb-af1d-98a373bdb4ae" target="_blank" rel="noopener noreferrer">Translator chat</a>
+        </nav>
+
+        <section class="result-panel" aria-labelledby="result-title">
+          <header class="result-header">
+            <div>
+              <h2 id="result-title">Rendered inscription</h2>
+              <p class="result-subtitle">Screenshot or export the clean glyph strip</p>
+            </div>
+            <button class="contrast-toggle" id="contrast-toggle" type="button" aria-label="Switch to black inscription on white background">
+              <span class="contrast-swatch" aria-hidden="true"></span>
+              <span id="contrast-label">White on black</span>
+            </button>
+          </header>
+
+          <div class="canvas-surround is-dark" id="canvas-surround">
+            <canvas id="result-canvas" width="430" height="155" aria-label="Rendered inscription"></canvas>
+            <div class="empty-message" id="empty-message">
+              <strong>Ready to render.</strong>
+              <span>Paste a glyph phrase or load the example.</span>
+            </div>
           </div>
-          <button class="contrast-toggle" id="contrast-toggle" type="button" aria-label="Switch to black inscription on white background">
-            <span class="contrast-swatch" aria-hidden="true"></span>
-            <span id="contrast-label">White on black</span>
-          </button>
-        </header>
 
-        <div class="canvas-surround is-dark" id="canvas-surround">
-          <canvas id="result-canvas" width="430" height="155" aria-label="Rendered inscription"></canvas>
-          <div class="empty-message" id="empty-message">
-            <strong>Ready to render.</strong>
-            <span>Paste a glyph phrase or load the example.</span>
+          <div class="preview-tools">
+            <label class="slider-field" for="glyph-size">
+              <span>Size</span>
+              <input id="glyph-size" type="range" min="30" max="120" step="2" value="58">
+              <output id="glyph-size-output" for="glyph-size">58</output>
+            </label>
+            <button class="secondary-button" id="save-png" type="button" disabled>Export PNG</button>
           </div>
-        </div>
 
-        <div class="preview-tools">
-          <label class="slider-field" for="glyph-size">
-            <span>Size</span>
-            <input id="glyph-size" type="range" min="30" max="120" step="2" value="58">
-            <output id="glyph-size-output" for="glyph-size">58</output>
-          </label>
-          <button class="secondary-button" id="save-png" type="button" disabled>Export PNG</button>
-        </div>
-
-        <section class="readout" aria-label="Rendering diagnostics">
-          <h3>Glyph tokens</h3>
-          <code id="recognised-tokens">—</code>
-          <p class="warning" id="render-warning" hidden></p>
+          <section class="readout" aria-label="Rendering diagnostics">
+            <h3>Glyph tokens</h3>
+            <code id="recognised-tokens">—</code>
+            <p class="warning" id="render-warning" hidden></p>
+          </section>
         </section>
-      </section>
+      </aside>
     </main>
-
-    <footer class="site-footer">Three script traditions · separate editable language modules</footer>
   </div>
+
+  <dialog class="rules-dialog" id="rules-dialog" aria-labelledby="rules-dialog-title">
+    <section class="rules-modal-shell">
+      <header class="rules-modal-header">
+        <div>
+          <p class="rules-eyebrow">Reference document</p>
+          <h2 id="rules-dialog-title">Volkhv–Tartessian Rules</h2>
+        </div>
+        <div class="rules-modal-actions">
+          <a class="rules-md-link" href="./volkhv-tartessian-rules.md" target="_blank" rel="noopener noreferrer">Open MD</a>
+          <button class="rules-close" id="rules-close" type="button" aria-label="Close rules window">×</button>
+        </div>
+      </header>
+      <article class="rules-content" id="rules-content" aria-live="polite">
+        <p class="rules-loading">Loading rules…</p>
+      </article>
+    </section>
+  </dialog>
 
   <script defer src="./js/languages/runispeleus.js"></script>
   <script defer src="./js/languages/saga-demotic.js"></script>
