@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const STATE = { open: false, bg: 'black', modal: null, button: null, zoom: 1, panX: 0, panY: 0, panning: null };
+  const STATE = { open: false, bg: 'black', modal: null, button: null, clearButton: null, zoom: 1, panX: 0, panY: 0, panning: null };
 
   function api() { return window.ArtifexSceneEditorCore || null; }
   function selectedItem() { return api()?.getSelectedItem?.() || null; }
@@ -85,6 +85,12 @@
     STATE.modal?.remove();
     STATE.modal = null;
     STATE.button?.classList.remove('is-active-v24');
+  }
+
+  function clearSelection() {
+    closePreview();
+    api()?.select?.('element', '');
+    api()?.toast?.('Selection cleared');
   }
 
   function modalMarkup() {
@@ -171,11 +177,32 @@
     applyPanZoom();
   }
 
+  function bindClearSelectionButton(previewButton) {
+    const wrap = previewButton?.closest('.stage-wrap');
+    if (!wrap) return;
+    let button = wrap.querySelector('.clear-selection-btn-v36');
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'clear-selection-btn-v36';
+      button.title = 'Clear selection and view the clean scene';
+      button.setAttribute('aria-label', 'Clear selection and view the clean scene');
+      button.textContent = '⌧';
+      previewButton.insertAdjacentElement('afterend', button);
+    }
+    STATE.clearButton = button;
+    button.disabled = !selectedItem();
+    if (button.dataset.clearSelectionBound === 'true') return;
+    button.dataset.clearSelectionBound = 'true';
+    button.addEventListener('click', clearSelection);
+  }
+
   function bindButton() {
     const button = document.querySelector('.object-preview-btn-v24');
     if (!button) return;
     STATE.button = button;
     STATE.button.disabled = !selectedItem();
+    bindClearSelectionButton(button);
     if (button.dataset.previewOwnerBound === 'true') return;
     button.dataset.previewOwnerBound = 'true';
     button.addEventListener('click', () => { if (STATE.open) closePreview(); else openPreview(); });
