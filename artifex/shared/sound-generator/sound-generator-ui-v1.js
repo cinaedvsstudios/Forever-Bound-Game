@@ -15,7 +15,7 @@ function loadCss() {
   const link = document.createElement('link');
   link.id = STYLE_ID;
   link.rel = 'stylesheet';
-  link.href = new URL('./sound-generator.css?v=1.10', import.meta.url).href;
+  link.href = new URL('./sound-generator.css?v=1.11', import.meta.url).href;
   document.head.appendChild(link);
 }
 
@@ -25,19 +25,32 @@ function controlSliderMarkup(definition) {
 }
 
 function markup(options) {
-  const close = options.mode === 'floating' ? '<button class="sound-close" type="button" data-act="close" title="Close">×</button>' : '';
+  const close = options.mode === 'floating' ? '<button class="sound-close" type="button" data-act="close" title="Close">✕</button>' : '';
   return `<section class="sound-generator-card" aria-label="Create Synth Sound">
-    <header class="sound-header"><div class="sound-brand"><span class="sound-rune">ᚠ</span><div><p class="sound-kicker">ARTIFEX SOUND LIBRARY TOOL</p><h1>Create Synth Sound</h1><p>Context: opened from Sound Library — ${esc(options.sourceLabel || 'Standalone preview')}</p></div><span class="sound-version">${VERSION}</span></div>${close}</header>
+    <header class="sound-header sound-tool-header"><div class="sound-brand"><span class="sound-rune">ᚠ</span><div><p class="sound-kicker">ARTIFEX SOUND LIBRARY TOOL</p><h1>Create Synth Sound</h1></div><span class="sound-version">${VERSION}</span></div>${close}</header>
+    <nav class="sound-top-actions" aria-label="Sound editing actions">
+      <p class="sound-variation-count" data-variation-count>Variation 1 of 1</p>
+      <button type="button" data-act="back">↩️ Library</button>
+      <button class="primary" data-act="preview">▶️ Preview</button>
+      <button data-act="stop">⏹️ Stop</button>
+      <span class="sound-tool-divider" aria-hidden="true"></span>
+      <button class="variation-action" data-act="variation">🎲 Random Variation</button>
+      <button data-act="prev">⬅️ Previous</button>
+      <button data-act="next">➡️ Next</button>
+      <button data-act="favorite">⭐ Favourite</button>
+      <button data-act="reset">🔄 Reset Type</button>
+      <span class="sound-tool-divider" aria-hidden="true"></span>
+      <button data-act="save">💾 Save Sound</button>
+      <button class="assign-action" data-act="assign">✅ Save and Select</button>
+    </nav>
     <div class="sound-layout sound-layout-redesigned">
-      <aside class="sound-type-panel"><h2>Sound Types</h2><label class="sound-search-label">Search starting sounds<input type="search" data-sound-type-search placeholder="coin, locked, quest, portal…" /></label><div class="sound-type-list" data-sound-types></div><div class="sound-selected-summary" data-selected-summary></div><button type="button" class="primary wide" data-act="variation">✦ Random Variation</button></aside>
-      <section class="sound-editor"><div class="sound-editor-top"><div><p class="sound-kicker">Audition only — metadata appears when saving</p><h2 data-current-title>Starting Sound</h2><p data-current-description></p><p class="sound-variation-count" data-variation-count>Variation 1 of 1</p></div><div class="sound-preview-actions"><button class="primary" data-act="preview">▶ Preview</button><button data-act="stop">■ Stop</button></div></div>
-        <div class="sound-history-actions"><button data-act="prev">← Previous</button><button data-act="next">Next →</button><button data-act="favorite">☆ Favourite</button><button data-act="reset">↺ Reset Type</button></div>
-        <div class="sound-favourites"><h3>Favourites in this unsaved session</h3><div data-favourites><p>No favourites yet. Star variations to compare them before saving.</p></div></div>
-        <h3>Simple sound-shaping controls</h3><div class="sound-control-grid">${SIMPLE_CONTROL_DEFINITIONS.map(controlSliderMarkup).join('')}</div>
-        <details class="sound-advanced"><summary>Advanced Controls</summary><fieldset class="sound-pitch-change"><legend>Frequency movement</legend><button data-pitch="drops">Drops</button><button data-pitch="steady">Steady</button><button data-pitch="rises">Rises</button></fieldset><div class="sound-control-grid compact">${ADVANCED_CONTROL_DEFINITIONS.map(controlSliderMarkup).join('')}</div><div class="sound-pattern-row"><label>Pattern<select data-field="pattern"><option value="single">Single</option><option value="double">Double</option><option value="triple">Triple</option><option value="repeat">Repeat</option></select></label><label class="check"><input type="checkbox" data-field="loop" /> Loop until stopped</label></div><div class="sound-file-actions secondary"><input type="file" accept=".json,application/json" data-file hidden /><button data-act="import">Import procedural JSON</button><button data-act="export">Export current recipe JSON</button></div></details>
+      <aside class="sound-type-panel"><h2>Sound Types</h2><label class="sound-search-label">Search starting sounds<input type="search" data-sound-type-search placeholder="coin, locked, quest, portal…" /></label><div class="sound-type-list" data-sound-types></div></aside>
+      <section class="sound-editor">
+        <div class="sound-favourites" data-favourites-panel hidden><h3>⭐ Favourites in this unsaved session</h3><div data-favourites></div></div>
+        <div class="sound-control-grid">${SIMPLE_CONTROL_DEFINITIONS.map(controlSliderMarkup).join('')}</div>
+        <details class="sound-advanced"><summary>⚙️ Advanced Controls</summary><fieldset class="sound-pitch-change"><legend>Frequency movement</legend><button data-pitch="drops">↘️ Drops</button><button data-pitch="steady">➡️ Steady</button><button data-pitch="rises">↗️ Rises</button></fieldset><div class="sound-control-grid compact">${ADVANCED_CONTROL_DEFINITIONS.map(controlSliderMarkup).join('')}</div><div class="sound-pattern-row"><label>Pattern<select data-field="pattern"><option value="single">Single</option><option value="double">Double</option><option value="triple">Triple</option><option value="repeat">Repeat</option></select></label><label class="check"><input type="checkbox" data-field="loop" /> Loop until stopped</label></div><div class="sound-file-actions secondary"><input type="file" accept=".json,application/json" data-file hidden /><button data-act="import">📥 Import procedural JSON</button><button data-act="export">📤 Export current recipe JSON</button></div></details>
       </section>
     </div>
-    <footer class="sound-actions"><button type="button" data-act="back">Back to Sound Library</button><div class="sound-file-actions"><button data-act="save">Save Sound to Library</button><button class="assign-action" data-act="assign">Save and Select</button></div></footer>
     <p class="sound-message" data-message aria-live="polite"></p>
   </section>`;
 }
@@ -45,7 +58,7 @@ function markup(options) {
 function saveDialogMarkup(record, options) {
   const suggestedId = makeAudioAssetId(record.name);
   const path = makeRecipePath(record.name);
-  return `<div class="sound-save-backdrop" role="dialog" aria-modal="true" aria-label="Save Sound to Library"><form class="sound-save-dialog" data-save-form><h2>Save Sound to Library</h2><p>Name, category and tags are only required now, after auditioning.</p><label>Name <input required maxlength="80" data-save-name value="${esc(record.name)}" /></label><label>Audio category <input maxlength="50" data-save-category value="${esc(record.category || 'sfx')}" /></label><label>Tags <input maxlength="180" data-save-tags value="${esc(record.tags)}" placeholder="ui, pickup, reward" /></label><dl><div><dt>Asset ID preview</dt><dd data-save-id>${esc(suggestedId)}</dd></div><div><dt>Location</dt><dd>Audio Library / <code>assets/audio/sfx/</code></dd></div><div><dt>Recipe path preview</dt><dd data-save-path>${esc(path)}</dd></div></dl><div class="sound-save-actions"><button type="button" data-save-cancel>Cancel</button><button class="primary" type="submit">${options.assignAfterSave ? 'Save and Select' : 'Save Sound'}</button></div></form></div>`;
+  return `<div class="sound-save-backdrop" role="dialog" aria-modal="true" aria-label="Save Sound to Library"><form class="sound-save-dialog" data-save-form><h2>Save Sound to Library</h2><p>Name, category and tags are only required now, after auditioning.</p><label>Name <input required maxlength="80" data-save-name value="${esc(record.name)}" /></label><label>Audio category <input maxlength="50" data-save-category value="${esc(record.category || 'sfx')}" /></label><label>Tags <input maxlength="180" data-save-tags value="${esc(record.tags)}" placeholder="ui, pickup, reward" /></label><dl><div><dt>Asset ID preview</dt><dd data-save-id>${esc(suggestedId)}</dd></div><div><dt>Location</dt><dd>Audio Library / <code>assets/audio/sfx/</code></dd></div><div><dt>Recipe path preview</dt><dd data-save-path>${esc(path)}</dd></div></dl><div class="sound-save-actions"><button type="button" data-save-cancel>✖️ Cancel</button><button class="primary" type="submit">${options.assignAfterSave ? '✅ Save and Select' : '💾 Save Sound'}</button></div></form></div>`;
 }
 
 export function createSoundGeneratorUI(container, options = {}) {
@@ -104,10 +117,10 @@ export function createSoundGeneratorUI(container, options = {}) {
 
   function renderFavourites() {
     const favourites = state.history.map((entry, index) => ({ ...entry, index })).filter((entry) => entry.favourite);
+    const panel = $('[data-favourites-panel]');
     const host = $('[data-favourites]');
-    host.innerHTML = favourites.length
-      ? favourites.map((entry) => `<button type="button" data-favourite-index="${entry.index}">★ Variation ${entry.index + 1} <span>${esc(entry.label || '')}</span></button>`).join('')
-      : '<p>No favourites yet. Star variations to compare them before saving.</p>';
+    if (panel) panel.hidden = !favourites.length;
+    host.innerHTML = favourites.map((entry) => `<button type="button" data-favourite-index="${entry.index}">⭐ Variation ${entry.index + 1} <span>${esc(entry.label || '')}</span></button>`).join('');
   }
 
   function renderControls() {
@@ -123,14 +136,11 @@ export function createSoundGeneratorUI(container, options = {}) {
     const loop = root.querySelector('[data-field="loop"]');
     if (loop) loop.checked = values.loop;
     $$('[data-pitch]').forEach((button) => button.classList.toggle('is-active', button.dataset.pitch === values.pitchChange));
-    const type = selectedType();
-    text('[data-current-title]', type.label);
-    text('[data-current-description]', type.description);
     text('[data-variation-count]', `Variation ${state.historyIndex + 1} of ${state.history.length}`);
-    const summary = $('[data-selected-summary]');
-    summary.innerHTML = `<h3>${esc(type.label)}</h3><p>${esc(type.description)}</p><small>Selecting a type only changes the audition profile. It does not save anything.</small>`;
     const favButton = $('[data-act="favorite"]');
-    favButton.textContent = state.history[state.historyIndex]?.favourite ? '★ Favourite' : '☆ Favourite';
+    const isFavourite = Boolean(state.history[state.historyIndex]?.favourite);
+    favButton.textContent = isFavourite ? '⭐ Favourited' : '⭐ Favourite';
+    favButton.classList.toggle('is-active', isFavourite);
     state.record = currentRecord();
     renderSoundTypes();
     renderFavourites();
@@ -149,7 +159,7 @@ export function createSoundGeneratorUI(container, options = {}) {
     state.historyIndex = 0;
     runtime.stop();
     renderControls();
-    message(`Selected ${type.label}. Generate a constrained Random Variation or shape the controls.`);
+    message(`Selected ${type.label}. Use Random Variation or adjust the controls.`);
   }
 
   function addVariation() {
