@@ -133,7 +133,7 @@ The following classification records the starting plan for documents that curren
 | `docs/artifex/19a-project-starter-file-schemas.md` | Remains the subordinate exact schema technical reference linked from `1A` and `4A`. | Retain active. |
 | `docs/artifex/20-asset-intake-workflow.md` | Implemented Creation Guide intake setup facts move into `4A`; remaining Asset Library-specific promotion workflow is assessed in the Asset Library pass. | Decide final retain/archive treatment during Asset Library audit. |
 | `docs/artifex/21-template-game-project-contract.md` | Universal three-layer distinction moves into `1A`; unique Template Game/reference-project material may remain as one bounded reference-project specification. | Decide retain/archive treatment after project/reference scope audit. |
-| `docs/artifex/22-sound-archetype-generator.md` | Sound Generator-specific permanent information stays in that module/service spec; universal generated-audio asset rule exists once in `1A`. | Retain active and consolidate last because current work is in progress. |
+| `docs/artifex/22-sound-archetype-generator.md` | Sound Generator-specific permanent information stays in that module/service spec; universal generated-audio asset rule exists once in `1A`. | Retain active and consolidate last because current Sound Generator work is in progress. |
 | `docs/artifex/23-current-main-scan-and-pr20-recovery.md` | Any current outstanding work moves to `docs/artifex/2A-global-to-do.md`; historical recovery evidence stays historical. | Archive after extraction. |
 | `docs/artifex/24-stabilisation-cleanup-and-ui-resumption-plan.md` | Permanent no-patch/one-scope/verified-archive/process rules move into `1A`; remaining open work moves into `docs/artifex/2A-global-to-do.md`; completed phases remain history. | Archive after extraction. |
 | `artifex/shared/todo-guide/README.md` | Valid universal ownership/task/document-control rules move into `1A`; outstanding work moves to `2A`; machine task shape retained only if a real service/code dependency requires it. | Supersede/archive after dependency audit and extraction. |
@@ -160,7 +160,7 @@ status refreshes and current-state reviews
 dated baseline matrices and read-only audit reports
 failed-acceptance plans
 old implementation/update-step histories
-handovers records
+handover records
 PR-specific documentation records
 superseded contract/index files
 ```
