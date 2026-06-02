@@ -22,8 +22,9 @@ Rules for interpreting migrated tasks:
 
 | Area | Current position relevant to task work | Protection rule |
 |---|---|---|
-| Documentation control | `0A`, `1A` and `2A` were published on `main` through merged PR #47. This pass corrects the controlled backlog path and adds the first extracted module specification, `3A`. | Continue through documentation-only passes; do not create competing active indexes, task lists or status documents. |
+| Documentation control | `0A`, `1A` and `2A` were published on `main` through merged PR #47. This pass corrects the controlled backlog path and adds extracted module specifications `3A` and `4A`. | Continue through documentation-only passes; do not create competing active indexes, task lists or status documents. |
 | Hub / Artifex Portal | Current implementation is `artifex/index.html` / **Artifex Hub V1.1.4**; `3A-hub-artifex-portal.md` is created in this pass from that current implementation. | Do not treat the older radial/wedge Portal plan as the current implementation authority. |
+| Creation Guide | Current implementation is `artifex/apps/creation-guide/index.html` / **V1.1.12**; it includes connected-folder starter creation and optional Initial Asset Intake Setup. `4A-creation-guide.md` is created in this pass. | Do not use V1.1.10/V1.1.11 documents to describe current functionality or re-list implemented intake setup as future work. |
 | Scene Editor | Accepted baseline is `artifex/apps/scene-editor/index.html` / `v0.37-control-state-inspector-retention`. Ownership repair work from v0.34–v0.37 is complete. | Do not revive old ownership-repair tasks; next work is project integration. |
 | Archetype Object Creator | V1.36 is merged on `main`; its lifecycle remains subject to post-merge functional validation. | Validate before beginning further Object Creator feature development. |
 | Effect Editor | Accepted route is `artifex/apps/effect-editor/index2.html` / `INDEX2-CLEAN-0.2.6`. | Do not restore older emergency-route work or treat parity controls already repaired as outstanding. |
@@ -43,7 +44,7 @@ Status: in progress
 - Maintain this file, `docs/artifex/2A-global-to-do.md`, as the sole human-readable active Artifex backlog.
 - Maintain `docs/artifex/0A-index-of-files.md` as the controlled index of active specifications, subordinate references and archive treatment.
 - Inspect every real module/service and retain or create exactly one active specification document containing only its unique permanent purpose, ownership, route/baseline and specific interfaces.
-- Continue extraction after the Hub pass in the approved module order, with **Creation Guide** next.
+- Continue extraction after the Creation Guide pass in the approved module order, with **Project Editor** next.
 - Extract still-valid permanent rules, module-specific facts and open work from older READMEs, todos, audits, handovers, baseline matrices and status-refresh documents.
 - Check whether `artifex/shared/todo-guide/all-apps-todos.json` is read by application code before changing its role. If runtime-required, retain it as a machine/runtime dependency only, not a second human-maintained backlog.
 - Check whether project-level files such as `todos/project-manager-todos.json` or `todos/project-editor-todos.json` are user-project output/runtime dependencies and retain compatibility where required.
@@ -59,6 +60,8 @@ artifex/shared/todo-guide/all-apps-todos.json
 artifex/apps/*/docs/todo.md
 artifex/apps/*/*plan*.md
 artifex/shared/todo-guide/audits/**
+docs/artifex/05-creation-guide.md
+docs/artifex/05a-creation-guide-v119-implementation-notes.md
 docs/artifex/11-portal-hub.md
 docs/artifex/23-current-main-scan-and-pr20-recovery.md
 docs/artifex/24-stabilisation-cleanup-and-ui-resumption-plan.md
@@ -91,7 +94,7 @@ Status: open, app-by-app adoption required
 Priority: highest  
 Status: partly started; broad adoption remains open
 
-- Complete shared connected-project-folder service adoption across authoring apps.
+- Complete shared connected-project-folder service adoption across authoring apps beyond the current Creation Guide starter/intake implementation.
 - Make authoring modules load the active connected project's real owned files/indexes rather than unrelated demo or browser-local data when a project is connected.
 - Implement consistent save-state reporting: **Saved to Project Folder**, **Local Draft Only**, **Project File Changed**, **Conflict**, **Permission Required**, **No Folder Connected**, **Save Failed**.
 - Implement navigation protection when leaving an app with local-only unsaved work, offering Save and Continue, Stay Here, Continue Without Saving and Export Backup where relevant.
@@ -146,37 +149,40 @@ Verified implementation baseline: `artifex/index.html` / **Artifex Hub V1.1.4** 
 
 # Creation Guide
 
-Current documented baseline needing verification: V1.1.12 / connected-folder starter work mixed with transitional/local behaviour.  
-Audit order: next after Hub.
+Active specification created in this pass: `docs/artifex/4A-creation-guide.md`.  
+Verified implementation baseline: `artifex/apps/creation-guide/index.html` / **Artifex Creation Guide V1.1.12** on current `main`.
 
-## Verification and contract alignment
+## Verified complete or already present in V1.1.12
 
-- Verify current starter project initialisation from fresh `main`, including output files, folder layout and ZIP fallback behaviour.
-- Confirm Blank Starter creation uses `startScreenId: null` until a real registered start screen exists; do not repeat older missing-start-screen behaviour.
-- Verify remaining bootstrap/folder helper layers and decide whether active transition code needs later consolidation into permanent ownership.
-- Extract the single Creation Guide module specification and update `0A` when complete.
+- Connected Project Folder controls exist for connect and re-authorise actions.
+- **Create Starter Structure** writes the empty canonical starter foundation through shared folder/structure services without overwriting existing files.
+- Blank Starter Project initial output uses `startScreenId: null` until a real registered screen exists.
+- **Initial Asset Intake Setup** exists, with the six displayed intake source buckets, **Create Intake Folders** / **Verify Intake Folders** and **Skip for Now**.
+- Current Health presentation already reports connected-folder state, starter structure and intake setup status.
 
-## Outstanding feature work
+## Outstanding feature and cleanup work
 
-- Add **Initial Asset Intake Setup**: explain `intake/` staging, show the six standard source buckets, provide Create Intake Folders and Skip for Now, and write approved intake structure to the connected project folder.
-- Add a non-blocking **Recommended Starting Media** checklist for logo/title mark, background, player art, NPC art, interactable object, transition object and UI/icon placeholder set.
-- Add project logo identity flow: intake source → Asset Library promotion → final registered project logo reference → display in Creation Guide/project selector where appropriate.
-- Extend setup/readiness Health reporting for folder permission/save state, local drafts, intake completion/skipping, media readiness and invalid project-logo references.
-- Reuse Shared Health Guide checks rather than retaining duplicate long-term health logic.
+- Add a working non-blocking **Recommended Starting Media** checklist for logo/title mark, background, player art, NPC art, interactable object, transition object and icon/UI placeholder set; it currently appears only as a future/warning Health item.
+- Add project-logo identity flow: intake source → Asset Library promotion → final registered project logo reference → display in Creation Guide/project selector where appropriate.
+- Extend Health/readiness reporting for real recommended-media state and invalid project-logo reference; retain later shared Health Guide reuse rather than multiplying duplicate check owners.
+- Reconcile the current layered V1.1.12 implementation: `app-bootstrap.js` still patches an older `module-app.js`, and the current UI modules overlay older project metadata/label concepts. Perform this only as a focused versioned implementation pass, not documentation repair.
+- Reconcile browser-local project summary/active-project handoff with the eventual Shared Active Project Service while retaining connected project files as authored-data truth.
 - Add the Template Game project choice only after the populated connected-reference project is proven.
+- Decide archive or local-pointer treatment for `docs/artifex/05-creation-guide.md`, `docs/artifex/05a-creation-guide-v119-implementation-notes.md` and `artifex/apps/creation-guide/README.md` after `4A` is accepted.
 
 ---
 
 # Project Editor
 
-Current documented baseline needing verification: `artifex/apps/project-editor/index.html` / `v0.1.32 CONTRACT`.
+Current documented baseline needing verification: `artifex/apps/project-editor/index.html` / `v0.1.32 CONTRACT`.  
+Audit order: next after Creation Guide.
 
 ## Naming, baseline and save verification
 
 - Verify current Project Editor shell, route/version and save/export behaviour from current `main` only.
 - Remove remaining user-facing **Project Manager** terminology in versioned passes while preserving compatibility for legacy identifiers/files still read.
 - Migrate generated todo filename use from `todos/project-manager-todos.json` to `todos/project-editor-todos.json` only through explicit backward-compatible migration.
-- Extract the single Project Editor specification after Creation Guide.
+- Extract the single Project Editor specification.
 
 ## Connected project and structure editing
 
@@ -311,7 +317,7 @@ Accepted baseline: `artifex/apps/effect-editor/index2.html` / `INDEX2-CLEAN-0.2.
 
 Classification pending: confirm whether this remains a distinct maintained service specification or is sufficiently covered by the master contract plus implementation ownership.
 
-- Complete directory-handle persistence/re-authorisation and relative-path read/write adoption required by authoring modules.
+- Complete directory-handle persistence/re-authorisation and relative-path read/write adoption required by authoring modules beyond the current Creation Guide implementation.
 - Provide common save-state and unsaved-navigation guard behaviour.
 - Ensure project JSON never stores private local paths or browser handles.
 - Support safe validation/finalisation workflows where owning apps write staged/final content through the connected project.
@@ -325,7 +331,7 @@ Classification pending: confirm whether this warrants its own service specificat
 - Make all apps reliably load the selected active project's real owned content/indexes where connected-project integration is implemented.
 - Prevent apps from quietly showing unrelated demo/default state when a real active project is available.
 - Define the safe boundary between browser-saved workspace selection/state and the connected project folder as authored-data source of truth.
-- Reconcile the Hub V1.1.4 localStorage handoff as part of this decision, without making Hub responsible for authored project data.
+- Reconcile the Hub V1.1.4 and Creation Guide V1.1.12 localStorage handoff as part of this decision, without making either module responsible for authored project data.
 
 ---
 
@@ -412,7 +418,7 @@ These are documentation-control actions, not implementation approval:
 | PR / document area | Current interpretation | Consolidation treatment |
 |---|---|---|
 | Merged PR #47 — documentation-control foundation | Published `0A`, `1A` and `2A` to `main`, but `0A`/`1A` retained an incorrect reference to `docs/GLOBAL_TODO.md`. | Treat as foundation baseline and correct the backlog-path inconsistency in this documentation-only pass. |
-| This Hub extraction pass | Adds `3A`, corrects `0A`/`1A`, and refreshes `2A` for current Hub and Puzzle V1.35 baseline. | Review as a documentation-only PR; no runtime or archive operation is authorised by it. |
+| Draft PR #50 — Hub and Creation Guide extraction pass | Adds `3A` and `4A`, corrects `0A`/`1A`, and refreshes `2A` for verified current Hub, Creation Guide and Puzzle V1.35 baselines. | Review as a documentation-only PR; no runtime or archive operation is authorised by it. |
 | Open PR #40 — Scene/Effect status refresh | Scene status was superseded by the later accepted Scene Editor v0.37 record; status-refresh files are not final documentation authority. | Extract any unique outstanding task only; do not merge as another active status source. |
 | Open PR #44 — Puzzle V1.34 status refresh | Contains earlier Puzzle baseline evidence, now superseded for runtime by merged V1.35 PR #48. | Reconcile late in the Puzzle module-spec pass; do not merge as a competing final authority. |
 | Merged PR #48 — Puzzle Creator V1.35 planning pages | Establishes current Puzzle UI/content baseline and recovered placeholder planning pages. | Protect in this to-do until the later Puzzle specification extraction. |
@@ -432,6 +438,14 @@ artifex/shared/todo-guide/all-apps-todos.json
 artifex/apps/archetype-object-creator/docs/todo.md
 artifex/apps/effect-editor/docs/todo.md
 artifex/apps/quest-builder/docs/todo.md
+docs/artifex/05-creation-guide.md
+docs/artifex/05a-creation-guide-v119-implementation-notes.md
+artifex/apps/creation-guide/README.md
+artifex/apps/creation-guide/index.html at Artifex Creation Guide V1.1.12
+artifex/apps/creation-guide/v1/src/project-folder-setup.js
+artifex/apps/creation-guide/v1/src/intake-setup.js
+artifex/apps/creation-guide/v1/src/project-health.js
+artifex/shared/project-folder/project-structure-initializer.js
 docs/artifex/11-portal-hub.md
 docs/artifex/24-stabilisation-cleanup-and-ui-resumption-plan.md
 artifex/index.html at Artifex Hub V1.1.4
