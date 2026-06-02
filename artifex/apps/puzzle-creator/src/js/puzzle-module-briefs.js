@@ -91,34 +91,27 @@ export const puzzleModuleBriefs = {
   },
   'symbol-assembly': {
     displayName: 'Pattern Lock Puzzle',
-    launcherDescription: 'Arrange or rotate pieces to complete a rune, seal or ritual pattern.',
+    launcherDescription: 'Place emoji signs on a rotatable 3D surface-point form to satisfy its hint.',
     engineLabel: 'Symbol Assembly',
-    status: 'Planning placeholder · not implemented',
-    overview: 'An optional puzzle where the player places, rotates or selects small pieces to complete a larger symbol, seal, rune, mosaic, lock, ritual pattern or magical diagram. It can become a shape-fitting puzzle, rune alignment puzzle, tile placement challenge or complete-the-seal ritual.',
+    status: 'Playable prototype · Cube, Pyramid, Diamond and Sphere demos',
+    overview: 'A rotatable three-dimensional surface-point puzzle based on the raycast reference interaction. The prototype uses only outer points of each form: the player selects emoji signs, rotates the form, places signs on its points and checks whether the completed arrangement answers the hint.',
     gameplayLoop: [
-      'Present a board with incomplete slots and a collection of selectable pieces.',
-      'The player places or rotates pieces according to the selected puzzle rule.',
-      'Wrong placements provide visible or narrative feedback without falsely completing the pattern.',
-      'Completing the correct pattern triggers the selected completion effect and optional reward.'
+      'Choose a demonstration form: Cube, Pyramid, Diamond or Sphere.',
+      'Read the authored hint and objective for the selected form.',
+      'Select an emoji from the tray, rotate the form and place signs on outer surface points.',
+      'Press Check Pattern; incorrect arrangements receive non-spoiling feedback and a correct arrangement completes the pattern.'
     ],
     plannedSystems: [
-      ['Puzzle board', 'Seal circle, mosaic square, rune ring or lock plate.'],
-      ['Piece interaction', 'Draggable or selectable pieces with optional rotation rules.'],
-      ['Validation', 'Correct-pattern checking and wrong-placement feedback.'],
-      ['Completion', 'Seal glow, door unlock, relic reveal or another authored outcome.'],
-      ['Difficulty', 'Piece count, rotations, distractor pieces and optional limited tries or time.']
+      ['Surface-point form', '3D outer points only, with no constructed interior, rotating like the reference example.'],
+      ['Prototype templates', 'Cube face grouping, pyramid height bands, mirrored diamond and day/night sphere.'],
+      ['Item interaction', 'Emoji tray, surface placement, replacement, erasing, clear/reset and demonstration fill.'],
+      ['Validation', 'Check Pattern action with no automatic reveal of the incorrect points.'],
+      ['Later authoring', 'Custom images, text, symbols, item sets, custom solution layout and export are intentionally later work.']
     ],
     references: [
-      ['Raycast selection reference', 'https://threejs.org/examples/#webgl_instancing_raycast', 'Reference for selecting repeated puzzle pieces; a first version can still be built in 2D Canvas.']
+      ['Raycast surface-point reference', 'https://threejs.org/examples/#webgl_instancing_raycast', 'The intended interaction reference: a rotatable three-dimensional form made of selectable surface points.']
     ],
-    questions: [
-      'What is the first actual pattern: a rune seal, door lock, ritual diagram or mosaic?',
-      'Should the first version use drag-and-drop placement, click-to-slot placement, rotation, or a combination?',
-      'Should pieces snap into any slot and then validate, or only allow compatible slots?',
-      'What happens after success in the first example: unlock a door, reveal a relic, trigger magic, or complete an optional challenge?',
-      'What should wrong-placement feedback look and sound like, and should there be any fail condition?',
-      'Should the first build intentionally be simple 2D, with 3D or raycast visuals later?'
-    ]
+    questions: []
   },
   'item-order-puzzle': {
     displayName: 'Potion Match',
