@@ -47,6 +47,7 @@
     wrapWidthSetting: document.querySelector("#wrap-width-setting"),
     boldToggle: document.querySelector("#bold-toggle"),
     handdrawnToggle: document.querySelector("#handdrawn-toggle"),
+    copyImage: document.querySelector("#copy-image"),
     savePng: document.querySelector("#save-png")
   };
 
@@ -77,6 +78,7 @@
     elements.emptyMessage.style.display = "block";
     elements.emptyMessage.innerHTML = `<strong>${title}</strong><span>${detail}</span>`;
     elements.recognisedTokens.textContent = "—";
+    elements.copyImage.disabled = true;
     elements.savePng.disabled = true;
     state.rendered = false;
   }
@@ -155,8 +157,18 @@
     const ink = inkColour === "white" ? [255, 255, 255] : [0, 0, 0];
     for (let index = 0; index < pixels.length; index += 4) {
       const luminance = (pixels[index] * .2126) + (pixels[index + 1] * .7152) + (pixels[index + 2] * .0722);
-      const alpha = Math.max(0, Math.min(255, Math.round((218 - luminance) * 2.75)));
-      pixels[index] = ink[0]; pixels[index + 1] = ink[1]; pixels[index + 2] = ink[2]; pixels[index + 3] = alpha;
+      let alpha = Math.max(0, Math.min(255, Math.round((218 - luminance) * 2.75)));
+      if (state.handdrawn && alpha > 8) {
+        const pixelNumber = index / 4;
+        const x = pixelNumber % rect.w;
+        const y = Math.floor(pixelNumber / rect.w);
+        const grain = (Math.sin((x + 1) * 9.71 + (y + 1) * 3.77) + 1) / 2;
+        alpha = Math.round(alpha * (.62 + (grain * .38)));
+      }
+      pixels[index] = ink[0];
+      pixels[index + 1] = ink[1];
+      pixels[index + 2] = ink[2];
+      pixels[index + 3] = alpha;
     }
     tileContext.putImageData(imageData, 0, 0);
     return tileCanvas;
@@ -190,9 +202,7 @@
         if (current.length && lineWidth(language, proposed, glyphHeight, gap) > state.wrapWidth) {
           output.push(current);
           current = [token];
-        } else {
-          current = proposed;
-        }
+        } else current = proposed;
       }
       if (current.length) output.push(current);
     }
@@ -204,10 +214,10 @@
     const waveA = Math.sin(seed * 1.71);
     const waveB = Math.cos(seed * 1.17);
     return {
-      x: Math.round(waveA * 2),
-      y: Math.round(waveB * 3),
-      rotation: waveA * 0.035,
-      scale: 1 + (waveB * 0.025)
+      x: Math.round(waveA * 4),
+      y: Math.round(waveB * 6),
+      rotation: waveA * .105,
+      scale: 1 + (waveB * .065)
     };
   }
 
@@ -222,6 +232,12 @@
     ctx.rotate(irregular.rotation);
     const left = -drawW / 2;
     const top = -drawH / 2;
+    if (state.handdrawn) {
+      ctx.globalAlpha = .18;
+      ctx.drawImage(tile, left - 2, top + 1, drawW, drawH);
+      ctx.drawImage(tile, left + 2, top - 1, drawW, drawH);
+      ctx.globalAlpha = 1;
+    }
     if (state.bold) {
       ctx.drawImage(tile, left - 1, top, drawW, drawH);
       ctx.drawImage(tile, left + 1, top, drawW, drawH);
@@ -256,13 +272,13 @@
     if (language.direction === "rtl") lines = lines.map((line) => line.slice().reverse());
     lines = wrappedLines(language, lines, glyphHeight, tileGap);
     const lineGap = state.lineSpacing;
-    const padding = Math.max(18, Math.round(glyphHeight * .38)) + (state.handdrawn ? 5 : 0);
+    const padding = Math.max(18, Math.round(glyphHeight * .38)) + (state.handdrawn ? 9 : 0);
     const measuredLines = lines.map((line) => {
       const widths = line.map((token) => glyphWidth(language, token, glyphHeight));
       return { tokens: line, widths, width: widths.reduce((total, width) => total + width, 0) + tileGap * Math.max(0, line.length - 1) };
     });
     const maxWidth = Math.max(...measuredLines.map((line) => line.width));
-    const canvasWidth = maxWidth + padding * 2;
+    const canvasWidth = Math.max(1, maxWidth + padding * 2);
     const canvasHeight = glyphHeight * measuredLines.length + lineGap * Math.max(0, measuredLines.length - 1) + padding * 2;
     elements.resultCanvas.width = canvasWidth;
     elements.resultCanvas.height = canvasHeight;
@@ -282,6 +298,7 @@
     });
     elements.resultCanvas.classList.add("is-visible");
     elements.emptyMessage.style.display = "none";
+    elements.copyImage.disabled = false;
     elements.savePng.disabled = false;
     state.rendered = true;
     elements.recognisedTokens.textContent = tokens.map((token) => token === "linebreak" ? "↵" : token).join(" · ");
@@ -337,6 +354,23 @@
     elements.rulesDialog.showModal();
   }
 
+  async function copyRenderedImage() {
+    if (!state.rendered) return;
+    if (!navigator.clipboard || typeof ClipboardItem === "undefined") {
+      showWarning("Copy image is not supported in this browser. Use Export PNG instead.");
+      return;
+    }
+    try {
+      const blob = await new Promise((resolve, reject) => elements.resultCanvas.toBlob((value) => value ? resolve(value) : reject(new Error("Image unavailable")), "image/png"));
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      const originalLabel = elements.copyImage.textContent;
+      elements.copyImage.textContent = "Copied";
+      window.setTimeout(() => { elements.copyImage.textContent = originalLabel; }, 1100);
+    } catch (error) {
+      showWarning("The browser blocked image copying. Use Export PNG instead.");
+    }
+  }
+
   elements.languageSelect.addEventListener("change", () => selectLanguage(elements.languageSelect.value));
   elements.modeRadios.forEach((radio) => radio.addEventListener("change", () => {
     if (!radio.checked) return; setInputMode(radio.value); const language = activeLanguage(); elements.sourceInput.value = language.ready ? (language.examples[state.mode] || "") : ""; if (state.image && language.ready) renderCurrentInput();
@@ -354,6 +388,7 @@
   elements.wrapWidth.addEventListener("input", () => { state.wrapWidth = Number(elements.wrapWidth.value); elements.wrapWidthOutput.textContent = String(state.wrapWidth); if (state.rendered) renderCurrentInput(); });
   elements.boldToggle.addEventListener("change", () => { state.bold = elements.boldToggle.checked; if (state.rendered) renderCurrentInput(); });
   elements.handdrawnToggle.addEventListener("change", () => { state.handdrawn = elements.handdrawnToggle.checked; if (state.rendered) renderCurrentInput(); });
+  elements.copyImage.addEventListener("click", copyRenderedImage);
   elements.savePng.addEventListener("click", () => {
     if (!state.rendered) return;
     try { const link = document.createElement("a"); link.download = `${state.languageId}-inscription.png`; link.href = elements.resultCanvas.toDataURL("image/png"); link.click(); }
