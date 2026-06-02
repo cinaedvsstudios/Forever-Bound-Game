@@ -1,13 +1,14 @@
 # Archetype Object Creator — Current State After V1.35 Review
 
 Date recorded: 2026-05-31  
-Status: Active code exists on `main`, but V1.35 is unverified and not accepted as clean integration.
+Historical status: V1.35 was reviewed as active code on `main` but unverified and not accepted as clean integration.  
+Follow-up status: V1.36 merged from PR #38 on 2 June 2026; see the follow-up section at the end of this document for current validation state.
 
 ## Why This Note Exists
 
 V1.35 was implemented as an extended repair/integration pass after the approved V1.34 Step 5 persistence and layout work. The pass made project-folder save and Sound Generator integration changes without first completing the required architecture review and without completing browser or disposable-project verification.
 
-This note is the current-state handover. Do not treat V1.35 as complete merely because the visible badge says V1.35.
+This note is the historical V1.35 current-state handover. Do not treat its V1.35 findings as the description of the current V1.36 runtime; use the follow-up section for what happened next.
 
 ## Authoritative Contracts To Read Before Further Editing
 
@@ -42,22 +43,22 @@ V1.34 attempted to repair the V1.33 Step 5 split regression and polish the layou
 - Desktop Step 5 sizing was adjusted to reduce horizontal overflow/clipping.
 - Frame Fix was intended to retain its two-column correction layout.
 
-Verification still required: completion/ready persistence, frame persistence, drag-order persistence, saved-session resume, layout overflow, and Frame Fix behaviour in the live app.
+Verification still required at the time of the V1.35 review: completion/ready persistence, frame persistence, drag-order persistence, saved-session resume, layout overflow, and Frame Fix behaviour in the live app.
 
-## V1.35 Changes Present In Code But Not Yet Accepted
+## V1.35 Changes Present In Code But Not Yet Accepted At Review Time
 
-The following additions or behaviour changes are currently active in the codebase and require audit/testing before being treated as approved:
+The following additions or behaviour changes were active during the V1.35 review and required audit/testing before being treated as approved:
 
 ### Save workflow and project-folder integration
 
 - A new active module was added: `v1/src/object-project-storage.js`.
 - The File menu was changed to include `Connect Project Folder` and `Save Object to Project`.
 - Step 5 toolbar wording was changed to `Save Draft`, `Save Project` and `Finish`.
-- `Save Project` is intended to write an object record under `archetypes/objects/` and update `archetypes/object-index.json`.
-- The project-save implementation currently saves a browser draft before attempting the project write.
-- The project-save implementation currently strips browser frame `dataUrl` content from the saved project record and writes provisional `previewOnly` / `draftSourceName` handling for uploaded frame previews.
+- `Save Project` was intended to write an object record under `archetypes/objects/` and update `archetypes/object-index.json`.
+- The project-save implementation saved a browser draft before attempting the project write.
+- The project-save implementation stripped browser frame `dataUrl` content from the saved project record and wrote provisional `previewOnly` / `draftSourceName` handling for uploaded frame previews.
 
-The final uploaded-frame/asset-promotion workflow is not approved. It must either register/promote proper final assets and store their `asset_` IDs, or deliberately block final object save until required Asset IDs are assigned. Do not silently treat provisional fields as a settled schema.
+The final uploaded-frame/asset-promotion workflow was not approved during the V1.35 review. It required a proper final asset/register flow or deliberate blocking until required Asset IDs were assigned.
 
 ### Step 5 UI changes
 
@@ -65,7 +66,7 @@ The final uploaded-frame/asset-promotion workflow is not approved. It must eithe
 - ZIP wording was changed to present it as backup/fallback rather than normal save.
 - The selected-task state label was changed to `Mark Task Ready`.
 
-The meaning of `Mark Task Ready` is not yet approved: it currently behaves as a manual checklist flag and may not prove that all required assets/configuration exist.
+At review time, the meaning of `Mark Task Ready` was not approved: it behaved as a manual checklist flag and did not itself prove that all required assets/configuration existed.
 
 ### Procedural Sound Generator integration
 
@@ -73,19 +74,19 @@ The meaning of `Mark Task Ready` is not yet approved: it currently behaves as a 
 - Step 5 was changed to attempt to open the shared Procedural Sound Generator and assign a returned `asset_sfx_...` ID into the selected task.
 - Sound-event fields were shifted toward registered asset-ID semantics rather than raw sound paths.
 
-The shared contract in `docs/artifex/22-sound-archetype-generator.md` is the intended rule: the generator owns recipe creation/registration, and Object Creator must store only returned `asset_` IDs. The Object Creator integration and actual callback/save behaviour remain unverified.
+The shared contract in `docs/artifex/22-sound-archetype-generator.md` remains the intended rule: the generator owns recipe creation/registration, and Object Creator stores only returned `asset_` IDs. Sound target assignment remains part of the V1.36 post-merge validation work listed below.
 
-## Architecture Risk Introduced By The Pass
+## Architecture Risk Identified In The V1.35 Pass
 
-The live app is not importing hundreds of separate patch files, but Step 5 remains vulnerable to layering problems because its final UI is assembled across multiple modules:
+At V1.35, Step 5 was vulnerable to layering problems because its final UI was assembled across multiple modules:
 
-- `object-wizard-build-checklist.js` renders base Step 5 markup and save controls.
-- `object-wizard-step5.js` uses observer-driven DOM enhancement for fields, Action Behaviour, Sound Events and the Sound Generator button.
-- `object-wizard-step5-layout.js` separately rearranges the detail panel and injects layout rules.
-- `object-wizard-asset-package.js` separately adds ZIP controls and action-button sizing styles.
-- `object-project-storage.js` separately introduces the new direct-save workflow.
+- `object-wizard-build-checklist.js` rendered base Step 5 markup and save controls.
+- `object-wizard-step5.js` used observer-driven DOM enhancement for fields, Action Behaviour, Sound Events and the Sound Generator button.
+- `object-wizard-step5-layout.js` separately rearranged the detail panel and injected layout rules.
+- `object-wizard-asset-package.js` separately added ZIP controls and action-button sizing styles.
+- `object-project-storage.js` separately introduced the new direct-save workflow.
 
-A cleanup pass must not add another patch/wrapper. It must decide ownership of Step 5 structure, controls, layout and project-save behaviour, then integrate or revert the provisional V1.35 work in those owning modules.
+PR #38 addressed the touched Step 5 ownership rather than adding another overlay/patch layer. Future corrections must continue to extend named owners rather than reintroducing installer/observer patch stacking.
 
 ## Temporary Files Created And Removed During V1.35 Work
 
@@ -97,22 +98,9 @@ The following were created during the pass and then removed rather than remainin
 
 Do not recreate these as new layering modules. Any future correction must be integrated into approved owners.
 
-## Required Next Work Before More Features
+## Historical V1.35 Verification Checklist
 
-1. Inspect the current V1.35 imports and active modules; do not add overlays or wrappers.
-2. Run syntax checks on every V1.34/V1.35 changed JavaScript file.
-3. Browser-test the Step 5 state-contract repair: ready state, frame slots/uploads, order persistence and resume persistence.
-4. Decide the final approved Step 5 save language and behaviour before retaining or changing `Save Draft`, `Save Project` and `Finish`.
-5. Decide whether `Mark Task Ready` remains a manual checklist control or becomes validation-backed readiness.
-6. Audit `object-project-storage.js` against the connected-folder contract and use only a disposable test project for writes.
-7. Resolve the final frame/asset workflow; no project record should treat browser preview files as final assets.
-8. Verify the shared Sound Generator popup, its asset-index registration, and `Save and Assign Here` callback before accepting the Object Creator hookup.
-9. Consolidate Step 5 structure/style ownership without adding a third transitional enhancer layer.
-10. Only after verification, change the to-do status from unverified/in review to done.
-
-## Manual Verification Checklist
-
-Use a fresh-cache URL when testing the live app. Test in two phases.
+The following checklist records what had to be investigated after the V1.35 review. Current actionable testing is stated in the V1.36 follow-up section below.
 
 ### Safe UI and browser-draft checks
 
@@ -137,25 +125,25 @@ Use a fresh-cache URL when testing the live app. Test in two phases.
 - Test `🎛️` Sound Events creation and confirm whether a synth recipe is registered under `assets/audio/sfx/`, an `asset_sfx_...` record appears in `assets/asset-index.json`, and the same ID is inserted into the Object Creator draft.
 - Confirm Backup ZIP still downloads uploaded preview material as the fallback/recovery route.
 
-## Documentation Status
+## V1.36 PR #38 follow-up — updated 2 June 2026 after merge
 
-- `artifex/apps/archetype-object-creator/README.md` and `docs/todo.md` must reflect this unverified V1.35 status.
-- `APPLY_INSTRUCTIONS.txt` is historical and must not be used as current installation or implementation guidance.
-- `docs/artifex/06-object-library.md` should identify Archetype Object Creator as the active authoring module and point here for implementation status.
-- `docs/artifex/19-project-file-contracts.md` remains the architecture contract; it is not evidence that V1.35 has passed testing.
-- `docs/artifex/22-sound-archetype-generator.md` remains the shared sound contract; Object Creator usage is provisional until verified.
+PR #38 was merged into `main` on 2 June 2026 at merge commit `ef4f37ebe5850c6367db59e57c01e2bb89949384`. V1.36 is therefore the current Object Creator runtime on `main`; it is no longer an open preview implementation.
 
-## V1.36 PR #38 follow-up — recorded 2 June 2026
-
-Open PR #38 contains the intended V1.36 implementation pass that responds to the V1.35 problems recorded above. It remains **pending manual acceptance and merge** and must not be treated as current `main` merely because its preview displays V1.36.
-
-The creator has manually accepted the following PR-preview UI changes for inclusion in PR #38:
+The creator manually confirmed these visible UI changes in the PR preview before merge, and they are now accepted on `main`:
 
 - repaired Step 5 Action Behaviour layout with no visible control/text overlap;
 - working **Add Frame Event** row creation;
 - click-to-fill behaviour for **Add Empty Frame Slot** while preserving slot order;
 - enlarged saved-wizard crystal-ball icon without the unwanted circular button border/background.
 
-Still pending before merge: disposable-project verification of in-progress staging save and reopen, finalisation refusal/asset-promotion safety, primary asset mapping/overwrite prevention, Sound Generator stale-target assignment and per-frame correction persistence.
+The broader V1.36 save/finalisation lifecycle was merged before its full disposable-project validation was completed. It remains implemented on `main` but **requires post-merge validation before new Object Creator feature work**:
 
-This V1.35 document remains a historical record of the risks that prompted PR #38; this follow-up does not rewrite those historical findings.
+- Save Project (In Progress) must stage uploaded images without stripping visible/editable previews from the current browser session.
+- File → Open Project Object must restore staged frame previews for continued Step 5 editing.
+- Invalid Finish / Mark Object Ready must refuse readiness without writing final asset files or ready records.
+- Valid finalisation must promote/register media and correctly map primary gameplay/portrait asset IDs to top-level visual fields.
+- Multiple primary Gameplay Sprite or Dialogue Portrait images must be refused before fixed-path final output can overwrite files.
+- Sound Generator stale-target assignment and per-frame correction persistence must be checked.
+- Console/module health and absence of duplicate Step 5 controls must be checked.
+
+This document remains the historical V1.35 review plus the dated V1.36 outcome; it does not claim that untested V1.36 lifecycle behaviour has passed.
