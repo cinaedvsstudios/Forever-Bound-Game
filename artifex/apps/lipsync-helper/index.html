@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Artifex Lip-Sync Helper · LIPSYNC-HELPER-0.1</title>
+  <link rel="stylesheet" href="./lipsync-helper.css?v=LIPSYNC-HELPER-0.1">
+</head>
+<body>
+  <div class="editor-shell">
+    <header class="top-bar">
+      <div class="brand" title="Artifex Lip-Sync Helper prototype">
+        <img class="brand-logo" src="../../artifexlogo.png" alt="Artifex logo">
+        <span class="brand-title-stack">
+          <img class="brand-title" src="../../artifextitle.png" alt="Artifex">
+          <span class="brand-subtitle">Lip-Sync Helper · <span class="version-pill">PATCH-WORKFLOW-0.1</span></span>
+        </span>
+      </div>
+      <span class="title-divider"></span>
+      <nav class="editor-menu" aria-label="Prototype actions">
+        <label class="btn primary file-button" title="Upload an MP4, WebM or browser-supported video.">
+          Upload Video
+          <input id="videoFile" class="hidden-file" type="file" accept="video/*">
+        </label>
+        <label class="btn file-button" title="Load a previously exported repair plan.">
+          Import Plan
+          <input id="planFile" class="hidden-file" type="file" accept=".json,application/json">
+        </label>
+        <button id="saveLocalBtn" class="btn" type="button" title="Save current repair-region metadata in this browser.">Save Local</button>
+        <button id="restoreLocalBtn" class="btn" type="button" title="Restore the last repair plan saved in this browser.">Restore Local</button>
+        <button id="downloadPlanBtn" class="btn" type="button" title="Download repair regions and patch settings as JSON.">Download Plan JSON</button>
+        <button id="resetBtn" class="btn" type="button" title="Clear this prototype workspace.">Blank</button>
+      </nav>
+      <span class="top-spacer"></span>
+      <span id="statusText" class="status ok">Ready for a video.</span>
+      <a class="btn" href="../../">Portal</a>
+    </header>
+
+    <main class="main-layout">
+      <aside class="side-panel controls-panel" aria-label="Lip-sync repair controls">
+        <div class="file-pill">
+          <span class="file-pill-line"><span class="file-pill-label">Module:</span> <span class="file-pill-value">Mouth Patch Repair Studio</span></span>
+          <span class="file-pill-line"><span class="file-pill-label">Video:</span> <span id="videoName" class="file-pill-value">No video loaded</span></span>
+          <span class="file-pill-line"><span class="file-pill-label">Plan:</span> <span id="planState" class="file-pill-value">Unsaved</span></span>
+        </div>
+
+        <section class="panel-card">
+          <h2>Source Video</h2>
+          <div class="field-row">
+            <div class="field"><label for="fpsInput">Working FPS</label><select id="fpsInput"><option value="24">24 fps</option><option value="25">25 fps</option><option value="30" selected>30 fps</option><option value="50">50 fps</option><option value="60">60 fps</option></select></div>
+            <div class="field"><label>Duration</label><output id="durationText" class="display-output">--:--.---</output></div>
+          </div>
+          <p class="small">FPS is used for forward/back frame stepping only. The uploaded video's original timing remains unchanged.</p>
+          <button id="buildStripBtn" class="btn full" type="button" disabled>Build Donor Frame Strip</button>
+        </section>
+
+        <section class="panel-card region-maker">
+          <h2>Mark Faulty Words</h2>
+          <div class="time-markers">
+            <div><span>IN</span><strong id="markInText">--:--.---</strong></div>
+            <div><span>OUT</span><strong id="markOutText">--:--.---</strong></div>
+          </div>
+          <div class="button-row">
+            <button id="markInBtn" class="btn" type="button" disabled>Set In</button>
+            <button id="markOutBtn" class="btn" type="button" disabled>Set Out</button>
+            <button id="clearMarksBtn" class="btn" type="button">Clear</button>
+          </div>
+          <div class="field">
+            <label for="phraseInput">Correct word / short phrase</label>
+            <input id="phraseInput" type="text" placeholder="e.g. End, Laughter, Ohhh, it be" autocomplete="off">
+          </div>
+          <div class="button-row"><button id="addRegionBtn" class="btn primary" type="button" disabled>Add Repair Region</button><button id="updateRegionBtn" class="btn" type="button" hidden>Update Selected Text</button></div>
+        </section>
+
+        <section class="panel-card" id="patchInspector">
+          <h2>Mouth Patch Inspector</h2>
+          <p id="noRegionMessage" class="small">Select a repair region to capture and adjust its mouth patch.</p>
+          <div id="patchFields" hidden>
+            <div class="field"><label>Selected Repair</label><output id="selectedRepairLabel" class="display-output"></output></div>
+            <div class="button-row">
+              <button id="captureModeBtn" class="btn primary" type="button">Capture Donor Mouth</button>
+              <button id="placeModeBtn" class="btn" type="button">Position Patch</button>
+              <button id="clearPatchBtn" class="btn" type="button">Remove Patch</button>
+            </div>
+            <p class="small">Capture: seek to a good frame, then drag a box around the usable mouth. Position: drag the patch over the faulty mouth.</p>
+            <div class="field-row">
+              <div class="field"><label for="patchX">X</label><input id="patchX" type="number" step="1"></div>
+              <div class="field"><label for="patchY">Y</label><input id="patchY" type="number" step="1"></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label for="patchScale">Scale <output id="patchScaleOut">100%</output></label><input id="patchScale" type="range" min="30" max="220" step="1" value="100"></div>
+              <div class="field"><label for="patchRotation">Rotate <output id="patchRotationOut">0°</output></label><input id="patchRotation" type="range" min="-45" max="45" step="1" value="0"></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label for="patchFeather">Feather <output id="patchFeatherOut">5 px</output></label><input id="patchFeather" type="range" min="0" max="30" step="1" value="5"></div>
+              <div class="field"><label for="patchOpacity">Opacity <output id="patchOpacityOut">100%</output></label><input id="patchOpacity" type="range" min="0" max="100" step="1" value="100"></div>
+            </div>
+            <label class="check-row"><input id="showPatch" type="checkbox" checked> Show patch while previewing</label>
+            <div class="donor-meta"><span>Donor frame</span><strong id="donorTime">None captured</strong></div>
+          </div>
+        </section>
+      </aside>
+
+      <section class="workspace-column" aria-label="Video preview workspace">
+        <div class="workspace-toolbar">
+          <button id="playBtn" class="btn" type="button" disabled>▶ Play</button>
+          <button id="backFrameBtn" class="btn" type="button" disabled>◀ Frame</button>
+          <button id="forwardFrameBtn" class="btn" type="button" disabled>Frame ▶</button>
+          <button id="loopBtn" class="btn" type="button" disabled>Loop Selected: Off</button>
+          <span class="workspace-time">Time <strong id="currentTimeText">00:00.000</strong></span>
+          <span id="canvasModeLabel" class="mode-pill">Preview mode</span>
+        </div>
+        <div class="stage-wrap">
+          <canvas id="videoCanvas" width="1280" height="720" aria-label="Video frame and mouth patch preview"></canvas>
+          <div id="blankMessage" class="blank-message">
+            <strong>Lip-Sync Helper</strong>
+            <span>Upload a video to mark broken words and test mouth patch replacements.</span>
+          </div>
+        </div>
+        <div class="timeline-panel">
+          <header>
+            <h2>Repair Timeline</h2>
+            <p>Click the filmstrip to seek · use Set In / Set Out to mark a broken word</p>
+          </header>
+          <canvas id="timelineCanvas" width="1280" height="130" aria-label="Video timeline and repair regions"></canvas>
+        </div>
+        <div class="donor-panel">
+          <header>
+            <h2>Donor Frame Browser</h2>
+            <p>Click a candidate frame, then use Capture Donor Mouth and drag over a good mouth shape.</p>
+          </header>
+          <div id="donorStrip" class="donor-strip"><p class="empty">Build the donor frame strip after loading a video.</p></div>
+        </div>
+      </section>
+
+      <aside class="side-panel repair-panel" aria-label="Repair region list">
+        <section class="panel-card">
+          <h2>Repair Queue</h2>
+          <p class="small">One card per failed word or short phrase. The patch remains editable and does not alter the source video.</p>
+          <div id="repairList" class="repair-list"><p class="empty">No repair regions marked yet.</p></div>
+        </section>
+        <section class="panel-card">
+          <h2>Visible Mouth Map</h2>
+          <div id="visemeMap" class="viseme-map"><p class="small">Enter a phrase to see its approximate mouth-shape sequence.</p></div>
+        </section>
+        <section class="panel-card future-card">
+          <h2>Prototype Boundary</h2>
+          <p class="small">This first prototype proves time marking, phrase mapping, donor-frame capture, feathered overlay preview and repair-plan export. Automatic face scanning and final MP4 re-rendering are not connected yet.</p>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <video id="sourceVideo" class="hidden-video" playsinline preload="metadata"></video>
+  <div id="toast" class="artifex-toast" role="status" aria-live="polite"></div>
+  <script src="./lipsync-helper.js?v=LIPSYNC-HELPER-0.1"></script>
+  <script src="./lipsync-helper-live-preview.js?v=LIPSYNC-HELPER-0.1"></script>
+</body>
+</html>
