@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Artifex FX Debug — Smoke Engine Prototype V0.1</title>
+  <title>Artifex FX Debug — Smoke Engine Prototype V0.2</title>
   <link rel="stylesheet" href="../atmosphere-volume/styles.css?v=0.4" />
 </head>
 <body>
@@ -12,7 +12,7 @@
       <div class="brand-mark"><span>ᚠ</span></div>
       <div class="brand-copy">
         <h1>ARTIFEX</h1>
-        <p>FX Debug Laboratory <span class="version-pill">SMOKE-ENGINE-0.1</span></p>
+        <p>FX Debug Laboratory <span class="version-pill">SMOKE-ENGINE-0.2</span></p>
       </div>
       <div class="divider" aria-hidden="true"></div>
       <div class="prototype-label">Standalone smoke test · separate from fog engine</div>
@@ -82,7 +82,7 @@
 
       <section class="card">
         <header><h2>Ribbon Wisps</h2></header>
-        <p class="hint">Wisps now form, grow to a maximum length, deform and fade away before restarting with a different shape.</p>
+        <p class="hint">Wisps form as smooth continuous curves, grow, deform and fade away before restarting with a different shape.</p>
         <label>Wisp Amount <output id="wisp-count-out">7</output>
           <input id="wisp-count" type="range" min="0" max="14" step="1" value="7" />
         </label>
@@ -154,7 +154,7 @@
 
       <section class="card">
         <header><h2>Performance / Test</h2></header>
-        <p class="hint">The smoke is rendered to a reduced-size transparent FX buffer, then composited over the sample scene. The FPS readout helps identify whether a mode is too heavy.</p>
+        <p class="hint">The smoke is rendered to a transparent FX buffer, then composited over the sample scene. The FPS readout helps identify whether a mode is too heavy.</p>
         <button id="regenerate" class="action-button" type="button">Regenerate Smoke Forms</button>
       </section>
     </aside>
@@ -174,6 +174,6 @@
     </section>
   </main>
   <div id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./smoke-engine.js?v=0.1"></script>
+  <script type="module" src="./smoke-engine.js?v=0.2"></script>
 </body>
 </html>
