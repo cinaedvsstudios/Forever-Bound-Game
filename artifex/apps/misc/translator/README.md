@@ -1,0 +1,80 @@
+# Forever Bound — Inscription Renderer
+
+A compact charcoal, purple and gold HTML/JavaScript renderer for creating screenshotable inscriptions from sprite-sheet tiles. The interface is designed as a centred app-style card: choose a script tradition, paste renderer input, render it, then toggle the result between white-on-black and black-on-white for capture or export.
+
+## Current status
+
+- The interface includes three separated language tabs:
+  - **Runispeleus** — Mel's scroll-language display layer; JavaScript placeholder ready for its atlas mapping.
+  - **Saga-Demotic** — Egyptian archive display layer; JavaScript placeholder ready for its right-to-left atlas mapping.
+  - **Volkhv–Tartessian** — Nyx's family ritual script; working renderer included.
+- `js/languages/volkhv-tartessian.js` contains the complete token parser and cell coordinates for the supplied finished glyph chart.
+- Each future language can be implemented by editing only its own file under `js/languages/`.
+
+## How to run it
+
+The page is static, but use a local web server so the canvas can safely export PNG images from the sprite sheet.
+
+From this folder, run one of:
+
+```bash
+python -m http.server 8080
+```
+
+or serve it through VS Code Live Server, Vite, GitHub Pages or the Artifex app.
+
+Then open `http://localhost:8080` in the browser.
+
+## Volkhv–Tartessian input modes
+
+### Renderer text
+
+This accepts paste-ready renderer wording, for example:
+
+```text
+Khrn paareeoo.
+Khro ueronaŕkee.
+Khro {Niks}.
+```
+
+Rules already implemented:
+
+- Normal spaces render as the break/seal glyph.
+- Phrase-final periods render as the break/seal glyph.
+- `{...}` creates opening and closing break/seal glyphs without duplicating adjacent seals.
+- The renderer normalises `w → u`, `v → b → p-family`, `y → i`, `x → ks`, `c/g → k-family`, `b → p-family`, and `d → t-family`.
+- Syllabic tokens use longest-match parsing so `pa`, `ko` and `tu` are chosen before standalone stop signs.
+
+### Glyph tokens
+
+This accepts exact tokens separated by spaces, for example:
+
+```text
+k h r n space pa a r e e o o space
+```
+
+Use `space`, `seal`, `[space]`, `[seal]`, or `.` to insert the break/seal glyph.
+
+## Included files
+
+```text
+index.html
+styles.css
+assets/
+  volkhv-tartessian-glyph-chart.png
+js/
+  app.js
+  languages/
+    volkhv-tartessian.js
+    runispeleus.js
+    saga-demotic.js
+```
+
+## Replacing the Volkhv–Tartessian sprite sheet
+
+The Upload/Replace sheet button accepts an image at runtime. It currently expects the same chart layout and cell positions as the included PNG. When a new trimmed atlas or a differently arranged sheet is used, update only `glyphMap` in `js/languages/volkhv-tartessian.js`.
+
+
+## UI preview note
+
+`index.html` includes the interface styling inline as well as in `styles.css`, so the page keeps its intended charcoal/purple/gold appearance when opened as a standalone HTML preview. The language parsing and glyph mapping remain separated into their own JavaScript files for editing.
