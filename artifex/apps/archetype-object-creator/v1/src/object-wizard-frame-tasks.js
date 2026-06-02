@@ -15,10 +15,22 @@ export function createObjectWizardFrameTasks({ wizardState, content, getRequirem
       box.className = `wizard-frame-box ${index === Number(data.currentFrameIndex || 0) ? 'is-current' : ''}`;
       box.draggable = true;
       const correction = correctionForFrame(data, index);
-      box.innerHTML = `<div class="wizard-frame-thumb">${frame.dataUrl ? `<img src="${frame.dataUrl}" style="${correctionStyle(correction)}" alt="${escapeHtml(frame.name || `Frame ${index + 1}`)}" />` : `<span>${escapeHtml(frame.name || frame.staging?.originalName || frame.assetId || `Frame ${index + 1}`)}</span>`}</div><div class="wizard-frame-meta"><button type="button" data-left>‹</button><button type="button" data-remove>×</button><button type="button" data-right>›</button></div>`;
-      box.querySelector('[data-left]').addEventListener('click', () => moveFrame(requirementId, index, index - 1));
-      box.querySelector('[data-right]').addEventListener('click', () => moveFrame(requirementId, index, index + 1));
-      box.querySelector('[data-remove]').addEventListener('click', () => removeFrame(requirementId, index));
+      const empty = isEmptyFrameSlot(frame);
+      const thumbnail = frame.dataUrl
+        ? `<img src="${frame.dataUrl}" style="${correctionStyle(correction)}" alt="${escapeHtml(frame.name || `Frame ${index + 1}`)}" />`
+        : empty
+          ? `<button type="button" data-fill-empty title="Choose an image for this frame" style="width:100%;height:100%;padding:7px;display:grid;place-items:center;gap:4px;background:transparent;border:1px dashed rgba(226,204,167,.32);border-radius:8px;color:rgba(255,240,206,.82);font-size:10px"><span>${escapeHtml(frame.name || `Frame ${index + 1}`)}</span><strong style="font-size:10px">Click to add image</strong></button>`
+          : `<span>${escapeHtml(frame.name || frame.staging?.originalName || frame.assetId || `Frame ${index + 1}`)}</span>`;
+      box.innerHTML = `<div class="wizard-frame-thumb">${thumbnail}</div><div class="wizard-frame-meta"><button type="button" data-left>‹</button><button type="button" data-remove>×</button><button type="button" data-right>›</button></div>`;
+      box.querySelector('[data-left]').addEventListener('click', (event) => { event.stopPropagation(); moveFrame(requirementId, index, index - 1); });
+      box.querySelector('[data-right]').addEventListener('click', (event) => { event.stopPropagation(); moveFrame(requirementId, index, index + 1); });
+      box.querySelector('[data-remove]').addEventListener('click', (event) => { event.stopPropagation(); removeFrame(requirementId, index); });
+      box.querySelector('[data-fill-empty]')?.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setCurrentFrame(requirementId, index);
+        openFrameSlotPicker(requirementId, index);
+      });
       box.addEventListener('click', () => setCurrentFrame(requirementId, index));
       box.addEventListener('dragstart', (event) => event.dataTransfer.setData('text/plain', String(index)));
       box.addEventListener('dragover', (event) => { event.preventDefault(); box.classList.add('is-drag-over'); });
@@ -26,6 +38,11 @@ export function createObjectWizardFrameTasks({ wizardState, content, getRequirem
       box.addEventListener('drop', (event) => {
         event.preventDefault();
         box.classList.remove('is-drag-over');
+        const imageFile = [...event.dataTransfer.files].find((file) => file.type.startsWith('image/'));
+        if (empty && imageFile) {
+          fillFrameSlot(requirementId, index, imageFile);
+          return;
+        }
         const from = Number(event.dataTransfer.getData('text/plain'));
         if (Number.isFinite(from)) moveFrame(requirementId, from, index);
       });
@@ -37,7 +54,7 @@ export function createObjectWizardFrameTasks({ wizardState, content, getRequirem
     Promise.all(files.map(readFrameFile)).then((newFrames) => {
       const data = ensureFrameCorrections(requirementId);
       const frames = [...(data.frames || []), ...newFrames];
-      setRequirementData(requirementId, { ...withoutLegacyCorrection(data), frames, frameCount: frames.length, imageAssetIds: frames.map((frame) => frame.name).join(', ') });
+      setRequirementData(requirementId, { ...withoutLegacyCorrection(data), frames, frameCount: frames.length, imageAssetIds: imageAssetSummary(frames) });
       renderRequirementDetail(findRequirementById(requirementId));
     });
   }
@@ -53,9 +70,42 @@ export function createObjectWizardFrameTasks({ wizardState, content, getRequirem
   function addEmptyFrame(requirementId) {
     const data = ensureFrameCorrections(requirementId);
     const frames = [...(data.frames || []), { id: `frame_${Date.now().toString(36)}`, name: `Frame ${(data.frames || []).length + 1}`, assetId: '', dataUrl: '' }];
-    setRequirementData(requirementId, { ...withoutLegacyCorrection(data), frames, frameCount: frames.length });
+    setRequirementData(requirementId, { ...withoutLegacyCorrection(data), frames, frameCount: frames.length, currentFrameIndex: frames.length - 1 });
     renderFrames(requirementId);
     paintPreviewFrame(requirementId);
+  }
+
+  function openFrameSlotPicker(requirementId, index) {
+    const picker = document.createElement('input');
+    picker.type = 'file';
+    picker.accept = 'image/*';
+    picker.hidden = true;
+    picker.addEventListener('change', () => {
+      const file = picker.files?.[0];
+      if (file) fillFrameSlot(requirementId, index, file);
+      picker.remove();
+    }, { once: true });
+    document.body.appendChild(picker);
+    picker.click();
+  }
+
+  async function fillFrameSlot(requirementId, index, file) {
+    const data = ensureFrameCorrections(requirementId);
+    const frames = [...(data.frames || [])];
+    if (!frames[index] || !isEmptyFrameSlot(frames[index])) return;
+    const replacement = await readFrameFile(file);
+    frames[index] = { ...replacement, id: frames[index].id || replacement.id };
+    setRequirementData(requirementId, { ...withoutLegacyCorrection(data), frames, frameCount: frames.length, currentFrameIndex: index, imageAssetIds: imageAssetSummary(frames) });
+    renderRequirementDetail(findRequirementById(requirementId));
+    toast(`Added ${file.name} to frame ${index + 1}.`, 'success');
+  }
+
+  function isEmptyFrameSlot(frame) {
+    return !frame?.dataUrl && !frame?.assetId && !frame?.staging?.path;
+  }
+
+  function imageAssetSummary(frames) {
+    return frames.map((frame) => frame.name || frame.assetId).filter(Boolean).join(', ');
   }
 
   function moveFrame(requirementId, from, to) {
@@ -65,7 +115,7 @@ export function createObjectWizardFrameTasks({ wizardState, content, getRequirem
     const [frame] = frames.splice(from, 1);
     frames.splice(to, 0, frame);
     const frameCorrections = remapCorrectionsAfterMove(data.frameCorrections || {}, from, to, frames.length);
-    setRequirementData(requirementId, { ...withoutLegacyCorrection(data), frames, frameCorrections, imageAssetIds: frames.map((item) => item.name || item.assetId).filter(Boolean).join(', ') });
+    setRequirementData(requirementId, { ...withoutLegacyCorrection(data), frames, frameCorrections, imageAssetIds: imageAssetSummary(frames) });
     renderFrames(requirementId);
     paintPreviewFrame(requirementId);
   }
@@ -80,7 +130,7 @@ export function createObjectWizardFrameTasks({ wizardState, content, getRequirem
       if (oldIndex < index) frameCorrections[oldIndex] = value;
       if (oldIndex > index) frameCorrections[oldIndex - 1] = value;
     });
-    setRequirementData(requirementId, { ...withoutLegacyCorrection(data), frames, frameCorrections, frameCount: frames.length, currentFrameIndex: Math.min(index, Math.max(0, frames.length - 1)), imageAssetIds: frames.map((item) => item.name || item.assetId).filter(Boolean).join(', ') });
+    setRequirementData(requirementId, { ...withoutLegacyCorrection(data), frames, frameCorrections, frameCount: frames.length, currentFrameIndex: Math.min(index, Math.max(0, frames.length - 1)), imageAssetIds: imageAssetSummary(frames) });
     renderFrames(requirementId);
     paintPreviewFrame(requirementId);
   }
