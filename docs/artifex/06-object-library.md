@@ -10,9 +10,8 @@ artifex/apps/archetype-object-creator/
 
 The concept may still be described generically as the **Object Library** when referring to the reusable collection of saved object definitions, but implementation work must use the active module name **Archetype Object Creator**.
 
-Accepted current-main version: `V1.35` until PR #38 is manually accepted and merged.  
-Preview version in open PR #38: `V1.36`.  
-PR #38 status: the repaired Step 5 layout, working **Add Frame Event**, click-to-fill empty frame slot behaviour and enlarged borderless saved-wizard icon were manually accepted in preview on 2 June 2026. Project-save and finalisation lifecycle acceptance is still pending disposable-project testing; do not merge yet.
+Current-main version: `V1.36`, merged from PR #38 on 2 June 2026 at merge commit `ef4f37ebe5850c6367db59e57c01e2bb89949384`.  
+Validation status: the repaired Step 5 layout, working **Add Frame Event**, click-to-fill empty frame slot behaviour and enlarged borderless saved-wizard icon were manually confirmed before merge. Project-save and finalisation lifecycle behaviour is implemented on `main` but still requires disposable-project post-merge validation before further Object Creator feature work.
 
 Historical app-specific handover:
 
@@ -57,24 +56,25 @@ The intended save model is:
 - browser/local storage for draft/recovery only;
 - JSON or ZIP download as backup/fallback rather than ordinary save.
 
-PR #38 implements this model for review using explicit `authoringStatus` values. In-progress records may carry authoring-only staging metadata; ready records must reference only final registered `asset_` IDs. This proposed runtime contract remains pending disposable-folder acceptance before merge.
+V1.36 implements this model on `main` using explicit `authoringStatus` values. In-progress records may carry authoring-only staging metadata; ready records must reference only final registered `asset_` IDs. The actual project-folder save/reopen/finalisation behaviour remains subject to the post-merge validation listed below.
 
-## V1.36 Preview Behaviour Accepted So Far
+## V1.36 Behaviour Confirmed So Far
 
-Manually checked in PR #38 preview on 2 June 2026:
+Manually checked in the PR #38 preview before merge on 2 June 2026 and now accepted on `main`:
 
 - the Step 5 Action Behaviour area no longer displays overlapping text/controls;
 - **Add Frame Event** creates an editable event row;
 - **Add Empty Frame Slot** can be filled in place by clicking an empty thumbnail and choosing an image, preserving sequence order;
 - the saved-wizard crystal-ball icon is larger and does not carry unwanted circular button chrome.
 
-Still requiring verification before merge:
+Still requiring post-merge verification:
 
 - in-progress save, live-preview retention and reopening staged images;
 - refused finalisation writing no final asset files;
 - successful final promotion/asset registration/top-level visual ID mapping;
 - primary single-sheet overwrite refusal;
-- Sound Generator stale-target assignment and per-frame correction persistence.
+- Sound Generator stale-target assignment and per-frame correction persistence;
+- absence of duplicate Step 5 controls, module-load errors and console errors.
 
 ## Module Boundary
 
@@ -129,7 +129,7 @@ Create Synth Sound popup
 → Object Creator stores only that returned asset_ ID in the originating object behaviour/event field
 ```
 
-PR #38 includes an initiating-target capture fix for this flow. It still requires the stale-selection browser test before merge.
+V1.36 includes an initiating-target capture fix for this flow. It remains to be verified on merged `main` using the stale-selection browser test.
 
 ## Object Categories
 
@@ -153,7 +153,7 @@ Supported/relevant object categories include:
 
 V1.34 attempted to repair Step 5 task persistence and layout regressions by restoring canonical `productionAssets.requirements` / `productionAssets.requirementOrder` storage, initial asset-ID task ordering, clean left-list display and compact two-column behaviour.
 
-PR #38 proposes V1.36 to supersede the provisional V1.35 save flow: Save Browser Draft is recovery only, Save Project (In Progress) writes project-backed in-progress records and stages uploaded frames, and Finish / Mark Object Ready promotes staged media into final registered assets before writing a ready object/index entry.
+V1.36 superseded the provisional V1.35 save flow when PR #38 was merged: Save Browser Draft is recovery only, Save Project (In Progress) writes project-backed in-progress records and stages uploaded frames, and Finish / Mark Object Ready promotes staged media into final registered assets before writing a ready object/index entry. This flow must still be functionally validated in a disposable project folder.
 
 Do not add new patch, overlay, wrapper or MutationObserver installer layers on top of this ownership model.
 
