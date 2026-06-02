@@ -2,7 +2,7 @@
 
 Status: Active consolidation index  
 Foundation published on `main`: PR #47 / merge `a475a90f4baca4421ff120c7244563ac283b9dd8`  
-Latest baseline checked for this update: `f707beb781a63165da29e145f5b8c4deeeada6ec`  
+Latest baseline checked for this update: `3b5f94701d1400d64e30617fb0434ac6bcb30627`  
 Intended final role: the single active index identifying authoritative Artifex documentation, module specifications, task source and archive policy.
 
 ## Purpose
@@ -50,6 +50,7 @@ If two active documents contain the same rule, status statement or task, the inf
 | `docs/artifex/1A-project-file-contracts.md` | Master Artifex contract: universal platform, ownership, save, path, asset, branding and documentation-control rules. | Active foundation; still being refined as each module is extracted. |
 | `docs/artifex/2A-global-to-do.md` | The single human-readable global active backlog, divided by All Apps / Shared Platform and each module/service. | Active destination for new outstanding work during consolidation. |
 | `docs/artifex/3A-hub-artifex-portal.md` | Hub / Artifex Portal module specification document. | Added during Hub extraction pass. |
+| `docs/artifex/4A-creation-guide.md` | Creation Guide module specification document. | Added during Creation Guide extraction pass; verified against current V1.1.12 implementation. |
 | `docs/artifex/19a-project-starter-file-schemas.md` | Subordinate technical reference for exact canonical starter JSON and typed index shapes. | Retain active, subject to link/title cleanup after contract adoption. |
 | `docs/artifex/22-sound-archetype-generator.md` | Sound Generator module/service specification document. | Retain active; inspect last because current Sound Generator work is in progress. |
 
@@ -61,8 +62,8 @@ Each confirmed real module or maintained shared service must ultimately have one
 |---:|---|---|---|
 | 1 | Master Artifex Contract / Shared Rules | Universal contract, not a module spec. | Foundation active in `docs/artifex/1A-project-file-contracts.md`; refine only when further universal rules are found. |
 | 2 | Hub / Artifex Portal | Module navigation, entry points and Hub-only presentation/route baseline. | Extracted into `docs/artifex/3A-hub-artifex-portal.md`; implementation follow-up remains in `2A`. |
-| 3 | Creation Guide | New project setup, starter creation, initial intake/setup and active-project registration boundary. | Next module audit. |
-| 4 | Project Editor | Structural/Flatplan/route ownership and Project Editor-only interface/baseline. | Consolidate any historical `Project Manager` material as migration evidence only. |
+| 3 | Creation Guide | New project setup, starter creation, initial intake/setup and active-project registration boundary. | Extracted into `docs/artifex/4A-creation-guide.md`; implementation follow-up remains in `2A`. |
+| 4 | Project Editor | Structural/Flatplan/route ownership and Project Editor-only interface/baseline. | Next module audit; consolidate historical `Project Manager` material as migration evidence only. |
 | 5 | Scene Editor | Scene/screen visual authoring ownership and accepted active baseline. | Extract latest accepted baseline; archive obsolete failed-status records later. |
 | 6 | Quest Builder | Quest/progression ownership and its defined use of saved puzzle references. | Avoid copying Puzzle Creator internals. |
 | 7 | Archetype Object Creator | Reusable non-FX object archetype authoring and final registered-asset reference workflow. | Preserve latest validation/work status in global to-do, not spec history. |
@@ -122,12 +123,15 @@ The following classification records the starting plan for documents that curren
 | `docs/artifex/00-index.md` | Active file inventory and authoritative-file rules move into this `0A` index. Module-specific pointers remain only where still useful. | Supersede/archive once this controlled index and module specs are complete. |
 | `docs/GLOBAL_TODO.md` | Any still-live work not already captured moves into `docs/artifex/2A-global-to-do.md`. | Retain as source evidence until extraction is confirmed; archive later, not delete now. |
 | `docs/artifex/02-module-architecture.md` | Universal ownership/boundary principles move into `1A`; unique module descriptions move into the relevant module specs. | Archive after module audit extraction. |
+| `docs/artifex/05-creation-guide.md` | Valid Creation Guide ownership/current implementation facts move into `4A`; any still-open work stays in `2A`. | Retain as source evidence now; archive after Creation Guide extraction is accepted. |
+| `docs/artifex/05a-creation-guide-v119-implementation-notes.md` | Historical V1.1.10 split facts checked against the later V1.1.12 implementation; no longer current authority. | Archive after Creation Guide extraction is accepted. |
+| `artifex/apps/creation-guide/README.md` | Earlier V1.1.10 runtime/readme evidence superseded for current status by V1.1.12 and `4A`. | Decide archive or rewrite-as-local-pointer treatment after `4A` acceptance. |
 | `docs/artifex/11-portal-hub.md` | Valid Hub purpose/current implementation facts move into `3A`; any still-open implementation work stays in `2A`. | Retain as source evidence now; archive after Hub extraction is accepted. |
 | `docs/artifex/12-project-settings.md` | Only still-valid universal active-project/save constraints move into `1A` or a confirmed service spec. Older absolute-path/localStorage-first concepts must not override the current connected-folder contract. | Archive after relevant service/module extraction. |
 | `docs/artifex/18-color-and-display-rules.md` | Universal Artifex branding/display/header/accent/control rules move into `1A`. | Archive or retain only as a subordinate visual reference if later inspection proves unique detailed material still needs a separate authority; it must not duplicate `1A`. |
 | `docs/artifex/19-project-file-contracts.md` | Its valid central-contract content forms the basis of `1A`. | Supersede/archive after `1A` is approved and all links updated. |
-| `docs/artifex/19a-project-starter-file-schemas.md` | Remains the subordinate exact schema technical reference linked from `1A`. | Retain active. |
-| `docs/artifex/20-asset-intake-workflow.md` | Universal intake-versus-final-asset rules move into `1A`; Asset Library/Creation Guide-specific workflow belongs in the relevant single specs. | Decide final retain/archive treatment during Asset Library and Creation Guide audits. |
+| `docs/artifex/19a-project-starter-file-schemas.md` | Remains the subordinate exact schema technical reference linked from `1A` and `4A`. | Retain active. |
+| `docs/artifex/20-asset-intake-workflow.md` | Implemented Creation Guide intake setup facts move into `4A`; remaining Asset Library-specific promotion workflow is assessed in the Asset Library pass. | Decide final retain/archive treatment during Asset Library audit. |
 | `docs/artifex/21-template-game-project-contract.md` | Universal three-layer distinction moves into `1A`; unique Template Game/reference-project material may remain as one bounded reference-project specification. | Decide retain/archive treatment after project/reference scope audit. |
 | `docs/artifex/22-sound-archetype-generator.md` | Sound Generator-specific permanent information stays in that module/service spec; universal generated-audio asset rule exists once in `1A`. | Retain active and consolidate last because current work is in progress. |
 | `docs/artifex/23-current-main-scan-and-pr20-recovery.md` | Any current outstanding work moves to `docs/artifex/2A-global-to-do.md`; historical recovery evidence stays historical. | Archive after extraction. |
@@ -156,7 +160,7 @@ status refreshes and current-state reviews
 dated baseline matrices and read-only audit reports
 failed-acceptance plans
 old implementation/update-step histories
-handover records
+handovers records
 PR-specific documentation records
 superseded contract/index files
 ```
