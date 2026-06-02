@@ -6,10 +6,11 @@ A compact charcoal, purple and gold HTML/JavaScript renderer for creating screen
 
 - The interface includes three separated language tabs:
   - **Runispeleus** — Mel's scroll-language display layer; JavaScript placeholder ready for its atlas mapping.
-  - **Saga-Demotic** — Egyptian archive display layer; JavaScript placeholder ready for its right-to-left atlas mapping.
+  - **Saga-Demotic** — Egyptian archive display layer; working right-to-left renderer included.
   - **Volkhv–Tartessian** — Nyx's family ritual script; working renderer included.
-- `js/languages/volkhv-tartessian.js` contains the complete token parser and cell coordinates for the supplied finished glyph chart.
-- Each future language can be implemented by editing only its own file under `js/languages/`.
+- `js/languages/volkhv-tartessian.js` contains the complete token parser and cell coordinates for the finished Volkhv–Tartessian glyph chart.
+- `js/languages/saga-demotic.js` contains the complete token parser and atlas coordinates for the approved Saga-Demotic glyph chart.
+- Each script tradition remains isolated in its own file under `js/languages/`.
 
 ## How to run it
 
@@ -55,6 +56,37 @@ k h r n space pa a r e e o o space
 
 Use `space`, `seal`, `[space]`, `[seal]`, or `.` to insert the break/seal glyph.
 
+## Saga-Demotic input modes
+
+### Renderer text
+
+This accepts canonical Saga-Demotic transliteration and renders it right-to-left using the approved fixed display signs.
+
+```text
+ꜣḫw sḫꜣw rn wn sbꜣ.
+```
+
+Implemented signs:
+
+```text
+r n m f p b w
+y e i ḏ d ṯ ṱ
+t k g q š s l
+h ḥ ḫ ẖ ꜣ ꜥ
+```
+
+The chart's row 4, column 5 is blank and unused. Word gaps are preserved in the reversible display version. Punctuation is not given a decorative display sign.
+
+### Display Encoding Key
+
+The **Glyph tokens** input mode accepts the reversible key format from the Saga-Demotic translator:
+
+```text
+RTL: ꜣ-ḫ-w | s-ḫ-ꜣ-w | r-n | w-n | s-b-ꜣ
+```
+
+The key remains in logical reading order. The shared renderer reverses the rendered sign order visually because Saga-Demotic is marked as right-to-left.
+
 ## Included files
 
 ```text
@@ -62,6 +94,7 @@ index.html
 styles.css
 assets/
   volkhv-tartessian-glyph-chart.png
+  saga-demotic-glyph-atlas.svg
 js/
   app.js
   languages/
@@ -70,10 +103,9 @@ js/
     saga-demotic.js
 ```
 
-## Replacing the Volkhv–Tartessian sprite sheet
+## Replacing a sprite sheet
 
-The Upload/Replace sheet button accepts an image at runtime. It currently expects the same chart layout and cell positions as the included PNG. When a new trimmed atlas or a differently arranged sheet is used, update only `glyphMap` in `js/languages/volkhv-tartessian.js`.
-
+The Upload/Replace sheet button accepts an image at runtime. It currently expects the same atlas layout and coordinates as the included asset for the selected script tradition. When a new trimmed atlas or a differently arranged sheet is used, update only the relevant `glyphMap` in its file under `js/languages/`.
 
 ## UI preview note
 
