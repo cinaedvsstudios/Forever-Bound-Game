@@ -14,6 +14,9 @@
   const rulesTitle = document.querySelector("#rules-dialog-title");
   const rulesLink = document.querySelector("#rules-md-link");
   const rulesContent = document.querySelector("#rules-content");
+  const inputMode = document.querySelector(".mode-switch");
+  const sourceLabel = document.querySelector("#source-label");
+  const assetBox = document.querySelector(".asset-box");
 
   if (!languageSelect || !translatorChatButton || !rulesButton || !rulesDialog || !rulesContent) return;
 
@@ -48,9 +51,13 @@
     const reference = currentReference();
     const hasChat = Boolean(reference && reference.chatUrl);
     const hasRules = Boolean(reference && reference.rulesUrl);
+    const directRuneInput = languageSelect.value === "runispeleus";
     translatorChatButton.hidden = !hasChat;
     translatorChatButton.setAttribute("aria-label", hasChat ? `Open ${reference.label} translator chat` : "No translator chat available");
     rulesButton.hidden = !hasRules;
+    if (inputMode) inputMode.hidden = directRuneInput;
+    if (assetBox) assetBox.hidden = directRuneInput;
+    if (sourceLabel && directRuneInput) sourceLabel.textContent = "Rune text";
     if (hasRules) {
       rulesButton.setAttribute("aria-label", `Open ${reference.rulesTitle}`);
       rulesTitle.textContent = reference.rulesTitle;
