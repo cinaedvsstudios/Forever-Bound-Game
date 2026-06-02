@@ -3,136 +3,130 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Artifex · Lip-Sync Helper V0.2</title>
-  <link rel="stylesheet" href="./lipsync-helper.css?v=LIPSYNC-HELPER-0.2">
+  <title>Artifex · Lip-Sync Helper V0.2b</title>
+  <link rel="stylesheet" href="./lipsync-helper.css?v=0.2b">
 </head>
 <body>
   <div class="app-shell">
-    <aside class="side-rail" aria-label="Lip-sync editing controls">
-      <div class="brand">
+    <aside class="side-rail">
+      <header class="brand">
         <img class="brand-symbol" src="../../artifexlogo.png" alt="">
-        <span class="brand-copy">
-          <img class="brand-title" src="../../artifextitle.png" alt="Artifex">
-          <span class="brand-subtitle">Lip-Sync Helper · V0.2</span>
-        </span>
-      </div>
-
-      <section class="rail-panel video-panel">
-        <h2>Video</h2>
-        <div class="video-meta">
-          <span class="meta-label">Source</span>
-          <strong id="videoName">No video loaded</strong>
-          <span class="meta-label">Duration</span>
-          <strong id="durationText">--:--.---</strong>
+        <div class="brand-copy">
+          <img class="brand-title-image" src="../../artifextitle.png" alt="Artifex">
+          <span class="brand-title-fallback">ARTIFEX</span>
+          <span class="brand-subtitle">Lip-Sync Helper · V0.2b</span>
         </div>
-        <label class="action-button primary upload-button">Upload Video<input id="videoFile" type="file" accept="video/*" hidden></label>
-        <button id="removeVideoBtn" class="action-button subtle" type="button" disabled>Remove Video</button>
+      </header>
+
+      <section class="rail-panel">
+        <h2>Video</h2>
+        <dl class="metadata">
+          <dt>Source</dt><dd id="videoName">No video loaded</dd>
+          <dt>Duration</dt><dd id="durationText">--:--.---</dd>
+        </dl>
+        <label class="button primary block">Upload Video<input id="fileInput" type="file" accept="video/*" hidden></label>
+        <button id="removeVideoBtn" class="button block" type="button" disabled>Remove Video</button>
       </section>
 
       <section class="rail-panel marker-panel">
-        <div class="panel-heading">
+        <div class="panel-row">
           <h2>Marked Words</h2>
-          <button id="markWordBtn" class="mini-button primary" type="button" disabled>+ Mark</button>
+          <button id="markWordSideBtn" class="tiny-button primary" type="button" disabled>+ Mark</button>
         </div>
-        <p class="help-text">Pause on the broken word and press <strong>Mark Word</strong>. A pin appears on the timeline.</p>
+        <p class="help">Pause on the broken word, then press <strong>Mark Word</strong>. A pin appears on the timeline.</p>
         <div id="markerList" class="marker-list"><p class="empty">No marked words.</p></div>
       </section>
 
-      <section id="selectionPanel" class="rail-panel selection-panel is-disabled">
-        <div class="panel-heading">
+      <section id="selectedPinPanel" class="rail-panel disabled">
+        <div class="panel-row">
           <h2>Selected Pin</h2>
-          <button id="deleteMarkerBtn" class="mini-button danger" type="button" disabled>Delete</button>
+          <button id="deleteMarkerBtn" class="tiny-button danger" type="button" disabled>Delete</button>
         </div>
-        <div id="noMarkerText" class="empty">Select a pin to edit it.</div>
-        <div id="markerFields" hidden>
-          <div class="selected-time"><span>Pin at</span><strong id="markerTime">--:--.---</strong></div>
+        <p id="noPinMessage" class="empty">Select a pin to edit it.</p>
+        <div id="pinFields" hidden>
+          <div class="pin-time"><span>Pin at</span><strong id="pinTime">--:--.---</strong></div>
           <label class="field-label" for="phraseInput">Words being said</label>
-          <input id="phraseInput" class="text-field" type="text" placeholder="End, Laughter, Ohhh, it be" autocomplete="off">
-          <label class="field-label" for="repairSpan">Repair preview span <output id="repairSpanOut">0.80 s</output></label>
-          <input id="repairSpan" class="slider" type="range" min="0.20" max="2.50" step="0.05" value="0.80">
-          <button id="loopBtn" class="action-button subtle full" type="button">Loop This Pin: Off</button>
+          <input id="phraseInput" class="input" type="text" placeholder="End, Laughter, Ohhh, it be">
+          <label class="field-label" for="spanInput">Repair preview span <output id="spanOutput">0.80 s</output></label>
+          <input id="spanInput" type="range" min="0.20" max="2.50" step="0.05" value="0.80">
+          <button id="loopBtn" class="button block" type="button">Loop This Pin: Off</button>
           <div class="divider"></div>
-          <div class="patch-actions">
-            <button id="captureBtn" class="action-button primary" type="button">Capture Donor Mouth</button>
-            <button id="positionBtn" class="action-button subtle" type="button" disabled>Position Patch</button>
-            <button id="clearPatchBtn" class="action-button subtle" type="button" disabled>Remove Patch</button>
+          <div class="patch-buttons">
+            <button id="captureBtn" class="button primary block" type="button">Capture Donor Mouth</button>
+            <button id="positionBtn" class="button" type="button" disabled>Position Patch</button>
+            <button id="removePatchBtn" class="button" type="button" disabled>Remove Patch</button>
           </div>
-          <p id="patchPrompt" class="help-text">Choose a donor frame below, then capture the mouth from the viewer.</p>
+          <p id="patchMessage" class="help">Choose a donor frame on the right, then drag a box around its mouth.</p>
           <div id="patchControls" hidden>
-            <div class="control-grid">
-              <label>X<input id="patchX" class="number-field" type="number" step="1"></label>
-              <label>Y<input id="patchY" class="number-field" type="number" step="1"></label>
+            <div class="two-cols">
+              <label class="field-label">X<input id="patchX" class="input" type="number" step="1"></label>
+              <label class="field-label">Y<input id="patchY" class="input" type="number" step="1"></label>
             </div>
-            <label class="field-label" for="patchScale">Scale <output id="patchScaleOut">100%</output></label>
-            <input id="patchScale" class="slider" type="range" min="30" max="220" step="1" value="100">
-            <label class="field-label" for="patchRotation">Rotate <output id="patchRotationOut">0°</output></label>
-            <input id="patchRotation" class="slider" type="range" min="-45" max="45" step="1" value="0">
-            <label class="field-label" for="patchFeather">Edge feather <output id="patchFeatherOut">5 px</output></label>
-            <input id="patchFeather" class="slider" type="range" min="0" max="30" step="1" value="5">
-            <label class="field-label" for="patchOpacity">Opacity <output id="patchOpacityOut">100%</output></label>
-            <input id="patchOpacity" class="slider" type="range" min="0" max="100" step="1" value="100">
-            <label class="check-line"><input id="showPatch" type="checkbox" checked> Show mouth patch</label>
-            <div class="selected-time"><span>Donor at</span><strong id="donorTime">--:--.---</strong></div>
+            <label class="field-label" for="patchScale">Scale <output id="scaleOutput">100%</output></label>
+            <input id="patchScale" type="range" min="30" max="220" step="1" value="100">
+            <label class="field-label" for="patchRotate">Rotate <output id="rotateOutput">0°</output></label>
+            <input id="patchRotate" type="range" min="-45" max="45" step="1" value="0">
+            <label class="field-label" for="patchFeather">Edge feather <output id="featherOutput">5 px</output></label>
+            <input id="patchFeather" type="range" min="0" max="30" step="1" value="5">
+            <label class="field-label" for="patchOpacity">Opacity <output id="opacityOutput">100%</output></label>
+            <input id="patchOpacity" type="range" min="0" max="100" step="1" value="100">
+            <label class="checkbox"><input id="showPatch" type="checkbox" checked> Show mouth patch</label>
+            <div class="pin-time"><span>Donor at</span><strong id="donorTime">--:--.---</strong></div>
           </div>
         </div>
       </section>
     </aside>
 
     <main class="studio">
-      <header class="transport-bar">
-        <div class="transport-buttons">
-          <button id="backFrameBtn" class="transport-button" type="button" disabled title="Previous frame">◀</button>
-          <button id="playBtn" class="transport-button play" type="button" disabled title="Play / Pause">▶</button>
-          <button id="forwardFrameBtn" class="transport-button" type="button" disabled title="Next frame">▶</button>
-        </div>
-        <div class="transport-center">
-          <div id="statusText" class="status-text">Drop a video into the player to begin.</div>
-          <div class="progress-pill"><span id="currentTimeText">00:00.000</span><span class="slash">/</span><span id="totalTimeText">00:00.000</span></div>
-        </div>
-        <div class="mode-box">Mode <strong id="modeText">Preview</strong></div>
-      </header>
-
-      <section id="dropZone" class="viewer-frame" aria-label="Video player drop zone">
-        <canvas id="videoCanvas" width="1280" height="720"></canvas>
-        <div id="dropOverlay" class="drop-overlay">
-          <div class="drop-icon">▶</div>
-          <strong>Drop video here</strong>
-          <span>or click to upload</span>
-        </div>
-        <video id="sourceVideo" preload="metadata" playsinline hidden></video>
-      </section>
-
-      <section class="timeline-frame">
-        <div class="timeline-top">
-          <div>
-            <h2>Word Timeline</h2>
-            <p>Click to seek. Click a numbered pin to select it.</p>
+      <section class="editor-column">
+        <section id="dropZone" class="viewer-frame">
+          <canvas id="videoCanvas" width="1280" height="720"></canvas>
+          <div id="dropOverlay" class="drop-overlay">
+            <div class="play-drop">▶</div>
+            <strong>Drop video here</strong>
+            <span>or click to upload</span>
           </div>
-          <button id="markWordMainBtn" class="action-button primary" type="button" disabled>Mark Word</button>
-        </div>
-        <canvas id="timelineCanvas" width="1400" height="136" aria-label="Word marker timeline"></canvas>
-      </section>
+          <video id="video" preload="metadata" playsinline hidden></video>
+        </section>
 
-      <section class="word-strip">
-        <div class="selected-phrase">
-          <span>Selected phrase</span>
-          <strong id="selectedPhrase">No marker selected</strong>
-        </div>
-        <button id="refreshDonorsBtn" class="round-action" type="button" disabled title="Refresh donor frames">↻</button>
-      </section>
-
-      <section class="donor-browser">
-        <div class="donor-header">
-          <div>
-            <h2>Donor Frames</h2>
-            <p>Choose a good matching pose, then capture just the mouth area in the video viewer.</p>
+        <section class="transport-bar">
+          <div class="transport-buttons">
+            <button id="prevFrameBtn" class="transport" type="button" disabled title="Previous frame">◀</button>
+            <button id="playBtn" class="transport play" type="button" disabled title="Play / Pause">▶</button>
+            <button id="nextFrameBtn" class="transport" type="button" disabled title="Next frame">▶</button>
           </div>
-        </div>
-        <div id="donorStrip" class="donor-strip"><p class="empty">Donor frames appear after a video is loaded.</p></div>
+          <div id="statusText" class="status">Drop a video into the player to begin.</div>
+          <div class="timecode"><strong id="currentTime">00:00.000</strong><span>/</span><strong id="totalTime">00:00.000</strong></div>
+          <div class="mode">Mode <strong id="modeText">Preview</strong></div>
+        </section>
+
+        <section class="timeline-frame">
+          <div class="section-heading">
+            <div><h2>Word Timeline</h2><p>Click to seek. Click a numbered pin to select it.</p></div>
+            <button id="markWordBtn" class="button primary" type="button" disabled>Mark Word</button>
+          </div>
+          <canvas id="timeline" width="1400" height="138"></canvas>
+        </section>
       </section>
+
+      <aside class="right-panels">
+        <section class="gold-panel phrase-panel">
+          <div class="section-heading tight">
+            <h2>Selected Phrase</h2>
+            <button id="refreshDonorsBtn" class="circle-button" type="button" disabled title="Refresh donor frames">↻</button>
+          </div>
+          <div class="phrase-display"><strong id="selectedPhrase">No marker selected</strong></div>
+        </section>
+        <section class="gold-panel donor-panel">
+          <div class="section-heading donor-heading">
+            <div><h2>Donor Frames</h2><p>Choose a matching pose, then capture the mouth in the viewer.</p></div>
+          </div>
+          <div id="donorStrip" class="donor-strip"><p class="empty">Donor frames appear after a video is loaded.</p></div>
+        </section>
+      </aside>
     </main>
   </div>
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="./lipsync-helper.js?v=LIPSYNC-HELPER-0.2"></script>
+  <div id="toast" class="toast"></div>
+  <script src="./lipsync-helper.js?v=0.2b"></script>
 </body>
 </html>
