@@ -41,6 +41,7 @@
     let zoom = Number(settings.zoom || defaultZoom || 1);
     let showHighlight = settings.showHighlight !== false;
     let panelScroll = 0;
+    let inspectorScroll = 0;
     let saveTimer = null;
     let lastWorkingCopySnapshot = '';
     let activeProject = window.ArtifexActiveProject?.project || null;
@@ -154,8 +155,20 @@
       render(false);
     }
 
-    function saveScroll() { const panel = document.querySelector('.side-panel'); if (panel) panelScroll = panel.scrollTop; }
-    function restoreScroll() { requestAnimationFrame(() => { const panel = document.querySelector('.side-panel'); if (panel) panel.scrollTop = panelScroll; }); }
+    function saveScroll() {
+      const panel = document.querySelector('.side-panel');
+      const inspector = document.querySelector('.object-inspector-body');
+      if (panel) panelScroll = panel.scrollTop;
+      if (inspector) inspectorScroll = inspector.scrollTop;
+    }
+    function restoreScroll() {
+      requestAnimationFrame(() => {
+        const panel = document.querySelector('.side-panel');
+        const inspector = document.querySelector('.object-inspector-body');
+        if (panel) panel.scrollTop = panelScroll;
+        if (inspector) inspector.scrollTop = inspectorScroll;
+      });
+    }
 
     const renderer = rendererModule.createRenderer({
       version: VERSION,

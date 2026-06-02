@@ -98,3 +98,12 @@
   opacity: .42;
   cursor: not-allowed;
 }
+
+/* v0.37: Aspect Ratio Lock is a persistent toggle, so its enabled state must be visible. */
+.aspect-lock-btn-v35.is-active,
+.aspect-lock-btn-v35[aria-pressed="true"] {
+  border-color: rgba(231, 56, 56, .96) !important;
+  background: linear-gradient(180deg, rgba(112, 30, 128, .98), rgba(65, 13, 76, .98)) !important;
+  color: #fff6d9 !important;
+  box-shadow: 0 0 13px rgba(231, 56, 56, .52), 0 0 18px rgba(195, 0, 255, .34), inset 0 0 0 1px rgba(255, 230, 190, .12) !important;
+}
