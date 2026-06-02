@@ -10,12 +10,15 @@ window.addEventListener('DOMContentLoaded', () => {
   emojiButtonLabelsAndTooltips();
   reorganiseDisplayCard();
   moveLogicButtonsUnderSolutionBox();
+  configureScatterPlacementUi();
 });
 
 function markVisibleBuildVersion() {
+  const eyebrow = document.querySelector('.brand-title-block .eyebrow');
+  if (eyebrow) eyebrow.textContent = 'Artifex Puzzle Creator Module';
   const pill = document.querySelector('.version-pill');
-  if (pill) pill.textContent = 'V1.32';
-  document.title = 'Artifex Puzzle Creator V1.32 · Forever Bound';
+  if (pill) pill.textContent = 'V1.33';
+  document.title = 'Artifex Puzzle Creator V1.33 · Forever Bound';
 }
 
 function removeVerboseHelperText() {
@@ -77,6 +80,58 @@ function moveLogicButtonsUnderSolutionBox() {
   const solve = $('btn-solve');
   const buttonGrid = solve?.closest('.button-grid');
   if (statusBox && solve && buttonGrid) statusBox.insertAdjacentElement('afterend', buttonGrid);
+}
+
+function configureScatterPlacementUi() {
+  const visualsPanel = document.querySelector('[data-panel-content="visuals"]');
+  if (!visualsPanel) return;
+
+  const syncVisibleCopy = () => {
+    const action = visualsPanel.querySelector('[data-scatter-regenerate]');
+    if (action) {
+      action.textContent = 'Place Markers';
+      action.title = 'Place placeholder markers using each slot’s selected amount, seed and placement mode.';
+    }
+    const status = visualsPanel.querySelector('.scatter-status');
+    if (status) {
+      status.textContent = status.textContent
+        .replace('then regenerate markers', 'then choose Place Markers')
+        .replace('regenerate now', 'choose Place Markers now')
+        .replace('Regenerate to update marker positions.', 'Choose Place Markers to update marker positions.')
+        .replace('Regenerate to apply it.', 'Choose Place Markers to apply it.');
+    }
+  };
+
+  const syncTypedValue = (target) => {
+    const scatter = window.__artifexMazeScatter?.state;
+    if (!scatter) return;
+    if (target.matches('[data-scatter-amount]')) {
+      const slotId = target.dataset.scatterAmount;
+      const slot = scatter.light.id === slotId ? scatter.light : scatter.decorations.find((item) => item.id === slotId);
+      if (!slot) return;
+      const maximum = slot.type === 'light' ? 30 : 20;
+      slot.amount = clampScatterNumber(target.value, 0, maximum);
+    }
+    if (target.matches('[data-scatter-seed]')) {
+      scatter.seed = clampScatterNumber(target.value, 1, 999999);
+    }
+  };
+
+  visualsPanel.addEventListener('input', (event) => syncTypedValue(event.target), true);
+  visualsPanel.addEventListener('change', (event) => syncTypedValue(event.target), true);
+  visualsPanel.addEventListener('click', (event) => {
+    if (!event.target.closest('[data-scatter-regenerate]')) return;
+    visualsPanel.querySelectorAll('[data-scatter-amount], [data-scatter-seed]').forEach(syncTypedValue);
+  }, true);
+
+  new MutationObserver(syncVisibleCopy).observe(visualsPanel, { childList: true, subtree: true });
+  syncVisibleCopy();
+}
+
+function clampScatterNumber(value, minimum, maximum) {
+  const parsed = Math.floor(Number(value));
+  if (!Number.isFinite(parsed)) return minimum;
+  return Math.max(minimum, Math.min(maximum, parsed));
 }
 
 function injectUiPolishStyles() {
