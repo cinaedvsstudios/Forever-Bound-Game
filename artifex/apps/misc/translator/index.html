@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Forever Bound — Inscription Renderer</title>
   <link rel="stylesheet" href="./styles.css">
+  <style>
+    .site-header { padding: 22px 27px 18px; }
+    .site-header h1 { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; font-size: clamp(1.65rem, 4vw, 2rem); }
+    .brand-prefix { color: var(--gold); font-size: .66rem; font-weight: 750; letter-spacing: .27em; text-transform: uppercase; white-space: nowrap; }
+    #language-select { background: #242229; color: #fff; font-weight: 700; }
+    #source-input { min-height: 120px; height: 120px; }
+    .asset-note:empty { display: none; }
+    .reference-button { font-family: inherit; cursor: pointer; }
+  </style>
 </head>
 <body>
   <div class="page-shell">
@@ -24,6 +33,9 @@
             </select>
           </div>
         </div>
+        <span class="visually-hidden" id="selected-language-kicker"></span>
+        <span class="visually-hidden" id="selected-language-title"></span>
+        <span class="visually-hidden" id="selected-language-description"></span>
 
         <fieldset class="mode-switch" aria-label="Input type">
           <legend>Input type</legend>
@@ -80,52 +92,24 @@
 
           <section class="render-settings" aria-label="Inscription appearance controls">
             <div class="settings-toggles">
-              <label class="setting-toggle">
-                <input id="wrap-toggle" type="checkbox">
-                <span>Wrap</span>
-              </label>
-              <label class="setting-toggle">
-                <input id="bold-toggle" type="checkbox">
-                <span>Bold</span>
-              </label>
-              <label class="setting-toggle">
-                <input id="handdrawn-toggle" type="checkbox">
-                <span>Hand-drawn</span>
-              </label>
+              <label class="setting-toggle"><input id="wrap-toggle" type="checkbox"><span>Wrap</span></label>
+              <label class="setting-toggle"><input id="bold-toggle" type="checkbox"><span>Bold</span></label>
+              <label class="setting-toggle"><input id="handdrawn-toggle" type="checkbox"><span>Hand-drawn</span></label>
             </div>
             <div class="settings-grid">
-              <label class="setting-slider" for="character-spacing">
-                <span>Character spacing</span>
-                <input id="character-spacing" type="range" min="0" max="32" step="1" value="2">
-                <output id="character-spacing-output" for="character-spacing">2</output>
-              </label>
-              <label class="setting-slider" for="line-spacing">
-                <span>Line spacing</span>
-                <input id="line-spacing" type="range" min="0" max="80" step="1" value="17">
-                <output id="line-spacing-output" for="line-spacing">17</output>
-              </label>
-              <label class="setting-slider wrap-setting" for="wrap-width" id="wrap-width-setting">
-                <span>Wrap width</span>
-                <input id="wrap-width" type="range" min="160" max="720" step="10" value="390" disabled>
-                <output id="wrap-width-output" for="wrap-width">390</output>
-              </label>
+              <label class="setting-slider" for="character-spacing"><span>Character spacing</span><input id="character-spacing" type="range" min="0" max="32" step="1" value="2"><output id="character-spacing-output" for="character-spacing">2</output></label>
+              <label class="setting-slider" for="line-spacing"><span>Line spacing</span><input id="line-spacing" type="range" min="0" max="80" step="1" value="17"><output id="line-spacing-output" for="line-spacing">17</output></label>
+              <label class="setting-slider wrap-setting" for="wrap-width" id="wrap-width-setting"><span>Wrap width</span><input id="wrap-width" type="range" min="160" max="720" step="10" value="390" disabled><output id="wrap-width-output" for="wrap-width">390</output></label>
             </div>
           </section>
 
           <div class="canvas-surround is-dark" id="canvas-surround">
             <canvas id="result-canvas" width="430" height="155" aria-label="Rendered inscription"></canvas>
-            <div class="empty-message" id="empty-message">
-              <strong>Ready to render.</strong>
-              <span>Paste a glyph phrase or load the example.</span>
-            </div>
+            <div class="empty-message" id="empty-message"><strong>Ready to render.</strong><span>Paste a glyph phrase or load the example.</span></div>
           </div>
 
           <div class="preview-tools">
-            <label class="slider-field" for="glyph-size">
-              <span>Size</span>
-              <input id="glyph-size" type="range" min="30" max="120" step="2" value="58">
-              <output id="glyph-size-output" for="glyph-size">58</output>
-            </label>
+            <label class="slider-field" for="glyph-size"><span>Size</span><input id="glyph-size" type="range" min="30" max="120" step="2" value="58"><output id="glyph-size-output" for="glyph-size">58</output></label>
             <button class="secondary-button" id="save-png" type="button" disabled>Export PNG</button>
           </div>
 
@@ -142,18 +126,13 @@
   <dialog class="rules-dialog" id="rules-dialog" aria-labelledby="rules-dialog-title">
     <section class="rules-modal-shell">
       <header class="rules-modal-header">
-        <div>
-          <p class="rules-eyebrow">Reference document</p>
-          <h2 id="rules-dialog-title">Volkhv–Tartessian Rules</h2>
-        </div>
+        <div><p class="rules-eyebrow">Reference document</p><h2 id="rules-dialog-title">Volkhv–Tartessian Rules</h2></div>
         <div class="rules-modal-actions">
           <a class="rules-md-link" href="./volkhv-tartessian-rules.md" target="_blank" rel="noopener noreferrer">Open MD</a>
           <button class="rules-close" id="rules-close" type="button" aria-label="Close rules window">×</button>
         </div>
       </header>
-      <article class="rules-content" id="rules-content" aria-live="polite">
-        <p class="rules-loading">Loading rules…</p>
-      </article>
+      <article class="rules-content" id="rules-content" aria-live="polite"><p class="rules-loading">Loading rules…</p></article>
     </section>
   </dialog>
 
