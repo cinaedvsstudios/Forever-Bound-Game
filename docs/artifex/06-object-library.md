@@ -10,10 +10,11 @@ artifex/apps/archetype-object-creator/
 
 The concept may still be described generically as the **Object Library** when referring to the reusable collection of saved object definitions, but implementation work must use the active module name **Archetype Object Creator**.
 
-Current visible app version: `V1.35`  
-Current status: V1.35 code exists on `main`, but its project-folder saving and Procedural Sound Generator integration are unverified and require audit before more feature work.
+Accepted current-main version: `V1.35` until PR #38 is manually accepted and merged.  
+Preview version in open PR #38: `V1.36`.  
+PR #38 status: the repaired Step 5 layout, working **Add Frame Event**, click-to-fill empty frame slot behaviour and enlarged borderless saved-wizard icon were manually accepted in preview on 2 June 2026. Project-save and finalisation lifecycle acceptance is still pending disposable-project testing; do not merge yet.
 
-Current app-specific handover:
+Historical app-specific handover:
 
 ```text
 artifex/apps/archetype-object-creator/docs/current-state-v1.35-review.md
@@ -52,11 +53,28 @@ Final visual and audio resources referenced by an object archetype must be regis
 
 The intended save model is:
 
-- deliberate connected project-folder save for final object records;
+- deliberate connected project-folder save for project-backed object records;
 - browser/local storage for draft/recovery only;
 - JSON or ZIP download as backup/fallback rather than ordinary save.
 
-The current V1.35 code attempts this model but has not been accepted as correctly integrated or fully tested. See the current-state handover before relying on it.
+PR #38 implements this model for review using explicit `authoringStatus` values. In-progress records may carry authoring-only staging metadata; ready records must reference only final registered `asset_` IDs. This proposed runtime contract remains pending disposable-folder acceptance before merge.
+
+## V1.36 Preview Behaviour Accepted So Far
+
+Manually checked in PR #38 preview on 2 June 2026:
+
+- the Step 5 Action Behaviour area no longer displays overlapping text/controls;
+- **Add Frame Event** creates an editable event row;
+- **Add Empty Frame Slot** can be filled in place by clicking an empty thumbnail and choosing an image, preserving sequence order;
+- the saved-wizard crystal-ball icon is larger and does not carry unwanted circular button chrome.
+
+Still requiring verification before merge:
+
+- in-progress save, live-preview retention and reopening staged images;
+- refused finalisation writing no final asset files;
+- successful final promotion/asset registration/top-level visual ID mapping;
+- primary single-sheet overwrite refusal;
+- Sound Generator stale-target assignment and per-frame correction persistence.
 
 ## Module Boundary
 
@@ -77,55 +95,26 @@ It does not own:
 - Quest or Puzzle internals;
 - Project Editor route/flatplan authoring;
 - Effect Editor FX archetypes;
-- Asset Library file promotion;
+- Asset Library file promotion outside its approved finalisation handoff;
 - copied procedural-sound recipes.
 
 ## Archetype And Instance
 
-An **Archetype** is a reusable definition of a game thing.
-
-An **Instance** is a specific placed occurrence of that archetype in a scene.
+An **Archetype** is a reusable definition of a game thing. An **Instance** is a specific placed occurrence of that archetype in a scene.
 
 Example: `archobj_bronze_key` is the reusable Bronze Key archetype. The actual key sitting on a table in a forest hut is a Scene Editor instance that references that archetype.
 
 ## Relationship To Scene Editor
 
-Scene Editor places objects visually and should reference saved Object Archetypes by stable object-archetype ID rather than redefining the object each time.
-
-Example:
-
-- Archetype Object Creator defines `archobj_bronze_key`.
-- Scene Editor places an instance of `archobj_bronze_key` in a scene.
-- The placed instance may add scene-specific position/state while the reusable definition stays in the object archetype record.
-
-Scene Editor integration that consumes object archetype IDs is separate work and must not be faked inside Object Creator.
+Scene Editor places objects visually and should reference saved Object Archetypes by stable object-archetype ID rather than redefining the object each time. Scene Editor integration that consumes object archetype IDs is separate work and must not be faked inside Object Creator.
 
 ## Relationship To Quest Builder And Puzzle Creator
 
-Quest Builder and Puzzle Creator may reference stable object IDs where gameplay requires an item, enemy, marker, door or interactable object.
-
-Examples:
-
-- has item: Bronze Key;
-- defeat enemy: Forest Wolf;
-- talk to character: Merchant NPC;
-- unlock object: Locked Door;
-- activate marker: Save Marker.
-
-They must not duplicate or author the reusable object internals owned by Archetype Object Creator.
+Quest Builder and Puzzle Creator may reference stable object IDs where gameplay requires an item, enemy, marker, door or interactable object. They must not duplicate or author the reusable object internals owned by Archetype Object Creator.
 
 ## Relationship To Project Editor
 
-Project Editor may reference Object Archetypes when structural route logic or world-level conditions need them.
-
-Examples:
-
-- Route requires item: Bronze Key.
-- Station contains required character: Merchant NPC.
-- Route opens after enemy defeated: Forest Wolf.
-- Waypoint activates object: Save Marker.
-
-Project Editor should not fully author object definitions. It references saved archetypes; Object Creator owns their content.
+Project Editor may reference Object Archetypes when structural route logic or world-level conditions need them, but it should not fully author object definitions.
 
 ## Relationship To Procedural Sound Generator
 
@@ -137,10 +126,10 @@ Expected flow:
 Create Synth Sound popup
 → saves recipe under assets/audio/sfx/synth_<slug>.json
 → registers asset_sfx_<slug> in assets/asset-index.json
-→ Object Creator stores only that returned asset_ ID in the appropriate object behaviour/event field
+→ Object Creator stores only that returned asset_ ID in the originating object behaviour/event field
 ```
 
-V1.35 currently contains a provisional `🎛️` Sound Events hookup for this flow. It must be tested against `docs/artifex/22-sound-archetype-generator.md` before being regarded as accepted.
+PR #38 includes an initiating-target capture fix for this flow. It still requires the stale-selection browser test before merge.
 
 ## Object Categories
 
@@ -164,9 +153,9 @@ Supported/relevant object categories include:
 
 V1.34 attempted to repair Step 5 task persistence and layout regressions by restoring canonical `productionAssets.requirements` / `productionAssets.requirementOrder` storage, initial asset-ID task ordering, clean left-list display and compact two-column behaviour.
 
-V1.35 added provisional work for project-folder saving, `Save Draft` / `Save Project` / `Finish`, `Mark Task Ready`, equal-size asset/ZIP controls and the shared synth-sound hookup.
+PR #38 proposes V1.36 to supersede the provisional V1.35 save flow: Save Browser Draft is recovery only, Save Project (In Progress) writes project-backed in-progress records and stages uploaded frames, and Finish / Mark Object Ready promotes staged media into final registered assets before writing a ready object/index entry.
 
-No further feature implementation should occur until the V1.35 pass has been audited and either cleanly integrated or rolled back. Do not add new patch/overlay/wrapper layers to repair it.
+Do not add new patch, overlay, wrapper or MutationObserver installer layers on top of this ownership model.
 
 ## Placeholder Assets
 

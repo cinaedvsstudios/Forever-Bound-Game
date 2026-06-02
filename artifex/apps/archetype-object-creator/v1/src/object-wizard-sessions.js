@@ -42,6 +42,7 @@ export function deleteWizardSession(id) {
 function installWizardSessionIndicator() {
   const menuBar = document.querySelector(".menu-bar");
   if (!menuBar || document.getElementById("wizard-session-wrap")) return;
+  injectWizardSessionIndicatorStyles();
   const wrap = document.createElement("div");
   wrap.id = "wizard-session-wrap";
   wrap.className = "wizard-session-wrap";
@@ -52,6 +53,39 @@ function installWizardSessionIndicator() {
     renderWizardSessionMenu();
   });
   refreshWizardSessionIndicator();
+}
+
+function injectWizardSessionIndicatorStyles() {
+  if (document.getElementById("wizard-session-icon-styles")) return;
+  const style = document.createElement("style");
+  style.id = "wizard-session-icon-styles";
+  style.textContent = `
+    .wizard-session-button {
+      width: 48px !important;
+      height: 48px !important;
+      min-width: 48px !important;
+      min-height: 48px !important;
+      padding: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      color: #fff0ce !important;
+      display: grid !important;
+      place-items: center !important;
+      font-size: 29px !important;
+      line-height: 1 !important;
+    }
+    .wizard-session-button:hover,
+    .wizard-session-button:focus-visible,
+    .wizard-session-wrap.is-open .wizard-session-button {
+      border: 0 !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      transform: scale(1.06);
+    }
+  `;
+  document.head.appendChild(style);
 }
 
 function listWizardSessions() {

@@ -355,7 +355,7 @@ function setupHelp() {
     `);
   });
   document.getElementById('about-button')?.addEventListener('click', () => {
-    openHelp('About V1.0', `
+    openHelp('About V1.36', `
       <p>This is the non-FX Object Archetype Creator. It keeps the Artifex editor shell architecture from the Effect Editor but removes particles, glow engines, emitter dynamics, and effect-layer controls.</p>
       <p>It creates reusable object definitions for characters, NPCs, Foes, props, pickups, doors, markers, caches, hazards, and other scene-placeable game objects.</p>
     `);

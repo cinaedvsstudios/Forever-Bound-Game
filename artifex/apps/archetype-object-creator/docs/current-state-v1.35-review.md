@@ -144,3 +144,18 @@ Use a fresh-cache URL when testing the live app. Test in two phases.
 - `docs/artifex/06-object-library.md` should identify Archetype Object Creator as the active authoring module and point here for implementation status.
 - `docs/artifex/19-project-file-contracts.md` remains the architecture contract; it is not evidence that V1.35 has passed testing.
 - `docs/artifex/22-sound-archetype-generator.md` remains the shared sound contract; Object Creator usage is provisional until verified.
+
+## V1.36 PR #38 follow-up — recorded 2 June 2026
+
+Open PR #38 contains the intended V1.36 implementation pass that responds to the V1.35 problems recorded above. It remains **pending manual acceptance and merge** and must not be treated as current `main` merely because its preview displays V1.36.
+
+The creator has manually accepted the following PR-preview UI changes for inclusion in PR #38:
+
+- repaired Step 5 Action Behaviour layout with no visible control/text overlap;
+- working **Add Frame Event** row creation;
+- click-to-fill behaviour for **Add Empty Frame Slot** while preserving slot order;
+- enlarged saved-wizard crystal-ball icon without the unwanted circular button border/background.
+
+Still pending before merge: disposable-project verification of in-progress staging save and reopen, finalisation refusal/asset-promotion safety, primary asset mapping/overwrite prevention, Sound Generator stale-target assignment and per-frame correction persistence.
+
+This V1.35 document remains a historical record of the risks that prompted PR #38; this follow-up does not rewrite those historical findings.

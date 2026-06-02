@@ -1,5 +1,5 @@
 import { editorState, updateArchetype, updateIdentity } from './editor-state.js';
-import { escapeHtml } from './object-wizard-helpers.js?v=1.35';
+import { escapeHtml } from './object-wizard-helpers.js?v=1.36';
 
 export function createObjectWizardBasicDetails({ setHeader, content, renderAbilityChoice, renderBuildChecklist }) {
   function renderBasicChanges() {

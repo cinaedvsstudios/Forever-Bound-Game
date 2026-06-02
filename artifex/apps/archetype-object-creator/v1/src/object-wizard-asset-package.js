@@ -1,15 +1,21 @@
 import { editorState } from './editor-state.js';
 
-const VERSION = '1.35';
+const VERSION = '1.36';
 const textEncoder = new TextEncoder();
-let assetObserver = null;
-let assetQueued = false;
 let crcTable;
 
 export function initObjectWizardAssetPackage() {
   injectAssetPackageStyles();
-  startAssetPackageObserver();
-  scheduleAssetPackageRefresh();
+}
+
+export function bindObjectWizardAssetPackage(panel, selectedId) {
+  if (!panel || !selectedId) return;
+  const button = panel.querySelector('[data-download-asset-zip]');
+  if (button && !button.dataset.boundAssetZip) {
+    button.dataset.boundAssetZip = 'true';
+    button.addEventListener('click', downloadAssetZip);
+  }
+  renderFramePathTable(panel, selectedId);
 }
 
 function injectAssetPackageStyles() {
@@ -99,49 +105,6 @@ function injectAssetPackageStyles() {
     }
   `;
   document.head.appendChild(style);
-}
-
-function startAssetPackageObserver() {
-  if (assetObserver) return;
-  assetObserver = new MutationObserver(() => scheduleAssetPackageRefresh());
-  assetObserver.observe(document.body, { childList: true, subtree: true });
-}
-
-function scheduleAssetPackageRefresh() {
-  if (assetQueued) return;
-  assetQueued = true;
-  window.requestAnimationFrame(() => {
-    assetQueued = false;
-    refreshAssetPackageControls();
-  });
-}
-
-function refreshAssetPackageControls() {
-  const panel = document.querySelector('#quickstart-dialog .wizard-build-detail-panel');
-  if (!panel) return;
-  const selectedId = selectedRequirementId();
-  if (!selectedId) return;
-
-  const actions = panel.querySelector('.wizard-build-actions');
-  if (actions && !actions.querySelector('[data-download-asset-zip]')) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'wizard-download-zip-button';
-    button.dataset.downloadAssetZip = 'true';
-    button.textContent = '📦 Backup ZIP';
-    button.title = 'Backup/fallback export: download this object package with uploaded frames and metadata';
-    button.addEventListener('click', downloadAssetZip);
-    actions.appendChild(button);
-  }
-
-  const strip = panel.querySelector('[data-frame-strip]');
-  if (strip) {
-    strip.classList.add('wizard-frame-drop-zone');
-    const hint = strip.querySelector('.hint');
-    if (hint && !strip.querySelector('.wizard-frame-box')) hint.textContent = 'Drop image files here, or use 🖼️ Add Images below.';
-  }
-
-  renderFramePathTable(panel, selectedId);
 }
 
 function renderFramePathTable(panel, selectedId) {
