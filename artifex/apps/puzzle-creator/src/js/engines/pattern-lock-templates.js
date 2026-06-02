@@ -38,7 +38,7 @@ export const patternTemplates = {
 };
 
 function makeCubePoints() {
-  const positions = [-0.78, 0.78];
+  const positions = [-1.35, -0.45, 0.45, 1.35];
   const points = [];
   const faces = [
     { axis: 'z', value: 2, emoji: '☀️', zone: 'front' }, { axis: 'z', value: -2, emoji: '🌙', zone: 'back' },
@@ -56,22 +56,22 @@ function makeCubePoints() {
 }
 
 function makePyramidPoints() {
-  const apex = { x: 0, y: 2.5, z: 0 };
+  const apex = { x: 0, y: 2.65, z: 0 };
   const corners = [
-    { x: -2.15, y: -1.55, z: -2.15 }, { x: 2.15, y: -1.55, z: -2.15 },
-    { x: 2.15, y: -1.55, z: 2.15 }, { x: -2.15, y: -1.55, z: 2.15 }
+    { x: -2.45, y: -1.75, z: -2.45 }, { x: 2.45, y: -1.75, z: -2.45 },
+    { x: 2.45, y: -1.75, z: 2.45 }, { x: -2.45, y: -1.75, z: 2.45 }
   ];
   const points = [{ ...apex, expected: '☀️', zone: 'summit' }];
   for (let face = 0; face < 4; face += 1) {
     const left = corners[face];
     const right = corners[(face + 1) % 4];
-    for (let row = 1; row <= 3; row += 1) {
-      const down = row / 3.65;
+    for (let row = 1; row <= 5; row += 1) {
+      const down = row / 5.45;
       const a = lerpPoint(apex, left, down);
       const b = lerpPoint(apex, right, down);
       for (let col = 1; col <= row; col += 1) {
         const position = lerpPoint(a, b, col / (row + 1));
-        const expected = position.y < -0.2 ? '🪨' : position.y < 1.12 ? '🌿' : '☁️';
+        const expected = position.y < -0.25 ? '🪨' : position.y < 1.1 ? '🌿' : '☁️';
         points.push({ ...position, expected, zone: `side-${face}` });
       }
     }
@@ -80,21 +80,20 @@ function makePyramidPoints() {
 }
 
 function makeDiamondPoints() {
-  const top = { x: 0, y: 2.55, z: 0 };
-  const bottom = { x: 0, y: -2.55, z: 0 };
-  const ring = [{ x: 2.3, y: 0, z: 0 }, { x: 0, y: 0, z: 2.3 }, { x: -2.3, y: 0, z: 0 }, { x: 0, y: 0, z: -2.3 }];
+  const top = { x: 0, y: 2.7, z: 0 };
+  const bottom = { x: 0, y: -2.7, z: 0 };
+  const ring = [{ x: 2.45, y: 0, z: 0 }, { x: 0, y: 0, z: 2.45 }, { x: -2.45, y: 0, z: 0 }, { x: 0, y: 0, z: -2.45 }];
   const points = [{ ...top, expected: '💎', zone: 'tip-top' }, { ...bottom, expected: '💎', zone: 'tip-bottom' }];
   [top, bottom].forEach((tip, half) => {
     for (let face = 0; face < 4; face += 1) {
       const left = ring[face];
       const right = ring[(face + 1) % 4];
-      [0.43, 0.72].forEach((down, row) => {
+      [0.24, 0.44, 0.64, 0.84].forEach((down, row) => {
         const a = lerpPoint(tip, left, down);
         const b = lerpPoint(tip, right, down);
-        const count = row + 1;
-        for (let col = 1; col <= count; col += 1) {
-          const point = lerpPoint(a, b, col / (count + 1));
-          const expected = Math.abs(point.y) > 0.95 ? '💎' : Math.abs(point.z) > 0.55 ? '🌙' : '✨';
+        for (let col = 1; col <= row + 1; col += 1) {
+          const point = lerpPoint(a, b, col / (row + 2));
+          const expected = Math.abs(point.y) > 1.18 ? '💎' : Math.abs(point.z) > 0.58 ? '🌙' : Math.abs(point.x) > 0.58 ? '✨' : '🔷';
           points.push({ ...point, expected, zone: `${half ? 'lower' : 'upper'}-${face}` });
         }
       });
@@ -105,16 +104,16 @@ function makeDiamondPoints() {
 
 function makeSpherePoints() {
   const points = [];
-  const radius = 2.45;
-  [-55, -18, 18, 55].forEach((latitude) => {
+  const radius = 2.55;
+  [-67.5, -45, -22.5, 0, 22.5, 45, 67.5].forEach((latitude) => {
     const phi = latitude * Math.PI / 180;
-    for (let longitude = 0; longitude < 360; longitude += 60) {
+    for (let longitude = 0; longitude < 360; longitude += 30) {
       const theta = longitude * Math.PI / 180;
       const x = radius * Math.cos(phi) * Math.cos(theta);
       const y = radius * Math.sin(phi);
       const z = radius * Math.cos(phi) * Math.sin(theta);
       const warm = x >= 0;
-      const expected = warm ? (y > 0.9 ? '☀️' : y < -0.9 ? '🔥' : '🌼') : (y > 0.9 ? '❄️' : y < -0.9 ? '🌊' : '🌙');
+      const expected = warm ? (y > 1.05 ? '☀️' : y < -1.05 ? '🔥' : '🌼') : (y > 1.05 ? '❄️' : y < -1.05 ? '🌊' : '🌙');
       points.push({ x, y, z, expected, zone: warm ? 'dawn' : 'night' });
     }
   });
