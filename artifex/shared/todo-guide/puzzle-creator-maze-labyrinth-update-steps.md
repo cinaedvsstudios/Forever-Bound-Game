@@ -1,6 +1,6 @@
 # Puzzle Creator · Maze / Labyrinth Update Steps
 
-Status: V1.33 approved — header identity, Scatter placement affordance and Surface + Edit ordering accepted; V1.34 puzzle-type landing screen candidate under browser review
+Status: V1.34 approved — puzzle-type landing screen and labelled shared workflow navigation accepted on `main`; Maze / Labyrinth remains the current playable authoring baseline
 Owner: Puzzle Creator
 Related modules: Project Manager, Scene Editor, Quest Builder, Archetype Object Creator, Asset Library, Build Game
 Last updated: 2026-06-02
@@ -91,9 +91,9 @@ src/js/engines/maze-scatter-decorations.js
 
 Scatter is decoration-only. It does not define objectives, collision, route logic or transfer behaviour.
 
-Implemented behaviour retained through V1.33:
+Implemented behaviour retained through V1.34:
 
-- A **Scatter · Decoration + Light** section appears in **04 · Surface + Edit**, beneath Wall Form and before the Colours workflow.
+- A **Scatter · Decoration + Light** section appears in the accepted **Colors** stage, beneath Wall Form and before the Colours workflow.
 - The section is inactive until the maker clicks **Add**; switching it off clears authored positions.
 - A **Decorative Lights** marker slot exists with an amount control and optional registered final visual asset selection.
 - Up to five additional **Decoration Assets** marker slots may be added.
@@ -129,36 +129,35 @@ Approval note: on 2026-05-31 the user tested the V1.32 distribution-mode build a
 
 ## V1.33 implemented and approved · UI identity and Surface + Edit clarity
 
-V1.33 is accepted on `main` following browser review on 2026-06-02.
+V1.33 was accepted on `main` following browser review on 2026-06-02 and is retained within V1.34.
 
 Implemented and accepted behaviour:
 
 - The app header correctly identifies **Artifex Puzzle Creator Module**, rather than incorrectly naming Quest Builder.
 - The Scatter placement action is labelled **Place Markers** and uses the typed amount/seed values on click without requiring Enter first.
-- **Surface + Edit** is ordered as **Walls → Scatter → Colours**, keeping Wall Form and Scatter from interrupting the colour/texture/paint workflow.
+- The colour/surface stage is ordered as **Walls → Scatter → Colours**, keeping Wall Form and Scatter from interrupting the colour/texture/paint workflow.
 - The existing Maze authoring, Walk Test and Scatter marker workflow were retained; no canonical saving or Quest integration was added.
 
-## V1.34 implementation candidate · puzzle-type landing screen and shared workflow navigation
+## V1.34 implemented and accepted · puzzle-type landing screen and shared workflow navigation
 
-V1.34 is a UI-shell candidate and is not yet the accepted live baseline until browser-tested and merged.
+V1.34 was merged to `main` through PR #42 on 2026-06-02 and is the current accepted Puzzle Creator UI-shell baseline.
 
-Candidate behaviour:
+Implemented behaviour:
 
 - First opening Puzzle Creator presents a left-side **Choose a Puzzle Type** launcher rather than immediately entering Maze / Labyrinth.
-- The right viewing area is visually blank until a workflow is selected.
+- The right viewing area remains visually blank until a workflow is selected.
 - The launcher lists the existing registered choices: **Maze / Labyrinth**, **Arena Trial**, **Obstacle Course**, **Symbol Assembly**, **Item Order Puzzle** and **Hazard Puzzle**.
-- Selecting **Maze / Labyrinth** reveals the existing accepted V1.33 Maze workflow without changing its puzzle mechanics.
+- Selecting **Maze / Labyrinth** reveals the retained accepted Maze workflow without changing its puzzle mechanics.
 - Once a workflow is selected, the navigation rail stays in the same location and uses visible labels beneath its icons: **Setup**, **Display**, **Logic** and **Colors**.
 - The **Puzzles** menu offers a return to the chooser without deliberately clearing the currently authored state.
 - The other listed puzzle types remain their existing early workflow state; V1.34 does not implement or claim completed gameplay editors for them.
 
-Required browser confirmation before merge:
+Scope retained:
 
-- initial chooser appears with blank viewing area and no visible Maze workflow;
-- selecting Maze opens the retained working workflow;
-- labelled navigation is clear and stable;
-- Random, Walk Test, Surface + Edit and Place Markers behaviour remain intact;
-- returning to the chooser and reselecting Maze does not lose the current authored state.
+- no canonical connected-project puzzle saving;
+- no Quest Builder `puzzleId` integration;
+- no new Maze mechanic or Scatter placement algorithm changes;
+- no Object Creator, sound or shared-service changes.
 
 ## Queued Scatter enhancement · Secondary Light Set / coverage fill
 
@@ -205,6 +204,7 @@ Suggested export direction when implemented:
 - Traboule as a hidden pass-through wall collision override.
 - Tunnel Mode, real first-person/3D renderer and helper pendant/crystal.
 - Texture-aware joined Rounded/Organic surfaces, if later testing requires it.
+- Canonical puzzle-index/content-file saving and live Quest Builder `puzzleId` handoff.
 
 ## Ownership and linking contracts
 
@@ -218,18 +218,20 @@ Suggested export direction when implemented:
 
 Features define content in the maze. Completion Rules decides which gameplay features are mandatory. Scatter and its light layers do not appear in Completion Rules because they are decorative only.
 
-## Next implementation order after V1.33 approval
+## Next implementation order after V1.34 approval
 
-1. Complete browser testing and acceptance decision for the V1.34 puzzle-type landing screen/shared navigation candidate.
-2. Implement and test the Secondary Light Set / coverage-fill workflow within `maze-scatter-decorations.js`.
-3. Implement Traboule as a hidden pass-through wall feature.
-4. Implement shared/global Portal Registry integration across apps.
-5. Define and implement Foe/Hazard feature behaviour.
-6. Resolve Tunnel Mode design and implement renderer/lighting workflow.
-7. Implement helper pendant/crystal only after mandatory objective tracking works.
+1. Implement and test the Secondary Light Set / coverage-fill workflow within `maze-scatter-decorations.js`, only when selected as the next approved Puzzle Creator scope.
+2. Implement Traboule as a hidden pass-through wall feature.
+3. Implement shared/global Portal Registry integration across apps.
+4. Define and implement Foe/Hazard feature behaviour.
+5. Resolve Tunnel Mode design and implement renderer/lighting workflow.
+6. Implement helper pendant/crystal only after mandatory objective tracking works.
+7. Separately plan canonical `puzzles/` saving and Quest Builder integration under the project-file contract.
 
 ## Preserved baseline for every future stage
 
+- The V1.34 landing screen and labelled shared workflow navigation remain intact unless deliberately revised.
+- Maze / Labyrinth remains the currently developed playable editor until other puzzle engines receive dedicated implementation and acceptance.
 - No numbered patch files or transitional wrapper modules may reappear.
 - Features and Completion Rules remain separate.
 - Scatter remains decoration-only and must not affect collision or completion rules.
