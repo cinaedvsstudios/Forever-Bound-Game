@@ -4,7 +4,7 @@
 
 This document is the current progress tracker and decision gate for restoring safe Artifex UI work after the large mixed integration period on 31 May 2026.
 
-The objective is not to pause development until every app is perfect. The objective is to resume work app-by-app from a known current-main baseline, without silently stacking UI work over broken behaviour, ambiguous save paths, obsolete files or temporary patch layers.
+The objective is not to pause development until every app is perfect. The objective is to resume work app-by-app from a verified current-main baseline, without silently stacking UI work over broken behaviour, ambiguous save paths, obsolete files or temporary patch layers.
 
 Central controls:
 
@@ -13,7 +13,15 @@ Central controls:
 3. Reopen UI-only work only where the baseline is known and the scope excludes unapproved schema, save, integration and architecture changes.
 4. Start implementation only after the user approves a named pass; stop for review after each pass.
 
-## Current Progress Status — Updated 1 June 2026
+## Current progress status — refreshed 2 June 2026
+
+Current GitHub `main` verified for this refresh:
+
+```text
+81c7a6df28fa6f0d57b7033076a7ec28c2ca34d7
+```
+
+This refresh records already-merged work only. Archetype Object Creator PR #38 remains open and under review; its proposed V1.36 state is not treated as current-main completion.
 
 ### Completed: Phase 0 — Preserve current truth and stop hidden drift
 
@@ -24,16 +32,18 @@ artifex/shared/todo-guide/audits/2026-06-01-change-timeline.md
 artifex/shared/todo-guide/audits/2026-06-01-current-main-baseline-matrix.md
 ```
 
-Confirmed outcome:
+Original outcome preserved as historical evidence:
 
 ```text
 - A large mixed merge on 31 May brought runtime, shared-service, documentation and asset work into main across several apps.
-- Scene Editor v0.34 reached main but failed manual acceptance and requires ownership consolidation before UI work there.
-- Archetype Object Creator V1.35 reached main but remains unverified.
-- Effect Editor had baseline ambiguity between an emergency primary route and an index2 clean-route candidate.
-- PR #20 is unsafe/abandoned and must not be used as a development base.
-- PR #9 and PR #17 are evidence only and must not be merged blindly.
+- Scene Editor v0.34 reached main but failed manual acceptance and required ownership consolidation.
+- Archetype Object Creator V1.35 reached main but remained unverified.
+- Effect Editor initially had baseline ambiguity between an emergency primary route and an index2 clean-route candidate.
+- PR #20 was unsafe/abandoned and must not be used as a development base.
+- PR #9 and PR #17 were evidence only and must not be merged blindly.
 ```
+
+Later phases below supersede the original Scene Editor and Effect Editor action conclusions.
 
 ### Completed: Phase 1 — Archive and hotfix consolidation inventory
 
@@ -43,15 +53,7 @@ Recorded audit file:
 artifex/shared/todo-guide/audits/2026-06-01-archive-and-hotfix-inventory.md
 ```
 
-Confirmed outcome:
-
-```text
-- Scene Editor has overlapping ownership across inspector structure, transform input, aspect/wrap, movement, sliders and card/visual behaviour; these active files cannot simply be archived.
-- Archetype Object Creator has active Step 5 enhancement/layout/frame/package layers requiring validation before consolidation or UI implementation.
-- Creation Guide has live current-main wrapper debt independently of abandoned PR #20.
-- Project Editor, Quest Builder and Puzzle Creator contained narrow inactive archive candidates.
-- Sound Generator preview/shared popup is intentional retained code and remains a potential small UI-only lane after a smoke check.
-```
+The inventory correctly identified the then-live repair debt. It remains useful as evidence of why later consolidation work was needed, but its pre-repair Scene Editor and pre-decision Effect Editor statuses are no longer current.
 
 ### Completed: Phase 2A — Project Editor archive-only pass 01
 
@@ -125,7 +127,7 @@ artifex/apps/puzzle-creator/src/js/engines/maze-v110-fixes.js
   → artifex/apps/puzzle-creator/archive/legacy-maze-pre-v132/maze-v110-fixes.js
 ```
 
-The active Puzzle Creator route remains V1.32 with `src/js/main.js?v=1.28` and `src/js/engines/maze-labyrinth-consolidation-loader.js?v=1.32`. Puzzle Creator-specific syntax and production-build checks passed during this archive-only pass.
+The active Puzzle Creator route remains V1.32 with `src/js/main.js?v=1.28` and `src/js/engines/maze-labyrinth-consolidation-loader.js?v=1.32`. Its detailed Maze/Labyrinth status file records V1.32 approval and implemented Scatter placement modes. A parallel Puzzle Creator baseline task is currently responsible for any further Puzzle Creator-specific documentation correction.
 
 ### Completed: Phase 3 — Corrected master rules-compliance and stability analysis
 
@@ -135,16 +137,7 @@ Recorded audit file:
 artifex/shared/todo-guide/audits/2026-06-01-master-rules-compliance-and-stability-audit.md
 ```
 
-Confirmed outcome:
-
-```text
-- Three archive-only passes are complete and should not be expanded or treated as behavioural fixes.
-- Scene Editor is the first required behavioural repair and is blocked from UI redesign until selected-object ownership is repaired and tested.
-- Archetype Object Creator V1.35 requires functional validation before changes.
-- Creation Guide and Project Editor require focused app-local verification when selected, but do not block independent safe UI lanes.
-- Puzzle Creator V1.32 is a recommended fuller UI-only lane after a quick baseline check.
-- Sound Generator preview/shared popup is a small visual-only lane after a quick smoke check, with save/asset-index/caller integration excluded.
-```
+That audit was accurate at the time it was produced. It has now been refreshed to recognise subsequent merged Effect Editor work and the merged Scene Editor ownership implementation.
 
 ### Completed: Phase 4 — Effect Editor route decision and Hub cutover
 
@@ -154,21 +147,7 @@ Recorded audit file:
 artifex/shared/todo-guide/audits/2026-06-01-effect-editor-route-decision-audit.md
 ```
 
-The read-only route audit and user manual deployed-browser comparison confirmed that the complete rewrite remained available at `index2.html`, while the default route was still exposing the emergency/repaired version.
-
-Accepted Effect Editor baseline:
-
-```text
-artifex/apps/effect-editor/index2.html
-Visible label: INDEX2-CLEAN-0.2.3
-```
-
-Retained old emergency route for reference/rollback only:
-
-```text
-artifex/apps/effect-editor/index.html
-Observed deployed label during user comparison: V3.35-EMERGENCY
-```
+The read-only route audit and user manual deployed-browser comparison confirmed that the clean rewrite remained available at `index2.html`, while the old default route exposed an emergency/repaired version.
 
 PR #25, **Route Effect Editor hub link to accepted index2 baseline**, was reviewed and merged into `main` on 1 June 2026.
 
@@ -176,33 +155,80 @@ PR #25, **Route Effect Editor hub link to accepted index2 baseline**, was review
 PR: #25
 Merge commit: a4a1bc9f03fe1c3e9ed08c066851adb8743bc520
 Scope: Hub-link-only route cutover; no Effect Editor implementation files changed.
+Hub target: apps/effect-editor/index2.html?from=hub
 ```
 
-Changed Hub navigation target:
+### Completed: Phase 5 — Effect Editor Index2 parity and accepted repair sequence
+
+The earlier route decision identified three parity gaps. Those gaps are no longer outstanding: they were implemented into the accepted Index2 route and followed by scoped acceptance repairs.
+
+Merged sequence:
+
+| PR | Result now present on `main` |
+|---|---|
+| #27 | Ported Rotation Direction modes, Orbital Force and ALL CAPS text control into Index2 permanent modules. |
+| #28 | Repaired text-layer/layer-delete behaviour; user-corrected panel/text-default portions were superseded by #29. |
+| #29 | Restored required Effect Specific Controls/diagnostics placement and intended Rising Spell Text sample behaviour. |
+| #30 | Repaired missing `finite` helper used by Dynamics/Orbital Force synchronisation. |
+| #31 | Repaired missing `setText` helper in Dynamics controls. |
+| #32 | Corrected ARTIFEX rune/header alignment and Rotate/Degree Range emitter-control wiring. |
+| #33 | Restored existing Brush / Shape Library to Index2. |
+| #34–#35 | Recorded later Effect Editor backlog and visual/reference/My Settings notes. |
+| #36 | Updated the current-main baseline matrix for the accepted Effect Editor Index2 state. |
+
+Accepted Effect Editor baseline on current `main`:
 
 ```text
-FROM: apps/effect-editor/?from=hub
-TO:   apps/effect-editor/index2.html?from=hub
+Entry point: artifex/apps/effect-editor/index2.html
+Visible/cache version: INDEX2-CLEAN-0.2.6
+Hub target: artifex/apps/effect-editor/index2.html?from=hub
 ```
 
-Known missing parity features to port in a separate future Effect Editor pass:
+Remaining Effect Editor work is not route selection or the three original parity gaps. It is separately scoped later work: connected-project save/status and canonical effect-index integration, Effect Library thumbnails/previews, emission guides, real FX engine expansion and preset quality, My Settings/pinned-controls restoration, and later technical cleanup where approved.
+
+### Completed implementation, acceptance pending: Phase 6 — Scene Editor ownership consolidation
+
+The earlier audits correctly required Scene Editor to consolidate Object Inspector and transform ownership. That implementation has now merged through PR #37.
 
 ```text
-- Rotation-direction controls: random rotation, within degree range, lock direction.
-- Orbital control.
-- Convert text to ALL CAPS.
+PR: #37 — Consolidate Scene Editor object, movement and UI ownership
+Merge commit: d759ae7412779de5689eb202ce9024829af6b58d
+Active entry point: artifex/apps/scene-editor/index.html
+Visible/cache version: v0.35-owner-consolidation
 ```
 
-Not authorised by the route decision/cutover:
+Confirmed implementation now on `main`:
 
 ```text
-- Changing, deleting or archiving the old emergency route or rescue files.
-- Implementing the three missing parity features.
-- Connected-folder save or canonical effect-index integration.
-- Broad Effect Editor redesign or global branding/aspect changes.
+- scene-editor-renderer.js owns permanent inspector/card structure.
+- scene-editor-transform-controls.js owns rotation, resize, scale, Wrap Bounding Box, Aspect Ratio Lock and Border binding.
+- scene-editor-stage-drag.js owns move-handle drag, middle-mouse pan, X/Y drag sync and offscreen range.
+- scene-editor-layer-controls.js is reduced to layer responsibilities.
+- scene-editor-value-sliders.js no longer has a separate direct transform mutation route.
+- scene-editor-aspect-controls.js, scene-editor-card-controller.js and scene-editor-offscreen-placement.js are removed from the active index.html load chain.
+- scene-editor-object-states.css is active for permanent Border display behaviour.
 ```
 
-## Current Authority Set
+No checked current-main document records a completed post-merge deployed manual browser acceptance run. Therefore the correct status is:
+
+```text
+Implementation merged; manual acceptance pending.
+```
+
+Required final acceptance gate:
+
+```text
+- Select and edit the ball: only the ball changes.
+- Select and edit the box: only the box changes.
+- Confirm a square image wraps as visibly square on the rendered 16:9 stage.
+- Confirm Border visibly hides/shows the selected object border only.
+- Reorder layers and Recalculate; confirm persistence after rerender and save/reload, including locked layers.
+- Test move-handle drag, editable X/Y, offscreen coordinates and middle-mouse workspace pan.
+- Test asset picker, object preview, menu actions, import and Download JSON.
+- Wait after interaction and confirm no duplicated/reinstalled controls and no console errors.
+```
+
+## Current authority set
 
 All later analysis and implementation work must use current `main` and check against:
 
@@ -223,78 +249,45 @@ artifex/shared/todo-guide/audits/2026-06-01-current-main-baseline-matrix.md
 artifex/shared/todo-guide/audits/2026-06-01-archive-and-hotfix-inventory.md
 artifex/shared/todo-guide/audits/2026-06-01-master-rules-compliance-and-stability-audit.md
 artifex/shared/todo-guide/audits/2026-06-01-effect-editor-route-decision-audit.md
+artifex/shared/todo-guide/audits/2026-06-02-code-vs-documentation-current-main-refresh.md
 ```
 
-## Remaining Focused Read-Only Analysis Work
+Note: the baseline matrix is also being touched by active Object Creator PR #38, so it should receive any additional Scene Editor refresh only after that overlap is resolved.
 
-| Priority | Surface | Required read-only work | Blocks UI where? | Recommended owner |
-|---:|---|---|---|---|
-| 1 | Archetype Object Creator | Validate V1.35 wizard flow, save/index update, browser recovery and Sound Generator callback behaviour. | Object Creator only. | Agent plus manual checks. |
-| 2 | Project Editor | Verify current save/export behaviour and remaining user-facing Project Manager terminology drift. | Project Editor expansion only. | Agent/research. |
-| 3 | Creation Guide | Verify starter ZIP/package output and starter-schema alignment from current main. | Creation Guide/project-start reliability only. | Agent/research. |
-| 4 | Hub | Later audit module icons/labels/routes/versions against final accepted module list, when Hub presentation work becomes relevant. | Hub UI only; currently superficial for the user. | Agent/research later. |
-| 5 | Effect Editor | Before feature implementation, map only the three accepted missing parity behaviours into index2's permanent modules. | Effect Editor parity pass only. | Agent or Codex read-only planning. |
+## Current app-by-app position
 
-## First Required Behavioural Repair
+| Surface | Current verified position | Next permitted/recommended action |
+|---|---|---|
+| Effect Editor | Accepted `index2.html` / `INDEX2-CLEAN-0.2.6`; original route/parity blocker resolved. | Future scoped save/library/guides/engine/My Settings work only if selected. |
+| Scene Editor | `v0.35-owner-consolidation` merged; acceptance not yet recorded. | Run deployed manual acceptance; do not claim stable completion until it passes. |
+| Puzzle Creator | V1.32; archive-only cleanup complete; permanent named modules/active loader retained. | Allow the current read-only/manual baseline task to complete before further Puzzle changes. |
+| Archetype Object Creator | V1.35 remains current main; V1.36 is proposed in open PR #38 with review findings. | Repair/review PR #38; do not mark complete or merge while findings remain. |
+| Sound Generator preview/shared popup | Retained intentional preview/runtime surface; caller acceptance remains tied to Object Creator. | Visual-only smoke/UI pass remains possible only without save/callback work. |
+| Quest Builder | Archive-only cleanup complete; later save/schema/terminology and puzzle handoff work remains. | Later bounded baseline/integration work. |
+| Project Editor | Archive-only cleanup complete; connected-folder save and terminology verification remains. | Current-main-only analysis later; do not merge PR #9 as-is. |
+| Creation Guide | Live wrapper/schema/package verification debt remains. | Current-main-only verification later; do not use PR #20 as a base. |
 
-Scene Editor remains the first confirmed functional repair:
+## Current immediate work lanes
 
 ```text
-Scene Editor: consolidate Object Inspector and transform ownership to repair selected-object / wrong-object behaviour.
+1. Allow the running Puzzle Creator baseline/documentation task to finish and review its findings.
+2. Correct and review Object Creator PR #38; it is not accepted current-main work yet.
+3. Run the deployed manual acceptance gate for merged Scene Editor v0.35-owner-consolidation.
+4. After active Object Creator overlap ends, correct the remaining stale Scene Editor wording in the baseline matrix.
 ```
 
-Mandatory acceptance gate:
-
-```text
-- Editing the ball changes only the ball.
-- Editing the box changes only the box.
-- Alternating selections does not apply stale values to the wrong object.
-- Move, resize, rotate, skew, aspect-lock and wrap-to-image affect only the selected item.
-- Visual adjustments remain selected-object specific.
-- Inspector cards render once without accumulating repair controls.
-- Save/autosave, reload and preview remain functional.
-- No replacement patch/helper/wrapper layer is introduced.
-```
-
-## Safe UI and Feature Resumption Lanes
-
-| Candidate | Required gate | Initial allowed scope | Explicit exclusions | Decision |
-|---|---|---|---|---|
-| Puzzle Creator V1.32 | Short current-main visual/manual baseline with version and route recorded. | Panel layout, spacing, typography, cards, toolbar/button/icon presentation and visible wording corrections. | Maze engine, loader consolidation, schemas, save paths, project-folder/registered-content integration and new wrappers. | Recommended first fuller independent UI-only lane. |
-| Sound Generator preview/shared popup V1.00 | Short modal/control/preview smoke test. | Popup/card layout, typography, spacing, control readability and visual accessibility. | Project-folder recipe save, asset-index registration, JSON import/export, Save and Assign callback and Object Creator integration. | Smallest low-risk visual-only lane. |
-| Effect Editor index2 | Parity mapping for the three accepted missing features, then one separately approved pass. | Port only the agreed controls into index2 permanent ownership; later UI polish can follow. | Old emergency repair/archive, save-contract integration, broad redesign, global aspect/logo changes. | Good rewritten baseline now accepted; useful feature-parity lane if prioritised. |
-| Quest Builder V1.2.12 | Quick entry/runtime/style and visible-flow check. | Presentation-only cards/flow/menu/control styling. | Schema, connection logic, export/save integration and new wrappers. | Later safe visual lane. |
-| Hub V1.1.4 | Link/version/icon baseline only when Hub work becomes useful. | Branding, spacing, labels, icon and card presentation. | Route/model restructuring and active-project/local-storage changes. | Not urgent while direct module URLs are being used. |
-
-## Current Decision Point — No New Implementation Authorised Yet
-
-Stabilisation analysis, initial archive cleanup and the Effect Editor route rescue are now recorded. The user must choose the next separately scoped pass:
-
-```text
-A. Port the three known missing Effect Editor features into the accepted index2 rewrite, starting with a narrow mapping/planning pass.
-B. Reopen independent visible UI work through a quick Puzzle Creator V1.32 baseline check, followed by UI-only work if accepted.
-C. Begin the first confirmed behavioural repair: Scene Editor Object Inspector and transform ownership consolidation, with full manual testing.
-D. Continue read-only validation in Archetype Object Creator, Project Editor or Creation Guide.
-```
-
-Practical recommendation:
-
-```text
-Because the Effect Editor rewrite has just been recovered and only three visible parity gaps were identified, the most coherent immediate follow-up is a narrow read-only mapping of those three missing controls into index2. Implementation should wait for that map and a fresh Codex allowance. Scene Editor remains the highest-priority broken app, but it is a larger controlled repair.
-```
-
-## Non-Negotiable Working Controls
+## Non-negotiable working controls
 
 1. Current `main` is the only implementation baseline. Old PRs and branches may be inspected as evidence only unless explicitly approved otherwise.
-2. Audit and mapping work is read-only. It must not edit files, create branches, merge PRs or perform cleanup while investigating.
+2. Audit and mapping work is read-only unless the user separately authorises a documentation correction or implementation pass.
 3. Implementation begins only after the user approves a named pass, permitted file area, prohibited changes and acceptance checks.
 4. One app and one concern per implementation pass. UI, save-contract integration, schema work, parity work and hotfix consolidation remain separate unless explicitly approved as unavoidable.
 5. No new patch/hotfix/wrapper files as the normal fix route. Valid behaviour moves into permanent ownership.
 6. No silent multi-hour implementation. Every pass stops with a report and review gate.
 7. Archive rather than delete obsolete work initially, and only after verified inactivity or successful replacement.
-8. A manual acceptance gate is required before another implementation pass begins.
+8. A manual acceptance gate is required before another implementation pass begins in an app with pending acceptance.
 
-## What Is Explicitly Not Authorised
+## What is explicitly not authorised
 
 ```text
 - a repo-wide automatic cleanup;
@@ -302,6 +295,7 @@ Because the Effect Editor rewrite has just been recovered and only three visible
 - deleting old implementations instead of initially archiving them;
 - merging PR #20 or using it as a development base;
 - blindly merging PR #9 or PR #17;
+- treating Object Creator PR #38 as accepted before its review findings are resolved and it is merged/accepted;
 - a mass save-schema or connected-folder rewrite;
 - bundling architecture work into a UI-only or parity pass;
 - continuing implementation work without a stop-and-report checkpoint.
