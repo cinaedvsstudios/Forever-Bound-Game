@@ -4,7 +4,7 @@ import { patternPaletteColor } from './pattern-lock-templates.js';
 
 const DEFAULT_EMPTY = '#d5dbd6';
 const DEFAULT_GLOW = '#9ee6a4';
-const BASE_SIZE = 0.19;
+const BASE_SIZE = 0.36;
 
 export class PatternLockRenderer {
   constructor(host, callbacks = {}) {
@@ -146,7 +146,7 @@ export class PatternLockRenderer {
     const texture = new THREE.CanvasTexture(canvas);
     const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
     const sprite = new THREE.Sprite(material);
-    sprite.scale.set(0.41, 0.41, 0.41);
+    sprite.scale.set(0.56, 0.56, 0.56);
     sprite.renderOrder = 4;
     return sprite;
   }
