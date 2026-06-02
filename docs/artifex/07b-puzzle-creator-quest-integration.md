@@ -6,7 +6,7 @@ This document defines how a completed puzzle created in **Puzzle Creator** is us
 
 A puzzle is a self-contained playable challenge. A Quest may contain one or more puzzles as meaningful flow steps, but Quest Builder must not absorb or duplicate a puzzle's internal authored mechanics.
 
-This is a design and integration contract. It does not mean the currently live Quest Builder V1.2.12 already exposes a Puzzle block or that Puzzle Creator V1.30 already writes canonical connected-project files.
+This is a design and integration contract. It does not mean the currently live Quest Builder V1.2.12 already exposes a Puzzle block or that Puzzle Creator V1.33 already writes canonical connected-project files.
 
 ## Locked Module Names
 
@@ -209,7 +209,9 @@ The current V1.2.12 Quest Builder does not yet implement this. Adding it is a fu
 
 ## Current Puzzle Creator Status Relevant to Integration
 
-Puzzle Creator V1.30 already shows a self-contained authoring model with a **Game logic** section, `Module ID`, `Puzzle Type`, `Integration Context`, `Completion Flag` and `Calling Text`. It also supports multiple puzzle engines in its current UI direction, including Maze / Labyrinth, Arena, Course, Symbol, Order and Hazard.
+Puzzle Creator V1.33 is the accepted live Maze / Labyrinth presentation and usability baseline. It shows a self-contained authoring model with a **Game logic** section, `Module ID`, `Puzzle Type`, `Integration Context`, `Completion Flag` and `Calling Text`, and it surfaces six planned puzzle engine choices: Maze / Labyrinth, Arena Trial, Obstacle Course, Symbol Assembly, Item Order Puzzle and Hazard Puzzle.
+
+The V1.34 UI-shell candidate changes initial navigation only: it proposes a **Choose a Puzzle Type** landing screen, a blank viewing area until a workflow is selected, and fixed labelled navigation stages of **Setup**, **Display**, **Logic** and **Colors** after selection. V1.34 does not implement new gameplay engines, project saving or Quest linking, and is not a live baseline until browser-tested and merged.
 
 However, the current Puzzle Creator is not yet canonical connected-project integration for Quest Builder:
 
