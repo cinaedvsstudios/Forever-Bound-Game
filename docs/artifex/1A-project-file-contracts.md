@@ -1,7 +1,8 @@
 # Artifex Master Contract and Project File Rules
 
-Status: Foundation draft for documentation consolidation  
-Prepared from current `main` baseline: `184309255347439a5e6ce82a6e6aa1fc99442760`  
+Status: Active foundation contract under controlled consolidation  
+Foundation published on `main`: PR #47 / merge `a475a90f4baca4421ff120c7244563ac283b9dd8`  
+Latest baseline checked for this update: `f707beb781a63165da29e145f5b8c4deeeada6ec`  
 Intended final role: the single governing contract for rules that apply across the Artifex suite.
 
 ## Purpose
@@ -10,7 +11,7 @@ This document is the central Artifex contract. It defines the universal rules th
 
 Artifex is a reusable game-building system. **Forever Bound / Artifacts Adventures** is a game project that may be authored through Artifex; it is not the definition of Artifex itself.
 
-This contract must not become a running development diary or module to-do list. It owns platform-wide decisions only. Information unique to one module belongs in that module's single specification document. Work still to be done belongs in `docs/GLOBAL_TODO.md`.
+This contract must not become a running development diary or module to-do list. It owns platform-wide decisions only. Information unique to one module belongs in that module's single specification document. Work still to be done belongs in `docs/artifex/2A-global-to-do.md`.
 
 ## Documentation Authority Model
 
@@ -24,7 +25,7 @@ One specification document per actual module or maintained shared service:
   purpose, ownership boundary, active route/baseline, unique interface and module-only rules
 
 One human-readable active work list:
-  docs/GLOBAL_TODO.md
+  docs/artifex/2A-global-to-do.md
 
 Archive:
   historical audits, handovers, superseded baselines, completed implementation records,
@@ -40,17 +41,20 @@ Exact data schemas may remain in subordinate technical references where repeatin
 The following documents remain valid reference types only where their subject applies:
 
 ```text
+docs/artifex/0A-index-of-files.md
+  controlled active-document index and consolidation map
+
+docs/artifex/2A-global-to-do.md
+  all active shared and module-specific work still to be completed
+
 docs/artifex/19a-project-starter-file-schemas.md
   exact minimum starter JSON shapes and typed empty indexes
 
 docs/artifex/22-sound-archetype-generator.md
   Sound Generator module/service specification and generated-audio workflow
-
-docs/GLOBAL_TODO.md
-  all active shared and module-specific work still to be completed
 ```
 
-Further existing files will either become one module's cleaned specification document, be absorbed where they contain universal rules, or be archived after useful information is transferred. Until the consolidation pass is completed and accepted, existing files on `main` remain historical/source evidence and must be checked rather than silently discarded.
+Further existing files will either become one module's cleaned specification document, be absorbed where they contain universal rules, or be archived after useful information is transferred. Until extraction is verified, older documents on `main` remain source evidence and must not be silently discarded.
 
 ## Locked Project Layers
 
@@ -74,26 +78,26 @@ Existing identifiers, task IDs, historical documents or stored filenames contain
 
 ## Universal Module Boundary Rule
 
-Artifex modules communicate through stable IDs, project-relative paths and defined references. One module must not swallow another module's authored content merely because it needs to use or validate it.
-
-At platform level, the ownership boundaries are:
+Artifex modules communicate through stable IDs, project-relative paths and defined references. One module must not absorb another module's authored content merely because it needs to use or validate it.
 
 | Module or service | Owns / writes | Must not own or author |
 |---|---|---|
-| Hub / Artifex Portal | navigation entry points and presentation of available modules/projects where implemented | authored project content |
-| Creation Guide | Blank Starter Project initialisation, project registration/setup, starter input-map creation, optional intake setup and setup/readiness reporting | populated scenes, quests, puzzles, object/FX definitions, promoted asset content or build output |
-| Project Editor | project structural graph, Flatplan/routes, project-level structure and structural references | scene interiors, quest internals, puzzle internals, object/FX authoring or raw asset promotion |
-| Scene Editor | scenes, screens, visual placements and scene instance references | project route structure, quest/puzzle internals or sound-recipe authoring |
-| Quest Builder | quests, sidequests, branches, progression conditions/outcomes and quest-scoped story/dialogue content where defined | puzzle internal definitions, visual scene layout, asset media/recipe authoring or project route structure |
-| Puzzle Creator | self-contained puzzle definitions, internal challenge rules and puzzle-owned references | whole quest chains, project route graph or copied sound recipes |
-| Archetype Object Creator | reusable non-FX object archetypes and references to final registered assets | scene instances, quest/puzzle internals, FX definitions or copied procedural recipes |
-| Effect Editor | reusable effect archetypes and their index entries | object archetypes, scene placement or unrelated gameplay structure |
-| Asset Library | final registered supplied/generated assets, metadata and groups | gameplay behaviour definitions |
-| Sound Generator | procedural sound recipe authoring, preview/playback mapping and request for final Asset Library registration | object, scene, quest or puzzle behaviour records |
-| Shared Project Folder Service | browser folder handles, permission state, relative-path reads/writes and shared draft/save guards | decisions about authored module content |
-| Shared Health Guide | generated readiness/audit/validation reporting | silent correction or overwriting of authored content |
-| Playtest / Runtime Engine | reading authored project data to run or preview playable content | primary authoring ownership |
-| Build Game | generated validated runtime/build package output | authoring module internals |
+| Hub / Artifex Portal | Navigation entry points and presentation of available modules/projects where implemented. | Authored project content. |
+| Creation Guide | Blank Starter Project initialisation, project registration/setup, starter input-map creation, optional intake setup and setup/readiness reporting. | Populated scenes, quests, puzzles, object/FX definitions, promoted asset content or build output. |
+| Project Editor | Project structural graph, Flatplan/routes, project-level structure and structural references. | Scene interiors, quest internals, puzzle internals, object/FX authoring or raw asset promotion. |
+| Scene Editor | Scenes, screens, visual placements and scene instance references. | Project route structure, quest/puzzle internals or sound-recipe authoring. |
+| Quest Builder | Quests, sidequests, branches, progression conditions/outcomes and quest-scoped story/dialogue content where defined. | Puzzle internal definitions, visual scene layout, asset media/recipe authoring or project route structure. |
+| Puzzle Creator | Self-contained puzzle definitions, internal challenge rules and puzzle-owned references. | Whole quest chains, project route graph or copied sound recipes. |
+| Archetype Object Creator | Reusable non-FX object archetypes and references to final registered assets. | Scene instances, quest/puzzle internals, FX definitions or copied procedural recipes. |
+| Effect Editor | Reusable effect archetypes and their index entries. | Object archetypes, scene placement or unrelated gameplay structure. |
+| Asset Library | Final registered supplied/generated assets, metadata and groups. | Gameplay behaviour definitions. |
+| Sound Generator | Procedural sound recipe authoring, preview/playback mapping and request for final Asset Library registration. | Object, scene, quest or puzzle behaviour records. |
+| Shared Project Folder Service | Browser folder handles, permission state, relative-path reads/writes and shared draft/save guards. | Decisions about authored module content. |
+| Shared Active Project Service | Selected-project state and handoff needed across modules, where maintained as a distinct service. | Authored module records. |
+| Registered Content Service / Picker | Shared reading/selection of registered records, where maintained as a distinct service. | Ownership of the selected records. |
+| Shared Health Guide | Generated readiness/audit/validation reporting. | Silent correction or overwriting of authored content. |
+| Playtest / Runtime Engine | Reading authored project data to run or preview playable content. | Primary authoring ownership. |
+| Build Game | Generated validated runtime/build package output. | Authoring module internals. |
 
 The detailed unique workflow for a module belongs in that module's own specification document; this table establishes the universal separation rule.
 
@@ -414,11 +418,11 @@ The detailed former colour reference can be preserved as source material during 
 
 ## Documentation Control Rules
 
-From the point this consolidation is approved:
+From the point this consolidation is adopted:
 
 - Universal platform rules belong only in this master contract.
 - Each module/service has one active specification document for its unique permanent information, ownership, active route/baseline and specific interface.
-- Current, next, blocked and future work belongs only in `docs/GLOBAL_TODO.md`, organised under **All Apps / Shared Platform** or the relevant module/service section.
+- Current, next, blocked and future work belongs only in `docs/artifex/2A-global-to-do.md`, organised under **All Apps / Shared Platform** or the relevant module/service section.
 - A machine-readable task file may remain where an application actively depends on it, but it must be identified as a machine/runtime dependency and not maintained as a second competing human backlog.
 - Dated audits, handovers, status updates, completed pass records and failed-acceptance plans are archive material after their still-valid rules or tasks have been transferred.
 - No new app-specific `todo.md`, current-state diary, status-refresh or active dated audit may be treated as another source of truth.
@@ -426,6 +430,6 @@ From the point this consolidation is approved:
 
 ## Migration Note
 
-This file is a new consolidation draft built from existing contract and platform-rule sources. It does not authorise runtime changes, schema rewrites, automatic file movement or archive decisions by itself.
+This file is a consolidation foundation built from existing contract and platform-rule sources. It does not authorise runtime changes, schema rewrites, automatic file movement or archive decisions by itself.
 
-The active migration work still required to adopt this model, reconcile module specifications, revise `docs/GLOBAL_TODO.md`, check machine-readable task dependencies and archive superseded documents belongs in the single global to-do list and must be performed in approved documentation-only passes.
+The active migration work still required to adopt this model, reconcile module specifications, maintain `docs/artifex/2A-global-to-do.md`, check machine-readable task dependencies and archive superseded documents belongs in the single global to-do list and must be performed in approved documentation-only passes.
