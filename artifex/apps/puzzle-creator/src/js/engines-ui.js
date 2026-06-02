@@ -1,5 +1,6 @@
 import { puzzleEngines, getPuzzleEngine } from './engines/index.js';
 import { getPuzzleModuleBrief } from './puzzle-module-briefs.js';
+import { openPatternLockWorkflow, closePatternLockWorkflow } from './engines/pattern-lock-runtime.js?v=1.36';
 
 const $ = (id) => document.getElementById(id);
 const engineValues = {};
@@ -54,7 +55,7 @@ function buildPuzzleLauncher() {
   panel.innerHTML = `
     <p class="eyebrow">Start a puzzle</p>
     <h2>Choose a Puzzle Type</h2>
-    <p class="puzzle-launcher-copy">Choose the challenge module you want to author. Labyrinth Maze is the currently developed playable editor; the other modules show their recovered planning brief until implementation begins.</p>
+    <p class="puzzle-launcher-copy">Choose the challenge module you want to author. Labyrinth Maze is developed and playable; Pattern Lock Puzzle now has its first surface-point prototype. Other modules retain planning pages until implementation begins.</p>
     <div class="puzzle-type-grid" aria-label="Available puzzle types"></div>
   `;
   host.prepend(panel);
@@ -83,6 +84,7 @@ function buildPuzzleBriefPage() {
 }
 
 function showPuzzleChooser() {
+  closePatternLockWorkflow();
   document.body.classList.add('is-puzzle-chooser');
   document.body.classList.remove('is-puzzle-brief');
   activeEngine = null;
@@ -97,6 +99,16 @@ function showPuzzleChooser() {
 }
 
 function openWorkflow(engineId) {
+  if (engineId === 'symbol-assembly') {
+    activeEngine = null;
+    window.__artifexActivePuzzleEngine = null;
+    $('puzzle-launcher-panel')?.setAttribute('hidden', '');
+    $('puzzle-module-brief-page')?.setAttribute('hidden', '');
+    document.querySelectorAll('.puzzle-type-option, .engine-button[data-engine]').forEach((button) => button.classList.toggle('is-active', button.dataset.engine === engineId));
+    openPatternLockWorkflow();
+    return;
+  }
+  closePatternLockWorkflow();
   if (engineId !== 'maze-labyrinth') {
     showPlanningBrief(engineId);
     return;
@@ -110,6 +122,7 @@ function openWorkflow(engineId) {
 }
 
 function showPlanningBrief(engineId) {
+  closePatternLockWorkflow();
   const engine = getPuzzleEngine(engineId);
   const brief = getPuzzleModuleBrief(engineId);
   const page = $('puzzle-module-brief-page');
