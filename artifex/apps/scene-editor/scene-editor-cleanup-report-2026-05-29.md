@@ -1,241 +1,223 @@
-# Scene Editor cleanup and core split report — 2026-05-29
-
-## Delivered status
-
-The Scene Editor core split is complete, merged, deployed and visually accepted as a working live baseline.
-
-- Current official live version: `v0.30-scene-core-split`
-- Live test URL: `https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/index.html?fresh=v0.30-scene-core-split`
-- Pull request: `#6 — Split Scene Editor core into modular files and archive legacy helpers`
-- Pull request URL: `https://github.com/cinaedvsstudios/Forever-Bound-Game/pull/6`
-- Merge commit: `e5001234b22747269b49856daf200e07a4d70dfc`
-- Merged at: `2026-05-29T00:45:41Z`
-
-After merge, the user opened the deployed GitHub Pages build and confirmed it loaded correctly, restored the local `title_screen_template.json` scene, displayed the stage and selected-object transform handles, and seemed fine after the requested live interaction check.
-
-## Starting state
-
-- Baseline live version supplied before this task: `v0.29-title-cache-sync`.
-- Baseline live URL: `https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/index.html?fresh=v0.29-title-cache-sync-restore-core`.
-- Existing archive folder reused: `artifex/apps/scene-editor/archive/legacy-2026-05-28/`.
-- The previous chat-based attempt to split storage/model logic had regressed on fresh load and was rolled back; the full split was therefore performed in Codex with complete file access and served-browser checks.
-
-## Codex work and delivery
-
-Codex reported these work commits during the task:
-
-1. `8041e97 Archive unused scene editor legacy files`
-2. `af31c50 Split scene editor core modules`
-3. `ce18824 Document scene editor core split`
-
-The resulting draft PR was created through Codex/GitHub and merged into `main` as merge commit `e5001234b22747269b49856daf200e07a4d70dfc`.
-
-## Changed files
-
-- `artifex/apps/scene-editor/index.html`
-- `artifex/apps/scene-editor/scene-editor-config.js`
-- `artifex/apps/scene-editor/scene-editor-storage.js`
-- `artifex/apps/scene-editor/scene-editor-v2.js`
-- `artifex/apps/scene-editor/scene-editor-scene-model.js`
-- `artifex/apps/scene-editor/scene-editor-io.js`
-- `artifex/apps/scene-editor/scene-editor-stage-drag.js`
-- `artifex/apps/scene-editor/scene-editor-renderer.js`
-- `artifex/apps/scene-editor/scene-editor-bindings.js`
-- `artifex/apps/scene-editor/scene-editor-core-api.js`
-- `artifex/apps/scene-editor/scene-editor-app.js`
-- `artifex/apps/scene-editor/scene-editor-core-split-todos.json`
-- `artifex/apps/scene-editor/scene-editor-cleanup-report-2026-05-29.md`
-- Archived legacy files listed below.
+# Scene Editor cleanup and ownership-consolidation report
+
+## Status refresh — 2 June 2026
+
+This report began as the 29 May core-split delivery record. It is now refreshed against current GitHub `main` so it does not stop at obsolete v0.30–v0.33 status language.
+
+Verified current-main state:
 
-## Archived files
+```text
+GitHub main: 81c7a6df28fa6f0d57b7033076a7ec28c2ca34d7
+Current implemented Scene Editor version: v0.35-owner-consolidation
+Active entry: artifex/apps/scene-editor/index.html
+Latest merged Scene Editor repair: PR #37
+Latest merge commit: d759ae7412779de5689eb202ce9024829af6b58d
+Acceptance status: implementation merged; deployed manual acceptance still to be recorded
+```
 
-Moved to `artifex/apps/scene-editor/archive/legacy-2026-05-28/` during the Codex pass:
+This report does not claim that the v0.35 deployed manual acceptance gate has passed. It records delivered code and the remaining test gate.
 
-- `dropdown-fix.js`
-- `scene-editor.js`
-- `scene-editor-v3-helper.js`
-- `scene-editor-v13-helper.js`
-- `scene-editor-v13e-helper.js`
-- `scene-editor-v14-helper.js`
-- `scene-editor-v14c-helper.js`
-- `recovered-proposed-feature-list.md`
-
-Already archived before the Codex pass and left there:
+## Delivery progression
 
-- `context-fix.js`
-- `scene-editor-v12-helper.js`
-- `scene-editor-v12b-helper.js`
-- `scene-editor-v13d-helper.js`
-- `scene-editor-v23-aspect-controls.css`
+| PR | Version / purpose | Current interpretation |
+|---|---|---|
+| #6 | `v0.30-scene-core-split` | Merged. Established separate model, IO, renderer, bindings, app and compatibility responsibilities and archived unused legacy files. |
+| #11 | `v0.31-runtime-module-cleanup` | Merged. Renamed retained numbered runtime modules to ownership-based filenames and removed stale helper messaging. |
+| #13 | `v0.32-controls-resize-search` | Merged. Added the focused controls/search/Shadow Blur pass, but deployed manual acceptance later failed. |
+| #16 | `v0.33-inspector-controls-repair` | Merged. Repaired v0.32 regressions and introduced the floating Object Inspector/scene-level organisation. |
+| #19 | `v0.34-live-acceptance-repair` | Merged, but failed manual acceptance because controls for the selected ball could affect the box. |
+| #37 | `v0.35-owner-consolidation` | Merged. Implements the permanent ownership consolidation required by the v0.34 failure; manual deployed acceptance remains pending. |
 
-## Created permanent core modules
+## Historical core-split delivery — v0.30
 
-- `scene-editor-scene-model.js` — scene data helpers, normalisation, collection/item lookup, background path data mutation, defaults, duplicate/remove and path application.
-- `scene-editor-io.js` — local file import, URL import, template manifest load, template load, JSON download and date formatting.
-- `scene-editor-stage-drag.js` — existing core move-handle/centre-drag wiring and pointer lifecycle.
-- `scene-editor-renderer.js` — shell, stage/work area, controls, cards, context menu, template modal, file pill and resume markup.
-- `scene-editor-bindings.js` — DOM event and form bindings.
-- `scene-editor-core-api.js` — stable `window.ArtifexSceneEditorCore` compatibility bridge factory.
-- `scene-editor-app.js` — app/state coordinator consuming config, storage, model, IO, renderer, bindings, stage drag and core API modules.
+PR #6 delivered the first modular Scene Editor core split and archive cleanup.
 
-`scene-editor-v2.js` remains loaded as a small bootstrap shell that creates and starts the modular application.
-
-## Final `index.html` active load list in v0.30
+```text
+Pull request: #6 — Split Scene Editor core into modular files and archive legacy helpers
+Merge commit: e5001234b22747269b49856daf200e07a4d70dfc
+Delivered version: v0.30-scene-core-split
+```
 
-### CSS
+Created permanent core modules included:
 
-1. `./scene-editor.css?v=v0.30-scene-core-split`
-2. `./context-menu.css?v=v0.30-scene-core-split`
-3. `./scene-editor-panel-stage.css?v=v0.30-scene-core-split`
-4. `./scene-editor-control-cards.css?v=v0.30-scene-core-split`
-5. `./scene-editor-value-sliders.css?v=v0.30-scene-core-split`
-6. `./scene-editor-ui-polish.css?v=v0.30-scene-core-split`
+```text
+scene-editor-scene-model.js
+scene-editor-io.js
+scene-editor-stage-drag.js
+scene-editor-renderer.js
+scene-editor-bindings.js
+scene-editor-core-api.js
+scene-editor-app.js
+```
 
-### JavaScript
-
-1. `../../shared/active-project/active-project-client.js?v=1.0.0`
-2. `./scene-editor-config.js?v=v0.30-scene-core-split`
-3. `./scene-editor-storage.js?v=v0.30-scene-core-split`
-4. `./scene-editor-scene-model.js?v=v0.30-scene-core-split`
-5. `./scene-editor-io.js?v=v0.30-scene-core-split`
-6. `./scene-editor-stage-drag.js?v=v0.30-scene-core-split`
-7. `./scene-editor-renderer.js?v=v0.30-scene-core-split`
-8. `./scene-editor-bindings.js?v=v0.30-scene-core-split`
-9. `./scene-editor-core-api.js?v=v0.30-scene-core-split`
-10. `./scene-editor-app.js?v=v0.30-scene-core-split`
-11. `./scene-editor-v2.js?v=v0.30-scene-core-split`
-12. `./scene-editor-v11-helper.js?v=v0.30-scene-core-split`
-13. `./scene-editor-transform-controls.js?v=v0.30-scene-core-split`
-14. `./scene-editor-v15-helper.js?v=v0.30-scene-core-split`
-15. `./scene-editor-value-sliders.js?v=v0.30-scene-core-split`
-16. `./scene-editor-v20-card-controller.js?v=v0.30-scene-core-split`
-17. `./scene-editor-v21-visual-adjustments.js?v=v0.30-scene-core-split`
-18. `./scene-editor-offscreen-placement.js?v=v0.30-scene-core-split`
-19. `./scene-editor-v23-aspect-controls.js?v=v0.30-scene-core-split`
-20. `./scene-editor-v24-object-preview.js?v=v0.30-scene-core-split`
-21. `./scene-editor-menu-controller.js?v=v0.30-scene-core-split`
-
-## Active runtime module audit still requiring a final cleanup pass
-
-The core split succeeded, but six still-loaded feature files remain under numbered legacy names. They were audited and retained during the split to avoid additional behaviour/cache risk in the same PR.
-
-| Current live file | Responsibility | Recommended permanent filename |
-| --- | --- | --- |
-| `scene-editor-v11-helper.js` | Asset library picker, image/path helper buttons, wrap image, import-warning/dirty markers | `scene-editor-asset-path-tools.js` |
-| `scene-editor-v15-helper.js` | Layer controls, layer locks/border state and layer/asset UI enhancements | `scene-editor-layer-controls.js` |
-| `scene-editor-v20-card-controller.js` | Card collapse/controller behaviour | `scene-editor-card-controller.js` |
-| `scene-editor-v21-visual-adjustments.js` | Selected-object visual adjustment controls and persistence | `scene-editor-visual-adjustments.js` |
-| `scene-editor-v23-aspect-controls.js` | Aspect-ratio lock, resize helpers and bounding-box wrap controls | `scene-editor-aspect-controls.js` |
-| `scene-editor-v24-object-preview.js` | Floating selected-object preview modal | `scene-editor-object-preview.js` |
-
-The active permanent files `scene-editor-transform-controls.js`, `scene-editor-value-sliders.js`, `scene-editor-offscreen-placement.js`, and `scene-editor-menu-controller.js` already have acceptable ownership-based filenames and should remain unless a later integration audit finds duplicate behaviour.
-
-## Confirmed remaining defect
-
-The live v0.30 screen still displays the stale runtime message:
-
-`v0.28-consolidation: Consolidated layout helper loaded`
-
-The old version constant remains in both:
-
-- `scene-editor-v11-helper.js`
-- `scene-editor-v15-helper.js`
-
-This is a presentation/cache-label cleanup defect only; the page loads and the modular core is working. The final runtime-module cleanup pass should replace these stale helper version/toast messages with the new live version convention while preserving behaviour.
-
-## Tests and checks completed
-
-Codex reported the following passed checks for the core split:
-
-- `node --check` over active Scene Editor/shared JavaScript files.
-- `npm run dev -- --host 127.0.0.1` served the app.
-- HTTP checks for the final Scene Editor `index.html` and all linked active CSS/JS assets returned success.
-- HTTP fetch of `artifex/templates/templates.json` returned success.
-- Temporary Playwright smoke test verified render, import-menu toggle, local backup resume, object selection, selected value fields, zoom, manual local save and the public core API bridge.
-- Temporary Playwright/browser dependencies were installed outside tracked project files; no package/lockfile changes were committed for testing.
-
-User live verification after merge:
-
-- Loaded deployed GitHub Pages version `v0.30-scene-core-split`.
-- Confirmed header/status version sync and local scene backup restore were visible.
-- Confirmed stage/grid/object render and selected-object transform handles were visible.
-- Reported the live editor “seems fine” after the requested interaction test.
-
-## Completed outcome
-
-The large Scene Editor core-file risk has been resolved. The app now satisfies the essential module-splitting requirement from `docs/artifex/19-project-file-contracts.md`: it has a thin bootstrap entry plus separate model, IO, renderer, bindings, app and compatibility API responsibilities.
-
-## Remaining Scene Editor work before cross-app integration
-
-1. Use Codex for one final low-risk runtime-module cleanup PR:
-   - Rename the six retained numbered live feature modules to permanent ownership-based filenames.
-   - Update `index.html` load paths and cache/version strings consistently.
-   - Remove stale `v0.28-consolidation` helper version/toast messages.
-   - Do not change feature behaviour or transform-control logic.
-   - Run static, served HTTP and Playwright smoke checks.
-   - User verifies the deployed build again before accepting it as the next stable baseline.
-
-2. After the final runtime-module cleanup is accepted, begin the wider all-app integration pass:
-   - active-project adoption inside Scene Editor;
-   - scene/screen indexes and stable output contracts;
-   - object archetype and effect archetype references;
-   - Project Manager/shared reference-index integration.
-
-## Recommended next version
-
-Use `v0.31-runtime-module-cleanup` for the final retained-helper rename/toast-cleanup pass, provided no unrelated feature change is included.
----
-
-## v0.32 controls, resize and settings-search follow-up — 2026-05-29
-
-Version used for this focused pass: `v0.32-controls-resize-search`.
-
-### Completed v0.32 items
-
-- Fixed the unlocked aspect-ratio resize defect in the permanent aspect-control ownership path. The cause was that resize completion can rerender the work area with the base image rule `object-fit: contain` before the aspect module reapplies its aspect-off fill/stretch state, so independent width/height data changed but the rendered image could visually preserve its natural ratio. The fix explicitly applies `object-fit: fill`, full width and full height to rendered image/text content when the lock is off, records that fit state with `data-aspect-fit`, and reapplies it after resize-driven work-area rerenders. Aspect-lock-on proportional math remains in the existing locked branch.
-- Added a compact left-panel settings search in the renderer and bindings modules. It searches card titles and visible labels case-insensitively, hides nonmatching rows/cards, shows a themed no-match message, and does not modify scene data, local save data or card collapsed state.
-- Added `item.visual.shadowBlur` in the visual-adjustments module. Older scene data receives the default value `25`; save/export/local persistence follows the existing selected-object `visual` object flow. Shadow Strength continues to control drop-shadow opacity/intensity, while Shadow Blur controls softness/blur radius independently.
-- Restyled adjustable numeric controls through the existing value-slider module and stylesheet. Numeric controls now use uppercase letter-spaced serif labels, a pale horizontal range track with rounded cream thumb, and a dark left decrement / centered value / right increment stepper. Ordinary text fields, path fields, selects and the settings search remain typed/select controls.
-- Updated the Scene Editor title, config version and active CSS/JS cache query labels to `v0.32-controls-resize-search` without changing the shared Module menu contents or order.
-
-### v0.32 tracker state
-
-The four focused follow-up tasks are marked complete in `scene-editor-core-split-todos.json`. The cross-app integration gate is no longer blocked by the v0.31 follow-up defects, but it should remain waiting for review, merge and user deployment verification of v0.32 before any cross-app integration begins.
-
-### v0.32 testing expectation
-
-Codex should run static JavaScript checks, served HTTP checks and Playwright/browser smoke coverage for v0.32 before opening the draft PR. User deployment acceptance should use:
-
-`https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/index.html?fresh=v0.32-controls-resize-search`
-
-### Remaining Scene Editor work before cross-app integration
-
-1. Review and merge the v0.32 draft PR after tests pass.
-2. User verifies the deployed v0.32 URL for local restore, aspect-off stretch, aspect-on proportional resize, settings search, Shadow Blur persistence, numeric control styling, selection, movement, rotation, origin marker, layers, cards, preview, menus, zoom and JSON download.
-3. Only after that verification, begin the wider cross-app active-project/reference/index integration pass.
-
----
-
-## v0.33 inspector, controls and resize repair follow-up — 2026-05-30
-
-Version used for this repair pass: `v0.33-inspector-controls-repair`.
-
-### Correction to v0.32 tracker state
-
-PR #13 was merged and deployed as `v0.32-controls-resize-search`, but deployed manual user acceptance failed. The failed behaviours were slider dragging in Visual Adjustments, the non-editable center value readout in numeric controls, and aspect-ratio-off image resizing still not visibly stretching/compressing the user-facing title-screen image. Therefore v0.32 must not be treated as the accepted completion gate for cross-app integration.
-
-### v0.33 repair/reorganisation scope
-
-The v0.33 pass repairs the existing permanent Scene Editor modules only: editable numeric sliders, aspect-off/on resize behaviour, a floating remembered-position Object Inspector, scene-level Scene Tags, scene-level Scene Audio, consistent active-project presentation, and removal of redundant Scene Editor Animation/object-audio placeholders. The pass intentionally does not implement connected project-folder loading, scene/screen indexes, reference indexes, portals, archetype linkage, Events/Triggers, or any shared Module menu changes.
-
-### Future Scene Events / Triggers task
-
-Scene Events / Triggers remain open future cross-app schema work. That later contract should cover scene-enter actions, object interact/pickup, portal/exit triggers, conditions, FX and sound triggers, existing object action/animation triggers, and quest-state updates involving Scene Editor, Archetype Object Creator, Effect Editor, Quest Builder and Project Manager.
-
-### Gate before cross-app integration
-
-After review and merge, user acceptance must verify the deployed v0.33 page at:
-
-`https://cinaedvsstudios.github.io/Forever-Bound-Game/artifex/apps/scene-editor/index.html?fresh=v0.33-inspector-controls-repair`
-
-Do not open cross-app active-project/reference/index integration until that deployed v0.33 build is manually accepted by the user.
+`scene-editor-v2.js` remained as a small bootstrap shell creating and starting the modular application.
+
+Archived into `artifex/apps/scene-editor/archive/legacy-2026-05-28/` during or before the core split:
+
+```text
+dropdown-fix.js
+scene-editor.js
+scene-editor-v3-helper.js
+scene-editor-v13-helper.js
+scene-editor-v13e-helper.js
+scene-editor-v14-helper.js
+scene-editor-v14c-helper.js
+recovered-proposed-feature-list.md
+context-fix.js
+scene-editor-v12-helper.js
+scene-editor-v12b-helper.js
+scene-editor-v13d-helper.js
+scene-editor-v23-aspect-controls.css
+```
+
+## Historical retained-module cleanup — v0.31
+
+PR #11 converted retained active numbered feature modules into ownership-based names rather than leaving numbered runtime helpers active:
+
+| Older live name | Ownership-based filename delivered in v0.31 |
+|---|---|
+| `scene-editor-v11-helper.js` | `scene-editor-asset-path-tools.js` |
+| `scene-editor-v15-helper.js` | `scene-editor-layer-controls.js` |
+| `scene-editor-v20-card-controller.js` | `scene-editor-card-controller.js` |
+| `scene-editor-v21-visual-adjustments.js` | `scene-editor-visual-adjustments.js` |
+| `scene-editor-v23-aspect-controls.js` | `scene-editor-aspect-controls.js` |
+| `scene-editor-v24-object-preview.js` | `scene-editor-object-preview.js` |
+
+At that point `scene-editor-transform-controls.js`, `scene-editor-value-sliders.js`, `scene-editor-offscreen-placement.js` and `scene-editor-menu-controller.js` remained active under ownership-based names.
+
+## Historical acceptance sequence — v0.32 to v0.34
+
+### v0.32 controls, resize and settings search
+
+PR #13 delivered `v0.32-controls-resize-search`, including:
+
+```text
+- unlocked aspect-ratio resize work;
+- compact left-panel settings search;
+- Shadow Blur selected-object visual control;
+- updated numeric adjustment styling and controls.
+```
+
+Static/served/browser checks were recorded during implementation, but deployed manual acceptance failed for slider dragging, editable numeric value input and visible aspect-off image stretching. v0.32 therefore did not reopen the cross-app integration gate.
+
+### v0.33 inspector and controls repair
+
+PR #16 delivered `v0.33-inspector-controls-repair`, including repairs to the v0.32 failures and reorganisation into a floating selected-object Object Inspector while keeping scene-level controls in the sidebar.
+
+### v0.34 live acceptance repair and failure
+
+PR #19 delivered `v0.34-live-acceptance-repair`, intended to compact the Object Inspector, remove duplicated Active Project presentation, restore workspace panning, correct numeric synchronisation and improve Wrap Bounding Box / Aspect Ratio behaviour.
+
+Deployed manual acceptance then failed because editing controls for the selected ball could affect the box. That failure established that the active architecture still had competing selected-object/inspector/transform ownership and required a consolidated permanent-owner repair.
+
+The detailed failure evidence and resulting plan are retained in:
+
+```text
+artifex/apps/scene-editor/scene-editor-v034-failed-acceptance-and-consolidation-plan-2026-05-31.md
+```
+
+## Current merged implementation — v0.35 ownership consolidation
+
+PR #37 implements the required consolidation from the v0.34 failure and is merged into current `main`.
+
+```text
+Pull request: #37 — Consolidate Scene Editor object, movement and UI ownership
+Merge commit: d759ae7412779de5689eb202ce9024829af6b58d
+Current version: v0.35-owner-consolidation
+```
+
+### Current ownership model
+
+| Behaviour | Active owner after merged v0.35 |
+|---|---|
+| Object Inspector, menu shell, Object Layers markup, preview entry and permanent controls markup | `scene-editor-renderer.js` |
+| Ordinary form/model updates | `scene-editor-bindings.js` |
+| Rotation, rotation origin, resize, scale, Wrap Bounding Box, Aspect Ratio Lock and Border toggle binding | `scene-editor-transform-controls.js` |
+| Move-handle drag, middle-mouse panning, X/Y sync and offscreen range | `scene-editor-stage-drag.js` |
+| Layer order, lock and recalculation | `scene-editor-layer-controls.js` |
+| Slider UI/readout dispatch only | `scene-editor-value-sliders.js` |
+| Selected-object visual editing | `scene-editor-visual-adjustments.js` |
+| Asset path/picker interaction | `scene-editor-asset-path-tools.js` |
+| Object preview interaction | `scene-editor-object-preview.js` |
+| Menu interaction | `scene-editor-menu-controller.js` |
+| Border display state | `scene-editor-object-states.css` |
+
+### Current v0.35 active CSS load list
+
+```text
+scene-editor.css
+context-menu.css
+scene-editor-panel-stage.css
+scene-editor-control-cards.css
+scene-editor-value-sliders.css
+scene-editor-ui-polish.css
+scene-editor-object-states.css
+```
+
+### Current v0.35 active JavaScript load list
+
+```text
+../../shared/active-project/active-project-client.js
+scene-editor-config.js
+scene-editor-storage.js
+scene-editor-scene-model.js
+scene-editor-io.js
+scene-editor-stage-drag.js
+scene-editor-renderer.js
+scene-editor-bindings.js
+scene-editor-core-api.js
+scene-editor-app.js
+scene-editor-v2.js
+scene-editor-asset-path-tools.js
+scene-editor-transform-controls.js
+scene-editor-layer-controls.js
+scene-editor-value-sliders.js
+scene-editor-visual-adjustments.js
+scene-editor-object-preview.js
+scene-editor-menu-controller.js
+```
+
+The following previously loaded ownership-overlap files are no longer in the active `index.html` load chain after the merged implementation:
+
+```text
+scene-editor-aspect-controls.js
+scene-editor-card-controller.js
+scene-editor-offscreen-placement.js
+```
+
+## Remaining acceptance gate before further Scene Editor work
+
+No checked current-main status document records that the merged `v0.35-owner-consolidation` version has completed its deployed manual browser acceptance run. Therefore the current status is:
+
+```text
+Implementation merged; manual deployed acceptance pending.
+```
+
+Required manual test list:
+
+```text
+1. Select ball and test Wrap, Aspect, size and visual changes: only ball changes.
+2. Select box and repeat: only box changes.
+3. Confirm a square image wraps to a visually square area on the 16:9 stage.
+4. Confirm Border is present, visibly hides/shows the border and is object-specific.
+5. Reorder layers and click Recalculate; verify persistence after rerender and save/reload, including locked layers.
+6. Test move-handle drag, editable X/Y, offscreen positions and middle-mouse workspace pan.
+7. Test asset picker, object preview, menu actions, import and Download JSON.
+8. Wait several seconds after interaction and confirm markup does not duplicate/reinstall and no console errors appear.
+```
+
+## Future work held until acceptance
+
+Only after the v0.35 acceptance result is recorded should new Scene Editor or cross-app integration work be scoped, including:
+
+```text
+- real connected-project scene/screen save and index handling;
+- stable object/effect reference integration;
+- shared reference-index work;
+- Scene Events / Triggers cross-app contract work;
+- additional UI or feature expansion.
+```
+
+## Current conclusion
+
+The earlier core split, runtime filename cleanup and subsequent repair work have advanced into a merged ownership-consolidation implementation on current `main`. The correct remaining task is not another Scene Editor ownership implementation pass; it is the deployed manual acceptance check for `v0.35-owner-consolidation` and recording that result before further work begins.
