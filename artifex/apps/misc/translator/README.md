@@ -1,20 +1,22 @@
 # Forever Bound — Inscription Renderer
 
-A compact charcoal, purple and gold HTML/JavaScript renderer for creating screenshotable inscriptions from sprite-sheet tiles. The interface is designed as a centred app-style card: choose a script tradition, paste renderer input, render it, then toggle the result between white-on-black and black-on-white for capture or export.
+A compact charcoal, purple and gold HTML/JavaScript renderer for creating screenshotable inscriptions. The interface is designed as a centred app-style card: choose a script tradition, paste renderer input, render it, then toggle the result between white-on-black and black-on-white for capture or export.
 
 ## Current status
 
-- The interface includes three separated language tabs:
-  - **Runispeleus** — Mel's scroll-language display layer; JavaScript placeholder ready for its atlas mapping.
-  - **Saga-Demotic** — Egyptian archive display layer; working right-to-left renderer included.
-  - **Volkhv–Tartessian** — Nyx's family ritual script; working renderer included.
+- The interface includes three separated language screens:
+  - **Runispeleus** — Mel's Codice Cylinder scroll display layer; working normal-font Unicode rune renderer included.
+  - **Saga-Demotic** — Egyptian archive display layer; working right-to-left sprite-sheet renderer included.
+  - **Volkhv–Tartessian** — Nyx's family ritual script; working sprite-sheet renderer included.
+- `js/languages/runispeleus.js` accepts finished Unicode rune text from the linked Runispeleus translator and turns it into a clean copyable/exportable image. It does not translate the wording.
 - `js/languages/volkhv-tartessian.js` contains the complete token parser and cell coordinates for the finished Volkhv–Tartessian glyph chart.
 - `js/languages/saga-demotic.js` contains the complete token parser and atlas coordinates for the approved Saga-Demotic glyph chart.
 - Each script tradition remains isolated in its own file under `js/languages/`.
+- Each screen links to its own translator chat and its own rules document.
 
 ## How to run it
 
-The page is static, but use a local web server so the canvas can safely export PNG images from the sprite sheet.
+The page is static, but use a local web server so the canvas can safely export PNG images.
 
 From this folder, run one of:
 
@@ -25,6 +27,16 @@ python -m http.server 8080
 or serve it through VS Code Live Server, Vite, GitHub Pages or the Artifex app.
 
 Then open `http://localhost:8080` in the browser.
+
+## Runispeleus input
+
+Runispeleus is Mel's Codice Cylinder writing system. Its linked translator produces the rune string. The renderer does not translate or transliterate: paste the finished Unicode runes into the **Rune text** input box and render them as an image using a normal browser rune font.
+
+```text
+ᛈᛖᚱᛖ ᚨᚾᛗᛟᚾ ᚷᛁᛗᛟᚾᛟᛊ, ᛊᚲᛁᚨᛊ ᚱᛁᛏᚻᛗᚨᛏᚨᛊ ᛒᛚᛟᛊᚨᚾᛏᛁ
+```
+
+The right-hand canvas preserves the pasted runes, word spacing and normal punctuation, then supports **Copy image** and **Export PNG**. Because this screen uses a normal font rather than a glyph sprite sheet, its sprite-sheet upload panel and separate input-mode switch are hidden.
 
 ## Volkhv–Tartessian input modes
 
@@ -92,11 +104,15 @@ The key remains in logical reading order. The shared renderer reverses the rende
 ```text
 index.html
 styles.css
+volkhv-tartessian-rules.md
+demotic-rules.md
+runispeleus-rules.md
 assets/
   volkhv-tartessian-glyph-chart.png
   saga-demotic-glyph-atlas.svg
 js/
   app.js
+  reference-tools.js
   languages/
     volkhv-tartessian.js
     runispeleus.js
@@ -105,7 +121,9 @@ js/
 
 ## Replacing a sprite sheet
 
-The Upload/Replace sheet button accepts an image at runtime. It currently expects the same atlas layout and coordinates as the included asset for the selected script tradition. When a new trimmed atlas or a differently arranged sheet is used, update only the relevant `glyphMap` in its file under `js/languages/`.
+The Upload/Replace sheet button accepts an image at runtime for Volkhv–Tartessian and Saga-Demotic. It currently expects the same atlas layout and coordinates as the included asset for the selected script tradition. When a new trimmed atlas or a differently arranged sheet is used, update only the relevant `glyphMap` in its file under `js/languages/`.
+
+Runispeleus uses normal Unicode rune font rendering and therefore does not require or expose a sprite-sheet replacement control.
 
 ## UI preview note
 
