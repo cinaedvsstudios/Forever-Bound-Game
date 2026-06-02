@@ -88,17 +88,19 @@ function configureScatterPlacementUi() {
 
   const syncVisibleCopy = () => {
     const action = visualsPanel.querySelector('[data-scatter-regenerate]');
+    const actionTitle = 'Place placeholder markers using each slot’s selected amount, seed and placement mode.';
     if (action) {
-      action.textContent = 'Place Markers';
-      action.title = 'Place placeholder markers using each slot’s selected amount, seed and placement mode.';
+      if (action.textContent !== 'Place Markers') action.textContent = 'Place Markers';
+      if (action.title !== actionTitle) action.title = actionTitle;
     }
     const status = visualsPanel.querySelector('.scatter-status');
     if (status) {
-      status.textContent = status.textContent
+      const nextText = status.textContent
         .replace('then regenerate markers', 'then choose Place Markers')
         .replace('regenerate now', 'choose Place Markers now')
         .replace('Regenerate to update marker positions.', 'Choose Place Markers to update marker positions.')
         .replace('Regenerate to apply it.', 'Choose Place Markers to apply it.');
+      if (status.textContent !== nextText) status.textContent = nextText;
     }
   };
 
