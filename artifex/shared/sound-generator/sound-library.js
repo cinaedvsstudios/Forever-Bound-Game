@@ -65,13 +65,13 @@ export async function loadRegisteredAudioAssets(options = {}) {
 }
 
 function markup(options) {
-  return `<section class="sound-modal-backdrop" role="presentation"><div class="sound-library-modal" role="dialog" aria-modal="true" aria-label="Sound Library"><header class="sound-header"><div class="sound-brand"><span class="sound-rune">ᚠ</span><div><p class="sound-kicker">ARTIFEX SHARED SELECTOR</p><h1>Sound Library</h1><p>Audio-filtered Asset Library selector — ${esc(options.sourceLabel || 'No caller context')}</p></div></div><button class="sound-close" type="button" data-library-act="close" title="Close">×</button></header><div class="sound-library-toolbar"><label>Search by name or tag <input type="search" data-library-search placeholder="coin, portal, warning…" /></label><label>Audio type <select data-library-filter><option value="all">All audio</option><option value="audio-file">Audio File</option><option value="generated-synth">Generated Synth</option></select></label><button type="button" data-library-act="refresh">Refresh</button><button type="button" class="primary" data-library-act="create">Create New Synth Sound</button></div><div class="sound-library-status" data-library-status></div><div class="sound-library-list" data-library-list></div><footer class="sound-actions"><div><strong>Captured target:</strong> <span data-captured>${esc(options.sourceLabel || 'Preview Harness')}</span></div><div><button type="button" data-library-act="stop">Stop</button><button type="button" class="assign-action" data-library-act="assign">Choose / Assign in Preview Harness</button></div></footer></div></section>`;
+  return `<section class="sound-modal-backdrop" role="presentation"><div class="sound-library-modal" role="dialog" aria-modal="true" aria-label="Sound Library"><header class="sound-header"><div class="sound-brand"><span class="sound-rune">ᚠ</span><div><p class="sound-kicker">ARTIFEX SHARED SELECTOR</p><h1>Sound Library</h1><p>Audio-filtered Asset Library selector — ${esc(options.sourceLabel || 'No caller context')}</p></div></div><button class="sound-close" type="button" data-library-act="close" title="Close">×</button></header><div class="sound-library-toolbar"><label>Search by name or tag <input type="search" data-library-search placeholder="coin, portal, warning…" /></label><label>Audio type <select data-library-filter><option value="all">All audio</option><option value="audio-file">Audio File</option><option value="generated-synth">Generated Synth</option></select></label><button type="button" data-library-act="refresh">Refresh</button><button type="button" class="primary" data-library-act="create">Create New Synth Sound</button></div><div class="sound-library-status" data-library-status></div><div class="sound-library-list" data-library-list></div><footer class="sound-actions"><div><strong>Captured target:</strong> <span data-captured>${esc(options.sourceLabel || 'Sound assignment')}</span></div><div><button type="button" data-library-act="stop">Stop</button><button type="button" class="assign-action" data-library-act="assign">Choose Sound</button></div></footer></div></section>`;
 }
 
 export function openSoundLibraryModal(options = {}) {
   loadCss();
   const captured = {
-    sourceLabel: options.sourceLabel || 'Preview Harness',
+    sourceLabel: options.sourceLabel || 'Sound assignment',
     currentAssetId: options.currentAssetId || '',
     onAssign: typeof options.onAssign === 'function' ? options.onAssign : () => {},
     openedAt: new Date().toISOString()
@@ -107,9 +107,18 @@ export function openSoundLibraryModal(options = {}) {
     const assets = filteredAssets();
     if (!assets.length) {
       list.innerHTML = '<p class="sound-empty">No registered audio assets match this view. Create a generated synth sound, or register imported audio through the Asset Library when that workflow is available.</p>';
+      updateAssignAction();
       return;
     }
     list.innerHTML = assets.map((asset) => `<article class="sound-library-item ${asset.id === state.selectedId ? 'is-selected' : ''}" data-asset-id="${esc(asset.id)}"><div><p class="sound-type-badge ${asset.sourceType}">${esc(asset.typeLabel)}</p><h2>${esc(asset.name)}</h2><p>${esc(asset.previewLabel)}</p><small>${esc(asset.id)} · ${esc(asset.file)}${asset.tags.length ? ` · ${esc(asset.tags.join(', '))}` : ''}</small></div><div class="sound-library-item-actions"><button type="button" data-library-preview="${esc(asset.id)}">Preview</button><button type="button" data-library-select="${esc(asset.id)}">${asset.id === state.selectedId ? 'Selected' : 'Select'}</button></div></article>`).join('');
+    updateAssignAction();
+  }
+
+  function updateAssignAction() {
+    const assignButton = $('[data-library-act="assign"]');
+    if (!assignButton) return;
+    assignButton.disabled = !state.selectedId;
+    assignButton.title = state.selectedId ? 'Choose the selected registered audio asset.' : 'Select a registered audio asset first.';
   }
 
   async function refresh(selectAssetId = '') {
@@ -117,7 +126,9 @@ export function openSoundLibraryModal(options = {}) {
     const clientState = client?.getState?.();
     if (!client || clientState?.folderStatus !== client.folderStatus.CONNECTED) {
       state.assets = [];
+      state.selectedId = '';
       renderList();
+      updateAssignAction();
       setStatus('No project connected. Connect a disposable Blank Starter Project folder before reading assets/asset-index.json.', 'warning');
       return;
     }
@@ -125,13 +136,14 @@ export function openSoundLibraryModal(options = {}) {
     const result = await loadRegisteredAudioAssets({ projectFolderClient: client });
     state.assets = result.audioAssets || [];
     if (selectAssetId) state.selectedId = selectAssetId;
+    if (!state.assets.some((asset) => asset.id === state.selectedId)) state.selectedId = '';
     if (!state.assets.length) {
       renderList();
+      updateAssignAction();
       const empty = result.status === REGISTERED_CONTENT_STATUS.EMPTY ? 'No registered audio assets are available in assets/asset-index.json.' : result.message;
       setStatus(empty, result.status === REGISTERED_CONTENT_STATUS.READY ? '' : 'warning');
       return;
     }
-    if (!state.selectedId || !state.assets.some((asset) => asset.id === state.selectedId)) state.selectedId = state.assets[0].id;
     renderList();
     setStatus(`${state.assets.length} registered audio asset(s) available from assets/asset-index.json.`);
   }
@@ -153,7 +165,6 @@ export function openSoundLibraryModal(options = {}) {
     const asset = state.assets.find((item) => item.id === assetId);
     if (!asset) return;
     stopPreview();
-    state.selectedId = asset.id;
     renderList();
     try {
       const client = getProjectClient();
@@ -228,10 +239,8 @@ export function openSoundLibraryModal(options = {}) {
     const action = event.target.closest('[data-library-act]')?.dataset.libraryAct;
     const previewId = event.target.closest('[data-library-preview]')?.dataset.libraryPreview;
     const selectId = event.target.closest('[data-library-select]')?.dataset.librarySelect;
-    const cardId = event.target.closest('[data-asset-id]')?.dataset.assetId;
     if (previewId) previewAsset(previewId);
     else if (selectId) { state.selectedId = selectId; renderList(); setStatus(`Selected ${selectId}.`); }
-    else if (cardId && !action) { state.selectedId = cardId; renderList(); }
     if (action === 'close') close();
     if (action === 'refresh') refresh(state.selectedId);
     if (action === 'create') openCreator();

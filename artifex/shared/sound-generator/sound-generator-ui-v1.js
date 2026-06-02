@@ -37,7 +37,7 @@ function markup(options) {
         <details class="sound-advanced"><summary>Advanced Controls</summary><fieldset class="sound-pitch-change"><legend>Frequency movement</legend><button data-pitch="drops">Drops</button><button data-pitch="steady">Steady</button><button data-pitch="rises">Rises</button></fieldset><div class="sound-control-grid compact">${ADVANCED_CONTROL_DEFINITIONS.map(controlSliderMarkup).join('')}</div><div class="sound-pattern-row"><label>Pattern<select data-field="pattern"><option value="single">Single</option><option value="double">Double</option><option value="triple">Triple</option><option value="repeat">Repeat</option></select></label><label class="check"><input type="checkbox" data-field="loop" /> Loop until stopped</label></div><div class="sound-file-actions secondary"><input type="file" accept=".json,application/json" data-file hidden /><button data-act="import">Import procedural JSON</button><button data-act="export">Export current recipe JSON</button></div></details>
       </section>
     </div>
-    <footer class="sound-actions"><button type="button" data-act="back">Back to Sound Library</button><div class="sound-file-actions"><button data-act="save">Save Sound to Library</button><button class="assign-action" data-act="assign">Save and Select / Assign in Preview Harness</button></div></footer>
+    <footer class="sound-actions"><button type="button" data-act="back">Back to Sound Library</button><div class="sound-file-actions"><button data-act="save">Save Sound to Library</button><button class="assign-action" data-act="assign">Save and Select</button></div></footer>
     <p class="sound-message" data-message aria-live="polite"></p>
   </section>`;
 }

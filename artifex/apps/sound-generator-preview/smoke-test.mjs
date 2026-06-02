@@ -65,13 +65,42 @@ await page.evaluate(() => {
   };
 });
 
+function assert(condition, message) {
+  if (!condition) throw new Error(message);
+}
+
+async function selectedLibraryCount() {
+  return page.locator('.sound-library-item.is-selected').count();
+}
+
 await page.getByRole('button', { name: 'Object Action Sound' }).click();
 await page.locator('.sound-type-badge.audio-file').waitFor();
 await page.locator('.sound-type-badge.generated-synth').waitFor();
-await page.getByText('Registered Click WAV').click();
-await page.getByText('Choose / Assign in Preview Harness').click();
-await page.locator('#returned-asset').filter({ hasText: 'asset_audio_registered_click' }).waitFor();
+assert(await selectedLibraryCount() === 0, 'Sound Library should open without a default selected asset.');
+assert(await page.locator('[data-library-act="assign"]').isDisabled(), 'Choose Sound should be disabled before explicit selection.');
+await page.evaluate(() => document.querySelector('[data-library-act="assign"]')?.click());
+await page.locator('#returned-asset').filter({ hasText: 'none yet' }).waitFor();
+await page.locator('.sound-library-item', { hasText: 'Registered Click WAV' }).locator('[data-library-preview]').click();
+assert(await selectedLibraryCount() === 0, 'Preview must not select the previewed asset.');
+assert(await page.locator('[data-library-act="assign"]').isDisabled(), 'Choose Sound should remain disabled after preview-only playback.');
+await page.evaluate(() => {
+  [...document.querySelectorAll('[data-change-target]')]
+    .find((button) => button.dataset.changeTarget === 'Preview Harness > Quest Completed Sound')
+    ?.click();
+});
+await page.locator('#external-target').filter({ hasText: 'Preview Harness > Quest Completed Sound' }).waitFor();
+await page.locator('.sound-library-item', { hasText: 'Registered Click WAV' }).locator('[data-library-select]').click();
+assert(await selectedLibraryCount() === 1, 'Explicit Select should mark exactly one asset selected.');
+assert(!(await page.locator('[data-library-act="assign"]').isDisabled()), 'Choose Sound should be enabled after explicit selection.');
+await page.getByText('Choose Sound').click();
+await page.locator('#returned-asset').filter({ hasText: /^asset_audio_registered_click$/ }).waitFor();
+const captureLog = await page.locator('#event-log li').first().textContent();
+assert(captureLog.includes('asset_audio_registered_click'), 'Callback log should include the selected registered asset ID.');
+assert(captureLog.includes('captured target Preview Harness > Object Action Sound'), 'Callback must report the original captured Object Action Sound target.');
+assert(captureLog.includes('External simulated target is currently Preview Harness > Quest Completed Sound'), 'Callback log should show the external target changed while the modal was open.');
 await page.getByRole('button', { name: 'Quest Completed Sound' }).click();
+await page.locator('.sound-type-badge.audio-file').waitFor();
+assert(await selectedLibraryCount() === 0, 'Second Sound Library open should also start without default selection.');
 await page.getByText('Create New Synth Sound').click();
 await page.getByRole('heading', { name: 'Create Synth Sound', exact: true }).waitFor();
 const body = await page.locator('.sound-generator-card').textContent();
@@ -88,7 +117,7 @@ await page.getByText('Save Sound to Library').click();
 await page.locator('[data-save-name]').fill('Smoke Test Pickup');
 await page.getByRole('button', { name: 'Save Sound', exact: true }).click();
 await page.getByText('Smoke Test Pickup').waitFor();
-await page.getByText('Choose / Assign in Preview Harness').click();
+await page.getByText('Choose Sound').click();
 await page.locator('#returned-asset').filter({ hasText: 'asset_sfx_smoke_test_pickup' }).waitFor();
 if (errors.length) throw new Error(errors.join('\n'));
 await page.screenshot({ path: '/tmp/sound-library-preview-smoke.png', fullPage: true });
