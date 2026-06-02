@@ -65,7 +65,13 @@ export async function loadRegisteredAudioAssets(options = {}) {
 }
 
 function markup(options) {
-  return `<section class="sound-modal-backdrop" role="presentation"><div class="sound-library-modal" role="dialog" aria-modal="true" aria-label="Sound Library"><header class="sound-header"><div class="sound-brand"><span class="sound-rune">ᚠ</span><div><p class="sound-kicker">ARTIFEX SHARED SELECTOR</p><h1>Sound Library</h1><p>Audio-filtered Asset Library selector — ${esc(options.sourceLabel || 'No caller context')}</p></div></div><button class="sound-close" type="button" data-library-act="close" title="Close">×</button></header><div class="sound-library-toolbar"><label>Search by name or tag <input type="search" data-library-search placeholder="coin, portal, warning…" /></label><label>Audio type <select data-library-filter><option value="all">All audio</option><option value="audio-file">Audio File</option><option value="generated-synth">Generated Synth</option></select></label><button type="button" data-library-act="refresh">Refresh</button><button type="button" class="primary" data-library-act="create">Create New Synth Sound</button></div><div class="sound-library-status" data-library-status></div><div class="sound-library-list" data-library-list></div><footer class="sound-actions"><div><strong>Captured target:</strong> <span data-captured>${esc(options.sourceLabel || 'Sound assignment')}</span></div><div><button type="button" data-library-act="stop">Stop</button><button type="button" class="assign-action" data-library-act="assign">Choose Sound</button></div></footer></div></section>`;
+  const subtitle = options.debugContext
+    ? `Debug captured target — ${esc(options.sourceLabel || 'Sound assignment')}`
+    : 'Browse registered audio assets or create a new synth sound.';
+  const contextNote = options.debugContext
+    ? `<div><strong>Debug captured target:</strong> <span data-captured>${esc(options.sourceLabel || 'Sound assignment')}</span></div>`
+    : '<div>Select a registered audio asset or create a new synth sound.</div>';
+  return `<section class="sound-modal-backdrop" role="presentation"><div class="sound-library-modal" role="dialog" aria-modal="true" aria-label="Sound Library"><header class="sound-header"><div class="sound-brand"><span class="sound-rune">ᚠ</span><div><p class="sound-kicker">ARTIFEX SOUND LIBRARY</p><h1>Sound Library</h1><p>${subtitle}</p></div></div><button class="sound-close" type="button" data-library-act="close" title="Close">×</button></header><div class="sound-library-toolbar"><label>Search by name or tag <input type="search" data-library-search placeholder="coin, portal, warning…" /></label><label>Audio type <select data-library-filter><option value="all">All audio</option><option value="audio-file">Audio File</option><option value="generated-synth">Generated Synth</option></select></label><button type="button" data-library-act="refresh">Refresh</button><button type="button" class="primary" data-library-act="create">Create New Synth Sound</button></div><div class="sound-library-status" data-library-status></div><div class="sound-library-list" data-library-list></div><footer class="sound-actions">${contextNote}<div><button type="button" data-library-act="stop">Stop</button><button type="button" class="assign-action" data-library-act="assign">Choose Sound</button></div></footer></div></section>`;
 }
 
 export function openSoundLibraryModal(options = {}) {
@@ -74,7 +80,8 @@ export function openSoundLibraryModal(options = {}) {
     sourceLabel: options.sourceLabel || 'Sound assignment',
     currentAssetId: options.currentAssetId || '',
     onAssign: typeof options.onAssign === 'function' ? options.onAssign : () => {},
-    openedAt: new Date().toISOString()
+    openedAt: new Date().toISOString(),
+    debugContext: options.debugContext === true
   };
   const state = { assets: [], selectedId: captured.currentAssetId, status: 'Loading Audio Asset Library…', previewUrl: null, playingId: '' };
   const host = document.createElement('div');
