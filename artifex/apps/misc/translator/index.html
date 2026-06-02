@@ -37,7 +37,7 @@
             <select id="language-select" aria-label="Writing system selection">
               <option value="volkhv-tartessian" selected>Volkhv–Tartessian</option>
               <option value="runispeleus">Runispeleus — Mel</option>
-              <option value="saga-demotic">Saga-Demotic — Archive</option>
+              <option value="saga-demotic">Demotic</option>
             </select>
           </div>
         </div>
@@ -46,8 +46,8 @@
         <span class="visually-hidden" id="selected-language-description"></span>
 
         <nav class="reference-bar" aria-label="Reference tools">
-          <button class="reference-button" type="button" onclick="window.open('https://chatgpt.com/share/6a1f37fa-0614-83eb-af1d-98a373bdb4ae', 'foreverBoundTranslatorChat', 'popup=yes,width=560,height=860,resizable=yes,scrollbars=yes');">Translator chat</button>
-          <button class="reference-button" id="rules-button" type="button" aria-label="Open Volkhv–Tartessian grammatical rules" aria-controls="rules-dialog" aria-haspopup="dialog">Grammatical Rules</button>
+          <button class="reference-button" id="translator-chat-button" type="button">Translator chat</button>
+          <button class="reference-button" id="rules-button" type="button" aria-label="Open script rules" aria-controls="rules-dialog" aria-haspopup="dialog">Grammatical Rules</button>
         </nav>
 
         <fieldset class="mode-switch" aria-label="Input type">
@@ -135,9 +135,9 @@
   <dialog class="rules-dialog" id="rules-dialog" aria-labelledby="rules-dialog-title">
     <section class="rules-modal-shell">
       <header class="rules-modal-header">
-        <div><p class="rules-eyebrow">Reference document</p><h2 id="rules-dialog-title">Volkhv–Tartessian Rules</h2></div>
+        <div><p class="rules-eyebrow">Reference document</p><h2 id="rules-dialog-title">Script Rules</h2></div>
         <div class="rules-modal-actions">
-          <a class="rules-md-link" href="./volkhv-tartessian-rules.md" target="_blank" rel="noopener noreferrer">Open MD</a>
+          <a class="rules-md-link" id="rules-md-link" href="#" target="_blank" rel="noopener noreferrer">Open MD</a>
           <button class="rules-close" id="rules-close" type="button" aria-label="Close rules window">×</button>
         </div>
       </header>
