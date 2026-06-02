@@ -67,28 +67,41 @@ The canonical empty index created by Creation Guide is:
 
 Quest Builder should then select a stable `puzzle_` ID from that index. It must not copy the complete puzzle definition into a Quest block.
 
-## Current Live V1.30 State
+## Current Live V1.33 State
 
-The current Puzzle Creator V1.30 interface is an evolving authoring app rather than completed connected-project integration.
+Puzzle Creator V1.33 is the accepted live presentation/usability baseline for the existing Maze / Labyrinth authoring workflow. It remains an evolving authoring app rather than completed connected-project integration.
 
 Current functionality includes:
 
-- multiple planned puzzle-engine choices, currently surfaced through the Puzzle menu;
+- multiple planned puzzle-engine choices surfaced through the Puzzle menu;
 - Maze / Labyrinth editing and preview workflow;
-- 2D overview plus rendered playable preview/walk testing where supported;
+- 2D overview plus rendered playable preview and Walk Test where supported;
 - features and completion-rule controls for the currently implemented Maze work;
 - Game Logic fields including Puzzle Type, Integration Context, Completion Flag and Calling Text;
 - JSON import/export/download workflow;
-- registered-content linking for selected current Maze features where implemented and documented in its current todo record.
+- registered-content linking for selected current Maze features where implemented and documented in its current todo record;
+- accepted V1.33 presentation/usability corrections: correct **Puzzle Creator Module** identity, clearer **Place Markers** Scatter action, amount entry applied without needing Enter before placement, and the **Walls → Scatter → Colours** ordering within Surface + Edit.
 
 Current limitations relevant to integration:
 
 - the app still uses an export/download workflow rather than canonical connected-folder saving to `puzzles/`;
 - its current runtime/export format has not yet been converted into the canonical `puzzle_` registration workflow required for Quest Builder picking;
-- Quest Builder does not yet contain a live `Puzzle` flow block or `puzzleId` selector;
-- the live Puzzle Creator header still contains old module wording that should be corrected in a future versioned UI pass.
+- Quest Builder does not yet contain a live `Puzzle` flow block or `puzzleId` selector.
 
 Do not present the Quest Builder handoff as live until both apps have received the necessary versioned implementation and browser testing.
+
+## V1.34 UI Candidate · Puzzle-Type Landing Screen and Shared Navigation
+
+The current V1.34 implementation branch proposes a UI-shell improvement only:
+
+- first opening Puzzle Creator shows a left-side **Choose a Puzzle Type** launcher instead of automatically presenting the Maze workflow;
+- the right viewing area remains blank until a puzzle type is selected;
+- the chooser lists the existing registered workflows: Maze / Labyrinth, Arena Trial, Obstacle Course, Symbol Assembly, Item Order Puzzle and Hazard Puzzle;
+- after entering a workflow, the shared navigation rail remains in the same position and includes visible text labels beneath the icons: **Setup**, **Display**, **Logic** and **Colors**;
+- the Puzzle menu provides a return to the chooser without deliberately deleting in-progress state;
+- selecting Maze / Labyrinth enters the accepted V1.33 Maze workflow; other puzzle-engine choices remain their existing early workflow state and must not be represented as completed gameplay editors.
+
+V1.34 must be browser-tested and accepted before it is merged or described as the live baseline. This UI-shell candidate does not implement canonical saving, Quest Builder integration, new puzzle gameplay, or any shared service changes.
 
 ## Puzzle Creator to Quest Builder Handoff
 
@@ -126,6 +139,6 @@ Imported or generated sounds must resolve through `assets/asset-index.json` usin
 
 ## Current Implementation Note
 
-The current active app includes older and newer Maze-related implementation files while V1.30 testing continues. Continue the existing cleanup rule: do not stack random patch layers or rebuild the app when a controlled normal-module change is sufficient.
+The active Maze / Labyrinth workflow uses permanent named modules only. V1.33 is accepted on `main`; V1.34 is a versioned UI-shell candidate awaiting browser confirmation. Continue the existing cleanup rule: do not stack random patch layers or rebuild the app when a controlled normal-module change is sufficient.
 
 Any live Puzzle Creator UI/data edit must use that app's visible version/cache-key update rule and requires browser confirmation before being described as working.

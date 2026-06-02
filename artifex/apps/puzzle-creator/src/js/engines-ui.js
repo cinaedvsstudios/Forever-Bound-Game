@@ -1,51 +1,111 @@
 import { puzzleEngines, getPuzzleEngine } from './engines/index.js';
 
 const $ = (id) => document.getElementById(id);
-const shortLabels = {
-  'maze-labyrinth': 'Maze',
-  'arena-trial': 'Arena',
-  'obstacle-course': 'Course',
-  'symbol-assembly': 'Symbol',
-  'item-order-puzzle': 'Order',
-  'hazard-puzzle': 'Hazard'
-};
-let activeEngine = getPuzzleEngine('maze-labyrinth');
 const engineValues = {};
+let activeEngine = null;
 
 window.addEventListener('DOMContentLoaded', () => {
   buildEngineButtons();
-  setActiveEngine(activeEngine.id);
+  buildPuzzleLauncher();
   bindImageContrastVisibility();
   patchExportPayload();
+  showPuzzleChooser();
 });
 
 function buildEngineButtons() {
   const host = $('engine-switcher');
   if (!host) return;
   host.innerHTML = '';
+
+  const chooserButton = document.createElement('button');
+  chooserButton.type = 'button';
+  chooserButton.className = 'engine-button engine-chooser-button';
+  chooserButton.title = 'Return to the puzzle type selection screen without deleting current work.';
+  chooserButton.innerHTML = '<span class="engine-icon">‹</span><span>Choose Puzzle Type</span>';
+  chooserButton.addEventListener('click', showPuzzleChooser);
+  host.appendChild(chooserButton);
+
   puzzleEngines.forEach((engine) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'engine-button';
     button.dataset.engine = engine.id;
     button.title = `${engine.label}: ${engine.purpose}`;
-    button.innerHTML = `<span class="engine-icon">${engine.icon}</span><span>${shortLabels[engine.id] || engine.label}</span>`;
-    button.addEventListener('click', () => setActiveEngine(engine.id));
+    button.innerHTML = `<span class="engine-icon">${engine.icon}</span><span>${engine.label}</span>`;
+    button.addEventListener('click', () => openWorkflow(engine.id));
     host.appendChild(button);
   });
+}
+
+function buildPuzzleLauncher() {
+  const host = document.querySelector('.left-panel-body');
+  if (!host || $('puzzle-launcher-panel')) return;
+  const panel = document.createElement('section');
+  panel.id = 'puzzle-launcher-panel';
+  panel.className = 'panel puzzle-launcher-panel';
+  panel.innerHTML = `
+    <p class="eyebrow">Start a puzzle</p>
+    <h2>Choose a Puzzle Type</h2>
+    <p class="puzzle-launcher-copy">Choose the challenge workflow you want to author. Maze / Labyrinth is the currently developed playable editor; other puzzle types retain their existing early workflow state.</p>
+    <div class="puzzle-type-grid" aria-label="Available puzzle types"></div>
+  `;
+  host.prepend(panel);
+  const grid = panel.querySelector('.puzzle-type-grid');
+  puzzleEngines.forEach((engine) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'puzzle-type-option';
+    button.dataset.engine = engine.id;
+    button.title = engine.purpose;
+    button.innerHTML = `<span class="engine-icon">${engine.icon}</span><span class="puzzle-type-copy"><strong>${engine.label}</strong><small>${launcherDescription(engine.id)}</small></span><span class="puzzle-type-arrow">›</span>`;
+    button.addEventListener('click', () => openWorkflow(engine.id));
+    grid.appendChild(button);
+  });
+}
+
+function launcherDescription(engineId) {
+  const descriptions = {
+    'maze-labyrinth': 'Build and test a navigable maze route.',
+    'arena-trial': 'Configure a contained combat challenge.',
+    'obstacle-course': 'Configure a movement and obstacle route.',
+    'symbol-assembly': 'Configure a symbol-based challenge.',
+    'item-order-puzzle': 'Configure an item ordering challenge.',
+    'hazard-puzzle': 'Configure an environmental hazard challenge.'
+  };
+  return descriptions[engineId] || 'Open this puzzle workflow.';
+}
+
+function showPuzzleChooser() {
+  document.body.classList.add('is-puzzle-chooser');
+  activeEngine = null;
+  window.__artifexActivePuzzleEngine = null;
+  $('puzzle-launcher-panel')?.removeAttribute('hidden');
+  document.querySelectorAll('.engine-button[data-engine]').forEach((button) => button.classList.remove('is-active'));
+  document.querySelectorAll('[data-panel-content]').forEach((panel) => {
+    panel.hidden = true;
+    panel.classList.remove('is-active');
+  });
+}
+
+function openWorkflow(engineId) {
+  document.body.classList.remove('is-puzzle-chooser');
+  $('puzzle-launcher-panel')?.setAttribute('hidden', '');
+  setActiveEngine(engineId);
+  const setupButton = document.querySelector('.panel-nav-button[data-panel="build"]');
+  setupButton?.click();
 }
 
 function setActiveEngine(engineId) {
   activeEngine = getPuzzleEngine(engineId);
   window.__artifexActivePuzzleEngine = activeEngine;
   window.__artifexPuzzleEngineValues = engineValues;
-  document.querySelectorAll('.engine-button').forEach((button) => button.classList.toggle('is-active', button.dataset.engine === activeEngine.id));
+  document.querySelectorAll('.engine-button[data-engine]').forEach((button) => button.classList.toggle('is-active', button.dataset.engine === activeEngine.id));
   if ($('active-engine-title')) $('active-engine-title').textContent = activeEngine.label;
   if ($('active-engine-purpose')) $('active-engine-purpose').textContent = activeEngine.purpose;
   if ($('playable-label')) $('playable-label').textContent = `${activeEngine.label} Preview`;
   if ($('module-id')) $('module-id').value = activeEngine.defaultModuleId;
   if ($('calling-text')) $('calling-text').value = activeEngine.callingText;
-  if ($('gameplay-mode')) $('gameplay-mode').value = activeEngine.mode;
+  if ($('gameplay-mode') && activeEngine.mode) $('gameplay-mode').value = activeEngine.mode;
   renderFields(activeEngine);
   drawEnginePreviewBadge(activeEngine);
 }
@@ -99,9 +159,10 @@ function bindImageContrastVisibility() {
 }
 
 function drawEnginePreviewBadge(engine) {
+  if (!engine) return;
   setTimeout(() => {
     const canvas = $('maze-preview-canvas');
-    if (!canvas) return;
+    if (!canvas || document.body.classList.contains('is-puzzle-chooser')) return;
     const ctx = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
     const ratio = canvas.width / Math.max(1, rect.width);
@@ -124,18 +185,18 @@ function drawEnginePreviewBadge(engine) {
 }
 
 function rounded(ctx, x, y, w, h, r) {
-  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r); ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r); ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + r); ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
 }
 
 function patchExportPayload() {
   window.__artifexAugmentPuzzlePayload = (payload) => ({
     ...payload,
-    engine: {
+    engine: activeEngine ? {
       id: activeEngine.id,
       label: activeEngine.label,
       moduleType: activeEngine.moduleType,
       mode: activeEngine.mode,
       values: engineValues[activeEngine.id] || {}
-    }
+    } : null
   });
 }
