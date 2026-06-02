@@ -1,7 +1,8 @@
 # Artifex Active Documentation Index and Control Map
 
-Status: Foundation draft for documentation consolidation  
-Prepared from current `main` baseline: `184309255347439a5e6ce82a6e6aa1fc99442760`  
+Status: Active consolidation index  
+Foundation published on `main`: PR #47 / merge `a475a90f4baca4421ff120c7244563ac283b9dd8`  
+Latest baseline checked for this update: `f707beb781a63165da29e145f5b8c4deeeada6ec`  
 Intended final role: the single active index identifying authoritative Artifex documentation, module specifications, task source and archive policy.
 
 ## Purpose
@@ -20,7 +21,7 @@ One specification document per actual module or maintained shared service:
   only that module/service's permanent unique role, ownership, route/baseline and interface
 
 One human-readable task document:
-  docs/GLOBAL_TODO.md
+  docs/artifex/2A-global-to-do.md
 
 Archive:
   old audits, status reports, completed-pass records, superseded handovers,
@@ -36,7 +37,7 @@ During this consolidation, older documents remain source evidence until their va
 | 1 | Master contract | Owns universal Artifex rules applying across modules/services. |
 | 2 | Module/service specification | Owns fixed information unique to one module/service. |
 | 3 | Exact technical schema/reference explicitly linked from the contract or a module spec | Owns detailed implementation shape for its bounded subject only. |
-| 4 | `docs/GLOBAL_TODO.md` | Owns outstanding/current/blocked/future work; it does not redefine contract rules. |
+| 4 | `docs/artifex/2A-global-to-do.md` | Owns outstanding/current/blocked/future work; it does not redefine contract rules. |
 | 5 | Archive | Preserves history/evidence only and is not an implementation authority. |
 
 If two active documents contain the same rule, status statement or task, the information must be consolidated into its single correct authority instead of maintained twice.
@@ -45,9 +46,10 @@ If two active documents contain the same rule, status statement or task, the inf
 
 | File | Intended active role | Status in this consolidation |
 |---|---|---|
-| `docs/artifex/0A-index-of-files.md` | This controlled active-document index. | New foundation draft. |
-| `docs/artifex/1A-project-file-contracts.md` | Master Artifex contract: universal platform, ownership, save, path, asset, branding and documentation-control rules. | New foundation draft built from existing contract/shared-rule material. |
-| `docs/GLOBAL_TODO.md` | The single human-readable global active backlog, divided by All Apps / Shared Platform and each module/service. | Exists but must be rewritten later after module-by-module extraction; current content is incomplete. |
+| `docs/artifex/0A-index-of-files.md` | This controlled active-document index. | Active consolidation index. |
+| `docs/artifex/1A-project-file-contracts.md` | Master Artifex contract: universal platform, ownership, save, path, asset, branding and documentation-control rules. | Active foundation; still being refined as each module is extracted. |
+| `docs/artifex/2A-global-to-do.md` | The single human-readable global active backlog, divided by All Apps / Shared Platform and each module/service. | Active destination for new outstanding work during consolidation. |
+| `docs/artifex/3A-hub-artifex-portal.md` | Hub / Artifex Portal module specification document. | Added during Hub extraction pass. |
 | `docs/artifex/19a-project-starter-file-schemas.md` | Subordinate technical reference for exact canonical starter JSON and typed index shapes. | Retain active, subject to link/title cleanup after contract adoption. |
 | `docs/artifex/22-sound-archetype-generator.md` | Sound Generator module/service specification document. | Retain active; inspect last because current Sound Generator work is in progress. |
 
@@ -57,9 +59,9 @@ Each confirmed real module or maintained shared service must ultimately have one
 
 | Audit order | Module / service | Target specification role | Current handling |
 |---:|---|---|---|
-| 1 | Master Artifex Contract / Shared Rules | Universal contract, not a module spec. | In progress through `1A-project-file-contracts.md`. |
-| 2 | Hub / Artifex Portal | Module navigation, entry points and Hub-only presentation/route baseline. | Audit after contract foundation. |
-| 3 | Creation Guide | New project setup, starter creation, initial intake/setup and active-project registration boundary. | Audit after Hub. |
+| 1 | Master Artifex Contract / Shared Rules | Universal contract, not a module spec. | Foundation active in `docs/artifex/1A-project-file-contracts.md`; refine only when further universal rules are found. |
+| 2 | Hub / Artifex Portal | Module navigation, entry points and Hub-only presentation/route baseline. | Extracted into `docs/artifex/3A-hub-artifex-portal.md`; implementation follow-up remains in `2A`. |
+| 3 | Creation Guide | New project setup, starter creation, initial intake/setup and active-project registration boundary. | Next module audit. |
 | 4 | Project Editor | Structural/Flatplan/route ownership and Project Editor-only interface/baseline. | Consolidate any historical `Project Manager` material as migration evidence only. |
 | 5 | Scene Editor | Scene/screen visual authoring ownership and accepted active baseline. | Extract latest accepted baseline; archive obsolete failed-status records later. |
 | 6 | Quest Builder | Quest/progression ownership and its defined use of saved puzzle references. | Avoid copying Puzzle Creator internals. |
@@ -77,15 +79,15 @@ Each confirmed real module or maintained shared service must ultimately have one
 
 A helper implementation file does not automatically receive its own specification document. A spec exists for a real module/service boundary only.
 
-## Target Global To-Do Structure
+## Global To-Do Source
 
-The sole human-readable active task source will be:
+The sole human-readable active task source is:
 
 ```text
-docs/GLOBAL_TODO.md
+docs/artifex/2A-global-to-do.md
 ```
 
-Its target sections are:
+Its sections are:
 
 ```text
 All Apps / Shared Platform
@@ -109,7 +111,7 @@ Sound Generator
 
 Universal permanent rules do not belong in the global to-do. Module baselines should appear there only when necessary to protect active work from obsolete assumptions.
 
-`artifex/shared/todo-guide/all-apps-todos.json` must be inspected for code dependencies before changing or relocating it. If required by an application, it may be retained temporarily as machine-readable/runtime-linked task data, but it must not remain an independent human-maintained backlog competing with `docs/GLOBAL_TODO.md`.
+`artifex/shared/todo-guide/all-apps-todos.json` must be inspected for code dependencies before changing or relocating it. If required by an application, it may be retained temporarily as machine-readable/runtime-linked task data, but it must not remain an independent human-maintained backlog competing with `docs/artifex/2A-global-to-do.md`.
 
 ## Current Shared-Rule Source Classification
 
@@ -118,7 +120,9 @@ The following classification records the starting plan for documents that curren
 | Current file | Valid information destination | Intended treatment after extraction and verification |
 |---|---|---|
 | `docs/artifex/00-index.md` | Active file inventory and authoritative-file rules move into this `0A` index. Module-specific pointers remain only where still useful. | Supersede/archive once this controlled index and module specs are complete. |
+| `docs/GLOBAL_TODO.md` | Any still-live work not already captured moves into `docs/artifex/2A-global-to-do.md`. | Retain as source evidence until extraction is confirmed; archive later, not delete now. |
 | `docs/artifex/02-module-architecture.md` | Universal ownership/boundary principles move into `1A`; unique module descriptions move into the relevant module specs. | Archive after module audit extraction. |
+| `docs/artifex/11-portal-hub.md` | Valid Hub purpose/current implementation facts move into `3A`; any still-open implementation work stays in `2A`. | Retain as source evidence now; archive after Hub extraction is accepted. |
 | `docs/artifex/12-project-settings.md` | Only still-valid universal active-project/save constraints move into `1A` or a confirmed service spec. Older absolute-path/localStorage-first concepts must not override the current connected-folder contract. | Archive after relevant service/module extraction. |
 | `docs/artifex/18-color-and-display-rules.md` | Universal Artifex branding/display/header/accent/control rules move into `1A`. | Archive or retain only as a subordinate visual reference if later inspection proves unique detailed material still needs a separate authority; it must not duplicate `1A`. |
 | `docs/artifex/19-project-file-contracts.md` | Its valid central-contract content forms the basis of `1A`. | Supersede/archive after `1A` is approved and all links updated. |
@@ -126,17 +130,17 @@ The following classification records the starting plan for documents that curren
 | `docs/artifex/20-asset-intake-workflow.md` | Universal intake-versus-final-asset rules move into `1A`; Asset Library/Creation Guide-specific workflow belongs in the relevant single specs. | Decide final retain/archive treatment during Asset Library and Creation Guide audits. |
 | `docs/artifex/21-template-game-project-contract.md` | Universal three-layer distinction moves into `1A`; unique Template Game/reference-project material may remain as one bounded reference-project specification. | Decide retain/archive treatment after project/reference scope audit. |
 | `docs/artifex/22-sound-archetype-generator.md` | Sound Generator-specific permanent information stays in that module/service spec; universal generated-audio asset rule exists once in `1A`. | Retain active and consolidate last because current work is in progress. |
-| `docs/artifex/23-current-main-scan-and-pr20-recovery.md` | Any current outstanding work moves to `docs/GLOBAL_TODO.md`; historical recovery evidence stays historical. | Archive after extraction. |
-| `docs/artifex/24-stabilisation-cleanup-and-ui-resumption-plan.md` | Permanent no-patch/one-scope/verified-archive/process rules move into `1A`; remaining open work moves into `docs/GLOBAL_TODO.md`; completed phases remain history. | Archive after extraction. |
-| `artifex/shared/todo-guide/README.md` | Valid universal ownership/task/document-control rules move into `1A`; outstanding work moves to global to-do; machine task shape retained only if a real service/code dependency requires it. | Supersede/archive after dependency audit and extraction. |
-| `artifex/shared/todo-guide/all-apps-todos.json` | Active human tasks must be represented in `docs/GLOBAL_TODO.md`; code-linked machine content remains until safely changed. | Dependency check required before any decision. |
-| `artifex/shared/todo-guide/audits/**` | Still-valid current facts go to module specs or global to-do; permanent universal rules go to `1A`. | Archive/history only after extraction. |
+| `docs/artifex/23-current-main-scan-and-pr20-recovery.md` | Any current outstanding work moves to `docs/artifex/2A-global-to-do.md`; historical recovery evidence stays historical. | Archive after extraction. |
+| `docs/artifex/24-stabilisation-cleanup-and-ui-resumption-plan.md` | Permanent no-patch/one-scope/verified-archive/process rules move into `1A`; remaining open work moves into `docs/artifex/2A-global-to-do.md`; completed phases remain history. | Archive after extraction. |
+| `artifex/shared/todo-guide/README.md` | Valid universal ownership/task/document-control rules move into `1A`; outstanding work moves to `2A`; machine task shape retained only if a real service/code dependency requires it. | Supersede/archive after dependency audit and extraction. |
+| `artifex/shared/todo-guide/all-apps-todos.json` | Active human tasks must be represented in `2A`; code-linked machine content remains until safely changed. | Dependency check required before any decision. |
+| `artifex/shared/todo-guide/audits/**` | Still-valid current facts go to module specs or `2A`; permanent universal rules go to `1A`. | Archive/history only after extraction. |
 
 ## Current Duplication Rules to Remove
 
 The following practices are no longer acceptable for the final controlled documentation model:
 
-- maintaining separate active app-specific `todo.md` files alongside a global backlog;
+- maintaining separate active app-specific `todo.md` files alongside the single `2A` global backlog;
 - writing new current-state or baseline documents that become competing status authorities;
 - keeping dated audit reports in the active instruction chain after their valid information is transferred;
 - copying universal save/path/branding/ownership rules into every module specification;
@@ -165,12 +169,12 @@ Puzzle Creator and Sound Generator are currently being edited separately. Their 
 
 ## Consolidation Implementation Notes
 
-This index and `1A-project-file-contracts.md` are new documentation-foundation drafts created on a dedicated documentation branch. They do not, by themselves:
+This controlled documentation set does not, by itself:
 
 - archive or delete any current document;
 - change any runtime route or app code;
 - change application schemas or file loading behaviour;
-- replace the global to-do before task extraction is complete;
-- authorise merging any existing PR.
+- retire legacy task sources before extraction is complete;
+- authorise merging any unrelated existing PR.
 
-Each following module/service audit should update the controlled map with its chosen single spec file, the information moved to global to-do and the documents eligible for archive after approval.
+Each following module/service audit should update this controlled map with its chosen single spec file, the information placed in `2A` and the documents eligible for archive after approval.
