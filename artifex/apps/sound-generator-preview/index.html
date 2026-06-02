@@ -13,9 +13,12 @@
     h1 { margin: 0 0 12px; font-family: Georgia, serif; font-size: 30px; letter-spacing: .05em; }
     h2 { margin: 20px 0 8px; color: #e2cca7; font-size: 16px; }
     p, li { color: rgba(255,240,206,.72); line-height: 1.55; }
-    .callers, .targets { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0 22px; }
+    .actions, .callers, .targets { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0 22px; }
     button { min-height: 40px; border: 1px solid rgba(226,204,167,.42); border-radius: 10px; padding: 9px 14px; background: rgba(132,94,51,.42); color: #fff0ce; cursor: pointer; font: inherit; }
     button:hover { border-color: #e2cca7; background: rgba(132,94,51,.58); }
+    button.primary { background: rgba(182,106,60,.82); border-color: rgba(255,218,155,.58); font-weight: 700; }
+    .debug-panel { margin-top: 22px; padding: 14px; border: 1px dashed rgba(226,204,167,.26); border-radius: 14px; background: rgba(0,0,0,.16); }
+    .debug-panel[hidden] { display: none; }
     .note, .result-grid { padding: 12px 14px; border: 1px dashed rgba(226,204,167,.24); border-radius: 11px; font-size: 12px; }
     .result-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
     .result-grid strong { display: block; color: #cbb18d; text-transform: uppercase; font-size: 10px; letter-spacing: .12em; }
@@ -29,28 +32,35 @@
   <main class="preview-host">
     <p class="kicker">Artifex Shared Utility Preview</p>
     <h1>Sound Library + Create Synth Sound</h1>
-    <p>This standalone harness proves the shared Sound Library-first workflow only. It simulates caller context labels but does not wire Object Creator, Quest Builder, Effect Editor, Puzzle Creator or Scene Editor runtime code.</p>
-    <h2>Open Sound Library with a captured caller context</h2>
-    <div class="callers">
-      <button type="button" data-source="Preview Harness > Object Action Sound">Object Action Sound</button>
-      <button type="button" data-source="Preview Harness > Quest Completed Sound">Quest Completed Sound</button>
-      <button type="button" data-source="Preview Harness > FX Loop Sound">FX Loop Sound</button>
-    </div>
-    <h2>Simulated external target ownership test</h2>
-    <p>Open the Sound Library, then change this external simulated target before choosing an asset. The callback should still report the source captured when the library opened.</p>
-    <div class="targets">
-      <button type="button" data-change-target="Preview Harness > Object Action Sound">External target: Object</button>
-      <button type="button" data-change-target="Preview Harness > Quest Completed Sound">External target: Quest</button>
-      <button type="button" data-change-target="Preview Harness > FX Loop Sound">External target: FX</button>
-    </div>
-    <div class="result-grid">
-      <p><strong>Captured at open</strong><span id="captured-target">none yet</span></p>
-      <p><strong>External simulated target</strong><span id="external-target">none</span></p>
-      <p><strong>Returned asset_ ID</strong><span id="returned-asset">none yet</span></p>
+    <p>The normal preview opens directly into the same shared Sound Library that future authoring apps will use. It includes the <strong>Create New Synth Sound</strong> route, but does not wire any caller app yet.</p>
+    <div class="actions">
+      <button class="primary" type="button" data-open-library>Open Sound Library</button>
+      <button type="button" data-show-debug>Debug target test</button>
     </div>
     <p class="note">Use a disposable Blank Starter Project folder. The Sound Library reads <code>assets/asset-index.json</code>. Saving a generated synth writes <code>assets/audio/sfx/synth_&lt;slug&gt;.json</code> and registers one normal <code>asset_sfx_...</code> audio item.</p>
-    <h2>Harness log</h2>
-    <ol id="event-log"></ol>
+    <section class="debug-panel" data-debug-panel hidden>
+      <h2>Debug only: captured caller-context assignment test</h2>
+      <p>This technical harness proves that a returned sound stays attached to the field that opened the library. It is not a different Sound Library UI.</p>
+      <div class="callers">
+        <button type="button" data-source="Preview Harness > Object Action Sound">Object Action Sound</button>
+        <button type="button" data-source="Preview Harness > Quest Completed Sound">Quest Completed Sound</button>
+        <button type="button" data-source="Preview Harness > FX Loop Sound">FX Loop Sound</button>
+      </div>
+      <p>After opening a debug context, change the simulated external target before choosing an asset. The returned assignment must still report the source captured when the library opened.</p>
+      <div class="targets">
+        <button type="button" data-change-target="Preview Harness > Object Action Sound">External target: Object</button>
+        <button type="button" data-change-target="Preview Harness > Quest Completed Sound">External target: Quest</button>
+        <button type="button" data-change-target="Preview Harness > FX Loop Sound">External target: FX</button>
+      </div>
+      <button type="button" data-hide-debug>Hide debug panel</button>
+      <div class="result-grid">
+        <p><strong>Captured at open</strong><span id="captured-target">none yet</span></p>
+        <p><strong>External simulated target</strong><span id="external-target">none</span></p>
+        <p><strong>Returned asset_ ID</strong><span id="returned-asset">none yet</span></p>
+      </div>
+      <h2>Debug log</h2>
+      <ol id="event-log"></ol>
+    </section>
   </main>
   <script type="module" src="./sound-generator-preview-host.js?v=1.10"></script>
 </body>
