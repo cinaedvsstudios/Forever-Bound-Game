@@ -14,6 +14,8 @@ export class PatternLockRenderer {
     this.emptyColor = DEFAULT_EMPTY;
     this.glowColor = DEFAULT_GLOW;
     this.pointScale = 1;
+    this.pointShape = 'sphere';
+    this.pointTexture = null;
     this.nodes = [];
     this.active = false;
     this.raycaster = new THREE.Raycaster();
@@ -102,12 +104,25 @@ export class PatternLockRenderer {
     if (hit && this.callbacks.onPointClick) this.callbacks.onPointClick(hit.object.userData.index);
   }
 
+  createGeometry() {
+    if (this.pointShape === 'cube') return new THREE.BoxGeometry(BASE_SIZE * 1.7, BASE_SIZE * 1.7, BASE_SIZE * 1.7, 1, 1, 1);
+    if (this.pointShape === 'gem') return new THREE.OctahedronGeometry(BASE_SIZE * 1.12, 0);
+    return new THREE.SphereGeometry(BASE_SIZE, 14, 14);
+  }
+
+  createMaterial() {
+    return new THREE.MeshStandardMaterial({
+      color: this.emptyColor,
+      map: this.pointTexture,
+      roughness: 0.34,
+      metalness: 0.06
+    });
+  }
+
   load(points, placements, isComplete = false) {
     this.clear();
     points.forEach((point, index) => {
-      const geometry = new THREE.SphereGeometry(BASE_SIZE, 14, 14);
-      const material = new THREE.MeshStandardMaterial({ color: this.emptyColor, roughness: 0.34, metalness: 0.06 });
-      const mesh = new THREE.Mesh(geometry, material);
+      const mesh = new THREE.Mesh(this.createGeometry(), this.createMaterial());
       mesh.position.set(point.x, point.y, point.z);
       mesh.castShadow = true;
       mesh.userData = { index, expected: point.expected, zone: point.zone, emoji: null, sprite: null };
@@ -133,6 +148,8 @@ export class PatternLockRenderer {
     this.nodes.forEach((node) => {
       const emoji = placements.get(node.userData.index) || null;
       node.userData.emoji = emoji;
+      node.material.map = this.pointTexture;
+      node.material.needsUpdate = true;
       if (node.userData.sprite) {
         node.remove(node.userData.sprite);
         this.disposeSprite(node.userData.sprite);
@@ -186,6 +203,14 @@ export class PatternLockRenderer {
     this.nodes.forEach((node) => node.scale.setScalar(this.pointScale));
   }
 
+  setPointShape(shape) {
+    this.pointShape = ['sphere', 'cube', 'gem'].includes(shape) ? shape : 'sphere';
+    this.nodes.forEach((node) => {
+      node.geometry.dispose();
+      node.geometry = this.createGeometry();
+    });
+  }
+
   setEmptyColor(color, placements, complete) {
     this.emptyColor = color;
     this.paint(placements, complete);
@@ -193,6 +218,23 @@ export class PatternLockRenderer {
 
   setGlowColor(color) {
     this.glowColor = color;
+  }
+
+  async setPointTexture(file, placements, complete) {
+    const dataUrl = await readFileAsDataUrl(file);
+    const nextTexture = await loadTexture(dataUrl);
+    nextTexture.colorSpace = THREE.SRGBColorSpace || undefined;
+    const previousTexture = this.pointTexture;
+    this.pointTexture = nextTexture;
+    this.paint(placements, complete);
+    previousTexture?.dispose();
+  }
+
+  clearPointTexture(placements, complete) {
+    const previousTexture = this.pointTexture;
+    this.pointTexture = null;
+    this.paint(placements, complete);
+    previousTexture?.dispose();
   }
 
   resetView() {
@@ -232,4 +274,19 @@ export class PatternLockRenderer {
     if (this.frame) window.cancelAnimationFrame(this.frame);
     this.frame = null;
   }
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error('Unable to read the texture file.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadTexture(url) {
+  return new Promise((resolve, reject) => {
+    new THREE.TextureLoader().load(url, resolve, undefined, reject);
+  });
 }
