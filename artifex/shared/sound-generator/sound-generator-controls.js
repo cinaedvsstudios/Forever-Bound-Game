@@ -5,6 +5,53 @@ const scale = (min, max, amount) => min + (max - min) * amount;
 const exponentialScale = (min, max, amount) => min * Math.pow(max / min, amount);
 const patternFromLegacyCount = (count) => Number(count) <= 1 ? 'single' : Number(count) === 2 ? 'double' : Number(count) === 3 ? 'triple' : 'repeat';
 
+export const PITCH_CURVE_PRESETS = Object.freeze({
+  drops: Object.freeze([
+    Object.freeze({ time: 0, value: 0.5 }),
+    Object.freeze({ time: 0.25, value: 0.47 }),
+    Object.freeze({ time: 0.5, value: 0.34 }),
+    Object.freeze({ time: 0.75, value: 0.17 }),
+    Object.freeze({ time: 1, value: 0 })
+  ]),
+  steady: Object.freeze([
+    Object.freeze({ time: 0, value: 0.5 }),
+    Object.freeze({ time: 0.25, value: 0.5 }),
+    Object.freeze({ time: 0.5, value: 0.5 }),
+    Object.freeze({ time: 0.75, value: 0.5 }),
+    Object.freeze({ time: 1, value: 0.5 })
+  ]),
+  rises: Object.freeze([
+    Object.freeze({ time: 0, value: 0.5 }),
+    Object.freeze({ time: 0.25, value: 0.53 }),
+    Object.freeze({ time: 0.5, value: 0.66 }),
+    Object.freeze({ time: 0.75, value: 0.83 }),
+    Object.freeze({ time: 1, value: 1 })
+  ])
+});
+
+export function pitchCurveForPreset(pitchChange = 'steady') {
+  const preset = PITCH_CURVE_PRESETS[pitchChange] || PITCH_CURVE_PRESETS.steady;
+  return preset.map(({ time, value }) => ({ time, value }));
+}
+
+export function normalizePitchCurve(input, pitchChange = 'steady') {
+  const source = Array.isArray(input) && input.length >= 2 ? input : pitchCurveForPreset(pitchChange);
+  const points = source
+    .map((point) => ({ time: round(clamp(point?.time, 0, 1)), value: round(clamp(point?.value, 0, 1)) }))
+    .filter((point) => Number.isFinite(point.time) && Number.isFinite(point.value))
+    .sort((left, right) => left.time - right.time)
+    .slice(0, 8);
+  if (points.length < 2) return pitchCurveForPreset(pitchChange);
+  points[0].time = 0;
+  points[points.length - 1].time = 1;
+  for (let index = 1; index < points.length - 1; index += 1) {
+    const minimum = points[index - 1].time + 0.025;
+    const maximum = points[index + 1].time - 0.025;
+    points[index].time = round(clamp(points[index].time, minimum, maximum));
+  }
+  return points;
+}
+
 export const SIMPLE_CONTROL_DEFINITIONS = Object.freeze([
   { key: 'tone', label: 'Tone', hint: 'Soft and rounded to sharp and buzzy.', min: 0, max: 100, ends: ['Soft', 'Sharp'] },
   { key: 'pitch', label: 'Pitch', hint: 'How high or low the sound feels.', min: 0, max: 100, ends: ['Low', 'High'] },
@@ -24,13 +71,15 @@ export const ADVANCED_CONTROL_DEFINITIONS = Object.freeze([
 export const CONTROL_DEFINITIONS = Object.freeze([...SIMPLE_CONTROL_DEFINITIONS, ...ADVANCED_CONTROL_DEFINITIONS]);
 
 export const DEFAULT_CONTROLS = Object.freeze({
-  name: 'New Sound', category: 'sfx', tags: '', tone: 20, pitch: 50, pitchChange: 'steady', brightness: 55,
-  length: 25, static: 0, echo: 10, wobble: 0, impact: 45, pattern: 'single', pace: 62, volume: 50, loop: false
+  name: 'New Sound', category: 'sfx', tags: '', tone: 20, pitch: 50, pitchChange: 'steady',
+  pitchCurve: PITCH_CURVE_PRESETS.steady, brightness: 55, length: 25, static: 0, echo: 10, wobble: 0,
+  impact: 45, pattern: 'single', pace: 62, volume: 50, loop: false
 });
 
 export function normalizeControls(input = {}) {
   const legacyTone = input.tone ?? input.texture ?? DEFAULT_CONTROLS.tone;
   const legacyStatic = input.static ?? input.noise ?? Math.max(0, Number(legacyTone) - 52);
+  const pitchChange = ['drops', 'steady', 'rises', 'custom'].includes(input.pitchChange) ? input.pitchChange : 'steady';
   return {
     ...DEFAULT_CONTROLS,
     name: String(input.name || DEFAULT_CONTROLS.name).trim().slice(0, 80) || DEFAULT_CONTROLS.name,
@@ -38,7 +87,8 @@ export function normalizeControls(input = {}) {
     tags: String(input.tags || '').trim().slice(0, 180),
     tone: integer(legacyTone, 0, 100),
     pitch: integer(input.pitch ?? DEFAULT_CONTROLS.pitch, 0, 100),
-    pitchChange: ['drops', 'steady', 'rises'].includes(input.pitchChange) ? input.pitchChange : 'steady',
+    pitchChange,
+    pitchCurve: normalizePitchCurve(input.pitchCurve, pitchChange),
     brightness: integer(input.brightness ?? DEFAULT_CONTROLS.brightness, 0, 100),
     length: integer(input.length ?? DEFAULT_CONTROLS.length, 0, 100),
     static: integer(legacyStatic, 0, 100),
@@ -56,21 +106,25 @@ export function controlsToRecipe(rawControls = {}) {
   const controls = normalizeControls(rawControls);
   const baseFrequencyHz = exponentialScale(55, 1760, controls.pitch / 100);
   const pitchTravel = scale(0.12, 0.64, controls.tone / 100);
-  const endFactor = controls.pitchChange === 'drops' ? 1 - pitchTravel : controls.pitchChange === 'rises' ? 1 + pitchTravel : 1;
   const durationMs = Math.round(exponentialScale(55, 2400, controls.length / 100));
   const attackMs = Math.round(scale(62, 2, Math.max(controls.tone, controls.impact) / 100));
   const releaseMs = Math.min(Math.round(scale(190, 22, controls.impact / 100)), Math.round(durationMs * 0.5));
   const waveform = controls.tone > 82 ? 'square' : controls.tone > 56 ? 'sawtooth' : controls.tone > 26 ? 'triangle' : 'sine';
   const outputGain = round(scale(0, 0.26, controls.volume / 100) * scale(0.72, 1.12, controls.impact / 100));
   const repeatCounts = { single: 1, double: 2, triple: 3, repeat: 4 };
+  const frequencyCurve = controls.pitchCurve.map(({ time, value }) => ({
+    time,
+    frequencyHz: Math.round(baseFrequencyHz * scale(1 - pitchTravel, 1 + pitchTravel, value))
+  }));
 
   return {
     masterGain: outputGain,
     durationMs,
     tone: {
       waveform,
-      startFrequencyHz: Math.round(baseFrequencyHz),
-      endFrequencyHz: Math.round(baseFrequencyHz * endFactor),
+      startFrequencyHz: frequencyCurve[0].frequencyHz,
+      endFrequencyHz: frequencyCurve[frequencyCurve.length - 1].frequencyHz,
+      frequencyCurve,
       attackMs,
       releaseMs
     },
@@ -138,6 +192,7 @@ export function randomSound(rawControls = DEFAULT_CONTROLS) {
     tone: integer(Math.random() * 100, 0, 100),
     pitch: integer(Math.random() * 100, 0, 100),
     pitchChange: pitchChanges[Math.floor(Math.random() * pitchChanges.length)],
+    pitchCurve: undefined,
     brightness: integer(Math.random() * 100, 0, 100),
     length: integer(Math.random() * 78 + 8, 0, 100),
     static: integer(Math.random() * 72, 0, 100),
