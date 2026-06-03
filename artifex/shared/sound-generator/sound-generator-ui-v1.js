@@ -1,27 +1,64 @@
-import { ADVANCED_CONTROL_DEFINITIONS, SIMPLE_CONTROL_DEFINITIONS, normalizeControls } from './sound-generator-controls.js';
+import { ADVANCED_CONTROL_DEFINITIONS, SIMPLE_CONTROL_DEFINITIONS, normalizeControls, pitchCurveForPreset } from './sound-generator-controls.js';
 import { SOUND_TYPE_GROUPS, SOUND_TYPES, constrainedVariationForSoundType, copyPresetControls, firstExamplePreset } from './sound-generator-presets.js';
 import { buildProceduralSynthAsset, makeAudioAssetId, makeRecipePath } from './procedural-synth-schema.js';
 import { ProceduralSoundRuntime } from './procedural-synth-runtime.js';
 import '../project-folder/project-folder-client.js?v=0.1.0';
 import { downloadProceduralSynthRecipe, readImportedProceduralSynth, saveProceduralSynthToLibrary } from './sound-generator-store.js';
 
-const VERSION = 'V1.10';
+const VERSION = 'V1.11';
 const STYLE_ID = 'artifex-sound-generator-css';
+const CURVE_BOX = Object.freeze({ width: 480, height: 224, left: 25, right: 14, top: 13, bottom: 27 });
+const CURVE_PLOT_WIDTH = CURVE_BOX.width - CURVE_BOX.left - CURVE_BOX.right;
+const CURVE_PLOT_HEIGHT = CURVE_BOX.height - CURVE_BOX.top - CURVE_BOX.bottom;
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const clone = (value) => structuredClone(value);
+const clamp = (value, min, max) => Math.max(min, Math.min(max, Number(value)));
 
 function loadCss() {
   if (document.getElementById(STYLE_ID)) return;
   const link = document.createElement('link');
   link.id = STYLE_ID;
   link.rel = 'stylesheet';
-  link.href = new URL('./sound-generator.css?v=1.11', import.meta.url).href;
+  link.href = new URL('./sound-generator.css?v=1.12', import.meta.url).href;
   document.head.appendChild(link);
 }
 
 function controlSliderMarkup(definition) {
   const ends = definition.ends || ['', ''];
   return `<label class="sound-slider" title="${esc(definition.hint)}"><span><b>${esc(definition.label)}</b><output data-out="${esc(definition.key)}">0</output></span><input type="range" min="${definition.min}" max="${definition.max}" step="1" data-field="${esc(definition.key)}" /><small>${esc(ends[0])} ↔ ${esc(ends[1])}</small></label>`;
+}
+
+function curveMarkup() {
+  return `<section class="sound-curve-panel" aria-label="Frequency movement curve editor">
+    <div class="sound-curve-header"><h3>Frequency movement</h3><output class="sound-play-time" data-play-time>0.00 / 0.00 sec</output></div>
+    <div class="sound-curve-presets" aria-label="Frequency curve starter shapes">
+      <button type="button" data-pitch="drops">↘️ Drops</button>
+      <button type="button" data-pitch="steady">➡️ Steady</button>
+      <button type="button" data-pitch="rises">↗️ Rises</button>
+    </div>
+    <svg class="sound-frequency-graph" data-frequency-graph viewBox="0 0 ${CURVE_BOX.width} ${CURVE_BOX.height}" role="img" aria-label="Drag frequency points over sound time">
+      <g class="curve-grid" aria-hidden="true">
+        <line x1="25" y1="13" x2="25" y2="197"></line>
+        <line x1="135.25" y1="13" x2="135.25" y2="197"></line>
+        <line x1="245.5" y1="13" x2="245.5" y2="197"></line>
+        <line x1="355.75" y1="13" x2="355.75" y2="197"></line>
+        <line x1="466" y1="13" x2="466" y2="197"></line>
+        <line x1="25" y1="13" x2="466" y2="13"></line>
+        <line x1="25" y1="59" x2="466" y2="59"></line>
+        <line x1="25" y1="105" x2="466" y2="105"></line>
+        <line x1="25" y1="151" x2="466" y2="151"></line>
+        <line x1="25" y1="197" x2="466" y2="197"></line>
+      </g>
+      <text class="curve-label" x="4" y="18">High</text>
+      <text class="curve-label" x="5" y="198">Low</text>
+      <text class="curve-label" x="25" y="218">0.00s</text>
+      <text class="curve-label curve-end-time" data-curve-duration x="466" y="218">0.00s</text>
+      <polyline class="curve-line" data-curve-line points=""></polyline>
+      <line class="curve-playhead" data-curve-playhead x1="25" y1="13" x2="25" y2="197"></line>
+      <g data-curve-points></g>
+    </svg>
+    <p class="sound-curve-help">Drag points to shape pitch through time. Start and end stay anchored to the sound edges.</p>
+  </section>`;
 }
 
 function markup(options) {
@@ -48,7 +85,7 @@ function markup(options) {
       <section class="sound-editor">
         <div class="sound-favourites" data-favourites-panel hidden><h3>⭐ Favourites in this unsaved session</h3><div data-favourites></div></div>
         <div class="sound-control-grid">${SIMPLE_CONTROL_DEFINITIONS.map(controlSliderMarkup).join('')}</div>
-        <details class="sound-advanced"><summary>⚙️ Advanced Controls</summary><fieldset class="sound-pitch-change"><legend>Frequency movement</legend><button data-pitch="drops">↘️ Drops</button><button data-pitch="steady">➡️ Steady</button><button data-pitch="rises">↗️ Rises</button></fieldset><div class="sound-control-grid compact">${ADVANCED_CONTROL_DEFINITIONS.map(controlSliderMarkup).join('')}</div><div class="sound-pattern-row"><label>Pattern<select data-field="pattern"><option value="single">Single</option><option value="double">Double</option><option value="triple">Triple</option><option value="repeat">Repeat</option></select></label><label class="check"><input type="checkbox" data-field="loop" /> Loop until stopped</label></div><div class="sound-file-actions secondary"><input type="file" accept=".json,application/json" data-file hidden /><button data-act="import">📥 Import procedural JSON</button><button data-act="export">📤 Export current recipe JSON</button></div></details>
+        <details class="sound-advanced"><summary>⚙️ Advanced Controls</summary>${curveMarkup()}<div class="sound-control-grid compact">${ADVANCED_CONTROL_DEFINITIONS.map(controlSliderMarkup).join('')}</div><div class="sound-pattern-row"><label>Pattern<select data-field="pattern"><option value="single">Single</option><option value="double">Double</option><option value="triple">Triple</option><option value="repeat">Repeat</option></select></label><label class="check"><input type="checkbox" data-field="loop" /> Loop until stopped</label></div><div class="sound-file-actions secondary"><input type="file" accept=".json,application/json" data-file hidden /><button data-act="import">📥 Import procedural JSON</button><button data-act="export">📤 Export current recipe JSON</button></div></details>
       </section>
     </div>
     <p class="sound-message" data-message aria-live="polite"></p>
@@ -72,7 +109,13 @@ export function createSoundGeneratorUI(container, options = {}) {
     historyIndex: 0,
     record: null,
     createdAt: null,
-    runtimeMessage: 'Ready.'
+    runtimeMessage: 'Ready.',
+    draggingCurveIndex: null,
+    playheadAnimation: null,
+    playheadStartedAt: 0,
+    playheadDuration: 0,
+    playheadLoop: false,
+    playing: false
   };
 
   container.innerHTML = markup(config);
@@ -81,9 +124,66 @@ export function createSoundGeneratorUI(container, options = {}) {
   const $$ = (s) => [...root.querySelectorAll(s)];
   const text = (s, value) => { const node = $(s); if (node) node.textContent = value || ''; };
   const message = (value, kind = '') => { text('[data-message]', value); $('[data-message]').dataset.kind = kind; };
-  const runtime = new ProceduralSoundRuntime(({ message: runtimeMsg }) => {
+
+  function cycleDurationSeconds(record = currentRecord()) {
+    const recipe = record.recipe;
+    const noteSeconds = Math.max(0.05, Number(recipe.durationMs || 200) / 1000);
+    const gapSeconds = Math.max(0, Number(recipe.pattern.paceMs || 0) / 1000);
+    const repeatCount = Math.max(1, Math.min(6, Number(recipe.pattern.steps || 1)));
+    return repeatCount * noteSeconds + Math.max(0, repeatCount - 1) * gapSeconds;
+  }
+
+  function curveCoordinate(point) {
+    return {
+      x: CURVE_BOX.left + clamp(point.time, 0, 1) * CURVE_PLOT_WIDTH,
+      y: CURVE_BOX.top + (1 - clamp(point.value, 0, 1)) * CURVE_PLOT_HEIGHT
+    };
+  }
+
+  function renderPlayhead(elapsed = 0, duration = cycleDurationSeconds(state.record || currentRecord())) {
+    const safeDuration = Math.max(0.01, Number(duration) || 0.01);
+    const safeElapsed = clamp(elapsed, 0, safeDuration);
+    const ratio = clamp(safeElapsed / safeDuration, 0, 1);
+    const x = CURVE_BOX.left + ratio * CURVE_PLOT_WIDTH;
+    const playhead = $('[data-curve-playhead]');
+    if (playhead) {
+      playhead.setAttribute('x1', x.toFixed(2));
+      playhead.setAttribute('x2', x.toFixed(2));
+      playhead.classList.toggle('is-playing', state.playing);
+    }
+    text('[data-play-time]', `${safeElapsed.toFixed(2)} / ${safeDuration.toFixed(2)} sec`);
+    text('[data-curve-duration]', `${safeDuration.toFixed(2)}s`);
+  }
+
+  function stopPlayhead(complete = false) {
+    if (state.playheadAnimation) cancelAnimationFrame(state.playheadAnimation);
+    state.playheadAnimation = null;
+    state.playing = false;
+    renderPlayhead(complete ? state.playheadDuration : 0, state.playheadDuration || cycleDurationSeconds(state.record || currentRecord()));
+  }
+
+  function startPlayhead(record) {
+    if (state.playheadAnimation) cancelAnimationFrame(state.playheadAnimation);
+    state.playheadDuration = cycleDurationSeconds(record);
+    state.playheadStartedAt = performance.now() + 25;
+    state.playheadLoop = Boolean(record.recipe.pattern.loop);
+    state.playing = true;
+    renderPlayhead(0, state.playheadDuration);
+    const tick = (now) => {
+      if (!state.playing) return;
+      const rawSeconds = Math.max(0, (now - state.playheadStartedAt) / 1000);
+      const elapsed = state.playheadLoop ? rawSeconds % state.playheadDuration : Math.min(rawSeconds, state.playheadDuration);
+      renderPlayhead(elapsed, state.playheadDuration);
+      if (state.playheadLoop || rawSeconds < state.playheadDuration) state.playheadAnimation = requestAnimationFrame(tick);
+      else state.playheadAnimation = null;
+    };
+    state.playheadAnimation = requestAnimationFrame(tick);
+  }
+
+  const runtime = new ProceduralSoundRuntime(({ playing, message: runtimeMsg }) => {
     state.runtimeMessage = runtimeMsg || 'Ready.';
     message(state.runtimeMessage);
+    if (playing === false) stopPlayhead(runtimeMsg === 'Preview complete.');
   });
 
   function currentControls() {
@@ -123,6 +223,16 @@ export function createSoundGeneratorUI(container, options = {}) {
     host.innerHTML = favourites.map((entry) => `<button type="button" data-favourite-index="${entry.index}">⭐ Variation ${entry.index + 1} <span>${esc(entry.label || '')}</span></button>`).join('');
   }
 
+  function renderCurve() {
+    const values = currentControls();
+    const coordinates = values.pitchCurve.map(curveCoordinate);
+    const line = $('[data-curve-line]');
+    const points = $('[data-curve-points]');
+    if (line) line.setAttribute('points', coordinates.map(({ x, y }) => `${x.toFixed(2)},${y.toFixed(2)}`).join(' '));
+    if (points) points.innerHTML = coordinates.map(({ x, y }, index) => `<circle class="curve-point" data-curve-index="${index}" tabindex="0" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="7" aria-label="Frequency curve point ${index + 1}"></circle>`).join('');
+    if (!state.playing) renderPlayhead(0, cycleDurationSeconds(state.record || currentRecord()));
+  }
+
   function renderControls() {
     const values = currentControls();
     [...SIMPLE_CONTROL_DEFINITIONS, ...ADVANCED_CONTROL_DEFINITIONS].forEach(({ key }) => {
@@ -144,6 +254,7 @@ export function createSoundGeneratorUI(container, options = {}) {
     state.record = currentRecord();
     renderSoundTypes();
     renderFavourites();
+    renderCurve();
   }
 
   function updateCurrentControls(patch) {
@@ -172,9 +283,30 @@ export function createSoundGeneratorUI(container, options = {}) {
     message(`Random Variation ${state.historyIndex + 1} stays within the ${type.label} profile.`);
   }
 
+  function moveCurvePoint(event) {
+    if (state.draggingCurveIndex === null) return;
+    const graph = $('[data-frequency-graph]');
+    const rect = graph.getBoundingClientRect();
+    const graphX = ((event.clientX - rect.left) / rect.width) * CURVE_BOX.width;
+    const graphY = ((event.clientY - rect.top) / rect.height) * CURVE_BOX.height;
+    const curve = currentControls().pitchCurve.map((point) => ({ ...point }));
+    const index = state.draggingCurveIndex;
+    const previous = curve[index - 1];
+    const next = curve[index + 1];
+    const value = clamp(1 - ((graphY - CURVE_BOX.top) / CURVE_PLOT_HEIGHT), 0, 1);
+    let time = clamp((graphX - CURVE_BOX.left) / CURVE_PLOT_WIDTH, 0, 1);
+    if (index === 0) time = 0;
+    else if (index === curve.length - 1) time = 1;
+    else time = clamp(time, previous.time + 0.025, next.time - 0.025);
+    curve[index] = { time: Number(time.toFixed(3)), value: Number(value.toFixed(3)) };
+    updateCurrentControls({ pitchCurve: curve, pitchChange: 'custom' });
+  }
+
   async function preview() {
     try {
-      await runtime.play(currentRecord());
+      const record = currentRecord();
+      await runtime.play(record);
+      startPlayhead(record);
     } catch (error) {
       message(error.message || String(error), 'error');
     }
@@ -230,13 +362,29 @@ export function createSoundGeneratorUI(container, options = {}) {
     if (target.matches('[data-field="loop"]')) updateCurrentControls({ loop: target.checked });
   });
 
+  root.addEventListener('pointerdown', (event) => {
+    const point = event.target.closest('[data-curve-index]');
+    if (!point) return;
+    state.draggingCurveIndex = Number(point.dataset.curveIndex);
+    $('[data-frequency-graph]')?.setPointerCapture?.(event.pointerId);
+    moveCurvePoint(event);
+    event.preventDefault();
+  });
+
+  root.addEventListener('pointermove', (event) => {
+    if (state.draggingCurveIndex !== null) moveCurvePoint(event);
+  });
+
+  root.addEventListener('pointerup', () => { state.draggingCurveIndex = null; });
+  root.addEventListener('pointercancel', () => { state.draggingCurveIndex = null; });
+
   root.addEventListener('click', async (event) => {
     const typeButton = event.target.closest('[data-type]');
     if (typeButton) { selectType(typeButton.dataset.type); return; }
     const favButton = event.target.closest('[data-favourite-index]');
     if (favButton) { state.historyIndex = Number(favButton.dataset.favouriteIndex); renderControls(); return; }
     const pitchButton = event.target.closest('[data-pitch]');
-    if (pitchButton) { updateCurrentControls({ pitchChange: pitchButton.dataset.pitch }); return; }
+    if (pitchButton) { updateCurrentControls({ pitchChange: pitchButton.dataset.pitch, pitchCurve: pitchCurveForPreset(pitchButton.dataset.pitch) }); return; }
     const action = event.target.closest('[data-act]')?.dataset.act;
     if (!action) return;
     if (action === 'close') { runtime.stop(); config.onClose?.(); }
@@ -273,7 +421,7 @@ export function createSoundGeneratorUI(container, options = {}) {
   message('Choose a sound type, create constrained variations, then save when ready.');
 
   return {
-    destroy() { runtime.stop(); },
+    destroy() { stopPlayhead(false); runtime.destroy(); },
     stop() { runtime.stop(); },
     getRecord() { return clone(currentRecord()); },
     getHistory() { return clone(state.history); }
