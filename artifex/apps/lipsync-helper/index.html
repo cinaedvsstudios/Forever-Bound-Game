@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Artifex · Lip-Sync Helper V1 Alpha</title>
-  <link rel="stylesheet" href="./lipsync-helper.css?v=LIPSYNC-HELPER-V1A">
+  <title>Artifex · Lip-Sync Helper V1 Alpha 2</title>
+  <link rel="stylesheet" href="./lipsync-helper.css?v=LIPSYNC-HELPER-V1A2">
 </head>
 <body>
   <div class="app-shell">
@@ -13,7 +13,7 @@
         <img class="brand-symbol" src="../../artifexlogo.png" alt="">
         <div class="brand-copy">
           <img class="brand-title-image" src="../../artifextitle.png" alt="Artifex">
-          <span class="brand-subtitle">Lip-Sync Helper · V1 Alpha</span>
+          <span class="brand-subtitle">Lip-Sync Helper · V1 Alpha 2</span>
         </div>
       </header>
 
@@ -53,7 +53,7 @@
           <button id="endMarkBtn" class="button" type="button" disabled>End Mark</button>
         </div>
         <div class="pending-mark"><span>Pending start</span><strong id="pendingStartText">None</strong></div>
-        <p class="help">Set the start and end of the mouth section that needs replacing.</p>
+        <p class="help">Set the exact start and end of the mouth movement to replace.</p>
         <div id="regionList" class="region-list"><p class="empty">No repair regions.</p></div>
       </section>
 
@@ -71,7 +71,7 @@
           </div>
           <label class="field-label" for="phraseInput">Correct word / short phrase</label>
           <input id="phraseInput" class="input" type="text" placeholder="End, Laughter, Ohhh, it be" autocomplete="off">
-          <p class="help">The phrase is converted into editable mouth-shape segments on the right.</p>
+          <p class="help">After typing, select each mouth-shape step on the right and assign it a captured or saved mouth.</p>
         </div>
       </section>
     </aside>
@@ -81,6 +81,12 @@
         <section id="dropZone" class="viewer-frame" aria-label="Video viewer and drop zone">
           <canvas id="videoCanvas"></canvas>
           <div id="dropOverlay" class="drop-overlay"><div class="play-drop">▶</div><strong>Drop video here</strong><span>or click to upload</span></div>
+          <div class="viewer-zoom" aria-label="Viewer zoom controls">
+            <span>ZOOM <output id="videoZoomText">100%</output></span>
+            <button id="videoZoomInBtn" class="zoom-button" type="button" disabled title="Zoom in">+</button>
+            <button id="videoZoomOutBtn" class="zoom-button" type="button" disabled title="Zoom out">−</button>
+            <button id="videoZoomResetBtn" class="zoom-button reset" type="button" disabled>Reset</button>
+          </div>
           <video id="video" preload="metadata" playsinline hidden></video>
         </section>
         <section class="transport-bar" aria-label="Playback controls">
@@ -91,9 +97,14 @@
           <div class="mode">Mode <strong id="modeText">Repair</strong></div>
         </section>
         <section class="timeline-frame">
-          <div class="section-heading">
-            <div><h2>Repair Timeline</h2><p>Mark a start and end range. Select the coloured region to edit its mouth sequence.</p></div>
-            <div class="timeline-actions"><button id="startMarkMainBtn" class="button primary" type="button" disabled>Start Mark</button><button id="endMarkMainBtn" class="button" type="button" disabled>End Mark</button></div>
+          <div class="section-heading timeline-heading">
+            <div><h2>Repair Timeline</h2><p>Mark a range, then zoom in to position frames accurately.</p></div>
+            <div class="timeline-tools">
+              <label class="timeline-zoom">Zoom <input id="timelineZoom" type="range" min="1" max="30" step="0.5" value="1" disabled><output id="timelineZoomText">1×</output></label>
+              <button id="timelineZoomResetBtn" class="tiny-button" type="button" disabled>Reset</button>
+              <button id="startMarkMainBtn" class="button primary" type="button" disabled>Start Mark</button>
+              <button id="endMarkMainBtn" class="button" type="button" disabled>End Mark</button>
+            </div>
           </div>
           <canvas id="timeline" aria-label="Repair timeline"></canvas>
         </section>
@@ -102,18 +113,20 @@
       <aside class="right-panels" aria-label="Viseme and patch controls">
         <section class="gold-panel phrase-panel">
           <div class="section-heading tight"><div><h2>Phrase / Viseme Reference</h2><p id="phraseSummary">Type a phrase in a selected repair region.</p></div></div>
-          <div id="segmentStrip" class="segment-strip"><p class="empty">No viseme segments yet.</p></div>
+          <p id="segmentHelp" class="step-instruction">After you type the word, each box below is one mouth shape. Select each box and assign a mouth patch.</p>
+          <div id="segmentStrip" class="segment-strip"><p class="empty">No mouth sequence yet.</p></div>
           <figure class="guide-frame"><img id="visemeGuide" src="./viseme-reference-guide.svg?v=1" alt="Reference chart of mouth shapes for viseme groups"></figure>
           <div id="guideChoices" class="guide-choices" aria-label="Viseme categories"></div>
         </section>
         <section class="gold-panel patch-panel">
           <div class="section-heading tight">
-            <div><h2 id="patchPanelTitle">Donor / Patch Editor</h2><p id="patchPanelHelp">Choose a segment, then capture or apply a mouth.</p></div>
+            <div><h2 id="patchPanelTitle">Donor / Patch Editor</h2><p id="patchPanelHelp">Select one mouth-shape box above to begin.</p></div>
             <button id="refreshDonorsBtn" class="circle-button" type="button" disabled title="Refresh donor frames">↻</button>
           </div>
+          <div id="nextStep" class="next-step">1. Select a mouth-shape box. 2. Select a donor frame. 3. Capture the mouth.</div>
           <div class="tab-row"><button id="thisVideoTab" class="tab active" type="button">This Video</button><button id="libraryTab" class="tab" type="button">Character Library</button></div>
           <div id="donorStrip" class="donor-strip"><p class="empty">Donor frames appear after a video is loaded.</p></div>
-          <div class="patch-toolbar"><button id="captureBtn" class="button primary" type="button" disabled>Capture Mouth</button><button id="positionBtn" class="button" type="button" disabled>Position</button><button id="removePatchBtn" class="button" type="button" disabled>Remove</button></div>
+          <div class="patch-toolbar"><button id="captureBtn" class="button primary" type="button" disabled>Capture Mouth for Step</button><button id="positionBtn" class="button" type="button" disabled>Position</button><button id="removePatchBtn" class="button" type="button" disabled>Remove</button></div>
           <div id="patchControls" class="patch-controls" hidden>
             <div class="control-grid thirds"><label>X<input id="patchX" class="input number" type="number" step="1"></label><label>Y<input id="patchY" class="input number" type="number" step="1"></label><label>Scale<input id="patchScale" class="input number" type="number" min="10" max="400" step="1"></label></div>
             <div class="control-grid thirds"><label>Rotate<input id="patchRotate" class="input number" type="number" min="-180" max="180" step="1"></label><label>Skew X<input id="patchSkewX" class="input number" type="number" min="-80" max="80" step="1"></label><label>Skew Y<input id="patchSkewY" class="input number" type="number" min="-80" max="80" step="1"></label></div>
@@ -131,6 +144,6 @@
     </main>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="./lipsync-helper.js?v=LIPSYNC-HELPER-V1A"></script>
+  <script src="./lipsync-helper.js?v=LIPSYNC-HELPER-V1A2"></script>
 </body>
 </html>
