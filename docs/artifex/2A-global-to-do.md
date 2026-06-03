@@ -22,11 +22,12 @@ Rules for interpreting migrated tasks:
 
 | Area | Current position relevant to task work | Protection rule |
 |---|---|---|
-| Documentation control | `0A`, `1A` and `2A` were published on `main` through merged PR #47. This pass corrects the controlled backlog path and adds extracted module specifications `3A`, `4A`, `5A` and `6A`. | Continue through documentation-only passes; do not create competing active indexes, task lists or status documents. |
+| Documentation control | `0A`, `1A` and `2A` were published on `main` through merged PR #47. This pass corrects the controlled backlog path and adds extracted module specifications `3A`, `4A`, `5A`, `6A` and `7A`. | Continue through documentation-only passes; do not create competing active indexes, task lists or status documents. |
 | Hub / Artifex Portal | Current implementation is `artifex/index.html` / **Artifex Hub V1.1.4**; `3A-hub-artifex-portal.md` is created in this pass from that current implementation. | Do not treat the older radial/wedge Portal plan as the current implementation authority. |
 | Creation Guide | Current implementation is `artifex/apps/creation-guide/index.html` / **V1.1.12**; it includes connected-folder starter creation and optional Initial Asset Intake Setup. `4A-creation-guide.md` is created in this pass. | Do not use V1.1.10/V1.1.11 documents to describe current functionality or re-list implemented intake setup as future work. |
 | Project Editor | Current implementation is `artifex/apps/project-editor/index.html` / **v0.1.32 CONTRACT**; it is a modular browser-draft/ZIP-import-export structural editor and `5A-project-editor.md` is created in this pass. | Do not list implemented Asset Browser/linking/Stitcher/Health functionality as future work, and do not treat browser draft state as connected-project truth. |
 | Scene Editor | Accepted implementation is `artifex/apps/scene-editor/index.html` / **v0.37-control-state-inspector-retention**; the v0.35–v0.37 stabilisation chain is complete and `6A-scene-editor.md` is created in this pass. | Do not revive old v0.34 wrong-object/ownership repair tasks; remaining work is connected-project/reference integration. |
+| Quest Builder | Current implementation is `artifex/apps/quest-builder/index.html` / **V1.2.12**; it includes the accepted fine-grid/smart-routing presentation and `7A-quest-builder.md` is created in this pass. | Do not list existing explicit connections, snap/grid presentation, block editing shell or export/validation foundation as missing; connected-project and structured-authoring work remains open. |
 | Archetype Object Creator | V1.36 is merged on `main`; its lifecycle remains subject to post-merge functional validation. | Validate before beginning further Object Creator feature development. |
 | Effect Editor | Accepted route is `artifex/apps/effect-editor/index2.html` / `INDEX2-CLEAN-0.2.6`. | Do not restore older emergency-route work or treat parity controls already repaired as outstanding. |
 | Puzzle Creator | V1.35 is merged on `main` through PR #48: Labyrinth Maze remains the working editor and the other surfaced modules are recovered planning pages/placeholders. Documentation refresh PR #44 remains open. | Protect the V1.35 distinction; do not describe planning pages as completed gameplay engines or merge duplicate status docs as final authority. |
@@ -45,7 +46,7 @@ Status: in progress
 - Maintain this file, `docs/artifex/2A-global-to-do.md`, as the sole human-readable active Artifex backlog.
 - Maintain `docs/artifex/0A-index-of-files.md` as the controlled index of active specifications, subordinate references and archive treatment.
 - Inspect every real module/service and retain or create exactly one active specification document containing only its unique permanent purpose, ownership, route/baseline and specific interfaces.
-- Continue extraction after the Scene Editor pass in the approved module order, with **Quest Builder** next.
+- Continue extraction after the Quest Builder pass in the approved module order, with **Archetype Object Creator** next.
 - Extract still-valid permanent rules, module-specific facts and open work from older READMEs, todos, audits, handovers, baseline matrices and status-refresh documents.
 - Check whether `artifex/shared/todo-guide/all-apps-todos.json` is read by application code before changing its role. If runtime-required, retain it as a machine/runtime dependency only, not a second human-maintained backlog.
 - Check whether project-level files such as `todos/project-manager-todos.json` or `todos/project-editor-todos.json` are user-project output/runtime dependencies and retain compatibility where required.
@@ -64,6 +65,13 @@ artifex/shared/todo-guide/audits/**
 docs/artifex/04-scene-editor.md
 docs/artifex/05-creation-guide.md
 docs/artifex/05a-creation-guide-v119-implementation-notes.md
+docs/artifex/07-quest-builder.md
+docs/artifex/07a-quest-builder-structured-authoring.md
+docs/artifex/07b-puzzle-creator-quest-integration.md
+artifex/apps/quest-builder/README.md
+artifex/apps/quest-builder/docs/structure.md
+artifex/apps/quest-builder/docs/block-taxonomy.md
+artifex/apps/quest-builder/docs/todo.md
 artifex/apps/project-editor/docs/project-editor-real-split-plan.md
 artifex/apps/scene-editor/scene-editor-v037-accepted-baseline-2026-06-02.md
 artifex/apps/scene-editor/scene-editor-cleanup-report-2026-05-29.md
@@ -234,41 +242,40 @@ Verified accepted implementation baseline: `artifex/apps/scene-editor/index.html
 
 # Quest Builder
 
-Current live documented baseline needing verification: `V1.2.12`.
+Active specification created in this pass: `docs/artifex/7A-quest-builder.md`.  
+Verified implementation baseline: `artifex/apps/quest-builder/index.html` / **Artifex Quest Builder V1.2.12** on current `main`.
 
-## Current known UI/terminology follow-up
+## Verified complete or already present in V1.2.12
 
-- Change any live Module flyout label from **Project Manager** to **Project Editor** in a normal versioned app pass.
-- Preserve accepted fine-grid, snap-mode and smart shortest-edge connector presentation while later features are implemented.
-- Extract the single Quest Builder specification after Scene Editor.
+- The live app is modular and loads focused modules for configuration, block taxonomy, quest schema, saved layout, UI bindings, canvas rendering, connection routing, editor dialogs and export.
+- The current editor already provides Quest/block inspection, popup editing, New Quest Wizard, starter templates and a visual Quest Flow workspace.
+- START and END nodes, explicit logical Quest connections, source-coloured connector display and current export/validation of explicit connections are already implemented.
+- V1.2.12 already provides the accepted fine grid, optional snap-to-grid control and smart shortest-edge connector display routing; these are not future tasks.
+- Workspace layout preferences and card positions already persist in browser state.
+- JSON bundle export, split project-file downloads and current warning/self-check validation already exist as an export workflow, although they are not canonical connected-project saving.
 
-## Workspace layout track
+## Outstanding implementation and integration work
 
-- Add dynamic workspace expansion when cards approach lower/right boundaries while maintaining comfortable blank padding.
-- Allow START/END endpoints to be positioned consistently in an expanded workspace without inferring logic from visual position.
-- Add horizontal Insert Space layout management; consider vertical/obstacle-aware routing only if tested use requires it.
-
-## Structured Quest authoring track
-
-- Define export-safe structured data for operations, requirements, outcomes and Quest-scoped dialogue/Capra records.
-- Replace vague free-text editing with contextual block-editing sections for actions, conditions, outcomes, failure/feedback, dialogue/presentation, linked assets and validation.
-- Add in-app **Open Dialogue / Feedback** authoring inside Quest Builder; do not create an unnecessary separate Dialogue app for first version.
-- Validate target IDs, dialogue references, feedback data and completion conditions.
-- Align Quest/Sidequest saving to canonical connected-project typed indexes and folder saving.
-
-## Linked Puzzle and audio track
-
-- Coordinate canonical Puzzle Creator connected-project saving/registration before adding meaningful Quest Builder Puzzle blocks.
-- Add a `Puzzle` block with required `puzzleId`, reading real registered puzzles and storing Quest-level context/outcomes only.
-- Add missing-puzzle/public-result validation and Project Editor public-result gate integration.
-- Add Sound Library selectors for stable Quest start, completion, failure, reward, dialogue and feedback fields only after the Sound Library foundation is accepted; saved references use `asset_` IDs only. Status: **provisional, sourced from open PR #46**.
+- Align Quest/Sidequest export/index output with the canonical typed `quests` / `sidequests` collections and remove current old schema/path assumptions including `projectTarget: projects/<project-id>/` from future direct-save output.
+- Implement real connected-project load, deliberate save, save-state and conflict/navigation handling for Quest Builder-owned `quests/` and `sidequests/` files through the shared connected-folder foundation.
+- Replace demo/local-only opened content behaviour once an active connected project is available, while retaining browser draft/export as fallback or recovery only.
+- Change the live Module flyout from **Project Manager** / old project-manager route to **Project Editor** through a normal versioned app pass with compatibility checked where necessary.
+- Align current `dialogue` block source metadata away from implying a required separate `dialogue-library`; first-version Quest-specific dialogue and Capra feedback belong contextually inside Quest Builder.
+- Define export-safe structured data for actions, requirements/conditions, success outcomes, failure/Capra feedback and Quest-scoped dialogue records, then implement the contextual block editor and validation around that defined structure.
+- Add in-app **Open Dialogue / Feedback** authoring where a block needs ordered lines; do not create a separate top-level Dialogue Editor for first version.
+- Add dynamic workspace expansion, moveable/saved START and END positions and horizontal Insert Space layout management as a separate UI/layout implementation track; consider obstacle-routing/manual-side override only if tested need is demonstrated.
+- Coordinate Puzzle Creator canonical saving/registration first, then add a real Quest Builder `Puzzle` block with required `puzzleId`, real saved-puzzle selection, Quest-level outcomes only and missing-puzzle/public-result validation.
+- Add Sound Library selectors for stable Quest voice, start, completion, failure, reward, dialogue and feedback audio fields only after the Sound Library foundation is accepted; save registered `asset_` IDs only. Status: **provisional, sourced from open PR #46**.
+- Add future **Test Quest** through confirmed shared Runtime/Playtest support without changing permanent project files during test overrides.
+- Decide archive or minimal-local-pointer treatment for `docs/artifex/07-quest-builder.md`, `07a-quest-builder-structured-authoring.md`, `07b-puzzle-creator-quest-integration.md`, `artifex/apps/quest-builder/README.md`, `docs/structure.md`, `docs/block-taxonomy.md` and `docs/todo.md` after `7A` is accepted and no unique live requirement remains.
 
 ---
 
 # Archetype Object Creator
 
 Current runtime baseline: **V1.36 merged on `main` from PR #38**.  
-Immediate gate: functional lifecycle validation before more feature work.
+Immediate gate: functional lifecycle validation before more feature work.  
+Next documentation extraction: create its single module specification after checking current implementation and any validation evidence.
 
 ## Mandatory V1.36 post-merge validation
 
@@ -438,7 +445,7 @@ These are documentation-control actions, not implementation approval:
 | PR / document area | Current interpretation | Consolidation treatment |
 |---|---|---|
 | Merged PR #47 — documentation-control foundation | Published `0A`, `1A` and `2A` to `main`, but `0A`/`1A` retained an incorrect reference to `docs/GLOBAL_TODO.md`. | Treat as foundation baseline and correct the backlog-path inconsistency in this documentation-only pass. |
-| Draft PR #50 — Hub, Creation Guide, Project Editor and Scene Editor extraction pass | Adds `3A`, `4A`, `5A` and `6A`, corrects `0A`/`1A`, and refreshes `2A` for verified current module baselines and protected Puzzle/Sound work. | Review as a documentation-only PR; no runtime or archive operation is authorised by it. |
+| Draft PR #50 — Hub, Creation Guide, Project Editor, Scene Editor and Quest Builder extraction pass | Adds `3A`, `4A`, `5A`, `6A` and `7A`, corrects `0A`/`1A`, and refreshes `2A` for verified current module baselines and protected Puzzle/Sound work. | Review as a documentation-only PR; no runtime or archive operation is authorised by it. |
 | Merged PR #45 — Scene Editor accepted baseline | Accurately records v0.37 as accepted after the stabilisation chain and supersedes older pending/failure status wording. | Treat as source evidence now captured in `6A` / `2A`; determine later archive treatment after acceptance. |
 | Open PR #40 — Scene/Effect status refresh | Its Scene status was superseded by the later accepted Scene Editor v0.37 record; status-refresh files are not final documentation authority. | Extract any unique outstanding Effect work only; do not merge as another active Scene status source. |
 | Open PR #44 — Puzzle V1.34 status refresh | Contains earlier Puzzle baseline evidence, now superseded for runtime by merged V1.35 PR #48. | Reconcile late in the Puzzle module-spec pass; do not merge as a competing final authority. |
@@ -458,10 +465,24 @@ artifex/shared/todo-guide/README.md
 artifex/shared/todo-guide/all-apps-todos.json
 artifex/apps/archetype-object-creator/docs/todo.md
 artifex/apps/effect-editor/docs/todo.md
-artifex/apps/quest-builder/docs/todo.md
 docs/artifex/04-scene-editor.md
 docs/artifex/05-creation-guide.md
 docs/artifex/05a-creation-guide-v119-implementation-notes.md
+docs/artifex/07-quest-builder.md
+docs/artifex/07a-quest-builder-structured-authoring.md
+docs/artifex/07b-puzzle-creator-quest-integration.md
+artifex/apps/quest-builder/README.md
+artifex/apps/quest-builder/docs/todo.md
+artifex/apps/quest-builder/docs/structure.md
+artifex/apps/quest-builder/docs/block-taxonomy.md
+artifex/apps/quest-builder/index.html at Artifex Quest Builder V1.2.12
+artifex/apps/quest-builder/v1/src/module-config.js
+artifex/apps/quest-builder/v1/src/block-types.js
+artifex/apps/quest-builder/v1/src/quest-schema.js
+artifex/apps/quest-builder/v1/src/layout-state.js
+artifex/apps/quest-builder/v1/src/connection-routing.js
+artifex/apps/quest-builder/v1/src/quest-builder-app.js
+artifex/apps/quest-builder/v1/src/export-json.js
 artifex/apps/creation-guide/README.md
 artifex/apps/creation-guide/index.html at Artifex Creation Guide V1.1.12
 artifex/apps/creation-guide/v1/src/project-folder-setup.js
