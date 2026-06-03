@@ -2,7 +2,7 @@
 
 Status: Active consolidation index  
 Foundation published on `main`: PR #47 / merge `a475a90f4baca4421ff120c7244563ac283b9dd8`  
-Latest baseline checked for this update: `01b0ab337735220ef627c1d9f770c2d4ec237e8d`  
+Latest baseline checked for this update: `fecd879f0b04c02550a7fbb9a63f8a2733cd6f23`  
 Intended final role: the single active index identifying authoritative Artifex documentation, module specifications, task source and archive policy.
 
 ## Purpose
@@ -52,6 +52,7 @@ If two active documents contain the same rule, status statement or task, the inf
 | `docs/artifex/3A-hub-artifex-portal.md` | Hub / Artifex Portal module specification document. | Added during Hub extraction pass. |
 | `docs/artifex/4A-creation-guide.md` | Creation Guide module specification document. | Added during Creation Guide extraction pass; verified against current V1.1.12 implementation. |
 | `docs/artifex/5A-project-editor.md` | Project Editor module specification document. | Added during Project Editor extraction pass; verified against current v0.1.32 CONTRACT implementation. |
+| `docs/artifex/6A-scene-editor.md` | Scene Editor module specification document. | Added during Scene Editor extraction pass; verified against accepted current v0.37 baseline. |
 | `docs/artifex/19a-project-starter-file-schemas.md` | Subordinate technical reference for exact canonical starter JSON and typed index shapes. | Retain active, subject to link/title cleanup after contract adoption. |
 | `docs/artifex/22-sound-archetype-generator.md` | Sound Generator module/service specification document. | Retain active; inspect last because current Sound Generator work is in progress. |
 
@@ -65,8 +66,8 @@ Each confirmed real module or maintained shared service must ultimately have one
 | 2 | Hub / Artifex Portal | Module navigation, entry points and Hub-only presentation/route baseline. | Extracted into `docs/artifex/3A-hub-artifex-portal.md`; implementation follow-up remains in `2A`. |
 | 3 | Creation Guide | New project setup, starter creation, initial intake/setup and active-project registration boundary. | Extracted into `docs/artifex/4A-creation-guide.md`; implementation follow-up remains in `2A`. |
 | 4 | Project Editor | Structural/Flatplan/route ownership and Project Editor-only interface/baseline. | Extracted into `docs/artifex/5A-project-editor.md`; implementation follow-up remains in `2A`. |
-| 5 | Scene Editor | Scene/screen visual authoring ownership and accepted active baseline. | Next module audit; preserve the accepted v0.37 baseline and archive obsolete failed-status records later. |
-| 6 | Quest Builder | Quest/progression ownership and its defined use of saved puzzle references. | Avoid copying Puzzle Creator internals. |
+| 5 | Scene Editor | Scene/screen visual authoring ownership and accepted active baseline. | Extracted into `docs/artifex/6A-scene-editor.md`; implementation follow-up remains in `2A`. |
+| 6 | Quest Builder | Quest/progression ownership and its defined use of saved puzzle references. | Next module audit; avoid copying Puzzle Creator internals. |
 | 7 | Archetype Object Creator | Reusable non-FX object archetype authoring and final registered-asset reference workflow. | Preserve latest validation/work status in global to-do, not spec history. |
 | 8 | Effect Editor | Reusable FX ownership and accepted Index2 baseline/route. | Protect accepted `index2.html` route. |
 | 9 | Asset Library | Promotion and final registration of supplied/generated assets. | Decide whether existing asset workflow content forms this spec. |
@@ -124,10 +125,13 @@ The following classification records the starting plan for documents that curren
 | `docs/artifex/00-index.md` | Active file inventory and authoritative-file rules move into this `0A` index. Module-specific pointers remain only where still useful. | Supersede/archive once this controlled index and module specs are complete. |
 | `docs/GLOBAL_TODO.md` | Any still-live work not already captured moves into `docs/artifex/2A-global-to-do.md`. | Retain as source evidence until extraction is confirmed; archive later, not delete now. |
 | `docs/artifex/02-module-architecture.md` | Universal ownership/boundary principles move into `1A`; unique module descriptions move into the relevant module specs. | Archive after module audit extraction. |
+| `docs/artifex/04-scene-editor.md` | Valid Scene Editor visual-authoring purpose/boundary content moves into `6A`; older migration/local-workflow status content is no longer current authority. | Retain as source evidence now; archive after Scene Editor extraction is accepted. |
 | `docs/artifex/05-creation-guide.md` | Valid Creation Guide ownership/current implementation facts move into `4A`; any still-open work stays in `2A`. | Retain as source evidence now; archive after Creation Guide extraction is accepted. |
 | `docs/artifex/05a-creation-guide-v119-implementation-notes.md` | Historical V1.1.10 split facts checked against the later V1.1.12 implementation; no longer current authority. | Archive after Creation Guide extraction is accepted. |
 | `artifex/apps/creation-guide/README.md` | Earlier V1.1.10 runtime/readme evidence superseded for current status by V1.1.12 and `4A`. | Decide archive or rewrite-as-local-pointer treatment after `4A` acceptance. |
 | `artifex/apps/project-editor/docs/project-editor-real-split-plan.md` | Its enduring Project Editor boundary and modular-live-baseline facts move into `5A`; implementation follow-up stays in `2A`. | Retain as extraction evidence now; archive after Project Editor extraction is accepted. |
+| `artifex/apps/scene-editor/scene-editor-v037-accepted-baseline-2026-06-02.md` | Accepted v0.37 baseline evidence and remaining integration boundary move into `6A` / `2A`. | Retain as evidence now; archive or retain as historical acceptance record after `6A` is accepted. |
+| `artifex/apps/scene-editor/scene-editor-cleanup-report-2026-05-29.md` and `scene-editor-v034-failed-acceptance-and-consolidation-plan-2026-05-31.md` | Historical intermediate/failed stabilisation evidence; completed v0.35–v0.37 work must not remain live tasks. | Archive after Scene Editor extraction is accepted and no unique open item remains. |
 | `docs/artifex/11-portal-hub.md` | Valid Hub purpose/current implementation facts move into `3A`; any still-open implementation work stays in `2A`. | Retain as source evidence now; archive after Hub extraction is accepted. |
 | `docs/artifex/12-project-settings.md` | Only still-valid universal active-project/save constraints move into `1A` or a confirmed service spec. Older absolute-path/localStorage-first concepts must not override the current connected-folder contract. | Archive after relevant service/module extraction. |
 | `docs/artifex/18-color-and-display-rules.md` | Universal Artifex branding/display/header/accent/control rules move into `1A`. | Archive or retain only as a subordinate visual reference if later inspection proves unique detailed material still needs a separate authority; it must not duplicate `1A`. |
