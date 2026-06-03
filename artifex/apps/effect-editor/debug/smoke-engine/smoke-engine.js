@@ -16,21 +16,22 @@ const state = {
   fpsFrames: 0,
   fpsTime: 0,
   scene: 'forest-gate',
-  mode: 'wispy',
+  mode: 'rising',
   layer: 'front',
+  doubleLayer: true,
   colour: '#dce2e7',
-  opacity: 0.52,
-  density: 0.40,
-  puffSize: 0.78,
-  definition: 0.55,
-  wispCount: 7,
-  wispBrightness: 0.72,
-  wispLength: 0.67,
-  wispWidth: 0.44,
-  tailFade: 0.74,
-  curl: 0.69,
-  rotation: 0.61,
-  duration: 5.2,
+  mistOpacity: 0.36,
+  density: 0.86,
+  puffSize: 1.73,
+  definition: 0.82,
+  wispCount: 13,
+  wispBrightness: 0.09,
+  wispLength: 0.95,
+  wispWidth: 0.42,
+  tailFade: 0.98,
+  curl: 0.94,
+  rotation: 0.91,
+  duration: 8.6,
   rise: 0.31,
   drift: 0.13,
   turbulence: 0.54,
@@ -42,20 +43,19 @@ const state = {
   sourceWidth: 34,
   height: 400,
   showMarker: true,
-  puffs: [],
-  ribbons: [],
+  instances: [],
   brush: null
 };
 
 const input = {
-  type: byId('effect-type'), mode: byId('mode'), scene: byId('scene'), layer: byId('layer'), colour: byId('colour'), colourHex: byId('colour-hex'),
-  opacity: byId('opacity'), density: byId('density'), puffSize: byId('puff-size'), definition: byId('definition'),
+  type: byId('effect-type'), mode: byId('mode'), scene: byId('scene'), layer: byId('layer'), doubleLayer: byId('double-layer'), colour: byId('colour'), colourHex: byId('colour-hex'),
+  mistOpacity: byId('mist-opacity'), density: byId('density'), puffSize: byId('puff-size'), definition: byId('definition'),
   wispCount: byId('wisp-count'), wispBrightness: byId('wisp-brightness'), wispLength: byId('wisp-length'), wispWidth: byId('wisp-width'), tailFade: byId('tail-fade'), curl: byId('curl'), rotation: byId('rotation'), duration: byId('duration'),
   rise: byId('rise'), drift: byId('drift'), turbulence: byId('turbulence'), clear: byId('clear'), edge: byId('edge'), bias: byId('bias'),
   sourceX: byId('source-x'), sourceY: byId('source-y'), sourceWidth: byId('source-width'), height: byId('height'), showMarker: byId('show-marker')
 };
 
-const out = Object.fromEntries(['opacity','density','puff-size','definition','wisp-count','wisp-brightness','wisp-length','wisp-width','tail-fade','curl','rotation','duration','rise','drift','turbulence','clear','edge','bias','source-x','source-y','source-width','height'].map((key) => [key, byId(`${key}-out`)]));
+const out = Object.fromEntries(['mist-opacity','density','puff-size','definition','wisp-count','wisp-brightness','wisp-length','wisp-width','tail-fade','curl','rotation','duration','rise','drift','turbulence','clear','edge','bias','source-x','source-y','source-width','height'].map((key) => [key, byId(`${key}-out`)]));
 
 init();
 
@@ -73,9 +73,10 @@ function bind() {
   input.mode.addEventListener('change', () => { state.mode = input.mode.value; regenerate(); updateUi(); });
   input.scene.addEventListener('change', () => { state.scene = input.scene.value; updateJson(); });
   input.layer.addEventListener('change', () => { state.layer = input.layer.value; updateJson(); });
+  input.doubleLayer.addEventListener('change', () => { state.doubleLayer = input.doubleLayer.checked; regenerate(); toast(state.doubleLayer ? 'Double layer preview enabled.' : 'Single layer preview enabled.'); });
   input.colour.addEventListener('input', () => { state.colour = input.colour.value; input.colourHex.value = state.colour; buildBrush(); updateJson(); });
   input.colourHex.addEventListener('change', () => { state.colour = normalHex(input.colourHex.value, state.colour); input.colour.value = state.colour; input.colourHex.value = state.colour; buildBrush(); updateJson(); });
-  bindNumber('opacity', false); bindNumber('density', true); bindNumber('puffSize', true); bindNumber('definition', true);
+  bindNumber('mistOpacity', false); bindNumber('density', true); bindNumber('puffSize', true); bindNumber('definition', true);
   bindNumber('wispCount', true); bindNumber('wispBrightness', false); bindNumber('wispLength', true); bindNumber('wispWidth', true); bindNumber('tailFade', false); bindNumber('curl', false); bindNumber('rotation', false); bindNumber('duration', true);
   bindNumber('rise', false); bindNumber('drift', false); bindNumber('turbulence', false); bindNumber('clear', false); bindNumber('edge', true); bindNumber('bias', true);
   bindNumber('sourceX', true); bindNumber('sourceY', true); bindNumber('sourceWidth', true); bindNumber('height', true);
@@ -111,28 +112,39 @@ function updateUi() {
 }
 
 function updateOutputs() {
-  out.opacity.textContent = state.opacity.toFixed(2); out.density.textContent = state.density.toFixed(2); out['puff-size'].textContent = state.puffSize.toFixed(2); out.definition.textContent = state.definition.toFixed(2);
+  out['mist-opacity'].textContent = state.mistOpacity.toFixed(2); out.density.textContent = state.density.toFixed(2); out['puff-size'].textContent = state.puffSize.toFixed(2); out.definition.textContent = state.definition.toFixed(2);
   out['wisp-count'].textContent = String(state.wispCount); out['wisp-brightness'].textContent = state.wispBrightness.toFixed(2); out['wisp-length'].textContent = state.wispLength.toFixed(2); out['wisp-width'].textContent = state.wispWidth.toFixed(2); out['tail-fade'].textContent = state.tailFade.toFixed(2); out.curl.textContent = state.curl.toFixed(2); out.rotation.textContent = state.rotation.toFixed(2); out.duration.textContent = `${state.duration.toFixed(2)}s`;
   out.rise.textContent = state.rise.toFixed(2); out.drift.textContent = state.drift.toFixed(2); out.turbulence.textContent = state.turbulence.toFixed(2); out.clear.textContent = state.clear.toFixed(2); out.edge.textContent = state.edge.toFixed(2); out.bias.textContent = state.bias.toFixed(2);
   out['source-x'].textContent = `${state.sourceX}%`; out['source-y'].textContent = `${state.sourceY}%`; out['source-width'].textContent = `${state.sourceWidth}px`; out.height.textContent = `${state.height}px`;
 }
 
 function regenerate() {
-  const rand = seeded(Math.floor(Math.random() * 10000000));
   buildBrush();
-  state.puffs = [];
-  state.ribbons = [];
-  const basePuffs = { rising: 9, wispy: 2, vignette: 18, fullscreen: 22, emission: 6 }[state.mode] || 8;
-  const puffCount = Math.min(34, Math.round(basePuffs + state.density * (state.mode === 'wispy' ? 5 : 12)));
-  for (let index = 0; index < puffCount; index += 1) state.puffs.push(makePuff(rand, true));
-  const ribbonCount = {
-    rising: Math.min(3, Math.round(state.wispCount * 0.45)),
-    wispy: state.wispCount,
-    vignette: Math.min(2, Math.round(state.wispCount * 0.22)),
-    fullscreen: Math.min(2, Math.round(state.wispCount * 0.2)),
-    emission: Math.max(1, Math.round(state.wispCount * 0.58))
-  }[state.mode] || 0;
-  for (let index = 0; index < ribbonCount; index += 1) state.ribbons.push(makeRibbon(rand, true));
+  state.instances = [];
+  const passes = state.doubleLayer ? 2 : 1;
+  for (let pass = 0; pass < passes; pass += 1) {
+    const rand = seeded(Math.floor(Math.random() * 10000000));
+    const instance = {
+      puffs: [],
+      ribbons: [],
+      alpha: pass === 0 ? 1 : 0.82,
+      phase: pass === 0 ? 0 : 1.73,
+      shiftX: pass === 0 ? 0 : 8,
+      shiftY: pass === 0 ? 0 : -5
+    };
+    const basePuffs = { rising: 9, wispy: 2, vignette: 18, fullscreen: 22, emission: 6 }[state.mode] || 8;
+    const puffCount = Math.min(34, Math.round(basePuffs + state.density * (state.mode === 'wispy' ? 5 : 12)));
+    for (let index = 0; index < puffCount; index += 1) instance.puffs.push(makePuff(rand, true));
+    const ribbonCount = {
+      rising: Math.min(3, Math.round(state.wispCount * 0.45)),
+      wispy: state.wispCount,
+      vignette: Math.min(2, Math.round(state.wispCount * 0.22)),
+      fullscreen: Math.min(2, Math.round(state.wispCount * 0.2)),
+      emission: Math.max(1, Math.round(state.wispCount * 0.58))
+    }[state.mode] || 0;
+    for (let index = 0; index < ribbonCount; index += 1) instance.ribbons.push(makeRibbon(rand, true));
+    state.instances.push(instance);
+  }
   updateJson();
 }
 
@@ -238,13 +250,15 @@ function frame(now) {
 }
 
 function updateForms(delta) {
-  for (let index = 0; index < state.puffs.length; index += 1) {
-    state.puffs[index].age += delta / state.puffs[index].life;
-    if (state.puffs[index].age >= 1) state.puffs[index] = makePuff(Math.random, false);
-  }
-  for (let index = 0; index < state.ribbons.length; index += 1) {
-    state.ribbons[index].age += delta / state.ribbons[index].life;
-    if (state.ribbons[index].age >= 1) state.ribbons[index] = makeRibbon(Math.random, false);
+  for (const instance of state.instances) {
+    for (let index = 0; index < instance.puffs.length; index += 1) {
+      instance.puffs[index].age += delta / instance.puffs[index].life;
+      if (instance.puffs[index].age >= 1) instance.puffs[index] = makePuff(Math.random, false);
+    }
+    for (let index = 0; index < instance.ribbons.length; index += 1) {
+      instance.ribbons[index].age += delta / instance.ribbons[index].life;
+      if (instance.ribbons[index].age >= 1) instance.ribbons[index] = makeRibbon(Math.random, false);
+    }
   }
 }
 
@@ -282,8 +296,13 @@ function compositeSmoke(context) {
   fx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
   fx.save();
   fx.scale(FX_SCALE, FX_SCALE);
-  drawPuffs(fx);
-  drawRibbons(fx);
+  for (const instance of state.instances) {
+    fx.save();
+    fx.translate(instance.shiftX, instance.shiftY);
+    drawPuffs(fx, instance);
+    drawRibbons(fx, instance);
+    fx.restore();
+  }
   if (state.mode === 'vignette') cutTransparentCentre(fx);
   fx.restore();
   context.save();
@@ -293,40 +312,40 @@ function compositeSmoke(context) {
   context.restore();
 }
 
-function drawPuffs(context) {
+function drawPuffs(context, instance) {
   const modeAlpha = state.mode === 'wispy' ? 0.36 : state.mode === 'rising' ? 0.65 : 1;
   context.save();
   context.globalCompositeOperation = 'screen';
-  for (const puff of state.puffs) {
+  for (const puff of instance.puffs) {
     const fade = smoothEnvelope(puff.age, 0.18, 0.32);
-    let x = puff.originX + state.drift * puff.age * 116 + Math.sin(puff.phase + state.time * 0.36) * state.turbulence * 17;
+    let x = puff.originX + state.drift * puff.age * 116 + Math.sin(puff.phase + instance.phase + state.time * 0.36) * state.turbulence * 17;
     let y = puff.originY;
     if (state.mode === 'rising' || state.mode === 'wispy' || state.mode === 'emission') y -= puff.age * (puff.plume || 330) * (0.45 + state.rise * 0.72);
-    else y += Math.sin(state.time * 0.23 + puff.phase) * state.turbulence * 10;
+    else y += Math.sin(state.time * 0.23 + instance.phase + puff.phase) * state.turbulence * 10;
     const radius = puff.radius * (0.82 + puff.age * 0.72);
     context.save();
     context.translate(x, y);
-    context.rotate(puff.spin * state.time);
-    context.globalAlpha = state.opacity * puff.alpha * fade * modeAlpha;
+    context.rotate(puff.spin * (state.time + instance.phase));
+    context.globalAlpha = state.mistOpacity * puff.alpha * fade * modeAlpha * instance.alpha;
     context.drawImage(state.brush, -radius / 2, -radius / 2, radius, radius);
     context.restore();
   }
   context.restore();
 }
 
-function drawRibbons(context) {
-  if (!state.ribbons.length) return;
+function drawRibbons(context, instance) {
+  if (!instance.ribbons.length) return;
   context.save();
   context.globalCompositeOperation = 'screen';
   context.lineCap = 'round';
   context.lineJoin = 'round';
-  for (const ribbon of state.ribbons) {
+  for (const ribbon of instance.ribbons) {
     const growth = easeOutCubic(clamp(ribbon.age / 0.42, 0, 1));
     const lifeFade = smoothEnvelope(ribbon.age, 0.12, 0.30);
     const length = ribbon.maxLength * growth;
     if (length < 3 || lifeFade <= 0) continue;
-    const geometry = makeRibbonPath(ribbon, length);
-    const brightness = state.opacity * ribbon.alpha * state.wispBrightness * lifeFade;
+    const geometry = makeRibbonPath(ribbon, length, instance.phase);
+    const brightness = ribbon.alpha * state.wispBrightness * lifeFade * instance.alpha;
     const gradient = context.createLinearGradient(geometry.start.x, geometry.start.y, geometry.end.x, geometry.end.y);
     const fadeSpan = 0.12 + state.tailFade * 0.10;
     gradient.addColorStop(0, rgba(state.colour, 0));
@@ -334,7 +353,6 @@ function drawRibbons(context) {
     gradient.addColorStop(0.42, rgba(state.colour, brightness));
     gradient.addColorStop(0.72, rgba(state.colour, brightness * 0.68));
     gradient.addColorStop(1, rgba(state.colour, 0));
-
     context.save();
     context.strokeStyle = gradient;
     context.globalAlpha = 0.20;
@@ -342,7 +360,6 @@ function drawRibbons(context) {
     context.filter = 'blur(5px)';
     context.stroke(geometry.path);
     context.restore();
-
     context.save();
     context.strokeStyle = gradient;
     context.globalAlpha = 0.57;
@@ -350,7 +367,6 @@ function drawRibbons(context) {
     context.filter = 'blur(1.3px)';
     context.stroke(geometry.path);
     context.restore();
-
     context.save();
     context.strokeStyle = gradient;
     context.globalAlpha = 0.48 + state.definition * 0.25;
@@ -361,8 +377,8 @@ function drawRibbons(context) {
   context.restore();
 }
 
-function makeRibbonPath(ribbon, length) {
-  const motion = state.time * (0.34 + state.rotation * ribbon.foldSpeed);
+function makeRibbonPath(ribbon, length, phaseOffset) {
+  const motion = (state.time + phaseOffset) * (0.34 + state.rotation * ribbon.foldSpeed);
   const turn = Math.sin(ribbon.phase + motion * 0.38) * state.rotation * 0.46;
   const angle = ribbon.angle + turn;
   const dx = Math.cos(angle);
@@ -370,7 +386,7 @@ function makeRibbonPath(ribbon, length) {
   const nx = -dy;
   const ny = dx;
   const baseDrift = state.drift * ribbon.age * length * 0.33;
-  const baseWave = Math.sin(ribbon.phase + state.time * 0.30) * state.turbulence * 9;
+  const baseWave = Math.sin(ribbon.phase + (state.time + phaseOffset) * 0.30) * state.turbulence * 9;
   const start = { x: ribbon.originX + baseDrift + nx * baseWave, y: ribbon.originY + ny * baseWave };
   const side1 = Math.sin(ribbon.phase + motion) * ribbon.swayA * ribbon.turnA;
   const side2 = Math.sin(ribbon.phase * 1.4 - motion * 0.72) * ribbon.swayB * ribbon.turnB;
@@ -539,9 +555,10 @@ function updateJson() {
     status: 'debug-prototype-not-runtime-schema',
     mode: state.mode,
     previewLayer: state.layer,
+    previewCopies: state.doubleLayer ? 2 : 1,
     performance: { reducedBufferScale: FX_SCALE },
-    appearance: { colour: state.colour, opacity: state.opacity, puffDensity: state.density, puffSize: state.puffSize, puffDefinition: state.definition },
-    ribbonWisps: { renderer: 'continuous-cubic-ribbon', count: state.wispCount, brightness: state.wispBrightness, maximumLength: state.wispLength, width: state.wispWidth, endFade: state.tailFade, curl: state.curl, rotationalFold: state.rotation, formDurationSeconds: state.duration },
+    mistBody: { colour: state.colour, opacity: state.mistOpacity, density: state.density, size: state.puffSize, definition: state.definition },
+    ribbonWisps: { renderer: 'continuous-cubic-ribbon', independentFromMistOpacity: true, count: state.wispCount, brightness: state.wispBrightness, maximumLength: state.wispLength, width: state.wispWidth, endFade: state.tailFade, curl: state.curl, rotationalFold: state.rotation, formDurationSeconds: state.duration },
     movement: { riseSpeed: state.rise, driftSpeed: state.drift, turbulence: state.turbulence },
     vignette: { centreOpening: state.clear, edgeDepth: state.edge, verticalBias: state.bias },
     emission: { xPercent: state.sourceX, yPercent: state.sourceY, sourceWidth: state.sourceWidth, plumeHeight: state.height }
