@@ -1,10 +1,11 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
-import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js';
 import { patternPaletteColor } from './pattern-lock-templates.js';
 
 const DEFAULT_EMPTY = '#d5dbd6';
 const DEFAULT_GLOW = '#9ee6a4';
 const BASE_SIZE = 0.36;
+const MIN_CAMERA_DISTANCE = 5.3;
+const MAX_CAMERA_DISTANCE = 15;
 
 export class PatternLockRenderer {
   constructor(host, callbacks = {}) {
@@ -18,6 +19,8 @@ export class PatternLockRenderer {
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
     this.pointerStart = null;
+    this.dragState = null;
+    this.cameraDistance = 10.8;
     this.buildScene();
   }
 
@@ -31,12 +34,6 @@ export class PatternLockRenderer {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.host.appendChild(this.renderer.domElement);
-    this.orbit = new OrbitControls(this.camera, this.renderer.domElement);
-    this.orbit.enableDamping = true;
-    this.orbit.dampingFactor = 0.06;
-    this.orbit.enablePan = false;
-    this.orbit.minDistance = 4.4;
-    this.orbit.maxDistance = 16;
     this.scene.add(new THREE.AmbientLight(0xfff0dc, 0.7));
     const key = new THREE.DirectionalLight(0xfff2d9, 1.05);
     key.position.set(6, 9, 10);
@@ -57,15 +54,43 @@ export class PatternLockRenderer {
   }
 
   bindPointerEvents() {
-    this.renderer.domElement.addEventListener('pointerdown', (event) => {
+    const canvas = this.renderer.domElement;
+    canvas.addEventListener('pointerdown', (event) => {
+      canvas.setPointerCapture(event.pointerId);
       this.pointerStart = { x: event.clientX, y: event.clientY };
+      this.dragState = {
+        pointerId: event.pointerId,
+        x: event.clientX,
+        y: event.clientY,
+        startRotationX: this.group.rotation.x,
+        startRotationY: this.group.rotation.y
+      };
     });
-    this.renderer.domElement.addEventListener('pointerup', (event) => {
+    canvas.addEventListener('pointermove', (event) => {
+      if (!this.dragState || this.dragState.pointerId !== event.pointerId) return;
+      const deltaX = event.clientX - this.dragState.x;
+      const deltaY = event.clientY - this.dragState.y;
+      this.group.rotation.y = this.dragState.startRotationY + deltaX * 0.009;
+      this.group.rotation.x = THREE.MathUtils.clamp(this.dragState.startRotationX + deltaY * 0.009, -Math.PI * 0.48, Math.PI * 0.48);
+    });
+    canvas.addEventListener('pointerup', (event) => {
       if (!this.pointerStart) return;
       const moved = Math.hypot(event.clientX - this.pointerStart.x, event.clientY - this.pointerStart.y);
       this.pointerStart = null;
+      this.dragState = null;
+      if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
       if (moved < 5) this.pickNode(event);
     });
+    canvas.addEventListener('pointercancel', (event) => {
+      this.pointerStart = null;
+      this.dragState = null;
+      if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+    });
+    canvas.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      this.cameraDistance = THREE.MathUtils.clamp(this.cameraDistance + Math.sign(event.deltaY) * 0.55, MIN_CAMERA_DISTANCE, MAX_CAMERA_DISTANCE);
+      this.updateCameraDistance();
+    }, { passive: false });
   }
 
   pickNode(event) {
@@ -171,10 +196,16 @@ export class PatternLockRenderer {
   }
 
   resetView() {
-    if (!this.camera || !this.orbit) return;
-    this.camera.position.set(7.4, 5.4, 8.6);
-    this.orbit.target.set(0, 0, 0);
-    this.orbit.update();
+    if (!this.camera || !this.group) return;
+    this.cameraDistance = 10.8;
+    this.camera.position.set(0, 0, this.cameraDistance);
+    this.camera.lookAt(0, 0, 0);
+    this.group.rotation.set(-0.34, 0.64, 0);
+  }
+
+  updateCameraDistance() {
+    this.camera.position.setLength(this.cameraDistance);
+    this.camera.lookAt(0, 0, 0);
   }
 
   resize() {
@@ -190,7 +221,6 @@ export class PatternLockRenderer {
     this.active = true;
     const draw = () => {
       if (!this.active) return;
-      this.orbit.update();
       this.renderer.render(this.scene, this.camera);
       this.frame = window.requestAnimationFrame(draw);
     };
