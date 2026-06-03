@@ -22,11 +22,11 @@ Rules for interpreting migrated tasks:
 
 | Area | Current position relevant to task work | Protection rule |
 |---|---|---|
-| Documentation control | `0A`, `1A` and `2A` were published on `main` through merged PR #47. This pass corrects the controlled backlog path and adds extracted module specifications `3A`, `4A` and `5A`. | Continue through documentation-only passes; do not create competing active indexes, task lists or status documents. |
+| Documentation control | `0A`, `1A` and `2A` were published on `main` through merged PR #47. This pass corrects the controlled backlog path and adds extracted module specifications `3A`, `4A`, `5A` and `6A`. | Continue through documentation-only passes; do not create competing active indexes, task lists or status documents. |
 | Hub / Artifex Portal | Current implementation is `artifex/index.html` / **Artifex Hub V1.1.4**; `3A-hub-artifex-portal.md` is created in this pass from that current implementation. | Do not treat the older radial/wedge Portal plan as the current implementation authority. |
 | Creation Guide | Current implementation is `artifex/apps/creation-guide/index.html` / **V1.1.12**; it includes connected-folder starter creation and optional Initial Asset Intake Setup. `4A-creation-guide.md` is created in this pass. | Do not use V1.1.10/V1.1.11 documents to describe current functionality or re-list implemented intake setup as future work. |
 | Project Editor | Current implementation is `artifex/apps/project-editor/index.html` / **v0.1.32 CONTRACT**; it is a modular browser-draft/ZIP-import-export structural editor and `5A-project-editor.md` is created in this pass. | Do not list implemented Asset Browser/linking/Stitcher/Health functionality as future work, and do not treat browser draft state as connected-project truth. |
-| Scene Editor | Accepted baseline is `artifex/apps/scene-editor/index.html` / `v0.37-control-state-inspector-retention`. Ownership repair work from v0.34–v0.37 is complete. | Do not revive old ownership-repair tasks; next work is project integration. |
+| Scene Editor | Accepted implementation is `artifex/apps/scene-editor/index.html` / **v0.37-control-state-inspector-retention**; the v0.35–v0.37 stabilisation chain is complete and `6A-scene-editor.md` is created in this pass. | Do not revive old v0.34 wrong-object/ownership repair tasks; remaining work is connected-project/reference integration. |
 | Archetype Object Creator | V1.36 is merged on `main`; its lifecycle remains subject to post-merge functional validation. | Validate before beginning further Object Creator feature development. |
 | Effect Editor | Accepted route is `artifex/apps/effect-editor/index2.html` / `INDEX2-CLEAN-0.2.6`. | Do not restore older emergency-route work or treat parity controls already repaired as outstanding. |
 | Puzzle Creator | V1.35 is merged on `main` through PR #48: Labyrinth Maze remains the working editor and the other surfaced modules are recovered planning pages/placeholders. Documentation refresh PR #44 remains open. | Protect the V1.35 distinction; do not describe planning pages as completed gameplay engines or merge duplicate status docs as final authority. |
@@ -45,7 +45,7 @@ Status: in progress
 - Maintain this file, `docs/artifex/2A-global-to-do.md`, as the sole human-readable active Artifex backlog.
 - Maintain `docs/artifex/0A-index-of-files.md` as the controlled index of active specifications, subordinate references and archive treatment.
 - Inspect every real module/service and retain or create exactly one active specification document containing only its unique permanent purpose, ownership, route/baseline and specific interfaces.
-- Continue extraction after the Project Editor pass in the approved module order, with **Scene Editor** next.
+- Continue extraction after the Scene Editor pass in the approved module order, with **Quest Builder** next.
 - Extract still-valid permanent rules, module-specific facts and open work from older READMEs, todos, audits, handovers, baseline matrices and status-refresh documents.
 - Check whether `artifex/shared/todo-guide/all-apps-todos.json` is read by application code before changing its role. If runtime-required, retain it as a machine/runtime dependency only, not a second human-maintained backlog.
 - Check whether project-level files such as `todos/project-manager-todos.json` or `todos/project-editor-todos.json` are user-project output/runtime dependencies and retain compatibility where required.
@@ -61,9 +61,13 @@ artifex/shared/todo-guide/all-apps-todos.json
 artifex/apps/*/docs/todo.md
 artifex/apps/*/*plan*.md
 artifex/shared/todo-guide/audits/**
+docs/artifex/04-scene-editor.md
 docs/artifex/05-creation-guide.md
 docs/artifex/05a-creation-guide-v119-implementation-notes.md
 artifex/apps/project-editor/docs/project-editor-real-split-plan.md
+artifex/apps/scene-editor/scene-editor-v037-accepted-baseline-2026-06-02.md
+artifex/apps/scene-editor/scene-editor-cleanup-report-2026-05-29.md
+artifex/apps/scene-editor/scene-editor-v034-failed-acceptance-and-consolidation-plan-2026-05-31.md
 docs/artifex/11-portal-hub.md
 docs/artifex/23-current-main-scan-and-pr20-recovery.md
 docs/artifex/24-stabilisation-cleanup-and-ui-resumption-plan.md
@@ -205,16 +209,26 @@ Verified implementation baseline: `artifex/apps/project-editor/index.html` / **A
 
 # Scene Editor
 
-Accepted baseline: `artifex/apps/scene-editor/index.html` / `v0.37-control-state-inspector-retention`.
+Active specification created in this pass: `docs/artifex/6A-scene-editor.md`.  
+Verified accepted implementation baseline: `artifex/apps/scene-editor/index.html` / **Artifex Scene Editor v0.37-control-state-inspector-retention** on current `main`, supported by merged accepted-baseline PR #45.
 
-Completed stabilisation work from v0.35–v0.37 must not be reopened as pending ownership work. Remaining tasks are integration tasks:
+## Verified complete or already present in v0.37
 
-- Extract the single Scene Editor specification and preserve the accepted v0.37 baseline.
-- Connect authored scenes/screens to the active project's real scene/screen files and indexes.
-- Display accurate project-file versus local-draft save status through the shared save-state model.
-- Place validated Object Creator and Effect Editor outputs through stable registered project references.
+- The live Scene Editor is modular and loads owned model, IO, stage-drag, renderer, bindings, core API and app/bootstrap components.
+- The v0.35–v0.37 ownership/stabilisation chain is accepted: Object Inspector/transform/movement ownership consolidation, selected-object artwork display repair, Clear Selection, colour-only Aspect Ratio Lock state and retained inspector scroll position are not pending work.
+- Scene/screen visual editing already covers scene identity/type/tags, grid, background, layers, placed elements, UI collection and scene-level audio fields in the local JSON workflow.
+- Local browser working-copy recovery, JSON import/template loading and JSON download are implemented.
+- Scene Editor displays active-project context through the shared active-project client, but this is currently presentation only.
+- The current Asset Library popup selects existing fixed-manifest asset paths for visual placement; it is not connected-project final-asset registration or selection.
+
+## Outstanding integration and future work
+
+- Implement connected-project scene/screen loading, direct saving and typed scene/screen index registration through the shared folder/save-state foundation.
+- Display accurate project-file versus local-draft/save/conflict/permission status rather than relying only on local backup/download indicators.
+- Replace fixed-manifest/path-only placement with stable connected-project registered references for validated Asset Library, Archetype Object Creator and Effect Editor outputs where appropriate.
 - Adopt Sound Library selection for ambience, local sound sources and transitions only after the Sound Library foundation is accepted and in a separate Scene Editor-owned pass. Status: **provisional, sourced from open PR #46**.
-- Later define Scene Events, Triggers and portal linking after save/reference foundations are reliable.
+- Define Scene Events, Triggers and portal linking only after save/reference foundations are reliable and the cross-module ownership contract is agreed.
+- Decide archive treatment for `docs/artifex/04-scene-editor.md`, `artifex/apps/scene-editor/scene-editor-v037-accepted-baseline-2026-06-02.md`, `scene-editor-cleanup-report-2026-05-29.md` and `scene-editor-v034-failed-acceptance-and-consolidation-plan-2026-05-31.md` after `6A` is accepted and no uncaptured live task remains.
 
 ---
 
@@ -424,8 +438,9 @@ These are documentation-control actions, not implementation approval:
 | PR / document area | Current interpretation | Consolidation treatment |
 |---|---|---|
 | Merged PR #47 — documentation-control foundation | Published `0A`, `1A` and `2A` to `main`, but `0A`/`1A` retained an incorrect reference to `docs/GLOBAL_TODO.md`. | Treat as foundation baseline and correct the backlog-path inconsistency in this documentation-only pass. |
-| Draft PR #50 — Hub, Creation Guide and Project Editor extraction pass | Adds `3A`, `4A` and `5A`, corrects `0A`/`1A`, and refreshes `2A` for verified current Hub, Creation Guide, Project Editor and protected Puzzle baselines. | Review as a documentation-only PR; no runtime or archive operation is authorised by it. |
-| Open PR #40 — Scene/Effect status refresh | Scene status was superseded by the later accepted Scene Editor v0.37 record; status-refresh files are not final documentation authority. | Extract any unique outstanding task only; do not merge as another active status source. |
+| Draft PR #50 — Hub, Creation Guide, Project Editor and Scene Editor extraction pass | Adds `3A`, `4A`, `5A` and `6A`, corrects `0A`/`1A`, and refreshes `2A` for verified current module baselines and protected Puzzle/Sound work. | Review as a documentation-only PR; no runtime or archive operation is authorised by it. |
+| Merged PR #45 — Scene Editor accepted baseline | Accurately records v0.37 as accepted after the stabilisation chain and supersedes older pending/failure status wording. | Treat as source evidence now captured in `6A` / `2A`; determine later archive treatment after acceptance. |
+| Open PR #40 — Scene/Effect status refresh | Its Scene status was superseded by the later accepted Scene Editor v0.37 record; status-refresh files are not final documentation authority. | Extract any unique outstanding Effect work only; do not merge as another active Scene status source. |
 | Open PR #44 — Puzzle V1.34 status refresh | Contains earlier Puzzle baseline evidence, now superseded for runtime by merged V1.35 PR #48. | Reconcile late in the Puzzle module-spec pass; do not merge as a competing final authority. |
 | Merged PR #48 — Puzzle Creator V1.35 planning pages | Establishes current Puzzle UI/content baseline and recovered placeholder planning pages. | Protect in this to-do until the later Puzzle specification extraction. |
 | Open PR #46 — Sound Library / Create Synth Sound | Active runtime/doc/task work in an area still being edited. | Preserve as active work; tasks copied here remain provisional until accepted/merged. |
@@ -444,6 +459,7 @@ artifex/shared/todo-guide/all-apps-todos.json
 artifex/apps/archetype-object-creator/docs/todo.md
 artifex/apps/effect-editor/docs/todo.md
 artifex/apps/quest-builder/docs/todo.md
+docs/artifex/04-scene-editor.md
 docs/artifex/05-creation-guide.md
 docs/artifex/05a-creation-guide-v119-implementation-notes.md
 artifex/apps/creation-guide/README.md
@@ -463,10 +479,22 @@ artifex/apps/project-editor/src/project-route-types.js
 artifex/apps/project-editor/src/project-stitcher.js
 artifex/apps/project-editor/src/project-buildprep.js
 artifex/apps/project-editor/docs/project-editor-real-split-plan.md
+artifex/apps/scene-editor/index.html at Artifex Scene Editor v0.37-control-state-inspector-retention
+artifex/apps/scene-editor/scene-editor-config.js
+artifex/apps/scene-editor/scene-editor-app.js
+artifex/apps/scene-editor/scene-editor-storage.js
+artifex/apps/scene-editor/scene-editor-scene-model.js
+artifex/apps/scene-editor/scene-editor-io.js
+artifex/apps/scene-editor/scene-editor-renderer.js
+artifex/apps/scene-editor/scene-editor-asset-path-tools.js
+artifex/apps/scene-editor/scene-editor-transform-controls.js
+artifex/apps/scene-editor/scene-editor-v037-accepted-baseline-2026-06-02.md
+artifex/apps/scene-editor/scene-editor-cleanup-report-2026-05-29.md
+artifex/apps/scene-editor/scene-editor-v034-failed-acceptance-and-consolidation-plan-2026-05-31.md
+merged Scene Editor accepted-baseline PR #45
 docs/artifex/11-portal-hub.md
 docs/artifex/24-stabilisation-cleanup-and-ui-resumption-plan.md
 artifex/index.html at Artifex Hub V1.1.4
-merged Scene Editor accepted-baseline PR #45
 open Puzzle documentation PR #44
 merged Puzzle Creator implementation PR #48
 open Sound Library / Sound Generator PR #46
