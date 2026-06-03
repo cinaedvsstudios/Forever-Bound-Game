@@ -2,7 +2,7 @@
 
 Status: Active consolidation index  
 Foundation published on `main`: PR #47 / merge `a475a90f4baca4421ff120c7244563ac283b9dd8`  
-Latest baseline checked for this update: `fecd879f0b04c02550a7fbb9a63f8a2733cd6f23`  
+Latest baseline checked for this update: Quest Builder V1.2.12 on current `main`, audited 3 June 2026 from repository state indexed at `394fc9e73b7b83297843d70e55c777c96e7bda84`  
 Intended final role: the single active index identifying authoritative Artifex documentation, module specifications, task source and archive policy.
 
 ## Purpose
@@ -53,6 +53,7 @@ If two active documents contain the same rule, status statement or task, the inf
 | `docs/artifex/4A-creation-guide.md` | Creation Guide module specification document. | Added during Creation Guide extraction pass; verified against current V1.1.12 implementation. |
 | `docs/artifex/5A-project-editor.md` | Project Editor module specification document. | Added during Project Editor extraction pass; verified against current v0.1.32 CONTRACT implementation. |
 | `docs/artifex/6A-scene-editor.md` | Scene Editor module specification document. | Added during Scene Editor extraction pass; verified against accepted current v0.37 baseline. |
+| `docs/artifex/7A-quest-builder.md` | Quest Builder module specification document. | Added during Quest Builder extraction pass; verified against current V1.2.12 implementation. |
 | `docs/artifex/19a-project-starter-file-schemas.md` | Subordinate technical reference for exact canonical starter JSON and typed index shapes. | Retain active, subject to link/title cleanup after contract adoption. |
 | `docs/artifex/22-sound-archetype-generator.md` | Sound Generator module/service specification document. | Retain active; inspect last because current Sound Generator work is in progress. |
 
@@ -67,8 +68,8 @@ Each confirmed real module or maintained shared service must ultimately have one
 | 3 | Creation Guide | New project setup, starter creation, initial intake/setup and active-project registration boundary. | Extracted into `docs/artifex/4A-creation-guide.md`; implementation follow-up remains in `2A`. |
 | 4 | Project Editor | Structural/Flatplan/route ownership and Project Editor-only interface/baseline. | Extracted into `docs/artifex/5A-project-editor.md`; implementation follow-up remains in `2A`. |
 | 5 | Scene Editor | Scene/screen visual authoring ownership and accepted active baseline. | Extracted into `docs/artifex/6A-scene-editor.md`; implementation follow-up remains in `2A`. |
-| 6 | Quest Builder | Quest/progression ownership and its defined use of saved puzzle references. | Next module audit; avoid copying Puzzle Creator internals. |
-| 7 | Archetype Object Creator | Reusable non-FX object archetype authoring and final registered-asset reference workflow. | Preserve latest validation/work status in global to-do, not spec history. |
+| 6 | Quest Builder | Quest/progression ownership and its defined use of saved puzzle references. | Extracted into `docs/artifex/7A-quest-builder.md`; implementation follow-up remains in `2A`. |
+| 7 | Archetype Object Creator | Reusable non-FX object archetype authoring and final registered-asset reference workflow. | Next module audit; preserve latest validation/work status in global to-do, not spec history. |
 | 8 | Effect Editor | Reusable FX ownership and accepted Index2 baseline/route. | Protect accepted `index2.html` route. |
 | 9 | Asset Library | Promotion and final registration of supplied/generated assets. | Decide whether existing asset workflow content forms this spec. |
 | 10 | Shared Connected Project Folder Service | Folder permission/read/write/save-state infrastructure. | Determine whether real maintained service merits its own spec. |
@@ -128,6 +129,8 @@ The following classification records the starting plan for documents that curren
 | `docs/artifex/04-scene-editor.md` | Valid Scene Editor visual-authoring purpose/boundary content moves into `6A`; older migration/local-workflow status content is no longer current authority. | Retain as source evidence now; archive after Scene Editor extraction is accepted. |
 | `docs/artifex/05-creation-guide.md` | Valid Creation Guide ownership/current implementation facts move into `4A`; any still-open work stays in `2A`. | Retain as source evidence now; archive after Creation Guide extraction is accepted. |
 | `docs/artifex/05a-creation-guide-v119-implementation-notes.md` | Historical V1.1.10 split facts checked against the later V1.1.12 implementation; no longer current authority. | Archive after Creation Guide extraction is accepted. |
+| `docs/artifex/07-quest-builder.md`, `07a-quest-builder-structured-authoring.md` and `07b-puzzle-creator-quest-integration.md` | Valid permanent Quest Builder purpose, ownership, dialogue and Puzzle handoff rules move into `7A`; open implementation remains in `2A`. | Retain as source evidence now; archive after Quest Builder extraction is accepted and no unique requirement remains. |
+| `artifex/apps/quest-builder/README.md`, `docs/structure.md`, `docs/block-taxonomy.md` and `docs/todo.md` | Valid live-baseline and module-specific rules move into `7A`; still-open code work moves into `2A`. | Retain as source evidence now; archive or replace with a minimal local pointer after `7A` is accepted. |
 | `artifex/apps/creation-guide/README.md` | Earlier V1.1.10 runtime/readme evidence superseded for current status by V1.1.12 and `4A`. | Decide archive or rewrite-as-local-pointer treatment after `4A` acceptance. |
 | `artifex/apps/project-editor/docs/project-editor-real-split-plan.md` | Its enduring Project Editor boundary and modular-live-baseline facts move into `5A`; implementation follow-up stays in `2A`. | Retain as extraction evidence now; archive after Project Editor extraction is accepted. |
 | `artifex/apps/scene-editor/scene-editor-v037-accepted-baseline-2026-06-02.md` | Accepted v0.37 baseline evidence and remaining integration boundary move into `6A` / `2A`. | Retain as evidence now; archive or retain as historical acceptance record after `6A` is accepted. |
@@ -136,7 +139,7 @@ The following classification records the starting plan for documents that curren
 | `docs/artifex/12-project-settings.md` | Only still-valid universal active-project/save constraints move into `1A` or a confirmed service spec. Older absolute-path/localStorage-first concepts must not override the current connected-folder contract. | Archive after relevant service/module extraction. |
 | `docs/artifex/18-color-and-display-rules.md` | Universal Artifex branding/display/header/accent/control rules move into `1A`. | Archive or retain only as a subordinate visual reference if later inspection proves unique detailed material still needs a separate authority; it must not duplicate `1A`. |
 | `docs/artifex/19-project-file-contracts.md` | Its valid central-contract content forms the basis of `1A`. | Supersede/archive after `1A` is approved and all links updated. |
-| `docs/artifex/19a-project-starter-file-schemas.md` | Remains the subordinate exact schema technical reference linked from `1A`, `4A` and `5A`. | Retain active. |
+| `docs/artifex/19a-project-starter-file-schemas.md` | Remains the subordinate exact schema technical reference linked from `1A`, `4A`, `5A` and `7A`. | Retain active. |
 | `docs/artifex/20-asset-intake-workflow.md` | Implemented Creation Guide intake setup facts move into `4A`; remaining Asset Library-specific promotion workflow is assessed in the Asset Library pass. | Decide final retain/archive treatment during Asset Library audit. |
 | `docs/artifex/21-template-game-project-contract.md` | Universal three-layer distinction moves into `1A`; unique Template Game/reference-project material may remain as one bounded reference-project specification. | Decide retain/archive treatment after project/reference scope audit. |
 | `docs/artifex/22-sound-archetype-generator.md` | Sound Generator-specific permanent information stays in that module/service spec; universal generated-audio asset rule exists once in `1A`. | Retain active and consolidate last because current Sound Generator work is in progress. |
