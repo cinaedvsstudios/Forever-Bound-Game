@@ -22,9 +22,10 @@ Rules for interpreting migrated tasks:
 
 | Area | Current position relevant to task work | Protection rule |
 |---|---|---|
-| Documentation control | `0A`, `1A` and `2A` were published on `main` through merged PR #47. This pass corrects the controlled backlog path and adds extracted module specifications `3A` and `4A`. | Continue through documentation-only passes; do not create competing active indexes, task lists or status documents. |
+| Documentation control | `0A`, `1A` and `2A` were published on `main` through merged PR #47. This pass corrects the controlled backlog path and adds extracted module specifications `3A`, `4A` and `5A`. | Continue through documentation-only passes; do not create competing active indexes, task lists or status documents. |
 | Hub / Artifex Portal | Current implementation is `artifex/index.html` / **Artifex Hub V1.1.4**; `3A-hub-artifex-portal.md` is created in this pass from that current implementation. | Do not treat the older radial/wedge Portal plan as the current implementation authority. |
 | Creation Guide | Current implementation is `artifex/apps/creation-guide/index.html` / **V1.1.12**; it includes connected-folder starter creation and optional Initial Asset Intake Setup. `4A-creation-guide.md` is created in this pass. | Do not use V1.1.10/V1.1.11 documents to describe current functionality or re-list implemented intake setup as future work. |
+| Project Editor | Current implementation is `artifex/apps/project-editor/index.html` / **v0.1.32 CONTRACT**; it is a modular browser-draft/ZIP-import-export structural editor and `5A-project-editor.md` is created in this pass. | Do not list implemented Asset Browser/linking/Stitcher/Health functionality as future work, and do not treat browser draft state as connected-project truth. |
 | Scene Editor | Accepted baseline is `artifex/apps/scene-editor/index.html` / `v0.37-control-state-inspector-retention`. Ownership repair work from v0.34–v0.37 is complete. | Do not revive old ownership-repair tasks; next work is project integration. |
 | Archetype Object Creator | V1.36 is merged on `main`; its lifecycle remains subject to post-merge functional validation. | Validate before beginning further Object Creator feature development. |
 | Effect Editor | Accepted route is `artifex/apps/effect-editor/index2.html` / `INDEX2-CLEAN-0.2.6`. | Do not restore older emergency-route work or treat parity controls already repaired as outstanding. |
@@ -44,7 +45,7 @@ Status: in progress
 - Maintain this file, `docs/artifex/2A-global-to-do.md`, as the sole human-readable active Artifex backlog.
 - Maintain `docs/artifex/0A-index-of-files.md` as the controlled index of active specifications, subordinate references and archive treatment.
 - Inspect every real module/service and retain or create exactly one active specification document containing only its unique permanent purpose, ownership, route/baseline and specific interfaces.
-- Continue extraction after the Creation Guide pass in the approved module order, with **Project Editor** next.
+- Continue extraction after the Project Editor pass in the approved module order, with **Scene Editor** next.
 - Extract still-valid permanent rules, module-specific facts and open work from older READMEs, todos, audits, handovers, baseline matrices and status-refresh documents.
 - Check whether `artifex/shared/todo-guide/all-apps-todos.json` is read by application code before changing its role. If runtime-required, retain it as a machine/runtime dependency only, not a second human-maintained backlog.
 - Check whether project-level files such as `todos/project-manager-todos.json` or `todos/project-editor-todos.json` are user-project output/runtime dependencies and retain compatibility where required.
@@ -62,6 +63,7 @@ artifex/apps/*/*plan*.md
 artifex/shared/todo-guide/audits/**
 docs/artifex/05-creation-guide.md
 docs/artifex/05a-creation-guide-v119-implementation-notes.md
+artifex/apps/project-editor/docs/project-editor-real-split-plan.md
 docs/artifex/11-portal-hub.md
 docs/artifex/23-current-main-scan-and-pr20-recovery.md
 docs/artifex/24-stabilisation-cleanup-and-ui-resumption-plan.md
@@ -174,26 +176,30 @@ Verified implementation baseline: `artifex/apps/creation-guide/index.html` / **A
 
 # Project Editor
 
-Current documented baseline needing verification: `artifex/apps/project-editor/index.html` / `v0.1.32 CONTRACT`.  
-Audit order: next after Creation Guide.
+Active specification created in this pass: `docs/artifex/5A-project-editor.md`.  
+Verified implementation baseline: `artifex/apps/project-editor/index.html` / **Artifex Project Editor v0.1.32 CONTRACT - Flatplan** on current `main`.
 
-## Naming, baseline and save verification
+## Verified complete or already present in v0.1.32 CONTRACT
 
-- Verify current Project Editor shell, route/version and save/export behaviour from current `main` only.
-- Remove remaining user-facing **Project Manager** terminology in versioned passes while preserving compatibility for legacy identifiers/files still read.
-- Migrate generated todo filename use from `todos/project-manager-todos.json` to `todos/project-editor-todos.json` only through explicit backward-compatible migration.
-- Extract the single Project Editor specification.
+- The live route is a modular Project Editor shell rather than the old monolithic `index.html`.
+- Flatplan structural browser-draft editing exists for project, logic, layout and registry state.
+- The Asset Browser already reads imported canonical index content for scenes/screens, quests, sidequests, puzzles, object/effect archetypes and assets.
+- Linking an imported library item to a selected Flatplan node is already implemented.
+- Stitcher already exposes simple, branch, quest-gated, puzzle-gated, item-gated, flag/condition and completed-state route types with gate/flag/state fields.
+- Shared Health-backed Getting Started and Build Prep presentation already exists.
+- Project JSON/ZIP import and backup ZIP export exist; browser draft saving is explicitly labelled as browser-only.
 
-## Connected project and structure editing
+## Outstanding integration, compatibility and cleanup work
 
-- Implement connected-folder open/re-authorisation/import flow so Project Editor loads canonical split project files from the selected root.
-- Implement direct Save Current Project / Save All for Project Editor-owned structural files through the shared folder service, retaining export ZIP only as backup/fallback.
-- Define and validate real project package import/export around canonical split files and typed schema contracts.
-- Make the Asset Browser read real scene, screen, quest, sidequest, puzzle, object archetype, effect archetype and asset indexes instead of placeholders.
-- Add valid link-to-selected-node behaviour for referenced module outputs.
-- Improve the inspector by selected node/route/gate type.
-- Make Stitcher routes support real simple, branch, quest-gated, puzzle-gated, item-gated and condition-gated routes.
-- Present Shared Health/Build Prep results without owning other modules' authored corrections.
+- Implement connected-folder open/re-authorisation/load flow so Project Editor reads canonical split files and live indexes from the active project root rather than relying on demo/default or imported browser-only state.
+- Implement direct Save Current Project / Save All for Project Editor-owned structural files through the shared folder service, retaining browser drafts and ZIP export only as recovery/backup/fallback layers.
+- Preserve and validate the existing import/export package interface while direct save is added, including compatibility for older project package files.
+- Migrate remaining active **Project Manager** source text, shared-health scopes and generated `todos/project-manager-todos.json` handling to Project Editor naming only through an explicit backward-compatible path.
+- Confirm/fix the Module menu Effect Editor destination against the protected accepted `apps/effect-editor/index2.html` route.
+- Extend structural validation for live connected references, broken gate/link IDs and real runtime/build readiness without authoring other modules' records.
+- Improve selected-node/route inspector editing only where not already provided by Stitcher; do not re-list the implemented route-type form as missing.
+- Replace the placeholder Stitcher route-playtest alert only when a confirmed Runtime/Playtest interface exists.
+- Decide archive treatment for `artifex/apps/project-editor/docs/project-editor-real-split-plan.md` after `5A` is accepted and no uncaptured live task remains.
 
 ---
 
@@ -418,7 +424,7 @@ These are documentation-control actions, not implementation approval:
 | PR / document area | Current interpretation | Consolidation treatment |
 |---|---|---|
 | Merged PR #47 — documentation-control foundation | Published `0A`, `1A` and `2A` to `main`, but `0A`/`1A` retained an incorrect reference to `docs/GLOBAL_TODO.md`. | Treat as foundation baseline and correct the backlog-path inconsistency in this documentation-only pass. |
-| Draft PR #50 — Hub and Creation Guide extraction pass | Adds `3A` and `4A`, corrects `0A`/`1A`, and refreshes `2A` for verified current Hub, Creation Guide and Puzzle V1.35 baselines. | Review as a documentation-only PR; no runtime or archive operation is authorised by it. |
+| Draft PR #50 — Hub, Creation Guide and Project Editor extraction pass | Adds `3A`, `4A` and `5A`, corrects `0A`/`1A`, and refreshes `2A` for verified current Hub, Creation Guide, Project Editor and protected Puzzle baselines. | Review as a documentation-only PR; no runtime or archive operation is authorised by it. |
 | Open PR #40 — Scene/Effect status refresh | Scene status was superseded by the later accepted Scene Editor v0.37 record; status-refresh files are not final documentation authority. | Extract any unique outstanding task only; do not merge as another active status source. |
 | Open PR #44 — Puzzle V1.34 status refresh | Contains earlier Puzzle baseline evidence, now superseded for runtime by merged V1.35 PR #48. | Reconcile late in the Puzzle module-spec pass; do not merge as a competing final authority. |
 | Merged PR #48 — Puzzle Creator V1.35 planning pages | Establishes current Puzzle UI/content baseline and recovered placeholder planning pages. | Protect in this to-do until the later Puzzle specification extraction. |
@@ -446,6 +452,17 @@ artifex/apps/creation-guide/v1/src/project-folder-setup.js
 artifex/apps/creation-guide/v1/src/intake-setup.js
 artifex/apps/creation-guide/v1/src/project-health.js
 artifex/shared/project-folder/project-structure-initializer.js
+artifex/apps/project-editor/index.html at Artifex Project Editor v0.1.32 CONTRACT - Flatplan
+artifex/apps/project-editor/src/project-app.v7.js
+artifex/apps/project-editor/src/project-state.js
+artifex/apps/project-editor/src/project-io.js
+artifex/apps/project-editor/src/project-library-indexes.js
+artifex/apps/project-editor/src/project-integration-ui.js
+artifex/apps/project-editor/src/project-asset-linking.js
+artifex/apps/project-editor/src/project-route-types.js
+artifex/apps/project-editor/src/project-stitcher.js
+artifex/apps/project-editor/src/project-buildprep.js
+artifex/apps/project-editor/docs/project-editor-real-split-plan.md
 docs/artifex/11-portal-hub.md
 docs/artifex/24-stabilisation-cleanup-and-ui-resumption-plan.md
 artifex/index.html at Artifex Hub V1.1.4
