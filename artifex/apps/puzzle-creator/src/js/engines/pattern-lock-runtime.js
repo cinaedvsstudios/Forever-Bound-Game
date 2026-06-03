@@ -48,10 +48,6 @@ function ensureMounted() {
   state.stage.className = 'pattern-lock-stage';
   state.stage.hidden = true;
   state.stage.innerHTML = `
-    <div class="pattern-stage-header">
-      <div><p class="eyebrow">Symbol Assembly · Playable Prototype</p><h2>Pattern Lock Puzzle</h2></div>
-      <div class="pattern-stage-state"><strong id="pattern-stage-template">Cube</strong><span>Surface points only · Drag to rotate</span></div>
-    </div>
     <div class="pattern-workspace">
       <div class="pattern-view-frame">
         <div class="pattern-view-toolbar"><span id="pattern-view-status">Select an emoji, then place it on a surface point.</span><button id="pattern-reset-view" class="small-button" type="button">Reset View</button></div>
@@ -98,8 +94,15 @@ function ensureMounted() {
     </section>
     <section class="panel tool-panel pattern-panel" data-pattern-panel="visuals" hidden>
       <div class="panel-title-row"><div><p class="eyebrow">04 · Colors</p><h2>Point Styling</h2></div></div>
-      <label class="field-block compact"><span>Empty Point</span><input id="pattern-empty-color" type="color" value="#d5dbd6" /></label>
-      <p class="pattern-panel-copy">Final images, runes, text, custom item sets and Asset Library selection are not part of this first prototype.</p>
+      <label class="field-block"><span>Point Shape</span><select id="pattern-point-shape"><option value="sphere">Sphere</option><option value="cube">Cube</option><option value="gem">Faceted Gem</option></select></label>
+      <label class="field-block compact"><span>Empty Point Colour</span><input id="pattern-empty-color" type="color" value="#d5dbd6" /></label>
+      <div class="pattern-texture-control">
+        <span class="pattern-control-label">Point Texture</span>
+        <label class="wide-button pattern-texture-upload"><input id="pattern-point-texture" class="file-input-hidden" type="file" accept="image/*" />Choose Texture Image</label>
+        <small id="pattern-texture-name">No custom texture selected.</small>
+        <button id="pattern-clear-texture" class="wide-button" type="button">Remove Texture</button>
+      </div>
+      <p class="pattern-panel-copy">Texture and point shape change the marker surface only; emoji placement and pattern logic stay the same.</p>
       <button id="pattern-clear-placements" class="wide-button danger-lite" type="button">Clear Placements</button>
     </section>`;
   leftBody.appendChild(state.panels);
@@ -123,7 +126,21 @@ function bindControls() {
     state.renderer.setPointScale(Number(event.target.value));
   });
   $('pattern-show-hint').addEventListener('change', (event) => { $('pattern-hint-overlay').hidden = !event.target.checked; });
+  $('pattern-point-shape').addEventListener('change', (event) => state.renderer.setPointShape(event.target.value));
   $('pattern-empty-color').addEventListener('input', (event) => state.renderer.setEmptyColor(event.target.value, state.placements, state.complete));
+  $('pattern-point-texture').addEventListener('change', (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    $('pattern-texture-name').textContent = file.name;
+    state.renderer.setPointTexture(file, state.placements, state.complete).catch(() => {
+      $('pattern-texture-name').textContent = 'Texture could not be loaded.';
+    });
+  });
+  $('pattern-clear-texture').addEventListener('click', () => {
+    $('pattern-point-texture').value = '';
+    $('pattern-texture-name').textContent = 'No custom texture selected.';
+    state.renderer.clearPointTexture(state.placements, state.complete);
+  });
   document.querySelector('.left-icon-bar')?.addEventListener('click', (event) => {
     if (!state.active) return;
     const button = event.target.closest('.panel-nav-button');
@@ -142,7 +159,6 @@ function loadTemplate(templateId) {
   state.complete = false;
   $('pattern-template-select').value = state.templateId;
   $('pattern-template-name').textContent = template.label;
-  $('pattern-stage-template').textContent = template.label;
   $('pattern-hint-text').textContent = template.hint;
   $('pattern-objective-text').textContent = template.objective;
   $('pattern-logic-hint').textContent = template.hint;
