@@ -104,8 +104,24 @@ export class ProceduralSoundRuntime {
 
     const oscillator = context.createOscillator();
     oscillator.type = recipe.tone.waveform || 'sine';
-    oscillator.frequency.setValueAtTime(Math.max(25, Number(recipe.tone.startFrequencyHz || 440)), startAt);
-    oscillator.frequency.exponentialRampToValueAtTime(Math.max(25, Number(recipe.tone.endFrequencyHz || 440)), endAt);
+    const frequencyCurve = Array.isArray(recipe.tone.frequencyCurve)
+      ? recipe.tone.frequencyCurve
+          .map((point) => ({
+            time: Math.max(0, Math.min(1, Number(point.time))),
+            frequencyHz: Math.max(25, Number(point.frequencyHz || 440))
+          }))
+          .filter((point) => Number.isFinite(point.time) && Number.isFinite(point.frequencyHz))
+          .sort((left, right) => left.time - right.time)
+      : [];
+    if (frequencyCurve.length >= 2) {
+      oscillator.frequency.setValueAtTime(frequencyCurve[0].frequencyHz, startAt);
+      frequencyCurve.slice(1).forEach((point) => {
+        oscillator.frequency.exponentialRampToValueAtTime(point.frequencyHz, startAt + duration * point.time);
+      });
+    } else {
+      oscillator.frequency.setValueAtTime(Math.max(25, Number(recipe.tone.startFrequencyHz || 440)), startAt);
+      oscillator.frequency.exponentialRampToValueAtTime(Math.max(25, Number(recipe.tone.endFrequencyHz || 440)), endAt);
+    }
     oscillator.connect(voiceGain);
     this.trackSource(oscillator);
 
