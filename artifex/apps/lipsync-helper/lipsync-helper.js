@@ -1,106 +1,619 @@
 (() => {
   'use strict';
+
   const $ = id => document.getElementById(id);
   const video = $('video');
-  const canvas = $('videoCanvas');
-  const ctx = canvas.getContext('2d');
+  const viewer = $('videoCanvas');
+  const vctx = viewer.getContext('2d');
   const timeline = $('timeline');
   const tctx = timeline.getContext('2d');
+  const dropZone = $('dropZone');
   const sourceCanvas = document.createElement('canvas');
-  sourceCanvas.width = canvas.width; sourceCanvas.height = canvas.height;
-  const sourceCtx = sourceCanvas.getContext('2d');
-  const state = { url:'', duration:0, fps:30, markers:[], selectedId:'', mode:'preview', loop:false, thumbs:[], donorSelected:-1, dragging:null, capture:null, building:false, raf:0 };
+  const sctx = sourceCanvas.getContext('2d');
+  const thumbCanvas = document.createElement('canvas');
+  const thumbCtx = thumbCanvas.getContext('2d');
+  thumbCanvas.width = 240;
+  thumbCanvas.height = 135;
+
+  const STORAGE_KEY = 'artifex.lipsync.visemeModels.v1';
+  const VISEMES = [
+    { key: 'aei', label: 'a e i' },
+    { key: 'o', label: 'o' },
+    { key: 'bmp', label: 'b m p' },
+    { key: 'soft', label: 'c d g k n s t x y z' },
+    { key: 'u', label: 'u' },
+    { key: 'fv', label: 'f v' },
+    { key: 'th', label: 'th' },
+    { key: 'ee', label: 'ee' },
+    { key: 'qw', label: 'q w' },
+    { key: 'r', label: 'r' },
+    { key: 'l', label: 'l' },
+    { key: 'ch', label: 'ch j sh' }
+  ];
+  const COMMON_PHRASES = {
+    oh: ['o', 'o'], ohh: ['o', 'o', 'o'], ohhh: ['o', 'o', 'o'],
+    end: ['aei', 'soft'], laughter: ['l', 'aei', 'fv', 'th', 'r'],
+    'it be': ['aei', 'soft', 'bmp', 'ee']
+  };
+  const state = {
+    url: '', duration: 0, fps: 30, pendingStart: null,
+    regions: [], selectedRegionId: '', selectedSegmentId: '',
+    mode: 'repair', loop: false, modelMode: false, modelViseme: 'o',
+    thumbView: 'video', thumbs: [], selectedThumb: -1, buildingThumbs: false,
+    libraries: loadLibraries(), pointer: null, captureBox: null, raf: 0,
+    videoRect: { x: 0, y: 0, w: 1, h: 1 }
+  };
   let toastTimer = 0;
-  const clamp = (v,min,max) => Math.max(min, Math.min(max,v));
-  const marker = () => state.markers.find(m => m.id === state.selectedId) || null;
-  const fmt = sec => { if (!Number.isFinite(sec)) return '--:--.---'; const s=Math.max(0,sec); return `${String(Math.floor(s/60)).padStart(2,'0')}:${(s%60).toFixed(3).padStart(6,'0')}`; };
-  function toast(text){ $('toast').textContent=text; $('toast').classList.add('visible'); clearTimeout(toastTimer); toastTimer=setTimeout(()=> $('toast').classList.remove('visible'),2200); }
-  function status(text){ $('statusText').textContent=text; }
-  function range(m){ const half=(m.span || .8)/2; return { start:clamp(m.time-half,0,state.duration), end:clamp(m.time+half,0,state.duration) }; }
-  function point(e){ const r=canvas.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width*canvas.width, y:(e.clientY-r.top)/r.height*canvas.height }; }
-  function box(a,b){ return { x:Math.min(a.x,b.x), y:Math.min(a.y,b.y), w:Math.abs(a.x-b.x), h:Math.abs(a.y-b.y) }; }
-  function setMode(mode){
-    const m=marker(); if(mode==='place' && !(m && m.patch && m.patch.image)) return;
-    state.mode=mode; state.capture=null;
-    $('modeText').textContent=mode==='capture'?'Capture mouth':mode==='place'?'Position patch':'Preview';
-    if(mode==='capture') status('Drag around a useful mouth shape in the video viewer.');
-    if(mode==='place') status('Drag the captured mouth over the faulty mouth position.');
+
+  function loadLibraries() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+    catch (_) { return {}; }
+  }
+  function saveLibraries() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.libraries)); }
+    catch (_) { toast('Browser storage is full; this viseme sample was not saved.'); }
+  }
+  function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+  function fmt(seconds) {
+    if (!Number.isFinite(seconds)) return '--:--.---';
+    const value = Math.max(0, seconds);
+    return `${String(Math.floor(value / 60)).padStart(2, '0')}:${(value % 60).toFixed(3).padStart(6, '0')}`;
+  }
+  function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+  function aspectLabel(width, height) {
+    if (!width || !height) return '--';
+    const divider = gcd(width, height);
+    const w = width / divider, h = height / divider;
+    return w <= 40 && h <= 40 ? `${w}:${h}` : `${(width / height).toFixed(3)}:1`;
+  }
+  function toast(text) {
+    const node = $('toast');
+    node.textContent = text;
+    node.classList.add('visible');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => node.classList.remove('visible'), 2400);
+  }
+  function status(text) { $('statusText').textContent = text; }
+  function characterName() { return $('characterName').value.trim() || 'Unnamed Character'; }
+  function selectedRegion() { return state.regions.find(region => region.id === state.selectedRegionId) || null; }
+  function selectedSegment() {
+    const region = selectedRegion();
+    return region ? region.segments.find(segment => segment.id === state.selectedSegmentId) || null : null;
+  }
+  function totalFrames(region) { return Math.max(1, Math.round((region.end - region.start) * state.fps)); }
+  function visemeLabel(key) { return VISEMES.find(viseme => viseme.key === key)?.label || key; }
+  function newId(prefix) { return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`; }
+
+  function deriveVisemes(input) {
+    const phrase = input.toLowerCase().replace(/[^a-z\s]/g, '').trim().replace(/\s+/g, ' ');
+    if (!phrase) return [];
+    if (COMMON_PHRASES[phrase]) return [...COMMON_PHRASES[phrase]];
+    const result = [];
+    for (let i = 0; i < phrase.length; i += 1) {
+      const char = phrase[i];
+      const pair = phrase.slice(i, i + 2);
+      let key = '';
+      if (pair === 'th') { key = 'th'; i += 1; }
+      else if (pair === 'ch' || pair === 'sh') { key = 'ch'; i += 1; }
+      else if (pair === 'ee') { key = 'ee'; i += 1; }
+      else if (char === ' ') continue;
+      else if ('bmp'.includes(char)) key = 'bmp';
+      else if ('fv'.includes(char)) key = 'fv';
+      else if (char === 'o') key = 'o';
+      else if (char === 'u') key = 'u';
+      else if ('qw'.includes(char)) key = 'qw';
+      else if (char === 'r') key = 'r';
+      else if (char === 'l') key = 'l';
+      else if ('aei'.includes(char)) key = 'aei';
+      else key = 'soft';
+      if (!result.length || result[result.length - 1] !== key || key === 'o' || key === 'ee') result.push(key);
+    }
+    return result;
+  }
+  function refreshSegmentBounds(region) {
+    let cursor = 0;
+    region.segments.forEach(segment => {
+      segment.startFrame = cursor;
+      segment.endFrame = cursor + segment.frames - 1;
+      cursor += segment.frames;
+    });
+  }
+  function rebuildSegments(region) {
+    const frameCount = totalFrames(region);
+    let keys = deriveVisemes(region.phrase);
+    if (keys.length > frameCount) keys = keys.slice(0, frameCount);
+    if (!keys.length) { region.segments = []; state.selectedSegmentId = ''; return; }
+    const existing = region.segments || [];
+    const old = new Map(existing.map(segment => [`${segment.viseme}:${segment.index}`, segment]));
+    const weights = keys.map(key => ['o', 'ee', 'aei', 'u', 'qw'].includes(key) ? 2 : 1);
+    const weightTotal = weights.reduce((sum, value) => sum + value, 0);
+    let assigned = 0;
+    region.segments = keys.map((key, index) => {
+      const remainingSlots = keys.length - index;
+      const remainingFrames = frameCount - assigned;
+      const preferred = index === keys.length - 1 ? remainingFrames : Math.round(frameCount * weights[index] / weightTotal);
+      const frames = Math.max(1, Math.min(preferred, remainingFrames - remainingSlots + 1));
+      const previous = old.get(`${key}:${index}`);
+      assigned += frames;
+      return { id: previous?.id || newId('segment'), index, viseme: key, frames, startFrame: 0, endFrame: 0, patch: previous?.patch || null };
+    });
+    refreshSegmentBounds(region);
+    if (!region.segments.some(segment => segment.id === state.selectedSegmentId)) state.selectedSegmentId = region.segments[0].id;
+  }
+  function adjustSegmentFrames(index, delta) {
+    const region = selectedRegion();
+    if (!region || region.segments.length < 2) return;
+    const current = region.segments[index];
+    const neighbour = region.segments[index < region.segments.length - 1 ? index + 1 : index - 1];
+    if (delta > 0 && neighbour.frames > 1) { current.frames += 1; neighbour.frames -= 1; }
+    if (delta < 0 && current.frames > 1) { current.frames -= 1; neighbour.frames += 1; }
+    refreshSegmentBounds(region);
+    renderSegments();
+    drawTimeline();
+  }
+  function segmentAtTime(region, time) {
+    if (!region || time < region.start || time > region.end || !region.segments.length) return null;
+    const frame = clamp(Math.floor((time - region.start) * state.fps), 0, totalFrames(region) - 1);
+    return region.segments.find(segment => frame >= segment.startFrame && frame <= segment.endFrame) || region.segments[region.segments.length - 1];
+  }
+
+  function resizeCanvases() {
+    const viewerRect = viewer.getBoundingClientRect();
+    viewer.width = Math.max(1, Math.round(viewerRect.width));
+    viewer.height = Math.max(1, Math.round(viewerRect.height));
+    sourceCanvas.width = viewer.width;
+    sourceCanvas.height = viewer.height;
+    const timelineRect = timeline.getBoundingClientRect();
+    timeline.width = Math.max(520, Math.round(timelineRect.width));
+    timeline.height = Math.max(90, Math.round(timelineRect.height));
+    drawViewer();
+    drawTimeline();
+  }
+  function drawRawFrame(context, width, height, updateVideoRect = false) {
+    context.clearRect(0, 0, width, height);
+    context.fillStyle = '#000';
+    context.fillRect(0, 0, width, height);
+    if (!video.videoWidth) return;
+    const scale = Math.min(width / video.videoWidth, height / video.videoHeight);
+    const drawWidth = video.videoWidth * scale;
+    const drawHeight = video.videoHeight * scale;
+    const x = (width - drawWidth) / 2;
+    const y = (height - drawHeight) / 2;
+    context.drawImage(video, x, y, drawWidth, drawHeight);
+    if (updateVideoRect) state.videoRect = { x, y, w: drawWidth, h: drawHeight };
+  }
+  function patchPixels(patch) {
+    const rect = state.videoRect;
+    return { x: rect.x + patch.nx * rect.w, y: rect.y + patch.ny * rect.h, w: patch.nw * rect.w, h: patch.nh * rect.h };
+  }
+  function buildPatchImage(patch) {
+    const output = document.createElement('canvas');
+    const mask = document.createElement('canvas');
+    output.width = mask.width = patch.sourceW;
+    output.height = mask.height = patch.sourceH;
+    const out = output.getContext('2d');
+    const maskCtx = mask.getContext('2d');
+    out.filter = `brightness(${patch.brightness}%) contrast(${patch.contrast}%) saturate(${patch.saturation}%)`;
+    out.drawImage(patch.image, 0, 0, output.width, output.height);
+    out.filter = 'none';
+    if (patch.warmth !== 0) {
+      out.globalCompositeOperation = 'soft-light';
+      out.globalAlpha = Math.abs(patch.warmth) / 170;
+      out.fillStyle = patch.warmth > 0 ? '#ff9348' : '#498fff';
+      out.fillRect(0, 0, output.width, output.height);
+      out.globalAlpha = 1;
+      out.globalCompositeOperation = 'source-over';
+    }
+    const feather = clamp(patch.feather, 0, Math.min(output.width, output.height) / 2);
+    const inset = Math.max(1, feather + 1);
+    maskCtx.filter = feather ? `blur(${feather}px)` : 'none';
+    maskCtx.fillStyle = '#fff';
+    maskCtx.beginPath();
+    maskCtx.ellipse(output.width / 2, output.height / 2, Math.max(1, output.width / 2 - inset), Math.max(1, output.height / 2 - inset), 0, 0, Math.PI * 2);
+    maskCtx.fill();
+    out.globalCompositeOperation = 'destination-in';
+    out.drawImage(mask, 0, 0);
+    return output;
+  }
+  function drawPatch(segment, selected) {
+    const patch = segment?.patch;
+    if (!patch?.image || !patch.visible) return;
+    const pixels = patchPixels(patch);
+    const filtered = buildPatchImage(patch);
+    const scale = patch.scale / 100;
+    vctx.save();
+    vctx.translate(pixels.x, pixels.y);
+    vctx.rotate(patch.rotation * Math.PI / 180);
+    vctx.transform(1, Math.tan(patch.skewY * Math.PI / 180), Math.tan(patch.skewX * Math.PI / 180), 1, 0, 0);
+    vctx.scale(scale * patch.widthScale / 100, scale * patch.heightScale / 100);
+    vctx.globalAlpha = patch.opacity / 100;
+    vctx.drawImage(filtered, -pixels.w / 2, -pixels.h / 2, pixels.w, pixels.h);
+    if (selected && state.mode === 'position') {
+      vctx.globalAlpha = 1;
+      vctx.strokeStyle = '#ff9c19';
+      vctx.lineWidth = 2 / Math.max(scale, 0.1);
+      vctx.setLineDash([8 / Math.max(scale, 0.1), 5 / Math.max(scale, 0.1)]);
+      vctx.strokeRect(-pixels.w / 2, -pixels.h / 2, pixels.w, pixels.h);
+    }
+    vctx.restore();
+  }
+  function drawViewer() {
+    drawRawFrame(sctx, sourceCanvas.width, sourceCanvas.height, true);
+    vctx.clearRect(0, 0, viewer.width, viewer.height);
+    vctx.drawImage(sourceCanvas, 0, 0);
+    if (!state.modelMode) {
+      const region = selectedRegion();
+      const active = segmentAtTime(region, video.currentTime);
+      if (active) drawPatch(active, active.id === state.selectedSegmentId);
+    }
+    if (state.mode === 'capture' && state.captureBox) {
+      const box = normalBox(state.captureBox.a, state.captureBox.b);
+      vctx.save();
+      vctx.fillStyle = 'rgba(255,156,25,.13)';
+      vctx.strokeStyle = '#ff9c19';
+      vctx.lineWidth = 3;
+      vctx.setLineDash([10, 6]);
+      vctx.fillRect(box.x, box.y, box.w, box.h);
+      vctx.strokeRect(box.x, box.y, box.w, box.h);
+      vctx.restore();
+    }
+  }
+  function xFor(time) { return 32 + (timeline.width - 64) * (time / state.duration); }
+  function drawTimeline() {
+    const width = timeline.width, height = timeline.height;
+    tctx.clearRect(0, 0, width, height);
+    tctx.fillStyle = '#0c0e13';
+    tctx.fillRect(0, 0, width, height);
+    if (!state.duration) {
+      tctx.fillStyle = '#777482';
+      tctx.font = `${Math.max(11, height * .12)}px sans-serif`;
+      tctx.fillText('Load a video to place repair regions.', 18, height / 2);
+      return;
+    }
+    const baseline = height * .59;
+    tctx.strokeStyle = 'rgba(158,115,243,.42)';
+    tctx.lineWidth = Math.max(5, height * .06);
+    tctx.lineCap = 'round';
+    tctx.beginPath(); tctx.moveTo(32, baseline); tctx.lineTo(width - 32, baseline); tctx.stroke();
+    tctx.lineCap = 'butt';
+    for (let i = 0; i <= 8; i += 1) {
+      const time = i / 8 * state.duration, x = xFor(time);
+      tctx.strokeStyle = 'rgba(255,255,255,.14)'; tctx.lineWidth = 1;
+      tctx.beginPath(); tctx.moveTo(x, baseline - height * .10); tctx.lineTo(x, baseline + height * .11); tctx.stroke();
+      tctx.fillStyle = '#918c9b'; tctx.font = `${Math.max(9, height * .085)}px sans-serif`; tctx.textAlign = 'center';
+      tctx.fillText(fmt(time), x, baseline + height * .29);
+    }
+    state.regions.forEach((region, index) => {
+      const selected = region.id === state.selectedRegionId;
+      const startX = xFor(region.start), endX = xFor(region.end), y = baseline - height * .14, barHeight = height * .22;
+      tctx.fillStyle = selected ? 'rgba(255,156,25,.34)' : 'rgba(158,115,243,.24)';
+      tctx.strokeStyle = selected ? '#ff9c19' : '#9e73f3'; tctx.lineWidth = 2;
+      tctx.beginPath(); tctx.roundRect(startX, y, Math.max(5, endX - startX), barHeight, 6); tctx.fill(); tctx.stroke();
+      if (selected && region.segments.length) {
+        region.segments.forEach(segment => {
+          const sx = startX + (endX - startX) * segment.startFrame / totalFrames(region);
+          const ex = startX + (endX - startX) * (segment.endFrame + 1) / totalFrames(region);
+          tctx.fillStyle = segment.id === state.selectedSegmentId ? 'rgba(255,208,115,.43)' : 'rgba(255,255,255,.07)';
+          tctx.fillRect(sx + 1, y + 1, Math.max(1, ex - sx - 2), barHeight - 2);
+        });
+      }
+      [region.start, region.end].forEach((time, markerIndex) => {
+        const px = xFor(time), py = y - 14;
+        tctx.strokeStyle = selected ? '#ffe0a5' : '#dfd0ff'; tctx.fillStyle = selected ? '#ff9c19' : '#9e73f3';
+        tctx.beginPath(); tctx.moveTo(px, py + 8); tctx.lineTo(px, y); tctx.stroke();
+        tctx.beginPath(); tctx.arc(px, py, 8, 0, Math.PI * 2); tctx.fill(); tctx.stroke();
+        tctx.fillStyle = '#fff'; tctx.font = `bold ${Math.max(9, height * .072)}px sans-serif`; tctx.textBaseline = 'middle';
+        tctx.fillText(markerIndex === 0 ? 'S' : 'E', px, py);
+      });
+      tctx.fillStyle = selected ? '#ffc267' : '#aba9b6'; tctx.font = `${Math.max(9, height * .072)}px sans-serif`;
+      tctx.fillText(String(index + 1), startX + 8, y + barHeight * .7);
+    });
+    if (state.pendingStart !== null) {
+      const pendingX = xFor(state.pendingStart);
+      tctx.strokeStyle = '#66c7ff'; tctx.lineWidth = 2;
+      tctx.beginPath(); tctx.moveTo(pendingX, height * .10); tctx.lineTo(pendingX, baseline + height * .16); tctx.stroke();
+    }
+    const cursorX = xFor(video.currentTime || 0);
+    tctx.strokeStyle = '#fff'; tctx.lineWidth = 2;
+    tctx.beginPath(); tctx.moveTo(cursorX, height * .07); tctx.lineTo(cursorX, height * .88); tctx.stroke();
+    tctx.textAlign = 'left'; tctx.textBaseline = 'alphabetic';
+  }
+
+  function renderGuideChoices() {
+    const container = $('guideChoices');
+    container.innerHTML = '';
+    const mapped = new Set(selectedRegion()?.segments.map(segment => segment.viseme) || []);
+    VISEMES.forEach(viseme => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `viseme-choice ${(state.modelMode ? state.modelViseme === viseme.key : mapped.has(viseme.key)) ? 'active' : ''}`;
+      button.textContent = viseme.label;
+      button.onclick = () => { state.modelViseme = viseme.key; renderGuideChoices(); if (state.modelMode || state.thumbView === 'library') renderDonors(); renderPatchControls(); };
+      container.appendChild(button);
+    });
+  }
+  function renderRegions() {
+    const list = $('regionList');
+    list.innerHTML = '';
+    if (!state.regions.length) { list.innerHTML = '<p class="empty">No repair regions.</p>'; return; }
+    state.regions.forEach((region, index) => {
+      const complete = region.segments.length && region.segments.every(segment => segment.patch?.image);
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `region-card ${region.id === state.selectedRegionId ? 'selected' : ''}`;
+      button.innerHTML = `<span class="region-card-top"><span>REPAIR ${String(index + 1).padStart(2, '0')}</span><span>${fmt(region.start)}–${fmt(region.end)}</span></span><strong></strong><small>${totalFrames(region)} frames · ${complete ? 'Patches placed' : region.segments.length ? 'Assign mouth patches' : 'Type correct phrase'}</small>`;
+      button.querySelector('strong').textContent = region.phrase || 'Enter words…';
+      button.onclick = () => selectRegion(region.id, true);
+      list.appendChild(button);
+    });
+  }
+  function renderSegments() {
+    const strip = $('segmentStrip');
+    const region = selectedRegion();
+    strip.innerHTML = '';
+    if (!region?.segments.length) { strip.innerHTML = '<p class="empty">No viseme segments yet.</p>'; return; }
+    region.segments.forEach((segment, index) => {
+      const card = document.createElement('div');
+      card.className = `segment-chip ${segment.id === state.selectedSegmentId ? 'selected' : ''} ${segment.patch?.image ? 'ready' : ''}`;
+      const choose = document.createElement('button');
+      choose.type = 'button'; choose.className = 'segment-select';
+      choose.innerHTML = `<strong>${visemeLabel(segment.viseme)}</strong><small>${segment.frames} fr</small>`;
+      choose.onclick = () => { state.selectedSegmentId = segment.id; renderSegments(); renderPatchControls(); renderDonors(); drawTimeline(); drawViewer(); };
+      const adjust = document.createElement('span'); adjust.className = 'segment-adjust';
+      const minus = document.createElement('button'); minus.type = 'button'; minus.textContent = '−'; minus.title = 'Reduce frames'; minus.onclick = () => adjustSegmentFrames(index, -1);
+      const plus = document.createElement('button'); plus.type = 'button'; plus.textContent = '+'; plus.title = 'Add frames'; plus.onclick = () => adjustSegmentFrames(index, 1);
+      adjust.append(minus, plus); card.append(choose, adjust); strip.appendChild(card);
+    });
+  }
+  function renderSelectedRegion() {
+    const region = selectedRegion(), hasRegion = !!region;
+    $('selectedRegionPanel').classList.toggle('disabled', !hasRegion);
+    $('noRegionMessage').hidden = hasRegion; $('regionFields').hidden = !hasRegion;
+    $('deleteRegionBtn').disabled = !hasRegion; $('loopBtn').disabled = !hasRegion;
+    if (!hasRegion) {
+      $('phraseSummary').textContent = 'Type a phrase in a selected repair region.';
+      renderSegments(); renderPatchControls(); renderGuideChoices(); return;
+    }
+    $('regionStart').textContent = fmt(region.start); $('regionEnd').textContent = fmt(region.end); $('regionFrames').textContent = totalFrames(region);
+    $('phraseInput').value = region.phrase; $('loopBtn').textContent = `Loop: ${state.loop ? 'On' : 'Off'}`;
+    $('phraseSummary').textContent = region.phrase ? `${region.phrase} · ${totalFrames(region)} frames to replace` : 'Type the correct word or short phrase.';
+    renderSegments(); renderPatchControls(); renderGuideChoices();
+  }
+  function renderPatchControls() {
+    const segment = selectedSegment(), patch = segment?.patch, hasPatch = !!patch?.image;
+    $('captureBtn').disabled = state.modelMode ? !state.duration : !segment;
+    $('positionBtn').disabled = !hasPatch || state.modelMode;
+    $('removePatchBtn').disabled = !hasPatch || state.modelMode;
+    $('patchControls').hidden = !hasPatch || state.modelMode;
+    $('modelInstruction').hidden = !state.modelMode;
+    $('patchPanelTitle').textContent = state.modelMode ? 'Viseme Model Builder' : 'Donor / Patch Editor';
+    $('patchPanelHelp').textContent = state.modelMode ? `${characterName()} / ${visemeLabel(state.modelViseme)} samples` : segment ? `Selected shape: ${visemeLabel(segment.viseme)}` : 'Choose a segment, then capture or apply a mouth.';
+    if (!hasPatch || state.modelMode) return;
+    const pixels = patchPixels(patch);
+    $('patchX').value = Math.round(pixels.x); $('patchY').value = Math.round(pixels.y); $('patchScale').value = patch.scale;
+    $('patchRotate').value = patch.rotation; $('patchSkewX').value = patch.skewX; $('patchSkewY').value = patch.skewY;
+    $('patchWidth').value = patch.widthScale; $('patchHeight').value = patch.heightScale; $('patchFeather').value = patch.feather;
+    $('patchOpacity').value = patch.opacity; $('patchBrightness').value = patch.brightness; $('patchContrast').value = patch.contrast;
+    $('patchSaturation').value = patch.saturation; $('patchWarmth').value = patch.warmth; $('showPatch').checked = patch.visible;
+    $('featherOutput').textContent = `${patch.feather} px`; $('opacityOutput').textContent = `${patch.opacity}%`; $('warmthOutput').textContent = patch.warmth;
+    $('donorTime').textContent = patch.sourceLabel;
+  }
+
+  function selectRegion(id, seekToStart) {
+    state.selectedRegionId = id; state.loop = false; state.modelMode = false;
+    $('modelModeBtn').textContent = 'Build Model'; $('modelModeBtn').classList.remove('primary');
+    const region = selectedRegion();
+    if (region?.segments.length && !region.segments.some(segment => segment.id === state.selectedSegmentId)) state.selectedSegmentId = region.segments[0].id;
+    if (region && seekToStart) seek(region.start);
+    setMode('repair'); renderRegions(); renderSelectedRegion(); renderDonors(); drawTimeline(); drawViewer();
+  }
+  function markStart() {
+    if (!state.duration) return;
+    video.pause(); state.pendingStart = Number(video.currentTime.toFixed(4)); $('pendingStartText').textContent = fmt(state.pendingStart); drawTimeline();
+    toast('Start marked. Move to the end and press End Mark.');
+  }
+  function markEnd() {
+    if (!state.duration) return;
+    if (state.pendingStart === null) { toast('Set a Start Mark first.'); return; }
+    video.pause();
+    const end = Number(video.currentTime.toFixed(4));
+    if (Math.abs(end - state.pendingStart) < 1 / state.fps) { toast('The repair range needs to cover at least one frame.'); return; }
+    const region = { id: newId('region'), start: Math.min(state.pendingStart, end), end: Math.max(state.pendingStart, end), phrase: '', segments: [] };
+    state.regions.push(region); state.regions.sort((a, b) => a.start - b.start); state.pendingStart = null; $('pendingStartText').textContent = 'None'; state.selectedSegmentId = '';
+    selectRegion(region.id, false); $('phraseInput').focus(); toast('Repair region created. Type the correct phrase.');
+  }
+  function deleteRegion() {
+    if (!state.selectedRegionId) return;
+    state.regions = state.regions.filter(region => region.id !== state.selectedRegionId);
+    state.selectedRegionId = state.regions[0]?.id || ''; state.selectedSegmentId = state.regions[0]?.segments[0]?.id || ''; state.loop = false;
+    setMode('repair'); renderRegions(); renderSelectedRegion(); drawTimeline(); drawViewer(); toast('Repair region deleted.');
+  }
+  function updatePhrase(value) {
+    const region = selectedRegion(); if (!region) return;
+    region.phrase = value; rebuildSegments(region); renderRegions(); renderSelectedRegion(); renderDonors(); drawTimeline(); drawViewer();
+  }
+  function updateFps(value) {
+    state.fps = Number(value) || 30; state.regions.forEach(rebuildSegments);
+    $('frameText').textContent = Math.round((video.currentTime || 0) * state.fps); renderRegions(); renderSelectedRegion(); drawTimeline();
+  }
+
+  function normalBox(a, b) { return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(a.x - b.x), h: Math.abs(a.y - b.y) }; }
+  function point(event) {
+    const rect = viewer.getBoundingClientRect();
+    return { x: (event.clientX - rect.left) / rect.width * viewer.width, y: (event.clientY - rect.top) / rect.height * viewer.height };
+  }
+  function pointInsideVideo(pointValue) {
+    const rect = state.videoRect;
+    return { x: clamp(pointValue.x, rect.x, rect.x + rect.w), y: clamp(pointValue.y, rect.y, rect.y + rect.h) };
+  }
+  function setMode(mode) {
+    state.mode = mode; state.captureBox = null;
+    $('modeText').textContent = state.modelMode ? 'Build Model' : mode === 'capture' ? 'Capture' : mode === 'position' ? 'Position' : 'Repair';
+    if (mode === 'capture') status(state.modelMode ? 'Drag around a mouth sample to add it to this character model.' : 'Drag around a donor mouth for the selected viseme segment.');
+    if (mode === 'position') status('Drag the mouth patch into place, then adjust its transform and lighting.');
     drawViewer();
   }
-  function loadFile(file){
-    if(!file || !file.type.startsWith('video/')) { if(file) toast('Drop a video file here.'); return; }
-    if(state.url) URL.revokeObjectURL(state.url);
-    video.pause(); state.url=URL.createObjectURL(file); state.duration=0; state.markers=[]; state.selectedId=''; state.mode='preview'; state.loop=false; state.thumbs=[]; state.donorSelected=-1;
-    $('videoName').textContent=file.name; $('dropOverlay').classList.add('hidden');
-    video.src=state.url; video.load(); renderMarkers(); renderSelected(); status('Loading video…');
+  function createPatch(image, dataUrl, sourceWidth, sourceHeight, normalWidth, normalHeight, sourceLabel) {
+    return { image, dataUrl, sourceW: sourceWidth, sourceH: sourceHeight, nx: .5, ny: .52, nw: normalWidth, nh: normalHeight, scale: 100, rotation: 0, skewX: 0, skewY: 0, widthScale: 100, heightScale: 100, feather: 5, opacity: 100, brightness: 100, contrast: 100, saturation: 100, warmth: 0, visible: true, sourceLabel };
   }
-  function clearVideo(){
-    video.pause(); if(state.url) URL.revokeObjectURL(state.url); Object.assign(state,{url:'',duration:0,markers:[],selectedId:'',mode:'preview',loop:false,thumbs:[],donorSelected:-1,dragging:null,capture:null});
-    video.removeAttribute('src'); video.load(); $('videoName').textContent='No video loaded'; $('durationText').textContent='--:--.---'; $('currentTime').textContent='00:00.000'; $('totalTime').textContent='00:00.000'; $('dropOverlay').classList.remove('hidden'); $('donorStrip').innerHTML='<p class="empty">Donor frames appear after a video is loaded.</p>';
-    ['removeVideoBtn','prevFrameBtn','playBtn','nextFrameBtn','markWordBtn','markWordSideBtn','refreshDonorsBtn'].forEach(id => $(id).disabled=true);
-    renderMarkers(); renderSelected(); drawViewer(); drawTimeline(); status('Drop a video into the player to begin.');
+  function captureSelection(bounds) {
+    const rect = state.videoRect;
+    if (bounds.w < 8 || bounds.h < 8) { toast('Drag a larger mouth selection.'); return; }
+    const crop = document.createElement('canvas'); crop.width = Math.round(bounds.w); crop.height = Math.round(bounds.h);
+    crop.getContext('2d').drawImage(sourceCanvas, bounds.x, bounds.y, bounds.w, bounds.h, 0, 0, crop.width, crop.height);
+    const dataUrl = crop.toDataURL('image/png');
+    const normalWidth = bounds.w / rect.w, normalHeight = bounds.h / rect.h;
+    if (state.modelMode) {
+      const name = characterName(); state.libraries[name] ||= {}; state.libraries[name][state.modelViseme] ||= [];
+      state.libraries[name][state.modelViseme].push({ dataUrl, sourceW: crop.width, sourceH: crop.height, normalWidth, normalHeight, label: `${name} / ${visemeLabel(state.modelViseme)} / ${fmt(video.currentTime)}` });
+      saveLibraries(); renderDonors(); setMode('repair'); toast(`Saved ${visemeLabel(state.modelViseme)} sample for ${name}.`); return;
+    }
+    const segment = selectedSegment();
+    if (!segment) { toast('Select a viseme segment first.'); return; }
+    const image = new Image(); image.onload = drawViewer; image.src = dataUrl;
+    segment.patch = createPatch(image, dataUrl, crop.width, crop.height, normalWidth, normalHeight, `Video ${fmt(video.currentTime)}`);
+    segment.patch.nx = (bounds.x + bounds.w / 2 - rect.x) / rect.w; segment.patch.ny = (bounds.y + bounds.h / 2 - rect.y) / rect.h;
+    setMode('position'); renderSegments(); renderRegions(); renderPatchControls(); drawViewer(); toast('Mouth captured for selected viseme segment.');
   }
-  function rawFrame(target,width,height){
-    target.clearRect(0,0,width,height); target.fillStyle='#030407'; target.fillRect(0,0,width,height); if(!video.videoWidth) return;
-    const scale=Math.min(width/video.videoWidth,height/video.videoHeight), w=video.videoWidth*scale, h=video.videoHeight*scale;
-    target.drawImage(video,(width-w)/2,(height-h)/2,w,h);
+  function applyLibrarySample(sample) {
+    const segment = selectedSegment(); if (!segment || state.modelMode) return;
+    const image = new Image(); image.onload = drawViewer; image.src = sample.dataUrl;
+    segment.patch = createPatch(image, sample.dataUrl, sample.sourceW, sample.sourceH, sample.normalWidth, sample.normalHeight, sample.label);
+    setMode('position'); renderSegments(); renderRegions(); renderPatchControls(); drawViewer(); toast('Character-library mouth applied to this segment.');
   }
-  function feathered(p){
-    const out=document.createElement('canvas'), mask=document.createElement('canvas'); out.width=mask.width=p.w; out.height=mask.height=p.h;
-    const o=out.getContext('2d'), m=mask.getContext('2d'), f=clamp(p.feather,0,Math.min(p.w,p.h)/2); o.drawImage(p.image,0,0);
-    m.filter=f?`blur(${f}px)`:'none'; m.fillStyle='#fff'; const inset=Math.max(1,f+1); m.beginPath(); m.ellipse(p.w/2,p.h/2,Math.max(1,p.w/2-inset),Math.max(1,p.h/2-inset),0,0,Math.PI*2); m.fill(); o.globalCompositeOperation='destination-in'; o.drawImage(mask,0,0); return out;
+  function updatePatch() {
+    const patch = selectedSegment()?.patch; if (!patch?.image) return;
+    const rect = state.videoRect;
+    patch.nx = ((Number($('patchX').value) || 0) - rect.x) / rect.w; patch.ny = ((Number($('patchY').value) || 0) - rect.y) / rect.h;
+    patch.scale = Number($('patchScale').value) || 100; patch.rotation = Number($('patchRotate').value) || 0;
+    patch.skewX = Number($('patchSkewX').value) || 0; patch.skewY = Number($('patchSkewY').value) || 0;
+    patch.widthScale = Number($('patchWidth').value) || 100; patch.heightScale = Number($('patchHeight').value) || 100;
+    patch.feather = Number($('patchFeather').value) || 0; patch.opacity = Number($('patchOpacity').value) || 0;
+    patch.brightness = Number($('patchBrightness').value) || 100; patch.contrast = Number($('patchContrast').value) || 100;
+    patch.saturation = Number($('patchSaturation').value) || 100; patch.warmth = Number($('patchWarmth').value) || 0; patch.visible = $('showPatch').checked;
+    renderPatchControls(); drawViewer();
   }
-  function drawViewer(){
-    rawFrame(sourceCtx,sourceCanvas.width,sourceCanvas.height); ctx.clearRect(0,0,canvas.width,canvas.height); ctx.drawImage(sourceCanvas,0,0);
-    const m=marker();
-    if(m && m.patch && m.patch.image && m.patch.visible){ const r=range(m); if(video.currentTime>=r.start && video.currentTime<=r.end){ const p=m.patch, image=feathered(p), scale=p.scale/100; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rotation*Math.PI/180); ctx.scale(scale,scale); ctx.globalAlpha=p.opacity/100; ctx.drawImage(image,-p.w/2,-p.h/2); if(state.mode==='place'){ ctx.globalAlpha=1; ctx.strokeStyle='#ff9c19'; ctx.lineWidth=2/scale; ctx.setLineDash([8/scale,5/scale]); ctx.strokeRect(-p.w/2,-p.h/2,p.w,p.h); } ctx.restore(); } }
-    if(state.mode==='capture' && state.capture){ const b=box(state.capture.a,state.capture.b); ctx.save(); ctx.fillStyle='rgba(255,156,25,.13)'; ctx.strokeStyle='#ff9c19'; ctx.lineWidth=3; ctx.setLineDash([10,6]); ctx.fillRect(b.x,b.y,b.w,b.h); ctx.strokeRect(b.x,b.y,b.w,b.h); ctx.restore(); }
+  function removePatch() {
+    const segment = selectedSegment(); if (!segment) return;
+    segment.patch = null; setMode('repair'); renderSegments(); renderRegions(); renderPatchControls(); drawViewer(); toast('Patch removed from selected segment.');
   }
-  function resizeTimeline(){ const r=timeline.getBoundingClientRect(), d=window.devicePixelRatio || 1; timeline.width=Math.max(520,Math.round(r.width*d)); timeline.height=Math.max(90,Math.round(r.height*d)); drawTimeline(); }
-  function xFor(t){ return 30 + (timeline.width-60)*(t/state.duration); }
-  function drawTimeline(){
-    const w=timeline.width,h=timeline.height; tctx.clearRect(0,0,w,h); tctx.fillStyle='#0c0e13'; tctx.fillRect(0,0,w,h);
-    if(!state.duration){ tctx.fillStyle='#777482'; tctx.font=`${Math.max(11,h*.12)}px sans-serif`; tctx.fillText('Load a video to place word markers.',18,h/2); return; }
-    const base=h*.60; tctx.strokeStyle='rgba(158,115,243,.46)'; tctx.lineWidth=Math.max(5,h*.062); tctx.lineCap='round'; tctx.beginPath(); tctx.moveTo(30,base); tctx.lineTo(w-30,base); tctx.stroke(); tctx.lineCap='butt';
-    for(let i=0;i<=8;i++){ const t=i/8*state.duration, x=xFor(t); tctx.strokeStyle='rgba(255,255,255,.15)'; tctx.lineWidth=1; tctx.beginPath(); tctx.moveTo(x,base-h*.1); tctx.lineTo(x,base+h*.11); tctx.stroke(); tctx.fillStyle='#918c9b'; tctx.textAlign='center'; tctx.font=`${Math.max(9,h*.085)}px sans-serif`; tctx.fillText(fmt(t),x,base+h*.28); }
-    state.markers.forEach((m,i)=>{ const selected=m.id===state.selectedId, x=xFor(m.time), y=base-h*.25, r=Math.max(8,h*.084); tctx.strokeStyle=selected?'#ffe0a5':'#dfd0ff'; tctx.fillStyle=selected?'#ff9c19':'#9e73f3'; tctx.lineWidth=2; tctx.beginPath(); tctx.moveTo(x,y+r); tctx.lineTo(x,base-2); tctx.stroke(); tctx.beginPath(); tctx.arc(x,y,r,0,Math.PI*2); tctx.fill(); tctx.stroke(); tctx.fillStyle='#fff'; tctx.font=`bold ${Math.max(10,h*.086)}px sans-serif`; tctx.textBaseline='middle'; tctx.fillText(String(i+1),x,y); });
-    const cursor=xFor(video.currentTime || 0); tctx.strokeStyle='#fff'; tctx.lineWidth=2; tctx.beginPath(); tctx.moveTo(cursor,h*.08); tctx.lineTo(cursor,h*.87); tctx.stroke(); tctx.textAlign='left'; tctx.textBaseline='alphabetic';
+
+  function loadVideo(file) {
+    if (!file || !file.type.startsWith('video/')) { if (file) toast('Drop a video file here.'); return; }
+    if (state.url) URL.revokeObjectURL(state.url);
+    video.pause(); state.url = URL.createObjectURL(file); state.duration = 0; state.pendingStart = null; state.regions = []; state.selectedRegionId = ''; state.selectedSegmentId = ''; state.loop = false; state.modelMode = false; state.thumbView = 'video'; state.thumbs = []; state.selectedThumb = -1;
+    $('videoName').textContent = file.name; $('pendingStartText').textContent = 'None'; $('dropOverlay').classList.add('hidden'); $('modelModeBtn').textContent = 'Build Model'; $('modelModeBtn').classList.remove('primary');
+    video.src = state.url; video.load(); renderRegions(); renderSelectedRegion(); status('Loading video…');
   }
-  function renderMarkers(){
-    const list=$('markerList'); list.innerHTML=''; if(!state.markers.length){ list.innerHTML='<p class="empty">No marked words.</p>'; return; }
-    state.markers.forEach((m,i)=>{ const btn=document.createElement('button'); btn.type='button'; btn.className=`marker-card ${m.id===state.selectedId?'selected':''}`; btn.innerHTML=`<span class="marker-card-top"><span>PIN ${String(i+1).padStart(2,'0')}</span><span>${fmt(m.time)}</span></span><strong></strong><small>${m.patch && m.patch.image?'Mouth patch captured':'Needs donor mouth'}</small>`; btn.querySelector('strong').textContent=m.phrase || 'Enter words…'; btn.onclick=()=>selectMarker(m.id,true); list.appendChild(btn); });
+  function clearVideo() {
+    video.pause(); if (state.url) URL.revokeObjectURL(state.url);
+    Object.assign(state, { url: '', duration: 0, pendingStart: null, regions: [], selectedRegionId: '', selectedSegmentId: '', mode: 'repair', loop: false, modelMode: false, thumbView: 'video', thumbs: [], selectedThumb: -1, buildingThumbs: false, pointer: null, captureBox: null });
+    video.removeAttribute('src'); video.load(); $('videoName').textContent = 'No video loaded'; $('resolutionText').textContent = '-- × --'; $('aspectText').textContent = '--'; $('durationText').textContent = '--:--.---'; $('currentTime').textContent = '00:00.000'; $('totalTime').textContent = '00:00.000'; $('frameText').textContent = '0'; $('pendingStartText').textContent = 'None'; $('dropOverlay').classList.remove('hidden'); $('modelModeBtn').textContent = 'Build Model'; $('modelModeBtn').classList.remove('primary');
+    ['removeVideoBtn','prevFrameBtn','playBtn','nextFrameBtn','startMarkBtn','endMarkBtn','startMarkMainBtn','endMarkMainBtn','refreshDonorsBtn','modelModeBtn'].forEach(id => { $(id).disabled = true; });
+    switchThumbView('video'); renderRegions(); renderSelectedRegion(); drawViewer(); drawTimeline(); status('Drop a video into the player to begin.');
   }
-  function renderSelected(){
-    const m=marker(), has=!!m; $('selectedPinPanel').classList.toggle('disabled',!has); $('noPinMessage').hidden=has; $('pinFields').hidden=!has; $('deleteMarkerBtn').disabled=!has;
-    if(!has){ $('selectedPhrase').textContent='No marker selected'; setMode('preview'); return; }
-    $('pinTime').textContent=fmt(m.time); $('phraseInput').value=m.phrase; $('spanInput').value=m.span; $('spanOutput').textContent=`${m.span.toFixed(2)} s`; $('selectedPhrase').textContent=m.phrase || 'Enter words for selected pin'; $('loopBtn').textContent=`Loop This Pin: ${state.loop?'On':'Off'}`;
-    const hasPatch=!!(m.patch && m.patch.image); $('positionBtn').disabled=!hasPatch; $('removePatchBtn').disabled=!hasPatch; $('patchControls').hidden=!hasPatch; $('patchMessage').textContent=hasPatch?'Patch is active. Adjust it below or drag it over the mouth.':'Choose a donor frame on the right, then drag a box around its mouth.';
-    if(hasPatch){ const p=m.patch; $('patchX').value=Math.round(p.x); $('patchY').value=Math.round(p.y); $('patchScale').value=p.scale; $('patchRotate').value=p.rotation; $('patchFeather').value=p.feather; $('patchOpacity').value=p.opacity; $('showPatch').checked=p.visible; $('scaleOutput').textContent=`${p.scale}%`; $('rotateOutput').textContent=`${p.rotation}°`; $('featherOutput').textContent=`${p.feather} px`; $('opacityOutput').textContent=`${p.opacity}%`; $('donorTime').textContent=fmt(p.donorTime); }
+  function seek(time) { if (state.duration) video.currentTime = clamp(time, 0, Math.max(0, state.duration - .001)); }
+  function seekAsync(time) {
+    return new Promise(resolve => { const target = clamp(time, 0, Math.max(0, state.duration - .001)); if (Math.abs(video.currentTime - target) < .001) { resolve(); return; } video.addEventListener('seeked', resolve, { once: true }); video.currentTime = target; });
   }
-  function selectMarker(id,seek){ state.selectedId=id; state.loop=false; setMode('preview'); const m=marker(); if(m && seek) video.currentTime=m.time; renderMarkers(); renderSelected(); drawTimeline(); drawViewer(); }
-  function addMarker(){ if(!state.duration) return; video.pause(); const m={id:`pin_${Date.now()}`,time:Number(video.currentTime.toFixed(4)),phrase:'',span:.8,patch:null}; state.markers.push(m); state.markers.sort((a,b)=>a.time-b.time); selectMarker(m.id,false); $('phraseInput').focus(); toast('Pin added. Type the word or short phrase.'); }
-  function deleteMarker(){ if(!state.selectedId) return; state.markers=state.markers.filter(m=>m.id!==state.selectedId); state.selectedId=state.markers[0]?.id || ''; state.loop=false; renderMarkers(); renderSelected(); drawTimeline(); drawViewer(); toast('Pin removed.'); }
-  function seek(time){ video.currentTime=clamp(time,0,Math.max(0,state.duration-.001)); }
-  function seekAsync(time){ return new Promise(resolve=>{ const t=clamp(time,0,Math.max(0,state.duration-.001)); if(Math.abs(video.currentTime-t)<.001){ resolve(); return; } video.addEventListener('seeked',resolve,{once:true}); video.currentTime=t; }); }
-  async function buildDonors(){
-    if(!state.duration || state.building) return; state.building=true; video.pause(); const saved=video.currentTime, count=clamp(Math.ceil(state.duration/1.25),9,18), c=document.createElement('canvas'); c.width=260;c.height=146; const cc=c.getContext('2d'); $('donorStrip').innerHTML='<p class="empty">Finding donor frames…</p>'; state.thumbs=[];
-    for(let i=0;i<count;i++){ const t=i/(count-1)*Math.max(0,state.duration-.01); await seekAsync(t); rawFrame(cc,c.width,c.height); state.thumbs.push({time:t,url:c.toDataURL('image/jpeg',.82)}); }
-    await seekAsync(saved); state.building=false; renderDonors(); drawViewer(); status('Pause on a broken word and add a marker pin.');
+  async function buildDonors() {
+    if (!state.duration || state.buildingThumbs) return;
+    state.buildingThumbs = true; video.pause(); const savedTime = video.currentTime; const count = clamp(Math.ceil(state.duration / 1.25), 10, 20);
+    $('donorStrip').innerHTML = '<p class="empty">Finding donor frames…</p>'; state.thumbs = [];
+    for (let index = 0; index < count; index += 1) {
+      const time = index / (count - 1) * Math.max(0, state.duration - .01);
+      await seekAsync(time); drawRawFrame(thumbCtx, thumbCanvas.width, thumbCanvas.height, false);
+      state.thumbs.push({ time, dataUrl: thumbCanvas.toDataURL('image/jpeg', .82) });
+    }
+    await seekAsync(savedTime); state.buildingThumbs = false; renderDonors(); drawViewer(); status('Create a repair region with Start Mark and End Mark.');
   }
-  function renderDonors(){ const strip=$('donorStrip'); strip.innerHTML=''; if(!state.thumbs.length){strip.innerHTML='<p class="empty">Donor frames appear after a video is loaded.</p>';return;} state.thumbs.forEach((thumb,i)=>{const b=document.createElement('button'); b.type='button'; b.className=`donor-thumb ${i===state.donorSelected?'selected':''}`; b.innerHTML=`<img src="${thumb.url}" alt=""><span>${fmt(thumb.time)}</span>`; b.onclick=()=>{state.donorSelected=i;video.pause();seek(thumb.time);setMode('preview');renderDonors();status('Donor frame selected. Now click Capture Donor Mouth.');}; strip.appendChild(b);}); }
-  function capturePatch(b){ const m=marker(); if(!m || b.w<10 || b.h<10){toast('Drag a larger mouth area.');return;} const c=document.createElement('canvas'); c.width=Math.round(b.w); c.height=Math.round(b.h); c.getContext('2d').drawImage(sourceCanvas,b.x,b.y,b.w,b.h,0,0,c.width,c.height); const img=new Image(); img.onload=drawViewer; img.src=c.toDataURL('image/png'); m.patch={image:img,w:c.width,h:c.height,x:b.x+b.w/2,y:b.y+b.h/2,scale:100,rotation:0,feather:5,opacity:100,visible:true,donorTime:Number(video.currentTime.toFixed(4))}; video.currentTime=m.time; setMode('place'); renderMarkers(); renderSelected(); toast('Mouth captured. Drag it into place.'); }
-  function updatePatch(){ const m=marker(); if(!(m && m.patch && m.patch.image))return; const p=m.patch; p.x=Number($('patchX').value)||0;p.y=Number($('patchY').value)||0;p.scale=Number($('patchScale').value);p.rotation=Number($('patchRotate').value);p.feather=Number($('patchFeather').value);p.opacity=Number($('patchOpacity').value);p.visible=$('showPatch').checked; renderSelected(); drawViewer(); }
-  function clearPatch(){ const m=marker(); if(!m)return; m.patch=null; setMode('preview'); renderMarkers(); renderSelected(); drawViewer(); toast('Mouth patch removed.'); }
-  function updatePlayback(){ $('currentTime').textContent=fmt(video.currentTime); const m=marker(); if(state.loop && m && video.currentTime>=range(m).end) video.currentTime=range(m).start; drawViewer(); drawTimeline(); }
-  function animate(){ if(video.paused || video.ended){state.raf=0;return;} updatePlayback(); state.raf=requestAnimationFrame(animate); }
-  $('fileInput').onchange=e=>{loadFile(e.target.files?.[0]);e.target.value='';}; $('dropOverlay').onclick=()=>$('fileInput').click(); $('removeVideoBtn').onclick=clearVideo;
-  $('dropZone').ondragover=e=>{e.preventDefault();$('dropZone').classList.add('drag-over');}; $('dropZone').ondragleave=()=>$('dropZone').classList.remove('drag-over'); $('dropZone').ondrop=e=>{e.preventDefault();$('dropZone').classList.remove('drag-over');loadFile(e.dataTransfer.files?.[0]);};
-  video.onloadedmetadata=()=>{state.duration=video.duration||0;$('durationText').textContent=fmt(state.duration);$('totalTime').textContent=fmt(state.duration);['removeVideoBtn','prevFrameBtn','playBtn','nextFrameBtn','markWordBtn','markWordSideBtn','refreshDonorsBtn'].forEach(id=>$(id).disabled=false);resizeTimeline();drawViewer();status('Pause on a broken word and add a marker pin.');buildDonors();}; video.onseeked=updatePlayback; video.onplay=()=>{$('playBtn').textContent='❚❚';if(!state.raf)state.raf=requestAnimationFrame(animate);}; video.onpause=()=>{$('playBtn').textContent='▶';updatePlayback();};
-  $('playBtn').onclick=()=>video.paused?video.play():video.pause(); $('prevFrameBtn').onclick=()=>{video.pause();seek(video.currentTime-1/state.fps);}; $('nextFrameBtn').onclick=()=>{video.pause();seek(video.currentTime+1/state.fps);}; $('markWordBtn').onclick=addMarker; $('markWordSideBtn').onclick=addMarker; $('deleteMarkerBtn').onclick=deleteMarker;
-  $('phraseInput').oninput=e=>{const m=marker();if(!m)return;m.phrase=e.target.value;$('selectedPhrase').textContent=m.phrase||'Enter words for selected pin';renderMarkers();}; $('spanInput').oninput=e=>{const m=marker();if(!m)return;m.span=Number(e.target.value);$('spanOutput').textContent=`${m.span.toFixed(2)} s`;drawViewer();};
-  $('loopBtn').onclick=()=>{const m=marker();if(!m)return;state.loop=!state.loop;$('loopBtn').textContent=`Loop This Pin: ${state.loop?'On':'Off'}`;if(state.loop){seek(range(m).start);video.play();}}; $('captureBtn').onclick=()=>{if(marker()){video.pause();setMode('capture');}}; $('positionBtn').onclick=()=>{video.pause();setMode('place');}; $('removePatchBtn').onclick=clearPatch; $('refreshDonorsBtn').onclick=buildDonors;
-  ['patchX','patchY','patchScale','patchRotate','patchFeather','patchOpacity','showPatch'].forEach(id=>$(id).oninput=updatePatch);
-  canvas.onpointerdown=e=>{const m=marker();if(!m)return;const p=point(e);if(state.mode==='capture'){state.dragging='capture';state.capture={a:p,b:p};canvas.setPointerCapture(e.pointerId);}else if(state.mode==='place'&&m.patch&&m.patch.image){state.dragging={type:'place',dx:p.x-m.patch.x,dy:p.y-m.patch.y};canvas.setPointerCapture(e.pointerId);}}; canvas.onpointermove=e=>{if(!state.dragging)return;const p=point(e),m=marker();if(state.dragging==='capture')state.capture.b=p;else if(m&&m.patch){m.patch.x=p.x-state.dragging.dx;m.patch.y=p.y-state.dragging.dy;renderSelected();}drawViewer();}; canvas.onpointerup=e=>{if(!state.dragging)return;if(state.dragging==='capture'&&state.capture)capturePatch(box(state.capture.a,state.capture.b));state.dragging=null;state.capture=null;try{canvas.releasePointerCapture(e.pointerId);}catch(_){}drawViewer();};
-  timeline.onclick=e=>{if(!state.duration)return;const r=timeline.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*timeline.width;let hit=null,dist=Infinity;state.markers.forEach(m=>{const d=Math.abs(xFor(m.time)-x);if(d<dist){dist=d;hit=m;}});if(hit&&dist<=18){selectMarker(hit.id,true);return;}video.pause();seek(clamp((x-30)/(timeline.width-60),0,1)*state.duration);}; window.onresize=resizeTimeline;
-  clearVideo(); resizeTimeline();
+  function renderDonors() {
+    const strip = $('donorStrip'); strip.innerHTML = '';
+    if (state.thumbView === 'library') {
+      const key = state.modelMode ? state.modelViseme : selectedSegment()?.viseme || state.modelViseme;
+      const samples = state.libraries[characterName()]?.[key] || [];
+      if (!samples.length) { strip.innerHTML = `<p class="empty">No saved ${characterName()} / ${visemeLabel(key)} samples yet.</p>`; return; }
+      samples.forEach(sample => {
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'library-thumb';
+        button.innerHTML = `<img src="${sample.dataUrl}" alt=""><span>${visemeLabel(key)}</span>`;
+        if (!state.modelMode) button.onclick = () => applyLibrarySample(sample);
+        strip.appendChild(button);
+      });
+      return;
+    }
+    if (!state.thumbs.length) { strip.innerHTML = '<p class="empty">Donor frames appear after a video is loaded.</p>'; return; }
+    state.thumbs.forEach((thumb, index) => {
+      const button = document.createElement('button'); button.type = 'button'; button.className = `donor-thumb ${index === state.selectedThumb ? 'selected' : ''}`;
+      button.innerHTML = `<img src="${thumb.dataUrl}" alt=""><span>${fmt(thumb.time)}</span>`;
+      button.onclick = () => { state.selectedThumb = index; video.pause(); seek(thumb.time); renderDonors(); status(state.modelMode ? 'Choose a viseme slot, then capture this mouth sample.' : 'Donor frame selected. Click Capture Mouth.'); };
+      strip.appendChild(button);
+    });
+  }
+  function switchThumbView(view) {
+    state.thumbView = view; $('thisVideoTab').classList.toggle('active', view === 'video'); $('libraryTab').classList.toggle('active', view === 'library'); renderDonors();
+  }
+  function toggleModelMode() {
+    if (!state.duration) return;
+    state.modelMode = !state.modelMode; state.loop = false; setMode('repair');
+    $('modelModeBtn').textContent = state.modelMode ? 'Back to Repair' : 'Build Model'; $('modelModeBtn').classList.toggle('primary', state.modelMode);
+    $('modelStatus').textContent = state.modelMode ? `Building samples for ${characterName()}. Choose a mouth shape on the right.` : 'Capture reusable mouth samples by character and viseme as you work.';
+    switchThumbView(state.modelMode ? 'video' : state.thumbView); renderSelectedRegion(); renderGuideChoices(); renderPatchControls();
+  }
+  function updatePlayback() {
+    $('currentTime').textContent = fmt(video.currentTime); $('frameText').textContent = String(Math.round(video.currentTime * state.fps));
+    const region = selectedRegion(); if (state.loop && region && video.currentTime >= region.end) seek(region.start);
+    drawViewer(); drawTimeline();
+  }
+  function animate() { if (video.paused || video.ended) { state.raf = 0; return; } updatePlayback(); state.raf = requestAnimationFrame(animate); }
+
+  $('fileInput').onchange = event => { loadVideo(event.target.files?.[0]); event.target.value = ''; };
+  $('dropOverlay').onclick = () => $('fileInput').click(); $('removeVideoBtn').onclick = clearVideo; $('workingFps').onchange = event => updateFps(event.target.value); $('modelModeBtn').onclick = toggleModelMode;
+  $('characterName').oninput = () => { renderDonors(); renderPatchControls(); };
+  dropZone.ondragover = event => { event.preventDefault(); dropZone.classList.add('drag-over'); };
+  dropZone.ondragleave = () => dropZone.classList.remove('drag-over');
+  dropZone.ondrop = event => { event.preventDefault(); dropZone.classList.remove('drag-over'); loadVideo(event.dataTransfer.files?.[0]); };
+  video.onloadedmetadata = () => {
+    state.duration = video.duration || 0; $('resolutionText').textContent = `${video.videoWidth} × ${video.videoHeight}`; $('aspectText').textContent = aspectLabel(video.videoWidth, video.videoHeight); $('durationText').textContent = fmt(state.duration); $('totalTime').textContent = fmt(state.duration);
+    ['removeVideoBtn','prevFrameBtn','playBtn','nextFrameBtn','startMarkBtn','endMarkBtn','startMarkMainBtn','endMarkMainBtn','refreshDonorsBtn','modelModeBtn'].forEach(id => { $(id).disabled = false; });
+    resizeCanvases(); status('Create a repair region with Start Mark and End Mark.'); buildDonors();
+  };
+  video.onseeked = updatePlayback;
+  video.onplay = () => { $('playBtn').textContent = '❚❚'; if (!state.raf) state.raf = requestAnimationFrame(animate); };
+  video.onpause = () => { $('playBtn').textContent = '▶'; updatePlayback(); };
+  $('playBtn').onclick = () => video.paused ? video.play() : video.pause();
+  $('prevFrameBtn').onclick = () => { video.pause(); seek(video.currentTime - 1 / state.fps); };
+  $('nextFrameBtn').onclick = () => { video.pause(); seek(video.currentTime + 1 / state.fps); };
+  $('startMarkBtn').onclick = markStart; $('startMarkMainBtn').onclick = markStart; $('endMarkBtn').onclick = markEnd; $('endMarkMainBtn').onclick = markEnd; $('deleteRegionBtn').onclick = deleteRegion;
+  $('phraseInput').oninput = event => updatePhrase(event.target.value);
+  $('loopBtn').onclick = () => { const region = selectedRegion(); if (!region) return; state.loop = !state.loop; $('loopBtn').textContent = `Loop: ${state.loop ? 'On' : 'Off'}`; if (state.loop) { seek(region.start); video.play(); } };
+  $('refreshDonorsBtn').onclick = buildDonors; $('thisVideoTab').onclick = () => switchThumbView('video'); $('libraryTab').onclick = () => switchThumbView('library');
+  $('captureBtn').onclick = () => { video.pause(); setMode('capture'); }; $('positionBtn').onclick = () => { video.pause(); setMode('position'); }; $('removePatchBtn').onclick = removePatch;
+  ['patchX','patchY','patchScale','patchRotate','patchSkewX','patchSkewY','patchWidth','patchHeight','patchFeather','patchOpacity','patchBrightness','patchContrast','patchSaturation','patchWarmth','showPatch'].forEach(id => { $(id).oninput = updatePatch; });
+  viewer.onpointerdown = event => {
+    const p = pointInsideVideo(point(event)); const segment = selectedSegment();
+    if (state.mode === 'capture') { state.pointer = { type: 'capture' }; state.captureBox = { a: p, b: p }; viewer.setPointerCapture(event.pointerId); }
+    if (state.mode === 'position' && segment?.patch?.image) { const pixels = patchPixels(segment.patch); state.pointer = { type: 'position', dx: p.x - pixels.x, dy: p.y - pixels.y }; viewer.setPointerCapture(event.pointerId); }
+  };
+  viewer.onpointermove = event => {
+    if (!state.pointer) return;
+    const p = pointInsideVideo(point(event)); const patch = selectedSegment()?.patch;
+    if (state.pointer.type === 'capture') state.captureBox.b = p;
+    if (state.pointer.type === 'position' && patch?.image) { const rect = state.videoRect; patch.nx = (p.x - state.pointer.dx - rect.x) / rect.w; patch.ny = (p.y - state.pointer.dy - rect.y) / rect.h; renderPatchControls(); }
+    drawViewer();
+  };
+  viewer.onpointerup = event => {
+    if (!state.pointer) return;
+    if (state.pointer.type === 'capture' && state.captureBox) captureSelection(normalBox(state.captureBox.a, state.captureBox.b));
+    state.pointer = null; state.captureBox = null; try { viewer.releasePointerCapture(event.pointerId); } catch (_) { /* none */ } drawViewer();
+  };
+  timeline.onclick = event => {
+    if (!state.duration) return;
+    const rect = timeline.getBoundingClientRect(); const x = (event.clientX - rect.left) / rect.width * timeline.width;
+    const hit = state.regions.find(region => x >= xFor(region.start) - 10 && x <= xFor(region.end) + 10);
+    if (hit) { selectRegion(hit.id, false); return; }
+    video.pause(); seek(clamp((x - 32) / (timeline.width - 64), 0, 1) * state.duration);
+  };
+  window.onresize = () => { resizeCanvases(); renderPatchControls(); };
+
+  renderGuideChoices(); clearVideo(); resizeCanvases();
 })();
