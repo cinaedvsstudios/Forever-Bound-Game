@@ -1,4 +1,4 @@
-import { normalizeControls } from './sound-generator-controls.js';
+import { normalizeControls, pitchCurveForPreset } from './sound-generator-controls.js';
 
 const clamp = (value, min = 0, max = 100) => Math.max(min, Math.min(max, Math.round(Number(value))));
 const sample = (items) => items[Math.floor(Math.random() * items.length)];
@@ -114,6 +114,7 @@ export function constrainedVariationForSoundType(soundTypeOrId) {
   if (!soundType) return copyPresetControls(firstExamplePreset());
   const base = soundType.controls;
   const profile = soundType.variation || {};
+  const pitchChange = sample(profile.pitchChange || [base.pitchChange]);
   return normalizeControls({
     ...base,
     pitch: vary(base.pitch, profile.pitch ?? 8),
@@ -125,7 +126,8 @@ export function constrainedVariationForSoundType(soundTypeOrId) {
     wobble: vary(base.wobble, profile.wobble ?? 12),
     impact: vary(base.impact, profile.impact ?? 10),
     pace: vary(base.pace, profile.pace ?? 8),
-    pitchChange: sample(profile.pitchChange || [base.pitchChange]),
+    pitchChange,
+    pitchCurve: pitchCurveForPreset(pitchChange),
     pattern: sample(profile.pattern || [base.pattern]),
     loop: Object.hasOwn(profile, 'loop') ? Boolean(profile.loop) : base.loop,
     name: soundType.label,
