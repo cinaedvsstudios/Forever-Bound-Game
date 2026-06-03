@@ -98,10 +98,20 @@ assert(await page.locator('.sound-top-actions').count() === 1, 'Synth editor mus
 await page.locator('.sound-advanced summary').click();
 await page.locator('[data-frequency-graph]').waitFor();
 assert(await page.locator('[data-curve-points] .curve-point').count() === 5, 'Frequency editor must expose five draggable curve points.');
+assert(await page.locator('[data-curve-playhead]').count() === 1, 'Frequency editor must include a playback playhead.');
 const steadyCurve = await page.locator('[data-curve-line]').getAttribute('points');
 await page.locator('[data-pitch="rises"]').click();
 const risingCurve = await page.locator('[data-curve-line]').getAttribute('points');
 assert(risingCurve !== steadyCurve, 'A frequency movement preset must visibly change the editable curve.');
+const movablePoint = page.locator('[data-curve-index="2"]');
+const movablePointBox = await movablePoint.boundingBox();
+assert(Boolean(movablePointBox), 'A draggable internal frequency point must be visible.');
+await page.mouse.move(movablePointBox.x + movablePointBox.width / 2, movablePointBox.y + movablePointBox.height / 2);
+await page.mouse.down();
+await page.mouse.move(movablePointBox.x + movablePointBox.width / 2 + 26, movablePointBox.y + movablePointBox.height / 2 + 25, { steps: 4 });
+await page.mouse.up();
+const customCurve = await page.locator('[data-curve-line]').getAttribute('points');
+assert(customCurve !== risingCurve, 'Dragging a frequency point must create a custom curve.');
 const durationBefore = await page.locator('[data-play-time]').textContent();
 await page.locator('[data-field="length"]').evaluate((input) => {
   input.value = '94';
