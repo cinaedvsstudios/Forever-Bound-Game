@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Artifex FX Debug — Smoke Engine Prototype V0.2</title>
+  <title>Artifex FX Debug — Smoke Engine Prototype V0.3</title>
   <link rel="stylesheet" href="../atmosphere-volume/styles.css?v=0.4" />
 </head>
 <body>
@@ -12,7 +12,7 @@
       <div class="brand-mark"><span>ᚠ</span></div>
       <div class="brand-copy">
         <h1>ARTIFEX</h1>
-        <p>FX Debug Laboratory <span class="version-pill">SMOKE-ENGINE-0.2</span></p>
+        <p>FX Debug Laboratory <span class="version-pill">SMOKE-ENGINE-0.3</span></p>
       </div>
       <div class="divider" aria-hidden="true"></div>
       <div class="prototype-label">Standalone smoke test · separate from fog engine</div>
@@ -36,8 +36,8 @@
         </label>
         <label>Smoke Mode
           <select id="mode" title="Choose a smoke behaviour">
-            <option value="rising">Rising Smoke</option>
-            <option value="wispy" selected>Wispy / Incense Smoke</option>
+            <option value="rising" selected>Rising Smoke</option>
+            <option value="wispy">Wispy / Incense Smoke</option>
             <option value="vignette">Smoke Vignette</option>
             <option value="fullscreen">Full Screen Smoke</option>
             <option value="emission">Emission Point / Chimney Fire</option>
@@ -58,54 +58,56 @@
             <option value="front" selected>In Front of Figures</option>
           </select>
         </label>
+        <label class="toggle"><span>Double Layer Preview</span><input id="double-layer" type="checkbox" checked title="Preview two independently randomized copies of the same effect together" /></label>
       </section>
 
       <section class="card">
-        <header><h2>Smoke Body</h2></header>
+        <header><h2>Mist / Smoke Body</h2></header>
+        <p class="hint">These controls affect only the soft smoke body underneath. They no longer change the ribbon wisps.</p>
         <label class="colour-row">Smoke Tint
           <input id="colour" type="color" value="#dce2e7" />
           <input id="colour-hex" type="text" value="#dce2e7" maxlength="7" spellcheck="false" />
         </label>
-        <label>Opacity <output id="opacity-out">0.52</output>
-          <input id="opacity" type="range" min="0" max="1" step="0.01" value="0.52" />
+        <label>Mist Opacity <output id="mist-opacity-out">0.36</output>
+          <input id="mist-opacity" type="range" min="0" max="1" step="0.01" value="0.36" />
         </label>
-        <label>Puff Density <output id="density-out">0.40</output>
-          <input id="density" type="range" min="0" max="1" step="0.01" value="0.40" />
+        <label>Mist Density <output id="density-out">0.86</output>
+          <input id="density" type="range" min="0" max="1" step="0.01" value="0.86" />
         </label>
-        <label>Puff Size <output id="puff-size-out">0.78</output>
-          <input id="puff-size" type="range" min="0.25" max="2" step="0.01" value="0.78" />
+        <label>Mist Size <output id="puff-size-out">1.73</output>
+          <input id="puff-size" type="range" min="0.25" max="2" step="0.01" value="1.73" />
         </label>
-        <label>Puff Definition <output id="definition-out">0.55</output>
-          <input id="definition" type="range" min="0" max="1" step="0.01" value="0.55" title="Higher creates brighter internal folds" />
+        <label>Mist Definition <output id="definition-out">0.82</output>
+          <input id="definition" type="range" min="0" max="1" step="0.01" value="0.82" title="Higher creates brighter internal folds in the soft smoke body" />
         </label>
       </section>
 
       <section class="card">
         <header><h2>Ribbon Wisps</h2></header>
         <p class="hint">Wisps form as smooth continuous curves, grow, deform and fade away before restarting with a different shape.</p>
-        <label>Wisp Amount <output id="wisp-count-out">7</output>
-          <input id="wisp-count" type="range" min="0" max="14" step="1" value="7" />
+        <label>Wisp Amount <output id="wisp-count-out">13</output>
+          <input id="wisp-count" type="range" min="0" max="14" step="1" value="13" />
         </label>
-        <label>Wisp Brightness <output id="wisp-brightness-out">0.72</output>
-          <input id="wisp-brightness" type="range" min="0" max="1.5" step="0.01" value="0.72" />
+        <label>Wisp Brightness <output id="wisp-brightness-out">0.09</output>
+          <input id="wisp-brightness" type="range" min="0" max="1.5" step="0.01" value="0.09" />
         </label>
-        <label>Ribbon Length <output id="wisp-length-out">0.67</output>
-          <input id="wisp-length" type="range" min="0.15" max="1" step="0.01" value="0.67" />
+        <label>Ribbon Length <output id="wisp-length-out">0.95</output>
+          <input id="wisp-length" type="range" min="0.15" max="1" step="0.01" value="0.95" />
         </label>
-        <label>Ribbon Width <output id="wisp-width-out">0.44</output>
-          <input id="wisp-width" type="range" min="0.05" max="1" step="0.01" value="0.44" />
+        <label>Ribbon Width <output id="wisp-width-out">0.42</output>
+          <input id="wisp-width" type="range" min="0.05" max="1" step="0.01" value="0.42" />
         </label>
-        <label>End Fade <output id="tail-fade-out">0.74</output>
-          <input id="tail-fade" type="range" min="0.05" max="1" step="0.01" value="0.74" title="Softens the visible beginning and end of every smoke ribbon" />
+        <label>End Fade <output id="tail-fade-out">0.98</output>
+          <input id="tail-fade" type="range" min="0.05" max="1" step="0.01" value="0.98" title="Softens the visible beginning and end of every smoke ribbon" />
         </label>
-        <label>Curl <output id="curl-out">0.69</output>
-          <input id="curl" type="range" min="0" max="1" step="0.01" value="0.69" />
+        <label>Curl <output id="curl-out">0.94</output>
+          <input id="curl" type="range" min="0" max="1" step="0.01" value="0.94" />
         </label>
-        <label>Rotation / Fold <output id="rotation-out">0.61</output>
-          <input id="rotation" type="range" min="0" max="1" step="0.01" value="0.61" title="Moves and turns the ribbon shape while it exists" />
+        <label>Rotation / Fold <output id="rotation-out">0.91</output>
+          <input id="rotation" type="range" min="0" max="1" step="0.01" value="0.91" title="Moves and turns the ribbon shape while it exists" />
         </label>
-        <label>Form Duration <output id="duration-out">5.20s</output>
-          <input id="duration" type="range" min="1.5" max="12" step="0.1" value="5.2" title="Time before each wisp dissolves and a new one forms" />
+        <label>Form Duration <output id="duration-out">8.60s</output>
+          <input id="duration" type="range" min="1.5" max="12" step="0.1" value="8.6" title="Time before each wisp dissolves and a new one forms" />
         </label>
       </section>
 
@@ -154,7 +156,7 @@
 
       <section class="card">
         <header><h2>Performance / Test</h2></header>
-        <p class="hint">The smoke is rendered to a transparent FX buffer, then composited over the sample scene. The FPS readout helps identify whether a mode is too heavy.</p>
+        <p class="hint">Double Layer Preview draws the same configured effect twice with different randomized forms and phase offsets, so it approximates stacking two saved smoke effects in a scene.</p>
         <button id="regenerate" class="action-button" type="button">Regenerate Smoke Forms</button>
       </section>
     </aside>
@@ -162,7 +164,7 @@
     <section class="workspace-column">
       <section class="workspace" aria-label="Smoke engine preview">
         <canvas id="preview" width="1280" height="720"></canvas>
-        <div class="stage-note"><strong>SMOKE ENGINE</strong><span id="stage-description">wispy / incense ribbons · separate from environmental fog</span><span id="fps">FPS: --</span></div>
+        <div class="stage-note"><strong>SMOKE ENGINE</strong><span id="stage-description">rising smoke body · subtle smooth internal ribbons</span><span id="fps">FPS: --</span></div>
       </section>
       <section class="result-panel">
         <header>
@@ -174,6 +176,6 @@
     </section>
   </main>
   <div id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./smoke-engine.js?v=0.2"></script>
+  <script type="module" src="./smoke-engine.js?v=0.3"></script>
 </body>
 </html>
