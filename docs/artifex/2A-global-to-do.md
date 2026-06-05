@@ -20,14 +20,14 @@ Rules for migrated tasks:
 
 | Area | Current controlled position | Protection rule |
 |---|---|---|
-| Documentation control | `0A`, `1A` and `2A` were published through merged PR #47. This pass adds extracted specifications `3A` through `8A`. | Do not create competing active indexes, task lists or current-state documents. |
+| Documentation control | `0A`, `1A` and `2A` were published through merged PR #47. This pass adds extracted specifications `3A` through `9A`. | Do not create competing active indexes, task lists or current-state documents. |
 | Hub / Artifex Portal | `artifex/index.html` / **Artifex Hub V1.1.4**; extracted into `3A`. | Do not treat the older radial/wedge plan as current authority. |
 | Creation Guide | `artifex/apps/creation-guide/index.html` / **V1.1.12**; extracted into `4A`. | Connected-folder starter creation and Initial Asset Intake Setup already exist. |
 | Project Editor | `artifex/apps/project-editor/index.html` / **v0.1.32 CONTRACT**; extracted into `5A`. | Imported-index browser, node linking, Stitcher forms and Health/Build Prep presentation already exist. |
 | Scene Editor | Accepted `artifex/apps/scene-editor/index.html` / **v0.37-control-state-inspector-retention**; extracted into `6A`. | Do not revive completed v0.35–v0.37 stabilisation work. |
 | Quest Builder | `artifex/apps/quest-builder/index.html` / **V1.2.12**; extracted into `7A`. | Do not list implemented connection/grid/routing/export foundations as future work. |
-| Archetype Object Creator | `artifex/apps/archetype-object-creator/index.html` / **V1.36**; extracted into `8A`. | V1.36 is the current implementation, but its project-save/finalisation lifecycle still requires disposable-project functional validation before feature development. |
-| Effect Editor | Accepted route is `artifex/apps/effect-editor/index2.html` / **INDEX2-CLEAN-0.2.6**. | Do not restore old emergency routes or overwrite the accepted Index2 baseline. |
+| Archetype Object Creator | `artifex/apps/archetype-object-creator/index.html` / **V1.36**; extracted into `8A`. | V1.36 is current, but its project-save/finalisation lifecycle still needs disposable-project functional validation before feature development. |
+| Effect Editor | Accepted `artifex/apps/effect-editor/index2.html` / **INDEX2-CLEAN-0.2.6**; extracted into `9A`. Rotation Direction, Orbital Force, ALL CAPS, readable Gravity/Boost, Brush / Shape Library and emitter-width brace guides are already present. | Do not restore the old emergency route or list delivered Index2 parity/width-guide work as unfinished. |
 | Puzzle Creator | Merged **V1.35**: Labyrinth Maze is working; surfaced additional modules are planning pages/placeholders. | Audit late; do not call placeholders completed engines. |
 | Sound Generator / Sound Library | Open PR #46 modifies this area. | Audit last; copied tasks remain provisional until accepted/merged. |
 
@@ -41,7 +41,7 @@ Priority: highest
 Status: in progress
 
 - Maintain `1A-project-file-contracts.md` as the single universal contract, `2A-global-to-do.md` as the single human-readable backlog and `0A-index-of-files.md` as the controlled document map.
-- Continue module extraction in order, with **Effect Editor** next after the completed `8A` Object Creator extraction.
+- Continue module extraction in order, with **Asset Library** next after the completed `9A` Effect Editor extraction.
 - Extract remaining valid rules/tasks from old READMEs, audits, handovers, status files and app-specific todos; archive only after transfer and dependency checking.
 - Check whether `artifex/shared/todo-guide/all-apps-todos.json` or project-level todo files are consumed by code before changing their role; runtime-required machine task data must not remain a competing human backlog.
 - Reconcile or close older documentation PRs only after capturing unique valid material.
@@ -192,25 +192,30 @@ Use a disposable Blank Starter Project folder only:
 
 # Effect Editor
 
-Next documentation extraction.  
-Protected accepted baseline: `artifex/apps/effect-editor/index2.html` / **INDEX2-CLEAN-0.2.6**.
+Specification: `docs/artifex/9A-effect-editor.md`.  
+Verified implemented already in accepted `artifex/apps/effect-editor/index2.html` / **INDEX2-CLEAN-0.2.6**: clean modular Index2 route; current local composition import/export/save; Quick Edit Helpers; appearance ramp and Shape / Brush / custom-image editing; Brush / Shape Library; Rotation Direction / Degree Range mapping; readable Gravity/Boost and Orbital Force; text controls with one ALL CAPS action; panel/collapse/layout memory; preview/layer/diagnostic controls; emitter-direction arrow and emitter-width brace guide.
 
-- Extract the single Effect Editor specification from current implementation and relevant status/plan documents while protecting the accepted Index2 route.
-- Complete remaining Display panel/view-control QA without reviving repaired parity tasks.
-- Restore My Settings/favourite pinned controls as Index2-owned behaviour.
-- Add Effect Library browsing and real connected-project save/status for effect archetypes.
-- Add required visual guides and refine runtime-facing gravity/speed control scaling.
-- Implement remaining real FX engines and text-effect runtime gaps only after ownership/baseline confirmation.
-- Finish real brush/overlay/icon loaders and later Asset Library connection where appropriate.
-- Add optional registered sound cues only after Sound foundation and accepted FX schema owner are confirmed. Status: **provisional from PR #46**.
+- Implement canonical connected-project save/status/index workflow for Effect Editor-owned `archetypes/effect-index.json` and `archetypes/effects/archeffect_<slug>.json`, including deliberate compatible treatment of current local `fx_` composition IDs.
+- Add a project-backed **Effect Library** for saved FX Archetype thumbnails/previews and stable selection; do not confuse this with the already-implemented Brush / Shape Library.
+- Replace session/repository-only texture, overlay, icon and thumbnail dependencies with stable final registered `asset_` references where required by saved project effects.
+- Add the still-missing visible **Degree Range cone / spread guide**; do not re-list the already-implemented emitter-width brace marks as unfinished.
+- Decide whether to integrate the existing but currently inactive `v327-my-settings.js` pinned-controls panel into the accepted Index2 owner chain, including any retained Add Modifier requirement, through a scoped implementation pass.
+- Expose visible text-effect **Once / Loop / Continuous** authoring controls and validate text performance/quality separately; ALL CAPS is already implemented.
+- Implement true video-reference/Plate-FX authoring or export only as a separately approved workflow that does not embed guide footage in normal game FX output.
+- Review the isolated **Atmosphere Volume Engine** prototype before choosing a production fog/mist/haze replacement engine; it is not currently integrated into Index2.
+- Scope additional FX engines, preset visual quality and any cleanup from current Index2 only; do not restore emergency/default-route rescue behaviour.
+- Add optional registered sound cues only after Sound foundation and the final FX schema/save owner are confirmed, storing `asset_` IDs only. Status: **provisional from PR #46**.
+- Decide archive/minimal-pointer treatment for superseded Effect Editor docs/audits and reconcile open PR #40 only after `9A` acceptance and task capture.
 
 ---
 
 # Asset Library
 
+Next documentation extraction.
+
 - Define or retain the single Asset Library specification for final registered `asset_` records, metadata, groups and selection.
 - Complete promotion from `intake/` into final indexed records while keeping authored content free of intake references.
-- Support Creation Guide logo/media promotion, Effect Library selectors and Object Creator bounded finalisation handoff through stable registered references.
+- Support Creation Guide logo/media promotion, Effect Library final registered dependencies and Object Creator bounded finalisation handoff through stable registered references.
 - Add canonical imported-audio promotion; Sound Library selects registered audio and must not become an ad-hoc importer. Status: **provisional from PR #46**.
 
 ---
@@ -297,14 +302,15 @@ Protected active work stream; audit last. Open PR #46 currently modifies this ar
 | PR / document area | Current interpretation | Consolidation treatment |
 |---|---|---|
 | Merged PR #47 | Published the initial documentation-control foundation. | Retain as foundation; path inconsistency is corrected in this extraction branch. |
-| Draft PR #50 | Adds `3A`–`8A`, corrects `0A`/`1A`, and consolidates `2A` for verified current module baselines. | Review as documentation-only; reconcile branch with current `main` before merge. |
+| Draft PR #50 | Adds `3A`–`9A`, corrects `0A`/`1A`, and consolidates `2A` for verified current module baselines. | Review as documentation-only; reconcile branch with current `main` before merge. |
 | Merged PR #38 | Established Object Creator V1.36 implementation. | Use as `8A` baseline evidence; retain functional validation as open work. |
 | Merged PR #45 | Established Scene Editor v0.37 accepted-baseline record. | Captured in `6A`/`2A`; later decide archive treatment. |
-| Open PR #40 | Earlier Scene/Effect status refresh; Scene portion is superseded. | Extract any unique Effect material only during Effect audit. |
+| Merged PR #49 | Added isolated Atmosphere Volume visual prototype only. | Retain as Effect Editor decision input; do not describe as live Index2 engine. |
+| Open PR #40 | Earlier Scene/Effect status refresh; useful Effect Index2 acceptance material is now captured in `9A`/`2A`. | Reconcile rather than merge as competing current authority after controlled extraction is accepted. |
 | Open PR #44 | Earlier Puzzle V1.34 status refresh, superseded by V1.35 runtime. | Reconcile during later Puzzle audit only. |
 | Open PR #46 | Active Sound Library/Create Synth work. | Preserve as provisional protected stream until accepted/merged. |
 | Older global/app todo and audit documents | Mixed history, rules and outstanding work. | Archive only after relevant extraction/dependency verification. |
 
 ## Migrated-source checkpoint
 
-The controlled documents now incorporate the reviewed useful information from the foundation/shared sources and the completed module audits through Archetype Object Creator, including the live source/docs reviewed for Hub, Creation Guide, Project Editor, Scene Editor, Quest Builder and Object Creator; merged baseline PRs #38 and #45; and protected Puzzle/Sound evidence. Further exact source-file classification continues through `0A` during each remaining module audit.
+The controlled documents now incorporate the reviewed useful information from the foundation/shared sources and completed module audits through Effect Editor: Hub, Creation Guide, Project Editor, Scene Editor, Quest Builder, Archetype Object Creator and accepted Index2 Effect Editor; merged baseline/prototype PRs #38, #45 and #49; and protected Puzzle/Sound evidence. Further exact source-file classification continues through `0A` during each remaining module audit.
