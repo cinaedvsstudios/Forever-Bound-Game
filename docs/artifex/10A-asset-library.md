@@ -1,9 +1,11 @@
 # Asset Library Specification
 
-Status: Active module specification draft during documentation consolidation.
+Status: Active module specification draft.
 
-Owning module: Asset Library.
+Asset Library owns final registered `asset_` records, `assets/asset-index.json`, final files under `assets/`, asset metadata, asset groups, and promotion from `intake/` into final indexed project assets.
 
-Active route: no finished standalone Asset Library app route has been verified in current `main` as of 6 June 2026.
+No finished standalone Asset Library app route was verified in current `main` as of 6 June 2026.
 
-Current baseline: Asset Library currently exists as the final registered-asset ownership
+`intake/` is staging only. Authoring modules must reference final registered `asset_` IDs, not intake paths or browser-only data.
+
+Asset Library does not own scene layout, object definitions, effect definitions, quests, puzzles, project routes, Health output, Build output, or Sound
