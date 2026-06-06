@@ -2,14 +2,17 @@
 
 Status: Active module specification draft.
 
-Asset Library owns final registered `asset_` records.
+Asset Library owns final registered assets.
 
-It owns `assets/asset-index.json`, final files under `assets/`, asset metadata, asset groups, and promotion from `intake/` into final indexed project assets.
+It owns:
+- `asset_` IDs
+- `assets/asset-index.json`
+- final files under `assets/`
+- asset metadata and groups
+- promotion from `intake/` to final indexed assets
 
-No finished standalone Asset Library app route was verified in current `main` as of 6 June 2026.
+No standalone Asset Library app route is verified yet.
 
 `intake/` is staging only.
 
-Authoring modules must reference final registered `asset_` IDs, not intake paths or browser-only data.
-
-Asset Library does not own scene layout, object definitions, effect definitions, quests,
+Other modules must reference final `asset_` IDs.
