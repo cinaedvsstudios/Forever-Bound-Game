@@ -58,3 +58,8 @@ engine: shimmer-distortion
 ```
 
 The final editor should save the editable project separately from the runtime-facing FX asset, matching the FX Editor documentation.
+
+
+## V1.01 additions
+
+Performance pass with reduced render scale, cloudy distorted rim, optional local PNG/JPEG/WebP texture, smoke-like wisps, and streaming particles.

@@ -1,5 +1,5 @@
-import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.00';
-import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.00';
+import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.01';
+import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.01';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -11,13 +11,17 @@ const state = {
   values: clonePreset(SHIMMER_PRESETS[0]).values,
   startedAt: performance.now(),
   pausedAt: 0,
-  playing: true
+  playing: true,
+  textureName: '',
+  textureDataUrl: ''
 };
 
 const controls = $$('[data-field]');
 const presetList = $('[data-preset-list]');
 const jsonOutput = $('[data-json-output]');
 const status = $('[data-status]');
+const textureFile = $('[data-texture-file]');
+const textureStatus = $('[data-texture-status]');
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -37,8 +41,31 @@ function normalizeFieldValue(input) {
   return input.value;
 }
 
+function updateTextureStatus() {
+  if (textureStatus) textureStatus.textContent = state.textureName ? `Loaded texture: ${state.textureName}` : 'No texture loaded.';
+}
+
 function syncControls() {
-  controls.forEach((input) => {
+  if (textureFile) textureFile.addEventListener('change', () => {
+  const file = textureFile.files && textureFile.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const image = new Image();
+    image.onload = () => {
+      engine.setTextureImage(image);
+      state.textureName = file.name;
+      state.textureDataUrl = String(reader.result || '');
+      state.values.sourceMode = 'texture';
+      syncControls();
+      setStatus(`Loaded texture ${file.name}.`);
+    };
+    image.src = String(reader.result || '');
+  };
+  reader.readAsDataURL(file);
+});
+
+controls.forEach((input) => {
     const key = input.dataset.field;
     const value = state.values[key];
     if (input.type === 'checkbox') input.checked = Boolean(value);
@@ -47,6 +74,7 @@ function syncControls() {
   const preset = currentPreset();
   $('[data-effect-name]').textContent = preset.name;
   $('[data-effect-description]').textContent = preset.description;
+  updateTextureStatus();
   renderJson();
 }
 
@@ -84,9 +112,9 @@ function fxAssetJson() {
     scope: 'project',
     projectId: 'forever-bound',
     engine: 'artifex-shimmer-distortion-preview',
-    engineVersion: '1.0.0-preview',
+    engineVersion: '1.0.1-preview',
     tags: preset.tags,
-    assets: {},
+    assets: state.textureName ? { texture: { kind: 'externalImageReference', editorFileName: state.textureName } } : {},
     composition: {
       layers: [
         {
@@ -118,11 +146,12 @@ function editorProjectJson() {
   return {
     schema: 'artifex.fxEditorProject.v1',
     editor: 'fx-shimmer-preview',
-    editorVersion: '1.0.0-preview',
+    editorVersion: '1.0.1-preview',
     selectedPresetId: state.selectedPresetId,
     name: preset.name,
     description: preset.description,
     values: clone(state.values),
+    texture: state.textureName ? { name: state.textureName, dataUrl: state.textureDataUrl } : null,
     view: {
       showGrid: Boolean(state.values.showGrid),
       showMask: Boolean(state.values.showMask)
@@ -145,6 +174,25 @@ function downloadJson(filename, payload) {
   anchor.remove();
   URL.revokeObjectURL(url);
 }
+
+if (textureFile) textureFile.addEventListener('change', () => {
+  const file = textureFile.files && textureFile.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const image = new Image();
+    image.onload = () => {
+      engine.setTextureImage(image);
+      state.textureName = file.name;
+      state.textureDataUrl = String(reader.result || '');
+      state.values.sourceMode = 'texture';
+      syncControls();
+      setStatus(`Loaded texture ${file.name}.`);
+    };
+    image.src = String(reader.result || '');
+  };
+  reader.readAsDataURL(file);
+});
 
 controls.forEach((input) => {
   input.addEventListener('input', () => {

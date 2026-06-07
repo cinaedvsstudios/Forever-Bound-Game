@@ -6,7 +6,7 @@
   "scope": "project",
   "projectId": "forever-bound",
   "engine": "artifex-shimmer-distortion-preview",
-  "engineVersion": "1.0.0-preview",
+  "engineVersion": "1.0.1-preview",
   "tags": [
     "portal",
     "route-exit",
@@ -25,7 +25,12 @@
           "strength": 68,
           "refraction": 62,
           "swirl": 42,
-          "glow": 76
+          "glow": 76,
+          "renderScale": 58,
+          "cellSize": 6,
+          "cloudiness": 70,
+          "wispAmount": 42,
+          "particleAmount": 34
         }
       }
     ]

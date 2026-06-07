@@ -6,7 +6,7 @@
   "scope": "project",
   "projectId": "forever-bound",
   "engine": "artifex-shimmer-distortion-preview",
-  "engineVersion": "1.0.0-preview",
+  "engineVersion": "1.0.1-preview",
   "tags": [
     "refraction",
     "heat",
@@ -25,7 +25,12 @@
           "strength": 36,
           "refraction": 78,
           "waveSize": 24,
-          "waveSpeed": 58
+          "waveSpeed": 58,
+          "renderScale": 58,
+          "cellSize": 6,
+          "cloudiness": 70,
+          "wispAmount": 42,
+          "particleAmount": 34
         }
       }
     ]
