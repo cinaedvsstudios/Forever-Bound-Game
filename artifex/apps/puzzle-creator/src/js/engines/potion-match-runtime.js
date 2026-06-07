@@ -7,6 +7,4 @@ const ingredientLibrary = {
   capraMilk: { label: 'Capra Milk', emoji: '🐐' },
   starDust: { label: 'Star Dust', emoji: '✨' },
   aetherisWater: { label: 'Aetheris Water', emoji: '💧' },
-  yarrow: { label: 'Yarrow', emoji: '🌿' },
-  mushroom: { label: 'Mushroom', emoji: '🍄' },
-  berry
+  yarrow: { label: 'Yarrow', emoji
