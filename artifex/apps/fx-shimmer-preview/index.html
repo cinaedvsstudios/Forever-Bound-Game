@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Artifex Shimmer / Portal Distortion Engine Preview</title>
-  <link rel="stylesheet" href="./styles.css?v=1.02" />
+  <link rel="stylesheet" href="./styles.css?v=1.03" />
 </head>
 <body>
   <main class="fx-shell" data-app>
@@ -15,7 +15,7 @@
           <p class="kicker">Artifex FX Engine Prototype</p>
           <h1>Shimmer / Portal Distortion Engine</h1>
         </div>
-        <span class="version">V1.02</span>
+        <span class="version">V1.03</span>
       </div>
       <div class="header-actions">
         <button type="button" data-action="play">▶️ Play</button>
@@ -82,8 +82,8 @@
             <label>Soft edge <input type="range" min="0" max="100" step="1" data-field="softness" /></label>
           </div>
           <div class="two">
-            <label>Horizontal scale <input type="range" min="40" max="180" step="1" data-field="scaleX" /></label>
-            <label>Vertical scale <input type="range" min="40" max="180" step="1" data-field="scaleY" /></label>
+            <label>Horizontal scale <input type="range" min="0" max="180" step="1" data-field="scaleX" /></label>
+            <label>Vertical scale <input type="range" min="0" max="180" step="1" data-field="scaleY" /></label>
           </div>
         </section>
 
@@ -176,8 +176,8 @@
             <label>Loop intensity <input type="range" min="0" max="100" step="1" data-field="loopIntensity" /></label>
           </div>
           <div class="two">
-            <label>Render scale <input type="range" min="35" max="100" step="1" data-field="renderScale" /></label>
-            <label>Cell size <input type="range" min="3" max="12" step="1" data-field="cellSize" /></label>
+            <label>Render scale <input type="range" min="50" max="100" step="1" data-field="renderScale" /></label>
+            <label>Cell size <input type="range" min="1" max="10" step="1" data-field="cellSize" /></label>
           </div>
           <label class="toggle wide"><input type="checkbox" data-field="loop" checked /> Loop until stopped</label>
         </section>
@@ -190,6 +190,6 @@
     </footer>
   </main>
 
-  <script type="module" src="./src/main.js?v=1.02"></script>
+  <script type="module" src="./src/main.js?v=1.03"></script>
 </body>
 </html>

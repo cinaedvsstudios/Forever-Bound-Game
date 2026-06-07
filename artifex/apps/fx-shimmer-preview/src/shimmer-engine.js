@@ -24,15 +24,15 @@ export class ShimmerDistortionEngine{
     const r=this.canvas.getBoundingClientRect();
     const w=Math.max(720,Math.round(r.width*ratio)),h=Math.max(405,Math.round(r.height*ratio));
     if(this.canvas.width!==w||this.canvas.height!==h){this.canvas.width=w;this.canvas.height=h;this.sourceCanvas.width=w;this.sourceCanvas.height=h;}
-    const rs=clamp(this.values.renderScale??58,35,100)/100;
-    const lw=Math.max(260,Math.round(w*rs)),lh=Math.max(146,Math.round(h*rs));
+    const rs=clamp(this.values.renderScale??82,50,100)/100;
+    const lw=Math.max(360,Math.round(w*rs)),lh=Math.max(203,Math.round(h*rs));
     if(this.lowCanvas.width!==lw||this.lowCanvas.height!==lh){this.lowCanvas.width=lw;this.lowCanvas.height=lh;}
   }
   geom(t){
     const v=this.values,w=this.canvas.width,h=this.canvas.height;
     const base=Math.min(w,h)*scale(.08,.62,(v.radius??60)/100);
     const pulse=1+Math.sin(t*scale(.4,4,(v.pulse??45)/100))*.035*((v.loopIntensity??50)/100);
-    return{w,h,cx:w*((v.positionX??50)/100),cy:h*((v.positionY??50)/100),base,rx:base*((v.scaleX??100)/100)*pulse,ry:base*((v.scaleY??100)/100)*pulse};
+    return{w,h,cx:w*((v.positionX??50)/100),cy:h*((v.positionY??50)/100),base,rx:Math.max(.01,base*((v.scaleX??100)/100)*pulse),ry:Math.max(.01,base*((v.scaleY??100)/100)*pulse)};
   }
   draw(t=0){this.resize();const g=this.geom(t);this.drawSource(t,g);this.drawDistorted(t,g);this.drawGlow(g);}
   drawSource(t,g){
@@ -42,7 +42,7 @@ export class ShimmerDistortionEngine{
     bg.addColorStop(0,rgba(v.coreColor,.24));bg.addColorStop(.45,rgba(v.rimColor,.12));bg.addColorStop(1,rgba(v.backdropColor,0));
     ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
     if(v.showGrid) this.drawGrid(ctx,w,h,t);
-    this.drawCore(ctx,g,t);this.drawCloudRim(ctx,g,t);this.drawWisps(ctx,g,t);this.drawParticles(ctx,g,t);
+    this.drawCore(ctx,g,t);if(v.type!=='heat'){this.drawCloudRim(ctx,g,t);this.drawWisps(ctx,g,t);this.drawParticles(ctx,g,t);}
   }
   drawGrid(ctx,w,h,t){
     const v=this.values,major=Math.max(38,Math.round(w/15)),minor=Math.max(19,Math.round(w/30));ctx.lineWidth=Math.max(1,w/1000);
@@ -96,7 +96,7 @@ export class ShimmerDistortionEngine{
   drawDistorted(t,g){
     const v=this.values,lw=this.lowCanvas.width,lh=this.lowCanvas.height,fw=this.sourceCanvas.width,fh=this.sourceCanvas.height,low=this.low,ctx=this.ctx;
     low.clearRect(0,0,lw,lh);low.drawImage(this.sourceCanvas,0,0,lw,lh);
-    const cx=g.cx*lw/fw,cy=g.cy*lh/fh,rx=g.rx*lw/fw,ry=g.ry*lh/fh,cell=clamp(v.cellSize??6,3,12),soft=scale(.06,.55,(v.softness??50)/100),str=scale(0,32,(v.strength??50)/100)*lw/fw,ref=scale(0,18,(v.refraction??50)/100)*lw/fw,waveSize=scale(.008,.09,(v.waveSize??40)/100),waveSpeed=scale(.15,4.8,(v.waveSpeed??40)/100),swirl=scale(-1.8,1.8,((v.swirl??0)+100)/200),noise=scale(0,12,(v.noise??30)/100)*lw/fw,chrom=scale(0,5.5,(v.chromatic??20)/100)*lw/fw;
+    const cx=g.cx*lw/fw,cy=g.cy*lh/fh,rx=Math.max(1,g.rx*lw/fw),ry=Math.max(1,g.ry*lh/fh),cell=clamp(v.cellSize??2,1,10),soft=scale(.06,.55,(v.softness??50)/100),str=scale(0,32,(v.strength??50)/100)*lw/fw,ref=scale(0,18,(v.refraction??50)/100)*lw/fw,waveSize=scale(.008,.09,(v.waveSize??40)/100),waveSpeed=scale(.15,4.8,(v.waveSpeed??40)/100),swirl=scale(-1.8,1.8,((v.swirl??0)+100)/200),noise=scale(0,12,(v.noise??30)/100)*lw/fw,chrom=scale(0,5.5,(v.chromatic??20)/100)*lw/fw;
     const pad=Math.ceil(Math.max(rx,ry)*.2),minX=Math.max(0,Math.floor(cx-rx-pad)),maxX=Math.min(lw,Math.ceil(cx+rx+pad)),minY=Math.max(0,Math.floor(cy-ry-pad)),maxY=Math.min(lh,Math.ceil(cy+ry+pad)),sx=fw/lw,sy=fh/lh,sw=Math.ceil(sx*cell),sh=Math.ceil(sy*cell);
     for(let y=minY;y<maxY;y+=cell)for(let x=minX;x<maxX;x+=cell){const nx=(x+cell*.5-cx)/rx,ny=(y+cell*.5-cy)/ry,dist=Math.sqrt(nx*nx+ny*ny),inside=1-smoothstep(1-soft,1.08,dist);if(inside<=.005)continue;const a=Math.atan2(ny,nx),phase=t*waveSpeed;let wav=Math.sin(dist/waveSize+phase+Math.sin(a*3+phase)*.65);if(v.type==='heat')wav=Math.sin(y*waveSize*2.6+phase*2.2)*.78+Math.sin(y*waveSize*5.4-phase)*.22;else if(v.type==='dream')wav=Math.sin(dist/waveSize-phase)*.55+Math.sin((nx-ny)*6+phase*.7)*.45;else if(v.type==='transition')wav=Math.sign(Math.sin((x+y)*waveSize*3+phase*3))*.55+Math.sin(a*8+phase)*.45;const rough=(hash2(x*.08+phase,y*.08-phase)-.5)*noise,dx=(Math.cos(a)*(str*wav+ref)-Math.sin(a)*swirl*12+rough)*inside,dy=(Math.sin(a)*(str*wav+ref)+Math.cos(a)*swirl*12-rough)*inside;if(chrom>.1&&inside>.15){low.globalCompositeOperation='lighter';low.globalAlpha=.18*inside;low.drawImage(this.sourceCanvas,(x+dx-chrom)*sx,(y+dy)*sy,sw,sh,x,y,cell+1,cell+1);low.drawImage(this.sourceCanvas,(x+dx+chrom)*sx,(y+dy)*sy,sw,sh,x,y,cell+1,cell+1);low.globalAlpha=1;low.globalCompositeOperation='source-over';}low.drawImage(this.sourceCanvas,(x+dx)*sx,(y+dy)*sy,sw,sh,x,y,cell+1,cell+1);}
     ctx.clearRect(0,0,fw,fh);ctx.imageSmoothingEnabled=true;ctx.drawImage(this.lowCanvas,0,0,fw,fh);
