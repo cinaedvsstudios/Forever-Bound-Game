@@ -459,10 +459,10 @@
   }
 }
 
-/* V1.15 drag/playhead marker. */
+/* V1.16 graph action layout marker. */
 
 
-/* V1.15 frequency graph interaction */
+/* V1.16 frequency graph interaction */
 .frequency-point {
   cursor: ns-resize;
   pointer-events: auto;
@@ -487,4 +487,63 @@
 }
 .sound-frequency-graph {
   touch-action: none;
+}
+
+
+/* V1.16 graph control placement and compact advanced columns */
+.sound-frequency-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 138px;
+  gap: 12px;
+  align-items: stretch;
+}
+.sound-frequency-plot {
+  min-width: 0;
+}
+.sound-frequency-actions {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid rgba(53,212,216,.22);
+  border-radius: 12px;
+  background: rgba(0,0,0,.18);
+}
+.sound-frequency-actions button {
+  width: 100%;
+  min-width: 0;
+}
+.sound-frequency-actions .inline-preview,
+.sound-frequency-actions .inline-stop {
+  min-width: 0;
+}
+.sound-frequency-footer {
+  display: none;
+}
+.sound-advanced-grid {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 8px;
+}
+.sound-sfxr-group {
+  padding: 8px;
+}
+.sound-sfxr-sliders {
+  gap: 7px;
+}
+.sound-advanced .sound-slider span {
+  font-size: 10px;
+}
+.sound-advanced .sound-slider b small {
+  display: inline;
+  margin-left: 4px;
+}
+@media (max-width: 1220px) {
+  .sound-advanced-grid { grid-template-columns: repeat(2, minmax(210px, 1fr)); }
+}
+@media (max-width: 820px) {
+  .sound-frequency-body,
+  .sound-advanced-grid { grid-template-columns: 1fr; }
+  .sound-frequency-actions { flex-direction: row; }
 }

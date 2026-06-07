@@ -5,7 +5,7 @@ import { ProceduralSoundRuntime } from './procedural-synth-runtime.js';
 import '../project-folder/project-folder-client.js?v=0.1.0';
 import { downloadProceduralSynthRecipe, readImportedProceduralSynth, saveProceduralSynthToLibrary } from './sound-generator-store.js';
 
-const VERSION = 'V1.15';
+const VERSION = 'V1.16';
 const STYLE_ID = 'artifex-sound-generator-css';
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const clone = (value) => structuredClone(value);
@@ -17,7 +17,7 @@ function loadCss() {
   const link = document.createElement('link');
   link.id = STYLE_ID;
   link.rel = 'stylesheet';
-  link.href = new URL('./sound-generator.css?v=1.15', import.meta.url).href;
+  link.href = new URL('./sound-generator.css?v=1.16', import.meta.url).href;
   document.head.appendChild(link);
 }
 
@@ -32,19 +32,24 @@ function advancedGroupMarkup(group) {
 function frequencyGraphMarkup() {
   return `<section class="sound-frequency-panel" aria-label="Frequency graph">
     <div class="sound-frequency-header"><h3>Frequency graph</h3><output data-frequency-duration>0.00 / 0.00 sec</output></div>
-    <svg class="sound-frequency-graph compact" data-frequency-graph viewBox="0 0 620 140" role="img" aria-label="Pitch movement over sound duration">
-      <g class="frequency-grid" aria-hidden="true">
-        <line x1="42" y1="16" x2="42" y2="104"></line><line x1="176" y1="16" x2="176" y2="104"></line><line x1="310" y1="16" x2="310" y2="104"></line><line x1="444" y1="16" x2="444" y2="104"></line><line x1="578" y1="16" x2="578" y2="104"></line>
-        <line x1="42" y1="16" x2="578" y2="16"></line><line x1="42" y1="38" x2="578" y2="38"></line><line x1="42" y1="60" x2="578" y2="60"></line><line x1="42" y1="82" x2="578" y2="82"></line><line x1="42" y1="104" x2="578" y2="104"></line>
-      </g>
-      <g data-frequency-y-labels></g>
-      <polyline class="frequency-curve" data-frequency-curve points="42,60 578,60"></polyline>
-      <line class="frequency-playhead" data-frequency-playhead x1="42" y1="12" x2="42" y2="108"></line>
-      <g data-frequency-points></g>
-    </svg>
-    <div class="sound-frequency-time-index" data-frequency-time-index></div>
-    <div class="sound-frequency-footer">
-      <button class="primary inline-preview" type="button" data-act="preview">▶️ Preview</button>
+    <div class="sound-frequency-body">
+      <div class="sound-frequency-plot">
+        <svg class="sound-frequency-graph compact" data-frequency-graph viewBox="0 0 620 140" role="img" aria-label="Pitch movement over sound duration">
+          <g class="frequency-grid" aria-hidden="true">
+            <line x1="42" y1="16" x2="42" y2="104"></line><line x1="176" y1="16" x2="176" y2="104"></line><line x1="310" y1="16" x2="310" y2="104"></line><line x1="444" y1="16" x2="444" y2="104"></line><line x1="578" y1="16" x2="578" y2="104"></line>
+            <line x1="42" y1="16" x2="578" y2="16"></line><line x1="42" y1="38" x2="578" y2="38"></line><line x1="42" y1="60" x2="578" y2="60"></line><line x1="42" y1="82" x2="578" y2="82"></line><line x1="42" y1="104" x2="578" y2="104"></line>
+          </g>
+          <g data-frequency-y-labels></g>
+          <polyline class="frequency-curve" data-frequency-curve points="42,60 578,60"></polyline>
+          <line class="frequency-playhead" data-frequency-playhead x1="42" y1="12" x2="42" y2="108"></line>
+          <g data-frequency-points></g>
+        </svg>
+        <div class="sound-frequency-time-index" data-frequency-time-index></div>
+      </div>
+      <aside class="sound-frequency-actions" aria-label="Sound preview controls">
+        <button class="primary inline-preview" type="button" data-act="preview">▶️ Play</button>
+        <button class="inline-stop" type="button" data-act="stop">⏹️ Stop</button>
+      </aside>
     </div>
   </section>`;
 }
@@ -63,7 +68,6 @@ function markup(options) {
       <section class="sound-editor">
         <div class="sound-toolbar">
           <button data-act="variation">🎲 Variation</button>
-          <button data-act="stop">⏹️ Stop</button>
           <button data-act="reset">↺ Reset</button>
           <button data-act="random">🎰 Random Sound</button>
           <button data-act="export">📤 Export JSON</button>
@@ -454,7 +458,7 @@ export function createSoundGeneratorUI(container, options = {}) {
     };
   });
 
-  $('[data-act="stop"]')?.addEventListener('click', () => { runtime.stop(); stopPlayhead(true); message('Preview stopped.'); });
+  $$('[data-act="stop"]').forEach((button) => button.addEventListener('click', () => { runtime.stop(); stopPlayhead(true); message('Preview stopped.'); }));
   $('[data-act="random"]')?.addEventListener('click', () => {
     state.values = randomSound(state.baseline);
     state.values.frequencyCurve = null;
