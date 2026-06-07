@@ -1,9 +1,12 @@
 const $ = (id) => document.getElementById(id);
 
-const ingredientLibrary = {
-  lavender: { label: 'Lavender', emoji: '💜' },
-  salt: { label: 'Salt', emoji: '🧂' },
-  moonflower: { label: 'Moonflower', emoji: '🌙' },
-  capraMilk: { label: 'Capra Milk', emoji: '🐐' },
-  starDust: { label: 'Star Dust', emoji: '✨' },
-  aetherisWater: { label: 'A
+const recipes = {
+  calm: {
+    name: 'Quieting Draught',
+    hint: 'Soft flower, clean salt, moon sign, then milk to bind it.',
+    order: ['lavender', 'salt', 'moonflower', 'capraMilk'],
+    pool: ['lavender', 'salt', 'moonflower', 'capraMilk', 'starDust', 'mushroom']
+  },
+  aether: {
+    name: 'Aetheris Bloom',
+    hint:
