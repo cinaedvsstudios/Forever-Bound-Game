@@ -1,65 +1,21 @@
 # Artifex Shimmer / Portal Distortion Engine Preview
 
-This is a standalone prototype for the next FX engine after the smoke prototype.
+V1.02 is a correction pass after V1.01 still looked too similar to the first version.
 
-It is intentionally placed in:
-
-```text
-artifex/apps/fx-shimmer-preview/
-```
-
-It does not replace the real FX Editor yet. It proves the visual/runtime behaviour first.
-
-## What it does
-
-The prototype renders browser-canvas distortion effects for:
+## V1.02 changes
 
 ```text
-Portal shimmer
-Heat shimmer / mirage refraction
-Dream ripple / limbo overlay
-Transition tear / magical fracture
-```
-
-The preview includes:
-
-```text
-Preset list
-Live canvas preview
-Shape controls
-Distortion controls
-Visual/glow controls
-Colour controls
-Placement/playback controls
-Export Editor Project JSON
-Export Artifex FX Asset JSON
+Removed the clean perfect overlay ellipse that made the portal edge look unchanged
+Replaced smooth rim strokes with broken noisy arc fragments
+Made cloudy rim blobs larger and more visible
+Made smoke-like wisps much stronger and more obvious
+Made streaming particles stronger and easier to see
+Raised the default Portal Threshold preset values so the difference is visible immediately
+Kept the reduced-resolution performance path from V1.01
 ```
 
 ## Test URL after upload
 
-After copying this folder into the repo and pushing to `main`, open:
-
 ```text
-https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/main/artifex/apps/fx-shimmer-preview/index.html
+https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/main/artifex/apps/fx-shimmer-preview/index.html?v=102
 ```
-
-Add a cache-busting suffix if needed:
-
-```text
-https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/main/artifex/apps/fx-shimmer-preview/index.html?v=1
-```
-
-## Future integration note
-
-Later, this should be integrated into the real FX Editor as a reusable engine type:
-
-```text
-engine: shimmer-distortion
-```
-
-The final editor should save the editable project separately from the runtime-facing FX asset, matching the FX Editor documentation.
-
-
-## V1.01 additions
-
-Performance pass with reduced render scale, cloudy distorted rim, optional local PNG/JPEG/WebP texture, smoke-like wisps, and streaming particles.

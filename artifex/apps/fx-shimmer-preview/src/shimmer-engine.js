@@ -57,19 +57,40 @@ export class ShimmerDistortionEngine{
     ctx.restore();
   }
   drawCloudRim(ctx,g,t){
-    const v=this.values,rw=scale(8,58,(v.rimWidth??50)/100),alpha=scale(.05,.76,(v.rimAlpha??50)/100),cloud=scale(.2,1.2,(v.cloudiness??60)/100),count=Math.round(scale(28,96,(v.cloudiness??60)/100));
+    const v=this.values,rw=scale(20,90,(v.rimWidth??75)/100),alpha=scale(.14,.95,(v.rimAlpha??85)/100),cloud=scale(.65,2.0,(v.cloudiness??95)/100),n=Math.round(scale(70,170,(v.cloudiness??95)/100)),blur=scale(20,76,(v.glow??75)/100);
     ctx.save();ctx.globalCompositeOperation='lighter';
-    for(let layer=0;layer<3;layer++)for(let i=0;i<count;i++){const seed=i*1.731+layer*19.3;const a=TAU*i/count+Math.sin(t*.45+seed)*.08;const rough=(hash2(Math.cos(a)*7+seed,t*.08+Math.sin(a)*9)-.5)*rw*cloud;const x=g.cx+Math.cos(a)*(g.rx+rough);const y=g.cy+Math.sin(a)*(g.ry+rough);const bw=rw*scale(.28,1.55,hash1(seed+2));const bh=rw*scale(.16,.85,hash1(seed+4));ctx.save();ctx.translate(x,y);ctx.rotate(a+Math.sin(seed)*.5);ctx.fillStyle=rgba(layer===1?v.accentColor:layer===2?v.coreColor:v.rimColor,alpha*(layer===1?.22:.48));ctx.shadowColor=layer===1?v.accentColor:v.rimColor;ctx.shadowBlur=scale(12,46,(v.glow??50)/100);ctx.beginPath();ctx.ellipse(0,0,bw,bh,0,0,TAU);ctx.fill();ctx.restore();}
+    for(let layer=0;layer<4;layer++){
+      for(let i=0;i<n;i++){
+        const seed=i*1.273+layer*19.17,a=TAU*(i/n)+Math.sin(t*.34+seed)*.12,roughA=(hash2(Math.cos(a)*5.7+layer,Math.sin(a)*6.2+t*.12)-.5)*cloud,roughB=(hash1(seed+t*.045)-.5)*cloud,rx=g.rx+roughA*rw*1.55+Math.sin(seed+t*.28)*rw*.45,ry=g.ry+roughB*rw*1.25+Math.cos(seed*.7-t*.22)*rw*.38,x=g.cx+Math.cos(a)*rx,y=g.cy+Math.sin(a)*ry,bw=rw*scale(.32,1.85,hash1(seed+3.1)),bh=rw*scale(.18,1.12,hash1(seed+4.6)),rot=a+Math.sin(seed)*.8+t*.05,col=layer===1?v.accentColor:layer===2?v.coreColor:v.rimColor;
+        ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.fillStyle=rgba(col,alpha*(layer===1?.24:.40));ctx.shadowColor=col;ctx.shadowBlur=blur;ctx.beginPath();ctx.ellipse(0,0,bw,bh,0,0,TAU);ctx.fill();ctx.restore();
+      }
+    }
+    for(let ring=0;ring<5;ring++){
+      const steps=150,skip=.33+ring*.055;ctx.lineWidth=Math.max(1,rw*(.08+ring*.018));ctx.strokeStyle=rgba(ring%2?v.accentColor:v.rimColor,alpha*(.30-ring*.025));ctx.shadowColor=ring%2?v.accentColor:v.rimColor;ctx.shadowBlur=blur*.75;
+      for(let i=0;i<steps;i++){
+        const a0=TAU*(i/steps),a1=TAU*((i+.66)/steps),vis=hash2(Math.cos(a0)*8.1+ring*2.3,Math.sin(a0)*9.4+t*.22);if(vis<skip)continue;
+        const n0=(hash2(Math.cos(a0)*11+ring,Math.sin(a0)*13+t*.18)-.5)*rw*cloud,n1=(hash2(Math.cos(a1)*11+ring,Math.sin(a1)*13+t*.18)-.5)*rw*cloud,x0=g.cx+Math.cos(a0)*(g.rx+n0+ring*rw*.12),y0=g.cy+Math.sin(a0)*(g.ry+n0*.75+ring*rw*.08),xm=g.cx+Math.cos((a0+a1)/2)*(g.rx+(n0+n1)*.6+ring*rw*.12),ym=g.cy+Math.sin((a0+a1)/2)*(g.ry+(n0+n1)*.42+ring*rw*.08),x1=g.cx+Math.cos(a1)*(g.rx+n1+ring*rw*.12),y1=g.cy+Math.sin(a1)*(g.ry+n1*.75+ring*rw*.08);
+        ctx.beginPath();ctx.moveTo(x0,y0);ctx.quadraticCurveTo(xm,ym,x1,y1);ctx.stroke();
+      }
+    }
     ctx.restore();
   }
   drawWisps(ctx,g,t){
-    const v=this.values,n=Math.round(scale(0,38,(v.wispAmount??0)/100));if(!n)return;const sp=scale(.12,1.8,(v.wispSpeed??40)/100),sz=scale(6,42,(v.wispSize??50)/100),curl=scale(0,1.4,(v.wispCurl??40)/100);ctx.save();ctx.globalCompositeOperation='lighter';
-    for(let i=0;i<n;i++){const seed=i*7.17,p=fract(t*sp*.14+hash1(seed)),a=TAU*hash1(seed+8)+Math.sin(t*.6+seed)*curl,d=scale(g.base*.08,g.base*1.35,p),x=g.cx+Math.cos(a)*d*(g.rx/g.base),y=g.cy+Math.sin(a)*d*(g.ry/g.base),s=sz*(1-p*.55)*(0.6+hash1(seed+3)*.7),al=(.14+hash1(seed+1)*.2)*(1-p);ctx.fillStyle=rgba(i%2?v.coreColor:v.accentColor,al);ctx.shadowColor=i%2?v.coreColor:v.rimColor;ctx.shadowBlur=s*1.3;ctx.beginPath();ctx.ellipse(x,y,s,s*.55,a,0,TAU);ctx.fill();}
+    const v=this.values,n=Math.round(scale(0,82,(v.wispAmount??85)/100));if(!n)return;const sp=scale(.25,2.5,(v.wispSpeed??60)/100),sz=scale(14,82,(v.wispSize??75)/100),curl=scale(.18,2.6,(v.wispCurl??75)/100);
+    ctx.save();ctx.globalCompositeOperation='lighter';
+    for(let i=0;i<n;i++){
+      const seed=i*7.17,p=fract(t*sp*.11+hash1(seed)),a=TAU*hash1(seed+8)+Math.sin(t*.58+seed)*curl,d=scale(g.base*.02,g.base*1.75,p),x=g.cx+Math.cos(a)*d*(g.rx/g.base),y=g.cy+Math.sin(a)*d*(g.ry/g.base),s=sz*(1-p*.5)*(0.7+hash1(seed+3)*.75),al=(.32+hash1(seed+1)*.36)*Math.sin((1-p)*Math.PI)*.86;
+      for(let b=0;b<4;b++){const ox=(hash1(seed+b*1.3)-.5)*s*1.15,oy=(hash1(seed+b*2.1)-.5)*s*1.15,col=b===1?v.coreColor:b===2?v.rimColor:v.accentColor;ctx.fillStyle=rgba(col,al*(b===1?.62:.40));ctx.shadowColor=col;ctx.shadowBlur=s*1.9;ctx.beginPath();ctx.ellipse(x+ox,y+oy,s*(1.38-b*.16),s*(.44+hash1(seed+b)*.5),a+b*.42,0,TAU);ctx.fill();}
+    }
     ctx.restore();
   }
   drawParticles(ctx,g,t){
-    const v=this.values,n=Math.round(scale(0,74,(v.particleAmount??0)/100));if(!n)return;const sp=scale(.18,2.5,(v.particleSpeed??40)/100),spr=scale(.1,1.8,(v.particleSpread??50)/100),sz=scale(1.4,7,(v.particleSize??25)/100);ctx.save();ctx.globalCompositeOperation='lighter';
-    for(let i=0;i<n;i++){const seed=i*17.2,p=fract(t*sp*.22+hash1(seed+4)),a=TAU*hash1(seed+1)+Math.sin(t*.8+seed)*spr,d=scale(g.base*.05,g.base*1.6,p),x=g.cx+Math.cos(a)*d*(g.rx/g.base),y=g.cy+Math.sin(a)*d*(g.ry/g.base),s=sz*(1-p*.65)*(0.7+hash1(seed+6)*.6),al=(.18+hash1(seed+7)*.52)*(1-p);ctx.fillStyle=rgba(i%3===0?v.accentColor:i%2?v.rimColor:v.coreColor,al);ctx.shadowColor=i%2?v.rimColor:v.coreColor;ctx.shadowBlur=s*4;ctx.beginPath();ctx.arc(x,y,s,0,TAU);ctx.fill();}
+    const v=this.values,n=Math.round(scale(0,128,(v.particleAmount??70)/100));if(!n)return;const sp=scale(.25,3.35,(v.particleSpeed??60)/100),spr=scale(.18,2.5,(v.particleSpread??80)/100),sz=scale(2.4,12.5,(v.particleSize??45)/100);
+    ctx.save();ctx.globalCompositeOperation='lighter';
+    for(let i=0;i<n;i++){
+      const seed=i*17.17,p=fract(t*sp*.2+hash1(seed+2.9)),a=TAU*hash1(seed+1.1)+Math.sin(t*.7+seed)*spr,d=scale(g.base*.05,g.base*1.85,p),x=g.cx+Math.cos(a)*d*(g.rx/g.base),y=g.cy+Math.sin(a)*d*(g.ry/g.base),s=sz*(1-p*.58)*(0.7+hash1(seed+3.6)*.65),al=(.34+hash1(seed+4.2)*.64)*Math.sin((1-p)*Math.PI),col=i%3===0?v.accentColor:i%2===0?v.coreColor:v.rimColor;
+      ctx.fillStyle=rgba(col,al);ctx.shadowColor=col;ctx.shadowBlur=s*6;ctx.beginPath();ctx.arc(x,y,s,0,TAU);ctx.fill();ctx.strokeStyle=rgba(col,al*.38);ctx.lineWidth=Math.max(1,s*.35);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-Math.cos(a)*s*5,y-Math.sin(a)*s*5);ctx.stroke();
+    }
     ctx.restore();
   }
   drawDistorted(t,g){
@@ -80,5 +101,12 @@ export class ShimmerDistortionEngine{
     for(let y=minY;y<maxY;y+=cell)for(let x=minX;x<maxX;x+=cell){const nx=(x+cell*.5-cx)/rx,ny=(y+cell*.5-cy)/ry,dist=Math.sqrt(nx*nx+ny*ny),inside=1-smoothstep(1-soft,1.08,dist);if(inside<=.005)continue;const a=Math.atan2(ny,nx),phase=t*waveSpeed;let wav=Math.sin(dist/waveSize+phase+Math.sin(a*3+phase)*.65);if(v.type==='heat')wav=Math.sin(y*waveSize*2.6+phase*2.2)*.78+Math.sin(y*waveSize*5.4-phase)*.22;else if(v.type==='dream')wav=Math.sin(dist/waveSize-phase)*.55+Math.sin((nx-ny)*6+phase*.7)*.45;else if(v.type==='transition')wav=Math.sign(Math.sin((x+y)*waveSize*3+phase*3))*.55+Math.sin(a*8+phase)*.45;const rough=(hash2(x*.08+phase,y*.08-phase)-.5)*noise,dx=(Math.cos(a)*(str*wav+ref)-Math.sin(a)*swirl*12+rough)*inside,dy=(Math.sin(a)*(str*wav+ref)+Math.cos(a)*swirl*12-rough)*inside;if(chrom>.1&&inside>.15){low.globalCompositeOperation='lighter';low.globalAlpha=.18*inside;low.drawImage(this.sourceCanvas,(x+dx-chrom)*sx,(y+dy)*sy,sw,sh,x,y,cell+1,cell+1);low.drawImage(this.sourceCanvas,(x+dx+chrom)*sx,(y+dy)*sy,sw,sh,x,y,cell+1,cell+1);low.globalAlpha=1;low.globalCompositeOperation='source-over';}low.drawImage(this.sourceCanvas,(x+dx)*sx,(y+dy)*sy,sw,sh,x,y,cell+1,cell+1);}
     ctx.clearRect(0,0,fw,fh);ctx.imageSmoothingEnabled=true;ctx.drawImage(this.lowCanvas,0,0,fw,fh);
   }
-  drawGlow(g){const v=this.values,ctx=this.ctx,glow=scale(0,.82,(v.glow??50)/100);if(!glow)return;const grad=ctx.createRadialGradient(g.cx,g.cy,g.base*.25,g.cx,g.cy,Math.max(g.rx,g.ry)*1.8);grad.addColorStop(0,rgba(v.coreColor,glow*.1));grad.addColorStop(.45,rgba(v.rimColor,glow*.08));grad.addColorStop(1,rgba(v.rimColor,0));ctx.fillStyle=grad;ctx.beginPath();ctx.ellipse(g.cx,g.cy,g.rx*1.75,g.ry*1.45,0,0,TAU);ctx.fill();}
+  drawGlow(g){
+    const v=this.values,ctx=this.ctx,glow=scale(0,.82,(v.glow??50)/100);if(!glow)return;
+    ctx.save();ctx.globalCompositeOperation='lighter';
+    const grad=ctx.createRadialGradient(g.cx,g.cy,g.base*.25,g.cx,g.cy,Math.max(g.rx,g.ry)*1.95);grad.addColorStop(0,rgba(v.coreColor,glow*.10));grad.addColorStop(.45,rgba(v.rimColor,glow*.08));grad.addColorStop(1,rgba(v.rimColor,0));ctx.fillStyle=grad;ctx.beginPath();ctx.ellipse(g.cx,g.cy,g.rx*1.82,g.ry*1.52,0,0,TAU);ctx.fill();
+    // No perfect ellipse stroke in V1.02. The mask is now short broken sparks only.
+    if(v.showMask){const a=scale(.04,.28,(v.rimAlpha??50)/100),rw=scale(1,5,(v.rimWidth??50)/100);ctx.shadowColor=v.rimColor;ctx.shadowBlur=20;for(let i=0;i<42;i++){const seed=i*3.19,a0=TAU*hash1(seed+Math.floor(performance.now()/500)*.01),a1=a0+scale(.02,.09,hash1(seed+9.4)),n=(hash1(seed+performance.now()*.00012)-.5)*g.base*.15;ctx.strokeStyle=rgba(i%2?v.accentColor:v.rimColor,a);ctx.lineWidth=rw*(.6+hash1(seed+2.2)*1.4);ctx.beginPath();ctx.moveTo(g.cx+Math.cos(a0)*(g.rx+n),g.cy+Math.sin(a0)*(g.ry+n*.72));ctx.lineTo(g.cx+Math.cos(a1)*(g.rx+n),g.cy+Math.sin(a1)*(g.ry+n*.72));ctx.stroke();}}
+    ctx.restore();
+  }
 }
