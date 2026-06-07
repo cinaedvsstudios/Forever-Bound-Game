@@ -5,7 +5,7 @@ import { ProceduralSoundRuntime } from './procedural-synth-runtime.js';
 import '../project-folder/project-folder-client.js?v=0.1.0';
 import { downloadProceduralSynthRecipe, readImportedProceduralSynth, proceduralSynthToJson, saveProceduralSynthToLibrary } from './sound-generator-store.js';
 
-const VERSION = 'V1.11';
+const VERSION = 'V1.13';
 const STYLE_ID = 'artifex-sound-generator-css';
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const clone = (value) => structuredClone(value);
@@ -17,7 +17,7 @@ function loadCss() {
   const link = document.createElement('link');
   link.id = STYLE_ID;
   link.rel = 'stylesheet';
-  link.href = new URL('./sound-generator.css?v=1.11', import.meta.url).href;
+  link.href = new URL('./sound-generator.css?v=1.13', import.meta.url).href;
   document.head.appendChild(link);
 }
 
@@ -31,18 +31,20 @@ function advancedGroupMarkup(group) {
 
 function frequencyGraphMarkup() {
   return `<section class="sound-frequency-panel" aria-label="Frequency graph">
-    <div class="sound-frequency-header"><h3>Frequency graph</h3><output data-frequency-duration>0.00 sec</output></div>
-    <svg class="sound-frequency-graph" data-frequency-graph viewBox="0 0 620 210" role="img" aria-label="Pitch movement over sound duration">
+    <div class="sound-frequency-header"><h3>Frequency graph</h3><output data-frequency-duration>0.00 / 0.00 sec</output></div>
+    <svg class="sound-frequency-graph compact" data-frequency-graph viewBox="0 0 620 140" role="img" aria-label="Pitch movement over sound duration">
       <g class="frequency-grid" aria-hidden="true">
-        <line x1="42" y1="20" x2="42" y2="166"></line><line x1="176" y1="20" x2="176" y2="166"></line><line x1="310" y1="20" x2="310" y2="166"></line><line x1="444" y1="20" x2="444" y2="166"></line><line x1="578" y1="20" x2="578" y2="166"></line>
-        <line x1="42" y1="20" x2="578" y2="20"></line><line x1="42" y1="56.5" x2="578" y2="56.5"></line><line x1="42" y1="93" x2="578" y2="93"></line><line x1="42" y1="129.5" x2="578" y2="129.5"></line><line x1="42" y1="166" x2="578" y2="166"></line>
+        <line x1="42" y1="16" x2="42" y2="104"></line><line x1="176" y1="16" x2="176" y2="104"></line><line x1="310" y1="16" x2="310" y2="104"></line><line x1="444" y1="16" x2="444" y2="104"></line><line x1="578" y1="16" x2="578" y2="104"></line>
+        <line x1="42" y1="16" x2="578" y2="16"></line><line x1="42" y1="38" x2="578" y2="38"></line><line x1="42" y1="60" x2="578" y2="60"></line><line x1="42" y1="82" x2="578" y2="82"></line><line x1="42" y1="104" x2="578" y2="104"></line>
       </g>
-      <text class="frequency-label" x="8" y="25">High</text>
-      <text class="frequency-label" x="10" y="168">Low</text>
-      <polyline class="frequency-curve" data-frequency-curve points="42,93 578,93"></polyline>
+      <g data-frequency-y-labels></g>
+      <polyline class="frequency-curve" data-frequency-curve points="42,60 578,60"></polyline>
       <g data-frequency-points></g>
     </svg>
-    <div class="sound-frequency-time-index" data-frequency-time-index><span>0.00s</span><span>0.03s</span><span>0.06s</span><span>0.10s</span></div>
+    <div class="sound-frequency-time-index" data-frequency-time-index></div>
+    <div class="sound-frequency-footer">
+      <button class="primary inline-preview" type="button" data-act="preview">▶️ Preview</button>
+    </div>
   </section>`;
 }
 
@@ -54,12 +56,11 @@ function markup(options) {
     <div class="sound-layout">
       <aside class="sound-library">
         <nav class="sound-mode-tabs"><button class="is-active" data-mode="examples">Use Example</button><button data-mode="new">Start New</button></nav>
-        <section data-examples><label class="sound-select-label">Purpose<select data-group></select></label><div class="sound-preset-list" data-example-list></div></section>
+        <section data-examples><div class="sound-example-groups" data-example-list></div></section>
         <section data-new hidden><p class="sound-help">Choose a starting shape, then use the SFXR-style controls to tune it.</p><div class="sound-preset-list" data-new-list></div></section>
       </aside>
       <section class="sound-editor">
         <div class="sound-toolbar">
-          <button class="primary" data-act="preview">▶️ Preview</button>
           <button data-act="variation">🎲 Variation</button>
           <button data-act="stop">⏹️ Stop</button>
           <button data-act="reset">↺ Reset</button>
@@ -70,11 +71,14 @@ function markup(options) {
           <button data-act="save">💾 Save to Library</button>
           <button class="assign-action" data-act="assign">✅ Save and Assign Here</button>
         </div>
-        <div class="sound-identity"><label>Name<input type="text" maxlength="80" data-field="name" /></label><label>Category<input type="text" maxlength="50" data-field="category" /></label><label class="wide">Tags<input type="text" maxlength="180" data-field="tags" placeholder="puzzle, correct, magical" /></label></div>
-        <fieldset class="sound-waveform"><legend>Waveform</legend>${WAVEFORMS.map((wave) => `<button type="button" data-waveform="${esc(wave.id)}">${esc(wave.label)}</button>`).join('')}</fieldset>
-        <fieldset class="sound-pitch-change"><legend>Pitch Change</legend><button data-pitch="drops">↘️ Drops</button><button data-pitch="steady">➡️ Steady</button><button data-pitch="rises">↗️ Rises</button></fieldset>
+        <div class="sound-identity compact-three"><label>Name<input type="text" maxlength="80" data-field="name" /></label><label>Category<input type="text" maxlength="50" data-field="category" /></label><label>Tags<input type="text" maxlength="180" data-field="tags" placeholder="puzzle, correct, magical" /></label></div>
+        <div class="sound-top-controls-row">
+          <fieldset class="sound-waveform"><legend>Waveform</legend>${WAVEFORMS.map((wave) => `<button type="button" data-waveform="${esc(wave.id)}">${esc(wave.label)}</button>`).join('')}</fieldset>
+          <fieldset class="sound-pitch-change"><legend>Pitch Change</legend><button data-pitch="drops">↘️ Drops</button><button data-pitch="steady">➡️ Steady</button><button data-pitch="rises">↗️ Rises</button></fieldset>
+        </div>
+        ${frequencyGraphMarkup()}
         <div class="sound-control-grid">${sliderMarkup(CONTROL_DEFINITIONS)}</div>
-        <details class="sound-advanced" open><summary>⚙️ Advanced SFXR-style controls</summary>${frequencyGraphMarkup()}<div class="sound-advanced-grid">${ADVANCED_CONTROL_GROUPS.map(advancedGroupMarkup).join('')}</div></details>
+        <details class="sound-advanced" open><summary>⚙️ Advanced SFXR-style controls</summary><div class="sound-advanced-grid">${ADVANCED_CONTROL_GROUPS.map(advancedGroupMarkup).join('')}</div></details>
         <div class="sound-pattern-row"><label>Pattern<select data-field="pattern"><option value="single">Single</option><option value="double">Double</option><option value="triple">Triple</option><option value="repeat">Repeat</option></select></label><label class="check"><input type="checkbox" data-field="loop" /> Loop until stopped</label></div>
       </section>
     </div>
@@ -124,9 +128,14 @@ export function createSoundGeneratorUI(container, options = {}) {
     const minFrequency = Math.min(...curve.map((point) => point.frequencyHz));
     const maxFrequency = Math.max(...curve.map((point) => point.frequencyHz));
     const range = Math.max(1, maxFrequency - minFrequency);
+    const graphLeft = 42;
+    const graphWidth = 536;
+    const graphTop = 16;
+    const graphHeight = 88;
+
     const points = curve.map((point) => {
-      const x = 42 + point.time * 536;
-      const y = 166 - ((point.frequencyHz - minFrequency) / range) * 146;
+      const x = graphLeft + point.time * graphWidth;
+      const y = graphTop + graphHeight - ((point.frequencyHz - minFrequency) / range) * graphHeight;
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     }).join(' ');
     const line = $('[data-frequency-curve]');
@@ -134,12 +143,23 @@ export function createSoundGeneratorUI(container, options = {}) {
     const pointHost = $('[data-frequency-points]');
     if (pointHost) {
       pointHost.innerHTML = curve.map((point) => {
-        const x = 42 + point.time * 536;
-        const y = 166 - ((point.frequencyHz - minFrequency) / range) * 146;
+        const x = graphLeft + point.time * graphWidth;
+        const y = graphTop + graphHeight - ((point.frequencyHz - minFrequency) / range) * graphHeight;
         return `<circle class="frequency-point" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5.5"><title>${Math.round(point.frequencyHz)} Hz at ${(point.time * durationMs / 1000).toFixed(2)} sec</title></circle>`;
       }).join('');
     }
-    text('[data-frequency-duration]', `${(durationMs / 1000).toFixed(2)} sec`);
+
+    const yAxis = $('[data-frequency-y-labels]');
+    if (yAxis) {
+      const ticks = [1, 0.75, 0.5, 0.25, 0];
+      yAxis.innerHTML = ticks.map((ratio) => {
+        const hz = minFrequency + range * ratio;
+        const y = graphTop + graphHeight - (ratio * graphHeight);
+        return `<text class="frequency-number" x="6" y="${(y + 4).toFixed(1)}">${Math.round(hz)}</text>`;
+      }).join('');
+    }
+
+    text('[data-frequency-duration]', `0.00 / ${(durationMs / 1000).toFixed(2)} sec`);
     const index = $('[data-frequency-time-index]');
     if (index) {
       const seconds = durationMs / 1000;
@@ -193,12 +213,17 @@ export function createSoundGeneratorUI(container, options = {}) {
   }
 
   function examples() {
-    const group = EXAMPLE_GROUPS.find((item) => item.id === state.group) || EXAMPLE_GROUPS[0];
-    $('[data-group]').innerHTML = EXAMPLE_GROUPS.map((item) => `<option value="${item.id}">${esc(item.label)}</option>`).join('');
-    $('[data-group]').value = group.id;
-    $('[data-example-list]').innerHTML = group.presets.map((preset) => `<button data-preset="${preset.id}" title="${esc(preset.description)}"><strong>${esc(preset.name)}</strong><small>${esc(preset.description)}</small></button>`).join('');
+    $('[data-example-list]').innerHTML = EXAMPLE_GROUPS.map((group, index) => `
+      <details class="sound-example-group" ${index === 0 ? 'open' : ''}>
+        <summary><span class="sound-group-toggle">▸</span><span>${esc(group.label)}</span></summary>
+        <div class="sound-preset-list">${group.presets.map((preset) => `<button data-preset="${preset.id}" title="${esc(preset.description)}"><strong>${esc(preset.name)}</strong><small>${esc(preset.description)}</small></button>`).join('')}</div>
+      </details>
+    `).join('');
     $$('[data-example-list] [data-preset]').forEach((button) => {
-      button.onclick = () => selectPreset(group.presets.find((preset) => preset.id === button.dataset.preset));
+      button.onclick = () => {
+        const preset = EXAMPLE_GROUPS.flatMap((item) => item.presets).find((entry) => entry.id === button.dataset.preset);
+        if (preset) selectPreset(preset);
+      };
     });
   }
 
@@ -274,14 +299,16 @@ export function createSoundGeneratorUI(container, options = {}) {
     };
   });
 
-  $('[data-act="preview"]').onclick = async () => {
-    try {
-      await runtime.play(record());
-      message('Previewing current sound.');
-    } catch (error) {
-      message(error.message || error, 'error');
-    }
-  };
+  $$('[data-act="preview"]').forEach((button) => {
+    button.onclick = async () => {
+      try {
+        await runtime.play(record());
+        message('Previewing current sound.');
+      } catch (error) {
+        message(error.message || error, 'error');
+      }
+    };
+  });
   $('[data-act="stop"]').onclick = () => { runtime.stop(); message('Preview stopped.'); };
   $('[data-act="random"]').onclick = () => {
     state.values = randomSound(state.baseline);
