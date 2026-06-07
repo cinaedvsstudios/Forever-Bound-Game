@@ -1,442 +1,285 @@
 # Artifex Global To Do
 
-Status: Consolidation draft  
-Intended final role: the single human-readable active task list for Artifex  
-Documentation-control branch: `docs/artifex-document-control-foundation-20260602`
+Status: Active global backlog after module/service documentation extraction  
+Intended role: the single human-readable active task list for Artifex  
+Index: `docs/artifex/0A-index-of-files.md`  
+Universal contract: `docs/artifex/1A-project-file-contracts.md`
 
 ## How this document is used
 
-This file consolidates outstanding work that is currently scattered across `docs/GLOBAL_TODO.md`, `artifex/shared/todo-guide/all-apps-todos.json`, per-app `todo.md` files, implementation plans, status-refresh records and active documentation PRs.
+This file owns outstanding work. It does not own permanent rules or module definitions.
 
-Once the consolidation is approved and the relevant file dependencies have been checked, this document becomes the only human-maintained Artifex backlog. Module specifications say what each module permanently is and owns. `docs/artifex/1A-project-file-contracts.md` says what all modules must obey. This file says what remains to be done.
+Module/service specifications say what each module is and owns. `1A` says what all modules must obey. This file says what still needs to be done.
 
-Rules for interpreting migrated tasks:
+Rules:
 
-- Completed historical work is not re-opened merely because an old todo or audit mentioned it.
-- Current accepted baselines belong in module specifications; a baseline is repeated here only when necessary to prevent work being based on an obsolete version.
-- Tasks copied from an open PR are marked **provisional** until that PR is accepted or its useful tasks are deliberately retained.
-- Puzzle Creator and Sound Generator are currently active work streams. Their items are gathered here for control, but their existing working documents/code are not to be overwritten from this consolidation branch.
-- Old per-app todo files, plans and audits are archive candidates only after their useful open work is safely represented here and their permanent rules/specification content has been transferred elsewhere.
+- Do not reopen completed work only because an old todo or audit mentioned it.
+- Do not maintain app-specific todo files as competing human backlogs.
+- Treat open PR work as provisional until accepted.
+- Keep browser localStorage as workspace/recovery state, not project truth.
+- Keep ZIP/download/export as backup/interchange unless a module explicitly has no connected-project save yet.
+- Archive old docs only after valid content has been transferred.
+- Do not replace old non-`A` specs; create/use the controlled `A` spec and archive the old file later.
 
-## Current protected baselines and active overlaps
+## Protected Baselines
 
-| Area | Current position relevant to task work | Protection rule |
+| Area | Current controlled position | Protection rule |
 |---|---|---|
-| Documentation control | `0A-index-of-files.md` and `1A-project-file-contracts.md` are foundation drafts on the documentation-control branch. | Do not merge until the module-by-module extraction and global todo consolidation are reviewed. |
-| Scene Editor | Accepted baseline is `artifex/apps/scene-editor/index.html` / `v0.37-control-state-inspector-retention`. Ownership repair work from v0.34–v0.37 is complete. | Do not revive old ownership-repair tasks; next work is project integration. |
-| Archetype Object Creator | V1.36 is merged on `main`; its lifecycle remains subject to post-merge functional validation. | Validate before beginning further Object Creator feature development. |
-| Effect Editor | Accepted route is `artifex/apps/effect-editor/index2.html` / `INDEX2-CLEAN-0.2.6`. | Do not restore older emergency route work or treat parity controls already repaired as outstanding. |
-| Puzzle Creator | V1.34 is the accepted UI-shell/Maze baseline recorded through merged implementation work; documentation refresh PR #44 is still open. | Leave current Puzzle work alone until its active editing stream is complete; do not merge duplicate status documents as the final documentation solution. |
-| Sound Generator / Sound Library | Shared Sound Library/Create Synth work is currently in open PR #46. | Any items taken from PR #46 are provisional until that work is accepted/merged or deliberately retained. |
+| Documentation control | Active docs now run from `0A` through `18A`. | Do not create competing index, backlog or status docs. |
+| Hub | Hub V1.1.4 captured in `3A`. | Do not treat older radial/wedge Portal plan as current. |
+| Creation Guide | V1.1.12 captured in `4A`. | Starter creation and Initial Asset Intake Setup already exist. |
+| Project Editor | v0.1.32 CONTRACT captured in `5A`. | Imported-index browser, linking, Stitcher and Health/Build Prep presentation already exist. |
+| Scene Editor | v0.37-control-state-inspector-retention captured in `6A`. | Do not revive completed v0.35-v0.37 stabilisation work. |
+| Quest Builder | V1.2.12 captured in `7A`. | Do not list current connection/grid/routing/export foundations as missing. |
+| Archetype Object Creator | V1.36 captured in `8A`. | Lifecycle implementation exists but still needs disposable-project validation before feature work. |
+| Effect Editor | INDEX2-CLEAN-0.2.6 captured in `9A`. | Rotation Direction, Orbital Force, ALL CAPS, Gravity/Boost, Brush/Shape Library and width braces are already present. |
+| Asset Library | Contract captured in `10A`. | No complete standalone UI route is verified; treat it as final registered-asset ownership layer. |
+| Shared Connected Project Folder Service | Captured in `11A`. | It owns folder/permission/project-relative read-write infrastructure, not module content. |
+| Shared Active Project Service | Captured in `12A`. | Active project is selection/context, not proof of connected folder or loaded files. |
+| Registered Content Service / Picker | Captured in `13A`. | It reads/selects registered records; it does not create them. |
+| Shared Health Guide / Project Audit | Captured in `14A`. | It reports and assigns fix owners; it must not silently repair authored data. |
+| Build Game | Captured in `15A`. | No complete standalone Build route is verified yet. |
+| Runtime Engine / Playtest | Captured in `16A`. | Current evidence is boundary/planning plus local preview pieces, not completed shared runtime. |
+| Puzzle Creator | V1.35 captured in `17A`. | Labyrinth Maze is implemented; other modules are planning placeholders. |
+| Sound Generator / Sound Library | Captured in new `18A`; old `22` is source evidence. | PR #46 Sound Library work remains provisional until accepted. |
 
----
-
-# All Apps / Shared Platform
-
-## Documentation consolidation and source-of-truth control
-
-Priority: highest  
-Status: in progress through this documentation-control branch
-
-- Establish `docs/artifex/1A-project-file-contracts.md` as the one universal Artifex contract after reviewing all remaining rule-bearing documents.
-- Establish this file, `docs/artifex/2A-global-to-do.md`, as the single human-readable active Artifex backlog.
-- Update `docs/artifex/0A-index-of-files.md` and all accepted module specifications so they point only to the approved active documentation structure.
-- Inspect every real module/service and choose or create exactly one active specification document containing only its unique permanent purpose, ownership, route/baseline and specific interface rules.
-- Extract still-valid permanent rules, module-specific facts and open work from old READMEs, todos, audits, handovers, baseline matrices and status-refresh documents.
-- Check whether `artifex/shared/todo-guide/all-apps-todos.json` is read by application code before changing its role. If runtime-required, retain it temporarily as a machine-readable dependency only; do not treat it as a second human-maintained backlog.
-- Check whether generated project-level task files such as `todos/project-manager-todos.json` or `todos/project-editor-todos.json` are runtime/user-project outputs rather than platform backlog files; retain compatibility where required.
-- After extraction and dependency checks, archive superseded active-status, audit, handover and per-app todo documents rather than deleting useful history.
-- Resolve or close documentation PRs that only update documents being superseded by this controlled structure, after extracting any valid information they contain.
-
-Source material currently being consolidated includes:
-
-```text
-docs/GLOBAL_TODO.md
-artifex/shared/todo-guide/README.md
-artifex/shared/todo-guide/all-apps-todos.json
-artifex/apps/*/docs/todo.md
-artifex/apps/*/*plan*.md
-artifex/shared/todo-guide/audits/**
-docs/artifex/23-current-main-scan-and-pr20-recovery.md
-docs/artifex/24-stabilisation-cleanup-and-ui-resumption-plan.md
-```
-
-## Module/file ownership and technical-debt audit
-
-Priority: high  
-Status: open
-
-- Audit each module against the master contract for clear file ownership and module boundaries.
-- Inspect large monolith files and split only where a real permanent responsibility boundary is required.
-- Audit active patch, override, rescue, enhancer and hotfix layers across apps; move retained behaviour into permanent owners and archive inactive layers only after verification.
-- Do not add new patch/wrapper layers as the normal method of feature work or repair.
-- Keep implementation passes scoped to one app and one concern unless a clearly authorised dependency makes that impossible.
-
-## Shared Artifex shell, branding and navigation consistency
-
-Priority: medium/high  
-Status: open, app-by-app adoption required
-
-- Standardise the common header arrangement: Artifex logo/app title, visible version pill, divider and main menu.
-- Standardise the File → Module flyout pattern listing core modules rather than listing every module inline in File menus.
-- Audit each active app against the shared dark Artifex chrome and module accent-colour rules now incorporated into the master contract draft.
-- Standardise visible version/cache-key handling so changed UI loads the matching accepted version consistently.
-- Standardise remembered editor layout state and a Reset Saved Layout action in apps that have draggable/resizable panels, collapse state, zoom/pan or view toggles.
-
-## Active project and connected-folder authoring foundation
+## All Apps / Shared Platform
 
 Priority: highest  
-Status: partly started; broad adoption remains open
+Status: ongoing
 
-- Complete shared connected-project-folder service adoption across the authoring apps.
-- Make authoring modules load the active connected project's real owned files and indexes rather than falling back to unrelated demo/browser-local state when a project is connected.
-- Implement consistent save-state reporting: **Saved to Project Folder**, **Local Draft Only**, **Project File Changed**, **Conflict**, **Permission Required**, **No Folder Connected**, **Save Failed**.
-- Implement navigation protection when leaving an app with local-only unsaved work, offering Save and Continue, Stay Here, Continue Without Saving and Export Backup where relevant.
-- Preserve the rule that browser-local data is recovery/workspace state and ZIP/download is backup/fallback, not the normal permanent project save path.
-- Validate typed starter schema alignment and project-relative paths as each module adopts real connected-folder saving.
+- Use `0A`, `1A`, `2A` and the active `A` specs as the controlled documentation set.
+- Archive or reduce old docs only after confirming their valid content is represented in active docs.
+- Check code dependencies before retiring machine-readable task files such as `artifex/shared/todo-guide/all-apps-todos.json`.
+- Reconcile open documentation PRs #40 and #44 so they do not become parallel current authorities.
+- Keep PR #46 protected as active Sound work until accepted/merged or deliberately rejected.
+- Standardise shared header/menu/version/chrome behaviour across apps through separate implementation passes.
+- Standardise connected-folder save-state, unsaved-navigation guard and local-draft warnings across authoring apps.
+- Build shared project-reference indexing so modules can show real usage of assets, objects, effects, scenes, quests, puzzles, routes and portal endpoints.
+- Build and validate the populated Template Game connected reference project after connected save/reference systems are reliable.
 
-## Shared reference and cross-app linking infrastructure
+## Hub / Artifex Portal
 
-Priority: high  
-Status: open
+Specification: `docs/artifex/3A-hub-artifex-portal.md`
 
-- Create a shared project reference index so modules can display where assets, object archetypes, effects, actions, scenes, quests, routes and other linked resources are actually used.
-- Use the shared reference index to power real reference listings in Archetype Object Creator rather than placeholder links.
-- Define and implement a project-wide Portal endpoint registry and cross-app linking contract. Portals are not Maze-only paired teleporters: Puzzle Creator and Scene Editor may place endpoints, Quest Builder may activate/reference them, Project Editor displays/validates the graph, and Health/Build report broken links.
-- Complete canonical Puzzle Creator → Quest Builder handoff using saved `puzzle_` IDs only after canonical puzzle saving/registration exists.
+- Rename transitional Hub labels where they imply the wrong module owner, especially Puzzle/Asset wording.
+- Resolve final displayed naming for Object Creator / Archetype Object Creator.
+- Reconcile browser-local active-project handoff with the Shared Active Project Service.
+- Apply shared shell/header refinements later.
+- Archive `docs/artifex/11-portal-hub.md` after acceptance and verification.
 
-## Template Game connected-reference proof
+## Creation Guide
 
-Priority: high  
-Status: open
+Specification: `docs/artifex/4A-creation-guide.md`
 
-- Build and validate the populated Template Game connected reference project using the same contracts as a real project.
-- Prove cross-app reads/references through at least project identity, structural routes, screen/scene records, final registered assets, object/effect records, a Quest and, when implemented, a saved Puzzle linked into a Quest.
-- Validate Health/Build results against the connected Template Game.
-- Add Template Game as a Creation Guide new-project choice only after the connected reference proof passes.
+- Add working Recommended Starting Media checklist.
+- Add project-logo flow from intake source through Asset Library promotion to registered display reference.
+- Extend readiness/Health reporting for real recommended-media and invalid logo-reference status.
+- Consolidate layered V1.1.12 implementation only through a focused versioned implementation pass.
+- Reconcile browser-local project handoff with Shared Active Project Service.
+- Add Template Game choice only after populated connected-reference proof passes.
+- Archive or reduce old Creation Guide docs after acceptance.
 
-## Health, audit and Build validation
+## Project Editor
 
-Priority: high  
-Status: open/partly foundational
+Specification: `docs/artifex/5A-project-editor.md`
 
-- Consolidate reusable diagnostics into Shared Health Guide rather than duplicating check logic inside each authoring module.
-- Validate connected-folder permission/write status, unsaved local drafts, external changes/conflicts, missing registered paths, broken IDs/references, duplicate IDs, unused assets and stale build/backup outputs.
-- Ensure Health reports issues and fix ownership without silently overwriting authored content.
-- Ensure Build Game validates and packages the project without becoming an authoring owner.
+- Implement connected-folder load/save for Project Editor-owned structural files and indexes.
+- Keep browser drafts and ZIP export as recovery/fallback.
+- Migrate Project Manager wording/scopes/files through backward-compatible handling.
+- Confirm/fix Effect Editor menu destination to protected `index2.html`.
+- Extend live connected-reference and gate validation.
+- Replace placeholder route-playtest only when Runtime/Playtest interface exists.
+- Archive old split-plan docs after acceptance.
 
----
+## Scene Editor
 
-# Hub / Artifex Portal
+Specification: `docs/artifex/6A-scene-editor.md`
 
-Status: requires module audit after master/global foundation
+- Implement connected-project scene/screen loading, direct saving and typed index registration.
+- Display canonical project-file/local-draft/conflict/permission status.
+- Replace fixed-manifest/path-only placement with stable registered Asset/Object/Effect references.
+- Add Sound Library ambience/source/transition selection after Sound foundation acceptance.
+- Define Scene Events, Triggers and portal linking after save/reference foundations are reliable.
+- Archive old Scene Editor status/plan docs after acceptance.
 
-- Check current Hub route, app links, visible version, icons and module labels against the final accepted module list.
-- Ensure the Effect Editor Hub link remains directed to the accepted Index2 route.
-- Define the Hub specification: navigation and project-entry ownership only, not authored module/project data.
-- Integrate accurate active-project presentation only through the agreed shared active-project service/contract.
-- Apply final shared shell branding/navigation conventions once the global shell contract is accepted.
+## Quest Builder
 
----
+Specification: `docs/artifex/7A-quest-builder.md`
 
-# Creation Guide
+- Align Quest/Sidequest export/index output with canonical typed collections.
+- Implement connected-project load/save/save-state/conflict handling.
+- Correct live Project Manager navigation wording/route to Project Editor.
+- Implement structured action/condition/outcome/dialogue/Capra authoring and validation.
+- Add dynamic workspace expansion and Insert Space layout tools.
+- After Puzzle Creator canonical saving exists, add real `Puzzle` block using required `puzzleId`.
+- Add registered Sound Library selectors after Sound foundation acceptance.
+- Add Test Quest only through confirmed Runtime/Playtest support.
+- Archive or reduce overlapping Quest Builder docs after acceptance.
 
-Current documented baseline needing verification: V1.1.12 / connected-folder starter work mixed with transitional/local behaviour.
+## Archetype Object Creator
 
-## Verification and contract alignment
+Specification: `docs/artifex/8A-archetype-object-creator.md`
 
-- Verify current starter project initialisation from fresh `main`, including output files, folder layout and package/ZIP fallback behaviour.
-- Confirm Blank Starter creation uses `startScreenId: null` until a real registered start screen exists; do not repeat older missing-start-screen behaviour.
-- Verify remaining bootstrap/folder helper layers and decide whether any active transition code requires later consolidation into permanent ownership.
+Mandatory validation before further feature work:
 
-## Outstanding feature work
-
-- Add **Initial Asset Intake Setup**: explain `intake/` staging, show the six standard source buckets, provide Create Intake Folders and Skip for Now, and write the approved intake structure to the connected project folder.
-- Add a non-blocking **Recommended Starting Media** checklist for logo/title mark, background, player art, NPC art, interactable object, transition object and UI/icon placeholder set.
-- Add project logo identity flow: intake source → Asset Library promotion → final registered project logo reference → display in Creation Guide/project selector where appropriate.
-- Extend setup/readiness Health reporting for folder permission/save state, unsaved local drafts, intake completion/skipping, media readiness and invalid project-logo references.
-- Reuse Shared Health Guide checks rather than retaining duplicate long-term health logic.
-- Add the Template Game project choice only after the populated connected-reference project is proven.
-
----
-
-# Project Editor
-
-Current documented baseline needing verification: `artifex/apps/project-editor/index.html` / `v0.1.32 CONTRACT`.
-
-## Naming, baseline and save verification
-
-- Verify current Project Editor shell, current route/version and save/export behaviour from current `main` only.
-- Remove remaining user-facing **Project Manager** terminology in later versioned passes while preserving compatibility for legacy identifiers/files that are still read.
-- Migrate project-generated todo filename use from `todos/project-manager-todos.json` to `todos/project-editor-todos.json` only through an explicit backward-compatible migration.
-
-## Connected project and structure editing
-
-- Implement connected-folder open/re-authorisation/import flow so Project Editor loads canonical split project files from the real selected root.
-- Implement direct Save Current Project / Save All for Project Editor-owned structural files through the shared folder service, retaining export ZIP only as backup/fallback.
-- Define and validate real project package import/export around canonical split files and typed schema contracts.
-- Make the Asset Browser read real scene, screen, quest, sidequest, puzzle, object archetype, effect archetype and asset indexes instead of placeholders.
-- Add valid link-to-selected-node behaviour for referenced module outputs.
-- Improve the inspector by selected node/route/gate type.
-- Make Stitcher routes support real simple, branch, quest-gated, puzzle-gated, item-gated and condition-gated routes.
-- Present Shared Health/Build Prep results without owning other modules' authored corrections.
-
----
-
-# Scene Editor
-
-Accepted baseline: `artifex/apps/scene-editor/index.html` / `v0.37-control-state-inspector-retention`.
-
-Completed stabilisation work from v0.35–v0.37 must not be reopened as pending ownership work. The remaining tasks are integration tasks:
-
-- Connect authored scenes/screens to the active project's real scene/screen files and indexes.
-- Display accurate project-file versus local-draft save status through the shared save-state model.
-- Place validated Object Creator and Effect Editor outputs through stable registered project references.
-- Adopt Sound Library selection for scene ambience, local sound sources and transitions only after the Sound Library foundation is accepted and in a separate Scene Editor-owned pass. Status: **provisional, sourced from open PR #46**.
-- Later define Scene Events, Triggers and portal linking after save/reference foundations are reliable.
-
----
-
-# Quest Builder
-
-Current live documented baseline: `V1.2.12`.
-
-## Current known UI/terminology follow-up
-
-- Change the live Module flyout label from **Project Manager** to **Project Editor** in a normal versioned app pass.
-- Preserve accepted fine-grid, snap-mode and smart shortest-edge connector presentation while later features are implemented.
-
-## Workspace layout track
-
-- Add dynamic workspace expansion when cards approach the lower/right boundaries while maintaining comfortable blank padding.
-- Allow START/END endpoints to be positioned consistently in an expanded workspace without inferring logic from their visual position.
-- Add horizontal Insert Space layout management; consider vertical/obstacle-aware routing only if tested use requires it.
-
-## Structured Quest authoring track
-
-- Define export-safe structured data for operations, requirements, outcomes and Quest-scoped dialogue/Capra records.
-- Replace vague free-text editing with contextual block-editing sections for actions, conditions, outcomes, failure/feedback, dialogue/presentation, linked assets and validation.
-- Add in-app **Open Dialogue / Feedback** authoring inside Quest Builder; do not create an unnecessary separate Dialogue app for first version.
-- Validate target IDs, dialogue references, feedback data and completion conditions.
-- Align Quest/Sidequest saving to canonical connected-project typed indexes and folder saving.
-
-## Linked Puzzle track
-
-- Wait for or coordinate canonical Puzzle Creator connected-project saving/registration.
-- Add a meaningful Quest Builder `Puzzle` block with required `puzzleId`.
-- Read/select real registered puzzles from the active connected project.
-- Store Quest-level requirements, outcomes and feedback only; do not copy puzzle internal definitions.
-- Add missing-puzzle/public-result validation and Project Editor public-result gate integration.
-
-## Audio integration track
-
-- Add Sound Library selectors for stable Quest start, completion, failure, reward, dialogue and feedback audio fields only after the Sound Library foundation is accepted. Quest records store registered `asset_` IDs only. Status: **provisional, sourced from open PR #46**.
-
----
-
-# Archetype Object Creator
-
-Current runtime baseline: **V1.36 merged on `main` from PR #38**.  
-Immediate gate: functional lifecycle validation before more feature work.
-
-## Mandatory V1.36 post-merge validation
-
-Use a disposable Blank Starter Project folder only:
-
-- Test **Save Project (In Progress)** with uploaded images: project JSON stores staging paths and no browser `dataUrl`, while current-session thumbnails, playback, Frame Fix and brightness matching remain usable.
-- Test **File → Open Project Object** for a saved `in_progress` object and confirm staged images rehydrate into visible editable Step 5 frames.
-- Test invalid **Finish / Mark Object Ready** and confirm it writes no final media, final asset-index record or ready object/index entry.
-- Test valid finalisation and confirm final media promotion, asset-index registration and top-level gameplay/portrait registered asset-ID mapping.
-- Test multiple uploaded images in primary Gameplay Sprite or Dialogue Portrait requirements and confirm finalisation refuses them before final output writes.
-- Test stale-target sound assignment: begin assignment from Action A, change selection to Action B before return, and confirm the returned sound asset ID remains assigned only to Action A.
-- Test per-frame correction persistence across actions, project save/reopen, export/import and finalisation.
+- Test Save Project (In Progress) with uploaded images: project JSON must use staging paths and no browser `dataUrl`.
+- Test Open Project Object for an `in_progress` object and staged media rehydration.
+- Test invalid Finish / Mark Object Ready and confirm no final writes occur.
+- Test valid finalisation and confirm final media promotion, `asset_` registration and top-level gameplay/portrait mapping.
+- Test multiple primary Gameplay Sprite or Dialogue Portrait images and confirm refusal before overwrite.
+- Test stale-target sound assignment.
+- Test per-frame correction persistence through save/reopen/export/import/finalisation.
 - Confirm no duplicate Step 5 controls, module-load failures or console errors.
 
-## Follow-up work after lifecycle validation
+Follow-up:
 
-- Plan a separate focused ownership split of large `editor-ui.js` only after lifecycle validation; do not combine refactoring with a validation repair.
-- Complete real scene/quest/reference listing in the existing Reference panel once the shared project reference index exists.
-- Adopt Sound Library-first selection for Object Creator sound events only after the Sound Library foundation is accepted and without regressing the V1.36 lifecycle. Status: **provisional, sourced from open PR #46**.
+- Split large `editor-ui.js` only after validation and separately from repair work.
+- Complete real Scene/Quest/Puzzle reference listing after shared reference index exists.
+- Adopt Sound Library object sounds after Sound foundation acceptance.
+- Archive Object Creator old docs and historical patch evidence after acceptance.
 
-## Migrated older todo handling
+## Effect Editor
 
-Older presentational Step 5 work in `docs/GLOBAL_TODO.md` has largely been delivered or superseded through V1.36. Retain only the unresolved real-reference-index requirement and lifecycle verification; do not re-add obsolete overlay/layout repair tasks as new feature work.
+Specification: `docs/artifex/9A-effect-editor.md`
 
----
+- Implement canonical connected-project save/status/index workflow for `archetypes/effect-index.json` and `archetypes/effects/archeffect_<slug>.json`.
+- Add project-backed Effect Library for saved FX Archetypes.
+- Replace session/repository-only texture, overlay, icon and thumbnail dependencies with final registered asset references where required.
+- Add visible Degree Range cone/spread guide.
+- Decide whether to integrate inactive `v327-my-settings.js` pinned-controls panel.
+- Expose visible text Once / Loop / Continuous controls and validate text performance.
+- Review Atmosphere Volume prototype before production fog/mist/haze decision.
+- Scope additional FX engines and preset polish from current Index2 only.
+- Add registered sound cues after Sound foundation and final FX schema owner are confirmed.
+- Archive or reduce superseded Effect Editor docs after acceptance.
 
-# Effect Editor
+## Asset Library
 
-Accepted baseline: `artifex/apps/effect-editor/index2.html` / `INDEX2-CLEAN-0.2.6`.
+Specification: `docs/artifex/10A-asset-library.md`
 
-## Editor UI and saved-library work
+- Create or confirm Asset Library UI/service for final `asset_` browsing, grouping, promotion and metadata editing.
+- Implement safe promotion from `intake/` to final `assets/` files and `assets/asset-index.json`.
+- Keep intake references out of permanent authored content.
+- Support Creation Guide logo/media readiness.
+- Support Object Creator finalisation without making Object Creator the general importer.
+- Support Effect Editor registered texture, overlay, icon, brush, thumbnail and audio dependencies.
+- Support Scene Editor, Quest Builder and Puzzle Creator registered media selection.
+- Add canonical imported-audio promotion for accepted audio formats.
+- Ensure Health and Build can validate final asset records and files.
+- Archive or reduce `docs/artifex/20-asset-intake-workflow.md` after acceptance.
 
-- Final QA/fix pass for the Display panel and view controls: avoid overlap with diagnostics, retain a clean icon grid, remove duplicate controls and keep Pause/Snapshot/Zoom positioning coherent.
-- Restore the **My Settings** / favourite pinned controls panel as an Index2-owned module, including draggable/collapsible panel, edit/pin mode, live mirrored controls and locally persisted pinned controls/panel position.
-- Add an **Effect Library** browser with visual thumbnails/previews, names, tags and engine types, ultimately backed by canonical connected-project effect records/indexes.
-- Add an obvious Save action in Effect Archetype Assets with real connected-project save/status behaviour and separate backup/export fallback.
-- Add live emitter-width brace markers and Degree Range cone guides that accurately reflect direction/range modes and respond to Guides visibility.
+## Shared Connected Project Folder Service
 
-## Runtime/effect engine work
+Specification: `docs/artifex/11A-shared-connected-project-folder-service.md`
 
-- Rescale gravity and speed controls into intuitive user-facing values consistent with visible runtime movement.
-- Complete text-effect runtime and controls: spawn delay, text-specific density, multiline/spacing/wrap behaviour, direction/reveal/scatter/keep-block/lifetime controls and stability across font choices.
-- Build missing real FX engines: smoke/cloud/mist/fog, spark/ember, electric arc/lightning, ribbon/trail, tornado/vortex/swirl, beam/laser, projectile/fireball, lens flare compositor, heat distortion/warping, convex/concave warps, liquid/blob/black-oil, rain/weather, shockwave/radial burst and sprite-sheet/flipbook FX.
-- Perform a visual-quality pass on built-in presets only after underlying engines are stable.
-- Finish real brush, overlay and icon asset loaders, with future Asset Library connection where appropriate.
-- Integrate retained V3 polish/legacy layers into normal permanent module ownership and archive dead layers only after stable verification.
+- Expand adoption beyond Creation Guide and Object Creator.
+- Standardise permission, re-authorisation, save-state and navigation-guard UI.
+- Implement project-file changed/conflict detection.
+- Ensure all writes use project-relative paths only.
+- Prevent modules from silently falling back to local-only saves when connected save is expected.
+- Validate `project.json` identity with Shared Active Project Service.
 
-## Confirmed visual targets to preserve during implementation
+## Shared Active Project Service
 
-- Lens flare / light glint: Three.js lens flare-style target combined with the user's circular overlay asset.
-- Underworld oil droplets: living black-oil/blob target based on marching-cubes-style motion.
-- Futuristic HUD bloom: general bloom effect plus uploaded PNG/image bloom support.
-- Sunlight rays: god-rays/light-shaft target.
-- Interactive water: disturbed/rippled water target.
-- Shockwave: radial impact-ring target.
-- Ground fog: low drifting ground-level fog/mist target.
-- Choose final visual references for Explosion and Storm before implementing those engine targets.
+Specification: `docs/artifex/12A-shared-active-project-service.md`
 
-## Audio integration track
+- Formalise stable API beyond direct localStorage access.
+- Bind active project selection safely to connected folder identity.
+- Validate selected project metadata against `project.json`.
+- Prevent apps from showing unrelated demo/default state when an active project exists.
+- Add project-switch guards for unsaved local-only work.
+- Reconcile stale/missing browser project-library entries.
+- Standardise visible active project context across apps.
 
-- Add optional Sound Library cues for start, loop, impact and end sounds only after the Sound Library foundation is accepted and after confirming the accepted FX schema owner. Silent effects remain valid; saved cues use registered `asset_` IDs only. Status: **provisional, sourced from open PR #46**.
+## Registered Content Service / Picker
 
----
+Specification: `docs/artifex/13A-registered-content-service-picker.md`
 
-# Asset Library
+- Adopt shared picker consistently in Scene Editor, Quest Builder, Asset Library, Effect Editor and Project Editor where appropriate.
+- Add project reference/usage reporting through shared reference index.
+- Add file-existence validation where needed without making picker the Health owner.
+- Support Portal and scatter-decoration registered selections if approved.
+- Keep every new selectable kind tied to an explicit owner and canonical index.
 
-- Define/retain the final Asset Library module specification for final registered `asset_` records, metadata, groups and asset selection.
-- Complete supplied-source promotion from `intake/` into final indexed `assets/` records while keeping permanent authored content free of intake references.
-- Support promotion/registration workflows needed by Creation Guide project-logo identity and starting-media readiness.
-- Support Effect Library/other module selectors through stable registered references rather than placeholder/demo records.
-- Add the canonical import/promote workflow for new audio files such as WAV, MP3 and OGG into final `assets/audio/` records; Sound Library should select registered audio, not become an ad-hoc importer. Status: **provisional, sourced from open PR #46**.
+## Shared Health Guide / Project Audit
 
----
+Specification: `docs/artifex/14A-shared-health-guide-project-audit.md`
 
-# Shared Connected Project Folder Service
+- Expand shared checks across all canonical project files and module indexes.
+- Integrate Creation Guide readiness checks with shared Health.
+- Integrate connected-folder permission/save/conflict state.
+- Integrate registered-content validation and shared project reference index.
+- Define writing/reading of `health/latest-health-report.json`.
+- Migrate task output to Project Editor naming with legacy recovery.
+- Feed Build Game validation without making Build Game the authoring owner.
+- Display fix owner and next action consistently.
 
-Classification pending: confirm whether this remains a distinct maintained service specification or is sufficiently covered by the master contract plus implementation ownership.
+## Build Game
 
-- Complete directory-handle persistence/re-authorisation and relative-path read/write adoption needed by authoring modules.
-- Provide common save-state and unsaved-navigation guard behaviour.
-- Ensure project JSON never stores private local paths or browser handles.
-- Support safe validation/finalisation workflows where owning apps write staged/final content through the connected project.
+Specification: `docs/artifex/15A-build-game.md`
 
----
+- Create or confirm Build Game app/service.
+- Define `build/runtime-project.json` and `build/build-manifest.json` schemas.
+- Consume Shared Health and run stricter final build validation.
+- Validate canonical indexes, record references and final assets.
+- Reject permanent intake references.
+- Detect unsaved local-only or stale source conditions where possible.
+- Generate runtime-ready output under `build/`.
+- Prove workflow through Template Game before production use.
 
-# Shared Active Project Service
+## Runtime Engine / Playtest
 
-Classification pending: confirm whether this warrants its own service specification.
+Specification: `docs/artifex/16A-runtime-engine-playtest.md`
 
-- Make all apps reliably load the selected active project's real owned content/indexes where connected-project integration is implemented.
-- Prevent apps from quietly showing unrelated demo/default state when a real active project is available.
-- Define the safe boundary between browser-saved workspace selection/state and the connected project folder as the authored-data source of truth.
+- Confirm runtime/playtest route and architecture.
+- Define preview/test entry points from Project Editor, Scene Editor, Quest Builder, Puzzle Creator and Build Game.
+- Keep Playtest temporary state separate from authored project files.
+- Implement safe fake flags/items/location/player-state override system.
+- Read saved connected-project content or explicit test packages, not unrelated demo data.
+- Support future generated audio playback and registered final assets.
+- Prove with Template Game.
 
----
+## Puzzle Creator
 
-# Registered Content Service / Picker
+Specification: `docs/artifex/17A-puzzle-creator.md`
 
-Classification pending: determine whether this is a maintained service specification or part of Asset Library/shared project infrastructure.
+- Implement canonical connected-project puzzle save/index registration.
+- Define final puzzle record schema and public puzzle result contract.
+- Coordinate Quest Builder `Puzzle` block and `puzzleId` selection after saved puzzle records exist.
+- Implement Secondary Light Set / coverage fill if still approved.
+- Render linked Door visuals and Scatter visual/light assets in playable preview.
+- Implement Portal registered visual/effect selection and global endpoint registry integration.
+- Implement Completion Rule enforcement in Walk Test/game runtime.
+- Implement Traboule, Foe, Hazard, Tunnel Mode, first-person/3D and helper systems only in scoped passes.
+- Build non-Maze puzzle engines separately; do not present placeholders as completed editors.
+- Add registered sound feedback after Sound foundation acceptance.
+- Reconcile open PR #44 rather than merging it as competing authority.
 
-- Provide stable selection/lookup of registered asset, object archetype and effect archetype records for authoring modules.
-- Support real reference validation without creating parallel ownership of the selected records.
-- Align with Asset Library and project reference index decisions.
+## Sound Generator / Sound Library
 
----
+Specification: `docs/artifex/18A-sound-generator-sound-library.md`
 
-# Shared Health Guide / Project Audit
+- Decide and merge or reject PR #46 Sound Library selector architecture.
+- Finish/confirm shared Sound Library modal over registered audio assets.
+- Finish imported-audio promotion through Asset Library.
+- Adopt Choose Sound / Create Synth Sound / Save and Assign Here hooks in Object Creator, Scene Editor, Puzzle Creator, Quest Builder and Effect Editor through separate owner-led passes.
+- Validate initiating-target capture in each caller integration.
+- Implement runtime/playtest playback of procedural-synth recipe assets where needed.
+- Extend Health and Build validation for generated audio.
+- Add at least one generated procedural sound to Template Game once involved systems are ready.
+- Archive old `docs/artifex/22-sound-archetype-generator.md` after `18A` acceptance and PR #46 reconciliation.
 
-- Establish or confirm the single Health Guide specification and shared check ownership.
-- Replace duplicated per-app long-term check logic with reusable shared checks displayed in app-appropriate contexts.
-- Report broken references, missing required records, invalid connected-folder state, unsaved local drafts, conflicts, duplicate IDs, unused assets and build readiness.
-- Report fix owner/module clearly and never silently correct authored content.
+## Documentation / PR Reconciliation Queue
 
----
-
-# Build Game
-
-- Establish or confirm the single Build Game specification.
-- Validate canonical project files, registered resources and unresolved cross-module references before packaging.
-- Consume Shared Health results where appropriate without becoming an authoring owner.
-- Prove final packaging through the Template Game connected-reference workflow before relying on it for production output.
-
----
-
-# Runtime Engine / Playtest
-
-Classification pending: determine whether Runtime Engine and Playtest are one maintained service or separate specifications.
-
-- Confirm what existing playable/preview routes actually exist and which authored records they read.
-- Define preview/testing entry points from Scene Editor, Project Editor, Quest Builder, Puzzle Creator and Build Game without transferring ownership of authored content.
-- Validate project-file reading against the connected-project contract after module saving becomes reliable.
-
----
-
-# Puzzle Creator
-
-Protected active work stream: consolidate only after checking the latest Puzzle work.  
-Last accepted baseline established through merged UI work: `artifex/apps/puzzle-creator/index.html` / `V1.34`, with Maze / Labyrinth as the currently developed playable workflow.
-
-- Preserve the accepted V1.34 launcher/navigation/Maze UI-shell baseline while later work is scoped.
-- Implement canonical connected-project saving/index registration for `puzzles/puzzle-index.json` and `puzzles/puzzle_<slug>.json`.
-- Coordinate the saved `puzzleId` handoff with Quest Builder only after canonical saved puzzle records exist.
-- Scope additional puzzle engines/features separately; do not present surfaced non-Maze choices as completed gameplay editors until built/tested.
-- Retain registered-content/final-asset reference rules for any puzzle-owned assets/effects/audio.
-- Adopt Sound Library feedback selection for correct input, wrong input, unlock, timer warning, completion and failure only after the Sound Library foundation is accepted and without interfering with current Puzzle work. Status: **provisional, sourced from open PR #46**.
-
----
-
-# Sound Generator / Sound Library
-
-Protected active work stream: open PR #46 currently modifies this area.  
-This section preserves future/adoption work without claiming PR #46 is accepted or merged.
-
-## Proposed shared foundation currently under review in PR #46
-
-- Provide a shared Sound Library selector that lists registered imported/generated audio assets through `assets/asset-index.json` and returns registered `asset_` IDs only.
-- Provide Create New Synth Sound inside Sound Library, writing approved generated recipes to final audio assets and registering them through Asset Library.
-- Confirm the standalone preview harness proves selection, preview, generated-synth save/registration and caller-target preservation before caller-app adoption.
-- After any merge, reconcile the Sound Generator specification document and this todo section to the actual accepted baseline.
-
-## Deferred caller adoption tasks after foundation acceptance
-
-- Archetype Object Creator: Sound Library-first selection for object sound events without regressing V1.36 lifecycle/target ownership.
-- Quest Builder: selectors for stable quest audio fields.
-- Effect Editor: optional effect start/loop/impact/end cues.
-- Puzzle Creator: feedback sounds.
-- Scene Editor: ambience, sources and transitions.
-- Asset Library: import/promotion of newly supplied audio files, since Sound Library must not own ad-hoc audio importing.
-
----
-
-# Documentation / PR reconciliation queue
-
-These are documentation-control actions, not implementation approval:
-
-| PR / document area | Current interpretation | Consolidation treatment |
+| PR / document area | Current interpretation | Action |
 |---|---|---|
-| Draft PR #47 — this documentation-control branch | Contains `0A` and `1A`, now to include `2A`. | Keep as draft until module extraction and document reference updates are sufficiently complete for review. |
-| Open PR #40 — Scene/Effect status refresh | Its Scene status was superseded by the later accepted Scene Editor v0.37 record; parts of its status-refresh approach are no longer needed as separate active docs. | Extract any unique outstanding task only; do not merge it as another active status authority. |
-| Open PR #44 — Puzzle V1.34 status refresh | Contains useful current Puzzle baseline information but updates the older duplicated documentation structure while Puzzle remains an active work stream. | Reconcile late with the Puzzle module spec/global todo rather than merge duplicate status sources as the final structure. |
-| Open PR #46 — Sound Library / Create Synth Sound | Active runtime/doc/task work in an area currently being edited. | Preserve as active work; tasks copied here are explicitly provisional until accepted/merged. |
-| `docs/GLOBAL_TODO.md` | Contains older Object Creator follow-up items, many superseded by V1.36; unresolved real-reference need retained here. | Supersede/archive only after this `2A` document is approved and references are updated. |
-| `artifex/shared/todo-guide/all-apps-todos.json` | Contains a large backlog and may have live/machine dependency implications. | Use as extraction source; check dependencies before retiring its human-backlog role. |
-| Per-app `todo.md`, plan, audit and status files | Mix current work with history and specification facts. | Extract into this todo/module specs, then archive where superseded and safe. |
+| PR #50 | Documentation extraction PR should now cover `3A` through `18A`. | Update title/body and reconcile branch before merge. |
+| PR #40 | Scene/Effect status refresh. | Do not merge as parallel authority; capture unique Effect details if any remain. |
+| PR #44 | Puzzle V1.34 documentation refresh. | Reconcile/close after `17A`; V1.35 and `17A` supersede it. |
+| PR #46 | Sound Library / Create Synth work. | Keep protected; decide after review/merge. |
+| Old non-A docs | Source evidence only after extraction. | Archive or reduce to local pointers after acceptance. |
 
-## Migrated-source checkpoint
+## Completion Checkpoint
 
-Open work has been copied or consolidated here from the known active backlog sources reviewed so far:
-
-```text
-docs/GLOBAL_TODO.md
-artifex/shared/todo-guide/README.md
-artifex/shared/todo-guide/all-apps-todos.json
-artifex/apps/archetype-object-creator/docs/todo.md
-artifex/apps/effect-editor/docs/todo.md
-artifex/apps/quest-builder/docs/todo.md
-docs/artifex/24-stabilisation-cleanup-and-ui-resumption-plan.md
-merged Scene Editor accepted-baseline PR #45
-open Puzzle documentation PR #44
-open Sound Library / Sound Generator PR #46
-```
-
-As each module is audited in order, this file must be checked against its remaining app-specific plans/todo documents so any additional still-live task is added here before the old source is archived.
+The active documentation extraction pass has produced or updated the controlled specifications through Sound Generator / Sound Library. The remaining work is implementation, validation, archive/reconciliation and PR cleanup, not more first-pass module extraction.
