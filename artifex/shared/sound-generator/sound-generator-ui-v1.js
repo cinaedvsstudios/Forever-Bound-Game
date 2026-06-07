@@ -5,19 +5,38 @@ import { ProceduralSoundRuntime } from './procedural-synth-runtime.js';
 import '../project-folder/project-folder-client.js?v=0.1.0';
 import { downloadProceduralSynthRecipe, readImportedProceduralSynth, saveProceduralSynthToLibrary } from './sound-generator-store.js';
 
-const VERSION = 'V1.17';
+const VERSION = 'V1.18';
 const STYLE_ID = 'artifex-sound-generator-css';
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const clone = (value) => structuredClone(value);
 const controls = (preset) => normalizeControls(copyPresetControls(preset));
 const allSliderDefinitions = Object.freeze([...CONTROL_DEFINITIONS, ...ADVANCED_CONTROL_GROUPS.flatMap((group) => group.controls)]);
+const ADVANCED_GROUP_ORDER = Object.freeze([
+  'envelope',
+  'lowpass',
+  'highpass',
+  'frequency',
+  'vibrato',
+  'arpeggiation',
+  'duty',
+  'flanger',
+  'retrigger',
+  'output'
+]);
+const orderedAdvancedGroups = Object.freeze([...ADVANCED_CONTROL_GROUPS].sort((left, right) => {
+  const leftIndex = ADVANCED_GROUP_ORDER.indexOf(left.id);
+  const rightIndex = ADVANCED_GROUP_ORDER.indexOf(right.id);
+  const safeLeft = leftIndex === -1 ? ADVANCED_GROUP_ORDER.length + (99 - left.controls.length) : leftIndex;
+  const safeRight = rightIndex === -1 ? ADVANCED_GROUP_ORDER.length + (99 - right.controls.length) : rightIndex;
+  return safeLeft - safeRight;
+}));
 
 function loadCss() {
   if (document.getElementById(STYLE_ID)) return;
   const link = document.createElement('link');
   link.id = STYLE_ID;
   link.rel = 'stylesheet';
-  link.href = new URL('./sound-generator.css?v=1.17', import.meta.url).href;
+  link.href = new URL('./sound-generator.css?v=1.18', import.meta.url).href;
   document.head.appendChild(link);
 }
 
@@ -49,6 +68,10 @@ function frequencyGraphMarkup() {
       <aside class="sound-frequency-actions" aria-label="Sound preview controls">
         <button class="primary inline-preview" type="button" data-act="preview">▶️ Play</button>
         <button class="inline-stop" type="button" data-act="stop">⏹️ Stop</button>
+        <div class="sound-graph-pattern-controls" aria-label="Playback pattern controls">
+          <label>Pattern<select data-field="pattern"><option value="single">Single</option><option value="double">Double</option><option value="triple">Triple</option><option value="repeat">Repeat</option></select></label>
+          <label class="check"><input type="checkbox" data-field="loop" /> Loop until stopped</label>
+        </div>
       </aside>
     </div>
   </section>`;
@@ -83,8 +106,7 @@ function markup(options) {
         </div>
         ${frequencyGraphMarkup()}
         <div class="sound-control-grid">${sliderMarkup(CONTROL_DEFINITIONS)}</div>
-        <details class="sound-advanced" open><summary>⚙️ Advanced SFXR-style controls</summary><div class="sound-advanced-grid">${ADVANCED_CONTROL_GROUPS.map(advancedGroupMarkup).join('')}</div></details>
-        <div class="sound-pattern-row"><label>Pattern<select data-field="pattern"><option value="single">Single</option><option value="double">Double</option><option value="triple">Triple</option><option value="repeat">Repeat</option></select></label><label class="check"><input type="checkbox" data-field="loop" /> Loop until stopped</label></div>
+        <details class="sound-advanced" open><summary>⚙️ Advanced SFXR-style controls</summary><div class="sound-advanced-grid">${orderedAdvancedGroups.map(advancedGroupMarkup).join('')}</div></details>
       </section>
     </div>
     <p class="sound-message" data-message aria-live="polite"></p>
