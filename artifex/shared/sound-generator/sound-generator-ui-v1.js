@@ -5,7 +5,7 @@ import { ProceduralSoundRuntime } from './procedural-synth-runtime.js';
 import '../project-folder/project-folder-client.js?v=0.1.0';
 import { downloadProceduralSynthRecipe, readImportedProceduralSynth, proceduralSynthToJson, saveProceduralSynthToLibrary } from './sound-generator-store.js';
 
-const VERSION = 'V1.10';
+const VERSION = 'V1.11';
 const STYLE_ID = 'artifex-sound-generator-css';
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const clone = (value) => structuredClone(value);
@@ -17,7 +17,7 @@ function loadCss() {
   const link = document.createElement('link');
   link.id = STYLE_ID;
   link.rel = 'stylesheet';
-  link.href = new URL('./sound-generator.css?v=1.10', import.meta.url).href;
+  link.href = new URL('./sound-generator.css?v=1.11', import.meta.url).href;
   document.head.appendChild(link);
 }
 
@@ -27,6 +27,23 @@ function sliderMarkup(definitions) {
 
 function advancedGroupMarkup(group) {
   return `<fieldset class="sound-sfxr-group"><legend>${esc(group.label)}</legend><div class="sound-sfxr-sliders">${sliderMarkup(group.controls)}</div></fieldset>`;
+}
+
+function frequencyGraphMarkup() {
+  return `<section class="sound-frequency-panel" aria-label="Frequency graph">
+    <div class="sound-frequency-header"><h3>Frequency graph</h3><output data-frequency-duration>0.00 sec</output></div>
+    <svg class="sound-frequency-graph" data-frequency-graph viewBox="0 0 620 210" role="img" aria-label="Pitch movement over sound duration">
+      <g class="frequency-grid" aria-hidden="true">
+        <line x1="42" y1="20" x2="42" y2="166"></line><line x1="176" y1="20" x2="176" y2="166"></line><line x1="310" y1="20" x2="310" y2="166"></line><line x1="444" y1="20" x2="444" y2="166"></line><line x1="578" y1="20" x2="578" y2="166"></line>
+        <line x1="42" y1="20" x2="578" y2="20"></line><line x1="42" y1="56.5" x2="578" y2="56.5"></line><line x1="42" y1="93" x2="578" y2="93"></line><line x1="42" y1="129.5" x2="578" y2="129.5"></line><line x1="42" y1="166" x2="578" y2="166"></line>
+      </g>
+      <text class="frequency-label" x="8" y="25">High</text>
+      <text class="frequency-label" x="10" y="168">Low</text>
+      <polyline class="frequency-curve" data-frequency-curve points="42,93 578,93"></polyline>
+      <g data-frequency-points></g>
+    </svg>
+    <div class="sound-frequency-time-index" data-frequency-time-index><span>0.00s</span><span>0.03s</span><span>0.06s</span><span>0.10s</span></div>
+  </section>`;
 }
 
 function markup(options) {
@@ -46,17 +63,21 @@ function markup(options) {
           <button data-act="variation">🎲 Variation</button>
           <button data-act="stop">⏹️ Stop</button>
           <button data-act="reset">↺ Reset</button>
+          <button data-act="random">🎰 Random Sound</button>
+          <button data-act="export">📤 Export JSON</button>
+          <input type="file" accept=".json,application/json" data-file hidden />
+          <button data-act="import">📥 Import JSON</button>
+          <button data-act="save">💾 Save to Library</button>
+          <button class="assign-action" data-act="assign">✅ Save and Assign Here</button>
         </div>
         <div class="sound-identity"><label>Name<input type="text" maxlength="80" data-field="name" /></label><label>Category<input type="text" maxlength="50" data-field="category" /></label><label class="wide">Tags<input type="text" maxlength="180" data-field="tags" placeholder="puzzle, correct, magical" /></label></div>
         <fieldset class="sound-waveform"><legend>Waveform</legend>${WAVEFORMS.map((wave) => `<button type="button" data-waveform="${esc(wave.id)}">${esc(wave.label)}</button>`).join('')}</fieldset>
         <fieldset class="sound-pitch-change"><legend>Pitch Change</legend><button data-pitch="drops">↘️ Drops</button><button data-pitch="steady">➡️ Steady</button><button data-pitch="rises">↗️ Rises</button></fieldset>
         <div class="sound-control-grid">${sliderMarkup(CONTROL_DEFINITIONS)}</div>
-        <details class="sound-advanced" open><summary>⚙️ Advanced SFXR-style controls</summary><div class="sound-advanced-grid">${ADVANCED_CONTROL_GROUPS.map(advancedGroupMarkup).join('')}</div></details>
+        <details class="sound-advanced" open><summary>⚙️ Advanced SFXR-style controls</summary>${frequencyGraphMarkup()}<div class="sound-advanced-grid">${ADVANCED_CONTROL_GROUPS.map(advancedGroupMarkup).join('')}</div></details>
         <div class="sound-pattern-row"><label>Pattern<select data-field="pattern"><option value="single">Single</option><option value="double">Double</option><option value="triple">Triple</option><option value="repeat">Repeat</option></select></label><label class="check"><input type="checkbox" data-field="loop" /> Loop until stopped</label></div>
       </section>
-      <aside class="sound-record"><h2>Generated Sound Asset</h2><dl class="sound-record-summary"><div><dt>Asset ID</dt><dd data-id></dd></div><div><dt>Recipe Path</dt><dd data-path></dd></div><div><dt>Kind</dt><dd>procedural-synth</dd></div></dl><label class="sound-json-label">Generated JSON<textarea data-json readonly spellcheck="false"></textarea></label><p class="sound-library-note">Save writes the recipe under <code>assets/audio/sfx/</code> and registers one <code>asset_sfx_</code> entry in <code>assets/asset-index.json</code>.</p></aside>
     </div>
-    <footer class="sound-actions"><div class="sound-preview-actions"><button data-act="random">🎰 Random Sound</button><button data-act="export">Export JSON</button><input type="file" accept=".json,application/json" data-file hidden /><button data-act="import">Import JSON</button></div><div class="sound-file-actions"><button data-act="save">💾 Save to Library</button><button class="assign-action" data-act="assign">✅ Save and Assign Here</button></div></footer>
     <p class="sound-message" data-message aria-live="polite"></p>
   </section>`;
 }
@@ -84,6 +105,48 @@ export function createSoundGeneratorUI(container, options = {}) {
   const message = (value, kind = '') => { text('[data-message]', value); $('[data-message]').dataset.kind = kind; };
   const runtime = new ProceduralSoundRuntime(({ message: value }) => text('[data-runtime]', value));
 
+  function renderFrequencyGraph(item) {
+    const recipe = item?.recipe || {};
+    const tone = recipe.tone || {};
+    const durationMs = Math.max(1, Number(recipe.durationMs || 100));
+    const rawCurve = Array.isArray(tone.frequencyCurve) && tone.frequencyCurve.length
+      ? tone.frequencyCurve
+      : [
+          { time: 0, frequencyHz: Number(tone.startFrequencyHz || 440) },
+          { time: 1, frequencyHz: Number(tone.endFrequencyHz || tone.startFrequencyHz || 440) }
+        ];
+    const curve = rawCurve
+      .map((point) => ({
+        time: Math.max(0, Math.min(1, Number(point.time ?? 0))),
+        frequencyHz: Math.max(1, Number(point.frequencyHz || 440))
+      }))
+      .sort((left, right) => left.time - right.time);
+    const minFrequency = Math.min(...curve.map((point) => point.frequencyHz));
+    const maxFrequency = Math.max(...curve.map((point) => point.frequencyHz));
+    const range = Math.max(1, maxFrequency - minFrequency);
+    const points = curve.map((point) => {
+      const x = 42 + point.time * 536;
+      const y = 166 - ((point.frequencyHz - minFrequency) / range) * 146;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    const line = $('[data-frequency-curve]');
+    if (line) line.setAttribute('points', points);
+    const pointHost = $('[data-frequency-points]');
+    if (pointHost) {
+      pointHost.innerHTML = curve.map((point) => {
+        const x = 42 + point.time * 536;
+        const y = 166 - ((point.frequencyHz - minFrequency) / range) * 146;
+        return `<circle class="frequency-point" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5.5"><title>${Math.round(point.frequencyHz)} Hz at ${(point.time * durationMs / 1000).toFixed(2)} sec</title></circle>`;
+      }).join('');
+    }
+    text('[data-frequency-duration]', `${(durationMs / 1000).toFixed(2)} sec`);
+    const index = $('[data-frequency-time-index]');
+    if (index) {
+      const seconds = durationMs / 1000;
+      index.innerHTML = [0, 0.25, 0.5, 0.75, 1].map((ratio) => `<span>${(seconds * ratio).toFixed(2)}s</span>`).join('');
+    }
+  }
+
   function record() {
     state.values = normalizeControls(state.values);
     state.record = buildProceduralSynthAsset(state.values, {
@@ -94,9 +157,7 @@ export function createSoundGeneratorUI(container, options = {}) {
       sourceLabel: config.sourceLabel
     });
     state.createdAt ||= state.record.createdAt;
-    text('[data-id]', state.record.assetId);
-    text('[data-path]', state.record.resourcePath);
-    $('[data-json]').value = proceduralSynthToJson(state.record);
+    renderFrequencyGraph(state.record);
     return state.record;
   }
 

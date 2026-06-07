@@ -34,7 +34,7 @@
   max-height: calc(100vh - 44px);
   min-height: min(780px, calc(100vh - 44px));
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   overflow: hidden;
   border: 1px solid var(--sg-border);
   border-radius: 22px;
@@ -92,10 +92,9 @@
 .sound-source-row strong { padding: 4px 11px; border: 1px solid rgba(53,212,216,.26); border-radius: 999px; background: rgba(53,212,216,.09); color: var(--sg-parchment); }
 .sound-state { margin-left: auto; color: var(--sg-muted); }
 
-.sound-layout { min-height: 0; display: grid; grid-template-columns: 278px minmax(520px, 1fr) minmax(300px, 365px); }
-.sound-library, .sound-editor, .sound-record { min-height: 0; overflow: auto; padding: 14px; }
+.sound-layout { min-height: 0; display: grid; grid-template-columns: 278px minmax(620px, 1fr); }
+.sound-library, .sound-editor { min-height: 0; overflow: auto; padding: 14px; }
 .sound-library { border-right: 1px solid var(--sg-line); background: rgba(0,0,0,.13); }
-.sound-record { border-left: 1px solid var(--sg-line); background: rgba(0,0,0,.16); }
 
 .sound-mode-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 13px; padding: 4px; border: 1px solid var(--sg-line); border-radius: 13px; background: rgba(0,0,0,.26); }
 .sound-mode-tabs button { border: 0; background: transparent; box-shadow: none; padding: 9px 6px; }
@@ -111,6 +110,7 @@
 
 .sound-editor { display: grid; align-content: start; gap: 12px; }
 .sound-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px; border: 1px solid rgba(53,212,216,.2); border-radius: 14px; background: rgba(0,0,0,.18); }
+.sound-toolbar .assign-action { margin-left: auto; }
 
 .sound-identity { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .sound-identity .wide { grid-column: 1 / -1; }
@@ -186,6 +186,58 @@
   padding: 4px 2px 10px;
 }
 
+.sound-frequency-panel {
+  margin: 0 0 12px;
+  padding: 10px;
+  border: 1px solid var(--sg-line);
+  border-radius: 13px;
+  background: rgba(0,0,0,.16);
+}
+.sound-frequency-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.sound-frequency-header h3 {
+  margin: 0;
+  color: var(--sg-teal);
+  font-size: 12px;
+  font-weight: 800;
+}
+.sound-frequency-header output {
+  padding: 4px 9px;
+  border: 1px solid rgba(53,212,216,.35);
+  border-radius: 999px;
+  background: rgba(53,212,216,.08);
+  color: var(--sg-parchment);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.sound-frequency-graph {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid rgba(53,212,216,.26);
+  border-radius: 12px;
+  background: #101313;
+}
+.frequency-grid line { stroke: rgba(248,240,200,.16); stroke-width: 1; }
+.frequency-label { fill: rgba(248,240,200,.62); font: 10px Arial, sans-serif; }
+.frequency-curve { fill: none; stroke: var(--sg-teal); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.frequency-point { fill: var(--sg-teal); stroke: #071011; stroke-width: 2; }
+.sound-frequency-time-index {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 0 3px;
+  color: rgba(248,240,200,.58);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
 .sound-advanced-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(250px, 1fr));
@@ -257,7 +309,6 @@
 
 @media (max-width: 1250px) {
   .sound-layout { grid-template-columns: 260px 1fr; }
-  .sound-record { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--sg-line); }
   .sound-json-label textarea { height: 230px; min-height: 180px; }
 }
 @media (max-width: 930px) {
