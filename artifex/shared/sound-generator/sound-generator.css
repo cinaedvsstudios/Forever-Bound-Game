@@ -547,3 +547,5 @@
   .sound-advanced-grid { grid-template-columns: 1fr; }
   .sound-frequency-actions { flex-direction: row; }
 }
+
+/* V1.17: frequency graph now uses a fixed normalized pitch scale so dragging one point does not visually shift the others. */

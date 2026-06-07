@@ -1,4 +1,4 @@
-import { openSoundGeneratorModal } from '../../shared/sound-generator/sound-generator-window.js?v=1.16';
+import { openSoundGeneratorModal } from '../../shared/sound-generator/sound-generator-window.js?v=1.17';
 
 function openPreview() {
   openSoundGeneratorModal({

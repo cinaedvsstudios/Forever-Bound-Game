@@ -5,7 +5,7 @@ import { ProceduralSoundRuntime } from './procedural-synth-runtime.js';
 import '../project-folder/project-folder-client.js?v=0.1.0';
 import { downloadProceduralSynthRecipe, readImportedProceduralSynth, saveProceduralSynthToLibrary } from './sound-generator-store.js';
 
-const VERSION = 'V1.16';
+const VERSION = 'V1.17';
 const STYLE_ID = 'artifex-sound-generator-css';
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const clone = (value) => structuredClone(value);
@@ -17,7 +17,7 @@ function loadCss() {
   const link = document.createElement('link');
   link.id = STYLE_ID;
   link.rel = 'stylesheet';
-  link.href = new URL('./sound-generator.css?v=1.16', import.meta.url).href;
+  link.href = new URL('./sound-generator.css?v=1.17', import.meta.url).href;
   document.head.appendChild(link);
 }
 
@@ -203,46 +203,73 @@ export function createSoundGeneratorUI(container, options = {}) {
     playheadFrame = requestAnimationFrame(tick);
   }
 
+  function graphFrequencyScale() {
+    const current = normalizeControls(state.values);
+    const baseFrequencyHz = 55 * Math.pow(1760 / 55, current.pitch / 100);
+    const pitchTravel = 0.08 + (0.78 - 0.08) * (current.tone / 100);
+    const minFrequency = Math.max(25, baseFrequencyHz * (1 - pitchTravel));
+    const maxFrequency = Math.max(minFrequency + 1, baseFrequencyHz * (1 + pitchTravel));
+    return { minFrequency, maxFrequency, range: Math.max(1, maxFrequency - minFrequency) };
+  }
+
+  function frequencyFromGraphValue(value, scale) {
+    return scale.minFrequency + scale.range * clamp01(value);
+  }
+
+  function graphValueFromFrequency(frequencyHz, scale) {
+    return clamp01((Number(frequencyHz) - scale.minFrequency) / scale.range);
+  }
+
   function renderFrequencyGraph(item) {
     const recipe = item?.recipe || {};
     const tone = recipe.tone || {};
     const durationMs = Math.max(1, Number(recipe.durationMs || 100));
-    const rawCurve = Array.isArray(tone.frequencyCurve) && tone.frequencyCurve.length
+    const scale = graphFrequencyScale();
+    const recipeCurve = Array.isArray(tone.frequencyCurve) && tone.frequencyCurve.length
       ? tone.frequencyCurve
       : [
           { time: 0, frequencyHz: Number(tone.startFrequencyHz || 440) },
           { time: 1, frequencyHz: Number(tone.endFrequencyHz || tone.startFrequencyHz || 440) }
         ];
-    const curve = rawCurve
-      .map((point) => ({
-        time: Math.max(0, Math.min(1, Number(point.time ?? 0))),
-        frequencyHz: Math.max(1, Number(point.frequencyHz || 440))
-      }))
-      .sort((left, right) => left.time - right.time);
-    const minFrequency = Math.min(...curve.map((point) => point.frequencyHz));
-    const maxFrequency = Math.max(...curve.map((point) => point.frequencyHz));
-    const range = Math.max(1, maxFrequency - minFrequency);
+
+    const curveValues = Array.isArray(state.values.frequencyCurve) && state.values.frequencyCurve.length >= 2
+      ? clone(state.values.frequencyCurve)
+          .map((point) => ({ time: clamp01(point.time), value: clamp01(point.value) }))
+          .sort((left, right) => left.time - right.time)
+      : recipeCurve
+          .map((point) => ({
+            time: clamp01(point.time ?? 0),
+            value: graphValueFromFrequency(Math.max(1, Number(point.frequencyHz || tone.startFrequencyHz || 440)), scale)
+          }))
+          .sort((left, right) => left.time - right.time);
+
+    if (curveValues.length) {
+      curveValues[0].time = 0;
+      curveValues[curveValues.length - 1].time = 1;
+    }
+
     graphSnapshot = {
-      curveValues: curve.map((point) => ({
-        time: point.time,
-        value: clamp01((point.frequencyHz - minFrequency) / range)
+      curveValues: curveValues.map((point) => ({
+        time: Number(Number(point.time).toFixed(3)),
+        value: Number(Number(point.value).toFixed(3))
       })),
       durationMs
     };
 
-    const points = curve.map((point) => {
+    const points = graphSnapshot.curveValues.map((point) => {
       const x = GRAPH.left + point.time * GRAPH.width;
-      const y = GRAPH.top + GRAPH.height - ((point.frequencyHz - minFrequency) / range) * GRAPH.height;
+      const y = GRAPH.top + GRAPH.height - point.value * GRAPH.height;
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     }).join(' ');
     const line = $('[data-frequency-curve]');
     if (line) line.setAttribute('points', points);
     const pointHost = $('[data-frequency-points]');
     if (pointHost) {
-      pointHost.innerHTML = curve.map((point, index) => {
+      pointHost.innerHTML = graphSnapshot.curveValues.map((point, index) => {
         const x = GRAPH.left + point.time * GRAPH.width;
-        const y = GRAPH.top + GRAPH.height - ((point.frequencyHz - minFrequency) / range) * GRAPH.height;
-        return `<circle class="frequency-point" data-frequency-point="${index}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6.5"><title>Drag to change this point. ${Math.round(point.frequencyHz)} Hz at ${(point.time * durationMs / 1000).toFixed(2)} sec</title></circle>`;
+        const y = GRAPH.top + GRAPH.height - point.value * GRAPH.height;
+        const hz = frequencyFromGraphValue(point.value, scale);
+        return `<circle class="frequency-point" data-frequency-point="${index}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6.5"><title>Drag to change this point. ${Math.round(hz)} Hz at ${(point.time * durationMs / 1000).toFixed(2)} sec</title></circle>`;
       }).join('');
     }
 
@@ -250,7 +277,7 @@ export function createSoundGeneratorUI(container, options = {}) {
     if (yAxis) {
       const ticks = [1, 0.75, 0.5, 0.25, 0];
       yAxis.innerHTML = ticks.map((ratio) => {
-        const hz = minFrequency + range * ratio;
+        const hz = frequencyFromGraphValue(ratio, scale);
         const y = GRAPH.top + GRAPH.height - (ratio * GRAPH.height);
         return `<text class="frequency-number" x="6" y="${(y + 4).toFixed(1)}">${Math.round(hz)}</text>`;
       }).join('');
@@ -351,9 +378,7 @@ export function createSoundGeneratorUI(container, options = {}) {
     if (dragPointIndex === null) return;
     const point = svgPoint(event);
     if (!point) return;
-    const baseCurve = Array.isArray(state.values.frequencyCurve) && state.values.frequencyCurve.length >= 2
-      ? clone(state.values.frequencyCurve)
-      : clone(graphSnapshot.curveValues);
+    const baseCurve = clone(graphSnapshot.curveValues);
     const index = Math.max(0, Math.min(baseCurve.length - 1, dragPointIndex));
     baseCurve[index].value = graphValueFromY(point.y);
     baseCurve[index].time = index === 0 ? 0 : index === baseCurve.length - 1 ? 1 : baseCurve[index].time;

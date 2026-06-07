@@ -246,7 +246,7 @@ function makeLayer(kind, offsetMs, durationMs, gain, extra = {}) {
   };
 }
 
-function profileLayersFor(controls, baseFrequencyHz) {
+function profileLayersFor(controls, baseFrequencyHz, pitchTravel) {
   const short = scale(38, 220, controls.length / 100);
   const medium = scale(110, 520, controls.length / 100);
   const long = scale(260, 1600, controls.length / 100);
@@ -255,14 +255,33 @@ function profileLayersFor(controls, baseFrequencyHz) {
   const punchGain = scale(0.035, 0.24, controls.impact / 100);
   const id = `${controls.soundTypeId || ''} ${controls.name || ''}`.toLowerCase();
   const layers = [];
+  const pitchCurve = makePitchCurve(controls, baseFrequencyHz, pitchTravel);
+  const frequencyAt = (time, multiplier = 1) => {
+    const t = Math.max(0, Math.min(1, Number(time)));
+    let previous = pitchCurve[0];
+    for (let index = 1; index < pitchCurve.length; index += 1) {
+      const next = pitchCurve[index];
+      if (t <= next.time) {
+        const span = Math.max(0.0001, next.time - previous.time);
+        const amount = Math.max(0, Math.min(1, (t - previous.time) / span));
+        return Math.max(25, scale(previous.frequencyHz, next.frequencyHz, amount) * multiplier);
+      }
+      previous = next;
+    }
+    return Math.max(25, previous.frequencyHz * multiplier);
+  };
 
-  const click = (offset = 0, gain = punchGain) => layers.push(makeLayer('click', offset, 20, gain, { frequencyHz: baseFrequencyHz * 2.8 }));
-  const sparkle = (offset = 20, pitch = 1.8, gain = brightGain) => layers.push(makeLayer('tone', offset, short, gain, { waveform: 'sine', startFrequencyHz: baseFrequencyHz * pitch, endFrequencyHz: baseFrequencyHz * pitch * 1.45, filterHz: 10000 }));
-  const thud = (offset = 0, gain = punchGain) => layers.push(makeLayer('thud', offset, scale(70, 260, controls.decay / 100), gain, { startFrequencyHz: baseFrequencyHz * 0.6, endFrequencyHz: baseFrequencyHz * 0.18 }));
-  const buzz = (offset = 22, gain = roughGain) => layers.push(makeLayer('buzz', offset, medium, gain, { frequencyHz: baseFrequencyHz * 0.75, wobble: controls.vibratoDepth }));
-  const rattle = (offset = 36, gain = roughGain) => layers.push(makeLayer('rattle', offset, scale(90, 340, controls.retriggerRate / 100), gain, { rate: scale(16, 62, controls.retriggerRate / 100), frequencyHz: baseFrequencyHz * 2.2 }));
+  const click = (offset = 0, gain = punchGain) => layers.push(makeLayer('click', offset, 20, gain, { frequencyHz: frequencyAt(0, 2.8) }));
+  const sparkle = (offset = 20, pitch = 1.8, gain = brightGain) => {
+    const startTime = Math.max(0, Math.min(1, offset / Math.max(1, long)));
+    const endTime = Math.max(startTime, Math.min(1, startTime + 0.32));
+    layers.push(makeLayer('tone', offset, short, gain, { waveform: 'sine', startFrequencyHz: frequencyAt(startTime, pitch), endFrequencyHz: frequencyAt(endTime, pitch * 1.45), filterHz: 10000 }));
+  };
+  const thud = (offset = 0, gain = punchGain) => layers.push(makeLayer('thud', offset, scale(70, 260, controls.decay / 100), gain, { startFrequencyHz: frequencyAt(0, 0.6), endFrequencyHz: frequencyAt(1, 0.18) }));
+  const buzz = (offset = 22, gain = roughGain) => layers.push(makeLayer('buzz', offset, medium, gain, { frequencyHz: frequencyAt(0.5, 0.75), wobble: controls.vibratoDepth }));
+  const rattle = (offset = 36, gain = roughGain) => layers.push(makeLayer('rattle', offset, scale(90, 340, controls.retriggerRate / 100), gain, { rate: scale(16, 62, controls.retriggerRate / 100), frequencyHz: frequencyAt(0.25, 2.2) }));
   const noise = (offset = 0, gain = roughGain, duration = medium) => layers.push(makeLayer('noise', offset, duration, gain, { filterHz: scale(700, 9500, controls.brightness / 100) }));
-  const sweep = (offset = 0, gain = brightGain, dir = 1) => layers.push(makeLayer('tone', offset, long, gain, { waveform: controls.waveform === 'noise' ? 'sawtooth' : controls.waveform, startFrequencyHz: baseFrequencyHz * (dir >= 0 ? 0.65 : 1.8), endFrequencyHz: baseFrequencyHz * (dir >= 0 ? 2.2 : 0.45), filterHz: scale(1200, 11000, controls.lpfCutoff / 100) }));
+  const sweep = (offset = 0, gain = brightGain, dir = 1) => layers.push(makeLayer('tone', offset, long, gain, { waveform: controls.waveform === 'noise' ? 'sawtooth' : controls.waveform, startFrequencyHz: frequencyAt(0, dir >= 0 ? 0.65 : 1.8), endFrequencyHz: frequencyAt(1, dir >= 0 ? 2.2 : 0.45), filterHz: scale(1200, 11000, controls.lpfCutoff / 100) }));
 
   if (id.includes('pickup') || id.includes('coin') || id.includes('reward')) {
     click(0, punchGain * 0.85);
@@ -378,7 +397,7 @@ export function controlsToRecipe(rawControls = {}) {
       offsetMs: round(scale(0, 12, controls.flangerOffset / 100)),
       sweep: round(signed(controls.flangerSweep))
     },
-    layers: profileLayersFor(controls, baseFrequencyHz),
+    layers: profileLayersFor(controls, baseFrequencyHz, pitchTravel),
     pattern: {
       mode: controls.pattern,
       steps: repeatCounts[controls.pattern],
