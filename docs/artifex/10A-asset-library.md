@@ -1,18 +1,13 @@
 # Asset Library Specification
 
-Status: Active module specification draft.
+Status: Active module specification draft during documentation consolidation  
+Owning module/service: Asset Library  
+Active route: no verified standalone Asset Library app route exists yet  
+Current verified baseline: asset ownership contract only; implementation is spread across starter schema, intake staging, registered-content readers and module-specific finalisation handoffs  
+Governing universal contract: `docs/artifex/1A-project-file-contracts.md`  
+Subordinate schema reference: `docs/artifex/19a-project-starter-file-schemas.md`  
+Outstanding work source: `docs/artifex/2A-global-to-do.md`
 
-Asset Library owns final registered assets.
+## Purpose
 
-It owns:
-- `asset_` IDs
-- `assets/asset-index.json`
-- final files under `assets/`
-- asset metadata and groups
-- promotion from `intake/` to final indexed assets
-
-No standalone Asset Library app route is verified yet.
-
-`intake/` is staging only.
-
-Other modules must reference final `asset_` IDs.
+Asset Library is the final registered
