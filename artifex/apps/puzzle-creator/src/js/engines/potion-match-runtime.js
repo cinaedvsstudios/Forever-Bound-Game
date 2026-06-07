@@ -6,5 +6,4 @@ const ingredientLibrary = {
   moonflower: { label: 'Moonflower', emoji: '🌙' },
   capraMilk: { label: 'Capra Milk', emoji: '🐐' },
   starDust: { label: 'Star Dust', emoji: '✨' },
-  aetherisWater: { label: 'Aetheris Water', emoji: '💧' },
-  yarrow: { label: 'Yarrow', emoji
+  aetherisWater: { label: 'A
