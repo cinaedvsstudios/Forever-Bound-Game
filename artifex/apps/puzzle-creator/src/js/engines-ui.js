@@ -4,6 +4,8 @@ import { getPuzzleModuleBrief } from './puzzle-module-briefs.js';
 const $ = (id) => document.getElementById(id);
 const engineValues = {};
 let activeEngine = null;
+let patternLockModule = null;
+let patternLockLoadPromise = null;
 
 window.addEventListener('DOMContentLoaded', () => {
   injectBriefStyles();
@@ -54,7 +56,7 @@ function buildPuzzleLauncher() {
   panel.innerHTML = `
     <p class="eyebrow">Start a puzzle</p>
     <h2>Choose a Puzzle Type</h2>
-    <p class="puzzle-launcher-copy">Choose the challenge module you want to author. Labyrinth Maze is the currently developed playable editor; the other modules show their recovered planning brief until implementation begins.</p>
+    <p class="puzzle-launcher-copy">Choose the challenge module you want to author. Labyrinth Maze is developed and playable; Pattern Lock Puzzle now has its first surface-point prototype. Other modules retain planning pages until implementation begins.</p>
     <div class="puzzle-type-grid" aria-label="Available puzzle types"></div>
   `;
   host.prepend(panel);
@@ -82,7 +84,13 @@ function buildPuzzleBriefPage() {
   stage.prepend(page);
 }
 
+function closePatternLockIfLoaded() {
+  patternLockModule?.closePatternLockWorkflow?.();
+  document.body.classList.remove('is-pattern-lock');
+}
+
 function showPuzzleChooser() {
+  closePatternLockIfLoaded();
   document.body.classList.add('is-puzzle-chooser');
   document.body.classList.remove('is-puzzle-brief');
   activeEngine = null;
@@ -96,7 +104,28 @@ function showPuzzleChooser() {
   });
 }
 
+async function launchPatternLock() {
+  try {
+    patternLockLoadPromise ||= import('./engines/pattern-lock-runtime.js?v=1.36.1');
+    patternLockModule = await patternLockLoadPromise;
+    patternLockModule.openPatternLockWorkflow();
+  } catch (error) {
+    patternLockLoadPromise = null;
+    showPatternLockFailure(error);
+  }
+}
+
 function openWorkflow(engineId) {
+  if (engineId === 'symbol-assembly') {
+    activeEngine = null;
+    window.__artifexActivePuzzleEngine = null;
+    $('puzzle-launcher-panel')?.setAttribute('hidden', '');
+    $('puzzle-module-brief-page')?.setAttribute('hidden', '');
+    document.querySelectorAll('.puzzle-type-option, .engine-button[data-engine]').forEach((button) => button.classList.toggle('is-active', button.dataset.engine === engineId));
+    void launchPatternLock();
+    return;
+  }
+  closePatternLockIfLoaded();
   if (engineId !== 'maze-labyrinth') {
     showPlanningBrief(engineId);
     return;
@@ -109,7 +138,30 @@ function openWorkflow(engineId) {
   setupButton?.click();
 }
 
+function showPatternLockFailure(error) {
+  closePatternLockIfLoaded();
+  const page = $('puzzle-module-brief-page');
+  if (!page) return;
+  document.body.classList.add('is-puzzle-chooser', 'is-puzzle-brief');
+  $('puzzle-launcher-panel')?.removeAttribute('hidden');
+  page.innerHTML = `
+    <header class="brief-hero"><div class="brief-icon">✥</div><div><p class="eyebrow">Symbol Assembly · Prototype Error</p><h2>Pattern Lock did not load</h2><span class="brief-status">Testing blocker</span></div></header>
+    <section class="brief-card brief-questions-card"><h3>Browser error</h3><p>${escapeHtml(error?.message || String(error))}</p></section>
+    <section class="brief-card"><h3>Next step</h3><p>Copy or screenshot this message so the prototype can be corrected without guessing.</p></section>`;
+  page.removeAttribute('hidden');
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
 function showPlanningBrief(engineId) {
+  closePatternLockIfLoaded();
   const engine = getPuzzleEngine(engineId);
   const brief = getPuzzleModuleBrief(engineId);
   const page = $('puzzle-module-brief-page');
