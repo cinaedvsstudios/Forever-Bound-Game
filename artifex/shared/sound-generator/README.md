@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This folder contains the reusable V1.00 **Create Synth Sound** popup and Web Audio preview runtime defined by `docs/artifex/22-sound-archetype-generator.md`.
+This folder contains the reusable **Create Synth Sound** popup and Web Audio preview runtime defined by `docs/artifex/22-sound-archetype-generator.md`.
 
 Generated sounds use the existing Asset Library model. A saved generated sound becomes a normal registered audio asset with an `asset_sfx_` ID and a procedural recipe file under `assets/audio/sfx/`. This tool does not create a separate sound-archetype index or an `archsound_` identifier family.
 
@@ -15,25 +15,41 @@ import {
 } from '../../shared/sound-generator/sound-generator-window.js';
 ```
 
-### Floating caller mode
+## What changed in this replacement set
 
-```js
-openSoundGeneratorModal({
-  sourceLabel: 'Puzzle Creator > Correct Input',
-  onAssign: ({ assetId }) => {
-    // Store assetId in the caller's current draft field.
-    // The caller remains responsible for saving its own record.
-  }
-});
+The popup now uses an SFXR-style procedural control model instead of only a small generic slider set.
+
+The simple controls remain visible for quick editing, but the advanced section now exposes:
+
+```text
+Envelope
+Frequency
+Vibrato
+Arpeggiation
+Duty Cycle
+Retrigger
+Flanger
+Low-Pass Filter
+High-Pass Filter
+Output
 ```
 
-Closing the popup destroys the preview runtime and stops active or looping sound.
+The recipe builder also adds recognisable procedural layers for named sounds. For example:
+
+```text
+Locked Door       thud + rattle + refusal buzz
+Item Pickup       click + rising sparkle tones
+Door Open         thud + scrape/sweep movement
+Footstep          low thud + short noise texture
+Explosion/Impact  boom + noise + crackle/rattle
+Magic/Portal      sweep + shimmer + sparkle
+```
 
 ## Active Files
 
 ```text
 sound-generator-window.js       public mount/open-modal lifecycle API
-sound-generator-ui-v1.js        active V1 popup UI and control bindings
+sound-generator-ui-v1.js        active popup UI and control bindings
 sound-generator-controls.js     creator-facing controls and recipe mapping
 sound-generator-presets.js      purpose examples and new-sound foundations
 procedural-synth-schema.js      generated-audio JSON schema and asset/path IDs
@@ -41,8 +57,6 @@ procedural-synth-runtime.js     Web Audio preview engine
 sound-generator-store.js        JSON import/export and connected Asset Library save
 sound-generator.css             shared popup styling
 ```
-
-`sound-generator-ui.js` is an earlier compact popup implementation retained during this staged integration pass; the active window entrypoint loads `sound-generator-ui-v1.js`.
 
 ## Generated Audio Record
 
@@ -69,22 +83,7 @@ assets/asset-index.json                   normal asset_sfx_ registration record
 
 **Save and Assign Here** performs that same save, then returns the registered `asset_sfx_` ID through the caller callback. The popup does not silently write the caller's object, scene or puzzle record.
 
-## V1 Functionality
-
-The active shared popup supports:
-
-```text
-Use Example and Start New modes
-plain-language Tone, Pitch, Length, Pitch Change, Wobble, Pace,
-Brightness, Static, Echo, Pattern, Loop and safe Preview Volume controls
-Preview and Stop through Web Audio
-Random Sound, Variation and Reset
-JSON import and export
-connected-folder Asset Library saving
-Save and Assign caller callback
-```
-
-## Current Integration Boundary
+## Integration Boundary
 
 A small browser test harness is available at:
 
@@ -92,4 +91,4 @@ A small browser test harness is available at:
 artifex/apps/sound-generator-preview/
 ```
 
-Current `main` also includes **Archetype Object Creator V1.35** caller integration: its Sound Events area can open this shared popup and receive the registered `asset_sfx_` ID in the current object draft after **Save and Assign Here**. Scene Editor and Puzzle Creator remain later caller integrations.
+Caller editors remain responsible for storing the returned `asset_sfx_` ID in their own draft data.

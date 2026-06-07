@@ -1,7 +1,7 @@
 import { normalizeControls, controlsToRecipe } from './sound-generator-controls.js';
 
 export const PROCEDURAL_SYNTH_SCHEMA_VERSION = 'artifex.audio.procedural-synth.v1';
-export const PROCEDURAL_SYNTH_ENGINE = Object.freeze({ id: 'web-audio', version: '1.0.0' });
+export const PROCEDURAL_SYNTH_ENGINE = Object.freeze({ id: 'web-audio', version: '1.1.0' });
 
 export function safeSlug(value) {
   return String(value || 'new-sound')
@@ -42,7 +42,7 @@ export function buildProceduralSynthAsset(rawControls, metadata = {}) {
       assignedFrom: metadata.sourceLabel || null
     },
     editor: {
-      controlsVersion: '1.0.0',
+      controlsVersion: '1.1.0',
       controls
     },
     recipe: controlsToRecipe(controls),
