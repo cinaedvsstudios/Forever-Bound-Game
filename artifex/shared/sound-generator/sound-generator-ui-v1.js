@@ -3,9 +3,9 @@ import { EXAMPLE_GROUPS, START_FOUNDATIONS, copyPresetControls, firstExamplePres
 import { buildProceduralSynthAsset, controlsFromImportedAsset } from './procedural-synth-schema.js';
 import { ProceduralSoundRuntime } from './procedural-synth-runtime.js';
 import '../project-folder/project-folder-client.js?v=0.1.0';
-import { downloadProceduralSynthRecipe, readImportedProceduralSynth, proceduralSynthToJson, saveProceduralSynthToLibrary } from './sound-generator-store.js';
+import { downloadProceduralSynthRecipe, readImportedProceduralSynth, saveProceduralSynthToLibrary } from './sound-generator-store.js';
 
-const VERSION = 'V1.13';
+const VERSION = 'V1.14';
 const STYLE_ID = 'artifex-sound-generator-css';
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const clone = (value) => structuredClone(value);
@@ -17,7 +17,7 @@ function loadCss() {
   const link = document.createElement('link');
   link.id = STYLE_ID;
   link.rel = 'stylesheet';
-  link.href = new URL('./sound-generator.css?v=1.13', import.meta.url).href;
+  link.href = new URL('./sound-generator.css?v=1.14', import.meta.url).href;
   document.head.appendChild(link);
 }
 
@@ -106,7 +106,7 @@ export function createSoundGeneratorUI(container, options = {}) {
   const $ = (s) => root.querySelector(s);
   const $$ = (s) => [...root.querySelectorAll(s)];
   const text = (s, value) => { const node = $(s); if (node) node.textContent = value || ''; };
-  const message = (value, kind = '') => { text('[data-message]', value); $('[data-message]').dataset.kind = kind; };
+  const message = (value, kind = '') => { const node = $('[data-message]'); if (node) { node.textContent = value || ''; node.dataset.kind = kind; } };
   const runtime = new ProceduralSoundRuntime(({ message: value }) => text('[data-runtime]', value));
 
   function renderFrequencyGraph(item) {
@@ -192,14 +192,17 @@ export function createSoundGeneratorUI(container, options = {}) {
       input.value = state.values[key];
       text(`[data-out="${key}"]`, `${state.values[key]}${key === 'volume' ? '%' : ''}`);
     });
-    $('[data-field="pattern"]').value = state.values.pattern;
-    $('[data-field="loop"]').checked = state.values.loop;
+    const pattern = $('[data-field="pattern"]');
+    if (pattern) pattern.value = state.values.pattern;
+    const loop = $('[data-field="loop"]');
+    if (loop) loop.checked = state.values.loop;
     $$('[data-pitch]').forEach((button) => button.classList.toggle('is-active', button.dataset.pitch === state.values.pitchChange));
     $$('[data-waveform]').forEach((button) => button.classList.toggle('is-active', button.dataset.waveform === state.values.waveform));
     record();
   }
 
   function selectPreset(preset, isNew = false) {
+    if (!preset) return;
     runtime.stop(false);
     state.preset = preset.id;
     state.mode = isNew ? 'start-new' : 'example';
@@ -213,7 +216,9 @@ export function createSoundGeneratorUI(container, options = {}) {
   }
 
   function examples() {
-    $('[data-example-list]').innerHTML = EXAMPLE_GROUPS.map((group, index) => `
+    const host = $('[data-example-list]');
+    if (!host) return;
+    host.innerHTML = EXAMPLE_GROUPS.map((group, index) => `
       <details class="sound-example-group" ${index === 0 ? 'open' : ''}>
         <summary><span class="sound-group-toggle">▸</span><span>${esc(group.label)}</span></summary>
         <div class="sound-preset-list">${group.presets.map((preset) => `<button data-preset="${preset.id}" title="${esc(preset.description)}"><strong>${esc(preset.name)}</strong><small>${esc(preset.description)}</small></button>`).join('')}</div>
@@ -228,7 +233,9 @@ export function createSoundGeneratorUI(container, options = {}) {
   }
 
   function foundations() {
-    $('[data-new-list]').innerHTML = START_FOUNDATIONS.map((preset) => `<button data-preset="${preset.id}" title="${esc(preset.description)}"><strong>${esc(preset.name)}</strong><small>${esc(preset.description)}</small></button>`).join('');
+    const host = $('[data-new-list]');
+    if (!host) return;
+    host.innerHTML = START_FOUNDATIONS.map((preset) => `<button data-preset="${preset.id}" title="${esc(preset.description)}"><strong>${esc(preset.name)}</strong><small>${esc(preset.description)}</small></button>`).join('');
     $$('[data-new-list] [data-preset]').forEach((button) => {
       button.onclick = () => selectPreset(START_FOUNDATIONS.find((preset) => preset.id === button.dataset.preset), true);
     });
@@ -236,8 +243,10 @@ export function createSoundGeneratorUI(container, options = {}) {
 
   function switchMode(mode) {
     $$('[data-mode]').forEach((button) => button.classList.toggle('is-active', button.dataset.mode === mode));
-    $('[data-examples]').hidden = mode !== 'examples';
-    $('[data-new]').hidden = mode !== 'new';
+    const examplesSection = $('[data-examples]');
+    const newSection = $('[data-new]');
+    if (examplesSection) examplesSection.hidden = mode !== 'examples';
+    if (newSection) newSection.hidden = mode !== 'new';
     selectPreset(mode === 'new' ? START_FOUNDATIONS[0] : firstExamplePreset(), mode === 'new');
   }
 
@@ -257,15 +266,11 @@ export function createSoundGeneratorUI(container, options = {}) {
   }
 
   $$('[data-mode]').forEach((button) => { button.onclick = () => switchMode(button.dataset.mode); });
-  $('[data-group]').onchange = (event) => {
-    state.group = event.target.value;
-    examples();
-    const group = EXAMPLE_GROUPS.find((item) => item.id === state.group) || EXAMPLE_GROUPS[0];
-    selectPreset(group.presets[0]);
-  };
 
   ['name', 'category', 'tags'].forEach((key) => {
-    $(`[data-field="${key}"]`).oninput = (event) => {
+    const input = $(`[data-field="${key}"]`);
+    if (!input) return;
+    input.oninput = (event) => {
       state.values[key] = event.target.value;
       if (key === 'name') state.id = null;
       record();
@@ -282,8 +287,10 @@ export function createSoundGeneratorUI(container, options = {}) {
     };
   });
 
-  $('[data-field="pattern"]').onchange = (event) => { state.values.pattern = event.target.value; record(); };
-  $('[data-field="loop"]').onchange = (event) => { state.values.loop = event.target.checked; record(); };
+  const pattern = $('[data-field="pattern"]');
+  if (pattern) pattern.onchange = (event) => { state.values.pattern = event.target.value; record(); };
+  const loop = $('[data-field="loop"]');
+  if (loop) loop.onchange = (event) => { state.values.loop = event.target.checked; record(); };
 
   $$('[data-pitch]').forEach((button) => {
     button.onclick = () => {
@@ -309,8 +316,9 @@ export function createSoundGeneratorUI(container, options = {}) {
       }
     };
   });
-  $('[data-act="stop"]').onclick = () => { runtime.stop(); message('Preview stopped.'); };
-  $('[data-act="random"]').onclick = () => {
+
+  $('[data-act="stop"]')?.addEventListener('click', () => { runtime.stop(); message('Preview stopped.'); });
+  $('[data-act="random"]')?.addEventListener('click', () => {
     state.values = randomSound(state.baseline);
     state.values.name = `Random ${state.baseline.name}`;
     state.mode = 'random';
@@ -318,8 +326,8 @@ export function createSoundGeneratorUI(container, options = {}) {
     state.createdAt = null;
     sync();
     message('Created a random sound.');
-  };
-  $('[data-act="variation"]').onclick = () => {
+  });
+  $('[data-act="variation"]')?.addEventListener('click', () => {
     state.values = randomVariation(state.baseline);
     state.values.name = `${state.baseline.name} Variation`;
     state.mode = 'variation';
@@ -327,38 +335,41 @@ export function createSoundGeneratorUI(container, options = {}) {
     state.createdAt = null;
     sync();
     message('Created a recognisable variation.');
-  };
-  $('[data-act="reset"]').onclick = () => {
+  });
+  $('[data-act="reset"]')?.addEventListener('click', () => {
     state.values = clone(state.baseline);
     state.id = null;
     state.createdAt = null;
     sync();
     message('Restored the selected starting sound.');
-  };
-  $('[data-act="export"]').onclick = () => {
+  });
+  $('[data-act="export"]')?.addEventListener('click', () => {
     const item = record();
     downloadProceduralSynthRecipe(item);
     message(`Exported ${item.resourcePath.split('/').pop()}.`, 'good');
-  };
-  $('[data-act="import"]').onclick = () => $('[data-file]').click();
-  $('[data-file]').onchange = async (event) => {
-    try {
-      const item = await readImportedProceduralSynth(event.target.files[0]);
-      state.values = controlsFromImportedAsset(item);
-      state.baseline = clone(state.values);
-      state.id = item.assetId;
-      state.createdAt = item.createdAt;
-      state.mode = 'imported';
-      sync();
-      message(`Imported ${item.assetId}.`, 'good');
-    } catch (error) {
-      message(error.message || error, 'error');
-    }
-    event.target.value = '';
-  };
+  });
+  $('[data-act="import"]')?.addEventListener('click', () => $('[data-file]')?.click());
+  const fileInput = $('[data-file]');
+  if (fileInput) {
+    fileInput.onchange = async (event) => {
+      try {
+        const item = await readImportedProceduralSynth(event.target.files[0]);
+        state.values = controlsFromImportedAsset(item);
+        state.baseline = clone(state.values);
+        state.id = item.assetId;
+        state.createdAt = item.createdAt;
+        state.mode = 'imported';
+        sync();
+        message(`Imported ${item.assetId}.`, 'good');
+      } catch (error) {
+        message(error.message || error, 'error');
+      }
+      event.target.value = '';
+    };
+  }
 
-  $('[data-act="save"]').onclick = () => save(false);
-  $('[data-act="assign"]').onclick = () => save(true);
+  $('[data-act="save"]')?.addEventListener('click', () => save(false));
+  $('[data-act="assign"]')?.addEventListener('click', () => save(true));
   $('[data-act="close"]')?.addEventListener('click', () => config.onClose?.());
 
   examples();
