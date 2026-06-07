@@ -6,4 +6,4 @@ This document records the intended design for the Puzzle Creator Item Order Puzz
 
 Potion Match is not only a one-off puzzle engine. It is also the base interaction pattern for crafting-style gameplay where the player selects ingredients in a required order and receives a success or failure outcome.
 
-The same module must
+The
