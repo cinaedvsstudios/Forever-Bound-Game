@@ -1,3 +1,4 @@
+// Smoke Engine debug prototype v0.6 — gravity slider max raised to 3 via index.html
 const W = 1280;
 const H = 720;
 const FX_SCALE = 0.62;

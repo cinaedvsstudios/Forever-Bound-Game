@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Artifex FX Debug — Smoke Engine Prototype V0.5</title>
+  <title>Artifex FX Debug — Smoke Engine Prototype V0.6</title>
   <link rel="stylesheet" href="../atmosphere-volume/styles.css?v=0.4" />
 </head>
 <body>
@@ -12,7 +12,7 @@
       <div class="brand-mark"><span>ᚠ</span></div>
       <div class="brand-copy">
         <h1>ARTIFEX</h1>
-        <p>FX Debug Laboratory <span class="version-pill">SMOKE-ENGINE-0.5</span></p>
+        <p>FX Debug Laboratory <span class="version-pill">SMOKE-ENGINE-0.6</span></p>
       </div>
       <div class="divider" aria-hidden="true"></div>
       <div class="prototype-label">Standalone smoke test · separate from fog engine</div>
@@ -115,7 +115,7 @@
         <header><h2>Movement / Gravity</h2></header>
         <p class="hint">Gravity controls the main direction the smoke travels. At -90° it rises straight up; 0° moves right; 90° moves down; 180° moves left.</p>
         <label>Gravity Strength <output id="gravity-out">0.31</output>
-          <input id="gravity" type="range" min="0" max="1.5" step="0.01" value="0.31" />
+          <input id="gravity" type="range" min="0" max="3" step="0.01" value="0.31" />
         </label>
         <label>Gravity Angle <output id="gravity-angle-out">-90°</output>
           <input id="gravity-angle" type="range" min="-180" max="180" step="1" value="-90" />
@@ -180,6 +180,6 @@
     </section>
   </main>
   <div id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./smoke-engine.js?v=0.5"></script>
+  <script type="module" src="./smoke-engine.js?v=0.6"></script>
 </body>
 </html>
