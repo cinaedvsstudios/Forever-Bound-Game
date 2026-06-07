@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Artifex FX Debug — Smoke Engine Prototype V0.4</title>
+  <title>Artifex FX Debug — Smoke Engine Prototype V0.5</title>
   <link rel="stylesheet" href="../atmosphere-volume/styles.css?v=0.4" />
 </head>
 <body>
@@ -12,7 +12,7 @@
       <div class="brand-mark"><span>ᚠ</span></div>
       <div class="brand-copy">
         <h1>ARTIFEX</h1>
-        <p>FX Debug Laboratory <span class="version-pill">SMOKE-ENGINE-0.4</span></p>
+        <p>FX Debug Laboratory <span class="version-pill">SMOKE-ENGINE-0.5</span></p>
       </div>
       <div class="divider" aria-hidden="true"></div>
       <div class="prototype-label">Standalone smoke test · separate from fog engine</div>
@@ -84,7 +84,7 @@
 
       <section class="card">
         <header><h2>Ribbon Wisps</h2></header>
-        <p class="hint">Wisps form as smooth continuous curves, grow, deform and fade away before restarting with a different shape.</p>
+        <p class="hint">Wisp Amount now means the same thing in every smoke mode. If it says 50, the engine creates 50 wisps per preview layer.</p>
         <label>Wisp Amount <output id="wisp-count-out">13</output>
           <input id="wisp-count" type="range" min="0" max="50" step="1" value="13" />
         </label>
@@ -112,9 +112,13 @@
       </section>
 
       <section class="card">
-        <header><h2>Movement</h2></header>
-        <label>Rise Speed <output id="rise-out">0.31</output>
-          <input id="rise" type="range" min="0" max="1.5" step="0.01" value="0.31" />
+        <header><h2>Movement / Gravity</h2></header>
+        <p class="hint">Gravity controls the main direction the smoke travels. At -90° it rises straight up; 0° moves right; 90° moves down; 180° moves left.</p>
+        <label>Gravity Strength <output id="gravity-out">0.31</output>
+          <input id="gravity" type="range" min="0" max="1.5" step="0.01" value="0.31" />
+        </label>
+        <label>Gravity Angle <output id="gravity-angle-out">-90°</output>
+          <input id="gravity-angle" type="range" min="-180" max="180" step="1" value="-90" />
         </label>
         <label>Side Drift <output id="drift-out">0.13</output>
           <input id="drift" type="range" min="-1" max="1" step="0.01" value="0.13" />
@@ -176,6 +180,6 @@
     </section>
   </main>
   <div id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./smoke-engine.js?v=0.3"></script>
+  <script type="module" src="./smoke-engine.js?v=0.5"></script>
 </body>
 </html>
