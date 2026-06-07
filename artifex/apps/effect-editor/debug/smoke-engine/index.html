@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Artifex FX Debug — Smoke Engine Prototype V0.3</title>
+  <title>Artifex FX Debug — Smoke Engine Prototype V0.4</title>
   <link rel="stylesheet" href="../atmosphere-volume/styles.css?v=0.4" />
 </head>
 <body>
@@ -12,7 +12,7 @@
       <div class="brand-mark"><span>ᚠ</span></div>
       <div class="brand-copy">
         <h1>ARTIFEX</h1>
-        <p>FX Debug Laboratory <span class="version-pill">SMOKE-ENGINE-0.3</span></p>
+        <p>FX Debug Laboratory <span class="version-pill">SMOKE-ENGINE-0.4</span></p>
       </div>
       <div class="divider" aria-hidden="true"></div>
       <div class="prototype-label">Standalone smoke test · separate from fog engine</div>
@@ -86,10 +86,10 @@
         <header><h2>Ribbon Wisps</h2></header>
         <p class="hint">Wisps form as smooth continuous curves, grow, deform and fade away before restarting with a different shape.</p>
         <label>Wisp Amount <output id="wisp-count-out">13</output>
-          <input id="wisp-count" type="range" min="0" max="14" step="1" value="13" />
+          <input id="wisp-count" type="range" min="0" max="50" step="1" value="13" />
         </label>
-        <label>Wisp Brightness <output id="wisp-brightness-out">0.09</output>
-          <input id="wisp-brightness" type="range" min="0" max="1.5" step="0.01" value="0.09" />
+        <label>Wisp Opacity <output id="wisp-brightness-out">0.09</output>
+          <input id="wisp-brightness" type="range" min="0" max="1.5" step="0.01" value="0.09" title="Opacity/strength of the visible ribbon wisps. This is separate from Mist Opacity." />
         </label>
         <label>Ribbon Length <output id="wisp-length-out">0.95</output>
           <input id="wisp-length" type="range" min="0.15" max="1" step="0.01" value="0.95" />
