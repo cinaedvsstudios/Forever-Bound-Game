@@ -1,0 +1,33 @@
+{
+  "schema": "artifex.fxArchetype.v1",
+  "id": "fx_heat_shimmer",
+  "label": "Heat Shimmer",
+  "type": "refractionDistortionEffect",
+  "scope": "project",
+  "projectId": "forever-bound",
+  "engine": "artifex-shimmer-distortion-preview",
+  "engineVersion": "1.0.0-preview",
+  "tags": [
+    "refraction",
+    "heat",
+    "mirage",
+    "air"
+  ],
+  "assets": {},
+  "composition": {
+    "layers": [
+      {
+        "id": "layer_refraction_distortion",
+        "engine": "shimmer-distortion",
+        "enabled": true,
+        "settings": {
+          "type": "heat",
+          "strength": 36,
+          "refraction": 78,
+          "waveSize": 24,
+          "waveSpeed": 58
+        }
+      }
+    ]
+  }
+}

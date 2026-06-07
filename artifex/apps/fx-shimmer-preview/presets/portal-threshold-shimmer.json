@@ -1,0 +1,33 @@
+{
+  "schema": "artifex.fxArchetype.v1",
+  "id": "fx_portal_threshold_shimmer",
+  "label": "Portal Threshold Shimmer",
+  "type": "refractionDistortionEffect",
+  "scope": "project",
+  "projectId": "forever-bound",
+  "engine": "artifex-shimmer-distortion-preview",
+  "engineVersion": "1.0.0-preview",
+  "tags": [
+    "portal",
+    "route-exit",
+    "radial",
+    "magic"
+  ],
+  "assets": {},
+  "composition": {
+    "layers": [
+      {
+        "id": "layer_portal_refraction",
+        "engine": "shimmer-distortion",
+        "enabled": true,
+        "settings": {
+          "type": "portal",
+          "strength": 68,
+          "refraction": 62,
+          "swirl": 42,
+          "glow": 76
+        }
+      }
+    ]
+  }
+}
