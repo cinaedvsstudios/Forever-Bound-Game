@@ -111,6 +111,21 @@ export const ADVANCED_CONTROL_GROUPS = Object.freeze([
 
 export const ADVANCED_CONTROL_DEFINITIONS = Object.freeze(ADVANCED_CONTROL_GROUPS.flatMap((group) => group.controls));
 
+function normalizeFrequencyCurve(input) {
+  if (!Array.isArray(input)) return null;
+  const curve = input
+    .map((point) => ({
+      time: Math.max(0, Math.min(1, Number(point?.time ?? 0))),
+      value: Math.max(0, Math.min(1, Number(point?.value ?? point?.ratio ?? 0.5)))
+    }))
+    .filter((point) => Number.isFinite(point.time) && Number.isFinite(point.value))
+    .sort((left, right) => left.time - right.time);
+  if (curve.length < 2) return null;
+  curve[0].time = 0;
+  curve[curve.length - 1].time = 1;
+  return curve.map((point) => ({ time: round(point.time, 3), value: round(point.value, 3) }));
+}
+
 export const DEFAULT_CONTROLS = Object.freeze({
   name: 'New Sound',
   category: 'custom',
@@ -149,7 +164,8 @@ export const DEFAULT_CONTROLS = Object.freeze({
   pattern: 'single',
   pace: 62,
   volume: 50,
-  loop: false
+  loop: false,
+  frequencyCurve: null
 });
 
 export function normalizeControls(input = {}) {
@@ -196,11 +212,18 @@ export function normalizeControls(input = {}) {
     pattern: ['single', 'double', 'triple', 'repeat'].includes(input.pattern) ? input.pattern : patternFromLegacyCount(input.repetitions || 1),
     pace: integer(input.pace ?? (100 - Number(input.gap ?? 38)), 0, 100),
     volume: integer(input.volume ?? DEFAULT_CONTROLS.volume, 0, 100),
-    loop: Boolean(input.loop)
+    loop: Boolean(input.loop),
+    frequencyCurve: normalizeFrequencyCurve(input.frequencyCurve)
   };
 }
 
 function makePitchCurve(controls, baseFrequencyHz, pitchTravel) {
+  if (Array.isArray(controls.frequencyCurve) && controls.frequencyCurve.length >= 2) {
+    return controls.frequencyCurve.map((point) => ({
+      time: Math.max(0, Math.min(1, Number(point.time))),
+      frequencyHz: Math.max(25, Math.round(baseFrequencyHz * scale(1 - pitchTravel, 1 + pitchTravel, Number(point.value))))
+    }));
+  }
   const direction = controls.pitchChange === 'drops' ? -1 : controls.pitchChange === 'rises' ? 1 : 0;
   const slide = signed(controls.slide);
   const deltaSlide = signed(controls.deltaSlide);
@@ -413,6 +436,7 @@ export function randomSound(rawControls = DEFAULT_CONTROLS) {
     tone: integer(Math.random() * 100, 0, 100),
     pitch: integer(Math.random() * 100, 0, 100),
     pitchChange: pitchChanges[Math.floor(Math.random() * pitchChanges.length)],
+    frequencyCurve: null,
     brightness: integer(Math.random() * 100, 0, 100),
     length: integer(Math.random() * 78 + 8, 0, 100),
     static: integer(Math.random() * 72, 0, 100),

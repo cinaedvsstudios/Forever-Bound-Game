@@ -5,7 +5,7 @@ import { ProceduralSoundRuntime } from './procedural-synth-runtime.js';
 import '../project-folder/project-folder-client.js?v=0.1.0';
 import { downloadProceduralSynthRecipe, readImportedProceduralSynth, saveProceduralSynthToLibrary } from './sound-generator-store.js';
 
-const VERSION = 'V1.14';
+const VERSION = 'V1.15';
 const STYLE_ID = 'artifex-sound-generator-css';
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const clone = (value) => structuredClone(value);
@@ -17,7 +17,7 @@ function loadCss() {
   const link = document.createElement('link');
   link.id = STYLE_ID;
   link.rel = 'stylesheet';
-  link.href = new URL('./sound-generator.css?v=1.14', import.meta.url).href;
+  link.href = new URL('./sound-generator.css?v=1.15', import.meta.url).href;
   document.head.appendChild(link);
 }
 
@@ -39,6 +39,7 @@ function frequencyGraphMarkup() {
       </g>
       <g data-frequency-y-labels></g>
       <polyline class="frequency-curve" data-frequency-curve points="42,60 578,60"></polyline>
+      <line class="frequency-playhead" data-frequency-playhead x1="42" y1="12" x2="42" y2="108"></line>
       <g data-frequency-points></g>
     </svg>
     <div class="sound-frequency-time-index" data-frequency-time-index></div>
@@ -107,7 +108,96 @@ export function createSoundGeneratorUI(container, options = {}) {
   const $$ = (s) => [...root.querySelectorAll(s)];
   const text = (s, value) => { const node = $(s); if (node) node.textContent = value || ''; };
   const message = (value, kind = '') => { const node = $('[data-message]'); if (node) { node.textContent = value || ''; node.dataset.kind = kind; } };
-  const runtime = new ProceduralSoundRuntime(({ message: value }) => text('[data-runtime]', value));
+  const runtime = new ProceduralSoundRuntime(({ message: value, playing }) => {
+    text('[data-runtime]', value);
+    if (playing === false) finishPlayhead();
+  });
+  const GRAPH = Object.freeze({ left: 42, width: 536, top: 16, height: 88 });
+  let graphSnapshot = { curveValues: [{ time: 0, value: 0.5 }, { time: 1, value: 0.5 }], durationMs: 100 };
+  let dragPointIndex = null;
+  let playheadFrame = null;
+  let playheadStartedAt = 0;
+  let playheadDurationMs = 100;
+  let playheadLoop = false;
+
+  function clamp01(value) {
+    return Math.max(0, Math.min(1, Number(value)));
+  }
+
+  function svgPoint(event) {
+    const svg = $('[data-frequency-graph]');
+    if (!svg) return null;
+    const rect = svg.getBoundingClientRect();
+    const viewBox = svg.viewBox.baseVal;
+    return {
+      x: viewBox.x + ((event.clientX - rect.left) / Math.max(1, rect.width)) * viewBox.width,
+      y: viewBox.y + ((event.clientY - rect.top) / Math.max(1, rect.height)) * viewBox.height
+    };
+  }
+
+  function graphValueFromY(y) {
+    return clamp01(1 - ((Number(y) - GRAPH.top) / GRAPH.height));
+  }
+
+  function setPlayhead(progress, currentMs = null, totalMs = null) {
+    const line = $('[data-frequency-playhead]');
+    if (!line) return;
+    const x = GRAPH.left + GRAPH.width * clamp01(progress);
+    line.setAttribute('x1', x.toFixed(1));
+    line.setAttribute('x2', x.toFixed(1));
+    line.classList.add('is-visible');
+    const total = Math.max(1, Number(totalMs ?? playheadDurationMs ?? graphSnapshot.durationMs));
+    const current = Math.max(0, Math.min(total, Number(currentMs ?? progress * total)));
+    text('[data-frequency-duration]', `${(current / 1000).toFixed(2)} / ${(total / 1000).toFixed(2)} sec`);
+  }
+
+  function stopPlayhead(reset = true) {
+    if (playheadFrame) cancelAnimationFrame(playheadFrame);
+    playheadFrame = null;
+    playheadStartedAt = 0;
+    const line = $('[data-frequency-playhead]');
+    if (line) {
+      line.classList.remove('is-visible');
+      line.setAttribute('x1', String(GRAPH.left));
+      line.setAttribute('x2', String(GRAPH.left));
+    }
+    if (reset) text('[data-frequency-duration]', `0.00 / ${(Math.max(1, graphSnapshot.durationMs) / 1000).toFixed(2)} sec`);
+  }
+
+  function finishPlayhead() {
+    if (!playheadFrame) return;
+    if (playheadFrame) cancelAnimationFrame(playheadFrame);
+    playheadFrame = null;
+    setPlayhead(1, playheadDurationMs, playheadDurationMs);
+    window.setTimeout(() => stopPlayhead(true), 320);
+  }
+
+  function totalPreviewDurationMs(item) {
+    const recipe = item?.recipe || {};
+    const noteMs = Math.max(50, Number(recipe.durationMs || 200));
+    const gapMs = Math.max(0, Number(recipe.pattern?.paceMs || 0));
+    const steps = Math.max(1, Math.min(6, Number(recipe.pattern?.steps || 1)));
+    return Math.max(50, steps * noteMs + Math.max(0, steps - 1) * gapMs);
+  }
+
+  function startPlayhead(item) {
+    stopPlayhead(false);
+    playheadDurationMs = totalPreviewDurationMs(item);
+    playheadLoop = Boolean(item?.recipe?.pattern?.loop);
+    playheadStartedAt = performance.now();
+    const tick = (now) => {
+      const elapsed = Math.max(0, now - playheadStartedAt);
+      const visibleElapsed = playheadLoop ? elapsed % playheadDurationMs : Math.min(elapsed, playheadDurationMs);
+      setPlayhead(visibleElapsed / playheadDurationMs, visibleElapsed, playheadDurationMs);
+      if (playheadLoop || elapsed < playheadDurationMs) {
+        playheadFrame = requestAnimationFrame(tick);
+      } else {
+        playheadFrame = null;
+        window.setTimeout(() => stopPlayhead(true), 320);
+      }
+    };
+    playheadFrame = requestAnimationFrame(tick);
+  }
 
   function renderFrequencyGraph(item) {
     const recipe = item?.recipe || {};
@@ -128,24 +218,27 @@ export function createSoundGeneratorUI(container, options = {}) {
     const minFrequency = Math.min(...curve.map((point) => point.frequencyHz));
     const maxFrequency = Math.max(...curve.map((point) => point.frequencyHz));
     const range = Math.max(1, maxFrequency - minFrequency);
-    const graphLeft = 42;
-    const graphWidth = 536;
-    const graphTop = 16;
-    const graphHeight = 88;
+    graphSnapshot = {
+      curveValues: curve.map((point) => ({
+        time: point.time,
+        value: clamp01((point.frequencyHz - minFrequency) / range)
+      })),
+      durationMs
+    };
 
     const points = curve.map((point) => {
-      const x = graphLeft + point.time * graphWidth;
-      const y = graphTop + graphHeight - ((point.frequencyHz - minFrequency) / range) * graphHeight;
+      const x = GRAPH.left + point.time * GRAPH.width;
+      const y = GRAPH.top + GRAPH.height - ((point.frequencyHz - minFrequency) / range) * GRAPH.height;
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     }).join(' ');
     const line = $('[data-frequency-curve]');
     if (line) line.setAttribute('points', points);
     const pointHost = $('[data-frequency-points]');
     if (pointHost) {
-      pointHost.innerHTML = curve.map((point) => {
-        const x = graphLeft + point.time * graphWidth;
-        const y = graphTop + graphHeight - ((point.frequencyHz - minFrequency) / range) * graphHeight;
-        return `<circle class="frequency-point" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5.5"><title>${Math.round(point.frequencyHz)} Hz at ${(point.time * durationMs / 1000).toFixed(2)} sec</title></circle>`;
+      pointHost.innerHTML = curve.map((point, index) => {
+        const x = GRAPH.left + point.time * GRAPH.width;
+        const y = GRAPH.top + GRAPH.height - ((point.frequencyHz - minFrequency) / range) * GRAPH.height;
+        return `<circle class="frequency-point" data-frequency-point="${index}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6.5"><title>Drag to change this point. ${Math.round(point.frequencyHz)} Hz at ${(point.time * durationMs / 1000).toFixed(2)} sec</title></circle>`;
       }).join('');
     }
 
@@ -154,7 +247,7 @@ export function createSoundGeneratorUI(container, options = {}) {
       const ticks = [1, 0.75, 0.5, 0.25, 0];
       yAxis.innerHTML = ticks.map((ratio) => {
         const hz = minFrequency + range * ratio;
-        const y = graphTop + graphHeight - (ratio * graphHeight);
+        const y = GRAPH.top + GRAPH.height - (ratio * GRAPH.height);
         return `<text class="frequency-number" x="6" y="${(y + 4).toFixed(1)}">${Math.round(hz)}</text>`;
       }).join('');
     }
@@ -250,6 +343,47 @@ export function createSoundGeneratorUI(container, options = {}) {
     selectPreset(mode === 'new' ? START_FOUNDATIONS[0] : firstExamplePreset(), mode === 'new');
   }
 
+  function applyDraggedPoint(event) {
+    if (dragPointIndex === null) return;
+    const point = svgPoint(event);
+    if (!point) return;
+    const baseCurve = Array.isArray(state.values.frequencyCurve) && state.values.frequencyCurve.length >= 2
+      ? clone(state.values.frequencyCurve)
+      : clone(graphSnapshot.curveValues);
+    const index = Math.max(0, Math.min(baseCurve.length - 1, dragPointIndex));
+    baseCurve[index].value = graphValueFromY(point.y);
+    baseCurve[index].time = index === 0 ? 0 : index === baseCurve.length - 1 ? 1 : baseCurve[index].time;
+    state.values.frequencyCurve = baseCurve.map((entry) => ({
+      time: Number(Number(entry.time).toFixed(3)),
+      value: Number(Number(entry.value).toFixed(3))
+    }));
+    state.values.pitchChange = 'custom';
+    sync();
+  }
+
+  function beginGraphDrag(event) {
+    const target = event.target.closest?.('[data-frequency-point]');
+    if (!target) return;
+    event.preventDefault();
+    dragPointIndex = Number(target.dataset.frequencyPoint);
+    target.setPointerCapture?.(event.pointerId);
+    root.classList.add('is-dragging-frequency');
+    applyDraggedPoint(event);
+  }
+
+  function moveGraphDrag(event) {
+    if (dragPointIndex === null) return;
+    event.preventDefault();
+    applyDraggedPoint(event);
+  }
+
+  function endGraphDrag() {
+    if (dragPointIndex === null) return;
+    dragPointIndex = null;
+    root.classList.remove('is-dragging-frequency');
+    message('Frequency graph point updated.');
+  }
+
   async function save(assign) {
     try {
       runtime.stop(false);
@@ -295,6 +429,7 @@ export function createSoundGeneratorUI(container, options = {}) {
   $$('[data-pitch]').forEach((button) => {
     button.onclick = () => {
       state.values.pitchChange = button.dataset.pitch;
+      state.values.frequencyCurve = null;
       sync();
     };
   });
@@ -309,7 +444,9 @@ export function createSoundGeneratorUI(container, options = {}) {
   $$('[data-act="preview"]').forEach((button) => {
     button.onclick = async () => {
       try {
-        await runtime.play(record());
+        const item = record();
+        await runtime.play(item);
+        startPlayhead(item);
         message('Previewing current sound.');
       } catch (error) {
         message(error.message || error, 'error');
@@ -317,9 +454,10 @@ export function createSoundGeneratorUI(container, options = {}) {
     };
   });
 
-  $('[data-act="stop"]')?.addEventListener('click', () => { runtime.stop(); message('Preview stopped.'); });
+  $('[data-act="stop"]')?.addEventListener('click', () => { runtime.stop(); stopPlayhead(true); message('Preview stopped.'); });
   $('[data-act="random"]')?.addEventListener('click', () => {
     state.values = randomSound(state.baseline);
+    state.values.frequencyCurve = null;
     state.values.name = `Random ${state.baseline.name}`;
     state.mode = 'random';
     state.id = null;
@@ -329,6 +467,7 @@ export function createSoundGeneratorUI(container, options = {}) {
   });
   $('[data-act="variation"]')?.addEventListener('click', () => {
     state.values = randomVariation(state.baseline);
+    state.values.frequencyCurve = null;
     state.values.name = `${state.baseline.name} Variation`;
     state.mode = 'variation';
     state.id = null;
@@ -368,6 +507,11 @@ export function createSoundGeneratorUI(container, options = {}) {
     };
   }
 
+  $('[data-frequency-graph]')?.addEventListener('pointerdown', beginGraphDrag);
+  window.addEventListener('pointermove', moveGraphDrag);
+  window.addEventListener('pointerup', endGraphDrag);
+  window.addEventListener('pointercancel', endGraphDrag);
+
   $('[data-act="save"]')?.addEventListener('click', () => save(false));
   $('[data-act="assign"]')?.addEventListener('click', () => save(true));
   $('[data-act="close"]')?.addEventListener('click', () => config.onClose?.());
@@ -380,6 +524,10 @@ export function createSoundGeneratorUI(container, options = {}) {
     getRecord: () => clone(record()),
     stop: () => runtime.stop(),
     destroy: () => {
+      stopPlayhead(true);
+      window.removeEventListener('pointermove', moveGraphDrag);
+      window.removeEventListener('pointerup', endGraphDrag);
+      window.removeEventListener('pointercancel', endGraphDrag);
       runtime.destroy();
       container.innerHTML = '';
     }

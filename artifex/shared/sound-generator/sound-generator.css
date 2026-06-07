@@ -458,3 +458,33 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* V1.15 drag/playhead marker. */
+
+
+/* V1.15 frequency graph interaction */
+.frequency-point {
+  cursor: ns-resize;
+  pointer-events: auto;
+  touch-action: none;
+  filter: drop-shadow(0 0 6px rgba(53,212,216,.45));
+}
+.frequency-point:hover,
+.is-dragging-frequency .frequency-point {
+  stroke: rgba(248,240,200,.94);
+  stroke-width: 2px;
+}
+.frequency-playhead {
+  opacity: 0;
+  pointer-events: none;
+  stroke: rgba(255,240,206,.92);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 8px rgba(53,212,216,.62));
+}
+.frequency-playhead.is-visible {
+  opacity: 1;
+}
+.sound-frequency-graph {
+  touch-action: none;
+}
