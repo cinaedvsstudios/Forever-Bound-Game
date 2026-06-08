@@ -174,62 +174,25 @@ export class ShimmerDistortionEngine {
     }
     ctx.restore();
   }
-  drawCircularWisps(g, t) {
-    const ctx = this.ctx, v = this.values;
-    const layers = 5, strands = Math.round(scale(5, 11, (v.wispAmount ?? 64) / 100));
-    const baseAlpha = scale(0.12, 0.64, (v.rimAlpha ?? 68) / 100), glow = scale(8, 30, (v.glow ?? 54) / 100);
-    const orbitSpeed = scale(0.18, 1.45, (v.wispSpeed ?? 58) / 100), widthBase = scale(1.1, 4.2, (v.wispSize ?? 54) / 100);
-    ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    for (let layer = 0; layer < layers; layer += 1) {
-      const layerRadius = scale(0.64, 0.88, layer / Math.max(1, layers - 1));
-      const layerPhase = t * orbitSpeed * (layer % 2 ? -0.34 : 0.42) + layer * 1.17;
-      for (let i = 0; i < strands; i += 1) {
-        const seed = layer * 100 + i * 11.23;
-        const start = TAU * (i / strands) + layerPhase + hash1(seed) * 0.28;
-        const len = scale(0.24, 0.82, hash1(seed + 2.1));
-        const color = i % 4 === 0 ? v.accentColor : (i % 2 === 0 ? v.coreColor : v.rimColor);
-        const pulse = 0.64 + Math.sin(t * 2.2 + seed) * 0.22 + hash1(seed + 3.4) * 0.18;
-        ctx.strokeStyle = rgba(color, baseAlpha * scale(0.22, 0.76, hash1(seed + 5.3)) * pulse);
-        ctx.lineWidth = widthBase * scale(0.45, 1.4, hash1(seed + 7.7));
-        ctx.shadowColor = color; ctx.shadowBlur = glow * scale(0.65, 1.45, hash1(seed + 8.9)); ctx.beginPath();
-        for (let s = 0; s <= 24; s += 1) {
-          const q = s / 24, a = start + len * q;
-          const ripple = Math.sin(q * TAU + t * 1.7 + seed) * g.base * 0.012;
-          const rough = (hash2(Math.cos(a) * 8.8 + seed, Math.sin(a) * 9.3 - seed + t * 0.16) - 0.5) * g.base * 0.035;
-          const x = g.cx + Math.cos(a) * (g.rx * layerRadius + ripple + rough);
-          const y = g.cy + Math.sin(a) * (g.ry * layerRadius + ripple * 0.72 + rough * 0.62);
-          if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-      }
-    }
-    for (let i = 0; i < 34; i += 1) {
-      const seed = i * 3.19, start = TAU * hash1(seed) + t * 0.08, len = scale(0.025, 0.11, hash1(seed + 4.4));
-      const color = i % 3 === 0 ? v.coreColor : v.rimColor;
-      ctx.strokeStyle = rgba(color, baseAlpha * 0.38); ctx.lineWidth = scale(0.7, 2.2, hash1(seed + 8.2));
-      ctx.shadowColor = color; ctx.shadowBlur = glow; ctx.beginPath();
-      for (let s = 0; s <= 5; s += 1) {
-        const a = start + len * (s / 5), jitter = (hash2(Math.cos(a) * 12 + seed, Math.sin(a) * 11 + t * 0.2) - 0.5) * g.base * 0.018;
-        const x = g.cx + Math.cos(a) * (g.rx * 0.59 + jitter), y = g.cy + Math.sin(a) * (g.ry * 0.64 + jitter * 0.72);
-        if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
+  drawCircularWisps(g,t){
+    const ctx=this.ctx,v=this.values,cloud=(v.cloudiness??72)/100;
+    const bw=scale(g.base*.035,g.base*.145,(v.rimWidth??66)/100),alpha=scale(.12,.62,(v.rimAlpha??66)/100),glow=scale(10,36,(v.glow??58)/100);
+    const bands=Math.round(scale(14,30,cloud));
+    ctx.save();ctx.globalCompositeOperation='lighter';ctx.filter=`blur(${scale(2.0,6.5,cloud)}px)`;
+    for(let i=0;i<bands;i++){
+      const seed=i*8.347,start=TAU*hash1(seed)+t*scale(.035,.16,hash1(seed+2))*(i%2?1:-1),len=scale(.16,.54,hash1(seed+3.1)),rad=scale(.66,.88,hash1(seed+4.2));
+      const col=i%4===0?v.accentColor:i%2===0?v.coreColor:v.rimColor,pulse=.68+Math.sin(t*1.8+seed)*.20+hash1(seed+5.5)*.12;
+      ctx.strokeStyle=rgba(col,alpha*scale(.18,.48,hash1(seed+6.1))*pulse);ctx.lineWidth=bw*scale(.55,1.35,hash1(seed+7.7));ctx.lineCap='round';ctx.lineJoin='round';ctx.shadowColor=col;ctx.shadowBlur=glow*scale(.8,1.8,hash1(seed+9.5));ctx.beginPath();
+      for(let s=0;s<=34;s++){const q=s/34,a=start+len*q,breath=Math.sin(t*1.4+q*TAU+seed)*g.base*.012,rough=(hash2(Math.cos(a)*4.2+seed,Math.sin(a)*4.9-seed+t*.08)-.5)*g.base*.040,x=g.cx+Math.cos(a)*(g.rx*rad+breath+rough),y=g.cy+Math.sin(a)*(g.ry*rad+breath*.72+rough*.66);if(s===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.stroke();
     }
     ctx.restore();
+    ctx.save();ctx.globalCompositeOperation='lighter';ctx.filter='blur(1.2px)';
+    for(let i=0;i<42;i++){const seed=i*3.73;if(hash1(seed+Math.floor(t*3)*.09)<.20)continue;const start=TAU*hash1(seed)+t*.06,len=scale(.025,.13,hash1(seed+4)),col=i%3===0?v.coreColor:i%2===0?v.rimColor:v.accentColor;ctx.strokeStyle=rgba(col,alpha*.34);ctx.lineWidth=scale(1.4,4.8,hash1(seed+5));ctx.lineCap='round';ctx.shadowColor=col;ctx.shadowBlur=glow;ctx.beginPath();for(let s=0;s<=5;s++){const a=start+len*(s/5),j=(hash2(Math.cos(a)*10+seed,Math.sin(a)*12+t*.18)-.5)*g.base*.022,x=g.cx+Math.cos(a)*(g.rx*.64+j),y=g.cy+Math.sin(a)*(g.ry*.69+j*.72);if(s===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.stroke()}
+    ctx.restore();
   }
-  drawPortalSparks(g, t) {
-    const ctx = this.ctx, v = this.values, count = Math.round(scale(0, 55, (v.particleAmount ?? 34) / 100));
-    const speed = scale(0.2, 1.9, (v.particleSpeed ?? 68) / 100);
-    ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    for (let i = 0; i < count; i += 1) {
-      const seed = i * 17.17, p = fract(t * speed * 0.15 + hash1(seed));
-      const a = TAU * hash1(seed + 1.1) + t * 0.18, r = scale(0.68, 1.08, p) + (hash1(seed + 4.4) - 0.5) * 0.08;
-      const x = g.cx + Math.cos(a) * g.rx * r, y = g.cy + Math.sin(a) * g.ry * r;
-      const size = scale(0.7, 3.2, (v.particleSize ?? 16) / 100) * scale(0.8, 1.8, hash1(seed + 2.7));
-      const alpha = scale(0.10, 0.54, hash1(seed + 3.6)) * Math.sin(p * Math.PI);
-      const color = i % 3 === 0 ? v.accentColor : (i % 2 === 0 ? v.coreColor : v.rimColor);
-      ctx.fillStyle = rgba(color, alpha); ctx.shadowColor = color; ctx.shadowBlur = size * 7; ctx.beginPath(); ctx.arc(x, y, size, 0, TAU); ctx.fill();
-    }
+  drawPortalSparks(g,t){
+    const ctx=this.ctx,v=this.values,count=Math.round(scale(0,48,(v.particleAmount??28)/100)),speed=scale(.2,1.9,(v.particleSpeed??68)/100);ctx.save();ctx.globalCompositeOperation='lighter';
+    for(let i=0;i<count;i++){const seed=i*17.17,p=fract(t*speed*.15+hash1(seed)),a=TAU*hash1(seed+1.1)+t*.18,r=scale(.66,1.08,p)+(hash1(seed+4.4)-.5)*.08,x=g.cx+Math.cos(a)*g.rx*r,y=g.cy+Math.sin(a)*g.ry*r,sz=scale(.5,2.4,(v.particleSize??12)/100)*scale(.8,1.8,hash1(seed+2.7)),al=scale(.08,.42,hash1(seed+3.6))*Math.sin(p*Math.PI),col=i%3===0?v.accentColor:i%2===0?v.coreColor:v.rimColor;ctx.fillStyle=rgba(col,al);ctx.shadowColor=col;ctx.shadowBlur=sz*7;ctx.beginPath();ctx.arc(x,y,sz,0,TAU);ctx.fill()}
     ctx.restore();
   }
   drawPortalGlow(g) {
@@ -239,52 +202,19 @@ export class ShimmerDistortionEngine {
     grad.addColorStop(0, rgba(v.coreColor, glow * 0.035)); grad.addColorStop(0.50, rgba(v.rimColor, glow * 0.09)); grad.addColorStop(1, rgba(v.rimColor, 0));
     ctx.fillStyle = grad; ctx.beginPath(); ctx.ellipse(g.cx, g.cy, g.rx * 1.42, g.ry * 1.30, 0, 0, TAU); ctx.fill(); ctx.restore();
   }
-  drawWormhole(ctx, g, t) {
-    const v = this.values;
-    const strandCount = Math.round(scale(26, 66, (v.cloudiness ?? 58) / 100));
-    const turns = scale(2.15, 5.6, (v.swirl + 100) / 200), speed = scale(0.26, 1.85, (v.waveSpeed ?? 58) / 100);
-    ctx.save(); ctx.globalCompositeOperation = 'lighter'; this.drawWormholeHaze(ctx, g, t);
-    for (let i = 0; i < strandCount; i += 1) {
-      const seed = i * 4.77, start = TAU * hash1(seed) + t * speed * scale(0.05, 0.22, hash1(seed + 7));
-      const color = i % 5 === 0 ? v.accentColor : (i % 2 === 0 ? v.coreColor : v.rimColor);
-      const alpha = scale(0.035, 0.16, hash1(seed + 2.4));
-      const width = scale(2.2, 7.8, hash1(seed + 4.9)) * scale(0.7, 1.25, (v.wispSize ?? 58) / 58);
-      ctx.save(); ctx.filter = `blur(${scale(0.6, 2.2, hash1(seed + 8.1))}px)`; ctx.strokeStyle = rgba(color, alpha);
-      ctx.lineWidth = width; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.shadowColor = color; ctx.shadowBlur = scale(8, 26, (v.glow ?? 54) / 100); ctx.beginPath();
-      const steps = 46, startP = hash1(seed + t * 0.014) * 0.16, endP = scale(0.58, 1.0, hash1(seed + 9.8));
-      for (let s = 0; s <= steps; s += 1) {
-        const q = startP + (endP - startP) * (s / steps), falloff = Math.pow(1 - q, 1.72);
-        const a = start + q * TAU * turns + t * speed * (0.18 + hash1(seed + 6) * 0.24);
-        const cloudy = (hash2(Math.cos(a) * 4.8 + seed, Math.sin(a) * 5.4 - seed + t * 0.12) - 0.5) * g.base * 0.05;
-        const x = g.cx + Math.cos(a) * (g.rx * falloff + cloudy), y = g.cy + Math.sin(a) * (g.ry * falloff + cloudy * 0.74);
-        if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      }
-      ctx.stroke(); ctx.restore();
-    }
-    for (let ring = 0; ring < 5; ring += 1) {
-      const radius = scale(0.12, 0.96, ring / 4), color = ring % 2 ? v.rimColor : v.coreColor;
-      ctx.strokeStyle = rgba(color, 0.045 * (1 - ring / 6)); ctx.lineWidth = Math.max(1.2, g.base * 0.004); ctx.shadowColor = color; ctx.shadowBlur = 12; ctx.beginPath();
-      for (let s = 0; s <= 116; s += 1) {
-        const a = TAU * (s / 116), wave = Math.sin(a * 4 + t * 1.0 + ring) * g.base * 0.015;
-        const x = g.cx + Math.cos(a) * (g.rx * radius + wave), y = g.cy + Math.sin(a) * (g.ry * radius + wave * 0.72);
-        if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    }
-    const hole = ctx.createRadialGradient(g.cx, g.cy, 0, g.cx, g.cy, g.base * 0.20);
-    hole.addColorStop(0, rgba('#000000', 0.92)); hole.addColorStop(0.50, rgba('#030612', 0.76)); hole.addColorStop(1, rgba(v.coreColor, 0));
-    ctx.fillStyle = hole; ctx.beginPath(); ctx.ellipse(g.cx, g.cy, g.rx * 0.15, g.ry * 0.17, 0, 0, TAU); ctx.fill();
-    ctx.restore(); this.drawParticles(ctx, g, t, 0.36);
+  drawWormhole(ctx,g,t){
+    const v=this.values,bands=Math.round(scale(8,18,(v.cloudiness??70)/100)),turns=scale(2.5,5.6,(v.swirl+100)/200),speed=scale(.25,1.55,(v.waveSpeed??54)/100);
+    ctx.save();ctx.globalCompositeOperation='lighter';
+    const bg=ctx.createRadialGradient(g.cx,g.cy,g.base*.02,g.cx,g.cy,Math.max(g.rx,g.ry)*1.55);bg.addColorStop(0,rgba('#000000',.78));bg.addColorStop(.18,rgba(v.coreColor,.16));bg.addColorStop(.46,rgba(v.rimColor,.075));bg.addColorStop(.78,rgba(v.rimColor,.035));bg.addColorStop(1,rgba(v.rimColor,0));ctx.fillStyle=bg;ctx.beginPath();ctx.ellipse(g.cx,g.cy,g.rx*1.50,g.ry*1.32,0,0,TAU);ctx.fill();
+    this.drawWormholeHaze(ctx,g,t);
+    for(let i=0;i<bands;i++){const seed=i*9.77,start=TAU*hash1(seed)+t*speed*scale(.025,.13,hash1(seed+7)),col=i%5===0?v.accentColor:i%2===0?v.coreColor:v.rimColor,al=scale(.030,.120,hash1(seed+2.4)),w=scale(g.base*.025,g.base*.080,hash1(seed+4.9))*scale(.75,1.2,(v.wispSize??82)/82);ctx.save();ctx.filter=`blur(${scale(2.0,5.2,hash1(seed+8.1))}px)`;ctx.strokeStyle=rgba(col,al);ctx.lineWidth=w;ctx.lineCap='round';ctx.lineJoin='round';ctx.shadowColor=col;ctx.shadowBlur=scale(10,28,(v.glow??50)/100);ctx.beginPath();const startP=hash1(seed+t*.010)*.12,endP=scale(.66,1.0,hash1(seed+9.8));for(let s=0;s<=64;s++){const q=startP+(endP-startP)*(s/64),fall=Math.pow(1-q,1.58),a=start+q*TAU*turns+t*speed*(.14+hash1(seed+6)*.18),cloudy=(hash2(Math.cos(a)*2.8+seed,Math.sin(a)*3.4-seed+t*.08)-.5)*g.base*.080,x=g.cx+Math.cos(a)*(g.rx*fall+cloudy),y=g.cy+Math.sin(a)*(g.ry*fall+cloudy*.74);if(s===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.stroke();ctx.restore()}
+    for(let i=0;i<18;i++){const seed=i*4.13,col=i%2===0?v.coreColor:v.rimColor;ctx.strokeStyle=rgba(col,scale(.025,.09,hash1(seed+1)));ctx.lineWidth=scale(.8,1.8,hash1(seed+2));ctx.shadowColor=col;ctx.shadowBlur=10;ctx.beginPath();for(let s=0;s<=34;s++){const q=s/34,fall=Math.pow(1-q,1.7),a=TAU*hash1(seed)+q*TAU*turns+t*speed*.18,x=g.cx+Math.cos(a)*g.rx*fall,y=g.cy+Math.sin(a)*g.ry*fall;if(s===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.stroke()}
+    const hole=ctx.createRadialGradient(g.cx,g.cy,0,g.cx,g.cy,g.base*.24);hole.addColorStop(0,rgba('#000000',.96));hole.addColorStop(.42,rgba('#01030b',.82));hole.addColorStop(1,rgba(v.coreColor,0));ctx.fillStyle=hole;ctx.beginPath();ctx.ellipse(g.cx,g.cy,g.rx*.16,g.ry*.18,0,0,TAU);ctx.fill();
+    ctx.restore();this.drawParticles(ctx,g,t,.22)
   }
-  drawWormholeHaze(ctx, g, t) {
-    const v = this.values; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.filter = 'blur(16px)';
-    for (let i = 0; i < 34; i += 1) {
-      const seed = i * 9.21, a = TAU * hash1(seed) + t * 0.035 * (i % 2 ? 1 : -1), r = scale(0.55, 1.38, hash1(seed + 3.2));
-      const x = g.cx + Math.cos(a) * g.rx * r, y = g.cy + Math.sin(a) * g.ry * r;
-      const sx = scale(g.base * 0.035, g.base * 0.20, hash1(seed + 5.5)), sy = scale(g.base * 0.018, g.base * 0.10, hash1(seed + 6.5));
-      const color = i % 4 === 0 ? v.accentColor : (i % 2 === 0 ? v.coreColor : v.rimColor), pulse = 0.55 + Math.sin(t * 1.1 + seed) * 0.28;
-      ctx.save(); ctx.translate(x, y); ctx.rotate(a + Math.sin(seed) * 0.8); ctx.fillStyle = rgba(color, scale(0.018, 0.082, hash1(seed + 7.2)) * pulse); ctx.beginPath(); ctx.ellipse(0, 0, sx, sy, 0, 0, TAU); ctx.fill(); ctx.restore();
-    }
+  drawWormholeHaze(ctx,g,t){
+    const v=this.values,blobs=28;ctx.save();ctx.globalCompositeOperation='lighter';ctx.filter='blur(20px)';
+    for(let i=0;i<blobs;i++){const seed=i*9.21,a=TAU*hash1(seed)+t*.030*(i%2?1:-1),r=scale(.48,1.46,hash1(seed+3.2)),x=g.cx+Math.cos(a)*g.rx*r,y=g.cy+Math.sin(a)*g.ry*r,sx=scale(g.base*.055,g.base*.24,hash1(seed+5.5)),sy=scale(g.base*.024,g.base*.12,hash1(seed+6.5)),col=i%4===0?v.accentColor:i%2===0?v.coreColor:v.rimColor,pulse=.48+Math.sin(t*1.0+seed)*.24;ctx.save();ctx.translate(x,y);ctx.rotate(a+Math.sin(seed)*.8);ctx.fillStyle=rgba(col,scale(.014,.065,hash1(seed+7.2))*pulse);ctx.beginPath();ctx.ellipse(0,0,sx,sy,0,0,TAU);ctx.fill();ctx.restore()}
     ctx.restore();
   }
   drawParticles(ctx, g, t, mult = 1) {
