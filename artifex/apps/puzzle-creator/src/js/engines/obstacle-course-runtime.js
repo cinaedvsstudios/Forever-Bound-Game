@@ -1,37 +1,75 @@
-// Obstacle Course / Flying Practice V2
-// Integrated runtime for Artifex Puzzle Creator.
-// POV Three.js flight prototype based on the recovered Three.js reference direction:
-// movement-through-world, route markers, obstacles, collectibles and outcome events.
+// Obstacle Course / Horse Forest Runner V3
+// POV 3D horse-riding obstacle course for Artifex Puzzle Creator.
+// Uses asset PNGs when present; falls back to generated Three.js shapes if an asset is missing.
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
 
+const ASSET_BASE = './assets/obstacle-course/horse-forest/';
+
+const HORSE_FOREST_ASSETS = {
+  sky: `${ASSET_BASE}sky/forest_sky_clouds_1920x1080.png`,
+  horizon: `${ASSET_BASE}backgrounds/forest_horizon_misty_pines_01_740x493.png`,
+  ground: `${ASSET_BASE}ground/forest_floor_roots_tile_placeholder_1254.png`,
+  trees: [
+    `${ASSET_BASE}trees/tree_pine_placeholder_01.png`,
+    `${ASSET_BASE}trees/tree_broadleaf_01.png`,
+    `${ASSET_BASE}trees/treeline_spruce_alpha_2048x1024.png`,
+    `${ASSET_BASE}trees/tree_bush_placeholder_01.png`,
+  ],
+  scenery: [
+    `${ASSET_BASE}trees/tree_bush_placeholder_01.png`,
+    `${ASSET_BASE}trees/treeline_pine_alpha_625x350.png`,
+  ],
+  logs: [
+    `${ASSET_BASE}obstacles/logs/obstacle_log_cut_01.png`,
+    `${ASSET_BASE}obstacles/logs/obstacle_log_branch_01.png`,
+    `${ASSET_BASE}obstacles/logs/obstacle_log_bark_01.png`,
+    `${ASSET_BASE}obstacles/logs/obstacle_fallen_branch_placeholder_01.png`,
+  ],
+  rocks: [
+    `${ASSET_BASE}obstacles/rocks/obstacle_rock_tall_01.png`,
+    `${ASSET_BASE}obstacles/rocks/obstacle_rock_medium_01.png`,
+    `${ASSET_BASE}obstacles/rocks/obstacle_rock_flat_01.png`,
+  ],
+  stumps: [
+    `${ASSET_BASE}obstacles/stumps/obstacle_stump_tall_01.png`,
+    `${ASSET_BASE}obstacles/stumps/obstacle_stump_low_01.png`,
+  ],
+  branches: [
+    `${ASSET_BASE}obstacles/branches/obstacle_overhead_branch_placeholder_01.png`,
+  ],
+  collectibles: [
+    `${ASSET_BASE}collectibles/flowers/collectible_blue_flower_placeholder_01.png`,
+    `${ASSET_BASE}collectibles/flowers/collectible_pink_flower_placeholder_01.png`,
+    `${ASSET_BASE}collectibles/ingredients/collectible_herb_bundle_placeholder_01.png`,
+    `${ASSET_BASE}collectibles/charms/collectible_forest_charm_placeholder_01.png`,
+  ],
+};
+
 const OC_TEMPLATES = {
-  forest_lake: {
-    label: 'Forest Lake Flight',
-    objective: 'Fly forward through the route markers over a lake and forest path. Dodge obstacles and collect light motes.',
+  horse_forest_easy: {
+    label: 'Horse Forest Ride',
+    objective: 'Ride through the forest path. Jump logs and rocks, avoid low branches, and collect flowers or ingredients.',
+    fog: 0x102018,
+    ground: 0x25351f,
+    sky: 0x9bc9f1,
+    obstacleRate: 1,
+  },
+  horse_forest_dense: {
+    label: 'Dense Forest Ride',
+    objective: 'Ride through denser forest. More side trees, more logs, and branch pickups placed closer to the path.',
     fog: 0x07130d,
-    ground: 0x173d26,
-    sky: 0x10233a,
-    accents: [0x2d6b42, 0x275a7a, 0x6f8f55],
-    obstacles: ['branch', 'rock', 'storm'],
+    ground: 0x1b2c19,
+    sky: 0x6fa5c8,
+    obstacleRate: 1.35,
   },
-  mountain_pass: {
-    label: 'Mountain Pass',
-    objective: 'Fly through a mountain pass in first-person view. Stay near the glowing path and avoid peaks, rocks and storm clouds.',
-    fog: 0x08111f,
-    ground: 0x202c3d,
-    sky: 0x162440,
-    accents: [0x4b5365, 0x27314a, 0x8c8f9c],
-    obstacles: ['peak', 'rock', 'storm'],
-  },
-  ruined_arches: {
-    label: 'Ruined Arches',
-    objective: 'Fly through broken ritual ruins. Pass the glowing markers, avoid stone arches and gather motes.',
-    fog: 0x09070d,
-    ground: 0x201a2e,
-    sky: 0x22163a,
-    accents: [0x54486a, 0x6b5b42, 0x3e5948],
-    obstacles: ['arch', 'rock', 'storm'],
+  horse_forest_night: {
+    label: 'Moonlit Forest Ride',
+    objective: 'A darker horse ride using the same asset slots. Collect glowing charms and avoid shadowed obstacles.',
+    fog: 0x060914,
+    ground: 0x11190f,
+    sky: 0x101832,
+    obstacleRate: 1.15,
   },
 };
 
@@ -40,27 +78,27 @@ const OC = {
   active: false,
   running: false,
   complete: false,
-  templateId: 'forest_lake',
+  templateId: 'horse_forest_easy',
   difficulty: 2,
   duration: 45,
-  speed: 38,
-  steerSpeed: 8,
-  pathWidth: 3.2,
+  speed: 34,
+  steerSpeed: 9,
+  laneWidth: 2.7,
   distance: 0,
-  courseLength: 1700,
+  courseLength: 1530,
   score: 0,
   hits: 0,
-  pathMisses: 0,
+  jumps: 0,
   collected: 0,
   successScore: 20,
   successEventId: 'obstacle_course_success',
   failureEventId: 'obstacle_course_failure',
-  successOutcomeKey: 'flying_practice_success',
-  failureOutcomeKey: 'flying_practice_failure',
+  successOutcomeKey: 'horse_forest_success',
+  failureOutcomeKey: 'horse_forest_failure',
   keys: new Set(),
-  player: { x: 0, y: 0 },
-  route: [],
+  player: { x: 0, y: 0, vy: 0, grounded: true },
   objects: [],
+  scenery: [],
   stage: null,
   panels: null,
   host: null,
@@ -68,13 +106,16 @@ const OC = {
   camera: null,
   renderer: null,
   world: null,
+  horseOverlay: null,
   clock: null,
   frame: null,
-  lastPenaltyAt: 0,
+  textureLoader: null,
+  textureCache: new Map(),
 };
 
 const oc$ = (id) => document.getElementById(id);
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const pick = (list) => list[Math.floor(Math.random() * list.length)];
 
 function injectObstacleStyles() {
   if (oc$('obstacle-course-pov-styles')) return;
@@ -91,17 +132,18 @@ function injectObstacleStyles() {
     .obstacle-header-line{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid rgba(124,202,210,.18);padding-bottom:12px}
     .obstacle-header-line h2{font-family:'Cinzel',serif;margin:3px 0 0;font-size:1.38rem}.obstacle-header-line p{margin:8px 0 0;color:var(--muted,#c9bfae);font-size:.78rem;line-height:1.42}
     .obstacle-status-pill{border:1px solid rgba(238,196,90,.34);border-radius:999px;color:#eec45a;padding:6px 10px;font-size:.68rem;font-weight:900;white-space:nowrap}
-    .obstacle-three-wrap{position:relative;min-height:520px;border:1px solid rgba(124,202,210,.18);border-radius:18px;overflow:hidden;background:#07101c}
-    .obstacle-three-wrap canvas{display:block;width:100%!important;height:520px!important;cursor:crosshair}
+    .obstacle-three-wrap{position:relative;min-height:500px;border:1px solid rgba(124,202,210,.18);border-radius:18px;overflow:hidden;background:#07101c}
+    .obstacle-three-wrap canvas{display:block;width:100%!important;height:500px!important;cursor:crosshair}
     .obstacle-hud{position:absolute;left:14px;right:14px;bottom:12px;display:flex;justify-content:space-between;gap:12px;pointer-events:none;color:var(--cream,#f4ead4);font-size:.74rem;text-shadow:0 2px 5px rgba(0,0,0,.8)}
-    .obstacle-reticle{position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border:1px solid rgba(238,196,90,.55);border-radius:50%;box-shadow:0 0 16px rgba(238,196,90,.25);pointer-events:none}.obstacle-reticle:before,.obstacle-reticle:after{content:'';position:absolute;background:rgba(238,196,90,.7)}.obstacle-reticle:before{left:50%;top:-8px;width:1px;height:50px}.obstacle-reticle:after{top:50%;left:-8px;width:50px;height:1px}
+    .obstacle-horse-overlay{position:absolute;left:50%;bottom:-8px;width:230px;height:78px;margin-left:-115px;pointer-events:none;filter:drop-shadow(0 5px 6px rgba(0,0,0,.65));opacity:.92}.obstacle-horse-overlay:before,.obstacle-horse-overlay:after{content:'';position:absolute;bottom:34px;width:34px;height:66px;background:linear-gradient(#5b371e,#21140c);border-radius:70% 70% 25% 25%;transform-origin:bottom center}.obstacle-horse-overlay:before{left:65px;transform:rotate(-14deg)}.obstacle-horse-overlay:after{right:65px;transform:rotate(14deg)}.obstacle-horse-overlay i{position:absolute;left:50%;bottom:0;width:160px;height:62px;margin-left:-80px;border-radius:48% 48% 0 0;background:linear-gradient(#4b2c19,#170e09)}
+    .obstacle-reticle{position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border:1px solid rgba(238,196,90,.35);border-radius:50%;box-shadow:0 0 16px rgba(238,196,90,.16);pointer-events:none}.obstacle-reticle:before,.obstacle-reticle:after{content:'';position:absolute;background:rgba(238,196,90,.45)}.obstacle-reticle:before{left:50%;top:-8px;width:1px;height:50px}.obstacle-reticle:after{top:50%;left:-8px;width:50px;height:1px}
     .obstacle-help-strip{display:flex;justify-content:space-between;gap:10px;color:var(--muted,#c9bfae);font-size:.72rem;line-height:1.35}
     .obstacle-control-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.obstacle-control-row button{min-height:42px;border:1px solid rgba(124,202,125,.3);border-radius:10px;background:rgba(20,72,37,.62);color:var(--cream,#f4ead4);font-weight:900;cursor:pointer}.obstacle-control-row button:hover{border-color:rgba(158,230,164,.62)}
     .obstacle-side-card{padding:16px 14px;display:flex;flex-direction:column;gap:11px}.obstacle-side-card h3{font-family:'Cinzel',serif;margin:0;font-size:1.03rem}
     .obstacle-metric{display:flex;justify-content:space-between;border:1px solid rgba(124,202,210,.2);border-radius:11px;padding:10px;color:var(--muted,#c9bfae);font-size:.76rem}.obstacle-metric strong{color:var(--cream,#f4ead4)}
     .obstacle-result{min-height:64px;border:1px solid rgba(124,202,210,.22);border-radius:11px;padding:11px;color:var(--muted,#c9bfae);font-size:.78rem;line-height:1.4}.obstacle-result[data-state='success']{border-color:#69ad70;color:#9ee6a4;background:#214b2b}.obstacle-result[data-state='failure']{border-color:#cc6d55;color:#f0a088;background:#4a1d1a}.obstacle-result[data-state='warn']{border-color:#c9a64a;color:#eec45a;background:#3c2c12}
     .obstacle-panel-copy{font-size:.73rem;line-height:1.46;color:var(--muted,#c9bfae);margin:0 0 14px}.obstacle-score-block{padding:12px;margin:0 0 10px;border-radius:11px;background:rgba(20,35,54,.42);border:1px solid rgba(124,202,210,.17)}.obstacle-score-block small{display:block;color:#eec45a;font-size:.63rem;letter-spacing:.13em;text-transform:uppercase;font-weight:800;margin-bottom:7px}.obstacle-score-block p{margin:0;font-size:.77rem;line-height:1.5;color:var(--cream,#f4ead4)}
-    .obstacle-mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.obstacle-mini-grid button{min-height:38px;border:1px solid rgba(124,202,125,.28);border-radius:9px;background:rgba(20,72,37,.58);color:var(--cream,#f4ead4);font-weight:900}
+    .obstacle-mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.obstacle-mini-grid button{min-height:38px;border:1px solid rgba(124,202,125,.28);border-radius:9px;background:rgba(20,72,37,.58);color:var(--cream,#f4ead4);font-weight:900}.asset-list-code{font-size:.62rem;line-height:1.45;white-space:pre-wrap;word-break:break-word;color:#c8e6ca;background:rgba(0,0,0,.28);border:1px solid rgba(124,202,125,.18);border-radius:10px;padding:9px}
     @media(max-width:1080px){.obstacle-workspace{grid-template-columns:1fr}.obstacle-view-card{min-height:600px}.obstacle-side-card{min-height:220px}}
   `;
   document.head.appendChild(style);
@@ -144,21 +186,21 @@ function ensureObstacleMounted() {
     <div class="obstacle-workspace">
       <section class="obstacle-view-card">
         <div class="obstacle-header-line">
-          <div><p class="eyebrow">Obstacle Course · POV 3D Prototype</p><h2 id="obstacle-title">Flying Practice</h2><p id="obstacle-objective"></p></div>
+          <div><p class="eyebrow">Obstacle Course · Horse Forest Runner V3</p><h2 id="obstacle-title">Horse Forest Ride</h2><p id="obstacle-objective"></p></div>
           <span id="obstacle-status" class="obstacle-status-pill">Ready</span>
         </div>
-        <div id="obstacle-three-host" class="obstacle-three-wrap"><div class="obstacle-reticle"></div><div class="obstacle-hud"><span>WASD / arrows steer Mel through the world</span><span id="obstacle-course-summary">0m / 0m</span></div></div>
-        <div class="obstacle-help-strip"><span>POV flight: stay inside the glowing tunnel/path, dodge 3D obstacles and collect light motes.</span><span>Reference direction: Three.js moving-world / terrain-style course.</span></div>
+        <div id="obstacle-three-host" class="obstacle-three-wrap"><div class="obstacle-reticle"></div><div class="obstacle-horse-overlay"><i></i></div><div class="obstacle-hud"><span>A/D or arrows steer · Space / W / Up jumps</span><span id="obstacle-course-summary">0m / 0m</span></div></div>
+        <div class="obstacle-help-strip"><span>POV horse ride: trees and forest floor use PNG assets; logs, rocks and stumps are jump/avoid obstacles.</span><span>Collect flowers, herbs and charms.</span></div>
         <div class="obstacle-control-row"><button id="obstacle-start" type="button">Start Test</button><button id="obstacle-pause" type="button">Pause</button><button id="obstacle-reset-run" type="button">Reset Run</button></div>
       </section>
       <aside class="obstacle-side-card">
-        <p class="eyebrow">Flight Result</p><h3>Score</h3>
+        <p class="eyebrow">Ride Result</p><h3>Score</h3>
         <div class="obstacle-metric"><span>Score</span><strong id="obstacle-score">0</strong></div>
         <div class="obstacle-metric"><span>Collected</span><strong id="obstacle-collected">0</strong></div>
         <div class="obstacle-metric"><span>Hits</span><strong id="obstacle-hits">0</strong></div>
-        <div class="obstacle-metric"><span>Path Misses</span><strong id="obstacle-path-misses">0</strong></div>
+        <div class="obstacle-metric"><span>Jumps</span><strong id="obstacle-jumps">0</strong></div>
         <div class="obstacle-metric"><span>Target Score</span><strong id="obstacle-target-score">20</strong></div>
-        <div id="obstacle-result" class="obstacle-result" aria-live="polite">Course waiting. Start the test when ready.</div>
+        <div id="obstacle-result" class="obstacle-result" aria-live="polite">Ride waiting. Start the test when ready.</div>
       </aside>
     </div>`;
   rightPanel.prepend(OC.stage);
@@ -168,31 +210,32 @@ function ensureObstacleMounted() {
   OC.panels.hidden = true;
   OC.panels.innerHTML = `
     <section class="panel tool-panel obstacle-panel" data-obstacle-panel="build">
-      <div class="panel-title-row"><div><p class="eyebrow">01 · Construction</p><h2>Flying Practice</h2></div><span class="status-pill is-waiting">V2</span></div>
-      <p class="obstacle-panel-copy">POV 3D Obstacle Course: moving world, route-marker tunnel, 3D obstacles, collectibles and score rules.</p>
-      <label class="field-block"><span>Course Template</span><select id="obstacle-template"><option value="forest_lake">Forest Lake Flight</option><option value="mountain_pass">Mountain Pass</option><option value="ruined_arches">Ruined Arches</option></select></label>
+      <div class="panel-title-row"><div><p class="eyebrow">01 · Construction</p><h2>Horse Ride</h2></div><span class="status-pill is-waiting">V3</span></div>
+      <p class="obstacle-panel-copy">POV 3D forest runner. The player rides forward automatically, steers left/right, jumps logs and rocks, avoids branches, and collects items.</p>
+      <label class="field-block"><span>Course Template</span><select id="obstacle-template"><option value="horse_forest_easy">Horse Forest Ride</option><option value="horse_forest_dense">Dense Forest Ride</option><option value="horse_forest_night">Moonlit Forest Ride</option></select></label>
       <label class="range-row"><span>Difficulty <output id="obstacle-difficulty-out">2</output></span><input id="obstacle-difficulty" type="range" min="1" max="5" value="2" /></label>
       <label class="range-row"><span>Course Duration <output id="obstacle-duration-out">45s</output></span><input id="obstacle-duration" type="range" min="20" max="80" step="5" value="45" /></label>
-      <button id="obstacle-regenerate" class="wide-button" type="button">Regenerate 3D Course</button>
+      <button id="obstacle-regenerate" class="wide-button" type="button">Regenerate Horse Course</button>
     </section>
     <section class="panel tool-panel obstacle-panel" data-obstacle-panel="display" hidden>
       <div class="panel-title-row"><div><p class="eyebrow">02 · Display</p><h2>Display</h2></div></div>
-      <label class="range-row"><span>Flight Speed <output id="obstacle-speed-out">38</output></span><input id="obstacle-speed" type="range" min="18" max="70" step="2" value="38" /></label>
-      <label class="range-row"><span>Guide Tunnel Width <output id="obstacle-path-width-out">3.2</output></span><input id="obstacle-path-width" type="range" min="1.6" max="6" step="0.2" value="3.2" /></label>
-      <label class="toggle-row"><span><strong>Show route markers</strong><small>Display the glowing 3D guide path.</small></span><input id="obstacle-show-markers" type="checkbox" checked /></label>
+      <label class="range-row"><span>Horse Speed <output id="obstacle-speed-out">34</output></span><input id="obstacle-speed" type="range" min="18" max="64" step="2" value="34" /></label>
+      <label class="range-row"><span>Lane Width <output id="obstacle-lane-width-out">2.7</output></span><input id="obstacle-lane-width" type="range" min="1.8" max="5" step="0.1" value="2.7" /></label>
+      <div class="obstacle-score-block"><small>Image slots</small><p>Sky, ground, horizon, trees, logs, rocks, stumps, branches and collectibles are loaded from the horse-forest asset folder.</p></div>
+      <div class="asset-list-code">${ASSET_BASE}\nsky/\nbackgrounds/\nground/\ntrees/\nobstacles/logs/\nobstacles/rocks/\nobstacles/stumps/\nobstacles/branches/\ncollectibles/</div>
     </section>
     <section class="panel tool-panel obstacle-panel" data-obstacle-panel="logic" hidden>
       <div class="panel-title-row"><div><p class="eyebrow">03 · Logic</p><h2>Scoring + Events</h2></div></div>
-      <div class="obstacle-score-block"><small>Scoring</small><p>Follow the glowing route: no penalty. Outside the tunnel: -1. Hit obstacle: -1. Collect glowing mote: +5. Finish course: resolve by target score.</p></div>
+      <div class="obstacle-score-block"><small>Scoring</small><p>Collect flower/herb/charm: +5. Hit log/rock/stump/branch: -1. Jump/avoid obstacles and finish the route to resolve success or failure.</p></div>
       <label class="range-row"><span>Success Score <output id="obstacle-success-score-out">20</output></span><input id="obstacle-success-score" type="range" min="0" max="80" step="5" value="20" /></label>
       <label class="field-block"><span>Success Event ID</span><input id="obstacle-success-event" type="text" value="obstacle_course_success" /></label>
-      <label class="field-block"><span>Success Quest Outcome Key</span><input id="obstacle-success-outcome" type="text" value="flying_practice_success" /></label>
+      <label class="field-block"><span>Success Quest Outcome Key</span><input id="obstacle-success-outcome" type="text" value="horse_forest_success" /></label>
       <label class="field-block"><span>Failure Event ID</span><input id="obstacle-failure-event" type="text" value="obstacle_course_failure" /></label>
-      <label class="field-block"><span>Failure Quest Outcome Key</span><input id="obstacle-failure-outcome" type="text" value="flying_practice_failure" /></label>
+      <label class="field-block"><span>Failure Quest Outcome Key</span><input id="obstacle-failure-outcome" type="text" value="horse_forest_failure" /></label>
     </section>
     <section class="panel tool-panel obstacle-panel" data-obstacle-panel="visuals" hidden>
-      <div class="panel-title-row"><div><p class="eyebrow">04 · Colors</p><h2>3D Course Objects</h2></div></div>
-      <p class="obstacle-panel-copy">V2 uses generated 3D course pieces. Later this can bind to Asset Library models/sprites and Effects Library trail/glow effects.</p>
+      <div class="panel-title-row"><div><p class="eyebrow">04 · Colors</p><h2>Asset Sets</h2></div></div>
+      <p class="obstacle-panel-copy">V3 now uses PNG billboard assets where available. Missing images fall back to primitive placeholder geometry, so the module does not crash while assets are being swapped.</p>
       <div class="obstacle-mini-grid"><button id="obstacle-add-obstacles" type="button">More Obstacles</button><button id="obstacle-add-collectibles" type="button">More Collectibles</button></div>
     </section>`;
   leftBody.appendChild(OC.panels);
@@ -204,23 +247,21 @@ function ensureObstacleMounted() {
 }
 
 function setupThreeScene() {
+  OC.textureLoader = new THREE.TextureLoader();
   OC.scene = new THREE.Scene();
   OC.camera = new THREE.PerspectiveCamera(70, 1, 0.1, 1000);
   OC.camera.position.set(0, 2.2, 8);
-  OC.camera.lookAt(0, 1.4, -32);
+  OC.camera.lookAt(0, 2.0, -40);
   OC.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
   OC.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  OC.renderer.shadowMap.enabled = true;
+  OC.renderer.shadowMap.enabled = false;
   OC.host.prepend(OC.renderer.domElement);
   OC.clock = new THREE.Clock();
 
-  OC.scene.add(new THREE.AmbientLight(0xbfd7ff, 0.55));
-  const sun = new THREE.DirectionalLight(0xfff0d0, 0.9);
-  sun.position.set(-8, 12, 8);
+  OC.scene.add(new THREE.AmbientLight(0xd8f0ff, 0.72));
+  const sun = new THREE.DirectionalLight(0xfff0d0, 0.95);
+  sun.position.set(-8, 16, 12);
   OC.scene.add(sun);
-  const glow = new THREE.PointLight(0x8ffbf0, 1.2, 80);
-  glow.position.set(0, 4, -12);
-  OC.scene.add(glow);
 
   OC.world = new THREE.Group();
   OC.scene.add(OC.world);
@@ -233,8 +274,7 @@ function bindObstacleControls() {
   oc$('obstacle-difficulty').addEventListener('input', (event) => { OC.difficulty = Number(event.target.value); oc$('obstacle-difficulty-out').textContent = String(OC.difficulty); regenerateCourse(); });
   oc$('obstacle-duration').addEventListener('input', (event) => { OC.duration = Number(event.target.value); oc$('obstacle-duration-out').textContent = `${OC.duration}s`; regenerateCourse(); });
   oc$('obstacle-speed').addEventListener('input', (event) => { OC.speed = Number(event.target.value); oc$('obstacle-speed-out').textContent = String(OC.speed); regenerateCourse(); });
-  oc$('obstacle-path-width').addEventListener('input', (event) => { OC.pathWidth = Number(event.target.value); oc$('obstacle-path-width-out').textContent = String(OC.pathWidth.toFixed(1)); refreshRouteMarkers(); drawFrame(); });
-  oc$('obstacle-show-markers').addEventListener('change', () => { refreshRouteMarkers(); drawFrame(); });
+  oc$('obstacle-lane-width').addEventListener('input', (event) => { OC.laneWidth = Number(event.target.value); oc$('obstacle-lane-width-out').textContent = OC.laneWidth.toFixed(1); regenerateCourse(); });
   oc$('obstacle-success-score').addEventListener('input', (event) => { OC.successScore = Number(event.target.value); oc$('obstacle-success-score-out').textContent = String(OC.successScore); oc$('obstacle-target-score').textContent = String(OC.successScore); });
   oc$('obstacle-success-event').addEventListener('input', (event) => { OC.successEventId = event.target.value; });
   oc$('obstacle-failure-event').addEventListener('input', (event) => { OC.failureEventId = event.target.value; });
@@ -244,14 +284,16 @@ function bindObstacleControls() {
   oc$('obstacle-start').addEventListener('click', startRun);
   oc$('obstacle-pause').addEventListener('click', pauseRun);
   oc$('obstacle-reset-run').addEventListener('click', () => resetRun(false));
-  oc$('obstacle-add-obstacles').addEventListener('click', () => { addObstacles(6); drawFrame(); });
-  oc$('obstacle-add-collectibles').addEventListener('click', () => { addCollectibles(5); drawFrame(); });
+  oc$('obstacle-add-obstacles').addEventListener('click', () => { addObstacles(7); drawFrame(); });
+  oc$('obstacle-add-collectibles').addEventListener('click', () => { addCollectibles(6); drawFrame(); });
 
   window.addEventListener('keydown', (event) => {
     if (!OC.active) return;
-    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D'].includes(event.key)) {
+    const key = event.key.toLowerCase();
+    if (['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d',' '].includes(key)) {
       event.preventDefault();
-      OC.keys.add(event.key.toLowerCase());
+      OC.keys.add(key);
+      if (['arrowup','w',' '].includes(key)) jumpHorse();
     }
   });
   window.addEventListener('keyup', (event) => OC.keys.delete(event.key.toLowerCase()));
@@ -266,10 +308,33 @@ function bindObstacleControls() {
   }, true);
 }
 
+function loadTexture(url, options = {}) {
+  if (OC.textureCache.has(url)) return OC.textureCache.get(url);
+  const texture = OC.textureLoader.load(url, undefined, undefined, () => {});
+  texture.colorSpace = THREE.SRGBColorSpace || texture.colorSpace;
+  if (options.repeat) {
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(options.repeat[0], options.repeat[1]);
+  }
+  OC.textureCache.set(url, texture);
+  return texture;
+}
+
+function makeSprite(url, width, height, fallbackColor = 0xffffff) {
+  const texture = loadTexture(url);
+  const mat = new THREE.SpriteMaterial({ map: texture, transparent: true, alphaTest: 0.12, color: 0xffffff });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(width, height, 1);
+  sprite.userData.assetUrl = url;
+  sprite.userData.fallbackColor = fallbackColor;
+  return sprite;
+}
+
 function resizeRenderer() {
   if (!OC.renderer || !OC.host || !OC.camera) return;
   const width = Math.max(1, OC.host.clientWidth);
-  const height = 520;
+  const height = 500;
   OC.camera.aspect = width / height;
   OC.camera.updateProjectionMatrix();
   OC.renderer.setSize(width, height);
@@ -278,16 +343,13 @@ function resizeRenderer() {
 function regenerateCourse() {
   if (!OC.world) return;
   clearWorld();
-  const template = OC_TEMPLATES[OC.templateId] || OC_TEMPLATES.forest_lake;
+  const template = OC_TEMPLATES[OC.templateId] || OC_TEMPLATES.horse_forest_easy;
   OC.courseLength = Math.max(900, OC.duration * OC.speed);
-  OC.scene.background = new THREE.Color(template.sky);
-  OC.scene.fog = new THREE.Fog(template.fog, 20, 260);
-  OC.route = [];
-  OC.objects = [];
+  OC.scene.background = loadTexture(HORSE_FOREST_ASSETS.sky);
+  OC.scene.fog = new THREE.Fog(template.fog, 50, 360);
   resetRun(true);
-  generateRoute();
   buildWorld(template);
-  addObstacles(10 + OC.difficulty * 6);
+  addObstacles(Math.round((8 + OC.difficulty * 5) * template.obstacleRate));
   addCollectibles(8 + OC.difficulty * 3);
   updateTemplateText();
   updateWorldPositions();
@@ -303,171 +365,85 @@ function clearWorld() {
       else node.material?.dispose?.();
     });
   }
+  OC.objects = [];
+  OC.scenery = [];
 }
 
 function updateTemplateText() {
-  const template = OC_TEMPLATES[OC.templateId] || OC_TEMPLATES.forest_lake;
+  const template = OC_TEMPLATES[OC.templateId] || OC_TEMPLATES.horse_forest_easy;
   oc$('obstacle-title').textContent = template.label;
   oc$('obstacle-objective').textContent = template.objective;
   oc$('obstacle-target-score').textContent = String(OC.successScore);
 }
 
-function generateRoute() {
-  const steps = 70;
-  const ampX = 3.3 + OC.difficulty * 0.32;
-  const ampY = 1.3 + OC.difficulty * 0.16;
-  const seed = Math.random() * Math.PI * 2;
-  for (let i = 0; i <= steps; i += 1) {
-    const t = i / steps;
-    const z = -t * OC.courseLength;
-    const x = Math.sin(t * 18 + seed) * ampX + Math.sin(t * 6.3 + seed * 0.7) * 1.3;
-    const y = 1.8 + Math.sin(t * 13 + seed * 0.4) * ampY;
-    OC.route.push({ z, x, y });
-  }
-}
-
 function buildWorld(template) {
-  const groundMat = new THREE.MeshStandardMaterial({ color: template.ground, roughness: 0.88, metalness: 0.02 });
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(70, OC.courseLength + 300, 20, 80), groundMat);
+  const groundTexture = loadTexture(HORSE_FOREST_ASSETS.ground, { repeat: [8, Math.max(12, OC.courseLength / 80)] });
+  const groundMat = new THREE.MeshStandardMaterial({ map: groundTexture, color: 0xffffff, roughness: 0.95, metalness: 0.0 });
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(28, OC.courseLength + 240, 1, 1), groundMat);
   ground.rotation.x = -Math.PI / 2;
-  ground.position.set(0, -2.4, -OC.courseLength / 2);
+  ground.position.set(0, -1.8, -OC.courseLength / 2);
   OC.world.add(ground);
 
-  for (let i = 0; i < 110; i += 1) {
-    const z = -Math.random() * OC.courseLength;
+  const pathMat = new THREE.MeshBasicMaterial({ color: template.ground, transparent: true, opacity: 0.36 });
+  const path = new THREE.Mesh(new THREE.PlaneGeometry(OC.laneWidth * 2.35, OC.courseLength + 240, 1, 1), pathMat);
+  path.rotation.x = -Math.PI / 2;
+  path.position.set(0, -1.78, -OC.courseLength / 2);
+  OC.world.add(path);
+
+  for (let d = 80; d < OC.courseLength + 200; d += 180) {
+    const horizon = makeSprite(HORSE_FOREST_ASSETS.horizon, 70, 26, 0x25401f);
+    horizon.position.set(0, 10.5, -d - 120);
+    horizon.material.opacity = 0.64;
+    OC.world.add(horizon);
+    OC.scenery.push(horizon);
+  }
+
+  const count = 95 + OC.difficulty * 22;
+  for (let i = 0; i < count; i += 1) {
+    const d = Math.random() * OC.courseLength;
     const side = Math.random() < 0.5 ? -1 : 1;
-    const x = side * (12 + Math.random() * 20);
-    const scale = 0.8 + Math.random() * 3.2;
-    const deco = createSceneryObject(template, scale);
-    deco.position.set(x, -2.2 + Math.random() * 0.3, z);
-    deco.rotation.y = Math.random() * Math.PI;
-    OC.world.add(deco);
+    const x = side * (OC.laneWidth + 3.1 + Math.random() * 9.5);
+    const h = 4.8 + Math.random() * 7.5;
+    const w = h * (0.55 + Math.random() * 0.55);
+    const tree = makeSprite(pick(Math.random() < 0.75 ? HORSE_FOREST_ASSETS.trees : HORSE_FOREST_ASSETS.scenery), w, h, 0x2f6a35);
+    tree.position.set(x, -1.6 + h / 2, -d);
+    OC.world.add(tree);
+    OC.scenery.push(tree);
   }
-  refreshRouteMarkers();
-}
-
-function createSceneryObject(template, scale) {
-  const group = new THREE.Group();
-  if (template.label.includes('Mountain')) {
-    const cone = new THREE.Mesh(new THREE.ConeGeometry(scale * 1.7, scale * 4.4, 5), new THREE.MeshStandardMaterial({ color: template.accents[0], roughness: 0.86 }));
-    cone.position.y = scale * 1.5;
-    group.add(cone);
-    return group;
-  }
-  if (template.label.includes('Ruined')) {
-    const mat = new THREE.MeshStandardMaterial({ color: template.accents[1], roughness: 0.8 });
-    const a = new THREE.Mesh(new THREE.BoxGeometry(scale * 0.7, scale * 3.4, scale * 0.7), mat);
-    const b = a.clone();
-    const c = new THREE.Mesh(new THREE.BoxGeometry(scale * 2.5, scale * 0.7, scale * 0.7), mat);
-    a.position.set(-scale, scale * 1.4, 0);
-    b.position.set(scale, scale * 1.4, 0);
-    c.position.set(0, scale * 3, 0);
-    group.add(a, b, c);
-    return group;
-  }
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(scale * 0.18, scale * 0.25, scale * 1.7, 7), new THREE.MeshStandardMaterial({ color: 0x5a3b25 }));
-  const leaves = new THREE.Mesh(new THREE.ConeGeometry(scale * 0.9, scale * 2.3, 9), new THREE.MeshStandardMaterial({ color: template.accents[0] }));
-  trunk.position.y = scale * 0.8;
-  leaves.position.y = scale * 2.2;
-  group.add(trunk, leaves);
-  return group;
-}
-
-function refreshRouteMarkers() {
-  if (!OC.world) return;
-  const old = OC.world.getObjectByName('route-markers');
-  if (old) OC.world.remove(old);
-  const group = new THREE.Group();
-  group.name = 'route-markers';
-  if (oc$('obstacle-show-markers')?.checked !== false) {
-    const routeMat = new THREE.MeshBasicMaterial({ color: 0x8ffbf0, transparent: true, opacity: 0.86 });
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0xeec45a, transparent: true, opacity: 0.88 });
-    OC.route.forEach((point, i) => {
-      if (i % 2) return;
-      const marker = new THREE.Mesh(new THREE.TorusGeometry(OC.pathWidth / 2, 0.035, 8, 32), routeMat);
-      marker.position.set(point.x, point.y, point.z);
-      marker.rotation.x = Math.PI / 2;
-      group.add(marker);
-      if (i % 6 === 0) {
-        const mote = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), ringMat);
-        mote.position.set(point.x, point.y, point.z + 0.35);
-        group.add(mote);
-      }
-    });
-  }
-  OC.world.add(group);
-}
-
-function routeAtDistance(distance) {
-  const z = -distance;
-  for (let i = 1; i < OC.route.length; i += 1) {
-    const prev = OC.route[i - 1];
-    const next = OC.route[i];
-    if (z >= next.z) {
-      const span = prev.z - next.z || 1;
-      const t = (prev.z - z) / span;
-      return { x: prev.x + (next.x - prev.x) * t, y: prev.y + (next.y - prev.y) * t, z };
-    }
-  }
-  return OC.route[OC.route.length - 1] || { x: 0, y: 2, z };
 }
 
 function addObstacles(count) {
-  const template = OC_TEMPLATES[OC.templateId] || OC_TEMPLATES.forest_lake;
-  const matDanger = new THREE.MeshStandardMaterial({ color: 0x6d2f35, roughness: 0.62, emissive: 0x1a0508, emissiveIntensity: 0.22 });
   for (let i = 0; i < count; i += 1) {
     const d = 70 + Math.random() * (OC.courseLength - 120);
-    const p = routeAtDistance(d);
-    const off = (Math.random() < 0.5 ? -1 : 1) * (OC.pathWidth * 0.72 + Math.random() * 3.3);
-    const yoff = (Math.random() - 0.5) * 2.4;
-    const type = template.obstacles[Math.floor(Math.random() * template.obstacles.length)];
-    const mesh = createObstacleMesh(type, matDanger);
-    mesh.position.set(p.x + off, clamp(p.y + yoff, -0.3, 6.6), -d);
-    mesh.rotation.set(Math.random() * 0.6, Math.random() * Math.PI, Math.random() * 0.4);
-    mesh.userData = { kind: 'obstacle', type, hit: false, radius: type === 'peak' ? 1.35 : 1.05 };
-    OC.world.add(mesh);
-    OC.objects.push(mesh);
+    const laneRoll = Math.random();
+    const x = laneRoll < 0.34 ? 0 : laneRoll < 0.67 ? -OC.laneWidth * 0.55 : OC.laneWidth * 0.55;
+    const kind = pick(['log', 'log', 'rock', 'stump', 'branch']);
+    let obj;
+    if (kind === 'log') obj = makeSprite(pick(HORSE_FOREST_ASSETS.logs), 2.9, 1.05, 0x7b4b2a);
+    else if (kind === 'rock') obj = makeSprite(pick(HORSE_FOREST_ASSETS.rocks), 1.55, 1.35, 0x777777);
+    else if (kind === 'stump') obj = makeSprite(pick(HORSE_FOREST_ASSETS.stumps), 1.25, 1.65, 0x775533);
+    else obj = makeSprite(pick(HORSE_FOREST_ASSETS.branches), 4.2, 1.4, 0x6a4428);
+    const isBranch = kind === 'branch';
+    obj.position.set(x, isBranch ? 2.45 : -1.05 + obj.scale.y / 2, -d);
+    obj.userData = { kind: 'obstacle', obstacleType: kind, hit: false, radiusX: isBranch ? 2.2 : 0.85, radiusZ: 1.15, needsJump: !isBranch, needsDuck: isBranch };
+    OC.world.add(obj);
+    OC.objects.push(obj);
   }
-}
-
-function createObstacleMesh(type, mat) {
-  if (type === 'peak') return new THREE.Mesh(new THREE.ConeGeometry(1.25, 3.2, 5), mat.clone());
-  if (type === 'storm') return new THREE.Mesh(new THREE.SphereGeometry(1.15, 14, 10), new THREE.MeshStandardMaterial({ color: 0x37425b, roughness: 0.9, emissive: 0x11172a, emissiveIntensity: 0.25 }));
-  if (type === 'branch') {
-    const group = new THREE.Group();
-    const branchMat = new THREE.MeshStandardMaterial({ color: 0x4e3220, roughness: 0.85 });
-    const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.22, 2.9, 8), branchMat);
-    branch.rotation.z = Math.PI / 2.8;
-    const leaves = new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 8), new THREE.MeshStandardMaterial({ color: 0x2d6b42 }));
-    leaves.position.x = 1.1;
-    group.add(branch, leaves);
-    return group;
-  }
-  if (type === 'arch') {
-    const group = new THREE.Group();
-    const stone = new THREE.MeshStandardMaterial({ color: 0x675b76, roughness: 0.86 });
-    const a = new THREE.Mesh(new THREE.BoxGeometry(0.45, 2.5, 0.45), stone);
-    const b = a.clone();
-    const c = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.45, 0.45), stone);
-    a.position.x = -0.9; b.position.x = 0.9; c.position.y = 1.2;
-    group.add(a, b, c);
-    return group;
-  }
-  return new THREE.Mesh(new THREE.DodecahedronGeometry(1.05, 0), mat.clone());
 }
 
 function addCollectibles(count) {
-  const mat = new THREE.MeshBasicMaterial({ color: 0xeec45a });
   for (let i = 0; i < count; i += 1) {
     const d = 45 + Math.random() * (OC.courseLength - 90);
-    const p = routeAtDistance(d);
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.27, 16, 16), mat.clone());
-    mesh.position.set(p.x + (Math.random() - 0.5) * OC.pathWidth * 0.9, p.y + (Math.random() - 0.5) * 0.8, -d);
-    mesh.userData = { kind: 'collectible', collected: false, radius: 0.7 };
-    const light = new THREE.PointLight(0xeec45a, 0.7, 8);
-    mesh.add(light);
-    OC.world.add(mesh);
-    OC.objects.push(mesh);
+    const laneRoll = Math.random();
+    const x = laneRoll < 0.34 ? 0 : laneRoll < 0.67 ? -OC.laneWidth * 0.55 : OC.laneWidth * 0.55;
+    const y = Math.random() < 0.65 ? 0.2 + Math.random() * 1.2 : 1.8 + Math.random() * 1.3;
+    const obj = makeSprite(pick(HORSE_FOREST_ASSETS.collectibles), 0.82, 0.82, 0xeec45a);
+    obj.position.set(x, y, -d);
+    obj.userData = { kind: 'collectible', collected: false, radius: 0.85 };
+    const light = new THREE.PointLight(0xeec45a, 0.75, 9);
+    obj.add(light);
+    OC.world.add(obj);
+    OC.objects.push(obj);
   }
 }
 
@@ -477,11 +453,12 @@ function resetRun(keepMessage = false) {
   OC.distance = 0;
   OC.score = 0;
   OC.hits = 0;
-  OC.pathMisses = 0;
+  OC.jumps = 0;
   OC.collected = 0;
   OC.player.x = 0;
   OC.player.y = 0;
-  OC.lastPenaltyAt = 0;
+  OC.player.vy = 0;
+  OC.player.grounded = true;
   OC.objects.forEach((obj) => {
     obj.visible = true;
     obj.userData.hit = false;
@@ -489,15 +466,15 @@ function resetRun(keepMessage = false) {
   });
   updateWorldPositions();
   updateStats();
-  if (!keepMessage && oc$('obstacle-result')) setResult('Course reset. Start the test when ready.', 'waiting');
+  if (!keepMessage && oc$('obstacle-result')) setResult('Ride reset. Start the test when ready.', 'waiting');
 }
 
 function startRun() {
   if (OC.complete) resetRun(true);
   OC.running = true;
   OC.clock.getDelta();
-  oc$('obstacle-status').textContent = 'Flying';
-  setResult('POV flight test running. Steer through the glowing tunnel.', 'waiting');
+  oc$('obstacle-status').textContent = 'Riding';
+  setResult('Horse ride running. Steer through the path and jump obstacles.', 'waiting');
   if (!OC.frame) OC.frame = requestAnimationFrame(tickRun);
 }
 
@@ -515,7 +492,6 @@ function tickRun() {
   if (OC.running) {
     updatePlayer(dt);
     OC.distance += OC.speed * dt;
-    checkPathPenalty();
     checkCollisions();
     if (OC.distance >= OC.courseLength) finishRun();
     updateStats();
@@ -524,53 +500,63 @@ function tickRun() {
   if (OC.running) OC.frame = requestAnimationFrame(tickRun);
 }
 
+function jumpHorse() {
+  if (!OC.running || !OC.player.grounded) return;
+  OC.player.vy = 7.8;
+  OC.player.grounded = false;
+  OC.jumps += 1;
+}
+
 function updatePlayer(dt) {
-  let dx = 0, dy = 0;
-  if (OC.keys.has('arrowup') || OC.keys.has('w')) dy += 1;
-  if (OC.keys.has('arrowdown') || OC.keys.has('s')) dy -= 1;
+  let dx = 0;
   if (OC.keys.has('arrowleft') || OC.keys.has('a')) dx -= 1;
   if (OC.keys.has('arrowright') || OC.keys.has('d')) dx += 1;
-  OC.player.x = clamp(OC.player.x + dx * OC.steerSpeed * dt, -6.5, 6.5);
-  OC.player.y = clamp(OC.player.y + dy * OC.steerSpeed * dt, -2.3, 4.6);
+  OC.player.x = clamp(OC.player.x + dx * OC.steerSpeed * dt, -OC.laneWidth, OC.laneWidth);
+
+  OC.player.vy -= 18 * dt;
+  OC.player.y += OC.player.vy * dt;
+  if (OC.player.y <= 0) {
+    OC.player.y = 0;
+    OC.player.vy = 0;
+    OC.player.grounded = true;
+  }
   updateWorldPositions();
 }
 
 function updateWorldPositions() {
-  const guide = routeAtDistance(OC.distance + 20);
-  OC.camera.position.set(OC.player.x, 2.2 + OC.player.y, 8);
-  OC.camera.lookAt(guide.x + OC.player.x * 0.25, guide.y, -34);
+  const bob = OC.running ? Math.sin(performance.now() * 0.012) * 0.035 : 0;
+  OC.camera.position.set(OC.player.x, 2.1 + OC.player.y + bob, 8);
+  OC.camera.lookAt(OC.player.x * 0.2, 1.45 + OC.player.y * 0.35, -38);
   if (OC.world) OC.world.position.z = OC.distance;
 }
 
-function checkPathPenalty() {
-  const guide = routeAtDistance(OC.distance + 20);
-  const dx = OC.player.x - guide.x;
-  const dy = (2.2 + OC.player.y) - guide.y;
-  const outside = Math.hypot(dx, dy) > OC.pathWidth / 2;
-  const now = performance.now();
-  if (outside && now - OC.lastPenaltyAt > 950) {
-    OC.score -= 1;
-    OC.pathMisses += 1;
-    OC.lastPenaltyAt = now;
-  }
-}
-
 function checkCollisions() {
-  const playerPos = new THREE.Vector3(OC.player.x, 2.2 + OC.player.y, -OC.distance - 20);
+  const playerZ = -OC.distance - 14;
+  const playerY = 0.6 + OC.player.y;
   OC.objects.forEach((obj) => {
     if (!obj.visible) return;
-    const dist = obj.getWorldPosition(new THREE.Vector3()).distanceTo(playerPos);
-    if (obj.userData.kind === 'obstacle' && !obj.userData.hit && dist < obj.userData.radius + 1.0) {
-      obj.userData.hit = true;
-      obj.visible = false;
-      OC.hits += 1;
-      OC.score -= 1;
+    const worldZ = obj.position.z + OC.world.position.z;
+    if (Math.abs(worldZ + 14) > 1.45) return;
+    const dx = Math.abs(obj.position.x - OC.player.x);
+    if (obj.userData.kind === 'obstacle' && !obj.userData.hit) {
+      const xHit = dx < obj.userData.radiusX;
+      const jumpCleared = obj.userData.needsJump && OC.player.y > 0.65;
+      const branchCleared = obj.userData.needsDuck && playerY < 1.9;
+      if (xHit && !jumpCleared && !branchCleared) {
+        obj.userData.hit = true;
+        obj.material.opacity = 0.35;
+        OC.hits += 1;
+        OC.score -= 1;
+      }
     }
-    if (obj.userData.kind === 'collectible' && !obj.userData.collected && dist < obj.userData.radius + 1.0) {
-      obj.userData.collected = true;
-      obj.visible = false;
-      OC.collected += 1;
-      OC.score += 5;
+    if (obj.userData.kind === 'collectible' && !obj.userData.collected) {
+      const dy = Math.abs(obj.position.y - playerY);
+      if (dx < obj.userData.radius && dy < obj.userData.radius + 0.45) {
+        obj.userData.collected = true;
+        obj.visible = false;
+        OC.collected += 1;
+        OC.score += 5;
+      }
     }
   });
 }
@@ -595,7 +581,7 @@ function updateStats() {
   oc$('obstacle-score').textContent = String(OC.score);
   oc$('obstacle-collected').textContent = String(OC.collected);
   oc$('obstacle-hits').textContent = String(OC.hits);
-  oc$('obstacle-path-misses').textContent = String(OC.pathMisses);
+  oc$('obstacle-jumps').textContent = String(OC.jumps);
   oc$('obstacle-course-summary').textContent = `${Math.round(OC.distance)}m / ${Math.round(OC.courseLength)}m`;
 }
 
@@ -608,12 +594,12 @@ function setResult(text, state = 'waiting') {
 
 function drawFrame() {
   if (!OC.renderer || !OC.scene || !OC.camera) return;
+  const now = performance.now();
   OC.objects.forEach((obj) => {
-    if (obj.userData.kind === 'collectible') {
-      obj.rotation.y += 0.018;
-      obj.scale.setScalar(1 + Math.sin(performance.now() * 0.006 + obj.position.z) * 0.12);
+    if (obj.userData.kind === 'collectible' && obj.visible) {
+      obj.material.rotation = Math.sin(now * 0.004 + obj.position.z) * 0.08;
+      obj.scale.setScalar(0.82 + Math.sin(now * 0.006 + obj.position.z) * 0.08);
     }
-    if (obj.userData.kind === 'obstacle') obj.rotation.y += 0.004;
   });
   OC.renderer.render(OC.scene, OC.camera);
 }
@@ -665,7 +651,7 @@ window.__artifexObstacleCourse = {
     difficulty: OC.difficulty,
     duration: OC.duration,
     speed: OC.speed,
-    pathWidth: OC.pathWidth,
+    laneWidth: OC.laneWidth,
     successScore: OC.successScore,
     successEventId: OC.successEventId,
     failureEventId: OC.failureEventId,
@@ -673,7 +659,8 @@ window.__artifexObstacleCourse = {
     failureOutcomeKey: OC.failureOutcomeKey,
     score: OC.score,
     hits: OC.hits,
-    pathMisses: OC.pathMisses,
+    jumps: OC.jumps,
     collected: OC.collected,
+    assetBase: ASSET_BASE,
   }),
 };
