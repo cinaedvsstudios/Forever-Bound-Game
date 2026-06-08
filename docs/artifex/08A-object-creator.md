@@ -221,6 +221,13 @@ The Object Creator Reference panel may show where a reusable object is used only
 
 ## Current Compatibility and Transition Notes
 
+### Consolidated Local Asset Helper Notes
+
+The archived Object Creator sprite-helper README defined the local `sprites/` folder as a future module workspace for parsing helpers, animation-state mapping helpers, preview/test sheets, sprite metadata examples and character movement/action templates. It is not a final project sprite-asset location; final sprite assets belong in the active project asset/library folders and are linked into Object Archetypes only after promotion/registration.
+
+The archived Object Creator icon README defined optional quick-add/template-card PNG names for the local app icon folder, including people, hero, hostile-human, possessed, caster, creature, boss, prop, door, pickup, cache, interactable, marker and hazard template groups. Missing PNGs must fall back to built-in temporary symbols; icon files must not become gameplay asset references.
+
+
 `docs/artifex/06-object-library.md` and `artifex/apps/archetype-object-creator/README.md` contain useful current V1.36 purpose, boundary and lifecycle facts, but they overlap as active module descriptions. Their enduring Object Creator-specific rules are consolidated into this specification.
 
 The local sprites README/source note is also consolidated here: Object Creator may have sprite helper/test/template material, but final project sprites and portraits must be registered Asset Library records before they become permanent authored content.

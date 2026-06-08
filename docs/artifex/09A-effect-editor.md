@@ -143,6 +143,11 @@ fx_<generated-value>
 
 and its initial visible archetype ID placeholder/value uses `fx_v3_effect_001`. This is a current implementation mismatch to be addressed during canonical connected-project save/index work. This specification does not silently rename existing local/export compositions or declare a migration without implementation and compatibility handling.
 
+
+Archived local Effect Editor notes record `INDEX2-CLEAN-0.2.2` at commit `96d0bc06c9f630ecf19bf11145b13423edbacdac` as a known-good rollback checkpoint for blank-screen, menu, canvas, controls or performance regressions during later Index2 integration. That checkpoint is recovery evidence only and does not replace the active route/baseline stated above.
+
+Archived split/refactor notes for `artifex/apps/effect-editor/src/` describe an early preservation-first plan to extract CSS, Tailwind config, presets, engine helpers, UI helpers and import/export helpers before adding new Artifex-specific features. Future refactors should preserve visible behaviour first, but current route authority remains this specification and the global backlog.
+
 ### Current local persistence and JSON exchange
 
 Index2 currently uses browser-local storage records:

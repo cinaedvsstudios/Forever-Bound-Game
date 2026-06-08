@@ -137,76 +137,66 @@ todos/project-manager-todos.json
 todos/project-editor-todos.json
 ```
 
-## Source and Archive Classification
+## Remaining Active Markdown Policy
 
-The following old files are source evidence or archive candidates after their valid information has been transferred into the active documents above.
+Outside this controlled `docs/artifex/00A`–`23A` set, tracked Markdown files may remain outside archive only when they are a general repository landing page or a genuinely required local implementation README that does not duplicate Artifex specifications, todos, audits, route decisions, split plans, phase notes or module contracts.
 
-| Existing old file / area | Valid information destination | Intended treatment |
-|---|---|---|
-| `00-index.md` | Active index material moved into `00A`. | Archive. |
-| `GLOBAL_TODO.md` | Still-live tasks moved into `02A`. | Archive after verification. |
-| `01-core-vision.md` | Universal system/layer rules moved into `01A`, `21A` and relevant module specs. | Archive. |
-| `02-module-architecture.md` | Universal rules into `01A`; module boundaries into relevant specs. | Archive. |
-| `03-project-editor-flatplan.md` | Project Editor material into `05A`; terminology into `20A`. | Archive. |
-| `04-scene-editor.md` | Scene Editor rules into `06A`; open work into `02A`. | Archive. |
-| `05-creation-guide.md` and `05a-creation-guide-v119-implementation-notes.md` | Creation Guide facts into `04A`; open work into `02A`. | Archive. |
-| `06-object-library.md` and Object Creator local docs | Object Creator rules into `08A`; validation/follow-up into `02A`. | Archive or minimal local pointer after approval. |
-| `07-quest-builder.md`, `07a-quest-builder-structured-authoring.md`, `07b-puzzle-creator-quest-integration.md`, `07C-potion-match-quest-outcome-handoff.md` and Quest Builder local docs | Quest Builder rules into `07A`; Puzzle handoff also reflected in `17A`; open work into `02A`. | Archive. |
-| `08-playtest-and-build.md` | Runtime/Playtest boundary into `16A`; Build boundary into `15A`. | Archive. |
-| `09-terminology.md` and `10-naming-brainstorm.md` | Terminology and naming decisions into `20A`. | Archive. |
-| `11-portal-hub.md` | Hub rules into `03A`. | Archive. |
-| `12-project-settings.md` | Active Project and Connected Folder concepts into `11A` and `12A`. | Archive after dependency check. |
-| `13-effects-library.md` and Effect Editor docs/todos/phase notes/audits | Effect Editor rules into `09A`; open work into `02A`. | Archive or minimal local pointer. |
-| `14-asset-library.md` | Asset Library feature detail into `10A`; open work into `02A`. | Archive. |
-| `15-template-system.md` | Template System reference into `22A`. | Archive. |
-| `16-dev-status-and-risks.md` | Still-live process risks into `01A` / `02A`. | Archive. |
-| `17-codex-prompts.md` | Prompt history only. | Archive. |
-| `18-color-and-display-rules.md` | Exact visual rules into `23A`. | Archive. |
-| `19-project-file-contracts.md` | Universal project-file contract into `01A`; schema detail into `19A`. | Archive. |
-| `19a-project-starter-file-schemas.md` | Renamed and retained as `19A-project-starter-schemas.md`. | Remove old lowercase duplicate after rename. |
-| `20-asset-intake-workflow.md` | Creation Guide intake into `04A`; Object Creator finalisation into `08A`; Asset Library promotion into `10A`. | Archive. |
-| `21-template-game-project-contract.md` | Template Game reference project into `21A`. | Archive. |
-| `22-sound-archetype-generator.md` | Sound Generator / Sound Library rules into `18A`. | Archive/source evidence. |
-| `23-current-main-scan-and-pr20-recovery.md` | Any live tasks into `02A`; history remains history. | Archive. |
-| `24-stabilisation-cleanup-and-ui-resumption-plan.md` | Permanent process rules into `01A`; live work into `02A`. | Archive. |
-| `CONTROL_FILE_UPDATES.md` | Helper note only; guidance absorbed into `00A` and `02A`. | Archive or delete after applying. |
+As of the final 2026-06-08 repository Markdown consolidation, the intended non-archive Markdown set is:
 
-## Current Duplication Rules to Remove
+```text
+README.md
+docs/artifex/00A-index.md
+docs/artifex/01A-project-file-contracts.md
+docs/artifex/02A-global-to-do.md
+docs/artifex/03A-hub.md
+docs/artifex/04A-creation-guide.md
+docs/artifex/05A-project-editor.md
+docs/artifex/06A-scene-editor.md
+docs/artifex/07A-quest-builder.md
+docs/artifex/08A-object-creator.md
+docs/artifex/09A-effect-editor.md
+docs/artifex/10A-asset-library.md
+docs/artifex/11A-connected-project-folder.md
+docs/artifex/12A-active-project.md
+docs/artifex/13A-registered-content-picker.md
+docs/artifex/14A-health-guide.md
+docs/artifex/15A-build-game.md
+docs/artifex/16A-runtime-playtest.md
+docs/artifex/17A-puzzle-creator.md
+docs/artifex/18A-sound-library.md
+docs/artifex/19A-project-starter-schemas.md
+docs/artifex/20A-terminology-naming.md
+docs/artifex/21A-template-game.md
+docs/artifex/22A-template-system.md
+docs/artifex/23A-colour-display-rules.md
+```
 
-The following practices are no longer acceptable in the controlled documentation model:
+Required local runtime Markdown resources retained outside archive:
 
-- maintaining active app-specific `todo.md` files alongside `02A`;
-- writing new current-state/status documents that become competing authorities;
-- copying universal save/path/branding/ownership rules into every module spec;
-- using dated audit reports as implementation baselines instead of checking current `main`;
-- replacing old non-`A` docs instead of creating/using the controlled `A` file;
-- keeping old design notes in the active instruction chain after their valid content is transferred.
+```text
+artifex/apps/misc/translator/demotic-rules.md
+artifex/apps/misc/translator/runispeleus-rules.md
+artifex/apps/misc/translator/volkhv-tartessian-rules.md
+```
+
+Empty placeholder folders that lost README-only tracking during archive consolidation must be intentionally tracked with `.gitkeep` when the folder itself remains part of a starter/intake contract.
+
+The final audit for repository Markdown files archived during that pass is retained at:
+
+```text
+docs/archive/pre-a-spec-consolidation-2026-06-08/repo-remaining-docs/FINAL_MD_ARCHIVE_AUDIT.md
+```
 
 ## Archive Policy
 
-Archive rather than delete once active information has been safely transferred.
+Archive rather than delete once active information has been safely transferred. Archived files remain evidence only. Active specs and `02A` must not cite archived files as the current rule or baseline.
 
-Archive candidates include:
-
-```text
-old per-app todo files
-status refreshes and current-state reviews
-dated baseline matrices and read-only audit reports
-failed-acceptance plans
-old implementation/update-step histories
-handover records
-PR-specific documentation records
-superseded contract/index files
-superseded non-A module specs
-```
-
-Archived files remain evidence only. Active specs and `02A` must not cite archived files as the current rule or baseline.
+Archive candidates include old per-app todo files, status refreshes and current-state reviews, dated baseline matrices and read-only audit reports, failed-acceptance plans, old implementation/update-step histories, handover records, PR-specific documentation records, superseded contract/index files, superseded non-`A` module specs and local README-style docs that duplicate active specifications.
 
 ## Consolidation Implementation Notes
 
 This controlled documentation set does not itself:
 
-- delete or archive old files;
 - change runtime routes;
 - change schemas;
 - merge open runtime PRs;
@@ -215,4 +205,4 @@ This controlled documentation set does not itself:
 - accept PR #46 Sound Library work;
 - turn planning placeholder Puzzle modules into completed engines.
 
-Those remain explicit tasks in `02A`.
+Those remain explicit tasks in `02A` where still current.

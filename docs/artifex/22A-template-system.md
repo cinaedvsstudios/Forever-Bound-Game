@@ -109,6 +109,11 @@ Template Game is a populated connected reference project with real registered re
 
 Artifex Adventures / Forever Bound is the real production project.
 
+
+## Blank Module Boilerplate Evidence
+
+The archived `artifex/apps/module-boilerplate/` README and extension notes describe a neutral authoring-app shell with a top menu, side panel, workspace, bottom record list, import/export JSON, local browser save and simple canvas preview. It may be used as implementation evidence when creating future Artifex tools, but it is not itself an active module specification and must not create a second documentation source of truth.
+
 ## Required Future Work
 
 The active backlog should decide:

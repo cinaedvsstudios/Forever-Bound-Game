@@ -182,3 +182,10 @@ Keep that image as a visual palette reference or archive it with older docs only
 ## Source Classification
 
 `docs/artifex/18-color-and-display-rules.md` is consolidated into this reference. After this file is accepted, the old document can become archive/source evidence.
+
+
+## Inscription Renderer Display Notes
+
+The local translator/inscription-renderer rule files under `artifex/apps/misc/translator/` describe three Forever Bound display traditions: Runispeleus for Mel's Codice Cylinder layer, Saga-Demotic for Egyptian archive display, and Volkhv–Tartessian for Nyx-family ritual script. Those rule files are retained because the translator app links to them and fetches at least the Volkhv–Tartessian rules at runtime; they are local app resources, not Artifex platform colour authority.
+
+If these scripts are surfaced in Artifex modules, preserve the display separation recorded by the translator notes: Runispeleus accepts finished Unicode rune text; Saga-Demotic uses right-to-left display ordering with fixed signs; Volkhv–Tartessian uses token parsing and break/seal spacing rules. Do not mix those renderer-specific rules into general module UI colour or control styling.
