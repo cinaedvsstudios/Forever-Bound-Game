@@ -1,11 +1,11 @@
 # Hub / Artifex Portal Specification
 
-Status: Active module specification draft during documentation consolidation  
-Owning module: Hub / Artifex Portal  
-Active route: `artifex/index.html`  
-Current verified implementation baseline: `Artifex Hub V1.1.4`  
-Governing universal contract: `docs/artifex/1A-project-file-contracts.md`  
-Outstanding work source: `docs/artifex/2A-global-to-do.md`
+Status: Active module specification draft during documentation consolidation
+Owning module: Hub / Artifex Portal
+Active route: `artifex/index.html`
+Current verified implementation baseline: `Artifex Hub V1.1.4`
+Governing universal contract: `docs/artifex/01A-project-file-contracts.md`
+Outstanding work source: `docs/artifex/02A-global-to-do.md`
 
 ## Purpose
 
@@ -92,4 +92,4 @@ After this specification is accepted and any remaining live work is retained in 
 
 ## Remaining Work
 
-All current and future Hub tasks are owned by `docs/artifex/2A-global-to-do.md`. This specification must not accumulate task checklists.
+All current and future Hub tasks are owned by `docs/artifex/02A-global-to-do.md`. This specification must not accumulate task checklists.
