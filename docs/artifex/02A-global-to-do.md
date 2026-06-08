@@ -91,11 +91,17 @@ Specification: `docs/artifex/05A-project-editor.md`
 
 - Implement connected-folder load/save for Project Editor-owned structural files and indexes.
 - Keep browser drafts and ZIP export as recovery/fallback.
+- Maintain the real split architecture: do not re-expand `index.html` into a monolith, do not wrap the editor in an iframe, and do not add unused scaffold modules that are not wired into the live editor.
 - Migrate Project Manager wording/scopes/files through backward-compatible handling.
 - Confirm/fix Effect Editor menu destination to protected `index2.html`.
 - Extend live connected-reference and gate validation.
 - Replace placeholder route-playtest only when Runtime/Playtest interface exists.
-- Archive old split-plan docs after acceptance.
+- Keep the Project Tasks / To-Do Board as an implemented workspace; future task work should extend focused modules rather than adding another wrapper layer.
+- Split remaining Manifest/workspace/toolbar logic only if `project-ui.js` grows again.
+- Split `project-integration-ui.js` further only if Asset Browser display, preview or search logic grows.
+- Consider renaming `project-app.v7.js` to `project-app.js` later once entry-file naming is stable.
+- Optionally mirror node-specific tasks into the selected-node inspector later.
+- Archive old Project Editor split-plan and Project Manager split-audit docs after acceptance.
 
 ## Scene Editor
 
@@ -142,7 +148,7 @@ Follow-up:
 - Split large `editor-ui.js` only after validation and separately from repair work.
 - Complete real Scene/Quest/Puzzle reference listing after shared reference index exists.
 - Adopt Sound Library object sounds after Sound foundation acceptance.
-- Archive Object Creator old docs and historical patch evidence after acceptance.
+- Archive Object Creator old docs, sprite helper README notes and historical patch evidence after their useful information is represented in `08A`.
 
 ## Effect Editor
 
@@ -338,6 +344,11 @@ Specification/reference: `docs/artifex/23A-colour-display-rules.md`
 | PR #40 | Scene/Effect status refresh. | Do not merge as parallel authority; capture unique Effect details if any remain. |
 | PR #44 | Puzzle V1.34 documentation refresh. | Reconcile/close after `17A`; V1.35 and `17A` supersede it. |
 | PR #46 | Sound Library / Create Synth work. | Keep protected; decide after review/merge. |
+| PR #20 | Historical unsafe Creation Guide / Project Editor cleanup branch. | Do not merge, manually resolve, or use as a development base; recreate any approved idea from current `main`. |
+| PR #17 | Historical Effect Editor index2 v0.2.3 branch. | Do not merge; use only as route-decision/background evidence. |
+| PR #9 | Stale Project Manager / Project Editor task workspace branch. | Requires diff-based salvage review only if still relevant; do not merge as-is. |
+| Scene Editor v0.35 exploratory branches | Historical target-fix attempts. | Do not merge or cherry-pick as shortcuts; use current accepted Scene Editor baseline. |
+| Phase 0 dated audits | Historical status evidence. | Archive after useful no-merge/no-base rules are retained here. |
 | Old non-A docs | Source evidence only after extraction. | Archive or reduce to local pointers after acceptance. |
 
 ## Completion Checkpoint

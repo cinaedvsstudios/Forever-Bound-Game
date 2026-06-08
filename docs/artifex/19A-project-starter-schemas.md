@@ -279,6 +279,21 @@ The following are the canonical empty index shapes created during project initia
 }
 ```
 
+
+## Optional Starter Folder README Notes
+
+Starter-folder README files are helper notes only. They are not authoritative schema definitions and must not become a second documentation system.
+
+If Creation Guide or a starter template creates helper README files, their content should follow these rules:
+
+| Folder | Helper-note meaning | Authority rule |
+|---|---|---|
+| `intake/backgrounds/` | Drop source artwork for full scenes, title/ending backgrounds, interiors, exteriors, scenery loops, window tiles, parallax plates and environmental layers. | Files here are staging files only. After approval they must be copied/promoted into final `assets/` folders and registered in Asset Library. |
+| `intake/characters/` | Drop source artwork for playable characters, NPCs, villains, enemies, portraits, turnarounds, sprite sheets, animation frames and character reference images. | Files here are staging files only. After approval they must be copied/promoted into final `assets/` folders and registered in Asset Library. |
+| `data/` | JSON and data files for scenes, quests, dialogue, items, codice entries and map routes. | Do not treat this as a replacement for the canonical typed folders and indexes defined in this schema. |
+
+These README notes are safe to archive after this rule is accepted because the active contract is recorded here and in Asset Library.
+
 ## Migration Note For Files Already Created During Earlier Testing
 
 Creation Guide intentionally does not overwrite files already present in a connected project folder. A folder initialised before this schema alignment may contain an earlier `input-map.json` object form, earlier `layout.json` camera form, or an invalid non-null starter `startScreenId`. It must be validated/migrated explicitly rather than silently replaced. For a disposable test folder, deleting the earlier generated starter JSON files and running starter creation again is acceptable.

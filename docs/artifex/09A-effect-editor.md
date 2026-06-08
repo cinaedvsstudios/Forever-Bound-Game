@@ -271,7 +271,7 @@ The following Effect Editor documents were inspected for this extraction. Their 
 | Existing source | Relevant information transferred or classified | Intended treatment after `09A` acceptance |
 |---|---|---|
 | `docs/artifex/13-effects-library.md` | FX Archetype/Instance, Game FX/Plate FX and module-boundary concepts. Its older prototype/current-state claims do not define Index2. | Supersede/archive as overlapping prior module specification once any unique future Plate FX requirement is retained here/`02A`. |
-| `artifex/shared/todo-guide/audits/2026-06-01-effect-editor-route-decision-audit.md` | Accepted Index2 route decision and Hub cutover evidence; its original `0.2.3`/missing-parity statements are superseded by current `0.2.6`. | Retain as decision evidence or archive after controlled extraction; not a parallel spec. |
+| `artifex/shared/todo-guide/audits/2026-06-01-effect-editor-route-decision-audit.md` | Accepted Index2 route decision and Hub cutover evidence; its original `0.2.3`/missing-parity statements are superseded by current `0.2.6`. | Consolidated here as route-decision evidence; archive as source evidence, not a parallel spec. |
 | Open PR #40's refresh of the route/master/stabilisation records | Correct evidence that PRs #27–#33 delivered Index2 parity and Brush/Shape restoration. | Do not merge merely as current authority; any unique useful content is captured in `09A`/`02A`. |
 | `artifex/apps/effect-editor/docs/todo.md` | My Settings requirements and approved visual target references. | Useful rules consolidated into `09A` and unfinished work into `02A`; archive after acceptance. |
 | `future-features.md` | Future Brush Sequence Animation concept only. | Deferred idea added to `02A`; archive as source evidence. |

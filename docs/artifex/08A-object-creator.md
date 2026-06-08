@@ -172,6 +172,27 @@ Throwable Object
 Hazard
 ```
 
+
+### Sprite helper workspace boundary
+
+Object Creator may contain local sprite helper, note, template or test-material folders for module development. Those folders are not the final project Asset Library and must not be treated as the permanent destination for project sprite assets.
+
+Final project sprite sheets, animation frames, portraits and generated/edited media must live as final registered `asset_` records once approved. Object Creator maps those registered assets into Object Archetype gameplay actions and dialogue portrait actions.
+
+A local sprite helper workspace may contain:
+
+```text
+sprite-sheet parsing helpers
+animation-state mapping helpers
+preview/test sprite sheets
+sprite metadata examples
+character animation templates
+movement/action state templates
+dialogue portrait mapping examples
+```
+
+The existing rule remains: talk is not a gameplay sprite action. Dialogue/talking belongs to the separate close-up Dialogue Portrait system, while full-body gameplay sprites use readable whole-body actions.
+
 ### Scene Editor relationship
 
 Scene Editor places visual instances that reference saved `archobj_` definitions. Object Creator defines the reusable object and its expected visual/behaviour metadata; it does not place that object into a specific scene or duplicate scene layout records.
@@ -196,11 +217,13 @@ V1.36 contains the initiating-target capture behaviour for a sound assignment op
 
 ### Reference panel dependency
 
-The Object Creator Reference panel may show where a reusable object is used only when backed by real shared project-reference data. It must not present placeholder/demo links as actual Scene, Quest or Puzzle usage. The shared reference-index work remains an external dependency recorded in `2A`.
+The Object Creator Reference panel may show where a reusable object is used only when backed by real shared project-reference data. It must not present placeholder/demo links as actual Scene, Quest or Puzzle usage. The shared reference-index work remains an external dependency recorded in `02A`.
 
 ## Current Compatibility and Transition Notes
 
 `docs/artifex/06-object-library.md` and `artifex/apps/archetype-object-creator/README.md` contain useful current V1.36 purpose, boundary and lifecycle facts, but they overlap as active module descriptions. Their enduring Object Creator-specific rules are consolidated into this specification.
+
+The local sprites README/source note is also consolidated here: Object Creator may have sprite helper/test/template material, but final project sprites and portraits must be registered Asset Library records before they become permanent authored content.
 
 `artifex/apps/archetype-object-creator/docs/todo.md` currently duplicates active task ownership; all still-live Object Creator work is represented in `02A` so this app-specific task file can later become archive evidence rather than a competing backlog.
 
