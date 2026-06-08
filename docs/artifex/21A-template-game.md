@@ -232,7 +232,7 @@ Normal day-to-day usability and remaining workflow/UI improvements should then b
 
 ## Archived Reference Scenario Evidence
 
-The former `artifex/artifex-adventures/19-artifex-adventure-template.md` file contains a detailed historical draft for an Artifex Adventures reference scenario, including Orient Express / Great Omar story material, passenger targets, train locations, quest flags, object archetypes and a module-demonstration checklist. Its useful role is source evidence for the Template Game proof scenario; it is not a separate active template specification.
+The archived `docs/archive/pre-a-spec-consolidation-2026-06-08/repo-remaining-docs/artifex/artifex-adventures/19-artifex-adventure-template.md` file contains a detailed historical draft for an Artifex Adventures reference scenario, including Orient Express / Great Omar story material, passenger targets, train locations, quest flags, object archetypes and a module-demonstration checklist. Its useful role is source evidence for the Template Game proof scenario; it is not a separate active template specification and should not be restored as an active Markdown file unless a future runtime dependency explicitly requires it.
 
 ## Source Classification
 
