@@ -2,8 +2,8 @@
 
 Status: Active consolidation index  
 Intended role: the single active index identifying authoritative Artifex documentation, module/service specifications, task source and archive policy.  
-Backlog source: `docs/artifex/2A-global-to-do.md`  
-Universal contract: `docs/artifex/1A-project-file-contracts.md`
+Backlog source: `docs/artifex/02A-global-to-do.md`  
+Universal contract: `docs/artifex/01A-project-file-contracts.md`
 
 ## Purpose
 
@@ -15,20 +15,23 @@ The controlled active-document structure is:
 
 ```text
 One universal contract:
-  docs/artifex/1A-project-file-contracts.md
+  docs/artifex/01A-project-file-contracts.md
+
+One human-readable active backlog:
+  docs/artifex/02A-global-to-do.md
 
 One specification document per actual module or maintained shared service:
   only that module/service's permanent unique role, ownership, route/baseline and interface
 
-One human-readable active backlog:
-  docs/artifex/2A-global-to-do.md
+Active subordinate references where needed:
+  schema, terminology, Template Game, Template System and visual/style references
 
 Archive:
   old audits, status reports, completed-pass records, superseded handovers,
   old per-app todo files and other historical implementation evidence
 ```
 
-Older documents remain source evidence until their valid information is transferred and the archive decision is approved. A document is not archived merely because its filename is old; the transfer must be checked first.
+Older documents remain source evidence after their valid information has been transferred. Archived documents are not current implementation authority.
 
 ## Authority Order
 
@@ -36,8 +39,8 @@ Older documents remain source evidence until their valid information is transfer
 |---:|---|---|
 | 1 | Master contract | Universal Artifex rules applying across modules/services. |
 | 2 | Module/service specification | Fixed information unique to one module/service. |
-| 3 | Subordinate technical schema/reference | Detailed implementation shape for its bounded subject only. |
-| 4 | `docs/artifex/2A-global-to-do.md` | Outstanding/current/blocked/future work. It does not redefine contract rules. |
+| 3 | Subordinate technical/reference document | Detailed implementation or reference material for its bounded subject only. |
+| 4 | `docs/artifex/02A-global-to-do.md` | Outstanding/current/blocked/future work. It does not redefine contract rules. |
 | 5 | Archive | History and evidence only. Not implementation authority. |
 
 If two active documents contain the same rule, status statement or task, consolidate it into its single correct authority instead of maintaining both.
@@ -46,46 +49,56 @@ If two active documents contain the same rule, status statement or task, consoli
 
 | File | Active role | Status |
 |---|---|---|
-| `docs/artifex/0A-index-of-files.md` | This controlled active-document index. | Active. |
-| `docs/artifex/1A-project-file-contracts.md` | Master Artifex contract: universal platform, ownership, save, path, asset, branding and documentation-control rules. | Active. |
-| `docs/artifex/2A-global-to-do.md` | Single human-readable global active backlog. | Active. |
-| `docs/artifex/19a-project-starter-file-schemas.md` | Subordinate exact schema reference for canonical starter JSON and typed index shapes. | Active subordinate reference. |
+| `docs/artifex/00A-index.md` | This controlled active-document index. | Active. |
+| `docs/artifex/01A-project-file-contracts.md` | Master Artifex contract: universal platform, ownership, save, path, asset, branding and documentation-control rules. | Active. |
+| `docs/artifex/02A-global-to-do.md` | Single human-readable global active backlog. | Active. |
 
-## Active Module and Service Specifications
+## Active Module and Shared-Service Specifications
 
 | Order | File | Module / service | Current status |
 |---:|---|---|---|
-| 3 | `docs/artifex/3A-hub-artifex-portal.md` | Hub / Artifex Portal | Extracted; current verified implementation was Hub V1.1.4. |
-| 4 | `docs/artifex/4A-creation-guide.md` | Creation Guide | Extracted; current verified implementation was V1.1.12. |
-| 5 | `docs/artifex/5A-project-editor.md` | Project Editor | Extracted; current verified implementation was v0.1.32 CONTRACT. |
-| 6 | `docs/artifex/6A-scene-editor.md` | Scene Editor | Extracted; accepted current implementation was v0.37-control-state-inspector-retention. |
-| 7 | `docs/artifex/7A-quest-builder.md` | Quest Builder | Extracted; current verified implementation was V1.2.12. |
-| 8 | `docs/artifex/8A-archetype-object-creator.md` | Archetype Object Creator | Extracted; V1.36 implementation captured with lifecycle validation retained in `2A`. |
-| 9 | `docs/artifex/9A-effect-editor.md` | Effect Editor | Extracted; accepted route is `index2.html` / INDEX2-CLEAN-0.2.6. |
-| 10 | `docs/artifex/10A-asset-library.md` | Asset Library | Extracted as final registered-asset ownership layer; no standalone complete UI route verified. |
-| 11 | `docs/artifex/11A-shared-connected-project-folder-service.md` | Shared Connected Project Folder Service | Extracted as shared browser folder/permission/read-write infrastructure. |
-| 12 | `docs/artifex/12A-shared-active-project-service.md` | Shared Active Project Service | Extracted as shared active-project selection/context layer. |
-| 13 | `docs/artifex/13A-registered-content-service-picker.md` | Registered Content Service / Picker | Extracted as shared final-record reader/picker. |
-| 14 | `docs/artifex/14A-shared-health-guide-project-audit.md` | Shared Health Guide / Project Audit | Extracted as shared diagnostic/audit layer. |
-| 15 | `docs/artifex/15A-build-game.md` | Build Game | Extracted as future packaging/build-output owner; no complete standalone build route verified. |
-| 16 | `docs/artifex/16A-runtime-engine-playtest.md` | Runtime Engine / Playtest | Extracted as shared runtime/preview/playtest boundary; not a completed runtime app. |
-| 17 | `docs/artifex/17A-puzzle-creator.md` | Puzzle Creator | Extracted; V1.35 baseline captured with Labyrinth Maze as current implemented workflow and other modules as planning placeholders. |
-| 18 | `docs/artifex/18A-sound-generator-sound-library.md` | Sound Generator / Sound Library | Extracted as new `A` spec; old `22-sound-archetype-generator.md` remains source evidence pending archive. |
+| 03 | `docs/artifex/03A-hub.md` | Hub / Artifex Portal | Current verified implementation was Hub V1.1.4. |
+| 04 | `docs/artifex/04A-creation-guide.md` | Creation Guide | Current verified implementation was V1.1.12. |
+| 05 | `docs/artifex/05A-project-editor.md` | Project Editor | Current verified implementation was v0.1.32 CONTRACT. |
+| 06 | `docs/artifex/06A-scene-editor.md` | Scene Editor | Accepted current implementation was v0.37-control-state-inspector-retention. |
+| 07 | `docs/artifex/07A-quest-builder.md` | Quest Builder | Current verified implementation was V1.2.12. |
+| 08 | `docs/artifex/08A-object-creator.md` | Archetype Object Creator | V1.36 implementation captured with lifecycle validation retained in `02A`. |
+| 09 | `docs/artifex/09A-effect-editor.md` | Effect Editor | Accepted route is `index2.html` / INDEX2-CLEAN-0.2.6. |
+| 10 | `docs/artifex/10A-asset-library.md` | Asset Library | Final registered-asset ownership layer; no standalone complete UI route verified. |
+| 11 | `docs/artifex/11A-connected-project-folder.md` | Shared Connected Project Folder Service | Shared browser folder/permission/read-write infrastructure. |
+| 12 | `docs/artifex/12A-active-project.md` | Shared Active Project Service | Shared active-project selection/context layer. |
+| 13 | `docs/artifex/13A-registered-content-picker.md` | Registered Content Service / Picker | Shared final-record reader/picker. |
+| 14 | `docs/artifex/14A-health-guide.md` | Shared Health Guide / Project Audit | Shared diagnostic/audit layer. |
+| 15 | `docs/artifex/15A-build-game.md` | Build Game | Future packaging/build-output owner; no complete standalone build route verified. |
+| 16 | `docs/artifex/16A-runtime-playtest.md` | Runtime Engine / Playtest | Shared runtime/preview/playtest boundary; not a completed runtime app. |
+| 17 | `docs/artifex/17A-puzzle-creator.md` | Puzzle Creator | V1.35 baseline captured; Labyrinth Maze is current implemented workflow; other modules are planning placeholders. |
+| 18 | `docs/artifex/18A-sound-library.md` | Sound Generator / Sound Library | Shared procedural/imported audio workflow over registered `asset_` records; PR #46 remains provisional until accepted. |
 
-## Completed Extraction Sequence
+## Active Subordinate Reference Documents
 
-The intended extraction sequence has now been completed:
+| Order | File | Reference subject | Status |
+|---:|---|---|---|
+| 19 | `docs/artifex/19A-project-starter-schemas.md` | Canonical starter JSON and typed index shapes. | Active subordinate schema reference. |
+| 20 | `docs/artifex/20A-terminology-naming.md` | Controlled terminology, naming alternatives and unresolved wording groups. | Active reference. |
+| 21 | `docs/artifex/21A-template-game.md` | Populated connected Template Game reference project. | Active reference. |
+| 22 | `docs/artifex/22A-template-system.md` | Reusable starter template system. | Active reference/planned service spec. |
+| 23 | `docs/artifex/23A-colour-display-rules.md` | Exact colour, display, header, accent and UI styling rules. | Active visual/style reference. |
+
+## Completed Active Sequence
+
+The controlled active documentation set is now:
 
 ```text
-1A  Universal Artifex contract
-2A  Global active backlog
-3A  Hub / Artifex Portal
-4A  Creation Guide
-5A  Project Editor
-6A  Scene Editor
-7A  Quest Builder
-8A  Archetype Object Creator
-9A  Effect Editor
+00A Index
+01A Universal Artifex contract
+02A Global active backlog
+03A Hub / Artifex Portal
+04A Creation Guide
+05A Project Editor
+06A Scene Editor
+07A Quest Builder
+08A Archetype Object Creator
+09A Effect Editor
 10A Asset Library
 11A Shared Connected Project Folder Service
 12A Shared Active Project Service
@@ -95,21 +108,26 @@ The intended extraction sequence has now been completed:
 16A Runtime Engine / Playtest
 17A Puzzle Creator
 18A Sound Generator / Sound Library
+19A Project Starter Schemas
+20A Terminology and Naming
+21A Template Game Reference Project
+22A Template System
+23A Colour and Display Rules
 ```
 
-Any future module/service specification should receive the next `A` number only after confirming that it represents a real maintained module/service boundary and not merely a helper file.
+Any future module/service specification should receive the next `A` number only after confirming that it represents a real maintained module/service boundary and not merely a helper note.
 
 ## Global To-Do Source
 
 The sole human-readable active task source is:
 
 ```text
-docs/artifex/2A-global-to-do.md
+docs/artifex/02A-global-to-do.md
 ```
 
 Universal permanent rules do not belong in the global to-do. Module baselines should appear there only when necessary to protect active work from obsolete assumptions.
 
-Machine-readable or project-specific task files may exist where runtime/app compatibility requires them, but they must not become independent human-maintained backlogs competing with `2A`.
+Machine-readable or project-specific task files may exist where runtime/app compatibility requires them, but they must not become independent human-maintained backlogs competing with `02A`.
 
 Examples of project/runtime task files that require dependency checks before retirement:
 
@@ -121,40 +139,43 @@ todos/project-editor-todos.json
 
 ## Source and Archive Classification
 
-The following documents are source evidence or archive candidates after their valid information has been transferred into active `A` specs, `1A`, or `2A`.
+The following old files are source evidence or archive candidates after their valid information has been transferred into the active documents above.
 
-| Existing file / area | Valid information destination | Intended treatment |
+| Existing old file / area | Valid information destination | Intended treatment |
 |---|---|---|
-| `docs/artifex/00-index.md` | Active index material moved into `0A`. | Supersede/archive. |
-| `docs/GLOBAL_TODO.md` | Still-live tasks moved into `2A`. | Archive after verification. |
-| `docs/artifex/02-module-architecture.md` | Universal rules into `1A`; module boundaries into relevant specs. | Archive after verification. |
-| `docs/artifex/04-scene-editor.md` | Scene Editor rules into `6A`; open work into `2A`. | Archive/source evidence. |
-| `docs/artifex/05-creation-guide.md` and `05a-creation-guide-v119-implementation-notes.md` | Creation Guide facts into `4A`; open work into `2A`. | Archive/source evidence. |
-| `docs/artifex/06-object-library.md` and Object Creator local README/current-state/todo files | Object Creator rules into `8A`; validation/follow-up into `2A`. | Archive or minimal local pointer after approval. |
-| `artifex/apps/archetype-object-creator/APPLY_INSTRUCTIONS.txt` and `archive/legacy-patches/README.md` | Historical-only Object Creator evidence; no-restore-patches rule in `8A`. | Archive evidence only. |
-| `docs/artifex/07-quest-builder.md`, `07a-quest-builder-structured-authoring.md`, `07b-puzzle-creator-quest-integration.md` and Quest Builder README/structure/taxonomy/todo | Quest Builder rules into `7A`; Puzzle handoff also reflected in `17A`; open work into `2A`. | Archive or minimal local pointer. |
-| `docs/artifex/08-playtest-and-build.md` | Runtime/Playtest boundary into `16A`; Build boundary into `15A`. | Archive/source evidence. |
-| `docs/artifex/13-effects-library.md` and Effect Editor docs/todos/phase notes/audits | Effect Editor rules into `9A`; open work into `2A`. | Archive or minimal local pointer. |
-| `artifex/apps/effect-editor/debug/atmosphere-volume/README.md` | Prototype boundary noted in `9A`; not live Index2 feature. | Retain as prototype evidence until production decision. |
-| `docs/artifex/20-asset-intake-workflow.md` | Creation Guide intake into `4A`; Object Creator finalisation into `8A`; Asset Library promotion into `10A`. | Archive or reduce after approval. |
-| `artifex/shared/registered-content/README.md` | Shared reader/picker rules into `13A`. | Archive/source evidence or local pointer. |
-| `docs/artifex/22-sound-archetype-generator.md` | Sound Generator / Sound Library rules into `18A`. | Archive/source evidence; do not replace as active spec. |
-| `docs/artifex/23-current-main-scan-and-pr20-recovery.md` | Any live tasks into `2A`; history remains history. | Archive. |
-| `docs/artifex/24-stabilisation-cleanup-and-ui-resumption-plan.md` | Permanent process rules into `1A`; live work into `2A`. | Archive. |
-| `artifex/shared/todo-guide/README.md` and `artifex/shared/todo-guide/audits/**` | Rules into `1A`; module facts into specs; live tasks into `2A`. | Archive after dependency checks. |
-| Open PR #40 Scene/Effect status refresh | Useful Effect Index2 evidence captured in `9A`; Scene portion superseded by `6A`. | Reconcile/close rather than merge as competing authority. |
-| Open PR #44 Puzzle V1.34 documentation refresh | Superseded by V1.35 and `17A`; useful boundary material captured. | Reconcile/close rather than merge as competing authority. |
-| Open PR #46 Sound Library / Create Synth work | Provisional Sound work reflected in `18A` and `2A`; not accepted baseline until merged/approved. | Keep protected. |
-| Merged PR #38 | Object Creator V1.36 baseline evidence for `8A`. | Historical evidence. |
-| Merged PR #45 | Scene Editor v0.37 accepted baseline evidence for `6A`. | Historical evidence. |
-| Merged PR #48 | Puzzle Creator V1.35 baseline evidence for `17A`. | Historical evidence. |
-| Merged PR #49 | Atmosphere Volume prototype evidence for `9A`. | Prototype evidence. |
+| `00-index.md` | Active index material moved into `00A`. | Archive. |
+| `GLOBAL_TODO.md` | Still-live tasks moved into `02A`. | Archive after verification. |
+| `01-core-vision.md` | Universal system/layer rules moved into `01A`, `21A` and relevant module specs. | Archive. |
+| `02-module-architecture.md` | Universal rules into `01A`; module boundaries into relevant specs. | Archive. |
+| `03-project-editor-flatplan.md` | Project Editor material into `05A`; terminology into `20A`. | Archive. |
+| `04-scene-editor.md` | Scene Editor rules into `06A`; open work into `02A`. | Archive. |
+| `05-creation-guide.md` and `05a-creation-guide-v119-implementation-notes.md` | Creation Guide facts into `04A`; open work into `02A`. | Archive. |
+| `06-object-library.md` and Object Creator local docs | Object Creator rules into `08A`; validation/follow-up into `02A`. | Archive or minimal local pointer after approval. |
+| `07-quest-builder.md`, `07a-quest-builder-structured-authoring.md`, `07b-puzzle-creator-quest-integration.md`, `07C-potion-match-quest-outcome-handoff.md` and Quest Builder local docs | Quest Builder rules into `07A`; Puzzle handoff also reflected in `17A`; open work into `02A`. | Archive. |
+| `08-playtest-and-build.md` | Runtime/Playtest boundary into `16A`; Build boundary into `15A`. | Archive. |
+| `09-terminology.md` and `10-naming-brainstorm.md` | Terminology and naming decisions into `20A`. | Archive. |
+| `11-portal-hub.md` | Hub rules into `03A`. | Archive. |
+| `12-project-settings.md` | Active Project and Connected Folder concepts into `11A` and `12A`. | Archive after dependency check. |
+| `13-effects-library.md` and Effect Editor docs/todos/phase notes/audits | Effect Editor rules into `09A`; open work into `02A`. | Archive or minimal local pointer. |
+| `14-asset-library.md` | Asset Library feature detail into `10A`; open work into `02A`. | Archive. |
+| `15-template-system.md` | Template System reference into `22A`. | Archive. |
+| `16-dev-status-and-risks.md` | Still-live process risks into `01A` / `02A`. | Archive. |
+| `17-codex-prompts.md` | Prompt history only. | Archive. |
+| `18-color-and-display-rules.md` | Exact visual rules into `23A`. | Archive. |
+| `19-project-file-contracts.md` | Universal project-file contract into `01A`; schema detail into `19A`. | Archive. |
+| `19a-project-starter-file-schemas.md` | Renamed and retained as `19A-project-starter-schemas.md`. | Remove old lowercase duplicate after rename. |
+| `20-asset-intake-workflow.md` | Creation Guide intake into `04A`; Object Creator finalisation into `08A`; Asset Library promotion into `10A`. | Archive. |
+| `21-template-game-project-contract.md` | Template Game reference project into `21A`. | Archive. |
+| `22-sound-archetype-generator.md` | Sound Generator / Sound Library rules into `18A`. | Archive/source evidence. |
+| `23-current-main-scan-and-pr20-recovery.md` | Any live tasks into `02A`; history remains history. | Archive. |
+| `24-stabilisation-cleanup-and-ui-resumption-plan.md` | Permanent process rules into `01A`; live work into `02A`. | Archive. |
+| `CONTROL_FILE_UPDATES.md` | Helper note only; guidance absorbed into `00A` and `02A`. | Archive or delete after applying. |
 
 ## Current Duplication Rules to Remove
 
 The following practices are no longer acceptable in the controlled documentation model:
 
-- maintaining active app-specific `todo.md` files alongside `2A`;
+- maintaining active app-specific `todo.md` files alongside `02A`;
 - writing new current-state/status documents that become competing authorities;
 - copying universal save/path/branding/ownership rules into every module spec;
 - using dated audit reports as implementation baselines instead of checking current `main`;
@@ -179,7 +200,7 @@ superseded contract/index files
 superseded non-A module specs
 ```
 
-Archived files remain evidence only. Active specs and `2A` must not cite archived files as the current rule or baseline.
+Archived files remain evidence only. Active specs and `02A` must not cite archived files as the current rule or baseline.
 
 ## Consolidation Implementation Notes
 
@@ -194,4 +215,4 @@ This controlled documentation set does not itself:
 - accept PR #46 Sound Library work;
 - turn planning placeholder Puzzle modules into completed engines.
 
-Those remain explicit tasks in `2A`.
+Those remain explicit tasks in `02A`.

@@ -10,7 +10,7 @@ This document is the central Artifex contract. It defines the universal rules th
 
 Artifex is a reusable game-building system. **Forever Bound / Artifacts Adventures** is a game project that may be authored through Artifex; it is not the definition of Artifex itself.
 
-This contract must not become a running development diary or module to-do list. It owns platform-wide decisions only. Information unique to one module belongs in that module's single specification document. Work still to be done belongs in `docs/GLOBAL_TODO.md`.
+This contract must not become a running development diary or module to-do list. It owns platform-wide decisions only. Information unique to one module belongs in that module's single specification document. Work still to be done belongs in `docs/artifex/02A-global-to-do.md`.
 
 ## Documentation Authority Model
 
@@ -18,13 +18,13 @@ The active Artifex documentation set follows this rule:
 
 ```text
 One master contract for universal Artifex rules:
-  docs/artifex/1A-project-file-contracts.md
+  docs/artifex/01A-project-file-contracts.md
 
 One specification document per actual module or maintained shared service:
   purpose, ownership boundary, active route/baseline, unique interface and module-only rules
 
 One human-readable active work list:
-  docs/GLOBAL_TODO.md
+  docs/artifex/02A-global-to-do.md
 
 Archive:
   historical audits, handovers, superseded baselines, completed implementation records,
@@ -37,20 +37,33 @@ Exact data schemas may remain in subordinate technical references where repeatin
 
 ## Required Technical and Module References
 
-The following documents remain valid reference types only where their subject applies:
+The following active documents remain valid reference types where their subject applies:
 
 ```text
-docs/artifex/19a-project-starter-file-schemas.md
+docs/artifex/00A-index.md
+  active documentation index and archive-control map
+
+docs/artifex/02A-global-to-do.md
+  all active shared and module-specific work still to be completed
+
+docs/artifex/18A-sound-library.md
+  Sound Generator / Sound Library specification and generated-audio workflow
+
+docs/artifex/19A-project-starter-schemas.md
   exact minimum starter JSON shapes and typed empty indexes
 
-docs/artifex/22-sound-archetype-generator.md
-  Sound Generator module/service specification and generated-audio workflow
+docs/artifex/20A-terminology-naming.md
+  terminology and naming reference
 
-docs/GLOBAL_TODO.md
-  all active shared and module-specific work still to be completed
+docs/artifex/21A-template-game.md
+  populated connected Template Game reference project
+
+docs/artifex/22A-template-system.md
+  reusable starter template system reference
+
+docs/artifex/23A-colour-display-rules.md
+  exact Artifex colour/display/UI rules
 ```
-
-Further existing files will either become one module's cleaned specification document, be absorbed where they contain universal rules, or be archived after useful information is transferred. Until the consolidation pass is completed and accepted, existing files on `main` remain historical/source evidence and must be checked rather than silently discarded.
 
 ## Locked Project Layers
 
@@ -251,7 +264,7 @@ Older code or projects may still use `todos/project-manager-todos.json`. Migrati
 The exact minimum JSON shapes for starter files and typed indexes are defined in:
 
 ```text
-docs/artifex/19a-project-starter-file-schemas.md
+docs/artifex/19A-project-starter-schemas.md
 ```
 
 Universal schema rules are:
@@ -330,7 +343,7 @@ Calling modules store the final `asset_` ID only. They must not copy a synth rec
 Detailed Sound Generator controls, recipe/playback behaviour and its registration callback belong in the Sound Generator module specification:
 
 ```text
-docs/artifex/22-sound-archetype-generator.md
+docs/artifex/18A-sound-library.md
 ```
 
 ## Cross-Module Reference Rules
@@ -418,7 +431,7 @@ From the point this consolidation is approved:
 
 - Universal platform rules belong only in this master contract.
 - Each module/service has one active specification document for its unique permanent information, ownership, active route/baseline and specific interface.
-- Current, next, blocked and future work belongs only in `docs/GLOBAL_TODO.md`, organised under **All Apps / Shared Platform** or the relevant module/service section.
+- Current, next, blocked and future work belongs only in `docs/artifex/02A-global-to-do.md`, organised under **All Apps / Shared Platform** or the relevant module/service section.
 - A machine-readable task file may remain where an application actively depends on it, but it must be identified as a machine/runtime dependency and not maintained as a second competing human backlog.
 - Dated audits, handovers, status updates, completed pass records and failed-acceptance plans are archive material after their still-valid rules or tasks have been transferred.
 - No new app-specific `todo.md`, current-state diary, status-refresh or active dated audit may be treated as another source of truth.
@@ -428,4 +441,4 @@ From the point this consolidation is approved:
 
 This file is a new consolidation draft built from existing contract and platform-rule sources. It does not authorise runtime changes, schema rewrites, automatic file movement or archive decisions by itself.
 
-The active migration work still required to adopt this model, reconcile module specifications, revise `docs/GLOBAL_TODO.md`, check machine-readable task dependencies and archive superseded documents belongs in the single global to-do list and must be performed in approved documentation-only passes.
+The active migration work still required to adopt this model, reconcile module specifications, revise `docs/artifex/02A-global-to-do.md`, check machine-readable task dependencies and archive superseded documents belongs in the single global to-do list and must be performed in approved documentation-only passes.

@@ -2,14 +2,14 @@
 
 Status: Active global backlog after module/service documentation extraction  
 Intended role: the single human-readable active task list for Artifex  
-Index: `docs/artifex/0A-index-of-files.md`  
-Universal contract: `docs/artifex/1A-project-file-contracts.md`
+Index: `docs/artifex/00A-index.md`  
+Universal contract: `docs/artifex/01A-project-file-contracts.md`
 
 ## How this document is used
 
 This file owns outstanding work. It does not own permanent rules or module definitions.
 
-Module/service specifications say what each module is and owns. `1A` says what all modules must obey. This file says what still needs to be done.
+Module/service specifications say what each module is and owns. `01A` says what all modules must obey. This file says what still needs to be done.
 
 Rules:
 
@@ -25,14 +25,14 @@ Rules:
 
 | Area | Current controlled position | Protection rule |
 |---|---|---|
-| Documentation control | Active docs now run from `0A` through `18A`. | Do not create competing index, backlog or status docs. |
-| Hub | Hub V1.1.4 captured in `3A`. | Do not treat older radial/wedge Portal plan as current. |
-| Creation Guide | V1.1.12 captured in `4A`. | Starter creation and Initial Asset Intake Setup already exist. |
-| Project Editor | v0.1.32 CONTRACT captured in `5A`. | Imported-index browser, linking, Stitcher and Health/Build Prep presentation already exist. |
-| Scene Editor | v0.37-control-state-inspector-retention captured in `6A`. | Do not revive completed v0.35-v0.37 stabilisation work. |
-| Quest Builder | V1.2.12 captured in `7A`. | Do not list current connection/grid/routing/export foundations as missing. |
-| Archetype Object Creator | V1.36 captured in `8A`. | Lifecycle implementation exists but still needs disposable-project validation before feature work. |
-| Effect Editor | INDEX2-CLEAN-0.2.6 captured in `9A`. | Rotation Direction, Orbital Force, ALL CAPS, Gravity/Boost, Brush/Shape Library and width braces are already present. |
+| Documentation control | Active docs now run from `00A` through `23A`. | Do not create competing index, backlog or status docs. |
+| Hub | Hub V1.1.4 captured in `03A`. | Do not treat older radial/wedge Portal plan as current. |
+| Creation Guide | V1.1.12 captured in `04A`. | Starter creation and Initial Asset Intake Setup already exist. |
+| Project Editor | v0.1.32 CONTRACT captured in `05A`. | Imported-index browser, linking, Stitcher and Health/Build Prep presentation already exist. |
+| Scene Editor | v0.37-control-state-inspector-retention captured in `06A`. | Do not revive completed v0.35-v0.37 stabilisation work. |
+| Quest Builder | V1.2.12 captured in `07A`. | Do not list current connection/grid/routing/export foundations as missing. |
+| Archetype Object Creator | V1.36 captured in `08A`. | Lifecycle implementation exists but still needs disposable-project validation before feature work. |
+| Effect Editor | INDEX2-CLEAN-0.2.6 captured in `09A`. | Rotation Direction, Orbital Force, ALL CAPS, Gravity/Boost, Brush/Shape Library and width braces are already present. |
 | Asset Library | Contract captured in `10A`. | No complete standalone UI route is verified; treat it as final registered-asset ownership layer. |
 | Shared Connected Project Folder Service | Captured in `11A`. | It owns folder/permission/project-relative read-write infrastructure, not module content. |
 | Shared Active Project Service | Captured in `12A`. | Active project is selection/context, not proof of connected folder or loaded files. |
@@ -41,14 +41,19 @@ Rules:
 | Build Game | Captured in `15A`. | No complete standalone Build route is verified yet. |
 | Runtime Engine / Playtest | Captured in `16A`. | Current evidence is boundary/planning plus local preview pieces, not completed shared runtime. |
 | Puzzle Creator | V1.35 captured in `17A`. | Labyrinth Maze is implemented; other modules are planning placeholders. |
-| Sound Generator / Sound Library | Captured in new `18A`; old `22` is source evidence. | PR #46 Sound Library work remains provisional until accepted. |
+| Sound Generator / Sound Library | Captured in `18A`. | PR #46 Sound Library work remains provisional until accepted. |
+| Project Starter Schemas | Captured in `19A`. | Exact starter JSON/index shapes live here, not in module specs. |
+| Terminology and Naming | Captured in `20A`. | Naming alternatives stay here until deliberately resolved. |
+| Template Game | Captured in `21A`. | Populated connected reference project is separate from Blank Starter Project. |
+| Template System | Captured in `22A`. | Planned starter-template system is separate from Template Game. |
+| Colour and Display Rules | Captured in `23A`. | Exact palette/header/accent/UI rules live here for UI standardisation. |
 
 ## All Apps / Shared Platform
 
 Priority: highest  
 Status: ongoing
 
-- Use `0A`, `1A`, `2A` and the active `A` specs as the controlled documentation set.
+- Use `0A`, `01A`, `02A` and the active `A` specs as the controlled documentation set.
 - Archive or reduce old docs only after confirming their valid content is represented in active docs.
 - Check code dependencies before retiring machine-readable task files such as `artifex/shared/todo-guide/all-apps-todos.json`.
 - Reconcile open documentation PRs #40 and #44 so they do not become parallel current authorities.
@@ -60,7 +65,7 @@ Status: ongoing
 
 ## Hub / Artifex Portal
 
-Specification: `docs/artifex/3A-hub-artifex-portal.md`
+Specification: `docs/artifex/03A-hub.md`
 
 - Rename transitional Hub labels where they imply the wrong module owner, especially Puzzle/Asset wording.
 - Resolve final displayed naming for Object Creator / Archetype Object Creator.
@@ -70,7 +75,7 @@ Specification: `docs/artifex/3A-hub-artifex-portal.md`
 
 ## Creation Guide
 
-Specification: `docs/artifex/4A-creation-guide.md`
+Specification: `docs/artifex/004A-creation-guide.md`
 
 - Add working Recommended Starting Media checklist.
 - Add project-logo flow from intake source through Asset Library promotion to registered display reference.
@@ -82,7 +87,7 @@ Specification: `docs/artifex/4A-creation-guide.md`
 
 ## Project Editor
 
-Specification: `docs/artifex/5A-project-editor.md`
+Specification: `docs/artifex/005A-project-editor.md`
 
 - Implement connected-folder load/save for Project Editor-owned structural files and indexes.
 - Keep browser drafts and ZIP export as recovery/fallback.
@@ -94,7 +99,7 @@ Specification: `docs/artifex/5A-project-editor.md`
 
 ## Scene Editor
 
-Specification: `docs/artifex/6A-scene-editor.md`
+Specification: `docs/artifex/006A-scene-editor.md`
 
 - Implement connected-project scene/screen loading, direct saving and typed index registration.
 - Display canonical project-file/local-draft/conflict/permission status.
@@ -105,7 +110,7 @@ Specification: `docs/artifex/6A-scene-editor.md`
 
 ## Quest Builder
 
-Specification: `docs/artifex/7A-quest-builder.md`
+Specification: `docs/artifex/007A-quest-builder.md`
 
 - Align Quest/Sidequest export/index output with canonical typed collections.
 - Implement connected-project load/save/save-state/conflict handling.
@@ -119,7 +124,7 @@ Specification: `docs/artifex/7A-quest-builder.md`
 
 ## Archetype Object Creator
 
-Specification: `docs/artifex/8A-archetype-object-creator.md`
+Specification: `docs/artifex/08A-object-creator.md`
 
 Mandatory validation before further feature work:
 
@@ -141,7 +146,7 @@ Follow-up:
 
 ## Effect Editor
 
-Specification: `docs/artifex/9A-effect-editor.md`
+Specification: `docs/artifex/009A-effect-editor.md`
 
 - Implement canonical connected-project save/status/index workflow for `archetypes/effect-index.json` and `archetypes/effects/archeffect_<slug>.json`.
 - Add project-backed Effect Library for saved FX Archetypes.
@@ -166,12 +171,17 @@ Specification: `docs/artifex/10A-asset-library.md`
 - Support Effect Editor registered texture, overlay, icon, brush, thumbnail and audio dependencies.
 - Support Scene Editor, Quest Builder and Puzzle Creator registered media selection.
 - Add canonical imported-audio promotion for accepted audio formats.
+- Support asset groups, including character/animation/portrait sets.
+- Support search/filter by name, tag, type, status, project, character and scene/referring-record usage.
+- Preview image, audio and procedural-synth assets.
+- Track usage through the shared reference index.
+- Edit an existing generated synth through the shared popup where safe.
 - Ensure Health and Build can validate final asset records and files.
 - Archive or reduce `docs/artifex/20-asset-intake-workflow.md` after acceptance.
 
 ## Shared Connected Project Folder Service
 
-Specification: `docs/artifex/11A-shared-connected-project-folder-service.md`
+Specification: `docs/artifex/11A-connected-project-folder.md`
 
 - Expand adoption beyond Creation Guide and Object Creator.
 - Standardise permission, re-authorisation, save-state and navigation-guard UI.
@@ -182,7 +192,7 @@ Specification: `docs/artifex/11A-shared-connected-project-folder-service.md`
 
 ## Shared Active Project Service
 
-Specification: `docs/artifex/12A-shared-active-project-service.md`
+Specification: `docs/artifex/12A-active-project.md`
 
 - Formalise stable API beyond direct localStorage access.
 - Bind active project selection safely to connected folder identity.
@@ -194,7 +204,7 @@ Specification: `docs/artifex/12A-shared-active-project-service.md`
 
 ## Registered Content Service / Picker
 
-Specification: `docs/artifex/13A-registered-content-service-picker.md`
+Specification: `docs/artifex/13A-registered-content-picker.md`
 
 - Adopt shared picker consistently in Scene Editor, Quest Builder, Asset Library, Effect Editor and Project Editor where appropriate.
 - Add project reference/usage reporting through shared reference index.
@@ -204,7 +214,7 @@ Specification: `docs/artifex/13A-registered-content-service-picker.md`
 
 ## Shared Health Guide / Project Audit
 
-Specification: `docs/artifex/14A-shared-health-guide-project-audit.md`
+Specification: `docs/artifex/14A-health-guide.md`
 
 - Expand shared checks across all canonical project files and module indexes.
 - Integrate Creation Guide readiness checks with shared Health.
@@ -230,7 +240,7 @@ Specification: `docs/artifex/15A-build-game.md`
 
 ## Runtime Engine / Playtest
 
-Specification: `docs/artifex/16A-runtime-engine-playtest.md`
+Specification: `docs/artifex/16A-runtime-playtest.md`
 
 - Confirm runtime/playtest route and architecture.
 - Define preview/test entry points from Project Editor, Scene Editor, Quest Builder, Puzzle Creator and Build Game.
@@ -258,7 +268,7 @@ Specification: `docs/artifex/17A-puzzle-creator.md`
 
 ## Sound Generator / Sound Library
 
-Specification: `docs/artifex/18A-sound-generator-sound-library.md`
+Specification: `docs/artifex/18A-sound-library.md`
 
 - Decide and merge or reject PR #46 Sound Library selector architecture.
 - Finish/confirm shared Sound Library modal over registered audio assets.
@@ -268,13 +278,53 @@ Specification: `docs/artifex/18A-sound-generator-sound-library.md`
 - Implement runtime/playtest playback of procedural-synth recipe assets where needed.
 - Extend Health and Build validation for generated audio.
 - Add at least one generated procedural sound to Template Game once involved systems are ready.
-- Archive old `docs/artifex/22-sound-archetype-generator.md` after `18A` acceptance and PR #46 reconciliation.
+- Archive old `docs/artifex/18A-sound-library.md` after `18A` acceptance and PR #46 reconciliation.
+
+## Project Starter Schemas
+
+Specification/reference: `docs/artifex/19A-project-starter-schemas.md`
+
+- Keep this as the exact subordinate schema reference for blank starter JSON and typed index shapes.
+- Update it only when the canonical starter schemas actually change.
+- Do not duplicate its full JSON examples inside every module spec.
+
+## Terminology and Naming
+
+Specification/reference: `docs/artifex/20A-terminology-naming.md`
+
+- Resolve not-locked terms such as Station, Stitcher, Archetype Object Creator / Object Library, Actor/Entity and Build Game button text when UI implementation needs them.
+- Do not delete naming alternatives until a term is deliberately rejected.
+- Keep final user-facing module names aligned with the active spec filenames and Hub labels.
+
+## Template Game Reference Project
+
+Specification/reference: `docs/artifex/21A-template-game.md`
+
+- Build the populated connected Template Game after connected save/reference systems are reliable.
+- Use the cross-app proof checklist before exposing Template Game as a Creation Guide choice.
+- Keep Template Game separate from Blank Starter Project and Artifacts Adventures / Forever Bound.
+
+## Template System
+
+Specification/reference: `docs/artifex/22A-template-system.md`
+
+- Decide whether Template System remains a maintained shared service or becomes a Creation Guide / Scene Editor feature.
+- If retained, implement `artifex/templates/`, `templates.json`, starter scene/screen templates and template-to-project-record workflow.
+- Keep Template System separate from the populated Template Game reference project.
+
+## Colour and Display Rules
+
+Specification/reference: `docs/artifex/23A-colour-display-rules.md`
+
+- Use the exact palette, header, accent, typography, card, button, tooltip and bottom-panel rules during UI standardisation.
+- Keep visual/style rules in the active reference and avoid redefining them separately in every module spec.
+- Archive old `18-color-and-display-rules.md` only after `23A` is accepted.
 
 ## Documentation / PR Reconciliation Queue
 
 | PR / document area | Current interpretation | Action |
 |---|---|---|
-| PR #50 | Documentation extraction PR should now cover `3A` through `18A`. | Update title/body and reconcile branch before merge. |
+| PR #50 | Documentation extraction PR should now cover `03A` through `23A`. | Update title/body and reconcile branch before merge. |
 | PR #40 | Scene/Effect status refresh. | Do not merge as parallel authority; capture unique Effect details if any remain. |
 | PR #44 | Puzzle V1.34 documentation refresh. | Reconcile/close after `17A`; V1.35 and `17A` supersede it. |
 | PR #46 | Sound Library / Create Synth work. | Keep protected; decide after review/merge. |
@@ -282,4 +332,4 @@ Specification: `docs/artifex/18A-sound-generator-sound-library.md`
 
 ## Completion Checkpoint
 
-The active documentation extraction pass has produced or updated the controlled specifications through Sound Generator / Sound Library. The remaining work is implementation, validation, archive/reconciliation and PR cleanup, not more first-pass module extraction.
+The active documentation extraction pass has produced or updated the controlled specifications and references through Colour and Display Rules. The remaining work is implementation, validation, archive/reconciliation and PR cleanup, not more first-pass module extraction.

@@ -4,9 +4,9 @@ Status: Active module/service specification during documentation consolidation
 Owning module/service: Asset Library  
 Active route: no verified standalone Asset Library app route exists yet  
 Current verified baseline: asset ownership contract only; implementation is currently spread across starter schema, intake staging, registered-content readers and module-specific finalisation handoffs  
-Governing universal contract: `docs/artifex/01A-project-file-contracts.md`  
-Subordinate schema reference: `docs/artifex/19A-project-starter-schemas.md`  
-Outstanding work source: `docs/artifex/02A-global-to-do.md`
+Governing universal contract: `docs/artifex/1A-project-file-contracts.md`  
+Subordinate schema reference: `docs/artifex/19a-project-starter-file-schemas.md`  
+Outstanding work source: `docs/artifex/2A-global-to-do.md`
 
 ## Purpose
 
@@ -304,7 +304,7 @@ The repository does not yet prove a finished standalone Asset Library UI app rou
 
 `docs/artifex/14-asset-library.md` remains source evidence only after this file is accepted. Its useful feature details have been consolidated here.
 
-`docs/artifex/20-asset-intake-workflow.md` remains useful source evidence for the staging-to-final promotion model. Its Creation Guide intake setup facts are covered by `4A`; Object Creator bounded promotion/finalisation facts are covered by `08A`; this specification captures the Asset Library ownership boundary.
+`docs/artifex/20-asset-intake-workflow.md` remains useful source evidence for the staging-to-final promotion model. Its Creation Guide intake setup facts are covered by `4A`; Object Creator bounded promotion/finalisation facts are covered by `8A`; this specification captures the Asset Library ownership boundary.
 
 `artifex/shared/registered-content/README.md` remains useful source evidence for the reader/picker boundary. It supports the rule that shared selection tools may read registered records without owning or creating them.
 
@@ -334,4 +334,4 @@ Known work includes:
 
 ## Remaining Work
 
-All current and future Asset Library work belongs in `docs/artifex/02A-global-to-do.md`. This specification must not become a task list.
+All current and future Asset Library work belongs in `docs/artifex/2A-global-to-do.md`. This specification must not become a task list.

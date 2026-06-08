@@ -4,9 +4,9 @@ Status: Active module/service specification during documentation consolidation
 Owning module/service: Build Game  
 Active route: no verified standalone Build Game app route exists yet  
 Current verified implementation baseline: Build Game is not yet implemented as a complete packaging module; current evidence exists through project contract paths, Project Editor Build Prep presentation, Shared Health Guide tasks and planned build validation work  
-Governing universal contract: `docs/artifex/01A-project-file-contracts.md`  
-Related specification: `docs/artifex/14A-health-guide.md`  
-Outstanding work source: `docs/artifex/02A-global-to-do.md`
+Governing universal contract: `docs/artifex/1A-project-file-contracts.md`  
+Related specification: `docs/artifex/14A-shared-health-guide-project-audit.md`  
+Outstanding work source: `docs/artifex/2A-global-to-do.md`
 
 ## Purpose
 
@@ -272,7 +272,7 @@ Known gaps include:
 
 ## Source Classification
 
-`docs/artifex/01A-project-file-contracts.md` reserves the canonical `build/` output paths and distinguishes generated Health/Build/backup/task files from blank starter foundations.
+`docs/artifex/1A-project-file-contracts.md` reserves the canonical `build/` output paths and distinguishes generated Health/Build/backup/task files from blank starter foundations.
 
 `artifex/apps/project-editor/src/project-buildprep.js` is current evidence for Build Prep UI consuming Shared Health, but it is not final Build Game packaging.
 
@@ -295,4 +295,4 @@ The active backlog, not this specification, owns implementation tasks. The main 
 
 ## Remaining Work
 
-All current and future Build Game work belongs in `docs/artifex/02A-global-to-do.md`. This specification must not become a task list.
+All current and future Build Game work belongs in `docs/artifex/2A-global-to-do.md`. This specification must not become a task list.

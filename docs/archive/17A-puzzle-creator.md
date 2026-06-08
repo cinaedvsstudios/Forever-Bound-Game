@@ -6,10 +6,10 @@ Active route: `artifex/apps/puzzle-creator/index.html`
 Current verified implementation baseline: `Artifex Puzzle Creator V1.35` on current `main`  
 Accepted implementation evidence: merged PR #48 / merge `f707beb781a63165da29e145f5b8c4deeeada6ec`  
 Protected workstream note: Puzzle Creator has been active recently; do not overwrite its current truth from older V1.34 documentation or open status-refresh PRs  
-Governing universal contract: `docs/artifex/01A-project-file-contracts.md`  
-Related module specification: `docs/artifex/07A-quest-builder.md`  
-Related shared-service specifications: `docs/artifex/13A-registered-content-picker.md`, `docs/artifex/10A-asset-library.md`, `docs/artifex/11A-connected-project-folder.md`  
-Outstanding work source: `docs/artifex/02A-global-to-do.md`
+Governing universal contract: `docs/artifex/1A-project-file-contracts.md`  
+Related module specification: `docs/artifex/7A-quest-builder.md`  
+Related shared-service specifications: `docs/artifex/13A-registered-content-service-picker.md`, `docs/artifex/10A-asset-library.md`, `docs/artifex/11A-shared-connected-project-folder-service.md`  
+Outstanding work source: `docs/artifex/2A-global-to-do.md`
 
 ## Purpose
 
@@ -250,102 +250,6 @@ Foe and Hazard placement/setup/runtime behaviour remain disabled or unimplemente
 
 Underworld Black Oil is a separate future hazard-puzzle engine page, not evidence that generic Maze Hazard runtime behaviour exists.
 
-## Potion Match / Crafting Skill Boundary
-
-Potion Match belongs inside Puzzle Creator as the ordered ingredient puzzle / crafting-style interaction module.
-
-It supports two intended modes:
-
-| Mode | Meaning |
-|---|---|
-| Challenge Potion Puzzle | A scene or Quest puzzle where the player chooses ingredients in the correct order. |
-| Crafting Skill | A reusable crafting screen where available ingredients should come from character inventory, so Mel can only use ingredients she has picked up, bought, earned or been given. |
-
-Puzzle Creator owns the internal Potion Match interaction:
-
-- challenge/crafting mode;
-- ingredient authoring;
-- recipe order;
-- decoy / extra tray item list;
-- strict mode, mistake rules and local quality behaviour;
-- internal success/failure evaluation;
-- background image and ingredient icon references;
-- local visual preview;
-- success and unsuccessful event IDs / outcome keys emitted to Quest Builder.
-
-Potion Match ingredient authoring should support:
-
-```text
-Ingredient ID
-Display name
-Emoji fallback
-Uploaded PNG icon
-Object Library / Archetype Object reference
-Optional tags
-Optional demo inventory count
-```
-
-Icon priority should be:
-
-```text
-Object Library / Archetype Object item first
-Uploaded PNG second
-Emoji fallback third
-```
-
-The Object Library selector may start with demo entries, but the contract should be ready to bind to real Archetype Object Creator / registered object records once that service is stable.
-
-Recipe authoring should support:
-
-```text
-recipe order list
-add selected ingredient to recipe
-remove ingredient from recipe
-decoy / extra tray item list
-add selected ingredient as decoy
-remove decoy
-remove defaults / start clean
-```
-
-The recipe order is the validation sequence. Decoys are visible options that can be selected incorrectly in challenge mode, or inventory-owned items that are not part of the active craft in crafting mode.
-
-Potion Match visual authoring should support a background PNG, background opacity/darken control, background blur and ingredient icons from Object Library, PNG or emoji fallback.
-
-## Potion Match Outcome Events
-
-Puzzle Creator should define event keys and visual previews. It should not own permanent Quest consequences.
-
-Each Potion Match puzzle should define:
-
-```text
-success event ID
-success Quest Builder outcome key
-success visual type
-success video/effect reference if used
-success preview text
-unsuccessful event ID
-unsuccessful Quest Builder outcome key
-unsuccessful visual type
-unsuccessful video/effect reference if used
-unsuccessful preview text
-```
-
-Puzzle Creator may preview the visual result. Quest Builder owns the actual inventory changes, quest flags, ability unlocks, dialogue, scene changes and rewards.
-
-Example craft outputs that can be authored in Potion Match and resolved through Quest Builder include:
-
-```text
-Lantern Potion
-Tracking Coin
-Portal Potion
-Salt Ward
-Healing Tisane
-```
-
-The current prototype has demonstrated ordered ingredient selection, decoys, quality loss, strict mode, crafting mode, demo inventory, background PNG upload, ingredient PNG icons, Object Library placeholders, removable default examples and author-controlled ingredient / recipe lists.
-
-The next Potion Match implementation step is to add explicit success and unsuccessful event fields to the Potion Match UI and include those fields in the exported puzzle JSON.
-
 ## Current Gaps
 
 Known gaps include:
@@ -369,7 +273,7 @@ Known gaps include:
 
 `artifex/apps/puzzle-creator/README.md` contains valid permanent purpose, ownership and handoff material, but its current-state section still describes V1.34 and is superseded by the V1.35 route/PR evidence. Its enduring boundary rules are consolidated into this specification.
 
-`docs/artifex/07b-puzzle-creator-quest-integration.md` contains valid Puzzle Creator / Quest Builder handoff rules and is consolidated into this specification and `07A`.
+`docs/artifex/07b-puzzle-creator-quest-integration.md` contains valid Puzzle Creator / Quest Builder handoff rules and is consolidated into this specification and `7A`.
 
 `artifex/shared/todo-guide/puzzle-creator-maze-labyrinth-update-steps.md` contains useful Maze baseline and outstanding Maze task evidence. It is not a permanent module specification.
 
@@ -378,10 +282,6 @@ Known gaps include:
 `artifex/apps/puzzle-creator/src/js/engines/*.js` is current implementation evidence for registered engine IDs, module type labels, default module IDs, purpose text and planning fields.
 
 Open PR #44 is a V1.34 documentation refresh and must not be merged as a parallel current-status authority after V1.35. Any still-useful V1.34 boundary content is already represented here.
-
-`16A-puzzle-creator-potion-match-crafting-and-events.md` is not an active separate module spec. Its Potion Match / Crafting Skill rules have been consolidated into this file and Quest Builder handoff rules belong in `07A-quest-builder.md`.
-
-`17A-quest-builder-puzzle-outcome-events.md` is not an active separate module spec. Its Quest consequences belong in `07A-quest-builder.md`; Puzzle Creator keeps only the puzzle-side event/output boundary.
 
 Merged PR #48 is the current V1.35 implementation baseline for the recovered module planning pages.
 
@@ -397,9 +297,8 @@ The active backlog, not this specification, owns implementation tasks. The main 
 - implement Portal registered visual/effect selection and global endpoint registry integration;
 - implement Traboule, Foe, Hazard, Tunnel Mode, first-person/3D and helper pendant/crystal only through scoped versioned passes;
 - build each non-Maze puzzle engine separately and do not present placeholders as completed engines;
-- add explicit Potion Match success and unsuccessful event fields and include them in exported puzzle JSON when Potion Match moves from planning/prototype into implementation;
 - add registered sound feedback selection only after Sound Library / Asset Library foundation is accepted.
 
 ## Remaining Work
 
-All current and future Puzzle Creator work belongs in `docs/artifex/02A-global-to-do.md`. This specification must not become a task list.
+All current and future Puzzle Creator work belongs in `docs/artifex/2A-global-to-do.md`. This specification must not become a task list.
