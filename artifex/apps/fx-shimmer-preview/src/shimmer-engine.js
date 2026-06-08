@@ -1,31 +1,490 @@
 const TAU = Math.PI * 2;
-const clamp=(v,min,max)=>Math.max(min,Math.min(max,Number(v)));
-const clamp01=v=>clamp(v,0,1);
-const scale=(min,max,v)=>min+(max-min)*clamp01(v);
-const smoothstep=(a,b,v)=>{const t=clamp01((v-a)/Math.max(.0001,b-a));return t*t*(3-2*t)};
-const fract=v=>v-Math.floor(v);
-const hash1=v=>fract(Math.sin(v*127.1)*43758.5453123);
-const hash2=(x,y)=>fract(Math.sin(x*127.1+y*311.7)*43758.5453123);
-function hexToRgb(hex){const s=String(hex||'#fff').replace('#','').trim();const f=s.length===3?s.split('').map(c=>c+c).join(''):s.padEnd(6,'0').slice(0,6);const n=parseInt(f,16);return{r:(n>>16)&255,g:(n>>8)&255,b:n&255}}
-function rgba(hex,a=1){const c=hexToRgb(hex);return `rgba(${c.r}, ${c.g}, ${c.b}, ${a})`}
-function cover(iw,ih,tw,th){const ir=iw/Math.max(1,ih),tr=tw/Math.max(1,th);let w=tw,h=th;if(ir>tr){h=th;w=h*ir}else{w=tw;h=w/ir}return{x:(tw-w)/2,y:(th-h)/2,width:w,height:h}}
-export class ShimmerDistortionEngine{
- constructor(canvas){this.canvas=canvas;this.ctx=canvas.getContext('2d');this.gridCanvas=document.createElement('canvas');this.grid=this.gridCanvas.getContext('2d');this.textureImage=null;this.values={};this.gridKey=''}
- setValues(v){this.values={...v}}
- setTextureImage(img=null){this.textureImage=img}
- resize(){const r=Math.max(1,Math.min(1.6,window.devicePixelRatio||1)),rect=this.canvas.getBoundingClientRect(),w=Math.max(720,Math.round(rect.width*r)),h=Math.max(405,Math.round(rect.height*r));if(this.canvas.width!==w||this.canvas.height!==h){this.canvas.width=w;this.canvas.height=h;this.gridCanvas.width=w;this.gridCanvas.height=h;this.gridKey=''}}
- geo(t){const v=this.values,w=this.canvas.width,h=this.canvas.height,base=Math.min(w,h)*scale(.08,.62,(v.radius??60)/100),pulse=1+Math.sin(t*scale(.4,4,(v.pulse??45)/100))*.035*((v.loopIntensity??50)/100);return{w,h,cx:w*((v.positionX??50)/100),cy:h*((v.positionY??50)/100),base,rx:Math.max(.01,base*((v.scaleX??100)/100)*pulse),ry:Math.max(.01,base*((v.scaleY??100)/100)*pulse)}}
-draw(t=0){this.resize();const g=this.geo(t),v=this.values,ctx=this.ctx;ctx.clearRect(0,0,g.w,g.h);ctx.fillStyle=v.backdropColor||'#09080f';ctx.fillRect(0,0,g.w,g.h);if(v.showGrid)this.drawGrid(g);this.drawShimmer(ctx,g,t);if(v.type==='heat'){this.drawHeat(ctx,g,t);return}if(v.type==='dream'){this.drawDream(ctx,g,t);return}if(v.type==='transition'){this.drawTransition(ctx,g,t);return}this.drawPortalCore(ctx,g,t);this.drawRim(ctx,g,t);this.drawWisps(ctx,g,t);this.drawParticles(ctx,g,t);this.drawGlow(ctx,g)}
-drawPortalCore(ctx,g,t){const v=this.values;ctx.save();ctx.globalCompositeOperation='source-over';const outer=ctx.createRadialGradient(g.cx,g.cy,g.base*.08,g.cx,g.cy,Math.max(g.rx,g.ry)*1.15);outer.addColorStop(0,rgba(v.coreColor,.10));outer.addColorStop(.45,rgba(v.coreColor,.05));outer.addColorStop(.72,rgba(v.rimColor,.035));outer.addColorStop(1,rgba(v.rimColor,0));ctx.fillStyle=outer;ctx.beginPath();ctx.ellipse(g.cx,g.cy,g.rx*1.08,g.ry*1.04,0,0,TAU);ctx.fill();ctx.save();ctx.beginPath();ctx.ellipse(g.cx,g.cy,g.rx*.68,g.ry*.78,0,0,TAU);ctx.clip();const dark=ctx.createRadialGradient(g.cx,g.cy,g.base*.05,g.cx,g.cy,Math.max(g.rx,g.ry)*.75);dark.addColorStop(0,rgba(v.coreColor,.12));dark.addColorStop(.5,rgba('#071018',.36));dark.addColorStop(1,rgba('#030407',.68));ctx.fillStyle=dark;ctx.fillRect(g.cx-g.rx,g.cy-g.ry,g.rx*2,g.ry*2);ctx.globalCompositeOperation='lighter';ctx.strokeStyle=rgba(v.coreColor,.12);ctx.lineWidth=Math.max(1,g.base*.004);for(let i=0;i<22;i++){const seed=i*2.31,amp=g.rx*scale(.08,.28,hash1(seed+2));ctx.beginPath();for(let s=0;s<=46;s++){const q=s/46,y=g.cy-g.ry*.62+q*g.ry*1.24,x=g.cx+Math.sin(q*TAU*2.2+t*1.2+seed)*amp*Math.sin(q*Math.PI);if(s===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.stroke()}ctx.restore();ctx.restore()}
-  drawGrid(g){const v=this.values,key=`${g.w}x${g.h}|${v.coreColor}|${v.rimColor}|${v.accentColor}|${v.backdropColor}`;if(this.gridKey!==key){this.gridKey=key;const c=this.grid;c.clearRect(0,0,g.w,g.h);const major=Math.max(34,Math.round(g.w/16)),minor=Math.max(17,Math.round(g.w/32));c.lineWidth=Math.max(1,g.w/900);for(let x=0;x<=g.w;x+=minor){c.beginPath();c.moveTo(x,0);c.lineTo(x,g.h);c.strokeStyle=x%major===0?rgba(v.coreColor,.18):rgba(v.coreColor,.055);c.stroke()}for(let y=0;y<=g.h;y+=minor){c.beginPath();c.moveTo(0,y);c.lineTo(g.w,y);c.strokeStyle=y%major===0?rgba(v.rimColor,.14):rgba(v.rimColor,.045);c.stroke()}}this.ctx.drawImage(this.gridCanvas,0,0)}
- drawShimmer(ctx,g,t){const v=this.values,str=scale(0,.28,(v.strength??50)/100),ref=scale(0,.22,(v.refraction??50)/100),ws=scale(.005,.08,(v.waveSize??40)/100),spd=scale(.15,4.8,(v.waveSpeed??40)/100),soft=scale(.06,.55,(v.softness??50)/100),step=v.type==='heat'?Math.max(4,Math.round(g.h/90)):Math.max(5,Math.round(g.h/130));ctx.save();ctx.globalCompositeOperation='lighter';for(let y=0;y<g.h;y+=step){const ny=(y-g.cy)/Math.max(1,g.ry);for(let x=0;x<g.w;x+=step*2){const nx=(x-g.cx)/Math.max(1,g.rx),d=Math.sqrt(nx*nx+ny*ny),mask=v.type==='heat'?Math.max(0,1-Math.abs(ny)*.9):1-smoothstep(1-soft,1.08,d);if(mask<=.01)continue;const wave=v.type==='heat'?Math.sin(y*ws*2.8+t*spd*2.2):Math.sin(d/ws+t*spd+Math.atan2(ny,nx)*3);const a=Math.max(0,(str*.20+ref*.16)*mask);ctx.strokeStyle=rgba(v.coreColor,a);ctx.lineWidth=Math.max(1,step*.32);ctx.beginPath();const off=wave*str*step*4*mask;ctx.moveTo(x+off,y);ctx.lineTo(x+step*2+off,y+wave*step*.7);ctx.stroke()}}ctx.restore()}
- drawHeat(ctx,g,t){const v=this.values;ctx.save();ctx.globalCompositeOperation='lighter';for(let i=0;i<22;i++){const y=g.cy-g.ry*.9+(i/21)*g.ry*1.8,a=.035+.04*Math.sin(i*.7+t);ctx.strokeStyle=rgba(v.accentColor,a);ctx.lineWidth=Math.max(1,g.h/540);ctx.beginPath();for(let x=0;x<=g.w;x+=18){const yy=y+Math.sin(x*.014+t*1.6+i*.4)*g.ry*.035;if(x===0)ctx.moveTo(x,yy);else ctx.lineTo(x,yy)}ctx.stroke()}ctx.restore()}
- drawCore(ctx,g,t){const v=this.values;ctx.save();ctx.beginPath();ctx.ellipse(g.cx,g.cy,g.rx,g.ry,0,0,TAU);ctx.clip();const fill=ctx.createRadialGradient(g.cx,g.cy,g.base*.05,g.cx,g.cy,Math.max(g.rx,g.ry));fill.addColorStop(0,rgba(v.coreColor,.22));fill.addColorStop(.55,rgba(v.accentColor,.07));fill.addColorStop(1,rgba(v.rimColor,.16));ctx.fillStyle=fill;ctx.fillRect(g.cx-g.rx*1.4,g.cy-g.ry*1.4,g.rx*2.8,g.ry*2.8);if(v.sourceMode==='texture'&&this.textureImage){const r=cover(this.textureImage.width,this.textureImage.height,g.rx*2.7,g.ry*2.3);ctx.globalAlpha=scale(.15,.92,(v.textureStrength??70)/100);ctx.drawImage(this.textureImage,g.cx-g.rx*1.35+r.x,g.cy-g.ry*1.15+r.y,r.width,r.height);ctx.globalAlpha=1}else{ctx.globalAlpha=.08;ctx.strokeStyle=rgba(v.coreColor,.65);ctx.lineWidth=Math.max(1,g.base*.012);for(let i=0;i<9;i++){ctx.beginPath();for(let x=-g.rx*1.3;x<=g.rx*1.3;x+=10){const y=Math.sin(x*.03+t*(1.1+i*.08)+i)*g.ry*.16+(i-4)*g.ry*.09;if(x<=-g.rx*1.3)ctx.moveTo(g.cx+x,g.cy+y);else ctx.lineTo(g.cx+x,g.cy+y)}ctx.stroke()}ctx.globalAlpha=1}ctx.restore()}
- point(g,a,off,t,seed,noise){const n=(hash2(Math.cos(a)*9.1+seed,Math.sin(a)*10.7+t*.14)-.5)*off*noise;return{x:g.cx+Math.cos(a)*(g.rx+n),y:g.cy+Math.sin(a)*(g.ry+n*.72)}}
-drawRim(ctx,g,t){const v=this.values,cloud=(v.cloudiness??56)/100,rw=scale(6,40,(v.rimWidth??50)/100),alpha=scale(.06,.50,(v.rimAlpha??60)/100),glow=scale(8,34,(v.glow??42)/100),arcs=Math.round(scale(64,150,cloud));ctx.save();ctx.globalCompositeOperation='lighter';for(let layer=0;layer<3;layer++){for(let i=0;i<arcs;i++){const seed=i*2.37+layer*9.1,start=TAU*hash1(seed+1)+t*.045*(layer-1),len=scale(.018,.09,hash1(seed+4))*scale(.7,1.4,cloud),skip=hash1(seed+Math.floor(t*4)*.03);if(skip<.28)continue;const col=i%5===0?v.accentColor:i%2===0?v.coreColor:v.rimColor;ctx.strokeStyle=rgba(col,alpha*scale(.24,.82,hash1(seed+6))*(1-layer*.18));ctx.lineWidth=Math.max(1,rw*scale(.018,.075,hash1(seed+7)));ctx.shadowColor=col;ctx.shadowBlur=glow;ctx.beginPath();for(let s=0;s<=5;s++){const a=start+len*(s/5),p=this.point(g,a,rw*(1.3+layer*.7),t,seed+s,scale(.55,1.45,cloud));if(s===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y)}ctx.stroke()}}ctx.restore()}
-drawWisps(ctx,g,t){const v=this.values,n=Math.round(scale(0,32,(v.wispAmount??34)/100));if(!n)return;const sp=scale(.14,1.45,(v.wispSpeed??42)/100),lenBase=scale(18,62,(v.wispSize??24)/100),curl=scale(.1,1.55,(v.wispCurl??54)/100);ctx.save();ctx.globalCompositeOperation='lighter';for(let i=0;i<n;i++){const seed=i*7.17,p=fract(t*sp*.12+hash1(seed)),a=TAU*hash1(seed+8)+Math.sin(t*.55+seed)*curl,d=scale(g.base*.08,g.base*1.35,p),x=g.cx+Math.cos(a)*d*(g.rx/g.base),y=g.cy+Math.sin(a)*d*(g.ry/g.base),al=(.04+hash1(seed+1)*.11)*Math.sin((1-p)*Math.PI),col=i%2?v.coreColor:v.accentColor;ctx.strokeStyle=rgba(col,al);ctx.lineWidth=scale(.6,1.8,hash1(seed+3));ctx.shadowColor=col;ctx.shadowBlur=scale(4,16,hash1(seed+4));ctx.beginPath();for(let s=0;s<=5;s++){const q=s/5,aa=a+Math.sin(q*TAU+t+seed)*.25*curl,dd=d-q*lenBase,px=g.cx+Math.cos(aa)*dd*(g.rx/g.base),py=g.cy+Math.sin(aa)*dd*(g.ry/g.base);if(s===0)ctx.moveTo(x,y);else ctx.lineTo(px,py)}ctx.stroke()}ctx.restore()}
- drawParticles(ctx,g,t){const v=this.values,n=Math.round(scale(0,58,(v.particleAmount??35)/100));if(!n)return;const sp=scale(.18,2.5,(v.particleSpeed??50)/100),spr=scale(.12,2,(v.particleSpread??70)/100),sz=scale(1.2,5.8,(v.particleSize??25)/100);ctx.save();ctx.globalCompositeOperation='lighter';for(let i=0;i<n;i++){const seed=i*17.17,p=fract(t*sp*.2+hash1(seed+2.9)),a=TAU*hash1(seed+1.1)+Math.sin(t*.7+seed)*spr,d=scale(g.base*.06,g.base*1.72,p),x=g.cx+Math.cos(a)*d*(g.rx/g.base),y=g.cy+Math.sin(a)*d*(g.ry/g.base),s=sz*(1-p*.58)*(0.7+hash1(seed+3.6)*.65),al=(.18+hash1(seed+4.2)*.32)*Math.sin((1-p)*Math.PI),col=i%3===0?v.accentColor:i%2===0?v.coreColor:v.rimColor;ctx.fillStyle=rgba(col,al);ctx.shadowColor=col;ctx.shadowBlur=s*5;ctx.beginPath();ctx.arc(x,y,s,0,TAU);ctx.fill()}ctx.restore()}
-drawDream(ctx,g,t){const v=this.values;ctx.save();ctx.globalCompositeOperation='lighter';ctx.filter='blur(1px)';const band=ctx.createRadialGradient(g.cx,g.cy,g.base*.1,g.cx,g.cy,Math.max(g.rx,g.ry)*1.05);band.addColorStop(0,rgba(v.coreColor,.10));band.addColorStop(.45,rgba(v.rimColor,.055));band.addColorStop(1,rgba(v.rimColor,0));ctx.fillStyle=band;ctx.beginPath();ctx.ellipse(g.cx,g.cy,g.rx*1.2,g.ry*1.08,0,0,TAU);ctx.fill();for(let i=0;i<18;i++){const y=g.cy-g.ry*.9+(i/17)*g.ry*1.8,phase=t*.28+i*.42;ctx.strokeStyle=rgba(i%2?v.rimColor:v.coreColor,.035+hash1(i)*.035);ctx.lineWidth=Math.max(1,g.base*.004);ctx.beginPath();for(let x=0;x<=g.w;x+=14){const yy=y+Math.sin(x*.018+phase)*g.ry*.07+Math.sin(x*.006-phase*1.7)*g.ry*.045;if(x===0)ctx.moveTo(x,yy);else ctx.lineTo(x,yy)}ctx.stroke()}for(let i=0;i<8;i++){const seed=i*5.7,p=fract(t*.045+hash1(seed)),x=g.cx+Math.cos(TAU*hash1(seed))*g.rx*scale(.1,.85,p),y=g.cy+Math.sin(TAU*hash1(seed+2))*g.ry*scale(.1,.8,p),r=scale(2,8,hash1(seed+3));ctx.fillStyle=rgba(v.accentColor,.04*Math.sin((1-p)*Math.PI));ctx.beginPath();ctx.arc(x,y,r,0,TAU);ctx.fill()}ctx.restore()}
-drawTransition(ctx,g,t){const v=this.values;ctx.save();ctx.globalCompositeOperation='lighter';const x0=g.cx+Math.sin(t*3.1)*g.base*.035,h=g.ry*1.55,w=Math.max(4,g.rx*.85);const grad=ctx.createLinearGradient(x0-w,g.cy,x0+w,g.cy);grad.addColorStop(0,rgba(v.rimColor,0));grad.addColorStop(.44,rgba(v.rimColor,.12));grad.addColorStop(.50,rgba(v.coreColor,.34));grad.addColorStop(.56,rgba(v.accentColor,.20));grad.addColorStop(1,rgba(v.rimColor,0));ctx.fillStyle=grad;ctx.shadowColor=v.rimColor;ctx.shadowBlur=24;ctx.beginPath();for(let i=0;i<=36;i++){const q=i/36,y=g.cy-h+q*h*2,x=x0+Math.sin(q*20+t*5)*w*.18+(hash1(i*2.1+Math.floor(t*14))-.5)*w*.25;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}for(let i=36;i>=0;i--){const q=i/36,y=g.cy-h+q*h*2,x=x0+w*.38+Math.sin(q*16-t*4)*w*.17+(hash1(i*3.7+2)-.5)*w*.22;ctx.lineTo(x,y)}ctx.closePath();ctx.fill();for(let i=0;i<34;i++){const seed=i*3.4,y=g.cy-h+hash1(seed)*h*2,x=x0+(hash1(seed+1)-.5)*w*2.2,len=scale(g.base*.04,g.base*.22,hash1(seed+2)),col=i%2?v.rimColor:v.accentColor;ctx.strokeStyle=rgba(col,scale(.07,.34,hash1(seed+3)));ctx.lineWidth=scale(1,3,hash1(seed+4));ctx.shadowColor=col;ctx.shadowBlur=18;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+(hash1(seed+5)-.5)*len,y+(hash1(seed+6)-.5)*len);ctx.stroke()}ctx.restore();this.drawParticles(ctx,g,t);this.drawGlow(ctx,g)}
-drawGlow(ctx,g){const v=this.values,glow=scale(0,.32,(v.glow??42)/100);if(!glow)return;ctx.save();ctx.globalCompositeOperation='lighter';const grad=ctx.createRadialGradient(g.cx,g.cy,g.base*.25,g.cx,g.cy,Math.max(g.rx,g.ry)*1.75);grad.addColorStop(0,rgba(v.coreColor,glow*.05));grad.addColorStop(.55,rgba(v.rimColor,glow*.07));grad.addColorStop(1,rgba(v.rimColor,0));ctx.fillStyle=grad;ctx.beginPath();ctx.ellipse(g.cx,g.cy,g.rx*1.55,g.ry*1.34,0,0,TAU);ctx.fill();ctx.restore()}
+
+const clamp = (value, min, max) => Math.max(min, Math.min(max, Number(value)));
+const clamp01 = (value) => clamp(value, 0, 1);
+const scale = (min, max, value) => min + (max - min) * clamp01(value);
+const fract = (value) => value - Math.floor(value);
+const hash1 = (value) => fract(Math.sin(value * 127.1) * 43758.5453123);
+const hash2 = (x, y) => fract(Math.sin(x * 127.1 + y * 311.7) * 43758.5453123);
+const smoothstep = (edge0, edge1, value) => {
+  const t = clamp01((value - edge0) / Math.max(0.0001, edge1 - edge0));
+  return t * t * (3 - 2 * t);
+};
+
+function hexToRgb(hex) {
+  const safe = String(hex || '#ffffff').replace('#', '').trim();
+  const full = safe.length === 3 ? safe.split('').map((char) => char + char).join('') : safe.padEnd(6, '0').slice(0, 6);
+  const value = Number.parseInt(full, 16);
+  return { r: (value >> 16) & 255, g: (value >> 8) & 255, b: value & 255 };
+}
+
+function rgba(hex, alpha = 1) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function cover(imageWidth, imageHeight, targetWidth, targetHeight) {
+  const imageRatio = imageWidth / Math.max(1, imageHeight);
+  const targetRatio = targetWidth / Math.max(1, targetHeight);
+  let width = targetWidth;
+  let height = targetHeight;
+  if (imageRatio > targetRatio) {
+    height = targetHeight;
+    width = height * imageRatio;
+  } else {
+    width = targetWidth;
+    height = width / imageRatio;
+  }
+  return { x: (targetWidth - width) / 2, y: (targetHeight - height) / 2, width, height };
+}
+
+export class ShimmerDistortionEngine {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.gridCanvas = document.createElement('canvas');
+    this.grid = this.gridCanvas.getContext('2d');
+    this.textureImage = null;
+    this.values = {};
+    this.gridKey = '';
+  }
+
+  setValues(values) {
+    this.values = { ...values };
+  }
+
+  setTextureImage(image = null) {
+    this.textureImage = image;
+  }
+
+  resize() {
+    const ratio = Math.max(1, Math.min(1.6, window.devicePixelRatio || 1));
+    const rect = this.canvas.getBoundingClientRect();
+    const width = Math.max(720, Math.round(rect.width * ratio));
+    const height = Math.max(405, Math.round(rect.height * ratio));
+    if (this.canvas.width !== width || this.canvas.height !== height) {
+      this.canvas.width = width;
+      this.canvas.height = height;
+      this.gridCanvas.width = width;
+      this.gridCanvas.height = height;
+      this.gridKey = '';
+    }
+  }
+
+  geometry(timeSec) {
+    const v = this.values;
+    const width = this.canvas.width;
+    const height = this.canvas.height;
+    const base = Math.min(width, height) * scale(0.08, 0.62, (v.radius ?? 60) / 100);
+    const pulse = 1 + Math.sin(timeSec * scale(0.4, 4, (v.pulse ?? 45) / 100)) * 0.035 * ((v.loopIntensity ?? 50) / 100);
+    return {
+      w: width,
+      h: height,
+      cx: width * ((v.positionX ?? 50) / 100),
+      cy: height * ((v.positionY ?? 50) / 100),
+      base,
+      rx: Math.max(0.01, base * ((v.scaleX ?? 100) / 100) * pulse),
+      ry: Math.max(0.01, base * ((v.scaleY ?? 100) / 100) * pulse)
+    };
+  }
+
+  draw(timeSec = 0) {
+    this.resize();
+    const g = this.geometry(timeSec);
+    const v = this.values;
+    const ctx = this.ctx;
+
+    ctx.clearRect(0, 0, g.w, g.h);
+    ctx.fillStyle = v.backdropColor || '#09080f';
+    ctx.fillRect(0, 0, g.w, g.h);
+
+    if (v.showGrid) this.drawGrid(g);
+    this.drawShimmer(ctx, g, timeSec);
+
+    if (v.type === 'heat') {
+      this.drawHeat(ctx, g, timeSec);
+    } else if (v.type === 'wormhole') {
+      this.drawWormhole(ctx, g, timeSec);
+    } else if (v.type === 'transition') {
+      this.drawTransition(ctx, g, timeSec);
+    } else {
+      this.drawPortalRing(ctx, g, timeSec);
+    }
+  }
+
+  drawGrid(g) {
+    const v = this.values;
+    const key = `${g.w}x${g.h}|${v.coreColor}|${v.rimColor}|${v.accentColor}|${v.backdropColor}`;
+    if (this.gridKey !== key) {
+      this.gridKey = key;
+      const ctx = this.grid;
+      ctx.clearRect(0, 0, g.w, g.h);
+      const major = Math.max(34, Math.round(g.w / 16));
+      const minor = Math.max(17, Math.round(g.w / 32));
+      ctx.lineWidth = Math.max(1, g.w / 900);
+      for (let x = 0; x <= g.w; x += minor) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, g.h);
+        ctx.strokeStyle = x % major === 0 ? rgba(v.coreColor, 0.18) : rgba(v.coreColor, 0.055);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= g.h; y += minor) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(g.w, y);
+        ctx.strokeStyle = y % major === 0 ? rgba(v.rimColor, 0.14) : rgba(v.rimColor, 0.045);
+        ctx.stroke();
+      }
+    }
+    this.ctx.drawImage(this.gridCanvas, 0, 0);
+  }
+
+  drawShimmer(ctx, g, timeSec) {
+    const v = this.values;
+    const strength = scale(0, 0.24, (v.strength ?? 50) / 100);
+    const refraction = scale(0, 0.16, (v.refraction ?? 50) / 100);
+    const waveSize = scale(0.006, 0.08, (v.waveSize ?? 40) / 100);
+    const waveSpeed = scale(0.15, 4.8, (v.waveSpeed ?? 40) / 100);
+    const softness = scale(0.06, 0.55, (v.softness ?? 50) / 100);
+    const step = v.type === 'heat' ? Math.max(4, Math.round(g.h / 90)) : Math.max(6, Math.round(g.h / 150));
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let y = 0; y < g.h; y += step) {
+      const ny = (y - g.cy) / Math.max(1, g.ry);
+      for (let x = 0; x < g.w; x += step * 2) {
+        const nx = (x - g.cx) / Math.max(1, g.rx);
+        const distance = Math.sqrt(nx * nx + ny * ny);
+        const mask = v.type === 'heat'
+          ? Math.max(0, 1 - Math.abs(ny) * 0.9)
+          : 1 - smoothstep(1 - softness, 1.08, distance);
+        if (mask <= 0.01) continue;
+        const wave = v.type === 'heat'
+          ? Math.sin(y * waveSize * 2.8 + timeSec * waveSpeed * 2.2)
+          : Math.sin(distance / waveSize + timeSec * waveSpeed + Math.atan2(ny, nx) * 3);
+        const alpha = Math.max(0, (strength * 0.16 + refraction * 0.12) * mask);
+        ctx.strokeStyle = rgba(v.coreColor, alpha);
+        ctx.lineWidth = Math.max(1, step * 0.25);
+        ctx.beginPath();
+        const offset = wave * strength * step * 4 * mask;
+        ctx.moveTo(x + offset, y);
+        ctx.lineTo(x + step * 2 + offset, y + wave * step * 0.7);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  drawHeat(ctx, g, timeSec) {
+    const v = this.values;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 22; i += 1) {
+      const y = g.cy - g.ry * 0.9 + (i / 21) * g.ry * 1.8;
+      const alpha = 0.035 + 0.04 * Math.sin(i * 0.7 + timeSec);
+      ctx.strokeStyle = rgba(v.accentColor, alpha);
+      ctx.lineWidth = Math.max(1, g.h / 540);
+      ctx.beginPath();
+      for (let x = 0; x <= g.w; x += 18) {
+        const yy = y + Math.sin(x * 0.014 + timeSec * 1.6 + i * 0.4) * g.ry * 0.035;
+        if (x === 0) ctx.moveTo(x, yy);
+        else ctx.lineTo(x, yy);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  drawPortalRing(ctx, g, timeSec) {
+    const v = this.values;
+    this.drawDarkAperture(ctx, g);
+    this.drawElectricRing(ctx, g, timeSec);
+    this.drawWisps(ctx, g, timeSec, 0.82);
+    this.drawParticles(ctx, g, timeSec, 0.85);
+    this.drawGlow(ctx, g, 0.34);
+  }
+
+  drawDarkAperture(ctx, g) {
+    const v = this.values;
+    ctx.save();
+    const outer = ctx.createRadialGradient(g.cx, g.cy, g.base * 0.08, g.cx, g.cy, Math.max(g.rx, g.ry) * 1.25);
+    outer.addColorStop(0, rgba(v.coreColor, 0.05));
+    outer.addColorStop(0.46, rgba(v.coreColor, 0.025));
+    outer.addColorStop(0.78, rgba(v.rimColor, 0.04));
+    outer.addColorStop(1, rgba(v.rimColor, 0));
+    ctx.fillStyle = outer;
+    ctx.beginPath();
+    ctx.ellipse(g.cx, g.cy, g.rx * 1.16, g.ry * 1.12, 0, 0, TAU);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.ellipse(g.cx, g.cy, g.rx * 0.62, g.ry * 0.70, 0, 0, TAU);
+    ctx.clip();
+    const dark = ctx.createRadialGradient(g.cx, g.cy, g.base * 0.05, g.cx, g.cy, Math.max(g.rx, g.ry) * 0.72);
+    dark.addColorStop(0, rgba('#030407', 0.86));
+    dark.addColorStop(0.55, rgba('#071018', 0.62));
+    dark.addColorStop(1, rgba('#020309', 0.92));
+    ctx.fillStyle = dark;
+    ctx.fillRect(g.cx - g.rx, g.cy - g.ry, g.rx * 2, g.ry * 2);
+
+    if (v.sourceMode === 'texture' && this.textureImage) {
+      const rect = cover(this.textureImage.width, this.textureImage.height, g.rx * 1.35, g.ry * 1.42);
+      ctx.globalAlpha = scale(0.12, 0.72, (v.textureStrength ?? 70) / 100);
+      ctx.drawImage(this.textureImage, g.cx - g.rx * 0.675 + rect.x, g.cy - g.ry * 0.71 + rect.y, rect.width, rect.height);
+    }
+    ctx.restore();
+  }
+
+  drawElectricRing(ctx, g, timeSec) {
+    const v = this.values;
+    const ringCount = Math.round(scale(38, 128, (v.cloudiness ?? 58) / 100));
+    const width = scale(6, 34, (v.rimWidth ?? 58) / 100);
+    const alpha = scale(0.12, 0.78, (v.rimAlpha ?? 74) / 100);
+    const speed = scale(0.15, 1.55, (v.swirl + 100) / 200);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+
+    for (let layer = 0; layer < 4; layer += 1) {
+      for (let i = 0; i < ringCount; i += 1) {
+        const seed = i * 2.713 + layer * 19.13;
+        const start = TAU * hash1(seed) + timeSec * speed * (layer % 2 ? -0.18 : 0.24);
+        const length = scale(0.018, 0.13, hash1(seed + 5.1));
+        if (hash1(seed + Math.floor(timeSec * 4) * 0.071) < 0.24) continue;
+        const colour = i % 5 === 0 ? v.accentColor : (i % 2 === 0 ? v.coreColor : v.rimColor);
+        ctx.strokeStyle = rgba(colour, alpha * scale(0.22, 0.86, hash1(seed + 6.2)) * (1 - layer * 0.12));
+        ctx.lineWidth = Math.max(0.8, width * scale(0.025, 0.12, hash1(seed + 7.3)));
+        ctx.shadowColor = colour;
+        ctx.shadowBlur = scale(8, 34, (v.glow ?? 62) / 100);
+        ctx.beginPath();
+        for (let step = 0; step <= 6; step += 1) {
+          const amount = step / 6;
+          const angle = start + length * amount;
+          const rough = (hash2(Math.cos(angle) * 11.2 + seed, Math.sin(angle) * 10.4 - seed + timeSec * 0.2) - 0.5) * width * scale(0.6, 1.9, (v.cloudiness ?? 58) / 100);
+          const x = g.cx + Math.cos(angle) * (g.rx * 0.76 + rough + layer * width * 0.12);
+          const y = g.cy + Math.sin(angle) * (g.ry * 0.84 + rough * 0.72 + layer * width * 0.08);
+          if (step === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawWormhole(ctx, g, timeSec) {
+    const v = this.values;
+    const arms = 6;
+    const streaks = Math.round(scale(52, 132, (v.cloudiness ?? 46) / 100));
+    const turns = scale(2.3, 6.4, (v.swirl + 100) / 200);
+    const speed = scale(0.35, 2.4, (v.waveSpeed ?? 62) / 100);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+
+    const bg = ctx.createRadialGradient(g.cx, g.cy, g.base * 0.02, g.cx, g.cy, Math.max(g.rx, g.ry) * 1.45);
+    bg.addColorStop(0, rgba('#02030a', 0.85));
+    bg.addColorStop(0.18, rgba(v.coreColor, 0.18));
+    bg.addColorStop(0.58, rgba(v.rimColor, 0.10));
+    bg.addColorStop(1, rgba(v.rimColor, 0));
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.ellipse(g.cx, g.cy, g.rx * 1.55, g.ry * 1.32, 0, 0, TAU);
+    ctx.fill();
+
+    for (let i = 0; i < streaks; i += 1) {
+      const seed = i * 3.91;
+      const arm = i % arms;
+      const offset = (arm / arms) * TAU + hash1(seed) * 0.34;
+      const colour = i % 4 === 0 ? v.accentColor : (i % 3 === 0 ? v.rimColor : v.coreColor);
+      ctx.strokeStyle = rgba(colour, scale(0.045, 0.24, hash1(seed + 2.1)));
+      ctx.lineWidth = scale(0.65, 2.8, hash1(seed + 4.7));
+      ctx.shadowColor = colour;
+      ctx.shadowBlur = scale(6, 28, (v.glow ?? 66) / 100);
+
+      ctx.beginPath();
+      const startP = hash1(seed + timeSec * 0.018) * 0.18;
+      const endP = scale(0.62, 1.0, hash1(seed + 9.8));
+      const steps = 42;
+      for (let s = 0; s <= steps; s += 1) {
+        const q = startP + (endP - startP) * (s / steps);
+        const radius = Math.pow(1 - q, 1.85);
+        const angle = offset + q * TAU * turns + timeSec * speed * (0.26 + hash1(seed + 6) * 0.32);
+        const flicker = (hash2(Math.cos(angle) * 8 + seed, Math.sin(angle) * 9 + timeSec * 0.22) - 0.5) * g.base * 0.03;
+        const x = g.cx + Math.cos(angle) * (g.rx * radius + flicker);
+        const y = g.cy + Math.sin(angle) * (g.ry * radius + flicker * 0.72);
+        if (s === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    for (let ring = 0; ring < 9; ring += 1) {
+      const radius = scale(0.08, 1.04, ring / 8);
+      ctx.strokeStyle = rgba(ring % 2 ? v.rimColor : v.coreColor, 0.08 * (1 - ring / 10));
+      ctx.lineWidth = Math.max(1, g.base * 0.003);
+      ctx.beginPath();
+      for (let s = 0; s <= 128; s += 1) {
+        const angle = TAU * (s / 128);
+        const wave = Math.sin(angle * 5 + timeSec * 1.2 + ring) * g.base * 0.012;
+        const x = g.cx + Math.cos(angle) * (g.rx * radius + wave);
+        const y = g.cy + Math.sin(angle) * (g.ry * radius + wave * 0.72);
+        if (s === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    const hole = ctx.createRadialGradient(g.cx, g.cy, 0, g.cx, g.cy, g.base * 0.19);
+    hole.addColorStop(0, rgba('#000000', 0.92));
+    hole.addColorStop(0.52, rgba('#030612', 0.72));
+    hole.addColorStop(1, rgba(v.coreColor, 0));
+    ctx.fillStyle = hole;
+    ctx.beginPath();
+    ctx.ellipse(g.cx, g.cy, g.rx * 0.16, g.ry * 0.18, 0, 0, TAU);
+    ctx.fill();
+
+    ctx.restore();
+    this.drawParticles(ctx, g, timeSec, 0.5);
+  }
+
+  drawWisps(ctx, g, timeSec, multiplier = 1) {
+    const v = this.values;
+    const count = Math.round(scale(0, 42, (v.wispAmount ?? 42) / 100) * multiplier);
+    if (!count) return;
+
+    const speed = scale(0.14, 1.55, (v.wispSpeed ?? 58) / 100);
+    const length = scale(20, 74, (v.wispSize ?? 34) / 100);
+    const curl = scale(0.16, 1.85, (v.wispCurl ?? 70) / 100);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < count; i += 1) {
+      const seed = i * 7.17;
+      const progress = fract(timeSec * speed * 0.12 + hash1(seed));
+      const angle = TAU * hash1(seed + 8) + Math.sin(timeSec * 0.55 + seed) * curl;
+      const distance = scale(g.base * 0.12, g.base * 1.55, progress);
+      const alpha = (0.045 + hash1(seed + 1) * 0.12) * Math.sin((1 - progress) * Math.PI) * multiplier;
+      const colour = i % 2 ? v.coreColor : v.accentColor;
+      ctx.strokeStyle = rgba(colour, alpha);
+      ctx.lineWidth = scale(0.6, 1.7, hash1(seed + 3));
+      ctx.shadowColor = colour;
+      ctx.shadowBlur = scale(4, 18, hash1(seed + 4));
+      ctx.beginPath();
+      for (let s = 0; s <= 6; s += 1) {
+        const q = s / 6;
+        const aa = angle + Math.sin(q * TAU + timeSec + seed) * 0.28 * curl;
+        const dd = distance - q * length;
+        const x = g.cx + Math.cos(aa) * dd * (g.rx / g.base);
+        const y = g.cy + Math.sin(aa) * dd * (g.ry / g.base);
+        if (s === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  drawParticles(ctx, g, timeSec, multiplier = 1) {
+    const v = this.values;
+    const count = Math.round(scale(0, 70, (v.particleAmount ?? 48) / 100) * multiplier);
+    if (!count) return;
+
+    const speed = scale(0.18, 2.7, (v.particleSpeed ?? 68) / 100);
+    const spread = scale(0.12, 2.1, (v.particleSpread ?? 72) / 100);
+    const sizeBase = scale(1.1, 6.2, (v.particleSize ?? 20) / 100);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < count; i += 1) {
+      const seed = i * 17.17;
+      const progress = fract(timeSec * speed * 0.2 + hash1(seed + 2.9));
+      const angle = TAU * hash1(seed + 1.1) + Math.sin(timeSec * 0.7 + seed) * spread;
+      const distance = scale(g.base * 0.06, g.base * 1.72, progress);
+      const x = g.cx + Math.cos(angle) * distance * (g.rx / g.base);
+      const y = g.cy + Math.sin(angle) * distance * (g.ry / g.base);
+      const size = sizeBase * (1 - progress * 0.58) * (0.7 + hash1(seed + 3.6) * 0.65);
+      const alpha = (0.18 + hash1(seed + 4.2) * 0.32) * Math.sin((1 - progress) * Math.PI) * multiplier;
+      const colour = i % 3 === 0 ? v.accentColor : (i % 2 === 0 ? v.coreColor : v.rimColor);
+      ctx.fillStyle = rgba(colour, alpha);
+      ctx.shadowColor = colour;
+      ctx.shadowBlur = size * 5;
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  drawTransition(ctx, g, timeSec) {
+    const v = this.values;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const x0 = g.cx + Math.sin(timeSec * 3.1) * g.base * 0.035;
+    const height = g.ry * 1.55;
+    const width = Math.max(4, g.rx * 0.85);
+    const grad = ctx.createLinearGradient(x0 - width, g.cy, x0 + width, g.cy);
+    grad.addColorStop(0, rgba(v.rimColor, 0));
+    grad.addColorStop(0.44, rgba(v.rimColor, 0.12));
+    grad.addColorStop(0.50, rgba(v.coreColor, 0.34));
+    grad.addColorStop(0.56, rgba(v.accentColor, 0.20));
+    grad.addColorStop(1, rgba(v.rimColor, 0));
+    ctx.fillStyle = grad;
+    ctx.shadowColor = v.rimColor;
+    ctx.shadowBlur = 24;
+    ctx.beginPath();
+    for (let i = 0; i <= 36; i += 1) {
+      const q = i / 36;
+      const y = g.cy - height + q * height * 2;
+      const x = x0 + Math.sin(q * 20 + timeSec * 5) * width * 0.18 + (hash1(i * 2.1 + Math.floor(timeSec * 14)) - 0.5) * width * 0.25;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    for (let i = 36; i >= 0; i -= 1) {
+      const q = i / 36;
+      const y = g.cy - height + q * height * 2;
+      const x = x0 + width * 0.38 + Math.sin(q * 16 - timeSec * 4) * width * 0.17 + (hash1(i * 3.7 + 2) - 0.5) * width * 0.22;
+      ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+
+    for (let i = 0; i < 34; i += 1) {
+      const seed = i * 3.4;
+      const y = g.cy - height + hash1(seed) * height * 2;
+      const x = x0 + (hash1(seed + 1) - 0.5) * width * 2.2;
+      const length = scale(g.base * 0.04, g.base * 0.22, hash1(seed + 2));
+      const colour = i % 2 ? v.rimColor : v.accentColor;
+      ctx.strokeStyle = rgba(colour, scale(0.07, 0.34, hash1(seed + 3)));
+      ctx.lineWidth = scale(1, 3, hash1(seed + 4));
+      ctx.shadowColor = colour;
+      ctx.shadowBlur = 18;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + (hash1(seed + 5) - 0.5) * length, y + (hash1(seed + 6) - 0.5) * length);
+      ctx.stroke();
+    }
+    ctx.restore();
+    this.drawParticles(ctx, g, timeSec, 0.8);
+    this.drawGlow(ctx, g, 0.3);
+  }
+
+  drawGlow(ctx, g, multiplier = 1) {
+    const v = this.values;
+    const glow = scale(0, 0.34, (v.glow ?? 62) / 100) * multiplier;
+    if (!glow) return;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const grad = ctx.createRadialGradient(g.cx, g.cy, g.base * 0.25, g.cx, g.cy, Math.max(g.rx, g.ry) * 1.75);
+    grad.addColorStop(0, rgba(v.coreColor, glow * 0.05));
+    grad.addColorStop(0.55, rgba(v.rimColor, glow * 0.07));
+    grad.addColorStop(1, rgba(v.rimColor, 0));
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.ellipse(g.cx, g.cy, g.rx * 1.55, g.ry * 1.34, 0, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+  }
 }

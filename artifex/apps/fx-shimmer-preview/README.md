@@ -1,9 +1,19 @@
 # Artifex Shimmer / Portal Distortion Engine Preview
 
-V1.06 is a visible correction pass. Portal Threshold no longer draws the same large filled oval core; it uses a separate ring/aperture renderer. Dream Ripple and Transition Tear use their own renderers and defaults. Heat Shimmer remains untouched visually.
+V1.07 rebuilds the visual idea around two separate categories from the reference images: wormholes and portal rings.
 
-Test URL after upload:
+## V1.07 changes
 
 ```text
-https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/main/artifex/apps/fx-shimmer-preview/index.html?v=106
+Portal Threshold is now Portal Ring: dark aperture, broken electric arcs, sparks and thin wisps
+Dream Ripple has been replaced by Wormhole Tunnel: spiral/vortex/tunnel filaments moving inward
+Heat Shimmer is kept visually unchanged
+Transition Tear is kept as the separate slash/glitch effect
+Distortion type dropdown now has Portal ring / aperture and Wormhole tunnel as separate types
+```
+
+## Test URL after upload
+
+```text
+https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/main/artifex/apps/fx-shimmer-preview/index.html?v=107
 ```
