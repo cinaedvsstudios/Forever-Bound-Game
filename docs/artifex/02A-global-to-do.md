@@ -53,7 +53,7 @@ Rules:
 Priority: highest  
 Status: ongoing
 
-- Use `0A`, `01A`, `02A` and the active `A` specs as the controlled documentation set.
+- Use `00A`, `01A`, `02A` and the active `A` specs as the controlled documentation set.
 - Archive or reduce old docs only after confirming their valid content is represented in active docs.
 - Check code dependencies before retiring machine-readable task files such as `artifex/shared/todo-guide/all-apps-todos.json`.
 - Reconcile open documentation PRs #40 and #44 so they do not become parallel current authorities.
@@ -75,7 +75,7 @@ Specification: `docs/artifex/03A-hub.md`
 
 ## Creation Guide
 
-Specification: `docs/artifex/004A-creation-guide.md`
+Specification: `docs/artifex/04A-creation-guide.md`
 
 - Add working Recommended Starting Media checklist.
 - Add project-logo flow from intake source through Asset Library promotion to registered display reference.
@@ -87,7 +87,7 @@ Specification: `docs/artifex/004A-creation-guide.md`
 
 ## Project Editor
 
-Specification: `docs/artifex/005A-project-editor.md`
+Specification: `docs/artifex/05A-project-editor.md`
 
 - Implement connected-folder load/save for Project Editor-owned structural files and indexes.
 - Keep browser drafts and ZIP export as recovery/fallback.
@@ -99,7 +99,7 @@ Specification: `docs/artifex/005A-project-editor.md`
 
 ## Scene Editor
 
-Specification: `docs/artifex/006A-scene-editor.md`
+Specification: `docs/artifex/06A-scene-editor.md`
 
 - Implement connected-project scene/screen loading, direct saving and typed index registration.
 - Display canonical project-file/local-draft/conflict/permission status.
@@ -110,7 +110,7 @@ Specification: `docs/artifex/006A-scene-editor.md`
 
 ## Quest Builder
 
-Specification: `docs/artifex/007A-quest-builder.md`
+Specification: `docs/artifex/07A-quest-builder.md`
 
 - Align Quest/Sidequest export/index output with canonical typed collections.
 - Implement connected-project load/save/save-state/conflict handling.
@@ -146,18 +146,28 @@ Follow-up:
 
 ## Effect Editor
 
-Specification: `docs/artifex/009A-effect-editor.md`
+Specification: `docs/artifex/09A-effect-editor.md`
 
+- Verify whether the accepted active Effect Editor route is still `index2.html` or whether V3.0 at `index.html` has replaced it; update `09A-effect-editor.md` only after confirming current repo truth.
 - Implement canonical connected-project save/status/index workflow for `archetypes/effect-index.json` and `archetypes/effects/archeffect_<slug>.json`.
 - Add project-backed Effect Library for saved FX Archetypes.
 - Replace session/repository-only texture, overlay, icon and thumbnail dependencies with final registered asset references where required.
+- Restore/implement the My Settings / favourite pinned-controls panel from `v327-my-settings.js` as a normal Index2/V3-owned module, not as a legacy patch layer.
 - Add visible Degree Range cone/spread guide.
-- Decide whether to integrate inactive `v327-my-settings.js` pinned-controls panel.
 - Expose visible text Once / Loop / Continuous controls and validate text performance.
+- Finish full performance optimisation: profile glow, blur, shadows, grid drawing and heavy multi-layer effects.
+- Implement real video underlay playback/scrubbing; current image/video underlay support is only partial.
+- Implement Effekseer draft import as a future compatibility pass if still wanted.
+- Add real Help / terminology links or dialog.
 - Review Atmosphere Volume prototype before production fog/mist/haze decision.
-- Scope additional FX engines and preset polish from current Index2 only.
+- Add proper Explosion and Storm effect targets after choosing final visual references.
+- Use the confirmed visual-reference targets when scoping future FX engines: lens flare/light glint, underworld oil droplets/living black oil, bloom/HUD glow, sunlight/god rays, interactive water, shockwave/impact ring and ground fog.
+- Run a final visual browser pass on the built-in preset library and decide the remaining preset naming/behaviour questions: Ribbon Trail vs Slash Trail, warmer Heat Shimmer, true horizontal Lens Flare, typo ID handling, and Cursed Magic / Pharaoh Fog category.
+- Future idea: Brush Sequence Animation for PNG brush-frame sequences, only after render stability, brush alpha masking, Shape / Brush / Custom modes and module split are stable.
+- Scope additional FX engines and preset polish from the confirmed active route only.
 - Add registered sound cues after Sound foundation and final FX schema owner are confirmed.
-- Archive or reduce superseded Effect Editor docs after acceptance.
+- After Effect Editor has been stable for a while, archive/remove old test-only branches, folders and experiments that are no longer referenced by the live route.
+- Archive or reduce superseded Effect Editor docs after their useful information has been transferred into `09A` and this backlog.
 
 ## Asset Library
 
@@ -278,7 +288,7 @@ Specification: `docs/artifex/18A-sound-library.md`
 - Implement runtime/playtest playback of procedural-synth recipe assets where needed.
 - Extend Health and Build validation for generated audio.
 - Add at least one generated procedural sound to Template Game once involved systems are ready.
-- Archive old `docs/artifex/18A-sound-library.md` after `18A` acceptance and PR #46 reconciliation.
+- Archive old `docs/artifex/22-sound-archetype-generator.md` after `18A` acceptance and PR #46 reconciliation.
 
 ## Project Starter Schemas
 

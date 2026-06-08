@@ -181,6 +181,53 @@ Index2 currently implements bounded text runtime behaviour, text layout caching,
 
 The current renderer draws the active emitter marker, a direction arrow and brace-style emitter-width guides. It does not provide verified evidence of the live Degree Range cone guide requested in the active backlog. The width-guide portion of that earlier task is therefore complete; the cone/spread visualisation remains a scoped follow-up.
 
+## Additional UI Contract Notes From Archived Phase Docs
+
+These rules are consolidated from the old Effect Editor phase notes, UI audits, recovery plans and local to-do files. They are retained here as module-specific UI contract guidance, not as separate active documents.
+
+### Authoring layout and wording
+
+- The main authoring cards should remain organised around **Effect Archetype**, **Effect Layer Appearance**, and **Effect Layer Dynamics**.
+- The left inspector should behave as the primary FX authoring panel.
+- The bottom panel should behave as a composer/layer strip with compact status, not as a tactical diagnostics dashboard.
+- Use conventional top menu labels: **File**, **Edit**, **View**, **Insert**, **Help**.
+- Dense labels should avoid tactical/defensive wording such as **Tactical HUD**, **Target Schema**, **HUD Reticle**, **Layer Diagnostics**, **Projection Angle** and **Interactive Coordinate Grid**.
+- Preferred softer wording includes **Preview Guides**, **JSON Output**, **Emitter Guide**, **Active Layer Summary**, **Direction** and **Preview Grid**.
+
+### Appearance and controls
+
+- Particle Shape / Shape Mode belongs in **Effect Layer Appearance / Visuals**, not in Motion / Dynamics.
+- Motion / Dynamics should contain emitter, speed, direction, spread, gravity, friction, orbit, lifetime and related movement controls.
+- Slider numeric values should be directly editable where practical and must update the same editor state as the slider.
+- Quick Edit Presets, Rotate Shape, capped softness/blur, expanded blend modes, Start/End Alpha values and info tooltips are retained Effect Editor UI capabilities where implemented.
+- The brush/texture pipeline should avoid live blur-heavy procedural shapes where brush PNG texture softness is available.
+- Brush alpha masking must avoid colouring the whole square PNG block; only the visible brush shape should receive tint/colour.
+
+### Preview, thumbnail and reference media
+
+- Thumbnail capture is an editor/library preview feature. Final project thumbnails should prefer real image files referenced by path rather than large base64 data inside final runtime JSON.
+- Reference images or videos are editor guide media unless a deliberate Plate FX export mode is implemented.
+- Image underlay and video underlay are not equivalent: frame-accurate video playback/scrubbing remains future work unless current code proves otherwise.
+- Low Performance Mode belongs with preview/view controls and must not change saved layer data merely because preview quality is reduced.
+
+### Future visual targets
+
+Confirmed future visual-reference targets include:
+
+```text
+Lens flare / light glint
+Underworld oil droplets / living black oil
+Bloom / HUD glow
+Sunlight / god rays
+Interactive water
+Shockwave / impact ring
+Ground fog
+Explosion
+Storm / weather
+```
+
+These targets guide future scoped FX engine work. They do not prove those engines are already implemented.
+
 ## Module-Specific Fixed Contracts and Dependencies
 
 ### Scene Editor relationship
@@ -226,12 +273,12 @@ The following Effect Editor documents were inspected for this extraction. Their 
 | `docs/artifex/13-effects-library.md` | FX Archetype/Instance, Game FX/Plate FX and module-boundary concepts. Its older prototype/current-state claims do not define Index2. | Supersede/archive as overlapping prior module specification once any unique future Plate FX requirement is retained here/`02A`. |
 | `artifex/shared/todo-guide/audits/2026-06-01-effect-editor-route-decision-audit.md` | Accepted Index2 route decision and Hub cutover evidence; its original `0.2.3`/missing-parity statements are superseded by current `0.2.6`. | Retain as decision evidence or archive after controlled extraction; not a parallel spec. |
 | Open PR #40's refresh of the route/master/stabilisation records | Correct evidence that PRs #27–#33 delivered Index2 parity and Brush/Shape restoration. | Do not merge merely as current authority; any unique useful content is captured in `09A`/`02A`. |
-| `artifex/apps/effect-editor/docs/todo.md` | My Settings requirements and approved visual target references. | Retain as source evidence now; archive/replace by `09A` + `2A` after acceptance. |
-| `future-features.md` | Future Brush Sequence Animation concept only. | Keep as deferred idea or archive after adding a deliberate low-priority item if approved; not current module authority. |
-| `v3-roadmap-open-items.md` | Old-route V3 follow-up history; some items checked against Index2. | Historical/superseded after `09A`; do not treat `index.html` as live accepted route. |
+| `artifex/apps/effect-editor/docs/todo.md` | My Settings requirements and approved visual target references. | Useful rules consolidated into `09A` and unfinished work into `02A`; archive after acceptance. |
+| `future-features.md` | Future Brush Sequence Animation concept only. | Deferred idea added to `02A`; archive as source evidence. |
+| `v3-roadmap-open-items.md` | Old-route V3 follow-up history and unfinished items, including route-status conflict, performance, Effekseer import, video underlay and Help links. | Unfinished work moved to `02A`; do not treat `index.html` as live accepted route until current repo truth is confirmed. |
 | `docs/effect-editor/index2-integration-work-started.md` | Earlier Index2 0.2.2 checkpoint/history. | Historical evidence only after `09A`; current baseline is 0.2.6. |
-| `compare-versions.md`, `current-vs-stable-ui-inventory.md`, `UI_STRUCTURE_AUDIT.md`, `PHASE_1_SAFE_FILE_SPLIT.md`, `PHASE_2_UI_CLEANUP.md` | Default-route recovery/refactor/design evidence, not current Index2 truth. | Archive/history after extraction; not active specifications or backlog authorities. |
-| `FX_UI_RESTRUCTURE_NOTES.md`, `FX_QUICK_EDIT_BRUSH_AND_REFERENCE_NOTES.md`, `FX_QUICK_EDIT_FIX_NOTES.md`, `FX_PHASE9I_ORIGIN_BRUSH_LIBRARY_NOTES.md`, `FX_PHASE9J_RESOLUTION_NOISE_NOTES.md`, `PHASE_8_LIBRARY_IMPORT_NOTES.md` | Older default-route phased delivery notes. Current Index2 capability was verified directly before being recorded here. | Archive/history after extraction; do not assume all old-route features exist in Index2. |
+| `compare-versions.md`, `current-vs-stable-ui-inventory.md`, `UI_STRUCTURE_AUDIT.md`, `PHASE_1_SAFE_FILE_SPLIT.md`, `PHASE_2_UI_CLEANUP.md` | Default-route recovery/refactor/design evidence, plus UI wording/layout rules now consolidated into this file. | Archive/history after extraction; not active specifications or backlog authorities. |
+| `FX_UI_RESTRUCTURE_NOTES.md`, `FX_UI_CONTROLS_PASS_NOTES.md`, `FX_QUICK_EDIT_BRUSH_AND_REFERENCE_NOTES.md`, `FX_QUICK_EDIT_FIX_NOTES.md`, `FX_PHASE9I_ORIGIN_BRUSH_LIBRARY_NOTES.md`, `FX_PHASE9J_RESOLUTION_NOISE_NOTES.md`, `PHASE_8_LIBRARY_IMPORT_NOTES.md`, `PRESET_LIBRARY_AUDIT.md` | Older default-route phased delivery notes and preset audit material. Stable module-specific UI rules are consolidated into this file; unfinished/preset follow-up work is in `02A`. | Archive/history after extraction; do not assume all old-route features exist in Index2. |
 | `artifex/apps/effect-editor/src/README.md` | Old split/refactor evidence identifying `index.html` as live. | Superseded/historical after `09A`; inaccurate as current route authority. |
 | `docs/archive/effect-editor-v3-promotion/**` and archived handoff records | Already historical default-route/V3 promotion evidence. | Remain archive evidence only. |
 | Merged PR #49 Atmosphere Volume debug prototype | Isolated later visual experiment, explicitly outside live Index2. | Record as prototype evidence and future decision input only. |
