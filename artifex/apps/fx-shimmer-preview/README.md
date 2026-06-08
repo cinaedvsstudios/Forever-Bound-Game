@@ -1,19 +1,21 @@
 # Artifex Shimmer / Portal Distortion Engine Preview
 
-V1.07 rebuilds the visual idea around two separate categories from the reference images: wormholes and portal rings.
+V1.08 refines the V1.07 wormhole/portal split.
 
-## V1.07 changes
+## V1.08 changes
 
 ```text
-Portal Threshold is now Portal Ring: dark aperture, broken electric arcs, sparks and thin wisps
-Dream Ripple has been replaced by Wormhole Tunnel: spiral/vortex/tunnel filaments moving inward
-Heat Shimmer is kept visually unchanged
-Transition Tear is kept as the separate slash/glitch effect
-Distortion type dropdown now has Portal ring / aperture and Wormhole tunnel as separate types
+Heat Shimmer is deliberately left visually unchanged.
+Portal Ring no longer draws the central stacked/vertical squiggle shape.
+Portal Ring now draws a dark aperture with circular wispy energy orbiting the opening.
+Portal wisps pulse, rotate, break and reconnect around the aperture.
+Wormhole Tunnel uses about half as many strands.
+Wormhole strands are thicker, softer, blurrier and more cloud/ribbon-like.
+Wormhole outer glow is no longer a uniform oval; it is made from irregular drifting haze patches.
 ```
 
 ## Test URL after upload
 
 ```text
-https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/main/artifex/apps/fx-shimmer-preview/index.html?v=107
+https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/main/artifex/apps/fx-shimmer-preview/index.html?v=108
 ```
