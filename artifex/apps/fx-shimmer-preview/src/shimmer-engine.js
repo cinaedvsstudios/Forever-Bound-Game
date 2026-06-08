@@ -1,4 +1,5 @@
 const TAU = Math.PI * 2;
+
 const clamp = (v, min, max) => Math.max(min, Math.min(max, Number(v)));
 const clamp01 = (v) => clamp(v, 0, 1);
 const scale = (min, max, v) => min + (max - min) * clamp01(v);

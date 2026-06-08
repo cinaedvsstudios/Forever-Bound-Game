@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Artifex Shimmer / Portal Distortion Engine Preview</title>
-  <link rel="stylesheet" href="./styles.css?v=1.09" />
+  <link rel="stylesheet" href="./styles.css?v=1.10" />
 </head>
 <body>
   <main class="fx-shell" data-app>
@@ -15,7 +15,7 @@
           <p class="kicker">Artifex FX Engine Prototype</p>
           <h1>Shimmer / Portal Distortion Engine</h1>
         </div>
-        <span class="version">V1.09</span>
+        <span class="version">V1.10</span>
       </div>
       <div class="header-actions">
         <button type="button" data-action="play">▶️ Play</button>
@@ -110,8 +110,12 @@
             <label>Rim width <input type="range" min="0" max="100" step="1" data-field="rimWidth" /></label>
           </div>
           <div class="two">
+            <label>Band thickness <input type="range" min="0" max="100" step="1" data-field="bandThickness" /></label>
             <label>Rim alpha <input type="range" min="0" max="100" step="1" data-field="rimAlpha" /></label>
+          </div>
+          <div class="two">
             <label>Chromatic split <input type="range" min="0" max="100" step="1" data-field="chromatic" /></label>
+            <label>Centre alpha <input type="range" min="0" max="100" step="1" data-field="centreAlpha" /></label>
           </div>
           <div class="two">
             <label>Blur pass <input type="range" min="0" max="100" step="1" data-field="blur" /></label>
@@ -139,6 +143,10 @@
             <label>Accent <input type="color" data-field="accentColor" /></label>
             <label>Backdrop <input type="color" data-field="backdropColor" /></label>
           </div>
+          <div class="two color-pair">
+            <label>Centre fill <input type="color" data-field="centreColor" /></label>
+            <label>Underlay tint <input type="color" data-field="underlayTint" /></label>
+          </div>
           <label>JPEG / PNG texture
             <input type="file" accept="image/png,image/jpeg,image/webp" data-texture-file />
           </label>
@@ -162,6 +170,10 @@
           <div class="two">
             <label>Particle spread <input type="range" min="0" max="100" step="1" data-field="particleSpread" /></label>
             <label>Particle size <input type="range" min="0" max="100" step="1" data-field="particleSize" /></label>
+          </div>
+          <div class="two">
+            <label>Particle alpha <input type="range" min="0" max="100" step="1" data-field="particleAlpha" /></label>
+            <label>Particle boost <input type="range" min="0" max="100" step="1" data-field="particleBoost" /></label>
           </div>
         </section>
 
@@ -190,6 +202,6 @@
     </footer>
   </main>
 
-  <script type="module" src="./src/main.js?v=1.09"></script>
+  <script type="module" src="./src/main.js?v=1.10"></script>
 </body>
 </html>

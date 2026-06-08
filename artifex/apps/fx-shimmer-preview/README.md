@@ -1,22 +1,23 @@
 # Artifex Shimmer / Portal Distortion Engine Preview
 
-V1.09 makes the portal and wormhole less scratch-line based.
+V1.10 adds the controls Chris asked for and pushes portal/wormhole away from thin-line look.
 
-## V1.09 changes
+## V1.10 changes
 
 ```text
-Heat Shimmer is deliberately left visually unchanged.
-Portal Ring no longer uses a dense spiky line halo as the main rim.
-Portal Ring now uses thicker blurred cloudy plasma bands around the aperture.
-Small lightning/spark strokes remain, but they are embedded inside the cloud rim instead of dominating the shape.
-Portal default is less refraction-heavy and more cloudy/plasma based.
-Wormhole Tunnel now uses fewer broad cloudy spiral bands instead of many thin lines.
-Wormhole has only a few embedded highlight filaments, so it should read less like a scratch nest.
-Wormhole outer haze remains irregular and broken rather than a single uniform oval.
+Added Band thickness slider so portal and wormhole thickness can be pushed much further.
+Added Centre alpha slider for the middle aperture/tunnel fill.
+Added Centre fill colour and Underlay tint colour controls.
+Texture underlay can now visibly tint the centre zone instead of just sitting under a dark mask.
+Particle controls are stronger: amount, alpha and boost now produce a visibly denser result.
+Wormhole now renders in 3 spiral thickness layers.
+The thickest wormhole layer is much broader than before.
+Wormhole layers rotate at different and slower speeds.
+Heat Shimmer remains untouched.
 ```
 
 ## Test URL after upload
 
 ```text
-https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/main/artifex/apps/fx-shimmer-preview/index.html?v=109
+https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/main/artifex/apps/fx-shimmer-preview/index.html?v=110
 ```
