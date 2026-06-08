@@ -1,5 +1,5 @@
-import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.10';
-import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.10';
+import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.12';
+import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.12';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -42,30 +42,12 @@ function normalizeFieldValue(input) {
 }
 
 function updateTextureStatus() {
-  if (textureStatus) textureStatus.textContent = state.textureName ? `Loaded texture: ${state.textureName}` : 'No texture loaded.';
+  if (!textureStatus) return;
+  textureStatus.textContent = state.textureName ? `Loaded texture: ${state.textureName}` : 'No texture loaded.';
 }
 
 function syncControls() {
-  if (textureFile) textureFile.addEventListener('change', () => {
-  const file = textureFile.files && textureFile.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    const image = new Image();
-    image.onload = () => {
-      engine.setTextureImage(image);
-      state.textureName = file.name;
-      state.textureDataUrl = String(reader.result || '');
-      state.values.sourceMode = 'texture';
-      syncControls();
-      setStatus(`Loaded texture ${file.name}.`);
-    };
-    image.src = String(reader.result || '');
-  };
-  reader.readAsDataURL(file);
-});
-
-controls.forEach((input) => {
+  controls.forEach((input) => {
     const key = input.dataset.field;
     const value = state.values[key];
     if (input.type === 'checkbox') input.checked = Boolean(value);
@@ -112,7 +94,7 @@ function fxAssetJson() {
     scope: 'project',
     projectId: 'forever-bound',
     engine: 'artifex-shimmer-distortion-preview',
-    engineVersion: '1.0.10-preview',
+    engineVersion: '1.1.2-preview',
     tags: preset.tags,
     assets: state.textureName ? { texture: { kind: 'externalImageReference', editorFileName: state.textureName } } : {},
     composition: {
@@ -146,7 +128,7 @@ function editorProjectJson() {
   return {
     schema: 'artifex.fxEditorProject.v1',
     editor: 'fx-shimmer-preview',
-    editorVersion: '1.0.10-preview',
+    editorVersion: '1.1.2-preview',
     selectedPresetId: state.selectedPresetId,
     name: preset.name,
     description: preset.description,
@@ -175,24 +157,26 @@ function downloadJson(filename, payload) {
   URL.revokeObjectURL(url);
 }
 
-if (textureFile) textureFile.addEventListener('change', () => {
-  const file = textureFile.files && textureFile.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    const image = new Image();
-    image.onload = () => {
-      engine.setTextureImage(image);
-      state.textureName = file.name;
-      state.textureDataUrl = String(reader.result || '');
-      state.values.sourceMode = 'texture';
-      syncControls();
-      setStatus(`Loaded texture ${file.name}.`);
+if (textureFile) {
+  textureFile.addEventListener('change', () => {
+    const file = textureFile.files && textureFile.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        engine.setTextureImage(image);
+        state.textureName = file.name;
+        state.textureDataUrl = String(reader.result || '');
+        state.values.sourceMode = 'texture';
+        syncControls();
+        setStatus(`Loaded texture ${file.name}.`);
+      };
+      image.src = String(reader.result || '');
     };
-    image.src = String(reader.result || '');
-  };
-  reader.readAsDataURL(file);
-});
+    reader.readAsDataURL(file);
+  });
+}
 
 controls.forEach((input) => {
   input.addEventListener('input', () => {

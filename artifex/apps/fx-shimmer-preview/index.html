@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Artifex Shimmer / Portal Distortion Engine Preview</title>
-  <link rel="stylesheet" href="./styles.css?v=1.10" />
+  <link rel="stylesheet" href="./styles.css?v=1.12" />
 </head>
 <body>
   <main class="fx-shell" data-app>
@@ -15,7 +15,7 @@
           <p class="kicker">Artifex FX Engine Prototype</p>
           <h1>Shimmer / Portal Distortion Engine</h1>
         </div>
-        <span class="version">V1.10</span>
+        <span class="version">V1.12</span>
       </div>
       <div class="header-actions">
         <button type="button" data-action="play">▶️ Play</button>
@@ -30,7 +30,7 @@
       <aside class="preset-panel">
         <div class="panel-title">
           <h2>Presets</h2>
-          <p>Portal, heat shimmer, dream/refraction and transition distortion starters.</p>
+          <p>Portal, wormhole, heat shimmer and transition distortion starters.</p>
         </div>
         <div class="preset-list" data-preset-list></div>
       </aside>
@@ -51,7 +51,7 @@
 
           <div class="canvas-wrap">
             <canvas width="960" height="540" data-canvas></canvas>
-            <div class="canvas-hint">Canvas preview — optimised preview with cloudy rim, optional texture, wisps and particles.</div>
+            <div class="canvas-hint">Canvas preview — portal ring uses cloudy rim puffs; wormhole now uses slower puffy spiral arms.</div>
           </div>
         </div>
 
@@ -107,23 +107,23 @@
           <h3>Visual layer</h3>
           <div class="two">
             <label>Glow <input type="range" min="0" max="100" step="1" data-field="glow" /></label>
-            <label>Rim width <input type="range" min="0" max="100" step="1" data-field="rimWidth" /></label>
+            <label>Cloud thickness <input type="range" min="0" max="100" step="1" data-field="rimWidth" /></label>
           </div>
           <div class="two">
-            <label>Band thickness <input type="range" min="0" max="100" step="1" data-field="bandThickness" /></label>
             <label>Rim alpha <input type="range" min="0" max="100" step="1" data-field="rimAlpha" /></label>
+            <label>Middle alpha <input type="range" min="0" max="100" step="1" data-field="middleAlpha" /></label>
           </div>
           <div class="two">
             <label>Chromatic split <input type="range" min="0" max="100" step="1" data-field="chromatic" /></label>
-            <label>Centre alpha <input type="range" min="0" max="100" step="1" data-field="centreAlpha" /></label>
-          </div>
-          <div class="two">
-            <label>Blur pass <input type="range" min="0" max="100" step="1" data-field="blur" /></label>
             <label>Pulse <input type="range" min="0" max="100" step="1" data-field="pulse" /></label>
           </div>
           <div class="two">
+            <label>Blur pass <input type="range" min="0" max="100" step="1" data-field="blur" /></label>
             <label>Cloud roughness <input type="range" min="0" max="100" step="1" data-field="cloudiness" /></label>
+          </div>
+          <div class="two">
             <label>Texture strength <input type="range" min="0" max="100" step="1" data-field="textureStrength" /></label>
+            <label>Loop intensity <input type="range" min="0" max="100" step="1" data-field="loopIntensity" /></label>
           </div>
         </section>
 
@@ -144,10 +144,10 @@
             <label>Backdrop <input type="color" data-field="backdropColor" /></label>
           </div>
           <div class="two color-pair">
-            <label>Centre fill <input type="color" data-field="centreColor" /></label>
-            <label>Underlay tint <input type="color" data-field="underlayTint" /></label>
+            <label>Middle / underlay <input type="color" data-field="middleColor" /></label>
+            <label>Backdrop tint reminder: middle colour stays active even with texture mode.</label>
           </div>
-          <label>JPEG / PNG texture
+          <label>JPEG / PNG texture for portal middle
             <input type="file" accept="image/png,image/jpeg,image/webp" data-texture-file />
           </label>
           <p class="texture-status" data-texture-status>No texture loaded.</p>
@@ -171,10 +171,6 @@
             <label>Particle spread <input type="range" min="0" max="100" step="1" data-field="particleSpread" /></label>
             <label>Particle size <input type="range" min="0" max="100" step="1" data-field="particleSize" /></label>
           </div>
-          <div class="two">
-            <label>Particle alpha <input type="range" min="0" max="100" step="1" data-field="particleAlpha" /></label>
-            <label>Particle boost <input type="range" min="0" max="100" step="1" data-field="particleBoost" /></label>
-          </div>
         </section>
 
         <section class="control-card">
@@ -185,12 +181,9 @@
           </div>
           <div class="two">
             <label>Duration sec <input type="range" min="1" max="20" step="1" data-field="durationSec" /></label>
-            <label>Loop intensity <input type="range" min="0" max="100" step="1" data-field="loopIntensity" /></label>
-          </div>
-          <div class="two">
             <label>Render scale <input type="range" min="50" max="100" step="1" data-field="renderScale" /></label>
-            <label>Cell size <input type="range" min="1" max="10" step="1" data-field="cellSize" /></label>
           </div>
+          <label>Cell size <input type="range" min="1" max="10" step="1" data-field="cellSize" /></label>
           <label class="toggle wide"><input type="checkbox" data-field="loop" checked /> Loop until stopped</label>
         </section>
       </aside>
@@ -202,6 +195,6 @@
     </footer>
   </main>
 
-  <script type="module" src="./src/main.js?v=1.10"></script>
+  <script type="module" src="./src/main.js?v=1.12"></script>
 </body>
 </html>
