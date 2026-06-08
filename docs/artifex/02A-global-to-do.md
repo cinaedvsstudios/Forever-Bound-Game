@@ -126,7 +126,7 @@ Specification: `docs/artifex/07A-quest-builder.md`
 - After Puzzle Creator canonical saving exists, add real `Puzzle` block using required `puzzleId`.
 - Add registered Sound Library selectors after Sound foundation acceptance.
 - Add Test Quest only through confirmed Runtime/Playtest support.
-- Archive or reduce overlapping Quest Builder docs after acceptance.
+- Confirm Quest Builder implementation tasks against current code; overlapping local Quest Builder README material has been archived into the 2026-06-08 final Markdown audit.
 
 ## Archetype Object Creator
 
@@ -148,7 +148,7 @@ Follow-up:
 - Split large `editor-ui.js` only after validation and separately from repair work.
 - Complete real Scene/Quest/Puzzle reference listing after shared reference index exists.
 - Adopt Sound Library object sounds after Sound foundation acceptance.
-- Archive Object Creator old docs, sprite helper README notes and historical patch evidence after their useful information is represented in `08A`.
+- Confirm Object Creator validation tasks against current code; old Object Creator README/helper notes have been archived into the 2026-06-08 final Markdown audit after their useful rules were represented in `08A`.
 
 ## Effect Editor
 

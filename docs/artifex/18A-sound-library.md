@@ -362,6 +362,13 @@ Known gaps include:
 
 PR #46 is current open work for the Sound Library selector and redesigned sound workflow. It should not be treated as merged baseline until accepted.
 
+
+## Starter Placeholder Audio Notes
+
+Archived starter-placeholder audio notes identify the template audio pack as rough, original synthetic prototype material for UI actions, map actions, interactions, movement, combat, generic effects, scene transitions, reward stings and lightweight MIDI music loops. These placeholders are for wiring playback and loop behaviour only; production audio must still be promoted into final project audio paths and registered through the owning Asset Library / Sound Library workflow before it is referenced by gameplay data.
+
+The old placeholder README listed short mono MP3 sound effects and lightweight General MIDI cues as browser-friendly testing assets. That list is archive evidence, not a second active Sound Library catalogue.
+
 ## Required Future Work
 
 The active backlog, not this specification, owns implementation tasks. The main known work is:

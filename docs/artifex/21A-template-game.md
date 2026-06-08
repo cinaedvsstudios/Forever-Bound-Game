@@ -229,6 +229,11 @@ Template Game proves technical connection and reference flow.
 
 Normal day-to-day usability and remaining workflow/UI improvements should then be proven and refined while making Artifacts Adventures / Forever Bound through Artifex.
 
+
+## Archived Reference Scenario Evidence
+
+The former `artifex/artifex-adventures/19-artifex-adventure-template.md` file contains a detailed historical draft for an Artifex Adventures reference scenario, including Orient Express / Great Omar story material, passenger targets, train locations, quest flags, object archetypes and a module-demonstration checklist. Its useful role is source evidence for the Template Game proof scenario; it is not a separate active template specification.
+
 ## Source Classification
 
 `docs/artifex/21-template-game-project-contract.md` is consolidated into this reference. After this file is accepted, the old document can become archive/source evidence.
