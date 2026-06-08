@@ -1,19 +1,20 @@
 # Artifex Shimmer / Portal Distortion Engine Preview
 
-V1.04 fixes the visible blockiness by removing the square cell-copy renderer from the portal rim.
+V1.05 separates the presets visually.
 
-## V1.04 changes
+## V1.05 changes
 
 ```text
-Portal rim/wisps/particles are now smooth vector canvas layers, not sampled square cells
-The blocky low-resolution copy method is no longer used for the portal edge
-Portal defaults are less blown out and less chunky
-Heat Shimmer remains a clean haze and does not get cloudy portal blobs/wisps/particles
-Horizontal Scale and Vertical Scale still go down to 0 so the shape can collapse into a line
+Heat Shimmer was not touched visually.
+Portal no longer uses the weird oval blob rim shapes.
+Portal rim is now broken arcs, tiny haze points, thin wisps and particles.
+Dream Ripple now has a soft ripple/screen-overlay renderer instead of portal rim behaviour.
+Transition Tear now has a vertical tear/glitch renderer instead of portal rim behaviour.
+Default Dream and Transition settings are changed so they no longer look like Portal Threshold.
 ```
 
 ## Test URL after upload
 
 ```text
-https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/main/artifex/apps/fx-shimmer-preview/index.html?v=104
+https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/main/artifex/apps/fx-shimmer-preview/index.html?v=105
 ```

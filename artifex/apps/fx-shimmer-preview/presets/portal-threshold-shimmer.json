@@ -6,7 +6,7 @@
   "scope": "project",
   "projectId": "forever-bound",
   "engine": "artifex-shimmer-distortion-preview",
-  "engineVersion": "1.0.4-preview",
+  "engineVersion": "1.0.5-preview",
   "tags": [
     "portal",
     "route-exit",
