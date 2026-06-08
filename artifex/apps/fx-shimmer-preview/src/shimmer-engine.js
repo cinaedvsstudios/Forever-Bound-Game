@@ -459,72 +459,75 @@ export class ShimmerDistortionEngine {
     ctx.restore();
   }
 
+
   drawWormhole(ctx, g, t) {
-    const v = this.values;
-    this.drawWormholeField(ctx, g, t);
-    this.drawWormholeNebulaArms(ctx, g, t);
-    this.drawWormholeFineFilaments(ctx, g, t);
-    this.drawWormholeVanishingPoint(ctx, g, t);
+    this.drawWormholeSoftField(ctx, g, t);
+    this.drawWormholeBlobSpiral(ctx, g, t);
+    this.drawWormholePullCore(ctx, g, t);
     this.drawWormholeParticles(ctx, g, t);
   }
 
-  drawWormholeField(ctx, g, t) {
+  drawWormholeSoftField(ctx, g, t) {
     const v = this.values;
-    const spin = scale(0.015, 0.22, (v.waveSpeed ?? 38) / 100) * ((v.swirl ?? 80) >= 0 ? 1 : -1);
+    const speed = Math.pow((v.waveSpeed ?? 24) / 100, 2) * 0.16;
+    const direction = (v.swirl ?? 80) >= 0 ? 1 : -1;
 
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
 
-    // Dim, uneven depth field. This replaces the big static blue oval.
-    const deep = ctx.createRadialGradient(g.cx, g.cy, g.base * 0.05, g.cx, g.cy, Math.max(g.rx, g.ry) * 1.62);
-    deep.addColorStop(0.00, rgba('#000000', 0.76));
-    deep.addColorStop(0.12, rgba(v.middleColor || '#07102b', 0.42));
-    deep.addColorStop(0.34, rgba(v.coreColor, 0.10));
-    deep.addColorStop(0.74, rgba(v.rimColor, 0.035));
-    deep.addColorStop(1.00, rgba(v.backdropColor || '#020611', 0));
-    ctx.fillStyle = deep;
+    const bg = ctx.createRadialGradient(g.cx, g.cy, g.base * 0.06, g.cx, g.cy, Math.max(g.rx, g.ry) * 1.55);
+    bg.addColorStop(0.00, rgba('#000000', 0.56));
+    bg.addColorStop(0.16, rgba(v.coreColor, 0.16));
+    bg.addColorStop(0.48, rgba(v.rimColor, 0.060));
+    bg.addColorStop(1.00, rgba(v.backdropColor || '#020611', 0));
+    ctx.fillStyle = bg;
     ctx.beginPath();
-    ctx.ellipse(g.cx, g.cy, g.rx * 1.34, g.ry * 1.18, 0, 0, TAU);
+    ctx.ellipse(g.cx, g.cy, g.rx * 1.26, g.ry * 1.04, 0, 0, TAU);
     ctx.fill();
 
-    // Low-cost approximation of a second-pass radial warp: sample the already-rendered grid in offset strips.
-    // This gives the background a pulled/swallowed feel without doing an expensive full pixel shader.
-    const strips = 54;
-    ctx.globalAlpha = scale(0.05, 0.24, (v.refraction ?? 36) / 100);
-    ctx.beginPath();
-    ctx.ellipse(g.cx, g.cy, g.rx * 1.06, g.ry * 0.96, 0, 0, TAU);
-    ctx.clip();
-    for (let i = 0; i < strips; i += 1) {
-      const q = i / (strips - 1);
-      const y = g.cy - g.ry * 1.02 + q * g.ry * 2.04;
-      const ny = (y - g.cy) / Math.max(1, g.ry);
-      const reach = Math.sqrt(Math.max(0, 1 - ny * ny));
-      const sx = g.cx - g.rx * reach;
-      const sw = g.rx * 2 * reach;
-      const phase = q * TAU * 2.2 + t * spin * 7;
-      const pull = Math.sin(phase) * scale(1, 18, (v.strength ?? 48) / 100) * (1 - Math.abs(ny));
-      const twist = Math.cos(phase * 0.7) * scale(0, 9, (v.swirl ?? 80) / 100) * reach;
-      ctx.drawImage(this.gridCanvas, sx, y, sw, 2, sx + pull + twist, y, sw, 2);
+    // Cheap moving warp suggestion: sparse curved horizontal wisps, not full strip-copy / shader emulation.
+    ctx.filter = 'blur(3px)';
+    ctx.lineCap = 'round';
+    const bands = 10;
+    for (let i = 0; i < bands; i += 1) {
+      const seed = i * 12.41;
+      const yOff = scale(-0.78, 0.78, i / Math.max(1, bands - 1));
+      const width = g.rx * scale(0.55, 1.10, 1 - Math.abs(yOff));
+      const y = g.cy + yOff * g.ry;
+      const alpha = scale(0.018, 0.060, 1 - Math.abs(yOff)) * scale(0.45, 1.05, (v.rimAlpha ?? 52) / 100);
+      const color = i % 2 ? v.rimColor : v.coreColor;
+      ctx.strokeStyle = rgba(color, alpha);
+      ctx.lineWidth = Math.max(2, g.base * scale(0.006, 0.018, (v.rimWidth ?? 70) / 100));
+      ctx.beginPath();
+      for (let s = 0; s <= 32; s += 1) {
+        const q = s / 32;
+        const x = g.cx - width + q * width * 2;
+        const curve = Math.sin(q * TAU * 1.3 + t * speed * direction * 12 + seed) * g.ry * 0.06;
+        const pull = Math.sin((q - 0.5) * Math.PI) * g.ry * 0.035;
+        const yy = y + curve + pull;
+        if (s === 0) ctx.moveTo(x, yy);
+        else ctx.lineTo(x, yy);
+      }
+      ctx.stroke();
     }
+
     ctx.restore();
   }
 
-  drawWormholeNebulaArms(ctx, g, t) {
+  drawWormholeBlobSpiral(ctx, g, t) {
     const v = this.values;
-    const dir = (v.swirl ?? 80) >= 0 ? 1 : -1;
-    const spin = scale(0.025, 0.34, (v.wispSpeed ?? 38) / 100) * dir;
-    const turns = scale(2.25, 5.80, Math.abs(v.swirl ?? 84) / 100);
-    const thickness = g.base * scale(0.035, 0.165, (v.rimWidth ?? 86) / 100);
-    const alphaMul = scale(0.35, 1.15, (v.rimAlpha ?? 64) / 100);
-    const cloud = scale(0.35, 1.25, (v.cloudiness ?? 82) / 100);
-    const rough = scale(0.018, 0.13, (v.noise ?? 24) / 100);
+    const speed = Math.pow((v.wispSpeed ?? 20) / 100, 2) * 0.22;
+    const direction = (v.swirl ?? 80) >= 0 ? 1 : -1;
+    const turns = scale(1.85, 4.40, Math.abs(v.swirl ?? 80) / 100);
+    const thickness = g.base * scale(0.018, 0.095, (v.rimWidth ?? 82) / 100);
+    const cloudiness = scale(0.55, 1.25, (v.cloudiness ?? 80) / 100);
+    const alphaMul = scale(0.35, 1.10, (v.rimAlpha ?? 54) / 100);
 
-    // Fewer paths, thick transparent strokes, then soft blobs. This is closer to nebula/wormhole references
-    // and much faster than drawing hundreds of heavy blurred ellipses.
+    // Three layers, but no stroked polygon paths. These are soft puffs along spiral arms.
     const layers = [
-      { arms: 3, width: 5.2, blur: 12, alpha: 0.065, speed: 0.38, stretch: 1.04 },
-      { arms: 4, width: 2.8, blur: 7, alpha: 0.100, speed: 0.65, stretch: 0.98 },
-      { arms: 5, width: 1.35, blur: 2, alpha: 0.145, speed: 1.00, stretch: 0.94 }
+      { arms: 3, steps: 13, size: 4.7, blur: 10, alpha: 0.070, speed: 0.22, radius: 1.03 },
+      { arms: 4, steps: 15, size: 2.7, blur: 6, alpha: 0.095, speed: 0.42, radius: 0.96 },
+      { arms: 5, steps: 16, size: 1.35, blur: 3, alpha: 0.125, speed: 0.68, radius: 0.91 }
     ];
 
     ctx.save();
@@ -533,145 +536,66 @@ export class ShimmerDistortionEngine {
     for (const [layerIndex, layer] of layers.entries()) {
       ctx.save();
       ctx.filter = `blur(${layer.blur}px)`;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
       for (let arm = 0; arm < layer.arms; arm += 1) {
-        const seed = layerIndex * 100 + arm * 23.531;
-        const baseAngle = (arm / layer.arms) * TAU + hash1(seed) * 0.46 + t * spin * layer.speed;
-        const colour = (arm + layerIndex) % 3 === 0 ? v.coreColor : ((arm + layerIndex) % 3 === 1 ? v.rimColor : v.accentColor);
-        const altColour = (arm + layerIndex) % 2 === 0 ? v.rimColor : v.coreColor;
+        const seed = layerIndex * 100 + arm * 41.19;
+        const startAngle = (arm / layer.arms) * TAU + hash1(seed) * 0.55 + t * speed * layer.speed * direction;
+        const colorA = (arm + layerIndex) % 3 === 0 ? v.coreColor : ((arm + layerIndex) % 3 === 1 ? v.rimColor : v.accentColor);
+        const colorB = (arm + layerIndex) % 2 === 0 ? v.rimColor : v.coreColor;
 
-        // Main cloudy ribbon.
-        ctx.strokeStyle = rgba(colour, layer.alpha * alphaMul);
-        ctx.lineWidth = Math.max(2, thickness * layer.width);
-        ctx.shadowColor = colour;
-        ctx.shadowBlur = thickness * layer.width * 0.55;
-        ctx.beginPath();
-        const steps = 72;
-        for (let s = 0; s <= steps; s += 1) {
-          const p = s / steps;
-          const falloff = Math.pow(1 - p, 0.86);
-          const a = baseAngle + dir * p * TAU * turns;
-          const n = fbm(Math.cos(a) * 1.7 + seed * 0.07 + p, Math.sin(a) * 1.7 - seed * 0.04 + t * 0.045, 4);
-          const jitter = (n - 0.5) * g.base * rough * (1 + layerIndex * 0.30);
-          const x = g.cx + Math.cos(a) * (g.rx * falloff * layer.stretch + jitter);
-          const y = g.cy + Math.sin(a) * (g.ry * falloff * 0.92 * layer.stretch + jitter * 0.70);
-          if (s === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
+        for (let step = 0; step < layer.steps; step += 1) {
+          const p = step / Math.max(1, layer.steps - 1);
+          const fade = Math.sin(p * Math.PI);
+          const radius = Math.pow(1 - p, 0.70);
+          const angle = startAngle + direction * p * TAU * turns;
+          const noise = (hash2(seed + step * 0.71, Math.floor(t * 2) * 0.13 + layerIndex) - 0.5) * g.base * 0.035 * cloudiness;
+          const x = g.cx + Math.cos(angle) * (g.rx * radius * layer.radius + noise);
+          const y = g.cy + Math.sin(angle) * (g.ry * radius * 0.88 * layer.radius + noise * 0.72);
 
-        // Offset colour pass gives the cloud ribbon body, not a scratch line.
-        ctx.strokeStyle = rgba(altColour, layer.alpha * alphaMul * 0.55);
-        ctx.lineWidth = Math.max(2, thickness * layer.width * 0.58);
-        ctx.shadowColor = altColour;
-        ctx.shadowBlur = thickness * layer.width * 0.32;
-        ctx.beginPath();
-        for (let s = 0; s <= steps; s += 1) {
-          const p = s / steps;
-          const falloff = Math.pow(1 - p, 0.82);
-          const a = baseAngle + 0.24 + dir * p * TAU * (turns * 0.92);
-          const n = fbm(Math.cos(a) * 1.45 + seed * 0.05, Math.sin(a) * 1.45 + p * 1.7 + t * 0.035, 3);
-          const jitter = (n - 0.5) * g.base * rough * 0.8;
-          const x = g.cx + Math.cos(a) * (g.rx * falloff * layer.stretch + jitter);
-          const y = g.cy + Math.sin(a) * (g.ry * falloff * 0.90 * layer.stretch + jitter * 0.70);
-          if (s === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
+          const major = thickness * layer.size * scale(0.55, 1.10, fade) * scale(0.80, 1.25, hash1(seed + step * 1.7));
+          const minor = major * scale(0.28, 0.58, hash1(seed + step * 2.1));
+          const alpha = layer.alpha * alphaMul * fade * scale(0.50, 1.10, hash1(seed + step * 2.7));
+          const color = step % 4 === 0 ? colorB : colorA;
+
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(angle + Math.PI / 2 + (hash1(seed + step) - 0.5) * 0.7);
+          ctx.fillStyle = rgba(color, alpha);
+          ctx.beginPath();
+          ctx.ellipse(0, 0, Math.max(1, major), Math.max(1, minor), 0, 0, TAU);
+          ctx.fill();
+          ctx.restore();
         }
-        ctx.stroke();
       }
       ctx.restore();
     }
 
-    // Soft broken outer nebula patches rotate too, so the cloud body is animated, not just the particles.
-    ctx.save();
-    ctx.filter = `blur(${scale(8, 22, (v.blur ?? 34) / 100)}px)`;
-    const blobCount = Math.round(scale(8, 24, (v.cloudiness ?? 82) / 100));
-    for (let i = 0; i < blobCount; i += 1) {
-      const seed = i * 7.211;
-      const a = TAU * hash1(seed) + t * spin * scale(0.35, 1.1, hash1(seed + 2));
-      const r = scale(0.45, 1.20, hash1(seed + 3));
-      const x = g.cx + Math.cos(a) * g.rx * r;
-      const y = g.cy + Math.sin(a) * g.ry * r * 0.92;
-      const major = thickness * scale(1.2, 3.8, hash1(seed + 4)) * cloud;
-      const minor = major * scale(0.28, 0.58, hash1(seed + 5));
-      const colour = i % 4 === 0 ? v.accentColor : (i % 2 === 0 ? v.coreColor : v.rimColor);
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(a + Math.PI / 2 + hash1(seed + 6));
-      ctx.fillStyle = rgba(colour, scale(0.025, 0.09, hash1(seed + 7)) * alphaMul);
-      ctx.beginPath();
-      ctx.ellipse(0, 0, major, minor, 0, 0, TAU);
-      ctx.fill();
-      ctx.restore();
-    }
-    ctx.restore();
-
     ctx.restore();
   }
 
-  drawWormholeFineFilaments(ctx, g, t) {
-    const v = this.values;
-    const dir = (v.swirl ?? 80) >= 0 ? 1 : -1;
-    const spin = scale(0.025, 0.34, (v.wispSpeed ?? 38) / 100) * dir;
-    const turns = scale(2.3, 5.5, Math.abs(v.swirl ?? 84) / 100);
-    const count = Math.round(scale(4, 14, (v.wispAmount ?? 64) / 100));
-
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.filter = 'blur(0.8px)';
-    ctx.lineCap = 'round';
-
-    for (let i = 0; i < count; i += 1) {
-      const seed = i * 31.13;
-      const baseAngle = TAU * hash1(seed) + t * spin * scale(0.65, 1.35, hash1(seed + 1));
-      const colour = i % 3 === 0 ? v.accentColor : (i % 2 === 0 ? v.coreColor : v.rimColor);
-      ctx.strokeStyle = rgba(colour, scale(0.035, 0.12, hash1(seed + 2)) * scale(0.45, 1.15, (v.rimAlpha ?? 64) / 100));
-      ctx.lineWidth = Math.max(1, g.base * scale(0.003, 0.009, (v.rimWidth ?? 86) / 100));
-      ctx.shadowColor = colour;
-      ctx.shadowBlur = g.base * 0.018;
-      ctx.beginPath();
-      const steps = 54;
-      for (let s = 0; s <= steps; s += 1) {
-        const p = s / steps;
-        const falloff = Math.pow(1 - p, 1.10);
-        const a = baseAngle + dir * p * TAU * turns;
-        const jitter = (fbm(Math.cos(a) * 3.1 + seed, Math.sin(a) * 3.1 + p + t * 0.035, 3) - 0.5) * g.base * 0.026;
-        const x = g.cx + Math.cos(a) * (g.rx * falloff + jitter);
-        const y = g.cy + Math.sin(a) * (g.ry * falloff * 0.92 + jitter * 0.65);
-        if (s === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  drawWormholeVanishingPoint(ctx, g, t) {
+  drawWormholePullCore(ctx, g, t) {
     const v = this.values;
     ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
 
-    // No decorative centre ring. Just a small dark gravitational pull with a faint inner glow.
-    const glow = ctx.createRadialGradient(g.cx, g.cy, 0, g.cx, g.cy, g.base * 0.30);
-    glow.addColorStop(0.00, rgba(v.coreColor, 0.16));
-    glow.addColorStop(0.22, rgba(v.coreColor, 0.20));
-    glow.addColorStop(0.58, rgba(v.rimColor, 0.06));
+    ctx.globalCompositeOperation = 'lighter';
+    const glow = ctx.createRadialGradient(g.cx, g.cy, 0, g.cx, g.cy, g.base * 0.34);
+    glow.addColorStop(0.00, rgba(v.coreColor, 0.46));
+    glow.addColorStop(0.22, rgba(v.coreColor, 0.28));
+    glow.addColorStop(0.58, rgba(v.rimColor, 0.060));
     glow.addColorStop(1.00, rgba(v.rimColor, 0));
     ctx.fillStyle = glow;
     ctx.beginPath();
-    ctx.ellipse(g.cx, g.cy, g.rx * 0.22, g.ry * 0.18, 0, 0, TAU);
+    ctx.ellipse(g.cx, g.cy, g.rx * 0.17, g.ry * 0.15, 0, 0, TAU);
     ctx.fill();
 
+    // No octagonal line nest / no decorative centre ring: only a dark vanishing point.
     ctx.globalCompositeOperation = 'source-over';
-    const hole = ctx.createRadialGradient(g.cx, g.cy, 0, g.cx, g.cy, g.base * 0.11);
+    const hole = ctx.createRadialGradient(g.cx, g.cy, 0, g.cx, g.cy, g.base * 0.13);
     hole.addColorStop(0.00, rgba('#000000', 0.98));
-    hole.addColorStop(0.48, rgba('#020510', 0.86));
+    hole.addColorStop(0.50, rgba('#020510', 0.88));
     hole.addColorStop(1.00, rgba('#000000', 0));
     ctx.fillStyle = hole;
     ctx.beginPath();
-    ctx.ellipse(g.cx, g.cy, g.rx * 0.075, g.ry * 0.064, 0, 0, TAU);
+    ctx.ellipse(g.cx, g.cy, g.rx * 0.075, g.ry * 0.060, 0, 0, TAU);
     ctx.fill();
 
     ctx.restore();
@@ -679,31 +603,32 @@ export class ShimmerDistortionEngine {
 
   drawWormholeParticles(ctx, g, t) {
     const v = this.values;
-    const count = Math.round(scale(0, 180, (v.particleAmount ?? 54) / 100));
+    const count = Math.round(scale(0, 150, (v.particleAmount ?? 54) / 100));
     if (!count) return;
 
-    const spin = scale(0.025, 0.34, (v.particleSpeed ?? 44) / 100) * ((v.swirl ?? 80) >= 0 ? 1 : -1);
-    const spread = scale(0.08, 0.75, (v.particleSpread ?? 72) / 100);
+    const speed = Math.pow((v.particleSpeed ?? 40) / 100, 2) * 0.52;
+    const spread = scale(0.08, 0.72, (v.particleSpread ?? 72) / 100);
     const sizeBase = scale(0.7, 5.2, (v.particleSize ?? 24) / 100);
-    const turns = scale(2.2, 5.4, Math.abs(v.swirl ?? 84) / 100);
-    const dir = (v.swirl ?? 80) >= 0 ? 1 : -1;
+    const turns = scale(1.80, 4.30, Math.abs(v.swirl ?? 84) / 100);
+    const direction = (v.swirl ?? 80) >= 0 ? 1 : -1;
 
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
 
     for (let i = 0; i < count; i += 1) {
       const seed = i * 17.17;
-      const p = fract(t * spin * 0.55 + hash1(seed + 2.9));
-      const inward = Math.pow(1 - p, 1.1);
+      const p = fract(t * speed * 0.35 + hash1(seed + 2.9));
+      const inward = Math.pow(1 - p, 1.08);
       const start = TAU * hash1(seed + 1.1);
-      const a = start + dir * p * TAU * turns + Math.sin(t * 0.3 + seed) * spread;
-      const x = g.cx + Math.cos(a) * g.rx * scale(0.08, 1.12, inward);
-      const y = g.cy + Math.sin(a) * g.ry * scale(0.07, 1.02, inward);
+      const angle = start + direction * p * TAU * turns + Math.sin(t * 0.24 + seed) * spread;
+      const x = g.cx + Math.cos(angle) * g.rx * scale(0.08, 1.10, inward);
+      const y = g.cy + Math.sin(angle) * g.ry * scale(0.06, 0.98, inward);
       const size = sizeBase * (0.40 + inward * 0.85) * (0.65 + hash1(seed + 3.6) * 0.75);
-      const alpha = (0.14 + hash1(seed + 4.2) * 0.42) * Math.sin(p * Math.PI);
-      const colour = i % 3 === 0 ? v.accentColor : (i % 2 === 0 ? v.coreColor : v.rimColor);
-      ctx.fillStyle = rgba(colour, alpha);
-      ctx.shadowColor = colour;
+      const alpha = (0.16 + hash1(seed + 4.2) * 0.42) * Math.sin(p * Math.PI);
+      const color = i % 3 === 0 ? v.accentColor : (i % 2 === 0 ? v.coreColor : v.rimColor);
+
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.shadowColor = color;
       ctx.shadowBlur = size * 5;
       ctx.beginPath();
       ctx.arc(x, y, size, 0, TAU);
