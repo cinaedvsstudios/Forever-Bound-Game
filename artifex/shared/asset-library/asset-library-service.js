@@ -78,6 +78,10 @@ function uniqueStrings(values) {
   return Array.from(new Set(safeArray(values).map(text).filter(Boolean)));
 }
 
+function normalizeAssetTaxonomy(value, fallback = 'image') {
+  return text(value || fallback).toLowerCase();
+}
+
 export function safeAssetSlug(value, fallback = 'asset') {
   return text(value || fallback)
     .normalize('NFKD')
@@ -127,8 +131,8 @@ export function validateStagedMediaPath(pathValue) {
 export function normalizeAssetRecord(record = {}, options = {}) {
   const now = isoNow(options.now);
   const id = text(record.id || record.assetId);
-  const type = safeAssetSlug(record.type || record.category || 'image');
-  const kind = safeAssetSlug(record.kind || record.assetKind || type);
+  const type = normalizeAssetTaxonomy(record.type || record.category, 'image');
+  const kind = normalizeAssetTaxonomy(record.kind || record.assetKind, type);
   const fileValidation = validateFinalAssetPath(record.file || record.path || record.resourcePath || record.finalPath);
   const errors = [];
 
@@ -265,8 +269,8 @@ export async function promoteStagedMediaAsset(client, request = {}, options = {}
   const sourceValidation = validateStagedMediaPath(request.sourcePath || request.originPath);
   const finalValidation = validateFinalAssetPath(request.finalPath || request.file);
   const errors = [...sourceValidation.errors, ...finalValidation.errors];
-  const type = safeAssetSlug(request.type || 'image');
-  const kind = safeAssetSlug(request.kind || request.assetKind || type);
+  const type = normalizeAssetTaxonomy(request.type, 'image');
+  const kind = normalizeAssetTaxonomy(request.kind || request.assetKind, type);
 
   if (!NON_AUDIO_TYPES.has(type)) errors.push(`Non-audio promotion does not support asset type: ${type}.`);
   if (!NON_AUDIO_KINDS.has(kind)) errors.push(`Non-audio promotion does not support asset kind: ${kind}.`);
