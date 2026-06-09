@@ -16,9 +16,9 @@
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; min-height: 100%; }
+html, body { margin: 0; height: 100%; overflow: hidden; }
 body {
-  min-height: 100vh;
+  height: 100vh;
   background:
     radial-gradient(circle at 20% 10%, rgba(53, 212, 216, .16), transparent 26%),
     radial-gradient(circle at 78% 0%, rgba(123, 67, 216, .14), transparent 28%),
@@ -34,8 +34,11 @@ button, input, select {
 
 .fx-shell {
   width: min(1880px, calc(100vw - 32px));
-  min-height: calc(100vh - 32px);
+  height: calc(100vh - 32px);
+  min-height: 0;
   margin: 16px auto;
+  display: flex;
+  flex-direction: column;
   border: 1px solid rgba(176, 100, 50, .45);
   border-radius: 22px;
   background: linear-gradient(180deg, rgba(30, 18, 14, .98), rgba(11, 8, 7, .98));
@@ -135,7 +138,9 @@ button.primary {
   display: grid;
   grid-template-columns: 290px minmax(640px, 1fr) 390px;
   gap: 0;
-  min-height: calc(100vh - 136px);
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
 }
 
 .preset-panel,
@@ -143,12 +148,19 @@ button.primary {
   border-right: 1px solid var(--border);
   background: rgba(15, 9, 8, .88);
   padding: 18px 16px;
-  overflow: auto;
+  min-height: 0;
 }
 
 .control-panel {
   border-right: 0;
   border-left: 1px solid var(--border);
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+
+.preset-panel {
+  overflow: hidden;
 }
 
 .panel-title h2,
@@ -205,7 +217,10 @@ button.primary {
 
 .preview-panel {
   padding: 18px;
-  overflow: auto;
+  overflow: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .canvas-card,
@@ -220,6 +235,7 @@ button.primary {
 
 .canvas-card {
   overflow: hidden;
+  flex: 0 0 auto;
 }
 
 .preview-toolbar {
@@ -277,10 +293,17 @@ canvas {
 .json-panel {
   margin-top: 16px;
   padding: 14px;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 pre {
-  max-height: 260px;
+  max-height: none;
+  flex: 1 1 auto;
+  min-height: 90px;
   overflow: auto;
   margin: 0;
   padding: 14px;
@@ -452,4 +475,15 @@ input[type="file"]{width:100%;min-height:38px;border:1px solid rgba(53,212,216,.
   pointer-events: none;
   width: 1px;
   height: 1px;
+}
+
+
+/* V1.20: keep the preview visible. The right settings panel is the scrolling area. */
+@media (min-width: 1321px) {
+  .canvas-wrap {
+    max-height: min(58vh, 720px);
+  }
+  .control-panel {
+    max-height: 100%;
+  }
 }
