@@ -13,6 +13,7 @@ import {
 } from './fx-runtime.js';
 import { toRuntimeLayer } from './physics-scale.js';
 import { drawTextParticle, isTextLayer, spawnTextParticlesForLayer } from './text-runtime.js';
+import { drawStructuredEffectLayer, isStructuredEffectLayer } from './portal-wormhole-runtime.js';
 
 let canvas;
 let ctx;
@@ -146,7 +147,7 @@ function tick(now) {
 function updateParticles() {
   const particleCap = editorState.emergencyLiteMode ? 80 : (editorState.lowPerformanceMode ? 260 : 900);
   for (const layer of editorState.composition.layers) {
-    if (layer.visible !== false && editorState.particles.length < particleCap) {
+    if (layer.visible !== false && !isStructuredEffectLayer(layer) && editorState.particles.length < particleCap) {
       const runtimeLayer = toRuntimeLayer(layer);
       const densityScale = editorState.emergencyLiteMode ? 0.18 : (editorState.lowPerformanceMode ? 0.45 : 1);
       const spawned = isTextLayer(runtimeLayer)
@@ -188,6 +189,10 @@ function draw() {
   }
 
   if (editorState.showGrid) drawGrid(scale);
+
+  for (const layer of editorState.composition.layers) {
+    drawStructuredEffectLayer(ctx, toRuntimeLayer(layer), scale, renderTime);
+  }
 
   for (const item of editorState.particles) {
     const layer = editorState.composition.layers.find((candidate) => candidate.id === item.layerId);
