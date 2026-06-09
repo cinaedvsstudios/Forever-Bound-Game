@@ -1,10 +1,9 @@
-// Horse Forest Runner V6
-// Fixed POV horse ride: sky/background, readable floor/path, and PNG billboard cards.
+// Horse Forest Runner V7
+// POV horse ride using separate static sky/horizon layers and moving world objects.
+// Fixes the broken V6 truncation and the V3/V4 stretched texture band problem.
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
 
-const ROOT='./assets/obstacle-course/horse-forest/';
-const A={
- sky:'sky/forest_sky_clouds_1920x1080.png',
- horizon:'backgrounds/forest_horizon_misty_pines_01_740x493.png',
- trees:['trees/tree_pine_placeholder_01.png','trees/tree_broadleaf_01
+const ROOT = './assets/obstacle-course/horse-forest/';
+const ASSETS = {
+  sky: 'sky/forest_sky_clouds_1920x108
