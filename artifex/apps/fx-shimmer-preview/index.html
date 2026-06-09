@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Artifex Shimmer / Portal Distortion Engine Preview</title>
-  <link rel="stylesheet" href="./styles.css?v=1.21" />
+  <link rel="stylesheet" href="./styles.css?v=1.22" />
 </head>
 <body>
   <main class="fx-shell" data-app>
@@ -15,7 +15,7 @@
           <p class="kicker">Artifex FX Engine Prototype</p>
           <h1>Shimmer / Portal Distortion Engine</h1>
         </div>
-        <span class="version">V1.21</span>
+        <span class="version">V1.22</span>
       </div>
       <div class="header-actions">
         <button type="button" data-action="play">▶️ Play</button>
@@ -51,7 +51,7 @@
 
           <div class="canvas-wrap">
             <canvas width="960" height="540" data-canvas></canvas>
-            <div class="canvas-hint">Canvas preview — preview stays visible; arm/cloud opacity now hard-isolates wormhole layers.</div>
+            <div class="canvas-hint">Canvas preview — sticky display; stronger arms, cloud stagger, pulse controls and particle emission.</div>
           </div>
         </div>
 
@@ -174,7 +174,11 @@
           </div>
           <div class="two">
             <label>Arm thickness <input type="range" min="0" max="100" step="1" data-field="armThickness" /></label>
+            <label>Arm radius <input type="range" min="0" max="100" step="1" data-field="armRadius" /></label>
+          </div>
+          <div class="two">
             <label>Arm softness <input type="range" min="0" max="100" step="1" data-field="armSoftness" /></label>
+            <label>Arm pulse strength <input type="range" min="0" max="100" step="1" data-field="armPulseStrength" /></label>
           </div>
           <div class="two">
             <label>Arm rotation speed <input type="range" min="0" max="100" step="1" data-field="armSpeed" /></label>
@@ -192,6 +196,10 @@
             <label>Cloud size <input type="range" min="0" max="100" step="1" data-field="orbitCloudSize" /></label>
             <label>Orbit radius <input type="range" min="0" max="100" step="1" data-field="orbitCloudRadius" /></label>
           </div>
+          <div class="two">
+            <label>Cloud stagger <input type="range" min="0" max="100" step="1" data-field="orbitCloudStagger" /></label>
+            <label>Cloud pulse strength <input type="range" min="0" max="100" step="1" data-field="orbitCloudPulseStrength" /></label>
+          </div>
           <label>Cloud orbit speed <input type="range" min="0" max="100" step="1" data-field="orbitCloudSpeed" /></label>
         </section>
 
@@ -203,11 +211,29 @@
           </div>
           <div class="two">
             <label>Particle speed <input type="range" min="0" max="100" step="1" data-field="particleSpeed" /></label>
-            <label>Particle spread <input type="range" min="0" max="100" step="1" data-field="particleSpread" /></label>
+            <label>Particle pulse strength <input type="range" min="0" max="100" step="1" data-field="particlePulseStrength" /></label>
           </div>
           <div class="two">
+            <label>Particle spread <input type="range" min="0" max="100" step="1" data-field="particleSpread" /></label>
             <label>Particle size <input type="range" min="0" max="100" step="1" data-field="particleSize" /></label>
-            <label>Particle glow <input type="range" min="0" max="100" step="1" data-field="particleGlow" /></label>
+          </div>
+          <label>Particle glow <input type="range" min="0" max="100" step="1" data-field="particleGlow" /></label>
+        </section>
+
+        <section class="control-card">
+          <h3>Emission</h3>
+          <div class="two">
+            <label>Emission amount <input type="range" min="0" max="100" step="1" data-field="emissionAmount" /></label>
+            <label>Emission opacity <input type="range" min="0" max="100" step="1" data-field="emissionOpacity" /></label>
+          </div>
+          <div class="two">
+            <label>Emission speed <input type="range" min="0" max="100" step="1" data-field="emissionSpeed" /></label>
+            <label>Emission direction ° <input type="range" min="0" max="360" step="1" data-field="emissionDirection" /></label>
+          </div>
+          <label class="toggle wide"><input type="checkbox" data-field="emissionVacuum" /> Vacuum / suck particles inward</label>
+          <div class="two">
+            <label>Trail length <input type="range" min="0" max="100" step="1" data-field="emissionTrailLength" /></label>
+            <label>Trail opacity <input type="range" min="0" max="100" step="1" data-field="emissionTrailOpacity" /></label>
           </div>
         </section>
 
@@ -274,6 +300,6 @@
     </footer>
   </main>
 
-  <script type="module" src="./src/main.js?v=1.21"></script>
+  <script type="module" src="./src/main.js?v=1.22"></script>
 </body>
 </html>

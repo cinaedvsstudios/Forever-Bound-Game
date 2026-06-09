@@ -1,25 +1,25 @@
 # Artifex Shimmer / Portal Distortion Engine Preview
 
-V1.21 fixes the desktop scrolling behaviour and hard-isolates wormhole opacity layers.
+V1.22 implements the requested wormhole control expansion without changing Portal Ring visuals.
 
-## V1.21 changes
+## V1.22 changes
 
 ```text
-The desktop layout no longer stacks the controls underneath the preview at laptop widths.
-The preview/display area stays visible.
-Only the right settings panel scrolls on desktop.
-The preset list also scrolls independently if needed.
-Wormhole base glow is reduced so it no longer visually masks the opacity sliders.
-Arm opacity now controls a new obvious arm-lobe layer, the broad rotating arm wash and the spiral arms.
-Arm amount at 0 removes the arm layer.
-Orbit Cloud opacity now controls the depth mist and orbiting cloud puffs with a stronger visible range.
-Orbit Cloud opacity at 0 removes that layer.
-Particle opacity remains separate.
-Portal Ring remains visually unchanged.
+Arm Amount and Arm Opacity are boosted internally by 2x so the full slider range is visibly stronger.
+Added Arm Radius.
+Added Arm Pulse Strength.
+Added Cloud Stagger so orbit clouds are no longer locked to one even radius.
+Added Cloud Pulse Strength.
+Added Particle Pulse Strength.
+Added a separate Emission card.
+Emission supports amount, opacity, speed, direction, vacuum mode, trail length and trail opacity.
+Emission direction 0 means radial/all directions; any other value acts as a directional angle.
+Vacuum reverses emission so particles are pulled inward instead of emitted outward.
+The desktop layout is hard-locked so the preview stays visible and the right controls panel scrolls independently.
 ```
 
 ## Test URL after upload
 
 ```text
-https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/main/artifex/apps/fx-shimmer-preview/index.html?v=121
+https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/main/artifex/apps/fx-shimmer-preview/index.html?v=122
 ```

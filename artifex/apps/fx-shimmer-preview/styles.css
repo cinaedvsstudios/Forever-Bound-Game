@@ -478,7 +478,7 @@ input[type="file"]{width:100%;min-height:38px;border:1px solid rgba(53,212,216,.
 }
 
 
-/* V1.21: keep the preview visible. The right settings panel is the scrolling area. */
+/* V1.22: keep the preview visible. The right settings panel is the scrolling area. */
 @media (min-width: 1321px) {
   .canvas-wrap {
     max-height: min(58vh, 720px);
@@ -489,7 +489,7 @@ input[type="file"]{width:100%;min-height:38px;border:1px solid rgba(53,212,216,.
 }
 
 
-/* V1.21: fixed desktop layout. The preview stays visible; only the settings panel scrolls. */
+/* V1.22: fixed desktop layout. The preview stays visible; only the settings panel scrolls. */
 .fx-shell {
   height: calc(100vh - 32px);
   max-height: calc(100vh - 32px);
@@ -594,5 +594,61 @@ input[type="file"]{width:100%;min-height:38px;border:1px solid rgba(53,212,216,.
     height: auto;
     max-height: none;
     overflow: visible !important;
+  }
+}
+
+
+/* V1.22: hard lock the preview layout; the app itself does not scroll on desktop. */
+@media (min-width: 981px) {
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden !important;
+  }
+
+  .fx-shell {
+    position: fixed;
+    inset: 16px;
+    width: auto;
+    height: auto;
+    max-height: none;
+    margin: 0;
+    overflow: hidden !important;
+  }
+
+  .workspace {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden !important;
+    grid-template-columns: minmax(190px, 250px) minmax(500px, 1fr) minmax(360px, 430px) !important;
+  }
+
+  .preview-panel {
+    position: relative;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden !important;
+  }
+
+  .canvas-wrap {
+    max-height: calc(100vh - 260px);
+  }
+
+  .control-panel {
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scrollbar-gutter: stable;
+  }
+
+  .preset-panel {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scrollbar-gutter: stable;
   }
 }
