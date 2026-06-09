@@ -298,7 +298,14 @@ export class ShimmerDistortionEngine {
     }
 
     if (mode === 'radial') {
-      const grad = ctx.createRadialGradient(g.cx, g.cy, g.base * 0.08, g.cx, g.cy, Math.max(g.rx, g.ry) * 1.25);
+      if (typeof ctx.createConicGradient === 'function') {
+        const grad = ctx.createConicGradient(t * 0.45, g.cx, g.cy);
+        grad.addColorStop(0, rgba(colorA, alpha));
+        grad.addColorStop(0.50, rgba(colorB, alpha));
+        grad.addColorStop(1, rgba(colorA, alpha));
+        return grad;
+      }
+      const grad = ctx.createLinearGradient(g.cx - g.rx, g.cy - g.ry, g.cx + g.rx, g.cy + g.ry);
       grad.addColorStop(0, rgba(colorA, alpha));
       grad.addColorStop(1, rgba(colorB, alpha));
       return grad;
@@ -324,19 +331,19 @@ export class ShimmerDistortionEngine {
     this.drawPortalOuterGlow(ctx, g);
     this.drawPortalMiddle(ctx, g, t);
     this.drawOverlayLayer(ctx, g, t, 'inside-aperture');
-    this.drawPortalOutline(ctx, g, t);
     this.drawPortalCloudRim(ctx, g, t);
     this.drawWormholeOrbitClouds(ctx, g, t);
     this.drawOverlayLayer(ctx, g, t, 'over-clouds');
     this.drawPortalLoopWisps(ctx, g, t);
     this.drawPortalParticles(ctx, g, t);
+    this.drawPortalOutline(ctx, g, t);
     this.drawOverlayLayer(ctx, g, t, 'front');
   }
 
   drawPortalOutline(ctx, g, t) {
     const v = this.values;
     const alphaBase = clamp01((v.outlineOpacity ?? 0) / 100);
-    const thickness = (v.outlineThickness ?? 0) / 100;
+    const thickness = (v.outlineThickness ?? 0) / 300;
     if (alphaBase <= 0.001 || thickness <= 0.001) return;
 
     const radius = (v.outlineRadius ?? 86) / 100;
@@ -345,21 +352,22 @@ export class ShimmerDistortionEngine {
     const pulseSpeed = scale(0.25, 7.0, (v.outlinePulseSpeed ?? 40) / 100);
     const pulse = 1 + Math.sin(t * pulseSpeed) * 0.55 * pulseStrength;
     const alpha = clamp01(alphaBase * (1 + Math.sin(t * pulseSpeed + Math.PI * 0.5) * 0.40 * pulseStrength));
-    const lineWidth = Math.max(0.5, g.base * scale(0.0015, 0.156, thickness) * pulse);
+    const lineWidth = Math.max(0.5, g.base * scale(0.0015, 0.22, thickness) * pulse);
     const colorA = v.outlineColorA || v.coreColor || '#32f1ff';
     const colorB = v.outlineColorB || v.rimColor || '#8e4dff';
 
     ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalCompositeOperation = 'source-over';
     ctx.strokeStyle = this.portalOutlineStyle(ctx, g, t, alpha * 0.98);
     ctx.lineWidth = lineWidth;
-    ctx.shadowColor = colorA;
+    ctx.shadowColor = colorB;
     ctx.shadowBlur = glow * g.base * 0.20 * (1 + pulseStrength);
     ctx.beginPath();
     ctx.ellipse(g.cx, g.cy, g.rx * radius, g.ry * radius, 0, 0, TAU);
     ctx.stroke();
 
     if (glow > 0.02) {
+      ctx.globalCompositeOperation = 'lighter';
       ctx.strokeStyle = this.portalOutlineStyle(ctx, g, t + 0.37, alpha * glow * 0.48);
       ctx.lineWidth = lineWidth * (1 + glow * 3.2);
       ctx.shadowColor = colorB;
@@ -774,6 +782,7 @@ export class ShimmerDistortionEngine {
     const softness = scale(0.5, 12, softnessValue / 100);
     const radiusScale = scale(0.08, 2.20, (v.armRadius ?? 72) / 100);
     const pulse = 1 + Math.sin(t * scale(0.7, 3.6, speedValue / 100)) * scale(0, 0.80, (v.armPulseStrength ?? 0) / 100);
+    const definition = clamp01((v.armDefinition ?? 42) / 100);
 
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -789,7 +798,7 @@ export class ShimmerDistortionEngine {
       if (!count) continue;
 
       ctx.save();
-      ctx.filter = `blur(${layer.blur}px)`;
+      ctx.filter = `blur(${Math.max(0, layer.blur * (1 - definition * 0.88))}px)`;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
@@ -799,7 +808,7 @@ export class ShimmerDistortionEngine {
         const colour = (i + layerIndex) % 3 === 0 ? v.coreColor : ((i + layerIndex) % 3 === 1 ? v.rimColor : v.accentColor);
 
         ctx.strokeStyle = rgba(colour, opacity * layer.alpha * 0.92);
-        ctx.lineWidth = Math.max(1.2, baseThickness * layer.width * pulse);
+        ctx.lineWidth = Math.max(1.2, baseThickness * layer.width * pulse * (1 - definition * 0.28));
         ctx.shadowColor = colour;
         ctx.shadowBlur = baseThickness * layer.width * 2.4;
         ctx.beginPath();
@@ -823,6 +832,42 @@ export class ShimmerDistortionEngine {
         ctx.globalAlpha = 1;
       }
 
+      ctx.restore();
+    }
+
+
+    if (definition > 0.02) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.filter = `blur(${scale(0.0, 1.8, 1 - definition)}px)`;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      const definedCount = Math.max(2, Math.round(scale(2, 12, amountBoost)));
+      for (let i = 0; i < definedCount; i += 1) {
+        const seed = 900 + i * 29.11;
+        const startAngle = (i / definedCount) * TAU + hash1(seed) * 0.45 + t * speed * dir;
+        const colour = i % 2 === 0 ? v.coreColor : v.rimColor;
+        ctx.strokeStyle = rgba(colour, opacity * definition * 0.62);
+        ctx.lineWidth = Math.max(0.8, baseThickness * scale(0.18, 0.46, definition));
+        ctx.shadowColor = colour;
+        ctx.shadowBlur = g.base * scale(0.004, 0.020, definition);
+        ctx.beginPath();
+        const steps = 78;
+        for (let s = 0; s <= steps; s += 1) {
+          const p = s / steps;
+          const radial = Math.pow(1 - p, 0.76);
+          const angle = startAngle + dir * p * TAU * turns;
+          const fadeIn = smoothstep(0.00, 0.16, p);
+          const fadeOut = 1 - smoothstep(0.82, 1.00, p);
+          ctx.globalAlpha = fadeIn * fadeOut;
+          const x = g.cx + Math.cos(angle) * g.rx * radial * radiusScale;
+          const y = g.cy + Math.sin(angle) * g.ry * radial * 0.88 * radiusScale;
+          if (s === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
       ctx.restore();
     }
 

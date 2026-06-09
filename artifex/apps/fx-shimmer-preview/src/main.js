@@ -1,5 +1,5 @@
-import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.23';
-import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.23';
+import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.24';
+import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.24';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -69,6 +69,58 @@ function updateOverlayStatus() {
   if (overlayLayerLabel) overlayLayerLabel.textContent = OVERLAY_LAYER_LABELS[state.values.overlayLayer] || 'Over clouds / rim';
 }
 
+
+function updateControlCardVisibility() {
+  const type = state.values.type || 'ring';
+  const visibleByType = {
+    ring: new Set([
+      'Shape',
+      'Distortion',
+      'Visual layer',
+      'Portal line outline',
+      'Colour / texture',
+      'Arms / nebula bands',
+      'Orbit clouds',
+      'Particles',
+      'PNG overlay layer',
+      'Placement / playback'
+    ]),
+    wormhole: new Set([
+      'Shape',
+      'Distortion',
+      'Visual layer',
+      'Colour / texture',
+      'Arms / nebula bands',
+      'Orbit clouds',
+      'Particles',
+      'Emission',
+      'PNG overlay layer',
+      'Placement / playback'
+    ]),
+    heat: new Set([
+      'Shape',
+      'Distortion',
+      'Visual layer',
+      'Colour / texture',
+      'Placement / playback'
+    ]),
+    transition: new Set([
+      'Shape',
+      'Distortion',
+      'Visual layer',
+      'Colour / texture',
+      'Placement / playback'
+    ])
+  };
+
+  const allowed = visibleByType[type] || visibleByType.ring;
+  $$('.control-card').forEach((card) => {
+    const title = $('h3', card)?.textContent?.trim();
+    if (!title) return;
+    card.hidden = !allowed.has(title);
+  });
+}
+
 function syncControls() {
   controls.forEach((input) => {
     const key = input.dataset.field;
@@ -81,6 +133,7 @@ function syncControls() {
   $('[data-effect-description]').textContent = preset.description;
   updateTextureStatus();
   updateOverlayStatus();
+  updateControlCardVisibility();
   renderJson();
 }
 
@@ -118,7 +171,7 @@ function fxAssetJson() {
     scope: 'project',
     projectId: 'forever-bound',
     engine: 'artifex-shimmer-distortion-preview',
-    engineVersion: '1.2.3-preview',
+    engineVersion: '1.2.4-preview',
     tags: preset.tags,
     assets: {
       ...(state.textureName ? { texture: { kind: 'externalImageReference', editorFileName: state.textureName } } : {}),
@@ -156,7 +209,7 @@ function editorProjectJson() {
   return {
     schema: 'artifex.fxEditorProject.v1',
     editor: 'fx-shimmer-preview',
-    editorVersion: '1.2.3-preview',
+    editorVersion: '1.2.4-preview',
     selectedPresetId: state.selectedPresetId,
     name: preset.name,
     description: preset.description,
@@ -268,10 +321,12 @@ if (overlayForward) overlayForward.onclick = () => moveOverlayLayer(1);
 controls.forEach((input) => {
   input.addEventListener('input', () => {
     state.values[input.dataset.field] = normalizeFieldValue(input);
+    updateControlCardVisibility();
     renderJson();
   });
   input.addEventListener('change', () => {
     state.values[input.dataset.field] = normalizeFieldValue(input);
+    updateControlCardVisibility();
     renderJson();
   });
 });

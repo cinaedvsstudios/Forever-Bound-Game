@@ -669,3 +669,5 @@ input[type="color"] {
   .preview-panel, .control-panel, .preset-panel { min-height: 0 !important; }
   .control-panel { overflow-y: scroll !important; }
 }
+
+.control-card[hidden]{display:none!important;}
