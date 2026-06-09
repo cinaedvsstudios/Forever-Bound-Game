@@ -3,7 +3,7 @@
 Status: Active module/service specification during documentation consolidation  
 Owning module/service: Asset Library  
 Active route: no verified standalone Asset Library app route exists yet  
-Current verified baseline: asset ownership contract only; implementation is currently spread across starter schema, intake staging, registered-content readers and module-specific finalisation handoffs  
+Current verified baseline: shared final-media foundation helper exists at `artifex/shared/asset-library/asset-library-service.js`; no finished standalone Asset Library UI route is verified
 Governing universal contract: `docs/artifex/01A-project-file-contracts.md`  
 Subordinate schema reference: `docs/artifex/19A-project-starter-schemas.md`  
 Outstanding work source: `docs/artifex/02A-global-to-do.md`
@@ -14,7 +14,7 @@ Asset Library is the final registered media and generated-media ownership layer 
 
 It owns stable `asset_` records, final media metadata, final asset grouping, searchable media-library behaviour and final files after source material has been promoted from staging or created by an approved generator.
 
-The current repository does not prove a finished standalone Asset Library application route. This specification therefore defines the permanent Asset Library contract and ownership boundary. It must not falsely describe a completed Asset Library UI app that has not yet been verified.
+The current repository contains a shared Asset Library foundation helper for final media/generated-media `asset_` index operations, but it does not prove a finished standalone Asset Library application route. This specification therefore defines the permanent Asset Library contract and ownership boundary. It must not falsely describe a completed Asset Library UI app that has not yet been verified.
 
 ## Layered Reusable-Content Model
 
@@ -331,11 +331,19 @@ assets/asset-index.json
 
 as the project-wide registered asset index.
 
+The shared Asset Library foundation helper is:
+
+```text
+artifex/shared/asset-library/asset-library-service.js
+```
+
+It can read or create `assets/asset-index.json`, validate the `artifex.assets.index.v1` shape, normalize final media/generated-media records, allocate stable `asset_` IDs, reject browser `dataUrl` values, reject `intake/` and legacy `artifex/assets-library/` final paths, upsert final asset records, and promote approved staged non-audio media from `intake/` to final `assets/` paths.
+
 The shared registered-content reader/picker can read existing registered indexes. It may display or select assets, object archetypes and effect archetypes, but it does not own, create, promote or rewrite those records.
 
 Archetype Object Creator V1.36 contains a bounded finalisation handoff. During successful object finalisation, it may promote the media required by the object being finished and register resulting final `asset_` records. That handoff exists only so a ready object can safely point to stable final assets.
 
-The repository does not yet prove a finished standalone Asset Library UI app route.
+The repository now has a shared Asset Library foundation helper, but it does not yet prove a finished standalone Asset Library UI app route.
 
 ## Source Classification
 
