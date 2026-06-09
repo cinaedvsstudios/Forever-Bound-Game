@@ -71,6 +71,7 @@ export class ShimmerDistortionEngine {
     this.gridCanvas = document.createElement('canvas');
     this.grid = this.gridCanvas.getContext('2d');
     this.textureImage = null;
+    this.overlayImage = null;
     this.values = {};
     this.gridKey = '';
   }
@@ -81,6 +82,10 @@ export class ShimmerDistortionEngine {
 
   setTextureImage(image = null) {
     this.textureImage = image;
+  }
+
+  setOverlayImage(image = null) {
+    this.overlayImage = image;
   }
 
   resize() {
@@ -137,10 +142,10 @@ export class ShimmerDistortionEngine {
       this.drawPortalRing(ctx, g, t);
     }
 
-    if (v.showMask && v.type !== 'heat' && v.type !== 'transition') {
+    if (v.showMask && v.type !== 'heat' && v.type !== 'transition' && v.type !== 'ring') {
       ctx.save();
-      ctx.strokeStyle = rgba(v.coreColor || '#32f1ff', 0.18);
-      ctx.lineWidth = Math.max(1, g.base * 0.01);
+      ctx.strokeStyle = rgba(v.coreColor || '#32f1ff', 0.14);
+      ctx.lineWidth = Math.max(1, g.base * 0.006);
       ctx.beginPath();
       ctx.ellipse(g.cx, g.cy, g.rx * 0.95, g.ry * 0.95, 0, 0, TAU);
       ctx.stroke();
@@ -231,13 +236,85 @@ export class ShimmerDistortionEngine {
     ctx.restore();
   }
 
+
+  drawOverlayLayer(ctx, g, t, layer) {
+    const v = this.values;
+    if (!v.overlayEnabled || !this.overlayImage || (v.overlayLayer || 'over-clouds') !== layer) return;
+
+    const alpha = clamp01((v.overlayOpacity ?? 60) / 100);
+    if (alpha <= 0.001) return;
+
+    const scaleValue = scale(0.16, 2.2, (v.overlayScale ?? 100) / 220);
+    const pulseSpeed = scale(0, 3.0, (v.overlayPulseSpeed ?? 12) / 100);
+    const pulse = pulseSpeed > 0 ? 1 + Math.sin(t * pulseSpeed) * 0.055 : 1;
+    const rotation = t * scale(-1.2, 1.2, ((v.overlayRotationSpeed ?? 0) + 100) / 200);
+    const maxRadius = Math.max(g.rx, g.ry) * scaleValue * pulse;
+    const width = maxRadius * 2;
+    const height = maxRadius * 2;
+    const image = this.overlayImage;
+    const aspect = image.width / Math.max(1, image.height);
+    let drawWidth = width;
+    let drawHeight = height;
+    if (aspect >= 1) drawHeight = drawWidth / aspect;
+    else drawWidth = drawHeight * aspect;
+
+    ctx.save();
+    if (layer === 'inside-aperture') {
+      ctx.beginPath();
+      ctx.ellipse(g.cx, g.cy, g.rx * 0.72, g.ry * 0.72, 0, 0, TAU);
+      ctx.clip();
+    }
+    ctx.globalAlpha = alpha;
+    ctx.globalCompositeOperation = v.overlayBlendMode || 'source-over';
+    ctx.translate(g.cx, g.cy);
+    ctx.rotate(rotation);
+    ctx.drawImage(image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+    ctx.restore();
+  }
+
   drawPortalRing(ctx, g, t) {
+    this.drawOverlayLayer(ctx, g, t, 'behind-effect');
     this.drawPortalBackdropDistortion(ctx, g, t);
     this.drawPortalOuterGlow(ctx, g);
     this.drawPortalMiddle(ctx, g, t);
+    this.drawOverlayLayer(ctx, g, t, 'inside-aperture');
+    this.drawPortalOutline(ctx, g, t);
     this.drawPortalCloudRim(ctx, g, t);
+    this.drawOverlayLayer(ctx, g, t, 'over-clouds');
     this.drawPortalLoopWisps(ctx, g, t);
     this.drawPortalParticles(ctx, g, t);
+    this.drawOverlayLayer(ctx, g, t, 'front');
+  }
+
+  drawPortalOutline(ctx, g, t) {
+    const v = this.values;
+    const alpha = clamp01((v.outlineOpacity ?? 0) / 100);
+    const thickness = (v.outlineThickness ?? 0) / 100;
+    if (alpha <= 0.001 || thickness <= 0.001) return;
+
+    const radius = (v.outlineRadius ?? 86) / 100;
+    const glow = clamp01((v.outlineGlow ?? 0) / 100);
+    const lineWidth = Math.max(0.75, g.base * scale(0.0025, 0.028, thickness));
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = rgba(v.coreColor || '#32f1ff', alpha * 0.55);
+    ctx.lineWidth = lineWidth;
+    ctx.shadowColor = v.coreColor || '#32f1ff';
+    ctx.shadowBlur = glow * g.base * 0.085;
+    ctx.beginPath();
+    ctx.ellipse(g.cx, g.cy, g.rx * radius, g.ry * radius, 0, 0, TAU);
+    ctx.stroke();
+
+    if (glow > 0.02) {
+      ctx.strokeStyle = rgba(v.rimColor || '#8e4dff', alpha * glow * 0.22);
+      ctx.lineWidth = lineWidth * (1 + glow * 2.3);
+      ctx.shadowBlur = glow * g.base * 0.16;
+      ctx.beginPath();
+      ctx.ellipse(g.cx, g.cy, g.rx * radius, g.ry * radius, 0, 0, TAU);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   drawPortalBackdropDistortion(ctx, g, t) {
@@ -462,11 +539,16 @@ export class ShimmerDistortionEngine {
 
 
   drawWormhole(ctx, g, t) {
+    this.drawOverlayLayer(ctx, g, t, 'behind-effect');
     this.drawWormholeDarkField(ctx, g, t);
+    this.drawWormholeOrbitingClouds(ctx, g, t);
     this.drawWormholeWispySpirals(ctx, g, t);
     this.drawWormholeDepthMist(ctx, g, t);
+    this.drawOverlayLayer(ctx, g, t, 'inside-aperture');
     this.drawWormholePullCore(ctx, g, t);
+    this.drawOverlayLayer(ctx, g, t, 'over-clouds');
     this.drawWormholeParticles(ctx, g, t);
+    this.drawOverlayLayer(ctx, g, t, 'front');
   }
 
   drawWormholeDarkField(ctx, g, t) {
@@ -512,6 +594,46 @@ export class ShimmerDistortionEngine {
         else ctx.lineTo(x, y);
       }
       ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+
+  drawWormholeOrbitingClouds(ctx, g, t) {
+    const v = this.values;
+    const amount = Math.round(scale(8, 26, (v.wispAmount ?? 44) / 100));
+    if (amount <= 0) return;
+
+    const speed = Math.pow((v.wispSpeed ?? 30) / 100, 2) * 0.42;
+    const dir = (v.swirl ?? 80) >= 0 ? 1 : -1;
+    const thickness = g.base * scale(0.014, 0.070, (v.rimWidth ?? 52) / 100);
+    const alphaMul = scale(0.22, 0.78, (v.rimAlpha ?? 32) / 100);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.filter = `blur(${scale(5, 14, (v.blur ?? 24) / 100)}px)`;
+
+    for (let i = 0; i < amount; i += 1) {
+      const seed = i * 15.913;
+      const orbit = TAU * (i / amount) + hash1(seed) * 0.55 + t * speed * dir * scale(0.55, 1.35, hash1(seed + 2));
+      const radius = scale(0.42, 0.92, hash1(seed + 3));
+      const wobble = Math.sin(t * speed * 3 + seed) * g.base * 0.018;
+      const x = g.cx + Math.cos(orbit) * (g.rx * radius + wobble);
+      const y = g.cy + Math.sin(orbit) * (g.ry * radius * 0.86 + wobble * 0.66);
+      const major = thickness * scale(1.2, 3.8, hash1(seed + 4));
+      const minor = major * scale(0.32, 0.58, hash1(seed + 5));
+      const colour = i % 4 === 0 ? v.accentColor : (i % 2 === 0 ? v.coreColor : v.rimColor);
+      const alpha = scale(0.018, 0.060, hash1(seed + 6)) * alphaMul;
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(orbit + Math.PI / 2 + (hash1(seed + 7) - 0.5) * 0.7);
+      ctx.fillStyle = rgba(colour, alpha);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, major, minor, 0, 0, TAU);
+      ctx.fill();
+      ctx.restore();
     }
 
     ctx.restore();

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Artifex Shimmer / Portal Distortion Engine Preview</title>
-  <link rel="stylesheet" href="./styles.css?v=1.16" />
+  <link rel="stylesheet" href="./styles.css?v=1.17" />
 </head>
 <body>
   <main class="fx-shell" data-app>
@@ -15,7 +15,7 @@
           <p class="kicker">Artifex FX Engine Prototype</p>
           <h1>Shimmer / Portal Distortion Engine</h1>
         </div>
-        <span class="version">V1.16</span>
+        <span class="version">V1.17</span>
       </div>
       <div class="header-actions">
         <button type="button" data-action="play">▶️ Play</button>
@@ -127,6 +127,19 @@
           </div>
         </section>
 
+
+        <section class="control-card">
+          <h3>Portal line outline</h3>
+          <div class="two">
+            <label>Line thickness <input type="range" min="0" max="100" step="1" data-field="outlineThickness" /></label>
+            <label>Line opacity <input type="range" min="0" max="100" step="1" data-field="outlineOpacity" /></label>
+          </div>
+          <div class="two">
+            <label>Line glow <input type="range" min="0" max="100" step="1" data-field="outlineGlow" /></label>
+            <label>Line radius <input type="range" min="55" max="125" step="1" data-field="outlineRadius" /></label>
+          </div>
+        </section>
+
         <section class="control-card">
           <h3>Colour / texture</h3>
           <label>Source mode
@@ -173,6 +186,45 @@
           </div>
         </section>
 
+
+        <section class="control-card">
+          <h3>PNG overlay layer</h3>
+          <label class="toggle wide"><input type="checkbox" data-field="overlayEnabled" /> Enable overlay</label>
+          <label>PNG overlay image
+            <input type="file" accept="image/png,image/jpeg,image/webp" data-overlay-file />
+          </label>
+          <p class="texture-status" data-overlay-status>No overlay loaded.</p>
+          <label>Blend mode
+            <select data-field="overlayBlendMode">
+              <option value="source-over">Normal</option>
+              <option value="lighter">Add / lighter</option>
+              <option value="screen">Screen</option>
+              <option value="overlay">Overlay</option>
+              <option value="soft-light">Soft light</option>
+              <option value="multiply">Multiply</option>
+            </select>
+          </label>
+          <div class="two">
+            <label>Overlay opacity <input type="range" min="0" max="100" step="1" data-field="overlayOpacity" /></label>
+            <label>Overlay scale <input type="range" min="10" max="220" step="1" data-field="overlayScale" /></label>
+          </div>
+          <div class="two">
+            <label>Rotation speed <input type="range" min="-100" max="100" step="1" data-field="overlayRotationSpeed" /></label>
+            <label>Pulse speed <input type="range" min="0" max="100" step="1" data-field="overlayPulseSpeed" /></label>
+          </div>
+          <div class="layer-row">
+            <button type="button" data-action="overlay-back">− Layer</button>
+            <output data-overlay-layer-label>Over clouds / rim</output>
+            <button type="button" data-action="overlay-forward">Layer +</button>
+          </div>
+          <select class="hidden-select" data-field="overlayLayer" aria-label="Overlay layer">
+            <option value="behind-effect">Behind effect</option>
+            <option value="inside-aperture">Inside aperture / core</option>
+            <option value="over-clouds">Over clouds / rim</option>
+            <option value="front">Front overlay</option>
+          </select>
+        </section>
+
         <section class="control-card">
           <h3>Placement / playback</h3>
           <div class="two">
@@ -195,6 +247,6 @@
     </footer>
   </main>
 
-  <script type="module" src="./src/main.js?v=1.16"></script>
+  <script type="module" src="./src/main.js?v=1.17"></script>
 </body>
 </html>

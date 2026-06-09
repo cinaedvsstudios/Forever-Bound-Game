@@ -1,5 +1,5 @@
-import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.16';
-import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.16';
+import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.17';
+import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.17';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -13,7 +13,9 @@ const state = {
   pausedAt: 0,
   playing: true,
   textureName: '',
-  textureDataUrl: ''
+  textureDataUrl: '',
+  overlayName: '',
+  overlayDataUrl: ''
 };
 
 const controls = $$('[data-field]');
@@ -22,6 +24,9 @@ const jsonOutput = $('[data-json-output]');
 const status = $('[data-status]');
 const textureFile = $('[data-texture-file]');
 const textureStatus = $('[data-texture-status]');
+const overlayFile = $('[data-overlay-file]');
+const overlayStatus = $('[data-overlay-status]');
+const overlayLayerLabel = $('[data-overlay-layer-label]');
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -46,6 +51,19 @@ function updateTextureStatus() {
   textureStatus.textContent = state.textureName ? `Loaded texture: ${state.textureName}` : 'No texture loaded.';
 }
 
+const OVERLAY_LAYER_LABELS = {
+  'behind-effect': 'Behind effect',
+  'inside-aperture': 'Inside aperture / core',
+  'over-clouds': 'Over clouds / rim',
+  front: 'Front overlay'
+};
+const OVERLAY_LAYER_ORDER = Object.keys(OVERLAY_LAYER_LABELS);
+
+function updateOverlayStatus() {
+  if (overlayStatus) overlayStatus.textContent = state.overlayName ? `Loaded overlay: ${state.overlayName}` : 'No overlay loaded.';
+  if (overlayLayerLabel) overlayLayerLabel.textContent = OVERLAY_LAYER_LABELS[state.values.overlayLayer] || 'Over clouds / rim';
+}
+
 function syncControls() {
   controls.forEach((input) => {
     const key = input.dataset.field;
@@ -57,6 +75,7 @@ function syncControls() {
   $('[data-effect-name]').textContent = preset.name;
   $('[data-effect-description]').textContent = preset.description;
   updateTextureStatus();
+  updateOverlayStatus();
   renderJson();
 }
 
@@ -94,9 +113,12 @@ function fxAssetJson() {
     scope: 'project',
     projectId: 'forever-bound',
     engine: 'artifex-shimmer-distortion-preview',
-    engineVersion: '1.1.6-preview',
+    engineVersion: '1.1.7-preview',
     tags: preset.tags,
-    assets: state.textureName ? { texture: { kind: 'externalImageReference', editorFileName: state.textureName } } : {},
+    assets: {
+      ...(state.textureName ? { texture: { kind: 'externalImageReference', editorFileName: state.textureName } } : {}),
+      ...(state.overlayName ? { overlay: { kind: 'externalPngOverlayReference', editorFileName: state.overlayName } } : {})
+    },
     composition: {
       layers: [
         {
@@ -128,12 +150,13 @@ function editorProjectJson() {
   return {
     schema: 'artifex.fxEditorProject.v1',
     editor: 'fx-shimmer-preview',
-    editorVersion: '1.1.6-preview',
+    editorVersion: '1.1.7-preview',
     selectedPresetId: state.selectedPresetId,
     name: preset.name,
     description: preset.description,
     values: clone(state.values),
     texture: state.textureName ? { name: state.textureName, dataUrl: state.textureDataUrl } : null,
+    overlay: state.overlayName ? { name: state.overlayName, dataUrl: state.overlayDataUrl } : null,
     view: {
       showGrid: Boolean(state.values.showGrid),
       showMask: Boolean(state.values.showMask)
@@ -177,6 +200,42 @@ if (textureFile) {
     reader.readAsDataURL(file);
   });
 }
+
+if (overlayFile) {
+  overlayFile.addEventListener('change', () => {
+    const file = overlayFile.files && overlayFile.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        engine.setOverlayImage(image);
+        state.overlayName = file.name;
+        state.overlayDataUrl = String(reader.result || '');
+        state.values.overlayEnabled = true;
+        syncControls();
+        setStatus(`Loaded overlay ${file.name}.`);
+      };
+      image.src = String(reader.result || '');
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function moveOverlayLayer(delta) {
+  const current = state.values.overlayLayer || 'over-clouds';
+  const index = OVERLAY_LAYER_ORDER.indexOf(current);
+  const safeIndex = index === -1 ? OVERLAY_LAYER_ORDER.indexOf('over-clouds') : index;
+  const next = Math.max(0, Math.min(OVERLAY_LAYER_ORDER.length - 1, safeIndex + delta));
+  state.values.overlayLayer = OVERLAY_LAYER_ORDER[next];
+  syncControls();
+  setStatus(`Overlay layer: ${OVERLAY_LAYER_LABELS[state.values.overlayLayer]}.`);
+}
+
+const overlayBack = $('[data-action="overlay-back"]');
+const overlayForward = $('[data-action="overlay-forward"]');
+if (overlayBack) overlayBack.onclick = () => moveOverlayLayer(-1);
+if (overlayForward) overlayForward.onclick = () => moveOverlayLayer(1);
 
 controls.forEach((input) => {
   input.addEventListener('input', () => {

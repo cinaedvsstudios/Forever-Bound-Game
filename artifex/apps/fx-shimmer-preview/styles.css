@@ -424,3 +424,32 @@ select {
 
 .texture-status{margin:4px 0 0;padding:8px 10px;border:1px dashed rgba(53,212,216,.22);border-radius:10px;color:rgba(255,240,206,.62);background:rgba(0,0,0,.18);font-size:12px;}
 input[type="file"]{width:100%;min-height:38px;border:1px solid rgba(53,212,216,.34);border-radius:10px;padding:7px 10px;color:var(--cream);background:#080606;}
+
+
+.layer-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+}
+
+.layer-row output {
+  min-height: 2.2rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(56, 239, 246, 0.38);
+  border-radius: 0.65rem;
+  background: rgba(0, 0, 0, 0.22);
+  color: #39f0f7;
+  font-weight: 700;
+  text-align: center;
+}
+
+.hidden-select {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 1px;
+  height: 1px;
+}
