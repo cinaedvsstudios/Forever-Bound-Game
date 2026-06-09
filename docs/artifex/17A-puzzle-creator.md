@@ -1,5 +1,417 @@
 # Puzzle Creator Specification
 
+## 2026-06-09 Continuity Update / Next-Chat Prompt
+
+This section is the current continuation record for the active Puzzle Creator work. It supersedes older placeholder-only wording where it conflicts, while preserving the stable V1.35 baseline and the accepted Labyrinth Maze workflow.
+
+Use this prompt to continue the work in a new chat or Codex session:
+
+```text
+We are continuing the Artifex Puzzle Creator work for the Forever Bound Game project.
+
+Work only inside the accepted live Puzzle Creator route:
+
+artifex/apps/puzzle-creator/index.html
+
+Do not create a separate permanent preview app. Do not replace the whole module with an older route. Do not revive outdated V1.34 placeholder-only documentation. Preserve the current V1.35 launcher/workflow shell and the accepted Labyrinth Maze workflow.
+
+Read and follow:
+
+docs/artifex/17A-puzzle-creator.md
+docs/artifex/01A-project-file-contracts.md
+docs/artifex/02A-global-to-do.md
+docs/artifex/07A-quest-builder.md
+docs/artifex/10A-asset-library.md
+docs/artifex/13A-registered-content-picker.md
+
+Current route:
+artifex/apps/puzzle-creator/index.html
+
+Current JS entry:
+artifex/apps/puzzle-creator/src/js/main.js
+
+Relevant engine/runtime files:
+artifex/apps/puzzle-creator/src/js/engines/maze-labyrinth-runtime.js
+artifex/apps/puzzle-creator/src/js/engines/potion-match-runtime.js
+artifex/apps/puzzle-creator/src/js/engines/horse-forest-runtime.js
+artifex/apps/puzzle-creator/src/js/engines/obstacle-course-runtime.js
+artifex/apps/puzzle-creator/src/js/engines/*.js
+artifex/apps/puzzle-creator/src/js/puzzle-module-briefs.js
+
+Current module list / user-facing launcher choices:
+1. Labyrinth Maze
+2. Boxing Ring
+3. Horse Forest Ride / formerly Flying Practice / underlying Obstacle Course slot
+4. Pattern Lock Puzzle
+5. Potion Match
+6. Underworld Black Oil
+
+Important current truth:
+- Labyrinth Maze is the stable implemented workflow and must not regress.
+- Pattern Lock Puzzle has a playable prototype for shape-surface symbol placement.
+- Potion Match has a playable prototype for ordered ingredient selection and crafting/challenge modes.
+- Obstacle Course has been redirected into the Horse Forest Ride prototype, a 2.5D PNG-card runner, not the older broken stretched Three.js texture-plane version.
+- Boxing Ring and Underworld Black Oil remain planning placeholders only unless built in a scoped pass.
+- The old Flying Practice name is misleading. Rename visible user text to Horse Forest Ride or Obstacle Course where possible, while preserving the underlying `obstacle-course` engine ID unless a deliberate migration is made.
+- The most recent Horse Forest fix is V10, intended to replace the broken V3/V4 visual approach. V10 uses CSS sky/horizon/ground layers and PNG cards for trees, bushes, logs, rocks, branches and collectibles.
+- The previous bug was that the live page still showed Horse Forest Runner V3 and the sky/ground/horizon were rendered as ugly horizontal bands. This happened because V4/V10 code was not properly committed/live and the runtime file online was incomplete or outdated.
+- If the page still says “Horse Forest Runner V3”, the live code has not been replaced with the V10 file.
+
+Immediate next goal:
+1. Ensure the live repository contains the complete V10 `horse-forest-runtime.js`.
+2. Ensure `main.js` imports `horse-forest-runtime.js` before `obstacle-course-runtime.js`, for example:
+   import './engines/horse-forest-runtime.js?v=1.50';
+   import './engines/obstacle-course-runtime.js?v=1.38';
+3. Ensure clicking the `data-engine="obstacle-course"` launcher opens the Horse Forest Ride / Horse Forest Runner V10 workflow.
+4. Ensure the old broken Three.js Obstacle Course does not display instead of the horse runner.
+5. Ensure the menu label no longer says Flying Practice once the new runtime loads, or at minimum make the Horse Forest Ride title clear after opening.
+6. Use the existing asset folder:
+   artifex/apps/puzzle-creator/assets/obstacle-course/horse-forest/
+7. Do not generate more images unless explicitly asked. This is now a code/layout/runtime fix task.
+
+Expected visual model for Horse Forest Ride:
+- Sky is a CSS/background layer using `sky/forest_sky_clouds_1920x1080.png`.
+- Distant forest horizon is a CSS/background strip using `backgrounds/forest_horizon_misty_pines_01_740x493.png` or another provided horizon image.
+- Ground is a moving tiled CSS layer using `ground/forest_floor_roots_tile_placeholder_1254.png`.
+- Trees and bushes are transparent PNG cards placed at pseudo-depth on the left/right of the route.
+- Logs and rocks are transparent PNG obstacle cards.
+- Low/overhead branches are transparent PNG hazard cards.
+- Flowers, herbs and charms are transparent PNG collectible cards.
+- Space jumps.
+- WASD/arrows steer.
+- Collectibles add score.
+- Obstacle hits subtract score / count hits.
+- Completion emits local success/failure event keys only; Quest Builder owns actual inventory/reward consequences.
+
+Do not use the stretched Three.js texture-plane approach for this prototype unless deliberately rebuilding the whole engine later. The practical fix is a 2.5D staged runner: CSS layers + positioned PNG cards.
+
+When editing:
+- Make small, targeted changes.
+- Keep an internal rollback list of touched files and exact changes.
+- Do not touch Maze unless necessary.
+- Do not remove Pattern Lock or Potion Match prototypes.
+- Do not claim a placeholder engine is complete unless it has been browser-tested.
+- If GitHub writing fails, provide a zip with `puzzle-creator` as the root folder, containing only the files that need to be replaced, and clearly list the target paths.
+```
+
+## 2026-06-09 Current Puzzle Engine Status Summary
+
+| User-facing module | Underlying engine ID / label | Current status after recent work |
+|---|---|---|
+| Labyrinth Maze | `maze-labyrinth` / Maze-Labyrinth | Stable implemented playable authoring workflow. Must not regress. |
+| Boxing Ring | `arena-trial` / Arena Trial | Planning placeholder. Not a completed combat-training engine. |
+| Horse Forest Ride / formerly Flying Practice | `obstacle-course` / Obstacle Course | Experimental playable prototype in progress. The desired current version is Horse Forest Runner V10 using 2.5D PNG cards. |
+| Pattern Lock Puzzle | `symbol-assembly` / Symbol Assembly | Playable prototype in progress for rotating shape/surface symbol placement. |
+| Potion Match | `item-order-puzzle` / Item Order Puzzle | Playable prototype in progress for ordered ingredient/crafting challenge. |
+| Underworld Black Oil | `hazard-puzzle` / Hazard Puzzle | Planning placeholder. Not a completed hazard engine. |
+
+Future work must preserve this distinction. Only Labyrinth Maze is stable. Pattern Lock, Potion Match and Horse Forest Ride are prototypes. Boxing Ring and Underworld Black Oil are still planning placeholders.
+
+## 2026-06-09 Detailed Puzzle Notes
+
+### Labyrinth Maze / Maze-Labyrinth
+
+Labyrinth Maze is the accepted stable Puzzle Creator workflow.
+
+Current behaviour includes the puzzle-type launcher, Setup/Display/Logic/Colors workflow rail, random/blank/reference/import setup actions, maze size/shape/warp/stretch/edge/wall-height/block-spacing controls, 2D overview, diorama/playable preview, Walk Test where supported, local Door and Portal transfer behaviour where already implemented, JSON import/export/download, registered Collect object linking, Door visual asset reference storage and Scatter decoration/light reference storage.
+
+Protected layout decisions:
+
+- Puzzle Creator should open to the puzzle-type chooser, not directly into Maze.
+- The workflow rail icons should keep labels under them.
+- Surface + Edit must keep Walls, Scatter and Colours visually separated.
+- Scatter is decoration-only and must not define objectives, collision, route logic, transfers or completion.
+- Maze must not be broken while other engines are added.
+
+### Boxing Ring / Arena Trial
+
+Boxing Ring is a future optional training arena using Battle Mode rules. It is not implemented yet.
+
+Intended components:
+
+- optional training arena where Mel fights controlled Foe projections for modest rewards;
+- Training Host / Spirit Tutor who explains the trial and gives win/loss dialogue;
+- Opponent Select Menu with enemies unlocking as Mel encounters them in the story;
+- Loadout Select Menu for limited weapons, Supplies, Relics or Songspells;
+- fixed Battle Mode arena;
+- modest reward logic: Silver, ingredients, Supplies, temporary boosts or rare first-clear bonuses;
+- cooldown/anti-farming logic;
+- no story penalty for losing;
+- first-clear bonuses and no-reward practice mode;
+- optional Codice entry recording defeated trial opponents and lore;
+- difficulty tiers using Foe tier logic;
+- in-world results screen, not modern “win/lose” wording.
+
+Open decisions before building:
+
+- in-world entrance location;
+- Training Host identity;
+- first opponent set;
+- first reward list;
+- whether it belongs in Quest 0.5 or later;
+- which Battle Mode runtime is stable enough to reuse.
+
+### Horse Forest Ride / Obstacle Course / Former Flying Practice
+
+The `obstacle-course` slot originally described Flying Practice, but the first desired implementation is now Horse Forest Ride.
+
+The first implementation should be a POV-style horse ride through a forest where the player jumps logs/rocks, avoids branches and collects flowers/herbs/charms. It should not use the broken stretched Three.js texture-plane view.
+
+Correct current approach:
+
+- 2.5D staged runner;
+- sky as CSS/background layer;
+- distant forest horizon as CSS/background strip;
+- ground as moving tiled CSS layer;
+- trees, bushes, logs, rocks, branches and collectibles as transparent PNG cards with pseudo-depth scaling;
+- Space jumps;
+- WASD/arrows steer;
+- collectibles add score;
+- obstacle hits subtract score/count hits;
+- success/failure emits local event keys for Quest Builder.
+
+Required paths:
+
+```text
+artifex/apps/puzzle-creator/src/js/engines/horse-forest-runtime.js
+artifex/apps/puzzle-creator/src/js/main.js
+artifex/apps/puzzle-creator/assets/obstacle-course/horse-forest/
+```
+
+Expected import order in `main.js`:
+
+```js
+import './engines/maze-labyrinth-runtime.js';
+import './engines-ui.js?v=1.36';
+import './engines/potion-match-runtime.js?v=1.37';
+import './engines/horse-forest-runtime.js?v=1.50';
+import './engines/obstacle-course-runtime.js?v=1.38';
+```
+
+Important bug note:
+
+If the browser shows “Horse Forest Runner V3” or the view is a blue rectangle with ugly horizontal floor/horizon bands, the live runtime is stale or incomplete. The V10 runtime must replace it.
+
+Asset folder structure:
+
+| Asset type | Path |
+|---|---|
+| Sky | `assets/obstacle-course/horse-forest/sky/` |
+| Horizon/background strip | `assets/obstacle-course/horse-forest/backgrounds/` |
+| Ground tile | `assets/obstacle-course/horse-forest/ground/` |
+| Trees / treelines | `assets/obstacle-course/horse-forest/trees/` |
+| Foreground bushes/foliage | `assets/obstacle-course/horse-forest/foreground/` |
+| Logs | `assets/obstacle-course/horse-forest/obstacles/logs/` |
+| Rocks | `assets/obstacle-course/horse-forest/obstacles/rocks/` |
+| Stumps | `assets/obstacle-course/horse-forest/obstacles/stumps/` |
+| Low branches | `assets/obstacle-course/horse-forest/obstacles/branches/` |
+| Side/overhead branches | `assets/obstacle-course/horse-forest/branches/` |
+| Flower collectibles | `assets/obstacle-course/horse-forest/collectibles/flowers/` |
+| Ingredient collectibles | `assets/obstacle-course/horse-forest/collectibles/ingredients/` |
+| Charm collectibles | `assets/obstacle-course/horse-forest/collectibles/charms/` |
+| FX | `assets/obstacle-course/horse-forest/fx/` |
+| Player/horse POV overlay | `assets/obstacle-course/horse-forest/player/` |
+| Markers | `assets/obstacle-course/horse-forest/markers/` |
+
+Useful current asset examples:
+
+```text
+sky/forest_sky_clouds_1920x1080.png
+backgrounds/forest_horizon_misty_pines_01_740x493.png
+backgrounds/forest_horizon_deep_pines_02_625x350.png
+ground/forest_floor_roots_tile_placeholder_1254.png
+trees/treeline_spruce_alpha_2048x1024.png
+trees/treeline_pine_alpha_625x350.png
+trees/tree_broadleaf_01.png
+trees/tree_pine_placeholder_01.png
+foreground/foreground_bush_placeholder_01.png
+obstacles/stumps/obstacle_stump_tall_01.png
+obstacles/stumps/obstacle_stump_low_01.png
+obstacles/rocks/obstacle_rock_tall_01.png
+obstacles/rocks/obstacle_rock_medium_01.png
+obstacles/rocks/obstacle_rock_flat_01.png
+obstacles/logs/obstacle_log_cut_01.png
+obstacles/logs/obstacle_log_branch_01.png
+obstacles/logs/obstacle_log_bark_01.png
+obstacles/branches/obstacle_low_branch_01.png
+branches/branch_overhead_leafy_01.png
+collectibles/flowers/collectible_blue_wildflower_01.png
+collectibles/flowers/collectible_pink_wildflower_01.png
+collectibles/ingredients/collectible_herb_bundle_01.png
+collectibles/charms/collectible_forest_charm_01.png
+```
+
+### Pattern Lock Puzzle / Symbol Assembly
+
+Pattern Lock Puzzle uses the `symbol-assembly` slot and has a playable prototype in progress.
+
+Core design:
+
+- player chooses a shape;
+- engine generates empty surface points/facets;
+- player selects symbols/images/text/emojis from a tray;
+- player places them onto surface points;
+- player rotates the shape to inspect different faces/sides;
+- puzzle validates whether the placement matches the authored rule/pattern.
+
+First supported shapes:
+
+```text
+Pyramid
+Diamond
+Cube
+Sphere
+```
+
+User correction that must be preserved:
+
+The shape should behave like the reference URL: points on each face/surface and the shape can be turned around. It should not be a flat board. Surface-only points are acceptable for the first version; full interior point construction is not first scope.
+
+Example rules/patterns:
+
+- all same symbol type on one face;
+- all same colour on one face;
+- recreate a reference pattern;
+- solve a riddle to decide placement;
+- mirror/symmetry sequence;
+- ritual seal positions.
+
+Known UI/future needs:
+
+- remove cluttering title text inside the preview area;
+- keep display area small enough that it does not run off screen;
+- support custom texture for balls/points;
+- support configurable point/ball shape;
+- decide whether validation is instant or via a check button;
+- decide whether feedback gives exact correctness or approximate closeness.
+
+### Potion Match / Item Order Puzzle
+
+Potion Match uses the `item-order-puzzle` slot and has a playable prototype in progress.
+
+It supports two intended modes:
+
+| Mode | Meaning |
+|---|---|
+| Challenge Potion Puzzle | Scene/Quest puzzle where the player chooses ingredients in the correct order. |
+| Crafting Skill | Reusable crafting screen where available ingredients come from character inventory. |
+
+Prototype behaviour already discussed/demonstrated:
+
+- recipe/order slots;
+- ingredient tray;
+- selecting ingredients in order;
+- reset brew;
+- show correct order;
+- shuffle tray;
+- progress count;
+- mistake count;
+- quality percentage;
+- strict/quality behaviour;
+- demo recipe such as Healing Tisane;
+- default demo ingredients such as yarrow, lavender, Capra milk, star dust, salt, mushroom and moonflower;
+- crafting mode using demo inventory;
+- challenge mode with decoys.
+
+Required ingredient authoring:
+
+```text
+Ingredient ID
+Display name
+Emoji fallback
+Uploaded PNG icon
+Object Library / Archetype Object reference
+Optional tags
+Optional demo inventory count
+```
+
+Icon priority:
+
+```text
+Object Library / Archetype Object item first
+Uploaded PNG second
+Emoji fallback third
+```
+
+Recipe authoring must support:
+
+```text
+recipe order list
+add selected ingredient to recipe
+remove ingredient from recipe
+decoy / extra tray item list
+add selected ingredient as decoy
+remove decoy
+remove defaults / start clean
+```
+
+Required outcome fields:
+
+```text
+success event ID
+success Quest Builder outcome key
+success visual type
+success video/effect reference if used
+success preview text
+unsuccessful event ID
+unsuccessful Quest Builder outcome key
+unsuccessful visual type
+unsuccessful video/effect reference if used
+unsuccessful preview text
+```
+
+Boundary:
+
+Puzzle Creator defines local interaction, ordered sequence and emitted outcome key. Quest Builder defines actual reward, inventory mutation, ability unlock, quest flag, dialogue and story consequence.
+
+Example craft outputs:
+
+```text
+Lantern Potion
+Tracking Coin
+Portal Potion
+Salt Ward
+Healing Tisane
+```
+
+### Underworld Black Oil / Hazard Puzzle
+
+Underworld Black Oil uses the `hazard-puzzle` slot.
+
+Status:
+
+- planning placeholder only;
+- not a completed hazard engine;
+- not evidence that Maze has generic hazard runtime behaviour.
+
+Intended concept:
+
+- living underworld corruption / black oil / spreading hazard;
+- avoid, cleanse or contain the hazard;
+- may use pulsing/spreading danger zones;
+- may define source count, spread rate, safe path width, cleansing tools, survival/escape/containment modes and win/loss states.
+
+Possible mechanics:
+
+- spreading source;
+- timed pulse danger;
+- safe-path traversal;
+- cleanse tools such as Aetheris, Saltseal, song, relic or ritual action;
+- containment seals/barriers;
+- escape before hazard overtakes route;
+- survival timer;
+- purification result event.
+
+Open questions:
+
+- grid puzzle, scene overlay, maze variant or standalone board;
+- turn-based, timed or manual spreading;
+- direct Mel control or authored route/solution;
+- first cleansing tools;
+- underworld theme immediately or neutral hazard prototype first.
+
+---
+
 Status: Active module specification during documentation consolidation  
 Owning module: Puzzle Creator  
 Active route: `artifex/apps/puzzle-creator/index.html`  
