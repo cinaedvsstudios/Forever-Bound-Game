@@ -53,7 +53,7 @@ export const SHIMMER_PRESETS = [
   {
     id: 'wormhole-tunnel',
     name: 'Wormhole Tunnel',
-    description: 'A rotating nebula-style wormhole with broad spiral cloud arms and a subtle dark vanishing point.',
+    description: 'A darker low-alpha wormhole with wispy spiral gas arms and a small dark vanishing point.',
     tags: ['wormhole', 'vortex', 'spiral', 'tunnel'],
     values: {
       type: 'wormhole',

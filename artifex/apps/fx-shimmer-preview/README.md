@@ -1,22 +1,21 @@
 # Artifex Shimmer / Portal Distortion Engine Preview
 
-V1.15 keeps the improved Portal Ring and fixes the Wormhole performance / octagonal-line problem.
+V1.16 keeps the improved Portal Ring and fixes the Wormhole overexposure problem.
 
-## V1.15 changes
+## V1.16 changes
 
 ```text
 Portal Ring is left unchanged.
-Wormhole no longer draws the octagonal / polygon line rings.
-Wormhole no longer uses the expensive heavy line nest that was freezing the preview.
-Wormhole now uses a smaller number of blurred puffy spiral cloud ellipses.
-Wormhole cloud body rotates visibly, not only the particles.
-Wormhole centre is only a small dark vanishing point, not a decorative ring/eye.
-Wormhole particles remain visible but are capped lower for performance.
-Default wormhole settings are reduced so the preview should not freeze the computer.
+Wormhole no longer draws a giant white blown-out disc.
+Wormhole no longer draws octagonal line rings.
+Wormhole uses low-alpha wispy spiral strokes and faint gas puffs instead of stacked bright blobs.
+Wormhole glow, rim alpha, cloudiness and particle defaults are reduced for performance and readability.
+The centre is still a small dark vanishing point.
+The cloud body should rotate visibly, but without freezing the browser.
 ```
 
 ## Test URL after upload
 
 ```text
-https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/main/artifex/apps/fx-shimmer-preview/index.html?v=115
+https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/main/artifex/apps/fx-shimmer-preview/index.html?v=116
 ```
