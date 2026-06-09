@@ -1,21 +1,22 @@
 # Artifex Shimmer / Portal Distortion Engine Preview
 
-V1.17 keeps the improved Portal Ring and the darker V1.16 Wormhole, then adds the requested control layer.
+V1.18 keeps the improved Portal Ring and restructures the Wormhole controls into separate real layers.
 
-## V1.17 changes
+## V1.18 changes
 
 ```text
-Portal Ring is visually unchanged except for dedicated thin-line outline controls.
-Portal line outline now has thickness, opacity, glow and radius sliders.
-Wormhole now has an explicit orbiting cloud layer so at least one cloud layer moves circularly like the particles.
-Added a PNG overlay card for portal and wormhole style testing.
-Overlay controls include enable, PNG file picker, blend mode, opacity, scale, rotation speed and pulse speed.
-Overlay layer can be moved with Layer - / Layer + between Behind effect, Inside aperture/core, Over clouds/rim and Front overlay.
-The overlay is exported in editor project JSON and referenced in asset JSON when loaded.
+Portal Ring visual body is left intact.
+Portal Ring thin outline controls are made more obvious: line thickness, line opacity, line glow and line radius.
+Wormhole is adjusted back toward the stronger older visible body while keeping the newer dark centre and no octagonal line nest.
+Wisps are renamed to Arms.
+Arms and Particles are now separate control cards.
+Orbit Clouds are also a separate control card so the moving cloud ring can be tuned independently from spiral arms and particles.
+Wormhole arms, orbit clouds and particles now have more aggressive value ranges so sliders visibly change the preview.
+Overlay image controls remain available with blend mode, opacity, scale, rotation speed, pulse speed and layer position.
 ```
 
 ## Test URL after upload
 
 ```text
-https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/main/artifex/apps/fx-shimmer-preview/index.html?v=117
+https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/main/artifex/apps/fx-shimmer-preview/index.html?v=118
 ```

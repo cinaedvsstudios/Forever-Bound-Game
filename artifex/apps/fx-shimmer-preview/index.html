@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Artifex Shimmer / Portal Distortion Engine Preview</title>
-  <link rel="stylesheet" href="./styles.css?v=1.17" />
+  <link rel="stylesheet" href="./styles.css?v=1.18" />
 </head>
 <body>
   <main class="fx-shell" data-app>
@@ -15,7 +15,7 @@
           <p class="kicker">Artifex FX Engine Prototype</p>
           <h1>Shimmer / Portal Distortion Engine</h1>
         </div>
-        <span class="version">V1.17</span>
+        <span class="version">V1.18</span>
       </div>
       <div class="header-actions">
         <button type="button" data-action="play">▶️ Play</button>
@@ -167,22 +167,47 @@
         </section>
 
         <section class="control-card">
-          <h3>Wisps / particles</h3>
+          <h3>Arms / nebula bands</h3>
           <div class="two">
-            <label>Wisp amount <input type="range" min="0" max="100" step="1" data-field="wispAmount" /></label>
-            <label>Wisp speed <input type="range" min="0" max="100" step="1" data-field="wispSpeed" /></label>
+            <label>Arm amount <input type="range" min="0" max="100" step="1" data-field="armAmount" /></label>
+            <label>Arm opacity <input type="range" min="0" max="100" step="1" data-field="armOpacity" /></label>
           </div>
           <div class="two">
-            <label>Wisp size <input type="range" min="0" max="100" step="1" data-field="wispSize" /></label>
-            <label>Wisp curl <input type="range" min="0" max="100" step="1" data-field="wispCurl" /></label>
+            <label>Arm thickness <input type="range" min="0" max="100" step="1" data-field="armThickness" /></label>
+            <label>Arm softness <input type="range" min="0" max="100" step="1" data-field="armSoftness" /></label>
           </div>
+          <div class="two">
+            <label>Arm rotation speed <input type="range" min="0" max="100" step="1" data-field="armSpeed" /></label>
+            <label>Arm curl / turns <input type="range" min="0" max="100" step="1" data-field="armCurl" /></label>
+          </div>
+        </section>
+
+        <section class="control-card">
+          <h3>Orbit clouds</h3>
+          <div class="two">
+            <label>Cloud amount <input type="range" min="0" max="100" step="1" data-field="orbitCloudAmount" /></label>
+            <label>Cloud opacity <input type="range" min="0" max="100" step="1" data-field="orbitCloudOpacity" /></label>
+          </div>
+          <div class="two">
+            <label>Cloud size <input type="range" min="0" max="100" step="1" data-field="orbitCloudSize" /></label>
+            <label>Orbit radius <input type="range" min="0" max="100" step="1" data-field="orbitCloudRadius" /></label>
+          </div>
+          <label>Cloud orbit speed <input type="range" min="0" max="100" step="1" data-field="orbitCloudSpeed" /></label>
+        </section>
+
+        <section class="control-card">
+          <h3>Particles</h3>
           <div class="two">
             <label>Particle amount <input type="range" min="0" max="100" step="1" data-field="particleAmount" /></label>
-            <label>Particle speed <input type="range" min="0" max="100" step="1" data-field="particleSpeed" /></label>
+            <label>Particle opacity <input type="range" min="0" max="100" step="1" data-field="particleOpacity" /></label>
           </div>
           <div class="two">
+            <label>Particle speed <input type="range" min="0" max="100" step="1" data-field="particleSpeed" /></label>
             <label>Particle spread <input type="range" min="0" max="100" step="1" data-field="particleSpread" /></label>
+          </div>
+          <div class="two">
             <label>Particle size <input type="range" min="0" max="100" step="1" data-field="particleSize" /></label>
+            <label>Particle glow <input type="range" min="0" max="100" step="1" data-field="particleGlow" /></label>
           </div>
         </section>
 
@@ -217,12 +242,14 @@
             <output data-overlay-layer-label>Over clouds / rim</output>
             <button type="button" data-action="overlay-forward">Layer +</button>
           </div>
-          <select class="hidden-select" data-field="overlayLayer" aria-label="Overlay layer">
+          <label>Layer position
+            <select data-field="overlayLayer" aria-label="Overlay layer">
             <option value="behind-effect">Behind effect</option>
             <option value="inside-aperture">Inside aperture / core</option>
             <option value="over-clouds">Over clouds / rim</option>
             <option value="front">Front overlay</option>
           </select>
+          </label>
         </section>
 
         <section class="control-card">
@@ -247,6 +274,6 @@
     </footer>
   </main>
 
-  <script type="module" src="./src/main.js?v=1.17"></script>
+  <script type="module" src="./src/main.js?v=1.18"></script>
 </body>
 </html>
