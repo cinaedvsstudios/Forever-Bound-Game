@@ -72,6 +72,7 @@ export class ShimmerDistortionEngine {
     this.grid = this.gridCanvas.getContext('2d');
     this.textureImage = null;
     this.overlayImage = null;
+    this.outlineImage = null;
     this.values = {};
     this.gridKey = '';
   }
@@ -86,6 +87,10 @@ export class ShimmerDistortionEngine {
 
   setOverlayImage(image = null) {
     this.overlayImage = image;
+  }
+
+  setOutlineImage(image = null) {
+    this.outlineImage = image;
   }
 
   resize() {
@@ -272,6 +277,47 @@ export class ShimmerDistortionEngine {
     ctx.restore();
   }
 
+  portalOutlineStyle(ctx, g, t, alpha = 1) {
+    const v = this.values;
+    const mode = v.outlineColorMode || 'solid';
+    const colorA = v.outlineColorA || v.coreColor || '#32f1ff';
+    const colorB = v.outlineColorB || v.rimColor || '#8e4dff';
+
+    if (mode === 'image' && this.outlineImage) {
+      const pattern = ctx.createPattern(this.outlineImage, 'repeat');
+      if (pattern && pattern.setTransform) {
+        const scaleValue = Math.max(0.08, g.base / Math.max(1, Math.min(this.outlineImage.width, this.outlineImage.height)) * 0.65);
+        const matrix = new DOMMatrix()
+          .translateSelf(g.cx, g.cy)
+          .rotateSelf((t * scale(-20, 20, ((v.outlinePulseSpeed ?? 40) / 100))) % 360)
+          .scaleSelf(scaleValue, scaleValue)
+          .translateSelf(-this.outlineImage.width / 2, -this.outlineImage.height / 2);
+        pattern.setTransform(matrix);
+      }
+      return pattern || rgba(colorA, alpha);
+    }
+
+    if (mode === 'radial') {
+      const grad = ctx.createRadialGradient(g.cx, g.cy, g.base * 0.08, g.cx, g.cy, Math.max(g.rx, g.ry) * 1.25);
+      grad.addColorStop(0, rgba(colorA, alpha));
+      grad.addColorStop(1, rgba(colorB, alpha));
+      return grad;
+    }
+
+    let grad = null;
+    if (mode === 'horizontal') grad = ctx.createLinearGradient(g.cx - g.rx, g.cy, g.cx + g.rx, g.cy);
+    else if (mode === 'vertical') grad = ctx.createLinearGradient(g.cx, g.cy - g.ry, g.cx, g.cy + g.ry);
+    else if (mode === 'diagonal') grad = ctx.createLinearGradient(g.cx - g.rx, g.cy - g.ry, g.cx + g.rx, g.cy + g.ry);
+
+    if (grad) {
+      grad.addColorStop(0, rgba(colorA, alpha));
+      grad.addColorStop(1, rgba(colorB, alpha));
+      return grad;
+    }
+
+    return rgba(colorA, alpha);
+  }
+
   drawPortalRing(ctx, g, t) {
     this.drawOverlayLayer(ctx, g, t, 'behind-effect');
     this.drawPortalBackdropDistortion(ctx, g, t);
@@ -280,6 +326,7 @@ export class ShimmerDistortionEngine {
     this.drawOverlayLayer(ctx, g, t, 'inside-aperture');
     this.drawPortalOutline(ctx, g, t);
     this.drawPortalCloudRim(ctx, g, t);
+    this.drawWormholeOrbitClouds(ctx, g, t);
     this.drawOverlayLayer(ctx, g, t, 'over-clouds');
     this.drawPortalLoopWisps(ctx, g, t);
     this.drawPortalParticles(ctx, g, t);
@@ -288,28 +335,35 @@ export class ShimmerDistortionEngine {
 
   drawPortalOutline(ctx, g, t) {
     const v = this.values;
-    const alpha = clamp01((v.outlineOpacity ?? 0) / 100);
+    const alphaBase = clamp01((v.outlineOpacity ?? 0) / 100);
     const thickness = (v.outlineThickness ?? 0) / 100;
-    if (alpha <= 0.001 || thickness <= 0.001) return;
+    if (alphaBase <= 0.001 || thickness <= 0.001) return;
 
     const radius = (v.outlineRadius ?? 86) / 100;
     const glow = clamp01((v.outlineGlow ?? 0) / 100);
-    const lineWidth = Math.max(0.5, g.base * scale(0.0015, 0.052, thickness));
+    const pulseStrength = clamp01((v.outlinePulseStrength ?? 0) / 100);
+    const pulseSpeed = scale(0.25, 7.0, (v.outlinePulseSpeed ?? 40) / 100);
+    const pulse = 1 + Math.sin(t * pulseSpeed) * 0.55 * pulseStrength;
+    const alpha = clamp01(alphaBase * (1 + Math.sin(t * pulseSpeed + Math.PI * 0.5) * 0.40 * pulseStrength));
+    const lineWidth = Math.max(0.5, g.base * scale(0.0015, 0.156, thickness) * pulse);
+    const colorA = v.outlineColorA || v.coreColor || '#32f1ff';
+    const colorB = v.outlineColorB || v.rimColor || '#8e4dff';
 
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    ctx.strokeStyle = rgba(v.coreColor || '#32f1ff', alpha * 0.92);
+    ctx.strokeStyle = this.portalOutlineStyle(ctx, g, t, alpha * 0.98);
     ctx.lineWidth = lineWidth;
-    ctx.shadowColor = v.coreColor || '#32f1ff';
-    ctx.shadowBlur = glow * g.base * 0.145;
+    ctx.shadowColor = colorA;
+    ctx.shadowBlur = glow * g.base * 0.20 * (1 + pulseStrength);
     ctx.beginPath();
     ctx.ellipse(g.cx, g.cy, g.rx * radius, g.ry * radius, 0, 0, TAU);
     ctx.stroke();
 
     if (glow > 0.02) {
-      ctx.strokeStyle = rgba(v.rimColor || '#8e4dff', alpha * glow * 0.38);
-      ctx.lineWidth = lineWidth * (1 + glow * 2.8);
-      ctx.shadowBlur = glow * g.base * 0.24;
+      ctx.strokeStyle = this.portalOutlineStyle(ctx, g, t + 0.37, alpha * glow * 0.48);
+      ctx.lineWidth = lineWidth * (1 + glow * 3.2);
+      ctx.shadowColor = colorB;
+      ctx.shadowBlur = glow * g.base * 0.30 * (1 + pulseStrength);
       ctx.beginPath();
       ctx.ellipse(g.cx, g.cy, g.rx * radius, g.ry * radius, 0, 0, TAU);
       ctx.stroke();
@@ -578,12 +632,12 @@ export class ShimmerDistortionEngine {
     ctx.filter = `blur(${scale(8, 18, (v.blur ?? 30) / 100)}px)`;
     const armAmountRaw = clamp01((v.armAmount ?? v.wispAmount ?? 52) / 100);
     const armOpacityRaw = clamp01((v.armOpacity ?? v.rimAlpha ?? 52) / 100);
-    const armAmountBoost = clamp01(armAmountRaw * 2.0);
-    const armOpacityBoost = clamp01(armOpacityRaw * 2.0);
-    const armRadius = scale(0.38, 1.55, (v.armRadius ?? 72) / 100);
+    const armAmountBoost = Math.min(1.8, armAmountRaw * 2.0);
+    const armOpacityBoost = Math.min(1.8, armOpacityRaw * 2.0);
+    const armRadius = scale(0.08, 2.20, (v.armRadius ?? 72) / 100);
     const armPulse = 1 + Math.sin(t * scale(0.9, 3.2, (v.armSpeed ?? 36) / 100)) * scale(0, 0.85, (v.armPulseStrength ?? 0) / 100);
     const armLayerEnabled = armOpacityBoost > 0.001 && armAmountBoost > 0.001;
-    const washCount = armLayerEnabled ? Math.round(scale(0, 46, armAmountBoost)) : 0;
+    const washCount = armLayerEnabled ? Math.round(scale(0, 76, Math.min(1, armAmountBoost))) : 0;
     for (let i = 0; i < washCount; i += 1) {
       const seed = i * 12.771;
       const a = TAU * (i / washCount) + t * speed * dir * scale(0.35, 1.05, hash1(seed + 2));
@@ -593,7 +647,7 @@ export class ShimmerDistortionEngine {
       const major = g.base * scale(0.090, 0.330, hash1(seed + 4)) * scale(0.55, 1.25, (v.cloudiness ?? 70) / 100) * armPulse;
       const minor = major * scale(0.28, 0.54, hash1(seed + 5));
       const colour = i % 3 === 0 ? v.coreColor : (i % 3 === 1 ? v.rimColor : v.accentColor);
-      const alpha = scale(0.000, 0.720, hash1(seed + 6)) * scale(0.20, 1.25, (v.cloudiness ?? 70) / 100) * Math.pow(armOpacityBoost, 1.05);
+      const alpha = Math.min(0.95, scale(0.000, 0.980, hash1(seed + 6)) * scale(0.20, 1.35, (v.cloudiness ?? 70) / 100) * armOpacityBoost);
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(a + Math.PI / 2 + (hash1(seed + 7) - 0.5) * 0.6);
@@ -613,7 +667,7 @@ export class ShimmerDistortionEngine {
     const speed = Math.pow((v.waveSpeed ?? 30) / 100, 2) * 0.20;
     const cloudOpacity = clamp01((v.orbitCloudOpacity ?? 0) / 100);
     const cloudPulse = 1 + Math.sin(t * scale(0.6, 3.0, (v.orbitCloudSpeed ?? 35) / 100)) * scale(0, 0.80, (v.orbitCloudPulseStrength ?? 0) / 100);
-    const cloudStagger = scale(0, 0.72, (v.orbitCloudStagger ?? 48) / 100);
+    const cloudStagger = scale(0, 1.65, (v.orbitCloudStagger ?? 48) / 100);
     const amount = Math.round(scale(0, 62, (v.cloudiness ?? 70) / 100) * cloudOpacity);
     if (amount <= 0 || cloudOpacity <= 0.001) return;
 
@@ -625,7 +679,7 @@ export class ShimmerDistortionEngine {
       const seed = i * 17.233;
       const p = hash1(seed + 1);
       const baseAngle = TAU * hash1(seed + 2) + t * speed * dir * scale(0.28, 0.78, hash1(seed + 3));
-      const radial = scale(0.16, 1.10, p) * scale(1 - cloudStagger * 0.55, 1 + cloudStagger, hash1(seed + 8));
+      const radial = scale(0.08, 1.18, p) * scale(Math.max(0.02, 1 - cloudStagger * 0.82), 1 + cloudStagger * 1.45, hash1(seed + 8));
       const bend = radial * TAU * scale(0.35, 1.45, Math.abs(v.swirl ?? 80) / 100);
       const a = baseAngle + dir * bend;
       const x = g.cx + Math.cos(a) * g.rx * radial;
@@ -652,17 +706,17 @@ export class ShimmerDistortionEngine {
     const v = this.values;
     const amountRaw = clamp01((v.armAmount ?? v.wispAmount ?? 52) / 100);
     const opacityRaw = clamp01((v.armOpacity ?? v.rimAlpha ?? 52) / 100);
-    const amountBoost = clamp01(amountRaw * 2.0);
-    const opacityBoost = clamp01(opacityRaw * 2.0);
+    const amountBoost = Math.min(1.8, amountRaw * 2.0);
+    const opacityBoost = Math.min(1.8, opacityRaw * 2.0);
     if (amountBoost <= 0 || opacityBoost <= 0) return;
 
-    const amount = Math.round(scale(0, 78, amountBoost));
-    const opacity = scale(0, 0.92, opacityBoost);
+    const amount = Math.round(scale(0, 115, Math.min(1, amountBoost)));
+    const opacity = scale(0, 1.65, Math.min(1, opacityBoost));
     const thickness = g.base * scale(0.022, 0.145, (v.armThickness ?? v.rimWidth ?? 64) / 100);
     const softness = scale(4, 19, (v.armSoftness ?? v.blur ?? 46) / 100);
     const speed = Math.pow((v.armSpeed ?? v.wispSpeed ?? 32) / 100, 2) * 0.42;
     const curl = scale(0.8, 3.8, (v.armCurl ?? v.wispCurl ?? 80) / 100);
-    const radiusScale = scale(0.38, 1.55, (v.armRadius ?? 72) / 100);
+    const radiusScale = scale(0.08, 2.20, (v.armRadius ?? 72) / 100);
     const pulse = 1 + Math.sin(t * scale(0.8, 3.8, (v.armSpeed ?? 32) / 100)) * scale(0, 0.90, (v.armPulseStrength ?? 0) / 100);
     const dir = (v.swirl ?? 80) >= 0 ? 1 : -1;
 
@@ -702,23 +756,23 @@ export class ShimmerDistortionEngine {
     const v = this.values;
     const amountRaw = clamp01((v.armAmount ?? v.wispAmount ?? 52) / 100);
     const opacityRaw = clamp01((v.armOpacity ?? v.rimAlpha ?? 52) / 100);
-    const amountBoost = clamp01(amountRaw * 2.0);
-    const opacityBoost = clamp01(opacityRaw * 2.0);
+    const amountBoost = Math.min(1.8, amountRaw * 2.0);
+    const opacityBoost = Math.min(1.8, opacityRaw * 2.0);
     const thicknessValue = v.armThickness ?? v.rimWidth ?? 64;
     const softnessValue = v.armSoftness ?? v.blur ?? 46;
     const speedValue = v.armSpeed ?? v.wispSpeed ?? 32;
     const curlValue = v.armCurl ?? v.wispCurl ?? Math.abs(v.swirl ?? 80);
-    const armCount = Math.round(scale(0, 22, amountBoost));
+    const armCount = Math.round(scale(0, 36, Math.min(1, amountBoost)));
     if (armCount <= 0 || opacityBoost <= 0 || thicknessValue <= 0) return;
 
     const dir = (v.swirl ?? 80) >= 0 ? 1 : -1;
     const speed = Math.pow(speedValue / 100, 2) * 0.46;
     const turns = scale(0.75, 4.80, curlValue / 100);
-    const baseThickness = g.base * scale(0.004, 0.130, thicknessValue / 100);
-    const opacity = scale(0.00, 1.65, opacityBoost);
+    const baseThickness = g.base * scale(0.004, 0.155, thicknessValue / 100);
+    const opacity = scale(0.00, 2.40, Math.min(1, opacityBoost));
     const roughness = scale(0.004, 0.060, (v.noise ?? 24) / 100);
     const softness = scale(0.5, 12, softnessValue / 100);
-    const radiusScale = scale(0.38, 1.55, (v.armRadius ?? 72) / 100);
+    const radiusScale = scale(0.08, 2.20, (v.armRadius ?? 72) / 100);
     const pulse = 1 + Math.sin(t * scale(0.7, 3.6, speedValue / 100)) * scale(0, 0.80, (v.armPulseStrength ?? 0) / 100);
 
     ctx.save();
@@ -783,7 +837,7 @@ export class ShimmerDistortionEngine {
     const opacity = scale(0, 1.35, (v.orbitCloudOpacity ?? 0) / 100);
     const sizeValue = (v.orbitCloudSize ?? 60) / 100;
     const radiusValue = (v.orbitCloudRadius ?? 72) / 100;
-    const stagger = scale(0, 0.78, (v.orbitCloudStagger ?? 48) / 100);
+    const stagger = scale(0, 1.90, (v.orbitCloudStagger ?? 48) / 100);
     const pulse = 1 + Math.sin(t * scale(0.7, 3.3, (v.orbitCloudSpeed ?? 35) / 100)) * scale(0, 0.90, (v.orbitCloudPulseStrength ?? 0) / 100);
     const speed = Math.pow((v.orbitCloudSpeed ?? 35) / 100, 2) * 0.70;
     const dir = (v.swirl ?? 80) >= 0 ? 1 : -1;
@@ -796,8 +850,8 @@ export class ShimmerDistortionEngine {
     for (let i = 0; i < amount; i += 1) {
       const seed = i * 15.913;
       const orbit = TAU * (i / amount) + hash1(seed) * 0.65 + t * speed * dir * scale(0.45, 1.35, hash1(seed + 2));
-      const localRadius = scale(0.35, 1.15, radiusValue) * scale(1 - stagger * 0.65, 1 + stagger * 0.95, hash1(seed + 3));
-      const wobble = Math.sin(t * speed * 2.4 + seed) * g.base * 0.025;
+      const localRadius = scale(0.25, 1.32, radiusValue) * scale(Math.max(0.03, 1 - stagger * 0.80), 1 + stagger * 1.55, hash1(seed + 3));
+      const wobble = Math.sin(t * speed * 2.4 + seed) * g.base * scale(0.015, 0.090, (v.orbitCloudStagger ?? 48) / 100);
       const x = g.cx + Math.cos(orbit) * (g.rx * localRadius + wobble);
       const y = g.cy + Math.sin(orbit) * (g.ry * localRadius * 0.88 + wobble * 0.68);
       const major = thickness * scale(1.0, 4.9, hash1(seed + 4)) * pulse;
@@ -891,16 +945,16 @@ export class ShimmerDistortionEngine {
 
   drawWormholeEmission(ctx, g, t) {
     const v = this.values;
-    const amount = Math.round(scale(0, 260, (v.emissionAmount ?? 0) / 100));
-    const opacity = scale(0, 1.55, (v.emissionOpacity ?? 60) / 100);
+    const amount = Math.round(scale(0, 520, (v.emissionAmount ?? 0) / 100));
+    const opacity = scale(0, 2.85, (v.emissionOpacity ?? 60) / 100);
     if (amount <= 0 || opacity <= 0.001) return;
 
-    const speed = scale(0.08, 1.95, (v.emissionSpeed ?? 45) / 100);
+    const speed = scale(0.18, 3.20, (v.emissionSpeed ?? 45) / 100);
     const directionDeg = Number(v.emissionDirection ?? 0);
     const vacuum = Boolean(v.emissionVacuum);
-    const trailLength = scale(0, 0.34, (v.emissionTrailLength ?? 42) / 100);
+    const trailLength = scale(0, 0.62, (v.emissionTrailLength ?? 42) / 100);
     const trailOpacity = scale(0, 1.0, (v.emissionTrailOpacity ?? 48) / 100);
-    const sizeBase = scale(0.9, 4.8, (v.particleSize ?? 24) / 100);
+    const sizeBase = scale(1.2, 7.8, (v.particleSize ?? 24) / 100);
     const glow = scale(2, 10, (v.particleGlow ?? 55) / 100);
 
     ctx.save();
@@ -919,22 +973,22 @@ export class ShimmerDistortionEngine {
       const angle = spreadAngle + wobble;
       const sx = g.cx;
       const sy = g.cy;
-      const maxD = scale(0.18, 1.18, hash1(seed + 6));
+      const maxD = scale(0.28, 1.42, hash1(seed + 6));
       const x = sx + Math.cos(angle) * g.rx * maxD * distance;
       const y = sy + Math.sin(angle) * g.ry * maxD * distance * 0.90;
       const prevDistance = vacuum ? Math.min(1, distance + trailLength) : Math.max(0, distance - trailLength);
       const tx = sx + Math.cos(angle) * g.rx * maxD * prevDistance;
       const ty = sy + Math.sin(angle) * g.ry * maxD * prevDistance * 0.90;
       const colour = i % 3 === 0 ? v.coreColor : (i % 3 === 1 ? v.rimColor : v.accentColor);
-      const alpha = opacity * fade * scale(0.38, 0.92, hash1(seed + 7));
+      const alpha = Math.min(1, opacity * fade * scale(0.44, 1.18, hash1(seed + 7)));
       const size = sizeBase * scale(0.65, 1.55, hash1(seed + 8));
 
       if (trailLength > 0.002 && trailOpacity > 0.001) {
         const grad = ctx.createLinearGradient(tx, ty, x, y);
         grad.addColorStop(0, rgba(colour, 0));
-        grad.addColorStop(1, rgba(colour, alpha * trailOpacity * 0.55));
+        grad.addColorStop(1, rgba(colour, alpha * trailOpacity * 0.95));
         ctx.strokeStyle = grad;
-        ctx.lineWidth = Math.max(0.8, size * 0.75);
+        ctx.lineWidth = Math.max(1.0, size * 1.15);
         ctx.beginPath();
         ctx.moveTo(tx, ty);
         ctx.lineTo(x, y);

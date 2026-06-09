@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Artifex Shimmer / Portal Distortion Engine Preview</title>
-  <link rel="stylesheet" href="./styles.css?v=1.22" />
+  <link rel="stylesheet" href="./styles.css?v=1.23" />
 </head>
 <body>
   <main class="fx-shell" data-app>
@@ -15,7 +15,7 @@
           <p class="kicker">Artifex FX Engine Prototype</p>
           <h1>Shimmer / Portal Distortion Engine</h1>
         </div>
-        <span class="version">V1.22</span>
+        <span class="version">V1.23</span>
       </div>
       <div class="header-actions">
         <button type="button" data-action="play">▶️ Play</button>
@@ -51,7 +51,7 @@
 
           <div class="canvas-wrap">
             <canvas width="960" height="540" data-canvas></canvas>
-            <div class="canvas-hint">Canvas preview — sticky display; stronger arms, cloud stagger, pulse controls and particle emission.</div>
+            <div class="canvas-hint">Canvas preview — portal outline colour/gradient/image, working orbit clouds, stronger arms and visible emission.</div>
           </div>
         </div>
 
@@ -136,8 +136,30 @@
           </div>
           <div class="two">
             <label>Line glow <input type="range" min="0" max="100" step="1" data-field="outlineGlow" /></label>
-            <label>Line radius <input type="range" min="55" max="125" step="1" data-field="outlineRadius" /></label>
+            <label>Line radius <input type="range" min="55" max="135" step="1" data-field="outlineRadius" /></label>
           </div>
+          <div class="two">
+            <label>Line pulse strength <input type="range" min="0" max="100" step="1" data-field="outlinePulseStrength" /></label>
+            <label>Line pulse speed <input type="range" min="0" max="100" step="1" data-field="outlinePulseSpeed" /></label>
+          </div>
+          <label>Line colour mode
+            <select data-field="outlineColorMode">
+              <option value="solid">Solid colour</option>
+              <option value="radial">Radial gradient</option>
+              <option value="horizontal">Horizontal gradient</option>
+              <option value="vertical">Vertical gradient</option>
+              <option value="diagonal">Diagonal gradient</option>
+              <option value="image">Image colour texture</option>
+            </select>
+          </label>
+          <div class="two">
+            <label>Line colour A <input type="color" data-field="outlineColorA" /></label>
+            <label>Line colour B <input type="color" data-field="outlineColorB" /></label>
+          </div>
+          <label>Line colour image
+            <input type="file" accept="image/png,image/jpeg,image/webp" data-outline-file />
+          </label>
+          <p class="texture-status" data-outline-status>No line image loaded.</p>
         </section>
 
         <section class="control-card">
@@ -300,6 +322,6 @@
     </footer>
   </main>
 
-  <script type="module" src="./src/main.js?v=1.22"></script>
+  <script type="module" src="./src/main.js?v=1.23"></script>
 </body>
 </html>

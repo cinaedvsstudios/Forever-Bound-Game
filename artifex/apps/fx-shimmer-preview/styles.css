@@ -478,7 +478,7 @@ input[type="file"]{width:100%;min-height:38px;border:1px solid rgba(53,212,216,.
 }
 
 
-/* V1.22: keep the preview visible. The right settings panel is the scrolling area. */
+/* V1.23: keep the preview visible. The right settings panel is the scrolling area. */
 @media (min-width: 1321px) {
   .canvas-wrap {
     max-height: min(58vh, 720px);
@@ -489,7 +489,7 @@ input[type="file"]{width:100%;min-height:38px;border:1px solid rgba(53,212,216,.
 }
 
 
-/* V1.22: fixed desktop layout. The preview stays visible; only the settings panel scrolls. */
+/* V1.23: fixed desktop layout. The preview stays visible; only the settings panel scrolls. */
 .fx-shell {
   height: calc(100vh - 32px);
   max-height: calc(100vh - 32px);
@@ -598,7 +598,7 @@ input[type="file"]{width:100%;min-height:38px;border:1px solid rgba(53,212,216,.
 }
 
 
-/* V1.22: hard lock the preview layout; the app itself does not scroll on desktop. */
+/* V1.23: hard lock the preview layout; the app itself does not scroll on desktop. */
 @media (min-width: 981px) {
   html,
   body {
@@ -651,4 +651,21 @@ input[type="file"]{width:100%;min-height:38px;border:1px solid rgba(53,212,216,.
     overflow-x: hidden !important;
     scrollbar-gutter: stable;
   }
+}
+
+
+/* V1.23: colour inputs and harder app shell scroll lock. */
+input[type="color"] {
+  width: 100%;
+  min-height: 38px;
+  padding: 3px;
+  border: 1px solid rgba(53,212,216,.34);
+  border-radius: 10px;
+  background: #080606;
+}
+@media (min-width: 981px) {
+  .fx-shell { display: flex; flex-direction: column; }
+  .workspace { flex: 1 1 auto; height: 0 !important; min-height: 0 !important; }
+  .preview-panel, .control-panel, .preset-panel { min-height: 0 !important; }
+  .control-panel { overflow-y: scroll !important; }
 }

@@ -1,5 +1,5 @@
-import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.22';
-import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.22';
+import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.23';
+import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.23';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -15,7 +15,9 @@ const state = {
   textureName: '',
   textureDataUrl: '',
   overlayName: '',
-  overlayDataUrl: ''
+  overlayDataUrl: '',
+  outlineName: '',
+  outlineDataUrl: ''
 };
 
 const controls = $$('[data-field]');
@@ -26,6 +28,8 @@ const textureFile = $('[data-texture-file]');
 const textureStatus = $('[data-texture-status]');
 const overlayFile = $('[data-overlay-file]');
 const overlayStatus = $('[data-overlay-status]');
+const outlineFile = $('[data-outline-file]');
+const outlineStatus = $('[data-outline-status]');
 const overlayLayerLabel = $('[data-overlay-layer-label]');
 
 function clone(value) {
@@ -61,6 +65,7 @@ const OVERLAY_LAYER_ORDER = Object.keys(OVERLAY_LAYER_LABELS);
 
 function updateOverlayStatus() {
   if (overlayStatus) overlayStatus.textContent = state.overlayName ? `Loaded overlay: ${state.overlayName}` : 'No overlay loaded.';
+  if (outlineStatus) outlineStatus.textContent = state.outlineName ? `Loaded line image: ${state.outlineName}` : 'No line image loaded.';
   if (overlayLayerLabel) overlayLayerLabel.textContent = OVERLAY_LAYER_LABELS[state.values.overlayLayer] || 'Over clouds / rim';
 }
 
@@ -113,11 +118,12 @@ function fxAssetJson() {
     scope: 'project',
     projectId: 'forever-bound',
     engine: 'artifex-shimmer-distortion-preview',
-    engineVersion: '1.2.2-preview',
+    engineVersion: '1.2.3-preview',
     tags: preset.tags,
     assets: {
       ...(state.textureName ? { texture: { kind: 'externalImageReference', editorFileName: state.textureName } } : {}),
-      ...(state.overlayName ? { overlay: { kind: 'externalPngOverlayReference', editorFileName: state.overlayName } } : {})
+      ...(state.overlayName ? { overlay: { kind: 'externalPngOverlayReference', editorFileName: state.overlayName } } : {}),
+      ...(state.outlineName ? { outlineColorImage: { kind: 'externalLineColorTextureReference', editorFileName: state.outlineName } } : {})
     },
     composition: {
       layers: [
@@ -150,13 +156,14 @@ function editorProjectJson() {
   return {
     schema: 'artifex.fxEditorProject.v1',
     editor: 'fx-shimmer-preview',
-    editorVersion: '1.2.2-preview',
+    editorVersion: '1.2.3-preview',
     selectedPresetId: state.selectedPresetId,
     name: preset.name,
     description: preset.description,
     values: clone(state.values),
     texture: state.textureName ? { name: state.textureName, dataUrl: state.textureDataUrl } : null,
     overlay: state.overlayName ? { name: state.overlayName, dataUrl: state.overlayDataUrl } : null,
+    outlineColorImage: state.outlineName ? { name: state.outlineName, dataUrl: state.outlineDataUrl } : null,
     view: {
       showGrid: Boolean(state.values.showGrid),
       showMask: Boolean(state.values.showMask)
@@ -215,6 +222,27 @@ if (overlayFile) {
         state.values.overlayEnabled = true;
         syncControls();
         setStatus(`Loaded overlay ${file.name}.`);
+      };
+      image.src = String(reader.result || '');
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+if (outlineFile) {
+  outlineFile.addEventListener('change', () => {
+    const file = outlineFile.files && outlineFile.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        engine.setOutlineImage(image);
+        state.outlineName = file.name;
+        state.outlineDataUrl = String(reader.result || '');
+        state.values.outlineColorMode = 'image';
+        syncControls();
+        setStatus(`Loaded portal line image ${file.name}.`);
       };
       image.src = String(reader.result || '');
     };
