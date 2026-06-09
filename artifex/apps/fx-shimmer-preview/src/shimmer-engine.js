@@ -574,7 +574,8 @@ export class ShimmerDistortionEngine {
     // Rotating soft nebula wash: this brings back the older visible body without using the old octagonal line nest.
     ctx.globalCompositeOperation = 'lighter';
     ctx.filter = `blur(${scale(8, 18, (v.blur ?? 30) / 100)}px)`;
-    const washCount = 9;
+    const armWashOpacity = clamp01((v.armOpacity ?? v.rimAlpha ?? 52) / 100);
+    const washCount = Math.round(scale(0, 12, (v.armAmount ?? v.wispAmount ?? 52) / 100));
     for (let i = 0; i < washCount; i += 1) {
       const seed = i * 12.771;
       const a = TAU * (i / washCount) + t * speed * dir * scale(0.35, 1.05, hash1(seed + 2));
@@ -584,7 +585,7 @@ export class ShimmerDistortionEngine {
       const major = g.base * scale(0.075, 0.25, hash1(seed + 4)) * scale(0.55, 1.25, (v.cloudiness ?? 70) / 100);
       const minor = major * scale(0.28, 0.54, hash1(seed + 5));
       const colour = i % 3 === 0 ? v.coreColor : (i % 3 === 1 ? v.rimColor : v.accentColor);
-      const alpha = scale(0.018, 0.055, hash1(seed + 6)) * scale(0.35, 1.15, (v.cloudiness ?? 70) / 100);
+      const alpha = scale(0.000, 0.135, hash1(seed + 6)) * scale(0.25, 1.20, (v.cloudiness ?? 70) / 100) * armWashOpacity;
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(a + Math.PI / 2 + (hash1(seed + 7) - 0.5) * 0.6);
@@ -602,8 +603,9 @@ export class ShimmerDistortionEngine {
     const v = this.values;
     const dir = (v.swirl ?? 80) >= 0 ? 1 : -1;
     const speed = Math.pow((v.waveSpeed ?? 30) / 100, 2) * 0.20;
-    const amount = Math.round(scale(0, 30, (v.cloudiness ?? 70) / 100));
-    if (amount <= 0) return;
+    const cloudOpacity = clamp01((v.orbitCloudOpacity ?? 0) / 100);
+    const amount = Math.round(scale(0, 38, (v.cloudiness ?? 70) / 100) * cloudOpacity);
+    if (amount <= 0 || cloudOpacity <= 0.001) return;
 
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -621,7 +623,7 @@ export class ShimmerDistortionEngine {
       const major = g.base * scale(0.025, 0.110, (v.cloudiness ?? 70) / 100) * scale(0.55, 1.75, hash1(seed + 4));
       const minor = major * scale(0.22, 0.48, hash1(seed + 5));
       const colour = i % 4 === 0 ? v.accentColor : (i % 2 === 0 ? v.coreColor : v.rimColor);
-      const alpha = scale(0.010, 0.044, hash1(seed + 6)) * scale(0.45, 1.15, (v.rimAlpha ?? 48) / 100);
+      const alpha = scale(0.000, 0.115, hash1(seed + 6)) * cloudOpacity * scale(0.45, 1.15, (v.cloudiness ?? 70) / 100);
 
       ctx.save();
       ctx.translate(x, y);
@@ -651,7 +653,7 @@ export class ShimmerDistortionEngine {
     const speed = Math.pow(speedValue / 100, 2) * 0.46;
     const turns = scale(0.75, 4.80, curlValue / 100);
     const baseThickness = g.base * scale(0.003, 0.085, thicknessValue / 100);
-    const opacity = scale(0.00, 0.34, opacityValue / 100);
+    const opacity = scale(0.00, 0.62, opacityValue / 100);
     const roughness = scale(0.004, 0.060, (v.noise ?? 24) / 100);
     const softness = scale(0.5, 12, softnessValue / 100);
 
@@ -711,10 +713,10 @@ export class ShimmerDistortionEngine {
 
   drawWormholeOrbitClouds(ctx, g, t) {
     const v = this.values;
-    const amount = Math.round(scale(0, 44, (v.orbitCloudAmount ?? 0) / 100));
+    const amount = Math.round(scale(0, 70, (v.orbitCloudAmount ?? 0) / 100));
     if (amount <= 0) return;
 
-    const opacity = scale(0, 0.22, (v.orbitCloudOpacity ?? 0) / 100);
+    const opacity = scale(0, 0.52, (v.orbitCloudOpacity ?? 0) / 100);
     const sizeValue = (v.orbitCloudSize ?? 60) / 100;
     const radiusValue = (v.orbitCloudRadius ?? 72) / 100;
     const speed = Math.pow((v.orbitCloudSpeed ?? 35) / 100, 2) * 0.70;
@@ -783,7 +785,7 @@ export class ShimmerDistortionEngine {
     const count = Math.round(scale(0, 190, (v.particleAmount ?? 38) / 100));
     if (!count) return;
 
-    const opacityMul = scale(0, 1.35, (v.particleOpacity ?? 62) / 100);
+    const opacityMul = scale(0, 1.95, (v.particleOpacity ?? 62) / 100);
     if (opacityMul <= 0.001) return;
 
     const speed = Math.pow((v.particleSpeed ?? 42) / 100, 2) * 0.52;

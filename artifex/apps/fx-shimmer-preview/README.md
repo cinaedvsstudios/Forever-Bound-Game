@@ -1,22 +1,21 @@
 # Artifex Shimmer / Portal Distortion Engine Preview
 
-V1.18 keeps the improved Portal Ring and restructures the Wormhole controls into separate real layers.
+V1.19 fixes the wormhole opacity controls.
 
-## V1.18 changes
+## V1.19 changes
 
 ```text
-Portal Ring visual body is left intact.
-Portal Ring thin outline controls are made more obvious: line thickness, line opacity, line glow and line radius.
-Wormhole is adjusted back toward the stronger older visible body while keeping the newer dark centre and no octagonal line nest.
-Wisps are renamed to Arms.
-Arms and Particles are now separate control cards.
-Orbit Clouds are also a separate control card so the moving cloud ring can be tuned independently from spiral arms and particles.
-Wormhole arms, orbit clouds and particles now have more aggressive value ranges so sliders visibly change the preview.
-Overlay image controls remain available with blend mode, opacity, scale, rotation speed, pulse speed and layer position.
+Portal Ring remains visually unchanged.
+Arm opacity now affects both the visible spiral arm ribbons and the broad rotating arm wash.
+Arm amount now also affects the broad rotating arm wash, so zero really removes the arm layer.
+Orbit Cloud opacity now controls both orbiting cloud puffs and depth mist, so zero really removes cloud puffs/mist.
+Orbit Cloud opacity range is stronger and should be visibly obvious.
+Particle opacity range is stronger.
+The wormhole default is tuned so the arms/cloud/particle sliders have visible headroom rather than sitting in a barely-visible range.
 ```
 
 ## Test URL after upload
 
 ```text
-https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/main/artifex/apps/fx-shimmer-preview/index.html?v=118
+https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/main/artifex/apps/fx-shimmer-preview/index.html?v=119
 ```
