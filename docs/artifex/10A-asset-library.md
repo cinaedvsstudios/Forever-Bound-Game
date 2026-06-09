@@ -10,11 +10,28 @@ Outstanding work source: `docs/artifex/02A-global-to-do.md`
 
 ## Purpose
 
-Asset Library is the final registered-asset ownership layer for Artifex projects.
+Asset Library is the final registered media and generated-media ownership layer for Artifex projects.
 
-It owns stable `asset_` records, final asset metadata, final asset grouping, searchable asset library behaviour and final asset files after source material has been promoted from staging or created by an approved generator.
+It owns stable `asset_` records, final media metadata, final asset grouping, searchable media-library behaviour and final files after source material has been promoted from staging or created by an approved generator.
 
 The current repository does not prove a finished standalone Asset Library application route. This specification therefore defines the permanent Asset Library contract and ownership boundary. It must not falsely describe a completed Asset Library UI app that has not yet been verified.
+
+## Layered Reusable-Content Model
+
+Artifex uses several reusable content layers. Asset Library is only one layer.
+
+| Layer | Owner | Stable ID / index | What belongs here | What does not belong here |
+|---|---|---|---|---|
+| Raw / imported media assets | Asset Library | `asset_` in `assets/asset-index.json` | Images, sprites, portraits, backgrounds, UI images, icons, buttons, frames, logos, textures, overlays, brushes, thumbnails, videos, animated images, imported audio, music, ambience, voice and sound files. | Scene layouts, quest logic, puzzle rules, object behaviour, effect logic. |
+| Generated / mechanical media assets | Asset Library with the relevant generator handoff | `asset_` in `assets/asset-index.json` | Generated/mechanical sounds from Sound Generator, procedural-synth playback recipes, approved generated media recipes and their final preview/playback metadata. | Separate `archsound_` records or a sound-archetype index. |
+| Mechanical FX archetypes | Effect Editor | `archeffect_` in `archetypes/effect-index.json` | Reusable effect definitions such as shimmer, fog, glow, portal effects, particles, shockwaves, light glints and other mechanical FX. | Raw texture/image/audio ownership. Dependencies should reference `asset_` records where they are project content. |
+| Archetype objects | Archetype Object Creator | `archobj_` in `archetypes/object-index.json` | Reusable game objects composed from sprites, portraits, sounds, videos, effects, frame corrections, gameplay metadata and interaction-facing fields. | General media importing or scene placement. |
+| Scenes / screens | Scene Editor | future `scene_` / screen indexes owned by Scene Editor | Playable spaces composed from backgrounds, overlays, placed objects, effects, sounds, puzzles, portals, routes and triggers. | Asset ownership. |
+| Puzzle records | Puzzle Creator | future `puzzle_` indexes owned by Puzzle Creator | Maze, pattern lock, rune/music, inventory, obstacle and other puzzle definitions. | Asset ownership or quest ownership. |
+| Quest / sidequest records | Quest Builder | future `quest_` / sidequest indexes owned by Quest Builder | Quest logic, dialogue references, objectives, puzzle references, rewards, scenes, Capra feedback and conditions. | Asset, scene, puzzle or object ownership. |
+| Project Library / Registered Content view | Registered Content Service / Picker | Reads owner indexes only | Cross-owner catalogue and selector for final records owned elsewhere. | Creating, promoting, editing or owning those records. |
+
+This separation is mandatory. Asset Library may show or help select reusable content from other layers through the broader Registered Content / Project Library view, but it must not become the owner of scenes, puzzles, quests, effect archetypes or archetype objects.
 
 ## Ownership Boundary
 
@@ -23,17 +40,19 @@ Asset Library owns:
 - stable `asset_` identifiers;
 - `assets/asset-index.json`;
 - final files under `assets/`;
-- asset metadata, including type, category, tags, groups, dimensions, duration, format, source/promotion notes, status and usage-facing labels;
-- searchable and filterable final asset catalogue behaviour;
+- media metadata, including type, category, tags, groups, dimensions, duration, format, source/promotion notes, status and usage-facing labels;
+- searchable and filterable final media catalogue behaviour;
 - promotion from `intake/` staging folders into final indexed project assets;
-- final registered image, sprite, portrait, texture, overlay, icon, UI, video-reference, music, sound-effect, voice and procedural-synth asset records;
-- asset groups such as character/animation/portrait sets;
+- final registered image, sprite, portrait, background, texture, overlay, brush, thumbnail, icon, UI, video, animated-image, music, ambience, sound-effect, voice and procedural-synth asset records;
+- generated/mechanical sound records created through the approved Sound Generator workflow;
+- asset groups such as character, animation, portrait, UI, texture, brush, effect-dependency and related audio groups;
 - usage information where available through the shared reference index;
-- the canonical asset records consumed by Scene Editor, Quest Builder, Puzzle Creator, Archetype Object Creator, Effect Editor, Sound Library, Runtime/Playtest, Health and Build Game.
+- the canonical media records consumed by Scene Editor, Quest Builder, Puzzle Creator, Archetype Object Creator, Effect Editor, Sound Library, Runtime/Playtest, Health and Build Game.
 
 Asset Library must not:
 
 - author scene layout, placed scene objects, quest logic, puzzle rules, object archetype definitions, effect archetype definitions, project routes, runtime behaviour or build output;
+- store scenes, puzzles, quests, object archetypes or effect archetypes in `assets/asset-index.json`;
 - allow modules to reference `intake/` files as permanent authored content;
 - allow module-specific preview files, browser drafts, staged uploads, data URLs or temporary source paths to become final project references;
 - create a separate sound-archetype index, `archsound_` identifier family or parallel generated-audio ownership system;
@@ -42,24 +61,35 @@ Asset Library must not:
 
 ## Asset Categories
 
-Asset Library may catalogue final registered assets such as:
+Asset Library may catalogue final registered media assets such as:
 
 ```text
-Characters
+Images
+Sprites
+Portraits
 Character Animations
-Props
 Backgrounds
-UI Elements
+Props
+UI Images
 Buttons
 Frames
 Logos
 Icons
+Textures
+Overlays
+Brushes
+Thumbnails
+Videos
+Animated Images
 Audio
 Music
+Ambience
 Sound Effects
 Voice
+Generated / Mechanical Sounds
+Procedural Synth Recipes
 CG / FX Dependencies
-Templates / Reference Assets
+Templates / Reference Media
 ```
 
 The exact display group names may change, but final reusable media belongs in Asset Library.
@@ -74,16 +104,22 @@ A final record may describe media such as:
 image
 sprite
 portrait
+background
 texture
 overlay
+brush
+thumbnail
 icon
 ui
+video
+animated-image
 audio
 music
+ambience
 sound-effect
 voice
 procedural-synth
-video-reference
+generated-media-recipe
 document/reference
 ```
 
@@ -177,7 +213,7 @@ Example character asset group:
 }
 ```
 
-Asset grouping is useful for characters, animation sets, portrait sets, UI packs, effect texture packs and related audio groups.
+Asset grouping is useful for characters, animation sets, portrait sets, UI packs, effect texture packs, brush packs, video/animated-image variants and related audio groups.
 
 ## Intake Versus Final Assets
 
@@ -189,6 +225,7 @@ Valid intake uses include:
 - unsorted source art;
 - screenshots or reference files awaiting review;
 - audio awaiting cleanup or conversion;
+- video or animated-image source material awaiting conversion or approval;
 - temporary media staged during a module-specific finalisation flow.
 
 Valid final asset uses include:
@@ -214,7 +251,7 @@ Filter by project
 Filter by character
 Filter by scene usage
 Filter by referring record
-Preview image/audio
+Preview image/audio/video/animated-image
 Preview procedural synth audio through its playback engine
 Distinguish imported audio files from generated synth recipes while listing them together
 Copy file path where safe
@@ -248,15 +285,15 @@ Creation Guide may create starter folders and initial intake buckets. It may rep
 
 ### Scene Editor
 
-Scene Editor places visual content in scenes and screens. It should reference final registered assets for backgrounds, overlays, placed images, UI images, ambience, local sound sources, transitions and any future media-backed scene element.
+Scene Editor places visual content in scenes and screens. It should reference final registered assets for backgrounds, overlays, placed images, UI images, ambience, local sound sources, transitions and any future media-backed scene element. It owns scene/screen records and placement semantics, not the media assets.
 
 ### Quest Builder
 
-Quest Builder may reference final registered assets for portraits, dialogue/feedback audio, reward icons, UI presentation, quest imagery and other Quest-facing media.
+Quest Builder may reference final registered assets for portraits, dialogue/feedback audio, reward icons, UI presentation, quest imagery and other Quest-facing media. It owns quest/sidequest records and quest logic.
 
 ### Archetype Object Creator
 
-Object Creator owns reusable `archobj_` object definitions. Its finalised objects must point to registered final `asset_` records for required gameplay sprites, portrait assets and object sound references.
+Object Creator owns reusable `archobj_` object definitions. Its finalised objects must point to registered final `asset_` records for required gameplay sprites, portrait assets, video/animated-image assets where approved and object sound references.
 
 Object Creator may perform a bounded finalisation handoff to create required final assets for the object being finished. That handoff is not a general asset-import UI and must not bypass Asset Library ownership rules.
 
@@ -266,7 +303,7 @@ Effect Editor owns reusable `archeffect_` FX definitions. Saved FX Archetypes th
 
 ### Puzzle Creator
 
-Puzzle Creator may reference final registered assets for puzzle visuals, icons, sounds, feedback, symbols, UI and puzzle-specific media.
+Puzzle Creator may reference final registered assets for puzzle visuals, icons, sounds, feedback, symbols, UI and puzzle-specific media. It owns puzzle records and puzzle logic.
 
 ### Sound Library / Sound Generator
 
@@ -276,7 +313,7 @@ Generated synth sounds and imported audio files must become final registered Ass
 
 ### Registered Content Service / Picker
 
-A shared registered-content picker may read and present Asset Library records. It is a selection/lookup service, not the owner of the records it displays.
+A shared registered-content picker may read and present Asset Library records alongside other registered project records. It is a selection/lookup service, not the owner of the records it displays.
 
 ### Health and Build Game
 
@@ -316,7 +353,7 @@ The active backlog, not this specification, owns implementation tasks.
 
 Known work includes:
 
-- create or confirm the Asset Library UI/service for browsing, grouping, promoting, editing metadata and registering final project assets;
+- create or confirm the Asset Library UI/service for browsing, grouping, promoting, editing metadata and registering final media/generated-media project assets;
 - implement safe promotion from `intake/` to final `assets/` files and `assets/asset-index.json` records;
 - prevent permanent authored content from referencing `intake/` files;
 - support Creation Guide project-logo and recommended-media readiness through final registered assets;
@@ -326,6 +363,7 @@ Known work includes:
 - support Quest Builder registered portrait, icon, reward, feedback and audio references;
 - support Puzzle Creator registered visual/audio feedback references;
 - add canonical imported-audio promotion for accepted audio formats such as WAV, MP3 and OGG;
+- add canonical video and animated-image promotion for accepted runtime-safe formats if those assets are approved for the game workflow;
 - support character asset groups and grouped animation/portrait sets;
 - support usage tracking through the shared reference index;
 - support procedural-synth preview and safe edit-through-popup flow;

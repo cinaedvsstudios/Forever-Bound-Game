@@ -20,6 +20,7 @@ Rules:
 - Keep ZIP/download/export as backup/interchange unless a module explicitly has no connected-project save yet.
 - Archive old docs only after valid content has been transferred.
 - Do not replace old non-`A` specs; create/use the controlled `A` spec and archive the old file later.
+- Keep the Asset Library, Registered Content / Project Library catalogue and individual record owners separate. Do not collapse scenes, puzzles, quests, effects and objects into `assets/asset-index.json`.
 
 ## Protected Baselines
 
@@ -31,17 +32,17 @@ Rules:
 | Project Editor | v0.1.32 CONTRACT captured in `05A`. | Imported-index browser, linking, Stitcher and Health/Build Prep presentation already exist. |
 | Scene Editor | v0.37-control-state-inspector-retention captured in `06A`. | Do not revive completed v0.35-v0.37 stabilisation work. |
 | Quest Builder | V1.2.12 captured in `07A`. | Do not list current connection/grid/routing/export foundations as missing. |
-| Archetype Object Creator | V1.36 captured in `08A`. | Lifecycle implementation exists but still needs disposable-project validation before feature work. |
+| Archetype Object Creator | V1.36 captured in `08A`; disposable-project lifecycle validation passed on 2026-06-09. | Remaining work is follow-up feature/maintenance work, not lifecycle validation. |
 | Effect Editor | INDEX2-CLEAN-0.2.6 captured in `09A`. | Rotation Direction, Orbital Force, ALL CAPS, Gravity/Boost, Brush/Shape Library and width braces are already present. |
-| Asset Library | Contract captured in `10A`. | No complete standalone UI route is verified; treat it as final registered-asset ownership layer. |
+| Asset Library | Contract captured in `10A`. | No complete standalone UI route is verified; treat it as final media/generated-media asset ownership layer, not owner of scenes/puzzles/quests/effects/objects. |
 | Shared Connected Project Folder Service | Captured in `11A`. | It owns folder/permission/project-relative read-write infrastructure, not module content. |
 | Shared Active Project Service | Captured in `12A`. | Active project is selection/context, not proof of connected folder or loaded files. |
-| Registered Content Service / Picker | Captured in `13A`. | It reads/selects registered records; it does not create them. |
+| Registered Content Service / Picker | Captured in `13A`. | It reads/selects registered records and may become the broader Project Library catalogue; it does not create or own them. |
 | Shared Health Guide / Project Audit | Captured in `14A`. | It reports and assigns fix owners; it must not silently repair authored data. |
 | Build Game | Captured in `15A`. | No complete standalone Build route is verified yet. |
 | Runtime Engine / Playtest | Captured in `16A`. | Current evidence is boundary/planning plus local preview pieces, not completed shared runtime. |
-| Puzzle Creator | V1.35 captured in `17A`. | Labyrinth Maze is implemented; other modules are planning placeholders. |
-| Sound Generator / Sound Library | Captured in `18A`. | PR #46 Sound Library work remains provisional until accepted. |
+| Puzzle Creator | V1.35 captured in `17A`. | Labyrinth Maze is implemented; other modules are planning placeholders. Active PR #52 is skipped while Puzzle Creator work is in progress. |
+| Sound Generator / Sound Library | Captured in `18A`. | The current live version is accepted as sufficient for now; prior pending PR #46 work was deliberately closed rather than merged. |
 | Project Starter Schemas | Captured in `19A`. | Exact starter JSON/index shapes live here, not in module specs. |
 | Terminology and Naming | Captured in `20A`. | Naming alternatives stay here until deliberately resolved. |
 | Template Game | Captured in `21A`. | Populated connected reference project is separate from Blank Starter Project. |
@@ -56,12 +57,11 @@ Status: ongoing
 - Use `00A`, `01A`, `02A` and the active `A` specs as the controlled documentation set.
 - Archive or reduce old docs only after confirming their valid content is represented in active docs.
 - Check code dependencies before retiring machine-readable task files such as `artifex/shared/todo-guide/all-apps-todos.json`.
-- Reconcile open documentation PRs #40 and #44 so they do not become parallel current authorities.
-- Keep PR #46 protected as active Sound work until accepted/merged or deliberately rejected.
 - Standardise shared header/menu/version/chrome behaviour across apps through separate implementation passes.
 - Standardise connected-folder save-state, unsaved-navigation guard and local-draft warnings across authoring apps.
 - Build shared project-reference indexing so modules can show real usage of assets, objects, effects, scenes, quests, puzzles, routes and portal endpoints.
 - Build and validate the populated Template Game connected reference project after connected save/reference systems are reliable.
+- Keep the layered content model explicit: Asset Library owns media/generated-media `asset_` records; Effect Editor owns `archeffect_`; Object Creator owns `archobj_`; Scene Editor owns scenes/screens; Puzzle Creator owns puzzles; Quest Builder owns quests; Registered Content / Project Library only reads and selects owner-backed records.
 
 ## Hub / Artifex Portal
 
@@ -110,8 +110,9 @@ Specification: `docs/artifex/06A-scene-editor.md`
 - Implement connected-project scene/screen loading, direct saving and typed index registration.
 - Display canonical project-file/local-draft/conflict/permission status.
 - Replace fixed-manifest/path-only placement with stable registered Asset/Object/Effect references.
-- Add Sound Library ambience/source/transition selection after Sound foundation acceptance.
+- Add Sound Library ambience/source/transition selection only after the accepted live Sound foundation is deliberately extended again.
 - Define Scene Events, Triggers and portal linking after save/reference foundations are reliable.
+- After canonical scene/screen save/index exists, decide whether scenes/screens become selectable Registered Content / Project Library kinds.
 - Archive old Scene Editor status/plan docs after acceptance.
 
 ## Quest Builder
@@ -124,8 +125,9 @@ Specification: `docs/artifex/07A-quest-builder.md`
 - Implement structured action/condition/outcome/dialogue/Capra authoring and validation.
 - Add dynamic workspace expansion and Insert Space layout tools.
 - After Puzzle Creator canonical saving exists, add real `Puzzle` block using required `puzzleId`.
-- Add registered Sound Library selectors after Sound foundation acceptance.
+- Add registered Sound Library selectors only after the accepted live Sound foundation is deliberately extended again.
 - Add Test Quest only through confirmed Runtime/Playtest support.
+- After canonical quest/sidequest indexes exist, decide whether quests become selectable Registered Content / Project Library kinds.
 - Confirm Quest Builder implementation tasks against current code; overlapping local Quest Builder README material has been archived into the 2026-06-08 final Markdown audit.
 
 ## Archetype Object Creator
@@ -141,7 +143,7 @@ Follow-up:
 
 - Split large `editor-ui.js` only after validation and separately from repair work.
 - Complete real Scene/Quest/Puzzle reference listing after shared reference index exists.
-- Adopt Sound Library object sounds after Sound foundation acceptance.
+- Adopt Sound Library object sounds only after the accepted live Sound foundation is deliberately extended again.
 - Keep Object Creator validation evidence in `08A`; old Object Creator README/helper notes have been archived into the 2026-06-08 final Markdown audit after their useful rules were represented in `08A`.
 
 ## Effect Editor
@@ -165,7 +167,7 @@ Specification: `docs/artifex/09A-effect-editor.md`
 - Run a final visual browser pass on the built-in preset library and decide the remaining preset naming/behaviour questions: Ribbon Trail vs Slash Trail, warmer Heat Shimmer, true horizontal Lens Flare, typo ID handling, and Cursed Magic / Pharaoh Fog category.
 - Future idea: Brush Sequence Animation for PNG brush-frame sequences, only after render stability, brush alpha masking, Shape / Brush / Custom modes and module split are stable.
 - Scope additional FX engines and preset polish from the confirmed active route only.
-- Add registered sound cues after Sound foundation and final FX schema owner are confirmed.
+- Add registered sound cues only after the accepted live Sound foundation is deliberately extended again.
 - After Effect Editor has been stable for a while, archive/remove old test-only branches, folders and experiments that are no longer referenced by the live route.
 - Archive or reduce superseded Effect Editor docs after their useful information has been transferred into `09A` and this backlog.
 
@@ -173,17 +175,27 @@ Specification: `docs/artifex/09A-effect-editor.md`
 
 Specification: `docs/artifex/10A-asset-library.md`
 
+Next step before implementation:
+
+- Run a current-main Asset Library scan to determine exactly what Asset Library code, routes, shared services, asset-index readers/writers, imported-media promotion helpers, previews, metadata editing and registered-content picker integrations already exist.
+- Do not implement the Asset Library UI until the scan confirms current repo truth and the implementation target.
+- During scan and implementation, preserve the layered model: Asset Library owns final media and generated-media `asset_` records only; it may catalogue/select object/effect/scene/puzzle/quest records through Registered Content / Project Library views but must not own those records.
+
+Known work:
+
 - Create or confirm Asset Library UI/service for final `asset_` browsing, grouping, promotion and metadata editing.
 - Implement safe promotion from `intake/` to final `assets/` files and `assets/asset-index.json`.
 - Keep intake references out of permanent authored content.
+- Support images, sprites, portraits, backgrounds, UI images, icons, buttons, frames, logos, textures, overlays, brushes, thumbnails, videos, animated images, imported audio, music, ambience, voice, sound files and generated/mechanical sounds.
 - Support Creation Guide logo/media readiness.
 - Support Object Creator finalisation without making Object Creator the general importer.
 - Support Effect Editor registered texture, overlay, icon, brush, thumbnail and audio dependencies.
 - Support Scene Editor, Quest Builder and Puzzle Creator registered media selection.
 - Add canonical imported-audio promotion for accepted audio formats.
+- Add canonical video and animated-image promotion for accepted runtime-safe formats if approved.
 - Support asset groups, including character/animation/portrait sets.
 - Support search/filter by name, tag, type, status, project, character and scene/referring-record usage.
-- Preview image, audio and procedural-synth assets.
+- Preview image, video, animated-image, audio and procedural-synth assets.
 - Track usage through the shared reference index.
 - Edit an existing generated synth through the shared popup where safe.
 - Ensure Health and Build can validate final asset records and files.
@@ -221,6 +233,7 @@ Specification: `docs/artifex/13A-registered-content-picker.md`
 - Add file-existence validation where needed without making picker the Health owner.
 - Support Portal and scatter-decoration registered selections if approved.
 - Keep every new selectable kind tied to an explicit owner and canonical index.
+- Treat future scenes, screens, puzzles, quests, templates, routes and portal endpoints as Registered Content / Project Library candidates only after their owning modules have canonical indexes and stable schemas.
 
 ## Shared Health Guide / Project Audit
 
@@ -264,6 +277,7 @@ Specification: `docs/artifex/16A-runtime-playtest.md`
 
 Specification: `docs/artifex/17A-puzzle-creator.md`
 
+- Leave active PR #52 alone while current Puzzle Creator work is in progress unless explicitly instructed otherwise.
 - Implement canonical connected-project puzzle save/index registration.
 - Define final puzzle record schema and public puzzle result contract.
 - Coordinate Quest Builder `Puzzle` block and `puzzleId` selection after saved puzzle records exist.
@@ -273,14 +287,19 @@ Specification: `docs/artifex/17A-puzzle-creator.md`
 - Implement Completion Rule enforcement in Walk Test/game runtime.
 - Implement Traboule, Foe, Hazard, Tunnel Mode, first-person/3D and helper systems only in scoped passes.
 - Build non-Maze puzzle engines separately; do not present placeholders as completed editors.
-- Add registered sound feedback after Sound foundation acceptance.
-- Reconcile open PR #44 rather than merging it as competing authority.
+- Add registered sound feedback only after the accepted live Sound foundation is deliberately extended again.
 
 ## Sound Generator / Sound Library
 
 Specification: `docs/artifex/18A-sound-library.md`
 
-- Decide and merge or reject PR #46 Sound Library selector architecture.
+Current position:
+
+- The current live Sound Generator / Sound Library version is accepted as sufficient for now.
+- PR #46 was deliberately closed/rejected rather than merged. Do not treat its pending branch as active work.
+
+Future work, only when deliberately reopened:
+
 - Finish/confirm shared Sound Library modal over registered audio assets.
 - Finish imported-audio promotion through Asset Library.
 - Adopt Choose Sound / Create Synth Sound / Save and Assign Here hooks in Object Creator, Scene Editor, Puzzle Creator, Quest Builder and Effect Editor through separate owner-led passes.
@@ -288,7 +307,7 @@ Specification: `docs/artifex/18A-sound-library.md`
 - Implement runtime/playtest playback of procedural-synth recipe assets where needed.
 - Extend Health and Build validation for generated audio.
 - Add at least one generated procedural sound to Template Game once involved systems are ready.
-- Archive old `docs/artifex/22-sound-archetype-generator.md` after `18A` acceptance and PR #46 reconciliation.
+- Archive old `docs/artifex/22-sound-archetype-generator.md` after `18A` acceptance and PR #46 reconciliation/closure is recorded.
 
 ## Project Starter Schemas
 
@@ -334,13 +353,15 @@ Specification/reference: `docs/artifex/23A-colour-display-rules.md`
 
 | PR / document area | Current interpretation | Action |
 |---|---|---|
-| PR #50 | Documentation extraction PR should now cover `03A` through `23A`. | Update title/body and reconcile branch before merge. |
-| PR #40 | Scene/Effect status refresh. | Do not merge as parallel authority; capture unique Effect details if any remain. |
-| PR #44 | Puzzle V1.34 documentation refresh. | Reconcile/close after `17A`; V1.35 and `17A` supersede it. |
-| PR #46 | Sound Library / Create Synth work. | Keep protected; decide after review/merge. |
-| PR #20 | Historical unsafe Creation Guide / Project Editor cleanup branch. | Do not merge, manually resolve, or use as a development base; recreate any approved idea from current `main`. |
-| PR #17 | Historical Effect Editor index2 v0.2.3 branch. | Do not merge; use only as route-decision/background evidence. |
-| PR #9 | Stale Project Manager / Project Editor task workspace branch. | Requires diff-based salvage review only if still relevant; do not merge as-is. |
+| PR #50 | Superseded by merged PR #53. | Closed; do not revive as a parallel docs authority. |
+| PR #40 | Scene/Effect status refresh. | Closed; do not merge as a parallel authority. |
+| PR #44 | Puzzle V1.34 documentation refresh. | Closed; V1.35 and `17A` supersede it. |
+| PR #46 | Sound Library / Create Synth work. | Closed/rejected by user because current live version is sufficient for now. |
+| PR #54 | Object Creator V1.36 lifecycle validation. | Merged; lifecycle validation blocker is closed. |
+| PR #52 | Puzzle Creator V1.36 Pattern Lock prototype. | Leave open/untouched while current Puzzle Creator work is in progress. |
+| PR #20 | Historical unsafe Creation Guide / Project Editor cleanup branch. | Closed; do not merge, manually resolve or use as a development base. |
+| PR #17 | Historical Effect Editor index2 v0.2.3 branch. | Closed; use only as route-decision/background evidence. |
+| PR #9 | Stale Project Manager / Project Editor task workspace branch. | Closed; do not merge as-is. |
 | Scene Editor v0.35 exploratory branches | Historical target-fix attempts. | Do not merge or cherry-pick as shortcuts; use current accepted Scene Editor baseline. |
 | Phase 0 dated audits | Historical status evidence. | Archive after useful no-merge/no-base rules are retained here. |
 | Old non-A docs | Source evidence only after extraction. | Archive or reduce to local pointers after acceptance. |
@@ -348,3 +369,5 @@ Specification/reference: `docs/artifex/23A-colour-display-rules.md`
 ## Completion Checkpoint
 
 The active documentation extraction pass has produced or updated the controlled specifications and references through Colour and Display Rules. The remaining work is implementation, validation, archive/reconciliation and PR cleanup, not more first-pass module extraction.
+
+Before Asset Library implementation, the next safe step is a current-main scan of existing Asset Library-related code and services, using this updated layered ownership model as the constraint.
