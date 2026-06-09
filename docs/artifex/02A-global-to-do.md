@@ -132,23 +132,17 @@ Specification: `docs/artifex/07A-quest-builder.md`
 
 Specification: `docs/artifex/08A-object-creator.md`
 
-Mandatory validation before further feature work:
+Validation status:
 
-- Test Save Project (In Progress) with uploaded images: project JSON must use staging paths and no browser `dataUrl`.
-- Test Open Project Object for an `in_progress` object and staged media rehydration.
-- Test invalid Finish / Mark Object Ready and confirm no final writes occur.
-- Test valid finalisation and confirm final media promotion, `asset_` registration and top-level gameplay/portrait mapping.
-- Test multiple primary Gameplay Sprite or Dialogue Portrait images and confirm refusal before overwrite.
-- Test stale-target sound assignment.
-- Test per-frame correction persistence through save/reopen/export/import/finalisation.
-- Confirm no duplicate Step 5 controls, module-load failures or console errors.
+- V1.36 disposable-project lifecycle validation passed on 2026-06-09 for in-progress staging, staged-media reopen/rehydration path, invalid readiness refusal, valid media promotion, final `asset_` registration, gameplay/portrait top-level mapping, multiple-primary refusal, stale sound-target refusal, per-frame correction persistence and duplicate Step 5/module syntax checks.
+- Remaining Object Creator work below is follow-up feature/maintenance work, not the now-closed V1.36 lifecycle blocker.
 
 Follow-up:
 
 - Split large `editor-ui.js` only after validation and separately from repair work.
 - Complete real Scene/Quest/Puzzle reference listing after shared reference index exists.
 - Adopt Sound Library object sounds after Sound foundation acceptance.
-- Confirm Object Creator validation tasks against current code; old Object Creator README/helper notes have been archived into the 2026-06-08 final Markdown audit after their useful rules were represented in `08A`.
+- Keep Object Creator validation evidence in `08A`; old Object Creator README/helper notes have been archived into the 2026-06-08 final Markdown audit after their useful rules were represented in `08A`.
 
 ## Effect Editor
 
