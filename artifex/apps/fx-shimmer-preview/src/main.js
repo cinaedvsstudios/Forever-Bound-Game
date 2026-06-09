@@ -1,5 +1,5 @@
-import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.24';
-import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.24';
+import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.25';
+import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.25';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -41,7 +41,7 @@ function currentPreset() {
 }
 
 function setStatus(message) {
-  status.textContent = message;
+  if (status) status.textContent = message;
 }
 
 function normalizeFieldValue(input) {
@@ -69,7 +69,6 @@ function updateOverlayStatus() {
   if (overlayLayerLabel) overlayLayerLabel.textContent = OVERLAY_LAYER_LABELS[state.values.overlayLayer] || 'Over clouds / rim';
 }
 
-
 function updateControlCardVisibility() {
   const type = state.values.type || 'ring';
   const visibleByType = {
@@ -77,9 +76,9 @@ function updateControlCardVisibility() {
       'Shape',
       'Distortion',
       'Visual layer',
+      'Portal inner wisps',
       'Portal line outline',
       'Colour / texture',
-      'Arms / nebula bands',
       'Orbit clouds',
       'Particles',
       'PNG overlay layer',
@@ -109,6 +108,7 @@ function updateControlCardVisibility() {
       'Distortion',
       'Visual layer',
       'Colour / texture',
+      'Particles',
       'Placement / playback'
     ])
   };
@@ -171,7 +171,7 @@ function fxAssetJson() {
     scope: 'project',
     projectId: 'forever-bound',
     engine: 'artifex-shimmer-distortion-preview',
-    engineVersion: '1.2.4-preview',
+    engineVersion: '1.2.5-preview',
     tags: preset.tags,
     assets: {
       ...(state.textureName ? { texture: { kind: 'externalImageReference', editorFileName: state.textureName } } : {}),
@@ -199,6 +199,7 @@ function fxAssetJson() {
     },
     compatibilityNotes: [
       'Prototype canvas renderer. Future integration should route this through the FX Editor engine registry.',
+      'Portal Inner Wisps are intentionally separate from Portal Line Outline and wormhole Arms.',
       'Exports runtime-facing archetype shape, not final production schema.'
     ]
   };
@@ -209,7 +210,7 @@ function editorProjectJson() {
   return {
     schema: 'artifex.fxEditorProject.v1',
     editor: 'fx-shimmer-preview',
-    editorVersion: '1.2.4-preview',
+    editorVersion: '1.2.5-preview',
     selectedPresetId: state.selectedPresetId,
     name: preset.name,
     description: preset.description,
@@ -225,7 +226,7 @@ function editorProjectJson() {
 }
 
 function renderJson() {
-  jsonOutput.textContent = JSON.stringify(fxAssetJson(), null, 2);
+  if (jsonOutput) jsonOutput.textContent = JSON.stringify(fxAssetJson(), null, 2);
 }
 
 function downloadJson(filename, payload) {
@@ -240,66 +241,54 @@ function downloadJson(filename, payload) {
   URL.revokeObjectURL(url);
 }
 
+function loadImageFile(input, onReady) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const image = new Image();
+    image.onload = () => onReady(file, image, String(reader.result || ''));
+    image.src = String(reader.result || '');
+  };
+  reader.readAsDataURL(file);
+}
+
 if (textureFile) {
   textureFile.addEventListener('change', () => {
-    const file = textureFile.files && textureFile.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const image = new Image();
-      image.onload = () => {
-        engine.setTextureImage(image);
-        state.textureName = file.name;
-        state.textureDataUrl = String(reader.result || '');
-        state.values.sourceMode = 'texture';
-        syncControls();
-        setStatus(`Loaded texture ${file.name}.`);
-      };
-      image.src = String(reader.result || '');
-    };
-    reader.readAsDataURL(file);
+    loadImageFile(textureFile, (file, image, dataUrl) => {
+      engine.setTextureImage(image);
+      state.textureName = file.name;
+      state.textureDataUrl = dataUrl;
+      state.values.sourceMode = 'texture';
+      syncControls();
+      setStatus(`Loaded texture ${file.name}.`);
+    });
   });
 }
 
 if (overlayFile) {
   overlayFile.addEventListener('change', () => {
-    const file = overlayFile.files && overlayFile.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const image = new Image();
-      image.onload = () => {
-        engine.setOverlayImage(image);
-        state.overlayName = file.name;
-        state.overlayDataUrl = String(reader.result || '');
-        state.values.overlayEnabled = true;
-        syncControls();
-        setStatus(`Loaded overlay ${file.name}.`);
-      };
-      image.src = String(reader.result || '');
-    };
-    reader.readAsDataURL(file);
+    loadImageFile(overlayFile, (file, image, dataUrl) => {
+      engine.setOverlayImage(image);
+      state.overlayName = file.name;
+      state.overlayDataUrl = dataUrl;
+      state.values.overlayEnabled = true;
+      syncControls();
+      setStatus(`Loaded overlay ${file.name}.`);
+    });
   });
 }
 
 if (outlineFile) {
   outlineFile.addEventListener('change', () => {
-    const file = outlineFile.files && outlineFile.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const image = new Image();
-      image.onload = () => {
-        engine.setOutlineImage(image);
-        state.outlineName = file.name;
-        state.outlineDataUrl = String(reader.result || '');
-        state.values.outlineColorMode = 'image';
-        syncControls();
-        setStatus(`Loaded portal line image ${file.name}.`);
-      };
-      image.src = String(reader.result || '');
-    };
-    reader.readAsDataURL(file);
+    loadImageFile(outlineFile, (file, image, dataUrl) => {
+      engine.setOutlineImage(image);
+      state.outlineName = file.name;
+      state.outlineDataUrl = dataUrl;
+      state.values.outlineColorMode = 'image';
+      syncControls();
+      setStatus(`Loaded portal line image ${file.name}.`);
+    });
   });
 }
 
@@ -388,5 +377,5 @@ function tick(now) {
 
 renderPresets();
 syncControls();
-setStatus('Loaded shimmer engine prototype.');
+setStatus('Loaded shimmer engine prototype V1.25.');
 requestAnimationFrame(tick);

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Artifex Shimmer / Portal Distortion Engine Preview</title>
-  <link rel="stylesheet" href="./styles.css?v=1.24" />
+  <link rel="stylesheet" href="./styles.css?v=1.25" />
 </head>
 <body>
   <main class="fx-shell" data-app>
@@ -15,7 +15,7 @@
           <p class="kicker">Artifex FX Engine Prototype</p>
           <h1>Shimmer / Portal Distortion Engine</h1>
         </div>
-        <span class="version">V1.24</span>
+        <span class="version">V1.25 Prototype Fix</span>
       </div>
       <div class="header-actions">
         <button type="button" data-action="play">▶️ Play</button>
@@ -39,7 +39,7 @@
         <div class="canvas-card">
           <div class="preview-toolbar">
             <div>
-              <h2 data-effect-name>Portal Shimmer</h2>
+              <h2 data-effect-name>Portal Ring</h2>
               <p data-effect-description>Layered radial distortion for portal edges, route exits, limbo tears and magical thresholds.</p>
             </div>
             <div class="preview-meta">
@@ -51,7 +51,7 @@
 
           <div class="canvas-wrap">
             <canvas width="960" height="540" data-canvas></canvas>
-            <div class="canvas-hint">Canvas preview — portal outline colour/gradient/image, working orbit clouds, stronger arms and visible emission.</div>
+            <div class="canvas-hint">Canvas preview — Portal Inner Wisps are now a separate editable portal layer; wormhole defaults are darker and cheaper.</div>
           </div>
         </div>
 
@@ -64,7 +64,7 @@
       <aside class="control-panel">
         <div class="panel-title">
           <h2>Controls</h2>
-          <p>These settings are intended to map cleanly into the future FX Editor archetype export.</p>
+          <p>These settings map to the prototype renderer. Only relevant cards show for each effect type.</p>
         </div>
 
         <section class="control-card">
@@ -127,6 +127,38 @@
           </div>
         </section>
 
+        <section class="control-card">
+          <h3>Portal inner wisps</h3>
+          <div class="two">
+            <label>Amount <input type="range" min="0" max="100" step="1" data-field="wispAmount" /></label>
+            <label>Opacity <input type="range" min="0" max="100" step="1" data-field="wispOpacity" /></label>
+          </div>
+          <div class="two">
+            <label>Thickness <input type="range" min="0" max="100" step="1" data-field="wispThickness" /></label>
+            <label>Glow <input type="range" min="0" max="100" step="1" data-field="wispGlow" /></label>
+          </div>
+          <div class="two">
+            <label>Speed <input type="range" min="0" max="100" step="1" data-field="wispSpeed" /></label>
+            <label>Curl / wave amount <input type="range" min="0" max="100" step="1" data-field="wispCurl" /></label>
+          </div>
+          <div class="two">
+            <label>Vertical spread <input type="range" min="0" max="100" step="1" data-field="wispVerticalSpread" /></label>
+            <label>Legacy size <input type="range" min="0" max="100" step="1" data-field="wispSize" /></label>
+          </div>
+          <div class="two color-pair">
+            <label>Colour A <input type="color" data-field="wispColorA" /></label>
+            <label>Colour B <input type="color" data-field="wispColorB" /></label>
+          </div>
+          <label>Layer position
+            <select data-field="wispLayer">
+              <option value="inside-aperture">Inside aperture / under rim</option>
+              <option value="behind-rim">Behind cloudy rim</option>
+              <option value="over-clouds">Over clouds / rim</option>
+              <option value="over-particles">Over particles</option>
+              <option value="front">Front layer</option>
+            </select>
+          </label>
+        </section>
 
         <section class="control-card">
           <h3>Portal line outline</h3>
@@ -142,6 +174,14 @@
             <label>Line pulse strength <input type="range" min="0" max="100" step="1" data-field="outlinePulseStrength" /></label>
             <label>Line pulse speed <input type="range" min="0" max="100" step="1" data-field="outlinePulseSpeed" /></label>
           </div>
+          <label>Line layer position
+            <select data-field="outlineLayer">
+              <option value="behind-rim">Behind cloudy rim</option>
+              <option value="over-clouds">Over clouds / rim</option>
+              <option value="over-particles">Over particles</option>
+              <option value="front">Front layer</option>
+            </select>
+          </label>
           <label>Line colour mode
             <select data-field="outlineColorMode">
               <option value="solid">Solid colour</option>
@@ -260,7 +300,6 @@
           </div>
         </section>
 
-
         <section class="control-card">
           <h3>PNG overlay layer</h3>
           <label class="toggle wide"><input type="checkbox" data-field="overlayEnabled" /> Enable overlay</label>
@@ -293,11 +332,11 @@
           </div>
           <label>Layer position
             <select data-field="overlayLayer" aria-label="Overlay layer">
-            <option value="behind-effect">Behind effect</option>
-            <option value="inside-aperture">Inside aperture / core</option>
-            <option value="over-clouds">Over clouds / rim</option>
-            <option value="front">Front overlay</option>
-          </select>
+              <option value="behind-effect">Behind effect</option>
+              <option value="inside-aperture">Inside aperture / core</option>
+              <option value="over-clouds">Over clouds / rim</option>
+              <option value="front">Front overlay</option>
+            </select>
           </label>
         </section>
 
@@ -323,6 +362,6 @@
     </footer>
   </main>
 
-  <script type="module" src="./src/main.js?v=1.24"></script>
+  <script type="module" src="./src/main.js?v=1.25"></script>
 </body>
 </html>
