@@ -1,5 +1,5 @@
-import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.20';
-import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.20';
+import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.21';
+import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.21';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -113,7 +113,7 @@ function fxAssetJson() {
     scope: 'project',
     projectId: 'forever-bound',
     engine: 'artifex-shimmer-distortion-preview',
-    engineVersion: '1.2.0-preview',
+    engineVersion: '1.2.1-preview',
     tags: preset.tags,
     assets: {
       ...(state.textureName ? { texture: { kind: 'externalImageReference', editorFileName: state.textureName } } : {}),
@@ -150,7 +150,7 @@ function editorProjectJson() {
   return {
     schema: 'artifex.fxEditorProject.v1',
     editor: 'fx-shimmer-preview',
-    editorVersion: '1.2.0-preview',
+    editorVersion: '1.2.1-preview',
     selectedPresetId: state.selectedPresetId,
     name: preset.name,
     description: preset.description,

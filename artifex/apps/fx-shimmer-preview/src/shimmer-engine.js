@@ -543,6 +543,7 @@ export class ShimmerDistortionEngine {
     this.drawOverlayLayer(ctx, g, t, 'behind-effect');
     this.drawWormholeDarkField(ctx, g, t);
     this.drawWormholeDepthMist(ctx, g, t);
+    this.drawWormholeArmLobes(ctx, g, t);
     this.drawWormholeArms(ctx, g, t);
     this.drawWormholeOrbitClouds(ctx, g, t);
     this.drawOverlayLayer(ctx, g, t, 'inside-aperture');
@@ -561,10 +562,10 @@ export class ShimmerDistortionEngine {
     ctx.save();
 
     const field = ctx.createRadialGradient(g.cx, g.cy, g.base * 0.05, g.cx, g.cy, Math.max(g.rx, g.ry) * 1.45);
-    field.addColorStop(0.00, rgba('#000000', 0.72));
-    field.addColorStop(0.13, rgba(v.middleColor || '#07102b', 0.24));
-    field.addColorStop(0.34, rgba(v.coreColor, 0.018 + glowLevel * 0.030));
-    field.addColorStop(0.62, rgba(v.rimColor, 0.012 + glowLevel * 0.024));
+    field.addColorStop(0.00, rgba('#000000', 0.78));
+    field.addColorStop(0.16, rgba(v.middleColor || '#07102b', 0.16));
+    field.addColorStop(0.42, rgba(v.coreColor, 0.006 + glowLevel * 0.010));
+    field.addColorStop(0.70, rgba(v.rimColor, 0.004 + glowLevel * 0.010));
     field.addColorStop(1.00, rgba(v.backdropColor || '#020611', 0));
     ctx.fillStyle = field;
     ctx.beginPath();
@@ -575,7 +576,8 @@ export class ShimmerDistortionEngine {
     ctx.globalCompositeOperation = 'lighter';
     ctx.filter = `blur(${scale(8, 18, (v.blur ?? 30) / 100)}px)`;
     const armWashOpacity = clamp01((v.armOpacity ?? v.rimAlpha ?? 52) / 100);
-    const washCount = Math.round(scale(0, 22, (v.armAmount ?? v.wispAmount ?? 52) / 100));
+    const armLayerEnabled = armWashOpacity > 0.001 && (v.armAmount ?? v.wispAmount ?? 52) > 0;
+    const washCount = armLayerEnabled ? Math.round(scale(0, 30, (v.armAmount ?? v.wispAmount ?? 52) / 100)) : 0;
     for (let i = 0; i < washCount; i += 1) {
       const seed = i * 12.771;
       const a = TAU * (i / washCount) + t * speed * dir * scale(0.35, 1.05, hash1(seed + 2));
@@ -585,7 +587,7 @@ export class ShimmerDistortionEngine {
       const major = g.base * scale(0.075, 0.25, hash1(seed + 4)) * scale(0.55, 1.25, (v.cloudiness ?? 70) / 100);
       const minor = major * scale(0.28, 0.54, hash1(seed + 5));
       const colour = i % 3 === 0 ? v.coreColor : (i % 3 === 1 ? v.rimColor : v.accentColor);
-      const alpha = scale(0.000, 0.340, hash1(seed + 6)) * scale(0.20, 1.25, (v.cloudiness ?? 70) / 100) * Math.pow(armWashOpacity, 1.05);
+      const alpha = scale(0.000, 0.520, hash1(seed + 6)) * scale(0.20, 1.25, (v.cloudiness ?? 70) / 100) * Math.pow(armWashOpacity, 1.15);
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(a + Math.PI / 2 + (hash1(seed + 7) - 0.5) * 0.6);
@@ -623,11 +625,57 @@ export class ShimmerDistortionEngine {
       const major = g.base * scale(0.025, 0.110, (v.cloudiness ?? 70) / 100) * scale(0.55, 1.75, hash1(seed + 4));
       const minor = major * scale(0.22, 0.48, hash1(seed + 5));
       const colour = i % 4 === 0 ? v.accentColor : (i % 2 === 0 ? v.coreColor : v.rimColor);
-      const alpha = scale(0.000, 0.285, hash1(seed + 6)) * Math.pow(cloudOpacity, 1.0) * scale(0.35, 1.25, (v.cloudiness ?? 70) / 100);
+      const alpha = scale(0.000, 0.440, hash1(seed + 6)) * Math.pow(cloudOpacity, 1.0) * scale(0.35, 1.25, (v.cloudiness ?? 70) / 100);
 
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(a + Math.PI / 2 + (hash1(seed + 7) - 0.5) * 0.9);
+      ctx.fillStyle = rgba(colour, alpha);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, major, minor, 0, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+
+  drawWormholeArmLobes(ctx, g, t) {
+    const v = this.values;
+    const amountValue = v.armAmount ?? v.wispAmount ?? 52;
+    const opacityValue = v.armOpacity ?? v.rimAlpha ?? 52;
+    if (amountValue <= 0 || opacityValue <= 0) return;
+
+    const amount = Math.round(scale(0, 42, amountValue / 100));
+    const opacity = scale(0, 0.48, opacityValue / 100);
+    const thickness = g.base * scale(0.018, 0.105, (v.armThickness ?? v.rimWidth ?? 64) / 100);
+    const softness = scale(5, 20, (v.armSoftness ?? v.blur ?? 46) / 100);
+    const speed = Math.pow((v.armSpeed ?? v.wispSpeed ?? 32) / 100, 2) * 0.42;
+    const curl = scale(0.8, 3.8, (v.armCurl ?? v.wispCurl ?? 80) / 100);
+    const dir = (v.swirl ?? 80) >= 0 ? 1 : -1;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.filter = `blur(${softness}px)`;
+
+    for (let i = 0; i < amount; i += 1) {
+      const seed = i * 23.719;
+      const p = hash1(seed + 1);
+      const armIndex = i % Math.max(2, Math.round(scale(2, 8, amountValue / 100)));
+      const start = (armIndex / Math.max(2, Math.round(scale(2, 8, amountValue / 100)))) * TAU;
+      const radial = scale(0.28, 1.04, p);
+      const angle = start + dir * radial * TAU * curl + t * speed * dir * scale(0.55, 1.25, hash1(seed + 2));
+      const wobble = (fbm(Math.cos(angle) * 1.7 + seed * 0.05, Math.sin(angle) * 1.7 + t * 0.03, 3) - 0.5) * g.base * 0.05;
+      const x = g.cx + Math.cos(angle) * (g.rx * radial + wobble);
+      const y = g.cy + Math.sin(angle) * (g.ry * radial * 0.88 + wobble * 0.65);
+      const major = thickness * scale(1.2, 4.8, hash1(seed + 3));
+      const minor = major * scale(0.28, 0.58, hash1(seed + 4));
+      const colour = i % 3 === 0 ? v.coreColor : (i % 3 === 1 ? v.rimColor : v.accentColor);
+      const alpha = opacity * scale(0.28, 1.0, hash1(seed + 5));
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle + Math.PI / 2 + (hash1(seed + 6) - 0.5) * 0.8);
       ctx.fillStyle = rgba(colour, alpha);
       ctx.beginPath();
       ctx.ellipse(0, 0, major, minor, 0, 0, TAU);
@@ -716,7 +764,7 @@ export class ShimmerDistortionEngine {
     const amount = Math.round(scale(0, 96, (v.orbitCloudAmount ?? 0) / 100));
     if (amount <= 0) return;
 
-    const opacity = scale(0, 0.95, (v.orbitCloudOpacity ?? 0) / 100);
+    const opacity = scale(0, 1.15, (v.orbitCloudOpacity ?? 0) / 100);
     const sizeValue = (v.orbitCloudSize ?? 60) / 100;
     const radiusValue = (v.orbitCloudRadius ?? 72) / 100;
     const speed = Math.pow((v.orbitCloudSpeed ?? 35) / 100, 2) * 0.70;
@@ -737,7 +785,7 @@ export class ShimmerDistortionEngine {
       const major = thickness * scale(1.0, 4.4, hash1(seed + 4));
       const minor = major * scale(0.30, 0.62, hash1(seed + 5));
       const colour = i % 4 === 0 ? v.accentColor : (i % 2 === 0 ? v.coreColor : v.rimColor);
-      const alpha = opacity * scale(0.34, 1.22, hash1(seed + 6));
+      const alpha = opacity * scale(0.38, 1.35, hash1(seed + 6));
 
       ctx.save();
       ctx.translate(x, y);

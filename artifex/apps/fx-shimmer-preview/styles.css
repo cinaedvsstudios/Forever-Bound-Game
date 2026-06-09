@@ -478,12 +478,121 @@ input[type="file"]{width:100%;min-height:38px;border:1px solid rgba(53,212,216,.
 }
 
 
-/* V1.20: keep the preview visible. The right settings panel is the scrolling area. */
+/* V1.21: keep the preview visible. The right settings panel is the scrolling area. */
 @media (min-width: 1321px) {
   .canvas-wrap {
     max-height: min(58vh, 720px);
   }
   .control-panel {
     max-height: 100%;
+  }
+}
+
+
+/* V1.21: fixed desktop layout. The preview stays visible; only the settings panel scrolls. */
+.fx-shell {
+  height: calc(100vh - 32px);
+  max-height: calc(100vh - 32px);
+  overflow: hidden;
+}
+
+.fx-header,
+.status-bar {
+  flex: 0 0 auto;
+}
+
+.workspace {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  grid-template-columns: minmax(210px, 260px) minmax(520px, 1fr) minmax(360px, 420px);
+}
+
+.preview-panel {
+  min-height: 0;
+  overflow: hidden;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100%;
+}
+
+.canvas-card {
+  flex: 0 0 auto;
+}
+
+.canvas-wrap {
+  max-height: min(64vh, 760px);
+}
+
+.json-panel {
+  min-height: 0;
+  max-height: 24vh;
+}
+
+.control-panel {
+  height: 100%;
+  max-height: 100%;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  align-content: start;
+  padding-bottom: 28px;
+}
+
+.preset-panel {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+
+/* Keep the settings panel on the right for normal desktop/laptop widths. */
+@media (max-width: 1320px) {
+  .workspace {
+    grid-template-columns: minmax(180px, 220px) minmax(420px, 1fr) minmax(330px, 380px);
+  }
+
+  .control-panel {
+    grid-column: auto;
+    grid-template-columns: 1fr;
+    border-left: 1px solid var(--border);
+    border-top: 0;
+  }
+
+  .control-panel .panel-title {
+    grid-column: auto;
+  }
+}
+
+/* Only stack on genuinely narrow/mobile widths. */
+@media (max-width: 980px) {
+  html, body {
+    overflow: auto;
+  }
+
+  .fx-shell {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .preview-panel {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    height: auto;
+    background: rgba(7,5,6,.95);
+  }
+
+  .control-panel {
+    height: auto;
+    max-height: none;
+    overflow: visible !important;
   }
 }
