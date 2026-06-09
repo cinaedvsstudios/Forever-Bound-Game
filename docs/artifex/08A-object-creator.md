@@ -5,7 +5,7 @@ Owning module: Archetype Object Creator
 Active route: `artifex/apps/archetype-object-creator/index.html`  
 Current verified implementation baseline: `Artifex Archetype Object Creator V1.36`  
 Accepted implementation evidence: merged PR #38  
-Validation qualification: visible Step 5 repairs were accepted before merge; project-save/finalisation lifecycle remains implemented but requires disposable-project post-merge functional validation before further feature development  
+Validation qualification: V1.36 disposable-project lifecycle validation passed on 2026-06-09 with a focused local disposable-project harness after a minimal stale sound-assignment guard was added.
 Governing universal contract: `docs/artifex/01A-project-file-contracts.md`  
 Subordinate exact starter/index schema reference: `docs/artifex/19A-project-starter-schemas.md`  
 Outstanding work source: `docs/artifex/02A-global-to-do.md`
@@ -58,7 +58,7 @@ For example, `archobj_bronze_key` defines the reusable Bronze Key and its intera
 
 The live route identifies itself as **Artifex Archetype Object Creator V1.36** and loads `v1/src/editor-app.js` as its entry point. PR #38 established V1.36 as the accepted current runtime and replaced the provisional V1.35 state with Step 5 ownership consolidation plus an `in_progress` / `ready` object lifecycle.
 
-The baseline must distinguish **present in code** from **functionally validated**. The visible Step 5/toolbar repairs were manually accepted before merge. The connected-project save, staged-media reopen and finalisation lifecycle is present in the merged code but remains subject to the disposable-project validation tracked in `02A`.
+The baseline must distinguish **present in code** from **functionally validated**. The visible Step 5/toolbar repairs were manually accepted before merge. The connected-project save, staged-media reopen and finalisation lifecycle has now passed the 2026-06-09 disposable-project validation tracked in `02A`.
 
 | Current area | Baseline status | Current implementation fact |
 |---|---|---|
@@ -148,7 +148,22 @@ The current code expresses the following required readiness behaviour:
 - sound-event fields in a ready object must reference registered final assets;
 - per-frame corrections are canonicalised as `frameCorrections` rather than maintained through parallel active correction paths.
 
-This safety contract is implemented in V1.36 code but remains to be proven through the post-merge functional validation listed in `02A`.
+This safety contract is implemented in V1.36 code and was included in the 2026-06-09 disposable-project lifecycle validation recorded below.
+
+## V1.36 Disposable-Project Lifecycle Validation
+
+Focused validation on 2026-06-09 used a disposable project-folder harness for Object Creator only. The pass confirmed that:
+
+- in-progress saves stage uploaded gameplay and portrait media under `intake/objects/` and the saved archetype JSON does not persist browser `dataUrl` preview payloads;
+- staged media can be read back from project-relative paths for reopening/rehydration;
+- invalid readiness attempts stop before object, index or final asset writes;
+- valid readiness promotes staged gameplay sprite and dialogue portrait media into final `assets/` paths, registers the promoted files in `assets/asset-index.json`, and maps the resulting `asset_` IDs to top-level `visual.spriteAssetId` and `visual.portraitAssetId`;
+- multiple primary Gameplay Sprite or Dialogue Portrait frame inputs are refused before final-asset overwrite;
+- per-frame `frameCorrections` survive save, reload/export-import-style serialisation and finalisation;
+- stale generated-sound assignment targets are refused instead of recreating removed production requirements;
+- the V1.36 module sources pass focused syntax checks, and no duplicate Step 5 control owners were found in the active implementation.
+
+This validation does not authorise new Object Creator feature work beyond separately tracked follow-ups; it only closes the V1.36 disposable-project lifecycle blocker.
 
 ## Module-Specific Fixed Contracts and Dependencies
 
@@ -213,7 +228,7 @@ Effect Editor owns reusable effect archetypes. Object Creator may later referenc
 
 Object Creator stores registered `asset_` IDs for object sounds or action-linked cues. A shared Sound Generator/Sound Library may create or return a registered final audio asset, but Object Creator must not copy procedural sound recipes into object records or create `archsound_` records/folders.
 
-V1.36 contains the initiating-target capture behaviour for a sound assignment opened from an object production task. That behaviour remains unaccepted as functionally complete until the stale-selection test in `2A` has passed.
+V1.36 contains the initiating-target capture behaviour for a sound assignment opened from an object production task. The 2026-06-09 validation added and checked a guard so a stale sound assignment is refused when its captured production task is no longer active, preventing ghost requirement corruption.
 
 ### Reference panel dependency
 
