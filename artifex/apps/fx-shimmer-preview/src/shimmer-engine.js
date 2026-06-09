@@ -615,62 +615,89 @@ export class ShimmerDistortionEngine {
 
   drawWormholeArms(ctx, g, t) {
     const v = this.values;
-    const amountRaw = clamp01((v.armAmount ?? 0) / 100);
-    const opacityRaw = clamp01((v.armOpacity ?? 0) / 100);
-    const thicknessValue = v.armThickness ?? 0;
-    if (amountRaw <= 0 || opacityRaw <= 0 || thicknessValue <= 0) return;
+    const amount = clamp01((v.armAmount ?? 0) / 100);
+    const opacity = clamp01((v.armOpacity ?? 0) / 100);
+    const thicknessValue = clamp01((v.armThickness ?? 0) / 100);
+    if (amount <= 0.001 || opacity <= 0.001 || thicknessValue <= 0.001) return;
+
     const dir = (v.swirl ?? 80) >= 0 ? 1 : -1;
-    const speed = Math.pow((v.armSpeed ?? 28) / 100, 2) * 0.36;
-    const turns = scale(0.75, 4.2, (v.armCurl ?? 60) / 100);
-    const baseThickness = g.base * scale(0.002, 0.060, thicknessValue / 100);
-    const opacity = scale(0.00, 0.42, opacityRaw);
-    const roughness = scale(0.004, 0.040, (v.noise ?? 20) / 100);
-    const softness = scale(0.5, 8, (v.armSoftness ?? 30) / 100);
-    const radiusScale = scale(0.16, 1.42, (v.armRadius ?? 56) / 100);
-    const pulse = 1 + Math.sin(t * scale(0.7, 3.0, (v.armSpeed ?? 28) / 100)) * scale(0, 0.38, (v.armPulseStrength ?? 0) / 100);
-    const definition = clamp01((v.armDefinition ?? 42) / 100);
-    const armCount = Math.round(scale(0, 26, amountRaw));
+    const speedControl = clamp01((v.armSpeed ?? 30) / 100);
+    const speed = Math.pow(speedControl, 2) * 0.62;
+    const turns = scale(0.55, 5.25, clamp01((v.armCurl ?? 62) / 100));
+    const radiusScale = scale(0.18, 1.72, clamp01((v.armRadius ?? 60) / 100));
+    const softness = scale(1.0, 12.0, clamp01((v.armSoftness ?? 34) / 100));
+    const definition = clamp01((v.armDefinition ?? 50) / 100);
+    const pulse = 1 + Math.sin(t * scale(0.65, 3.6, speedControl)) * scale(0, 0.55, clamp01((v.armPulseStrength ?? 0) / 100));
+    const noiseStrength = scale(0.002, 0.048, clamp01((v.noise ?? 20) / 100));
+    const baseThickness = g.base * scale(0.012, 0.118, thicknessValue) * pulse;
+    const colourFor = (i) => (i % 3 === 0 ? v.coreColor : (i % 3 === 1 ? v.rimColor : v.accentColor));
+
+    // Soft body: this is deliberately driven by the arm controls, so Amount/Opacity/Thickness are visibly testable.
+    const lobeCount = Math.round(scale(0, 54, amount));
+    if (lobeCount > 0) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.filter = `blur(${softness + scale(2, 9, 1 - definition)}px)`;
+      for (let i = 0; i < lobeCount; i += 1) {
+        const seed = i * 18.713;
+        const armIndex = i % Math.max(2, Math.round(scale(2, 8, amount)));
+        const baseAngle = (armIndex / Math.max(2, Math.round(scale(2, 8, amount)))) * TAU;
+        const local = hash1(seed + 1.2);
+        const radial = scale(0.20, 1.05, local) * radiusScale;
+        const angle = baseAngle + dir * radial * TAU * turns * 0.35 + t * speed * dir * scale(0.35, 1.05, hash1(seed + 2.4));
+        const x = g.cx + Math.cos(angle) * g.rx * radial;
+        const y = g.cy + Math.sin(angle) * g.ry * radial * 0.88;
+        const major = baseThickness * scale(2.2, 7.5, hash1(seed + 3.6));
+        const minor = major * scale(0.28, 0.52, hash1(seed + 4.8));
+        const alpha = Math.min(0.26, opacity * scale(0.10, 0.38, hash1(seed + 5.9)) * scale(0.55, 1.15, amount));
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle + Math.PI / 2 + (hash1(seed + 6.2) - 0.5) * 0.8);
+        ctx.fillStyle = rgba(colourFor(i), alpha);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, major, minor, 0, 0, TAU);
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+
+    // Defined spiral bands: these make curl/radius/speed/definition visibly change the shape of the wormhole.
+    const bandCount = Math.max(0, Math.round(scale(0, 18, amount)));
+    if (!bandCount) return;
     ctx.save();
     ctx.globalCompositeOperation = 'screen';
-    const layers = [
-      { countMul: 0.55, width: 3.0, blur: softness + 3.0, alpha: 0.48, speed: 0.40, stretch: 1.08 },
-      { countMul: 0.75, width: 1.7, blur: softness * 0.65 + 1.6, alpha: 0.62, speed: 0.65, stretch: 1.00 },
-      { countMul: 0.90, width: 0.7, blur: softness * 0.25, alpha: 0.72, speed: 0.90, stretch: 0.94 }
-    ];
-    for (const [layerIndex, layer] of layers.entries()) {
-      const count = Math.max(0, Math.round(armCount * layer.countMul));
-      if (!count) continue;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (let i = 0; i < bandCount; i += 1) {
+      const seed = i * 24.317;
+      const startAngle = (i / bandCount) * TAU + hash1(seed) * 0.45 + t * speed * dir;
+      const colour = colourFor(i);
+      const lineAlpha = Math.min(0.42, opacity * scale(0.18, 0.62, definition) * scale(0.65, 1.0, hash1(seed + 1.1)));
       ctx.save();
-      ctx.filter = `blur(${Math.max(0, layer.blur * (1 - definition * 0.88))}px)`;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      for (let i = 0; i < count; i += 1) {
-        const seed = layerIndex * 500 + i * 21.317;
-        const startAngle = (i / count) * TAU + hash1(seed) * 0.55 + t * speed * layer.speed * dir;
-        const colour = (i + layerIndex) % 3 === 0 ? v.coreColor : ((i + layerIndex) % 3 === 1 ? v.rimColor : v.accentColor);
-        ctx.strokeStyle = rgba(colour, Math.min(0.30, opacity * layer.alpha));
-        ctx.lineWidth = Math.max(0.8, baseThickness * layer.width * pulse * (1 - definition * 0.28));
-        ctx.shadowColor = colour;
-        ctx.shadowBlur = baseThickness * layer.width * 1.6;
-        ctx.beginPath();
-        const steps = 42;
-        for (let s = 0; s <= steps; s += 1) {
-          const p = s / steps;
-          const radial = Math.pow(1 - p, 0.74);
-          const angle = startAngle + dir * p * TAU * turns;
-          const broken = fbm(Math.cos(angle) * 1.8 + seed * 0.07 + p * 0.8, Math.sin(angle) * 1.8 - seed * 0.03 + t * 0.025, 3);
-          const jitter = (broken - 0.5) * g.base * roughness;
-          const fadeIn = smoothstep(0.00, 0.18, p);
-          const fadeOut = 1 - smoothstep(0.78, 1.00, p);
-          ctx.globalAlpha = fadeIn * fadeOut * scale(0.55, 1.0, broken);
-          const x = g.cx + Math.cos(angle) * (g.rx * radial * layer.stretch * radiusScale + jitter);
-          const y = g.cy + Math.sin(angle) * (g.ry * radial * 0.88 * layer.stretch * radiusScale + jitter * 0.70);
-          if (s === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-        ctx.globalAlpha = 1;
+      ctx.filter = `blur(${scale(0.15, 2.8, 1 - definition)}px)`;
+      ctx.strokeStyle = rgba(colour, lineAlpha);
+      ctx.lineWidth = Math.max(0.9, baseThickness * scale(0.45, 1.35, definition));
+      ctx.shadowColor = colour;
+      ctx.shadowBlur = baseThickness * scale(1.0, 3.8, opacity);
+      ctx.beginPath();
+      const steps = 58;
+      for (let s = 0; s <= steps; s += 1) {
+        const p = s / steps;
+        const radial = Math.pow(1 - p, 0.72) * radiusScale;
+        const angle = startAngle + dir * p * TAU * turns;
+        const broken = fbm(Math.cos(angle) * 1.8 + seed * 0.07 + p * 0.8, Math.sin(angle) * 1.8 - seed * 0.03 + t * 0.025, 3);
+        const jitter = (broken - 0.5) * g.base * noiseStrength;
+        const fadeIn = smoothstep(0.00, 0.16, p);
+        const fadeOut = 1 - smoothstep(0.78, 1.00, p);
+        ctx.globalAlpha = fadeIn * fadeOut * scale(0.55, 1.0, broken);
+        const x = g.cx + Math.cos(angle) * (g.rx * radial + jitter);
+        const y = g.cy + Math.sin(angle) * (g.ry * radial * 0.88 + jitter * 0.70);
+        if (s === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
       }
+      ctx.stroke();
+      ctx.globalAlpha = 1;
       ctx.restore();
     }
     ctx.restore();
