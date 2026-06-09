@@ -18,7 +18,7 @@ import {
   updateActiveLayer
 } from './editor-state.js';
 import { initRenderer, takeSnapshot } from './editor-renderer.js';
-import { cloneBasePreset, listBasePresets } from './presets/base-effects.js';
+import { cloneBasePreset, listBasePresets } from './presets/portal-wormhole-presets.js';
 import { initBottomPanel, renderLayerList, syncBottomPanelStatus } from './editor-bottom-panel.js';
 import { syncEffectControls } from './editor-effect-controls.js';
 import { initEditorPersistence, loadCompositionLocal } from './editor-persistence.js';
@@ -28,6 +28,7 @@ const ENGINES = [
   ['electric-arc', 'Electric Arc Engine'], ['ribbon', 'Trail / Ribbon Engine'],
   ['ring', 'Ring / Shockwave Engine'], ['projectile', 'Projectile / Trail Engine'],
   ['gas', 'Gas / Smoke / Dust Engine'], ['shockwave', 'Shockwave Pulse Engine'],
+  ['portal-ring', 'Portal Ring / Aperture Engine'], ['wormhole-tunnel', 'Wormhole Tunnel Engine'],
   ['refraction', 'Refraction / Shimmer Engine'], ['heatdistortion', 'Heat Distortion Engine'],
   ['lensflare', 'Lens Flare Engine'], ['true-lensflare', 'True Lens Flare Engine'], ['text', 'Text Effect Engine']
 ];
@@ -166,7 +167,7 @@ function ensureStarterLayer() { if (!editorState.composition.layers.length) addP
 function addPreset(id) {
   const preset = cloneBasePreset('base', id);
   if (!preset?.config) return;
-  const config = { ...preset.config, spawnRate: Math.min(Number(preset.config.spawnRate) || 4, 4) };
+  const config = { ...preset.config, spawnRate: ['portal-ring', 'wormhole-tunnel'].includes(preset.config.engine) ? 0 : Math.min(Number(preset.config.spawnRate) || 4, 4) };
   if (id === 'standard-particle') {
     config.gravity = 100;
     config.gravityBoost = false;
