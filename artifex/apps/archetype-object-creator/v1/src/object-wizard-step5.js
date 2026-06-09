@@ -149,6 +149,10 @@ function captureSoundTarget(rows, requirementId) {
 
 function assignGeneratedSound(target, assetId) {
   if (!assetId || !target?.requirementId) return;
+  if (!isActiveRequirement(target.requirementId)) {
+    toast(`Generated sound was not assigned because ${humanize(actionIdFromRequirement(target.requirementId))} is no longer an active object task.`, 'warn');
+    return;
+  }
   const data = getRequirementData(target.requirementId);
   const events = Array.isArray(data.soundEvents) ? [...data.soundEvents] : [];
   while (events.length <= target.rowIndex) events.push({ assetId: '', trigger: 'frame', frame: '', volume: 1, pitchVariance: 0, spatial: false, loop: false, stopOnEnd: true, cooldown: 0 });
@@ -248,6 +252,11 @@ function writeRequirementData(requirementId, updates) {
   updateArchetype({ productionAssets: { ...current, version: VERSION, requirements: { ...(current.requirements || {}), [requirementId]: { ...((current.requirements || {})[requirementId] || {}), ...updates } } } });
 }
 function getRequirementData(requirementId) { return editorState.archetype?.productionAssets?.requirements?.[requirementId] || {}; }
+function isActiveRequirement(requirementId) {
+  const productionAssets = editorState.archetype?.productionAssets || {};
+  return Object.prototype.hasOwnProperty.call(productionAssets.requirements || {}, requirementId)
+    && (!Array.isArray(productionAssets.requirementOrder) || !productionAssets.requirementOrder.length || productionAssets.requirementOrder.includes(requirementId));
+}
 function actionIdFromRequirement(requirementId) { return String(requirementId || '').split(':')[1] || String(requirementId || 'asset'); }
 function splitSoundValues(value) { return String(value || '').split(/[\n,]+/).map((item) => item.trim()).filter(Boolean); }
 function humanize(value) { return String(value || '').replace(/[_-]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()); }
