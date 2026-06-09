@@ -233,6 +233,149 @@ Storm / weather
 
 These targets guide future scoped FX engine work. They do not prove those engines are already implemented.
 
+## Recent FX Engine Prototype Consolidation
+
+The smoke/cloud and shimmer/portal/wormhole work created during the current Effect Editor engine exploration is prototype evidence, not yet live Index2 implementation authority. These engines were deliberately built outside the active Index2 route so the visual behaviour, controls and export shape could be iterated quickly without destabilising the accepted Effect Editor baseline.
+
+The correct interpretation is:
+
+```text
+prototype preview app / isolated engine harness = visual and control validation
+active Effect Editor Index2 route = accepted authoring surface
+future integration = controlled migration into Index2 engine registry and layer UI
+```
+
+These prototypes should not become permanent parallel authoring apps. Their useful renderer logic, preset data, control semantics and export fields should be migrated into the live Effect Editor only after mapping each engine to a stable layer engine type and saving/export schema.
+
+### Smoke / Cloud Engine prototype
+
+The smoke/cloud engine was created as a procedural canvas-based FX preview for fog, smoke, mist, soft cloud puffs and magical atmospheric wisps. The useful design pattern is a layered particle/cloud renderer rather than a single flat blur. It separates broad atmospheric body, drifting wisps, opacity, size, softness, turbulence/curl, colour/tint, speed and density-style controls so a single engine can produce ground fog, smoke plumes, magical haze, cloud puffs and low-lying mist by preset.
+
+The engine should be treated as the future basis for one or more Index2 layer engines such as:
+
+```text
+smoke-cloud
+fog-bank
+mist-volume
+wisp-field
+atmosphere-soft-particles
+```
+
+The important implementation lesson is that smoke/cloud controls must be visually high-impact. Amount, opacity, size, softness, drift, turbulence, curl and colour controls must visibly change the preview, not merely update JSON values. Any low-performance mode should reduce preview resolution or particle count only and must not silently change saved effect data.
+
+The smoke/cloud work is related to, but not identical to, the existing isolated Atmosphere Volume debug prototype. The Atmosphere Volume prototype tests broad fog/mist/haze replacement logic. The smoke/cloud engine is a more author-facing procedural layer concept with reusable controls that can become part of normal FX Archetype composition if integrated properly.
+
+### Shimmer / Portal / Wormhole prototype
+
+The portal/wormhole work was created as a separate preview harness at the prototype app level rather than inside Index2. Its current working package was iterated through the `fx-shimmer-preview` line and reached `V1.24` during visual tuning.
+
+The prototype currently covers four related effect families:
+
+```text
+Portal Ring / aperture
+Wormhole Tunnel
+Heat Shimmer
+Transition Tear
+```
+
+The engine was created as a procedural canvas renderer with presets, visible controls, a live preview, local image inputs and JSON export. It uses an offscreen/grid-style preview layer, procedural radial/spiral drawing, particles, orbiting cloud puffs, optional PNG overlays, colour/texture inputs and per-layer timing controls. It should be integrated as engine logic and control panels inside Index2, not as a separate permanent editor.
+
+#### Portal Ring
+
+Portal Ring is the most visually approved part of the prototype. Its useful layer model is:
+
+```text
+aperture / middle
+cloud rim body
+thin portal line outline
+orbit clouds
+particles
+optional overlay image
+```
+
+The thin portal line outline must remain separate from the cloudy rim. It requires its own controls for thickness, opacity, glow, radius, pulse strength, pulse speed, colour mode, colour A/B and optional image-based colour. The line must render above the cloudy portal body when the user expects a visible clean outline. Colour and gradient controls must affect the visible stroke, not be washed out by additive glow.
+
+The cloudy rim/body remains a different layer from the thin line and should keep its softer magical threshold look.
+
+#### Wormhole Tunnel
+
+Wormhole is still in active tuning and should be treated as promising but not visually final. The better direction is a dark centre with visible rotating nebula arms, staggered orbit clouds, particles and optional centre emission. The current control structure should remain separated into distinct layers:
+
+```text
+core / vanishing point
+arms / nebula bands
+orbit clouds
+particles
+emission
+overlay image
+```
+
+Arms and clouds must not share one control card. Arms are spiral nebula bands. Orbit Clouds are larger cloud puffs moving around the wormhole. Particles are small sparks/dots. Emission is a separate centre-out or vacuum/sucked-in particle stream.
+
+Wormhole controls must be visibly connected to the renderer. In particular:
+
+```text
+Arm amount
+Arm opacity
+Arm thickness
+Arm radius
+Arm definition
+Arm softness
+Arm rotation speed
+Arm curl / turns
+Arm pulse strength
+Cloud amount
+Cloud opacity
+Cloud size
+Cloud stagger
+Cloud pulse strength
+Particle amount
+Particle opacity
+Particle size
+Particle speed
+Particle pulse strength
+Emission amount
+Emission opacity
+Emission speed
+Emission direction
+Emission vacuum
+Trail length
+Trail opacity
+```
+
+If a control is visible in the Effect Editor after integration, it must have a visible effect in the preview for the currently selected engine. Controls that are irrelevant to Heat Shimmer or Transition Tear should be hidden or disabled for those engine types.
+
+#### Heat Shimmer and Transition Tear
+
+Heat Shimmer and Transition Tear are useful families in the same preview, but their live editor UI should not show the full portal/wormhole control set. Their controls should be reduced to only relevant settings such as shape/scale, strength, refraction, wave size/speed, noise, glow, colour/tint and playback. Portal line, arms, orbit clouds, wormhole emission and particle controls should not appear for these simpler effects unless a future version genuinely connects them.
+
+### Integration rule for prototype engines
+
+When integrating these prototype engines into the live Effect Editor, the implementation should follow a preservation-first rule:
+
+```text
+do not replace Index2
+do not revive the emergency route
+do not create another parallel editor app
+do not break existing layer composition, local save/import/export or brush library behaviour
+do add engine modules and control cards behind the existing Index2 layer/editor architecture
+```
+
+Each prototype engine should become an Index2 layer engine type with:
+
+```text
+engine identifier
+default preset values
+normalised layer state fields
+engine-specific controls
+renderer function
+preview diagnostics
+JSON import/export compatibility
+future canonical archeffect_ save mapping
+```
+
+Until connected-project saving exists, prototype-derived data may continue through local Composition JSON export/import, but it must not be described as final connected-project persistence.
+
 ## Module-Specific Fixed Contracts and Dependencies
 
 ### Scene Editor relationship
@@ -286,6 +429,7 @@ The following Effect Editor documents were inspected for this extraction. Their 
 | `FX_UI_RESTRUCTURE_NOTES.md`, `FX_UI_CONTROLS_PASS_NOTES.md`, `FX_QUICK_EDIT_BRUSH_AND_REFERENCE_NOTES.md`, `FX_QUICK_EDIT_FIX_NOTES.md`, `FX_PHASE9I_ORIGIN_BRUSH_LIBRARY_NOTES.md`, `FX_PHASE9J_RESOLUTION_NOISE_NOTES.md`, `PHASE_8_LIBRARY_IMPORT_NOTES.md`, `PRESET_LIBRARY_AUDIT.md` | Older default-route phased delivery notes and preset audit material. Stable module-specific UI rules are consolidated into this file; unfinished/preset follow-up work is in `02A`. | Archive/history after extraction; do not assume all old-route features exist in Index2. |
 | `artifex/apps/effect-editor/src/README.md` | Old split/refactor evidence identifying `index.html` as live. | Superseded/historical after `09A`; inaccurate as current route authority. |
 | `docs/archive/effect-editor-v3-promotion/**` and archived handoff records | Already historical default-route/V3 promotion evidence. | Remain archive evidence only. |
+| Current smoke/cloud and shimmer/portal/wormhole prototype work | Recent isolated canvas-engine prototypes for smoke/cloud, Portal Ring, Wormhole Tunnel, Heat Shimmer and Transition Tear. Captured as prototype evidence and integration guidance only, not as accepted Index2 implementation. | Use as source material for future Index2 engine modules; do not treat prototype preview apps as permanent parallel authoring routes. |
 | Merged PR #49 Atmosphere Volume debug prototype | Isolated later visual experiment, explicitly outside live Index2. | Record as prototype evidence and future decision input only. |
 
 ## Remaining Work
