@@ -1,11 +1,12 @@
-// Horse Forest Ride layout patch V2
-// Forces the overview/key block into the middle panel directly under the main viewer.
+// Horse Forest Ride layout patch V3
+// Middle panel and right panel now scroll independently; overview stays under the main viewer.
 
-const PATCH_ID = 'horse-forest-layout-patch-v2';
+const PATCH_ID = 'horse-forest-layout-patch-v3';
 let layoutObserver = null;
 
 function injectLayoutPatchStyles() {
   document.getElementById('horse-forest-layout-patch-v1')?.remove();
+  document.getElementById('horse-forest-layout-patch-v2')?.remove();
   if (document.getElementById(PATCH_ID)) return;
   const style = document.createElement('style');
   style.id = PATCH_ID;
@@ -13,13 +14,13 @@ function injectLayoutPatchStyles() {
     body.is-obstacle-course .left-panel{flex:0 0 250px!important;width:250px!important;min-width:240px!important;max-width:260px!important}
     body.is-obstacle-course #obstacle-course-stage{height:calc(100vh - 92px)!important;overflow:hidden!important;padding:12px 14px 14px!important;box-sizing:border-box!important}
     body.is-obstacle-course .obstacle-workspace{grid-template-columns:minmax(560px,1fr) 320px!important;height:100%!important;min-height:0!important;align-items:stretch!important}
-    body.is-obstacle-course .obstacle-view-card{min-height:0!important;height:100%!important;max-height:100%!important;overflow:hidden!important;position:sticky!important;top:0!important;display:flex!important;flex-direction:column!important}
-    body.is-obstacle-course .obstacle-three-wrap{flex:0 0 auto!important}
+    body.is-obstacle-course .obstacle-view-card{min-height:0!important;height:100%!important;max-height:100%!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important;scrollbar-gutter:stable!important;position:sticky!important;top:0!important;display:flex!important;flex-direction:column!important}
+    body.is-obstacle-course .obstacle-three-wrap{flex:0 0 auto!important;min-height:0!important}
     body.is-obstacle-course .obstacle-side-card{min-height:0!important;height:100%!important;max-height:100%!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important;scrollbar-gutter:stable!important;position:sticky!important;top:0!important}
-    body.is-obstacle-course .hf-overview-middle{flex:1 1 auto!important;min-height:220px!important;display:block!important;margin-top:10px!important;padding:10px!important;border:1px solid rgba(238,196,90,.42)!important;border-radius:14px!important;background:rgba(0,0,0,.18)!important;box-sizing:border-box!important;overflow:hidden!important}
-    body.is-obstacle-course .hf-overview-middle>.hf-overview-row{display:grid!important;grid-template-columns:86px minmax(0,1fr)!important;gap:10px!important;align-items:stretch!important;width:100%!important;height:100%!important;min-height:200px!important}
+    body.is-obstacle-course .hf-overview-middle{flex:0 0 auto!important;min-height:300px!important;display:block!important;margin-top:10px!important;padding:10px!important;border:1px solid rgba(238,196,90,.42)!important;border-radius:14px!important;background:rgba(0,0,0,.18)!important;box-sizing:border-box!important;overflow:hidden!important}
+    body.is-obstacle-course .hf-overview-middle>.hf-overview-row{display:grid!important;grid-template-columns:86px minmax(0,1fr)!important;gap:10px!important;align-items:stretch!important;width:100%!important;height:100%!important;min-height:280px!important}
     body.is-obstacle-course .hf-overview-middle .hf-key{height:auto!important;align-self:stretch!important}
-    body.is-obstacle-course .hf-overview-middle .hf-overview-scroll{height:100%!important;min-height:200px!important;max-height:100%!important;overflow-y:auto!important;overflow-x:hidden!important}
+    body.is-obstacle-course .hf-overview-middle .hf-overview-scroll{height:280px!important;min-height:280px!important;max-height:280px!important;overflow-y:auto!important;overflow-x:hidden!important}
     body.is-obstacle-course .hf-overview-middle .hf-overview{width:100%!important}
     body.is-obstacle-course .obstacle-side-card>.hf-overview-row{display:none!important}
     body.is-obstacle-course .obstacle-side-card .hf-button-row:first-child{position:sticky!important;top:0!important;z-index:5!important;padding-bottom:8px!important;background:rgba(7,14,22,.96)!important}
