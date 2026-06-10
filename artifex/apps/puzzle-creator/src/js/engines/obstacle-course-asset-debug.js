@@ -1,7 +1,8 @@
-// Horse Forest Ride Asset Debug V1
+// Horse Forest Ride Asset Debug V2
+// Uses fetch-first checks for images so existing textures cannot sit forever as pending.
 
 const ASSET_ROOT = './assets/obstacle-course/horse-forest/';
-const STYLE_ID = 'horse-asset-debug-v1-style';
+const STYLE_ID = 'horse-asset-debug-v2-style';
 const MODAL_ID = 'horse-asset-debug-modal';
 const BUTTON_ID = 'horse-asset-debug-button';
 
@@ -29,6 +30,7 @@ const ASSETS = [
 ].map(([group,type,name,path,optional]) => ({ group, type, name, path, optional }));
 
 function injectStyles() {
+  document.getElementById('horse-asset-debug-v1-style')?.remove();
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement('style');
   style.id = STYLE_ID;
@@ -46,19 +48,38 @@ function urlOf(asset) { return `${ASSET_ROOT}${asset.path}`; }
 function bytes(n) { if (!Number.isFinite(n)) return ''; if (n < 1024) return `${n} B`; if (n < 1048576) return `${(n/1024).toFixed(1)} KB`; return `${(n/1048576).toFixed(2)} MB`; }
 function setRow(row, status, detail, cls) { const s = row.querySelector('.hf-asset-status'); s.textContent = status; s.className = `hf-asset-status ${cls}`; row.querySelector('.hf-asset-detail').textContent = detail || ''; }
 
-function checkImage(asset, row) {
-  const img = new Image();
-  img.onload = () => { row.querySelector('.hf-asset-preview').replaceChildren(img); setRow(row, asset.optional ? 'loaded optional' : 'loaded', `${img.naturalWidth} × ${img.naturalHeight}`, 'ok'); };
-  img.onerror = () => setRow(row, asset.optional ? 'missing optional' : 'failed', 'Image could not load.', asset.optional ? 'pending' : 'fail');
-  img.src = `${urlOf(asset)}?debug=${Date.now()}`;
+async function fetchAsset(asset, label) {
+  const res = await fetch(`${urlOf(asset)}?assetDebug=${Date.now()}`, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const blob = await res.blob();
+  return { res, blob, detail: `${bytes(blob.size)} · ${res.headers.get('content-type') || label} request ok` };
+}
+
+async function checkImage(asset, row) {
+  try {
+    const { blob, detail } = await fetchAsset(asset, 'image');
+    const objectUrl = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      row.querySelector('.hf-asset-preview').replaceChildren(img);
+      setRow(row, asset.optional ? 'loaded optional' : 'loaded', `${detail} · ${img.naturalWidth} × ${img.naturalHeight}`, 'ok');
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 30000);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      setRow(row, asset.optional ? 'decode failed optional' : 'decode failed', `${detail} · browser could not decode image`, asset.optional ? 'pending' : 'fail');
+    };
+    img.src = objectUrl;
+  } catch (error) {
+    setRow(row, asset.optional ? 'missing optional' : 'failed', error.message, asset.optional ? 'pending' : 'fail');
+  }
 }
 
 async function checkRequest(asset, row, label) {
   try {
-    const res = await fetch(urlOf(asset), { cache: 'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    setRow(row, asset.optional ? 'found optional' : 'found', `${bytes(Number(res.headers.get('content-length')))} · ${label} request ok`, 'ok');
-    return res;
+    const { blob, res } = await fetchAsset(asset, label);
+    setRow(row, asset.optional ? 'found optional' : 'found', `${bytes(blob.size)} · ${res.headers.get('content-type') || label} request ok`, 'ok');
+    return blob;
   } catch (error) {
     setRow(row, asset.optional ? 'missing optional' : 'failed', error.message, asset.optional ? 'pending' : 'fail');
     return null;
@@ -66,10 +87,10 @@ async function checkRequest(asset, row, label) {
 }
 
 async function checkGlb(asset, row) {
-  const res = await checkRequest(asset, row, 'GLB');
-  if (!res) return;
+  const blob = await checkRequest(asset, row, 'GLB');
+  if (!blob) return;
   try {
-    const buffer = await res.arrayBuffer();
+    const buffer = await blob.arrayBuffer();
     const header = new TextDecoder().decode(new Uint8Array(buffer.slice(0, 4)));
     let detail = `${bytes(buffer.byteLength)} · header ${header}`;
     if (header !== 'glTF') detail += ' · WARNING: not binary GLB';
@@ -117,7 +138,7 @@ function runChecks() {
     const fail = rows.querySelectorAll('.hf-asset-status.fail').length;
     const pending = rows.querySelectorAll('.hf-asset-status.pending').length;
     summary.textContent = `Checked: ${ok} ok · ${fail} failed · ${pending} optional/pending`;
-  }, 2400);
+  }, 3500);
 }
 
 function openModal() { const modal = document.getElementById(MODAL_ID) || createModal(); modal.hidden = false; runChecks(); }
