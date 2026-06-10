@@ -1,0 +1,66 @@
+{
+  "schema": "cinaedvs.artifex.maze.v1",
+  "kind": "puzzle_module",
+  "editor": {
+    "name": "Artifex Maze Maker",
+    "version": "1.0.0"
+  },
+  "game": "Forever Bound",
+  "moduleId": "ch00_q00_labyrinth_maze",
+  "displayName": "Labyrinth Maze",
+  "gameplayMode": "scene_mode",
+  "puzzle": {
+    "type": "pass_environmental_obstacle",
+    "callingText": "Find the correct passage through the labyrinth.",
+    "completionCondition": {
+      "flag": "maze_exit_reached",
+      "value": true,
+      "trigger": "player_reaches_exit_cell"
+    },
+    "start": { "x": 1, "y": 0, "grid": "A2" },
+    "exit": { "x": 5, "y": 6, "grid": "G6" }
+  },
+  "grid": {
+    "cols": 7,
+    "rows": 7,
+    "cellSize": 1,
+    "origin": "top_left",
+    "wallValue": 1,
+    "pathValue": 0,
+    "matrix": [
+      [1,0,1,1,1,1,1],
+      [1,0,0,0,1,0,1],
+      [1,1,1,0,1,0,1],
+      [1,0,0,0,0,0,1],
+      [1,0,1,1,1,0,1],
+      [1,0,0,0,0,0,1],
+      [1,1,1,1,1,0,1]
+    ]
+  },
+  "collision": {
+    "type": "grid_solid_cells",
+    "solidValue": 1,
+    "navigableValue": 0,
+    "playerRadiusCells": 0.34
+  },
+  "renderHints": {
+    "preview3d": true,
+    "wallHeight": 1.5,
+    "wallGap": 0.98,
+    "layoutStyle": "straight",
+    "edgeStyle": "sharp",
+    "wallMaterialPreset": "hedge",
+    "defaultWallColor": "#24513a",
+    "floorStyle": "soil",
+    "cellOverrides": []
+  },
+  "entities": [
+    { "id": "ch00_q00_labyrinth_maze_entry", "type": "entry_point", "role": "maze_start", "grid": "A2", "x": 1, "y": 0 },
+    { "id": "ch00_q00_labyrinth_maze_exit", "type": "completion_trigger", "role": "maze_exit", "grid": "G6", "x": 5, "y": 6, "setsFlag": "maze_exit_reached" }
+  ],
+  "solution": {
+    "optional": true,
+    "algorithm": "breadth_first_search",
+    "path": []
+  }
+}

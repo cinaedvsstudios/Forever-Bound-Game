@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pattern Lock Module · Forever Bound</title>
+  <link rel="stylesheet" href="src/css/pattern.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="side">
+      <section class="brand">
+        <p class="eyebrow">Pattern puzzle</p>
+        <h1>Pattern Lock</h1>
+        <p class="copy">Standalone isolated module. Drag the form to rotate it, choose an emoji/sign, then click a surface point to place it.</p>
+        <a class="module-back-link" href="../index.html">← Puzzle menu</a>
+      </section>
+
+      <section class="panel">
+        <p class="eyebrow">01 · Construction</p>
+        <h2 id="templateName">Cube</h2>
+        <label>Shape Template
+          <select id="templateSelect">
+            <option value="cube">Cube</option>
+            <option value="pyramid">Pyramid</option>
+            <option value="diamond">Diamond</option>
+            <option value="sphere">Sphere</option>
+          </select>
+        </label>
+        <p class="copy" id="objective"></p>
+        <div class="button-row">
+          <button id="resetBtn" type="button">Reset</button>
+          <button id="exampleBtn" type="button">Show Example</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <p class="eyebrow">02 · Signs</p>
+        <div class="emoji-tray" id="emojiTray"></div>
+        <div class="button-row" style="margin-top:10px">
+          <button id="eraseBtn" type="button">⌫ Erase</button>
+          <button id="clearBtn" type="button">Clear All</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <p class="eyebrow">03 · Validation</p>
+        <p class="progress"><span>Placed</span><strong id="progress">0 / 0</strong></p>
+        <button id="checkBtn" type="button" style="width:100%;margin:10px 0">Check Pattern</button>
+        <div class="status" id="result">The form awaits its signs.</div>
+      </section>
+    </aside>
+
+    <main class="stage">
+      <section class="canvas-card">
+        <div class="toolbar">
+          <span id="viewStatus">Select an emoji, then place it on a surface point.</span>
+          <button id="resetViewBtn" type="button">Reset View</button>
+        </div>
+        <canvas id="patternCanvas"></canvas>
+        <div class="hint"><span class="kbd">Hint</span> <span id="hint"></span></div>
+      </section>
+    </main>
+  </div>
+  <script src="src/js/pattern.js"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cinaedvs.artifex.maze.v1",
+  "title": "Artifex Maze Maker Puzzle Module",
+  "type": "object",
+  "required": ["schema", "kind", "moduleId", "gameplayMode", "puzzle", "grid", "collision", "entities"],
+  "properties": {
+    "schema": { "const": "cinaedvs.artifex.maze.v1" },
+    "kind": { "const": "puzzle_module" },
+    "moduleId": { "type": "string" },
+    "displayName": { "type": "string" },
+    "gameplayMode": { "enum": ["scene_mode", "travel_mode", "battle_mode", "map_mode"] },
+    "puzzle": {
+      "type": "object",
+      "required": ["type", "completionCondition", "start", "exit"],
+      "properties": {
+        "type": { "type": "string" },
+        "callingText": { "type": "string" },
+        "completionCondition": {
+          "type": "object",
+          "required": ["flag", "value", "trigger"],
+          "properties": {
+            "flag": { "type": "string" },
+            "value": { "type": "boolean" },
+            "trigger": { "type": "string" }
+          }
+        },
+        "start": { "$ref": "#/$defs/gridPoint" },
+        "exit": { "$ref": "#/$defs/gridPoint" }
+      }
+    },
+    "grid": {
+      "type": "object",
+      "required": ["cols", "rows", "cellSize", "wallValue", "pathValue", "matrix"],
+      "properties": {
+        "cols": { "type": "integer", "minimum": 1 },
+        "rows": { "type": "integer", "minimum": 1 },
+        "cellSize": { "type": "number" },
+        "origin": { "type": "string" },
+        "wallValue": { "type": "integer" },
+        "pathValue": { "type": "integer" },
+        "matrix": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "type": "integer", "enum": [0, 1] }
+          }
+        }
+      }
+    },
+    "collision": { "type": "object" },
+    "renderHints": { "type": "object" },
+    "entities": { "type": "array", "items": { "type": "object" } },
+    "solution": { "type": "object" },
+    "notes": { "type": "string" }
+  },
+  "$defs": {
+    "gridPoint": {
+      "type": "object",
+      "required": ["x", "y"],
+      "properties": {
+        "x": { "type": "integer" },
+        "y": { "type": "integer" },
+        "grid": { "type": "string" }
+      }
+    }
+  }
+}
