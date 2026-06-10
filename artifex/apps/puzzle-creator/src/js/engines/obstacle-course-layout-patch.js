@@ -1,18 +1,20 @@
-// Horse Forest Ride layout patch V4
-// Adds editor JSON export plus hold-to-move horse controls with soft acceleration/deceleration.
+// Horse Forest Ride layout patch V5
+// Phase 1 movement controls: hold-to-move forward, slow stop, backward walk, and Ctrl duck.
 
-const PATCH_ID = 'horse-forest-layout-patch-v4';
+const PATCH_ID = 'horse-forest-layout-patch-v5';
 let layoutObserver = null;
 let forwardHeld = false;
-let stoppingTimer = null;
+let backwardHeld = false;
 let speedRampTimer = null;
 let baseSpeed = null;
 let exportedOnce = false;
+let duckPassthroughUntil = 0;
 
 function injectLayoutPatchStyles() {
   document.getElementById('horse-forest-layout-patch-v1')?.remove();
   document.getElementById('horse-forest-layout-patch-v2')?.remove();
   document.getElementById('horse-forest-layout-patch-v3')?.remove();
+  document.getElementById('horse-forest-layout-patch-v4')?.remove();
   if (document.getElementById(PATCH_ID)) return;
   const style = document.createElement('style');
   style.id = PATCH_ID;
@@ -80,7 +82,7 @@ function collectHorseEditorState() {
     exportedAt: new Date().toISOString(),
     app: 'Puzzle Creator / Obstacle Course / Horse Forest Runner',
     runtimeVersion: 'Horse Forest Runner V27',
-    layoutPatchVersion: 'Horse Forest Ride layout patch V4',
+    layoutPatchVersion: 'Horse Forest Ride layout patch V5',
     notes: 'This JSON records the current editable horse-ride settings, layer controls, brush controls, and runtime defaults available through the editor UI.',
     runtimeState,
     template: { id: valueOf('obstacle-template'), label: selectedText('obstacle-template') },
@@ -89,7 +91,11 @@ function collectHorseEditorState() {
     scoring: { successScore: valueOf('obstacle-success-score') },
     layerEditor: { selectedLayer: valueOf('hf-layer-select'), visibleLayerLabels: layerOptions, soloButtonAvailable: true, backgroundWhiteButtonAvailable: true },
     paint: { mode: valueOf('hf-paint-mode'), brushSize: valueOf('hf-brush-size'), brushStrength: valueOf('hf-brush-strength') },
-    controls: { forward: 'Hold ArrowUp or W to move. Release to decelerate over about 2 seconds. Tap ArrowUp/W for a small step. Space remains jump. A/D or arrow left/right steer.' }
+    controls: {
+      forward: 'Hold ArrowUp or W to move. Release to decelerate over about 2 seconds. Tap ArrowUp/W for a small step.',
+      backward: 'Hold ArrowDown or S to walk backwards slowly. Tap for a small backward step.',
+      duck: 'Ctrl is the duck/lower-head key. ArrowDown/S no longer duck.'
+    }
   };
 }
 
@@ -120,7 +126,7 @@ function ensureJsonExportButton() {
   firstControls.insertAdjacentElement('afterend', button);
   const note = document.createElement('p');
   note.className = 'hf-movement-note';
-  note.textContent = 'Hold ↑/W to move. Release to slow down and stop. Tap for a small step. Space jumps.';
+  note.textContent = 'Hold ↑/W to move. Hold ↓/S to back up slowly. Ctrl ducks. Space jumps.';
   button.insertAdjacentElement('afterend', note);
   exportedOnce = true;
 }
@@ -133,14 +139,16 @@ function dispatchInput(node) {
   node.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
-function setHorseSpeed(value) {
+function setHorseSpeed(value, clamp = true) {
   const input = speedInput();
   if (!input) return;
-  input.value = String(Math.max(Number(input.min || 0), Math.min(Number(input.max || 64), value)));
+  const min = clamp ? Number(input.min || 0) : -64;
+  const max = Number(input.max || 64);
+  input.value = String(Math.max(min, Math.min(max, value)));
   dispatchInput(input);
 }
 
-function rampSpeed(from, to, durationMs, done) {
+function rampSpeed(from, to, durationMs, done, clamp = true) {
   const input = speedInput();
   if (!input) return;
   clearInterval(speedRampTimer);
@@ -148,7 +156,7 @@ function rampSpeed(from, to, durationMs, done) {
   speedRampTimer = setInterval(() => {
     const t = Math.min(1, (performance.now() - started) / durationMs);
     const eased = t * t * (3 - 2 * t);
-    setHorseSpeed(from + (to - from) * eased);
+    setHorseSpeed(from + (to - from) * eased, clamp);
     if (t >= 1) {
       clearInterval(speedRampTimer);
       speedRampTimer = null;
@@ -157,36 +165,83 @@ function rampSpeed(from, to, durationMs, done) {
   }, 40);
 }
 
+function restoreBaseSpeed() {
+  if (baseSpeed !== null) setHorseSpeed(baseSpeed, true);
+}
+
 function beginForwardMove() {
   if (!document.body.classList.contains('is-obstacle-course')) return;
   const input = speedInput();
   if (!input) return;
   if (baseSpeed === null) baseSpeed = Math.max(18, Number(input.value) || 34);
   forwardHeld = true;
-  clearTimeout(stoppingTimer);
+  backwardHeld = false;
   document.getElementById('obstacle-start')?.click();
-  rampSpeed(Math.max(6, Number(input.value) || 6), baseSpeed, 600);
+  rampSpeed(Math.max(4, Math.abs(Number(input.value)) || 4), baseSpeed, 650, null, true);
 }
 
 function endForwardMove() {
   if (!document.body.classList.contains('is-obstacle-course') || !forwardHeld) return;
   forwardHeld = false;
   const input = speedInput();
-  const current = Number(input?.value) || baseSpeed || 34;
+  const current = Math.abs(Number(input?.value) || baseSpeed || 34);
   rampSpeed(current, 4, 1900, () => {
     document.getElementById('obstacle-pause')?.click();
-    if (baseSpeed !== null) setHorseSpeed(baseSpeed);
-  });
+    restoreBaseSpeed();
+  }, true);
+}
+
+function beginBackwardMove() {
+  if (!document.body.classList.contains('is-obstacle-course')) return;
+  const input = speedInput();
+  if (!input) return;
+  if (baseSpeed === null) baseSpeed = Math.max(18, Math.abs(Number(input.value)) || 34);
+  backwardHeld = true;
+  forwardHeld = false;
+  document.getElementById('obstacle-start')?.click();
+  rampSpeed(Number(input.value) || 0, -7, 260, null, false);
+}
+
+function endBackwardMove() {
+  if (!document.body.classList.contains('is-obstacle-course') || !backwardHeld) return;
+  backwardHeld = false;
+  const input = speedInput();
+  const current = Number(input?.value) || -7;
+  rampSpeed(current, 0, 420, () => {
+    document.getElementById('obstacle-pause')?.click();
+    restoreBaseSpeed();
+  }, false);
+}
+
+function sendDuckKey(type) {
+  duckPassthroughUntil = performance.now() + 80;
+  document.dispatchEvent(new KeyboardEvent(type, { key: 'ArrowDown', code: 'ArrowDown', bubbles: true, cancelable: true }));
 }
 
 function interceptMovementKeys(event) {
   if (!document.body.classList.contains('is-obstacle-course')) return;
   const key = event.key.toLowerCase();
-  if (key !== 'arrowup' && key !== 'w') return;
+  const isForward = key === 'arrowup' || key === 'w';
+  const isBackward = key === 'arrowdown' || key === 's';
+  const isDuck = key === 'control';
+  if (isBackward && performance.now() < duckPassthroughUntil) return;
+  if (!isForward && !isBackward && !isDuck) return;
   event.preventDefault();
   event.stopImmediatePropagation();
-  if (event.type === 'keydown' && !event.repeat) beginForwardMove();
-  if (event.type === 'keyup') endForwardMove();
+  if (isForward) {
+    if (event.type === 'keydown' && !event.repeat) beginForwardMove();
+    if (event.type === 'keyup') endForwardMove();
+    return;
+  }
+  if (isBackward) {
+    if (event.type === 'keydown' && !event.repeat) beginBackwardMove();
+    if (event.type === 'keyup') endBackwardMove();
+    return;
+  }
+  if (isDuck) {
+    if (event.type === 'keydown' && !event.repeat) sendDuckKey('keydown');
+    if (event.type === 'keyup') sendDuckKey('keyup');
+  }
 }
 
 function bootLayoutPatch() {
