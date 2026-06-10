@@ -1,5 +1,5 @@
-// Obstacle Course / Horse Forest Runner V20
-// Controlled pass: skewed spruce horizon border, clear visible path, grounded 3D trees, rocks, ferns.
+// Obstacle Course / Horse Forest Runner V21
+// Uses one fixed sky+spruce background, blended ground, separate visible path, GLB trees only.
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
 
@@ -7,10 +7,9 @@ const ASSET_BASE = './assets/obstacle-course/horse-forest/';
 const GROUND_Y = -1.62;
 const SEGMENT_LENGTH = 18;
 
-const HORSE_FOREST_ASSETS = {
+const ASSETS = {
   horse: `${ASSET_BASE}foreground/horse.png`,
-  sky: `${ASSET_BASE}sky/forest_sky_clouds_1920x1080.png`,
-  border: `${ASSET_BASE}trees/treeline_spruce_alpha_2048x1024.png`,
+  background: `${ASSET_BASE}backgrounds/horseridebg.jpg`,
   pathGround: `${ASSET_BASE}ground/forest_floor_roots_tile_placeholder_1254.png`,
   sideGroundA: `${ASSET_BASE}ground/forest_floor_grass.png`,
   sideGroundB: `${ASSET_BASE}ground/forest_floor_grass2.png`,
@@ -28,21 +27,21 @@ const TEMPLATES = {
     label: 'Horse Forest Ride',
     objective: 'Ride through the forest corridor. Follow the lighter path, jump logs, rocks, and streams, duck beneath low branches, and collect glowing items.',
     fog: 0x102018,
-    sky: 0x7fa7b8,
+    clear: 0x7fa7b8,
     obstacleRate: 1,
   },
   horse_forest_dense: {
     label: 'Dense Forest Ride',
-    objective: 'Ride through a tighter forest corridor. Tree borders are denser, but the path remains clear.',
+    objective: 'Ride through a tighter forest corridor. Trees stay outside the path.',
     fog: 0x07130d,
-    sky: 0x6d93a7,
+    clear: 0x6d93a7,
     obstacleRate: 1.35,
   },
   horse_forest_night: {
     label: 'Moonlit Forest Ride',
     objective: 'A darker ride through the same clear corridor. Collect glowing charms and avoid shadowed obstacles.',
     fog: 0x060914,
-    sky: 0x101832,
+    clear: 0x101832,
     obstacleRate: 1.15,
   },
 };
@@ -83,13 +82,13 @@ const OC = {
   scene: null,
   camera: null,
   renderer: null,
-  backdrop: null,
   world: null,
   clock: null,
   frame: null,
   textureLoader: null,
   textureCache: new Map(),
   groundMaterial: null,
+  pathMaterial: null,
   fallbackGroundMaterial: null,
   gltfLoaderPromise: null,
 };
@@ -119,7 +118,7 @@ function injectStyles() {
     .obstacle-workspace{display:grid;grid-template-columns:minmax(600px,1fr) 292px;gap:14px;align-items:start}.obstacle-view-card,.obstacle-side-card{border:1px solid rgba(124,202,210,.24);border-radius:16px;background:rgba(7,14,22,.84);box-shadow:0 12px 34px rgba(0,0,0,.28)}
     .obstacle-view-card{padding:16px;display:flex;flex-direction:column;gap:12px;min-height:min(720px,calc(100vh - 140px))}.obstacle-header-line{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid rgba(124,202,210,.18);padding-bottom:12px}.obstacle-header-line h2{font-family:'Cinzel',serif;margin:3px 0 0;font-size:1.38rem}.obstacle-header-line p{margin:8px 0 0;color:var(--muted,#c9bfae);font-size:.78rem;line-height:1.42}.obstacle-status-pill{border:1px solid rgba(238,196,90,.34);border-radius:999px;color:#eec45a;padding:6px 10px;font-size:.68rem;font-weight:900;white-space:nowrap}
     .obstacle-three-wrap{position:relative;min-height:500px;border:1px solid rgba(124,202,210,.18);border-radius:18px;overflow:hidden;background:#07101c}.obstacle-three-wrap:after{content:'';position:absolute;left:0;right:0;bottom:0;height:86px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(10,8,5,.56));pointer-events:none;z-index:2}.obstacle-three-wrap canvas{display:block;width:100%!important;height:500px!important;cursor:crosshair}
-    .obstacle-hud{position:absolute;left:14px;right:14px;bottom:12px;z-index:6;display:flex;justify-content:space-between;gap:12px;pointer-events:none;color:var(--cream,#f4ead4);font-size:.74rem;text-shadow:0 2px 5px rgba(0,0,0,.8)}.obstacle-horse-overlay{position:absolute;left:50%;bottom:-26px;z-index:5;width:330px;height:190px;margin-left:-165px;pointer-events:none;filter:drop-shadow(0 7px 9px rgba(0,0,0,.72));opacity:.98;background:url('${HORSE_FOREST_ASSETS.horse}') center bottom / contain no-repeat}.obstacle-horse-overlay i{display:none}.obstacle-reticle{position:absolute;left:50%;top:50%;z-index:4;width:34px;height:34px;margin:-17px 0 0 -17px;border:1px solid rgba(238,196,90,.35);border-radius:50%;box-shadow:0 0 16px rgba(238,196,90,.16);pointer-events:none}.obstacle-reticle:before,.obstacle-reticle:after{content:'';position:absolute;background:rgba(238,196,90,.45)}.obstacle-reticle:before{left:50%;top:-8px;width:1px;height:50px}.obstacle-reticle:after{top:50%;left:-8px;width:50px;height:1px}
+    .obstacle-hud{position:absolute;left:14px;right:14px;bottom:12px;z-index:6;display:flex;justify-content:space-between;gap:12px;pointer-events:none;color:var(--cream,#f4ead4);font-size:.74rem;text-shadow:0 2px 5px rgba(0,0,0,.8)}.obstacle-horse-overlay{position:absolute;left:50%;bottom:-26px;z-index:5;width:330px;height:190px;margin-left:-165px;pointer-events:none;filter:drop-shadow(0 7px 9px rgba(0,0,0,.72));opacity:.98;background:url('${ASSETS.horse}') center bottom / contain no-repeat}.obstacle-horse-overlay i{display:none}.obstacle-reticle{position:absolute;left:50%;top:50%;z-index:4;width:34px;height:34px;margin:-17px 0 0 -17px;border:1px solid rgba(238,196,90,.35);border-radius:50%;box-shadow:0 0 16px rgba(238,196,90,.16);pointer-events:none}.obstacle-reticle:before,.obstacle-reticle:after{content:'';position:absolute;background:rgba(238,196,90,.45)}.obstacle-reticle:before{left:50%;top:-8px;width:1px;height:50px}.obstacle-reticle:after{top:50%;left:-8px;width:50px;height:1px}
     .obstacle-help-strip{display:flex;justify-content:space-between;gap:10px;color:var(--muted,#c9bfae);font-size:.72rem;line-height:1.35}.obstacle-control-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.obstacle-control-row button{min-height:42px;border:1px solid rgba(124,202,125,.3);border-radius:10px;background:rgba(20,72,37,.62);color:var(--cream,#f4ead4);font-weight:900;cursor:pointer}.obstacle-side-card{padding:16px 14px;display:flex;flex-direction:column;gap:11px}.obstacle-side-card h3{font-family:'Cinzel',serif;margin:0;font-size:1.03rem}.obstacle-metric{display:flex;justify-content:space-between;border:1px solid rgba(124,202,210,.2);border-radius:11px;padding:10px;color:var(--muted,#c9bfae);font-size:.76rem}.obstacle-metric strong{color:var(--cream,#f4ead4)}
     .obstacle-result{min-height:64px;border:1px solid rgba(124,202,210,.22);border-radius:11px;padding:11px;color:var(--muted,#c9bfae);font-size:.78rem;line-height:1.4}.obstacle-result[data-state='success']{border-color:#69ad70;color:#9ee6a4;background:#214b2b}.obstacle-result[data-state='failure']{border-color:#cc6d55;color:#f0a088;background:#4a1d1a}.obstacle-result[data-state='warn']{border-color:#c9a64a;color:#eec45a;background:#3c2c12}.obstacle-panel-copy{font-size:.73rem;line-height:1.46;color:var(--muted,#c9bfae);margin:0 0 14px}.obstacle-score-block{padding:12px;margin:0 0 10px;border-radius:11px;background:rgba(20,35,54,.42);border:1px solid rgba(124,202,210,.17)}.obstacle-score-block small{display:block;color:#eec45a;font-size:.63rem;letter-spacing:.13em;text-transform:uppercase;font-weight:800;margin-bottom:7px}.obstacle-score-block p{margin:0;font-size:.77rem;line-height:1.5;color:var(--cream,#f4ead4)}.obstacle-mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.obstacle-mini-grid button{min-height:38px;border:1px solid rgba(124,202,125,.28);border-radius:9px;background:rgba(20,72,37,.58);color:var(--cream,#f4ead4);font-weight:900}.asset-list-code{font-size:.62rem;line-height:1.45;white-space:pre-wrap;word-break:break-word;color:#c8e6ca;background:rgba(0,0,0,.28);border:1px solid rgba(124,202,125,.18);border-radius:10px;padding:9px}
     @media(max-width:1080px){.obstacle-workspace{grid-template-columns:1fr}.obstacle-view-card{min-height:600px}.obstacle-side-card{min-height:220px}}
@@ -163,9 +162,9 @@ function ensureObstacleMounted() {
   OC.stage.innerHTML = `
     <div class="obstacle-workspace">
       <section class="obstacle-view-card">
-        <div class="obstacle-header-line"><div><p class="eyebrow">Obstacle Course · Horse Forest Runner V20</p><h2 id="obstacle-title">Horse Forest Ride</h2><p id="obstacle-objective"></p></div><span id="obstacle-status" class="obstacle-status-pill">Ready</span></div>
+        <div class="obstacle-header-line"><div><p class="eyebrow">Obstacle Course · Horse Forest Runner V21</p><h2 id="obstacle-title">Horse Forest Ride</h2><p id="obstacle-objective"></p></div><span id="obstacle-status" class="obstacle-status-pill">Ready</span></div>
         <div id="obstacle-three-host" class="obstacle-three-wrap"><div class="obstacle-reticle"></div><div class="obstacle-horse-overlay"><i></i></div><div class="obstacle-hud"><span>A/D or arrows steer · Space/W/Up jumps · S/Down ducks</span><span id="obstacle-course-summary">0m / 0m</span></div></div>
-        <div class="obstacle-help-strip"><span>Path texture: roots. Side ground: grass/noise blend. Trees: 3D only. Border: skewed spruce horizon.</span><span>Bump/displacement sliders are live.</span></div>
+        <div class="obstacle-help-strip"><span>Fixed background image. Separate light roots path. Noise-blended forest ground.</span><span>No procedural cone trees.</span></div>
         <div class="obstacle-control-row"><button id="obstacle-start" type="button">Start Test</button><button id="obstacle-pause" type="button">Pause</button><button id="obstacle-reset-run" type="button">Reset Run</button></div>
       </section>
       <aside class="obstacle-side-card">
@@ -180,10 +179,10 @@ function ensureObstacleMounted() {
   OC.panels.id = 'obstacle-course-panels';
   OC.panels.hidden = true;
   OC.panels.innerHTML = `
-    <section class="panel tool-panel obstacle-panel" data-obstacle-panel="build"><div class="panel-title-row"><div><p class="eyebrow">01 · Construction</p><h2>Horse Ride</h2></div><span class="status-pill is-waiting">V20</span></div><p class="obstacle-panel-copy">POV forest runner with a clear blended-texture path corridor. The spruce PNG is only a skewed horizon border.</p><label class="field-block"><span>Course Template</span><select id="obstacle-template"><option value="horse_forest_easy">Horse Forest Ride</option><option value="horse_forest_dense">Dense Forest Ride</option><option value="horse_forest_night">Moonlit Forest Ride</option></select></label><label class="range-row"><span>Difficulty <output id="obstacle-difficulty-out">2</output></span><input id="obstacle-difficulty" type="range" min="1" max="5" value="2" /></label><label class="range-row"><span>Course Duration <output id="obstacle-duration-out">45s</output></span><input id="obstacle-duration" type="range" min="20" max="80" step="5" value="45" /></label><button id="obstacle-regenerate" class="wide-button" type="button">Regenerate Horse Course</button></section>
-    <section class="panel tool-panel obstacle-panel" data-obstacle-panel="display" hidden><div class="panel-title-row"><div><p class="eyebrow">02 · Display</p><h2>Ground Relief</h2></div></div><p class="obstacle-panel-copy">The procedural noise mask blends the ground textures and also drives bump/displacement. Collision remains flat.</p><label class="range-row"><span>Bump Strength <output id="obstacle-bump-out">0.12</output></span><input id="obstacle-bump" type="range" min="0" max="0.45" step="0.01" value="0.12" /></label><label class="range-row"><span>Displacement Strength <output id="obstacle-displacement-out">0.035</output></span><input id="obstacle-displacement" type="range" min="0" max="0.18" step="0.005" value="0.035" /></label><label class="range-row"><span>Horse Speed <output id="obstacle-speed-out">34</output></span><input id="obstacle-speed" type="range" min="18" max="64" step="2" value="34" /></label><label class="range-row"><span>Lane Width <output id="obstacle-lane-width-out">2.7</output></span><input id="obstacle-lane-width" type="range" min="1.8" max="5" step="0.1" value="2.7" /></label><div class="asset-list-code">Path: ground/forest_floor_roots_tile_placeholder_1254.png\nSides: ground/forest_floor_grass.png + ground/forest_floor_grass2.png\nBorder: trees/treeline_spruce_alpha_2048x1024.png\nSky: sky/forest_sky_clouds_1920x1080.png</div></section>
+    <section class="panel tool-panel obstacle-panel" data-obstacle-panel="build"><div class="panel-title-row"><div><p class="eyebrow">01 · Construction</p><h2>Horse Ride</h2></div><span class="status-pill is-waiting">V21</span></div><p class="obstacle-panel-copy">The background is now one fixed JPG. The scene renders ground, path, GLB trees, rocks, ferns, obstacles, and horse overlay.</p><label class="field-block"><span>Course Template</span><select id="obstacle-template"><option value="horse_forest_easy">Horse Forest Ride</option><option value="horse_forest_dense">Dense Forest Ride</option><option value="horse_forest_night">Moonlit Forest Ride</option></select></label><label class="range-row"><span>Difficulty <output id="obstacle-difficulty-out">2</output></span><input id="obstacle-difficulty" type="range" min="1" max="5" value="2" /></label><label class="range-row"><span>Course Duration <output id="obstacle-duration-out">45s</output></span><input id="obstacle-duration" type="range" min="20" max="80" step="5" value="45" /></label><button id="obstacle-regenerate" class="wide-button" type="button">Regenerate Horse Course</button></section>
+    <section class="panel tool-panel obstacle-panel" data-obstacle-panel="display" hidden><div class="panel-title-row"><div><p class="eyebrow">02 · Display</p><h2>Ground Relief</h2></div></div><p class="obstacle-panel-copy">The generated noise alpha blends all three ground images. The path also has its own separate curved roots strip so it stays visible.</p><label class="range-row"><span>Bump Strength <output id="obstacle-bump-out">0.12</output></span><input id="obstacle-bump" type="range" min="0" max="0.45" step="0.01" value="0.12" /></label><label class="range-row"><span>Displacement Strength <output id="obstacle-displacement-out">0.035</output></span><input id="obstacle-displacement" type="range" min="0" max="0.18" step="0.005" value="0.035" /></label><label class="range-row"><span>Horse Speed <output id="obstacle-speed-out">34</output></span><input id="obstacle-speed" type="range" min="18" max="64" step="2" value="34" /></label><label class="range-row"><span>Lane Width <output id="obstacle-lane-width-out">2.7</output></span><input id="obstacle-lane-width" type="range" min="1.8" max="5" step="0.1" value="2.7" /></label><div class="asset-list-code">Background: backgrounds/horseridebg.jpg\nPath strip: ground/forest_floor_roots_tile_placeholder_1254.png\nNoise blend: roots + forest_floor_grass.png + forest_floor_grass2.png\nTrees: GLB models only</div></section>
     <section class="panel tool-panel obstacle-panel" data-obstacle-panel="logic" hidden><div class="panel-title-row"><div><p class="eyebrow">03 · Logic</p><h2>Scoring + Events</h2></div></div><div class="obstacle-score-block"><small>Scoring</small><p>Collect glowing item: +5. Hit log/rock/branch/stream: -1. Jump obstacles, duck branches, and finish the route to resolve success or failure.</p></div><label class="range-row"><span>Success Score <output id="obstacle-success-score-out">20</output></span><input id="obstacle-success-score" type="range" min="0" max="80" step="5" value="20" /></label><label class="field-block"><span>Success Event ID</span><input id="obstacle-success-event" type="text" value="obstacle_course_success" /></label><label class="field-block"><span>Success Quest Outcome Key</span><input id="obstacle-success-outcome" type="text" value="horse_forest_success" /></label><label class="field-block"><span>Failure Event ID</span><input id="obstacle-failure-event" type="text" value="obstacle_course_failure" /></label><label class="field-block"><span>Failure Quest Outcome Key</span><input id="obstacle-failure-outcome" type="text" value="horse_forest_failure" /></label></section>
-    <section class="panel tool-panel obstacle-panel" data-obstacle-panel="visuals" hidden><div class="panel-title-row"><div><p class="eyebrow">04 · Density</p><h2>Route Pieces</h2></div></div><p class="obstacle-panel-copy">Scattered trees, rocks, and ferns are 3D objects. The middle path stays open.</p><div class="obstacle-mini-grid"><button id="obstacle-add-obstacles" type="button">More Obstacles</button><button id="obstacle-add-collectibles" type="button">More Collectibles</button></div></section>`;
+    <section class="panel tool-panel obstacle-panel" data-obstacle-panel="visuals" hidden><div class="panel-title-row"><div><p class="eyebrow">04 · Density</p><h2>Route Pieces</h2></div></div><p class="obstacle-panel-copy">Scattered trees, rocks, and ferns stay beside the path. No fake fallback tree cones are used.</p><div class="obstacle-mini-grid"><button id="obstacle-add-obstacles" type="button">More Obstacles</button><button id="obstacle-add-collectibles" type="button">More Collectibles</button></div></section>`;
   leftBody.appendChild(OC.panels);
 
   OC.host = oc$('obstacle-three-host');
@@ -207,8 +206,6 @@ function setupThreeScene() {
   const sun = new THREE.DirectionalLight(0xfff0d0, 1.0);
   sun.position.set(-8, 16, 12);
   OC.scene.add(sun);
-  OC.backdrop = new THREE.Group();
-  OC.scene.add(OC.backdrop);
   OC.world = new THREE.Group();
   OC.scene.add(OC.world);
   OC.fallbackGroundMaterial = new THREE.MeshStandardMaterial({ color: 0x3a2c1a, roughness: 0.98, metalness: 0 });
@@ -347,9 +344,9 @@ async function buildGroundMaterial() {
   try {
     const size = 512;
     const [pathImg, grassAImg, grassBImg] = await Promise.all([
-      loadImage(HORSE_FOREST_ASSETS.pathGround),
-      loadImage(HORSE_FOREST_ASSETS.sideGroundA),
-      loadImage(HORSE_FOREST_ASSETS.sideGroundB),
+      loadImage(ASSETS.pathGround),
+      loadImage(ASSETS.sideGroundA),
+      loadImage(ASSETS.sideGroundB),
     ]);
     const pathData = getImageData(pathImg, size);
     const grassAData = getImageData(grassAImg, size);
@@ -368,24 +365,21 @@ async function buildGroundMaterial() {
         const v = y / size;
         const n1 = fbm(u * 7.0, v * 7.0, 1);
         const n2 = fbm(u * 18.0, v * 18.0, 5);
-        const edgeWobble = (n1 - 0.5) * 0.075 + (n2 - 0.5) * 0.02;
-        const pathMask = 1 - smoothstep(0.185 + edgeWobble, 0.31 + edgeWobble, Math.abs(u - 0.5));
-        const sideMix = smoothstep(0.22, 0.78, fbm(u * 5.5 + 31, v * 5.5 - 8, 9));
+        const rootPatch = smoothstep(0.66, 0.94, fbm(u * 4.4 + 12, v * 4.4 - 3, 21)) * 0.22;
+        const sideMix = smoothstep(0.18, 0.82, fbm(u * 5.5 + 31, v * 5.5 - 8, 9));
         const sx = (u * size * 2.8 + n2 * 18) % size;
         const sy = (v * size * 2.8 + n1 * 18) % size;
         const pathCol = sample(pathData, size, sx, sy);
         const grassA = sample(grassAData, size, sx * 1.2, sy * 1.2);
         const grassB = sample(grassBData, size, sx * 1.1 + 80, sy * 1.1 + 40);
         const sideCol = grassA.map((c, i) => c * (1 - sideMix) + grassB[i] * sideMix);
-        const pathTint = 1.12;
-        const sideTint = 0.82 + n1 * 0.18;
-        const out = [0, 1, 2].map((i) => clamp(pathCol[i] * pathTint * pathMask + sideCol[i] * sideTint * (1 - pathMask), 0, 255));
+        const out = [0, 1, 2].map((i) => clamp(pathCol[i] * 0.92 * rootPatch + sideCol[i] * (0.84 + n1 * 0.18) * (1 - rootPatch), 0, 255));
         const idx = (y * size + x) * 4;
         colorImage.data[idx] = out[0];
         colorImage.data[idx + 1] = out[1];
         colorImage.data[idx + 2] = out[2];
         colorImage.data[idx + 3] = 255;
-        const bump = clamp(70 + n1 * 115 + n2 * 70 + pathMask * 14, 0, 255);
+        const bump = clamp(70 + n1 * 115 + n2 * 70 + rootPatch * 24, 0, 255);
         bumpImage.data[idx] = bump;
         bumpImage.data[idx + 1] = bump;
         bumpImage.data[idx + 2] = bump;
@@ -413,6 +407,12 @@ async function buildGroundMaterial() {
       roughness: 0.98,
       metalness: 0,
     });
+    OC.pathMaterial = new THREE.MeshStandardMaterial({
+      map: loadTexture(ASSETS.pathGround, { repeat: [1.1, 2.6] }),
+      roughness: 0.96,
+      metalness: 0,
+      color: 0xffffff,
+    });
     updateGroundRelief();
     if (OC.active) regenerateCourse();
   } catch (error) {
@@ -434,7 +434,7 @@ async function loadTreeModels() {
     if (!OC.gltfLoaderPromise) OC.gltfLoaderPromise = import('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js');
     const { GLTFLoader } = await OC.gltfLoaderPromise;
     const loader = new GLTFLoader();
-    HORSE_FOREST_ASSETS.treeModels.forEach((url) => {
+    ASSETS.treeModels.forEach((url) => {
       loader.load(url, (gltf) => {
         if (!gltf.scene) return;
         gltf.scene.traverse((node) => {
@@ -448,7 +448,7 @@ async function loadTreeModels() {
       }, undefined, () => {});
     });
   } catch (error) {
-    console.warn('[HorseForest] GLTFLoader unavailable; procedural 3D trees remain active.', error);
+    console.warn('[HorseForest] GLB tree loader failed. No fake tree fallback will be shown.', error);
   }
 }
 
@@ -457,10 +457,9 @@ function regenerateCourse() {
   clearWorld();
   const template = TEMPLATES[OC.templateId] || TEMPLATES.horse_forest_easy;
   OC.courseLength = Math.max(900, OC.duration * OC.speed);
-  OC.scene.background = loadTexture(HORSE_FOREST_ASSETS.sky);
-  OC.scene.fog = new THREE.Fog(template.fog, 60, 360);
-  OC.renderer?.setClearColor(template.sky, 1);
-  buildBackdrop(template);
+  OC.scene.background = loadTexture(ASSETS.background);
+  OC.scene.fog = new THREE.Fog(template.fog, 70, 375);
+  OC.renderer?.setClearColor(template.clear, 1);
   resetRun(true);
   buildWorld();
   addObstacles(Math.round((8 + OC.difficulty * 5) * template.obstacleRate));
@@ -484,7 +483,6 @@ function disposeGroup(group) {
 
 function clearWorld() {
   disposeGroup(OC.world);
-  disposeGroup(OC.backdrop);
   OC.objects = [];
   OC.scenery = [];
   OC.groundMeshes = [];
@@ -497,61 +495,9 @@ function updateTemplateText() {
   oc$('obstacle-target-score').textContent = String(OC.successScore);
 }
 
-function makeBorderMesh(width, height, topInset, bottomDrop, material) {
-  const half = width / 2;
-  const topHalf = half * topInset;
-  const positions = new Float32Array([
-    -half, -height / 2 - bottomDrop, 0,
-     half, -height / 2 - bottomDrop, 0,
-    -topHalf, height / 2, 0,
-     topHalf, height / 2, 0,
-  ]);
-  const uvs = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
-  const indices = [0, 1, 2, 2, 1, 3];
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-  geo.setIndex(indices);
-  geo.computeVertexNormals();
-  return new THREE.Mesh(geo, material);
-}
-
-function buildBackdrop(template) {
-  const skyVeil = new THREE.Mesh(new THREE.PlaneGeometry(240, 110), new THREE.MeshBasicMaterial({ color: template.sky, transparent: true, opacity: 0.08, depthWrite: false, depthTest: false, fog: false }));
-  skyVeil.position.set(0, 10, -205);
-  skyVeil.renderOrder = -20;
-  OC.backdrop.add(skyVeil);
-
-  const borderTexture = loadTexture(HORSE_FOREST_ASSETS.border);
-  const baseBorderMat = new THREE.MeshBasicMaterial({ map: borderTexture, transparent: true, alphaTest: 0.08, depthWrite: false, depthTest: false, fog: false, side: THREE.DoubleSide });
-
-  const center = makeBorderMesh(138, 32, 0.64, 5.2, baseBorderMat);
-  center.position.set(0, 4.6, -156);
-  center.renderOrder = -10;
-  OC.backdrop.add(center);
-
-  const left = makeBorderMesh(118, 34, 0.7, 6.0, baseBorderMat.clone());
-  left.position.set(-48, 4.15, -126);
-  left.rotation.y = 0.38;
-  left.rotation.z = -0.025;
-  left.renderOrder = -9;
-  OC.backdrop.add(left);
-
-  const right = makeBorderMesh(118, 34, 0.7, 6.0, baseBorderMat.clone());
-  right.position.set(48, 4.15, -126);
-  right.rotation.y = -0.38;
-  right.rotation.z = 0.025;
-  right.renderOrder = -9;
-  OC.backdrop.add(right);
-
-  const fogBand = new THREE.Mesh(new THREE.PlaneGeometry(220, 16), new THREE.MeshBasicMaterial({ color: template.fog, transparent: true, opacity: 0.12, depthWrite: false, depthTest: false, fog: false }));
-  fogBand.position.set(0, 1.5, -112);
-  fogBand.renderOrder = -8;
-  OC.backdrop.add(fogBand);
-}
-
 function buildWorld() {
   buildGroundChunks();
+  buildVisiblePath();
   buildTreeCorridor();
   scatterForestFloorDetail();
 }
@@ -563,43 +509,59 @@ function buildGroundChunks() {
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(42, SEGMENT_LENGTH + 1.2, 32, 18), mat);
     ground.rotation.x = -Math.PI / 2;
     ground.position.set(center, GROUND_Y, -d - SEGMENT_LENGTH / 2);
-    ground.renderOrder = 0;
     OC.world.add(ground);
     OC.groundMeshes.push(ground);
   }
 }
 
-function buildTreeCorridor() {
-  const mainStep = OC.templateId === 'horse_forest_dense' ? 22 : 28;
-  const outerStep = OC.templateId === 'horse_forest_dense' ? 30 : 38;
-  for (let d = 28; d < OC.courseLength + 260; d += mainStep) {
-    [-1, 1].forEach((side) => addTreeAt(d + rand(-3, 8), side, rand(8.5, 14.5), rand(6.5, 10.5)));
+function buildVisiblePath() {
+  const mat = OC.pathMaterial || new THREE.MeshStandardMaterial({ color: 0x9a6640, roughness: 1 });
+  const width = OC.laneWidth * 2.25;
+  for (let d = 0; d < OC.courseLength + 300; d += SEGMENT_LENGTH) {
+    const d0 = d;
+    const d1 = d + SEGMENT_LENGTH;
+    const c0 = pathCenterAt(d0);
+    const c1 = pathCenterAt(d1);
+    const mid = (c0 + c1) / 2;
+    const strip = new THREE.Mesh(new THREE.PlaneGeometry(width, SEGMENT_LENGTH + 0.8, 10, 10), mat);
+    strip.rotation.x = -Math.PI / 2;
+    strip.rotation.z = Math.atan2(c1 - c0, SEGMENT_LENGTH);
+    strip.position.set(mid, GROUND_Y + 0.026, -d - SEGMENT_LENGTH / 2);
+    strip.renderOrder = 2;
+    OC.world.add(strip);
+    OC.groundMeshes.push(strip);
   }
-  for (let d = 18; d < OC.courseLength + 300; d += outerStep) {
+}
+
+function buildTreeCorridor() {
+  if (!OC.treeModels.length) return;
+  const mainStep = OC.templateId === 'horse_forest_dense' ? 24 : 32;
+  const outerStep = OC.templateId === 'horse_forest_dense' ? 34 : 44;
+  for (let d = 42; d < OC.courseLength + 260; d += mainStep) {
+    [-1, 1].forEach((side) => addTreeAt(d + rand(-4, 10), side, rand(8.5, 15), rand(8.0, 12.5)));
+  }
+  for (let d = 24; d < OC.courseLength + 300; d += outerStep) {
     [-1, 1].forEach((side) => {
-      addTreeAt(d + rand(0, 12), side, rand(9, 16), rand(13, 20));
-      addTreeAt(d + rand(8, 22), side, rand(6.5, 12), rand(20, 29));
+      addTreeAt(d + rand(0, 14), side, rand(9, 17), rand(14, 22));
+      addTreeAt(d + rand(9, 24), side, rand(7, 13), rand(22, 32));
     });
   }
 }
 
 function addTreeAt(distance, side, height, extraOffset = 0) {
   const center = pathCenterAt(distance);
-  const corridorEdge = OC.laneWidth * 2.6;
+  const corridorEdge = OC.laneWidth * 2.65;
   const x = center + side * (corridorEdge + extraOffset + rand(0.7, 2.4));
-  const tree = createTree(height);
+  const tree = createModelTree(height);
+  if (!tree) return;
   tree.position.set(x, GROUND_Y, -distance);
   tree.rotation.y = rand(0, Math.PI * 2);
   OC.world.add(tree);
   OC.scenery.push(tree);
 }
 
-function createTree(targetHeight) {
-  if (OC.treeModels.length) return createModelTree(targetHeight);
-  return createProceduralTree(targetHeight);
-}
-
 function createModelTree(targetHeight) {
+  if (!OC.treeModels.length) return null;
   const root = pick(OC.treeModels).clone(true);
   root.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(root);
@@ -615,35 +577,11 @@ function createModelTree(targetHeight) {
   return root;
 }
 
-function createProceduralTree(targetHeight) {
-  const group = new THREE.Group();
-  const scale = targetHeight / 12;
-  const trunkMat = new THREE.MeshLambertMaterial({ color: 0x5a3820 });
-  const darkLeaf = new THREE.MeshLambertMaterial({ color: 0x183d1d });
-  const midLeaf = new THREE.MeshLambertMaterial({ color: 0x2c6a2c });
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16 * scale, 0.28 * scale, targetHeight * 0.75, 9), trunkMat);
-  trunk.position.y = targetHeight * 0.375;
-  group.add(trunk);
-  const layers = [
-    [0.44, 0.17, 0.18],
-    [0.58, 0.15, 0.17],
-    [0.71, 0.13, 0.16],
-    [0.83, 0.10, 0.14],
-    [0.93, 0.07, 0.11],
-  ];
-  layers.forEach(([y, r, h], index) => {
-    const cone = new THREE.Mesh(new THREE.ConeGeometry(targetHeight * r, targetHeight * h, 8), index % 2 === 0 ? darkLeaf : midLeaf);
-    cone.position.y = targetHeight * y;
-    group.add(cone);
-  });
-  return group;
-}
-
 function scatterForestFloorDetail() {
   for (let d = 18; d < OC.courseLength + 260; d += rand(8, 14)) {
     [-1, 1].forEach((side) => {
       const center = pathCenterAt(d);
-      const edge = OC.laneWidth * 1.5;
+      const edge = OC.laneWidth * 1.35;
       const x = center + side * (edge + rand(1.2, 8.8));
       if (Math.random() < 0.55) addFern(x, d + rand(-3, 4));
       if (Math.random() < 0.38) addSceneryRock(x + rand(-1, 1), d + rand(-4, 4));
