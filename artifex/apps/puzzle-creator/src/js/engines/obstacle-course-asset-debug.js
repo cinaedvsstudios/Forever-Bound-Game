@@ -1,38 +1,62 @@
-// Horse Forest Ride Asset Debug V3
-// Separate debug helper. Checks live horse forest images, modular path WEBPs, GLBs, and planned audio.
+// Horse Forest Ride Asset Debug V4
+// Updated to match the current horse-forest folders shown by the user: ground, obstacles, foreground, backgrounds, and 3d.
 
 const ASSET_ROOT = './assets/obstacle-course/horse-forest/';
-const STYLE_ID = 'horse-asset-debug-v3-style';
+const STYLE_ID = 'horse-asset-debug-v4-style';
 const MODAL_ID = 'horse-asset-debug-modal';
 const BUTTON_ID = 'horse-asset-debug-button';
 
 const ASSETS = [
   ['Backgrounds','image','Main forest ride background','backgrounds/horseridebg.jpg',false],
+  ['Foreground','image','Horse POV foreground','foreground/horse.png',false],
+
+  ['Ground','image','Fern image','ground/fern.png',false],
+  ['Ground','image','Forest floor grass','ground/forest_floor_grass.png',false],
   ['Ground','image','Forest floor grass2 base ground','ground/forest_floor_grass2.png',false],
-  ['Ground archived/reference','image','Forest floor grass','ground/forest_floor_grass.png',true],
-  ['Ground archived/reference','image','Old root/path tile','ground/forest_floor_roots_tile_placeholder_1254.png',true],
-  ['Path segments','image','Path straight','path-segments/pathstraight.webp',false],
-  ['Path segments','image','Path kink','path-segments/pathkink.webp',false],
-  ['Path segments','image','Path left','path-segments/pathleft.webp',false],
-  ['Path segments','image','Path right','path-segments/pathright.webp',false],
-  ['Path segments','image','Path left to straight','path-segments/pathlefttostraight.webp',false],
-  ['Path segments','image','Right to straight','path-segments/righttostraight.webp',false],
-  ['Path segments ignored','image','Split path old/ignored','path-segments/splitpath.webp',true],
-  ['Path segments ignored','image','Split path 2 old/ignored','path-segments/splitpath2.webp',true],
-  ['3D trees','glb','Tree','3d/tree.glb',false],
-  ['3D trees','glb','Low-poly tree','3d/tree_low-poly.glb',false],
-  ['3D trees','glb','Hill top tree','3d/hill_top_tree.glb',false],
-  ['3D trees','glb','Small pine','3d/small_pine.glb',false],
-  ['3D trees','glb','Pine with awkward teenage face','3d/pine_with_awkward_teenage_face.glb',true],
-  ['3D rocks','glb','Low-poly rock','3d/rock_low-poly.glb',false],
-  ['3D rocks','glb','Low-poly stone','3d/stone_low-poly.glb',false],
+  ['Ground','image','Old root/path tile','ground/forest_floor_roots_tile_placeholder_1254.png',true],
+
+  ['Path segments','image','Path kink','ground/pathkink.webp',false],
+  ['Path segments','image','Path left','ground/pathleft.webp',false],
+  ['Path segments','image','Path left to straight','ground/pathlefttostraight.webp',false],
+  ['Path segments','image','Path right','ground/pathright.webp',false],
+  ['Path segments','image','Path straight','ground/pathstraight.webp',false],
+  ['Path segments','image','Right to straight','ground/righttostraight.webp',false],
+  ['Path segments ignored','image','Split path old/ignored','ground/splitpath.webp',true],
+  ['Path segments ignored','image','Split path 2 old/ignored','ground/splitpath2.webp',true],
+
+  ['Obstacles','image','Overhead leafy branch','obstacles/branch_overhead_leafy_01.png',false],
+  ['Obstacles','image','Fallen branch placeholder','obstacles/obstacle_fallen_branch_placeholder_01.png',false],
+  ['Obstacles','image','Log bark','obstacles/obstacle_log_bark_01.png',false],
+  ['Obstacles','image','Log branch','obstacles/obstacle_log_branch_01.png',false],
+  ['Obstacles','image','Low branch','obstacles/obstacle_low_branch_01.png',false],
+  ['Obstacles','image','Overhead branch placeholder','obstacles/obstacle_overhead_branch_placeholder_01.png',false],
+  ['Obstacles','image','Flat rock','obstacles/obstacle_rock_flat_01.png',false],
+  ['Obstacles','image','Medium rock','obstacles/obstacle_rock_medium_01.png',false],
+  ['Obstacles','image','Tall rock','obstacles/obstacle_rock_tall_01.png',false],
+  ['Obstacles','image','Low stump','obstacles/obstacle_stump_low_01.png',false],
+
+  ['3D','glb','Tree GN','3d/tree_gn.glb',false],
+  ['3D','glb','Oak trees','3d/oak_trees.glb',false],
+  ['3D','glb','Tree','3d/tree.glb',false],
+  ['3D','glb','Hill top tree','3d/hill_top_tree.glb',false],
+  ['3D','glb','Rock low-poly','3d/rock_low-poly.glb',false],
+  ['3D','glb','Dead tree','3d/dead_tree.glb',false],
+  ['3D','glb','Stone low-poly','3d/stone_low-poly.glb',false],
+  ['3D','glb','Pine with awkward teenage face','3d/pine_with_awkward_teenage_face.glb',false],
+  ['3D','glb','Stylized glowing mushrooms','3d/stylized_glowing_mushrooms.glb',false],
+  ['3D','glb','Tree low-poly','3d/tree_low-poly.glb',false],
+  ['3D','glb','Pine tree','3d/pine_tree.glb',false],
+  ['3D','glb','Low-poly fern','3d/low_poly_fern.glb',false],
+  ['3D','glb','Small pine','3d/small_pine.glb',false],
+  ['3D','glb','Pine tree PS1 low-poly','3d/pine_tree_-_ps1_low_poly.glb',false],
+
   ['Audio planned','audio','Slow gallop','audio/horse_gallop_slow.mp3',true],
   ['Audio planned','audio','Full gallop','audio/horse_gallop_full.mp3',true],
   ['Audio planned','audio','Landing','audio/horse_landing.mp3',true]
 ].map(([group,type,name,path,optional]) => ({ group, type, name, path, optional }));
 
 function injectStyles() {
-  ['horse-asset-debug-v1-style','horse-asset-debug-v2-style'].forEach((id) => document.getElementById(id)?.remove());
+  ['horse-asset-debug-v1-style','horse-asset-debug-v2-style','horse-asset-debug-v3-style'].forEach((id) => document.getElementById(id)?.remove());
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement('style');
   style.id = STYLE_ID;
@@ -126,7 +150,7 @@ function createModal() {
   modal.id = MODAL_ID;
   modal.className = 'hf-asset-modal';
   modal.hidden = true;
-  modal.innerHTML = `<div class="hf-asset-head"><div><h2>Horse Forest Asset Debug</h2><div class="hf-asset-small">Checks live images, path WEBPs, audio requests, and GLB request/parse status. Optional reference/planned assets may be missing.</div></div><div><button id="hf-asset-rerun" type="button">Recheck</button> <button id="hf-asset-close" type="button">Close</button></div></div><div class="hf-asset-body"><div class="hf-asset-toolbar"><span id="hf-asset-summary">Ready.</span><span class="hf-asset-path">Root: ${ASSET_ROOT}</span></div><table class="hf-asset-table"><thead><tr><th>Group</th><th>Asset</th><th>Type</th><th>Status</th><th>Preview</th><th>Path / Details</th></tr></thead><tbody id="hf-asset-rows"></tbody></table></div>`;
+  modal.innerHTML = `<div class="hf-asset-head"><div><h2>Horse Forest Asset Debug</h2><div class="hf-asset-small">Checks current horse-forest folders: backgrounds, foreground, ground/path WEBPs, obstacle PNGs, GLBs, and planned audio.</div></div><div><button id="hf-asset-rerun" type="button">Recheck</button> <button id="hf-asset-close" type="button">Close</button></div></div><div class="hf-asset-body"><div class="hf-asset-toolbar"><span id="hf-asset-summary">Ready.</span><span class="hf-asset-path">Root: ${ASSET_ROOT}</span></div><table class="hf-asset-table"><thead><tr><th>Group</th><th>Asset</th><th>Type</th><th>Status</th><th>Preview</th><th>Path / Details</th></tr></thead><tbody id="hf-asset-rows"></tbody></table></div>`;
   document.body.appendChild(modal);
   modal.querySelector('#hf-asset-close').addEventListener('click', () => { modal.hidden = true; });
   modal.querySelector('#hf-asset-rerun').addEventListener('click', runChecks);
@@ -141,7 +165,7 @@ function runChecks() {
   summary.textContent = `Checking ${ASSETS.length} assets...`;
   ASSETS.forEach((asset) => {
     const row = document.createElement('tr');
-    row.innerHTML = `<td>${asset.group}</td><td>${asset.name}${asset.optional ? '<div class="hf-asset-small">optional/reference</div>' : ''}</td><td>${asset.type}</td><td><span class="hf-asset-status pending">pending</span></td><td class="hf-asset-preview"></td><td><div class="hf-asset-path">${urlOf(asset)}</div><div class="hf-asset-small hf-asset-detail"></div></td>`;
+    row.innerHTML = `<td>${asset.group}</td><td>${asset.name}${asset.optional ? '<div class="hf-asset-small">optional/reference/ignored</div>' : ''}</td><td>${asset.type}</td><td><span class="hf-asset-status pending">pending</span></td><td class="hf-asset-preview"></td><td><div class="hf-asset-path">${urlOf(asset)}</div><div class="hf-asset-small hf-asset-detail"></div></td>`;
     rows.appendChild(row);
     if (asset.type === 'image') checkImage(asset, row);
     else if (asset.type === 'glb') checkGlb(asset, row);
@@ -152,7 +176,7 @@ function runChecks() {
     const fail = rows.querySelectorAll('.hf-asset-status.fail').length;
     const pending = rows.querySelectorAll('.hf-asset-status.pending').length;
     summary.textContent = `Checked: ${ok} ok · ${fail} failed · ${pending} optional/pending`;
-  }, 3500);
+  }, 4500);
 }
 
 function openModal() {
