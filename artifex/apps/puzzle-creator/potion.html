@@ -1,1 +1,34 @@
-<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=index.html"><title>Redirecting</title><a href="index.html">Back to Puzzle Creator</a>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Artifex Potion Match · Forever Bound</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="src/css/artifex-theme.css?v=1.29" />
+  <style>
+    .app-header{grid-template-columns:minmax(220px,1fr) auto;height:92px;min-height:92px}.app-menu{justify-self:center}.workspace,.left-panel,.right-panel{height:calc(100vh - 92px)}.panel-nav-button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}.panel-nav-icon{font-size:1.55rem;line-height:1}.panel-nav-label{font-size:.58rem;line-height:1;letter-spacing:.12em;text-transform:uppercase;font-weight:900;text-shadow:none}.right-panel{overflow:auto}.left-panel-body{overflow:auto}.boot-note{padding:18px;color:var(--muted,#c9bfae)}
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand-lockup"><div class="brand-sigil" aria-hidden="true"><span class="brand-rune">ᚠ</span></div><div class="brand-title-block"><p class="eyebrow">Artifex Puzzle Creator Module</p><div class="title-row"><h1>Potion Match</h1><span class="version-pill">V1.38</span><span class="title-divider"></span></div></div></div>
+      <nav class="app-menu" aria-label="Potion Match menu"><div class="menu-group"><a class="menu-top" href="index.html" style="text-decoration:none">Puzzle Hub</a></div></nav>
+    </header>
+    <main class="workspace two-panel-workspace">
+      <aside class="control-rail left-panel" aria-label="Potion Match controls">
+        <nav class="left-icon-bar" aria-label="Potion Match sections"><button class="panel-nav-button is-active" type="button" data-panel="build"><span class="panel-nav-icon">⚒</span><span class="panel-nav-label">Setup</span></button><button class="panel-nav-button" type="button" data-panel="display"><span class="panel-nav-icon">◈</span><span class="panel-nav-label">Display</span></button><button class="panel-nav-button" type="button" data-panel="logic"><span class="panel-nav-icon">☍</span><span class="panel-nav-label">Logic</span></button><button class="panel-nav-button" type="button" data-panel="visuals"><span class="panel-nav-icon">✦</span><span class="panel-nav-label">Colors</span></button></nav>
+        <div class="left-panel-body"><p class="boot-note">Loading Potion Match…</p></div>
+      </aside>
+      <section class="right-panel" aria-label="Potion Match preview"><p class="boot-note">Loading Potion Match preview…</p></section>
+    </main>
+  </div>
+  <script type="module">
+    import './src/js/engines/potion-match-runtime.js?v=1.37';
+    window.addEventListener('DOMContentLoaded', () => setTimeout(() => window.__artifexPotionMatch?.open?.(), 80));
+  </script>
+</body>
+</html>
