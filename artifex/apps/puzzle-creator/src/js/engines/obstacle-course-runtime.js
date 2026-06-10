@@ -1,23 +1,21 @@
-// Obstacle Course / Horse Forest Runner V4
-// POV 3D horse-riding obstacle course for Artifex Puzzle Creator.
-// Fixes the forest ride compositing so opaque texture cards are not used as repeated foreground layers.
+// Obstacle Course / Horse Forest Runner V18
+// Active Horse Forest Ride runtime for Artifex Puzzle Creator.
+// Fixes the corridor composition: no centre backdrop image, no trees in the running path,
+// solid side tree borders, obvious corridor, and PNG horse POV overlay.
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
 
 const ASSET_BASE = './assets/obstacle-course/horse-forest/';
 
 const HORSE_FOREST_ASSETS = {
-  sky: `${ASSET_BASE}sky/forest_sky_clouds_1920x1080.png`,
-  horizon: `${ASSET_BASE}backgrounds/forest_horizon_misty_pines_01_740x493.png`,
-  horizonDeep: `${ASSET_BASE}backgrounds/forest_horizon_deep_pines_02_625x350.png`,
+  horse: `${ASSET_BASE}foreground/horse.png`,
   ground: `${ASSET_BASE}ground/forest_floor_roots_tile_placeholder_1254.png`,
   trees: [
-    `${ASSET_BASE}trees/tree_broadleaf_01.png`,
-    `${ASSET_BASE}trees/treeline_spruce_alpha_2048x1024.png`,
-  ],
-  scenery: [
     `${ASSET_BASE}trees/treeline_spruce_alpha_2048x1024.png`,
     `${ASSET_BASE}trees/treeline_pine_alpha_625x350.png`,
+    `${ASSET_BASE}trees/tree_pine_placeholder_01.png`,
+    `${ASSET_BASE}trees/tree_broadleaf_01.png`,
+    `${ASSET_BASE}trees/tree_bush_placeholder_01.png`,
   ],
   logs: [
     `${ASSET_BASE}obstacles/logs/obstacle_log_cut_01.png`,
@@ -48,23 +46,23 @@ const HORSE_FOREST_ASSETS = {
 const OC_TEMPLATES = {
   horse_forest_easy: {
     label: 'Horse Forest Ride',
-    objective: 'Ride through the forest path. Jump logs and rocks, duck beneath low branches, and collect flowers or ingredients.',
+    objective: 'Ride through the forest corridor. Jump logs, rocks, and streams, duck beneath low branches, and collect flowers or ingredients.',
     fog: 0x102018,
     ground: 0x25351f,
-    sky: 0x9bc9f1,
+    sky: 0x7fa7b8,
     obstacleRate: 1,
   },
   horse_forest_dense: {
     label: 'Dense Forest Ride',
-    objective: 'Ride through denser forest. More side trees, more logs, and branch pickups placed closer to the path.',
+    objective: 'Ride through a tighter forest corridor. The tree borders are denser, but the path remains clear.',
     fog: 0x07130d,
     ground: 0x1b2c19,
-    sky: 0x6fa5c8,
+    sky: 0x6d93a7,
     obstacleRate: 1.35,
   },
   horse_forest_night: {
     label: 'Moonlit Forest Ride',
-    objective: 'A darker horse ride using the same asset slots. Collect glowing charms and avoid shadowed obstacles.',
+    objective: 'A darker horse ride through the same clear corridor. Collect glowing charms and avoid shadowed obstacles.',
     fog: 0x060914,
     ground: 0x11190f,
     sky: 0x101832,
@@ -98,6 +96,7 @@ const OC = {
   player: { x: 0, y: 0, vy: 0, grounded: true },
   objects: [],
   scenery: [],
+  pathMeshes: [],
   stage: null,
   panels: null,
   host: null,
@@ -116,6 +115,15 @@ const OC = {
 const oc$ = (id) => document.getElementById(id);
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
+const rand = (min, max) => min + Math.random() * (max - min);
+
+function pathCenterAt(distance) {
+  return Math.sin(distance * 0.0065) * 1.15 + Math.sin(distance * 0.017) * 0.38;
+}
+
+function playerWorldX() {
+  return pathCenterAt(OC.distance) + OC.player.x;
+}
 
 function injectObstacleStyles() {
   if (oc$('obstacle-course-pov-styles')) return;
@@ -133,11 +141,11 @@ function injectObstacleStyles() {
     .obstacle-header-line h2{font-family:'Cinzel',serif;margin:3px 0 0;font-size:1.38rem}.obstacle-header-line p{margin:8px 0 0;color:var(--muted,#c9bfae);font-size:.78rem;line-height:1.42}
     .obstacle-status-pill{border:1px solid rgba(238,196,90,.34);border-radius:999px;color:#eec45a;padding:6px 10px;font-size:.68rem;font-weight:900;white-space:nowrap}
     .obstacle-three-wrap{position:relative;min-height:500px;border:1px solid rgba(124,202,210,.18);border-radius:18px;overflow:hidden;background:#07101c}
-    .obstacle-three-wrap:after{content:'';position:absolute;left:0;right:0;bottom:0;height:70px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(10,8,5,.48));pointer-events:none;z-index:2}
+    .obstacle-three-wrap:after{content:'';position:absolute;left:0;right:0;bottom:0;height:86px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(10,8,5,.56));pointer-events:none;z-index:2}
     .obstacle-three-wrap canvas{display:block;width:100%!important;height:500px!important;cursor:crosshair}
-    .obstacle-hud{position:absolute;left:14px;right:14px;bottom:12px;z-index:5;display:flex;justify-content:space-between;gap:12px;pointer-events:none;color:var(--cream,#f4ead4);font-size:.74rem;text-shadow:0 2px 5px rgba(0,0,0,.8)}
-    .obstacle-horse-overlay{position:absolute;left:50%;bottom:-8px;z-index:4;width:230px;height:78px;margin-left:-115px;pointer-events:none;filter:drop-shadow(0 5px 6px rgba(0,0,0,.65));opacity:.92}.obstacle-horse-overlay:before,.obstacle-horse-overlay:after{content:'';position:absolute;bottom:34px;width:34px;height:66px;background:linear-gradient(#5b371e,#21140c);border-radius:70% 70% 25% 25%;transform-origin:bottom center}.obstacle-horse-overlay:before{left:65px;transform:rotate(-14deg)}.obstacle-horse-overlay:after{right:65px;transform:rotate(14deg)}.obstacle-horse-overlay i{position:absolute;left:50%;bottom:0;width:160px;height:62px;margin-left:-80px;border-radius:48% 48% 0 0;background:linear-gradient(#4b2c19,#170e09)}
-    .obstacle-reticle{position:absolute;left:50%;top:50%;z-index:3;width:34px;height:34px;margin:-17px 0 0 -17px;border:1px solid rgba(238,196,90,.35);border-radius:50%;box-shadow:0 0 16px rgba(238,196,90,.16);pointer-events:none}.obstacle-reticle:before,.obstacle-reticle:after{content:'';position:absolute;background:rgba(238,196,90,.45)}.obstacle-reticle:before{left:50%;top:-8px;width:1px;height:50px}.obstacle-reticle:after{top:50%;left:-8px;width:50px;height:1px}
+    .obstacle-hud{position:absolute;left:14px;right:14px;bottom:12px;z-index:6;display:flex;justify-content:space-between;gap:12px;pointer-events:none;color:var(--cream,#f4ead4);font-size:.74rem;text-shadow:0 2px 5px rgba(0,0,0,.8)}
+    .obstacle-horse-overlay{position:absolute;left:50%;bottom:-26px;z-index:5;width:330px;height:190px;margin-left:-165px;pointer-events:none;filter:drop-shadow(0 7px 9px rgba(0,0,0,.72));opacity:.98;background:url('${HORSE_FOREST_ASSETS.horse}') center bottom / contain no-repeat}.obstacle-horse-overlay i{display:none}
+    .obstacle-reticle{position:absolute;left:50%;top:50%;z-index:4;width:34px;height:34px;margin:-17px 0 0 -17px;border:1px solid rgba(238,196,90,.35);border-radius:50%;box-shadow:0 0 16px rgba(238,196,90,.16);pointer-events:none}.obstacle-reticle:before,.obstacle-reticle:after{content:'';position:absolute;background:rgba(238,196,90,.45)}.obstacle-reticle:before{left:50%;top:-8px;width:1px;height:50px}.obstacle-reticle:after{top:50%;left:-8px;width:50px;height:1px}
     .obstacle-help-strip{display:flex;justify-content:space-between;gap:10px;color:var(--muted,#c9bfae);font-size:.72rem;line-height:1.35}
     .obstacle-control-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.obstacle-control-row button{min-height:42px;border:1px solid rgba(124,202,125,.3);border-radius:10px;background:rgba(20,72,37,.62);color:var(--cream,#f4ead4);font-weight:900;cursor:pointer}.obstacle-control-row button:hover{border-color:rgba(158,230,164,.62)}
     .obstacle-side-card{padding:16px 14px;display:flex;flex-direction:column;gap:11px}.obstacle-side-card h3{font-family:'Cinzel',serif;margin:0;font-size:1.03rem}
@@ -187,11 +195,11 @@ function ensureObstacleMounted() {
     <div class="obstacle-workspace">
       <section class="obstacle-view-card">
         <div class="obstacle-header-line">
-          <div><p class="eyebrow">Obstacle Course · Horse Forest Runner V4</p><h2 id="obstacle-title">Horse Forest Ride</h2><p id="obstacle-objective"></p></div>
+          <div><p class="eyebrow">Obstacle Course · Horse Forest Runner V18</p><h2 id="obstacle-title">Horse Forest Ride</h2><p id="obstacle-objective"></p></div>
           <span id="obstacle-status" class="obstacle-status-pill">Ready</span>
         </div>
         <div id="obstacle-three-host" class="obstacle-three-wrap"><div class="obstacle-reticle"></div><div class="obstacle-horse-overlay"><i></i></div><div class="obstacle-hud"><span>A/D or arrows steer · Space/W/Up jumps · S/Down ducks</span><span id="obstacle-course-summary">0m / 0m</span></div></div>
-        <div class="obstacle-help-strip"><span>POV horse ride: fixed sky/horizon backdrop, alpha tree walls, and repeated forest floor plane.</span><span>No opaque horizon cards.</span></div>
+        <div class="obstacle-help-strip"><span>Clear forest corridor: tree walls stay on both sides and never sit in the running lane.</span><span>No centre background photo panels.</span></div>
         <div class="obstacle-control-row"><button id="obstacle-start" type="button">Start Test</button><button id="obstacle-pause" type="button">Pause</button><button id="obstacle-reset-run" type="button">Reset Run</button></div>
       </section>
       <aside class="obstacle-side-card">
@@ -211,8 +219,8 @@ function ensureObstacleMounted() {
   OC.panels.hidden = true;
   OC.panels.innerHTML = `
     <section class="panel tool-panel obstacle-panel" data-obstacle-panel="build">
-      <div class="panel-title-row"><div><p class="eyebrow">01 · Construction</p><h2>Horse Ride</h2></div><span class="status-pill is-waiting">V4</span></div>
-      <p class="obstacle-panel-copy">POV 3D forest runner. The player rides forward automatically, steers left/right, jumps logs and rocks, ducks beneath branches, and collects items.</p>
+      <div class="panel-title-row"><div><p class="eyebrow">01 · Construction</p><h2>Horse Ride</h2></div><span class="status-pill is-waiting">V18</span></div>
+      <p class="obstacle-panel-copy">POV 3D forest runner. The path is now kept as a visible corridor, with tree borders on the left and right only.</p>
       <label class="field-block"><span>Course Template</span><select id="obstacle-template"><option value="horse_forest_easy">Horse Forest Ride</option><option value="horse_forest_dense">Dense Forest Ride</option><option value="horse_forest_night">Moonlit Forest Ride</option></select></label>
       <label class="range-row"><span>Difficulty <output id="obstacle-difficulty-out">2</output></span><input id="obstacle-difficulty" type="range" min="1" max="5" value="2" /></label>
       <label class="range-row"><span>Course Duration <output id="obstacle-duration-out">45s</output></span><input id="obstacle-duration" type="range" min="20" max="80" step="5" value="45" /></label>
@@ -222,10 +230,9 @@ function ensureObstacleMounted() {
       <div class="panel-title-row"><div><p class="eyebrow">02 · Display</p><h2>Display</h2></div></div>
       <label class="range-row"><span>Horse Speed <output id="obstacle-speed-out">34</output></span><input id="obstacle-speed" type="range" min="18" max="64" step="2" value="34" /></label>
       <label class="range-row"><span>Lane Width <output id="obstacle-lane-width-out">2.7</output></span><input id="obstacle-lane-width" type="range" min="1.8" max="5" step="0.1" value="2.7" /></label>
-      <div class="obstacle-score-block"><small>Image slots</small><p>V4 only uses confirmed transparent tree assets as billboards. The opaque horizon photos are fixed as one distant backdrop so they do not create repeated cards.</p></div>
+      <div class="obstacle-score-block"><small>Horse PNG</small><p>The horse overlay now uses foreground/horse.png. Add left/right variants later and this can be switched while steering.</p></div>
       <div class="asset-list-code">${ASSET_BASE}
-sky/
-backgrounds/
+foreground/horse.png
 ground/
 trees/
 obstacles/logs/
@@ -236,7 +243,7 @@ collectibles/</div>
     </section>
     <section class="panel tool-panel obstacle-panel" data-obstacle-panel="logic" hidden>
       <div class="panel-title-row"><div><p class="eyebrow">03 · Logic</p><h2>Scoring + Events</h2></div></div>
-      <div class="obstacle-score-block"><small>Scoring</small><p>Collect flower/herb/charm: +5. Hit log/rock/stump/branch: -1. Jump obstacles, duck branches, and finish the route to resolve success or failure.</p></div>
+      <div class="obstacle-score-block"><small>Scoring</small><p>Collect flower/herb/charm: +5. Hit log/rock/stump/branch/stream: -1. Jump obstacles, duck branches, and finish the route to resolve success or failure.</p></div>
       <label class="range-row"><span>Success Score <output id="obstacle-success-score-out">20</output></span><input id="obstacle-success-score" type="range" min="0" max="80" step="5" value="20" /></label>
       <label class="field-block"><span>Success Event ID</span><input id="obstacle-success-event" type="text" value="obstacle_course_success" /></label>
       <label class="field-block"><span>Success Quest Outcome Key</span><input id="obstacle-success-outcome" type="text" value="horse_forest_success" /></label>
@@ -244,8 +251,8 @@ collectibles/</div>
       <label class="field-block"><span>Failure Quest Outcome Key</span><input id="obstacle-failure-outcome" type="text" value="horse_forest_failure" /></label>
     </section>
     <section class="panel tool-panel obstacle-panel" data-obstacle-panel="visuals" hidden>
-      <div class="panel-title-row"><div><p class="eyebrow">04 · Colors</p><h2>Asset Sets</h2></div></div>
-      <p class="obstacle-panel-copy">The forest is now composited as separate layers: sky background, one fixed distant horizon, transparent side tree walls, ground path, obstacle sprites, collectible sprites, and the horse POV overlay.</p>
+      <div class="panel-title-row"><div><p class="eyebrow">04 · Density</p><h2>Route Pieces</h2></div></div>
+      <p class="obstacle-panel-copy">Tree walls are generated along both sides of the screen. The path centre may curve, but scenery is always pushed outside the corridor.</p>
       <div class="obstacle-mini-grid"><button id="obstacle-add-obstacles" type="button">More Obstacles</button><button id="obstacle-add-collectibles" type="button">More Collectibles</button></div>
     </section>`;
   leftBody.appendChild(OC.panels);
@@ -264,7 +271,7 @@ function setupThreeScene() {
   OC.camera.lookAt(0, 0.08, -44);
   OC.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
   OC.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  OC.renderer.setClearColor(0x9bc9f1, 1);
+  OC.renderer.setClearColor(0x7fa7b8, 1);
   OC.renderer.shadowMap.enabled = false;
   OC.host.prepend(OC.renderer.domElement);
   OC.clock = new THREE.Clock();
@@ -359,22 +366,6 @@ function makeSprite(url, width, height, options = {}) {
   return sprite;
 }
 
-function makeBackdropPlane(url, width, height, x, y, z, opacity = 1) {
-  const mat = new THREE.MeshBasicMaterial({
-    map: loadTexture(url),
-    transparent: opacity < 1,
-    opacity,
-    depthWrite: false,
-    depthTest: false,
-    fog: false,
-    side: THREE.DoubleSide,
-  });
-  const plane = new THREE.Mesh(new THREE.PlaneGeometry(width, height), mat);
-  plane.position.set(x, y, z);
-  plane.renderOrder = -10;
-  return plane;
-}
-
 function resizeRenderer() {
   if (!OC.renderer || !OC.host || !OC.camera) return;
   const width = Math.max(1, OC.host.clientWidth);
@@ -389,8 +380,8 @@ function regenerateCourse() {
   clearWorld();
   const template = OC_TEMPLATES[OC.templateId] || OC_TEMPLATES.horse_forest_easy;
   OC.courseLength = Math.max(900, OC.duration * OC.speed);
-  OC.scene.background = loadTexture(HORSE_FOREST_ASSETS.sky);
-  OC.scene.fog = new THREE.Fog(template.fog, 42, 300);
+  OC.scene.background = new THREE.Color(template.sky);
+  OC.scene.fog = new THREE.Fog(template.fog, 44, 310);
   OC.renderer?.setClearColor(template.sky, 1);
   buildBackdrop(template);
   resetRun(true);
@@ -419,6 +410,7 @@ function clearWorld() {
   disposeGroup(OC.backdrop);
   OC.objects = [];
   OC.scenery = [];
+  OC.pathMeshes = [];
 }
 
 function updateTemplateText() {
@@ -429,58 +421,89 @@ function updateTemplateText() {
 }
 
 function buildBackdrop(template) {
-  const deepHorizon = makeBackdropPlane(HORSE_FOREST_ASSETS.horizonDeep, 180, 50, 0, 8.4, -170, OC.templateId === 'horse_forest_night' ? 0.58 : 0.42);
-  const mistHorizon = makeBackdropPlane(HORSE_FOREST_ASSETS.horizon, 150, 54, 0, 5.4, -125, OC.templateId === 'horse_forest_night' ? 0.68 : 0.9);
-  OC.backdrop.add(deepHorizon);
-  OC.backdrop.add(mistHorizon);
+  const skyGlow = new THREE.Mesh(
+    new THREE.PlaneGeometry(220, 92),
+    new THREE.MeshBasicMaterial({ color: template.sky, depthWrite: false, depthTest: false, fog: false })
+  );
+  skyGlow.position.set(0, 12, -190);
+  skyGlow.renderOrder = -12;
+  OC.backdrop.add(skyGlow);
 
-  const veilMat = new THREE.MeshBasicMaterial({ color: template.fog, transparent: true, opacity: 0.22, depthWrite: false, depthTest: false, fog: false });
-  const veil = new THREE.Mesh(new THREE.PlaneGeometry(180, 40), veilMat);
-  veil.position.set(0, 5.6, -118);
-  veil.renderOrder = -8;
-  OC.backdrop.add(veil);
+  const fogBand = new THREE.Mesh(
+    new THREE.PlaneGeometry(220, 24),
+    new THREE.MeshBasicMaterial({ color: template.fog, transparent: true, opacity: 0.22, depthWrite: false, depthTest: false, fog: false })
+  );
+  fogBand.position.set(0, 3.1, -118);
+  fogBand.renderOrder = -8;
+  OC.backdrop.add(fogBand);
 }
 
 function buildWorld(template) {
-  const groundTexture = loadTexture(HORSE_FOREST_ASSETS.ground, { repeat: [6, Math.max(14, OC.courseLength / 55)] });
+  const groundTexture = loadTexture(HORSE_FOREST_ASSETS.ground, { repeat: [8, Math.max(16, OC.courseLength / 48)] });
   const groundMat = new THREE.MeshStandardMaterial({ map: groundTexture, color: 0xffffff, roughness: 0.98, metalness: 0.0 });
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(58, OC.courseLength + 420, 1, 1), groundMat);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(62, OC.courseLength + 420, 1, 1), groundMat);
   ground.rotation.x = -Math.PI / 2;
   ground.position.set(0, -1.62, -OC.courseLength / 2 + 12);
   OC.world.add(ground);
 
-  const pathMat = new THREE.MeshBasicMaterial({ color: 0x2a2012, transparent: true, opacity: 0.28, depthWrite: false });
-  const path = new THREE.Mesh(new THREE.PlaneGeometry(OC.laneWidth * 2.6, OC.courseLength + 420, 1, 1), pathMat);
-  path.rotation.x = -Math.PI / 2;
-  path.position.set(0, -1.59, -OC.courseLength / 2 + 12);
-  path.renderOrder = 0;
-  OC.world.add(path);
+  buildCurvedPath();
+  buildTreeCorridor();
+}
 
-  const sideRowStep = 82;
-  for (let d = 20; d < OC.courseLength + 220; d += sideRowStep) {
+function buildCurvedPath() {
+  const pathMat = new THREE.MeshBasicMaterial({ color: 0x1c150d, transparent: true, opacity: 0.44, depthWrite: false });
+  const edgeMat = new THREE.MeshBasicMaterial({ color: 0x3a2c17, transparent: true, opacity: 0.38, depthWrite: false });
+  const segmentLength = 18;
+  for (let d = 0; d < OC.courseLength + 280; d += segmentLength) {
+    const center = pathCenterAt(d);
+    const path = new THREE.Mesh(new THREE.PlaneGeometry(OC.laneWidth * 2.42, segmentLength + 1.2, 1, 1), pathMat);
+    path.rotation.x = -Math.PI / 2;
+    path.position.set(center, -1.585, -d - segmentLength / 2);
+    path.renderOrder = 0;
+    OC.world.add(path);
+    OC.pathMeshes.push(path);
+
     [-1, 1].forEach((side) => {
-      const depthJitter = Math.random() * 22;
-      const h = 8.4 + Math.random() * 3.6;
-      const w = h * (1.2 + Math.random() * 0.55);
-      const x = side * (OC.laneWidth + 4.9 + Math.random() * 3.8);
-      const treeWall = makeSprite(pick(HORSE_FOREST_ASSETS.scenery), w, h, { opacity: 0.9, alphaTest: 0.2, renderOrder: 1 });
-      treeWall.position.set(x, -1.45 + h / 2, -d - depthJitter);
+      const edge = new THREE.Mesh(new THREE.PlaneGeometry(0.18, segmentLength + 1.2, 1, 1), edgeMat);
+      edge.rotation.x = -Math.PI / 2;
+      edge.position.set(center + side * OC.laneWidth * 1.26, -1.575, -d - segmentLength / 2);
+      edge.renderOrder = 1;
+      OC.world.add(edge);
+      OC.pathMeshes.push(edge);
+    });
+  }
+}
+
+function buildTreeCorridor() {
+  const denseStep = OC.templateId === 'horse_forest_dense' ? 16 : 20;
+  const outerStep = OC.templateId === 'horse_forest_dense' ? 24 : 30;
+
+  for (let d = 12; d < OC.courseLength + 260; d += denseStep) {
+    const center = pathCenterAt(d);
+    [-1, 1].forEach((side) => {
+      const h = rand(14, 24);
+      const w = h * rand(0.72, 1.18);
+      const x = center + side * (OC.laneWidth * 1.55 + rand(0.25, 1.15));
+      const treeWall = makeSprite(pick(HORSE_FOREST_ASSETS.trees), w, h, { opacity: 0.94, alphaTest: 0.2, renderOrder: 2 });
+      treeWall.position.set(x, -1.48 + h / 2, -d - rand(0, 6));
       OC.world.add(treeWall);
       OC.scenery.push(treeWall);
     });
   }
 
-  const accentCount = 34 + OC.difficulty * 7;
-  for (let i = 0; i < accentCount; i += 1) {
-    const d = Math.random() * OC.courseLength;
-    const side = Math.random() < 0.5 ? -1 : 1;
-    const x = side * (OC.laneWidth + 6.4 + Math.random() * 10.5);
-    const h = 5.6 + Math.random() * 6.5;
-    const w = h * (0.62 + Math.random() * 0.38);
-    const tree = makeSprite(pick(HORSE_FOREST_ASSETS.trees), w, h, { opacity: 0.86, alphaTest: 0.22, renderOrder: 2 });
-    tree.position.set(x, -1.48 + h / 2, -d);
-    OC.world.add(tree);
-    OC.scenery.push(tree);
+  for (let d = 6; d < OC.courseLength + 300; d += outerStep) {
+    const center = pathCenterAt(d);
+    [-1, 1].forEach((side) => {
+      for (let row = 0; row < 2; row += 1) {
+        const h = rand(10, 21);
+        const w = h * rand(0.58, 1.05);
+        const x = center + side * (OC.laneWidth * 1.95 + row * rand(2.2, 4.4) + rand(0, 2.5));
+        const tree = makeSprite(pick(HORSE_FOREST_ASSETS.trees), w, h, { opacity: row ? 0.76 : 0.88, alphaTest: 0.22, renderOrder: row ? 1 : 3 });
+        tree.position.set(x, -1.5 + h / 2, -d - row * 9 - rand(0, 12));
+        OC.world.add(tree);
+        OC.scenery.push(tree);
+      }
+    });
   }
 }
 
@@ -488,28 +511,55 @@ function addObstacles(count) {
   for (let i = 0; i < count; i += 1) {
     const d = 70 + Math.random() * (OC.courseLength - 120);
     const laneRoll = Math.random();
-    const x = laneRoll < 0.34 ? 0 : laneRoll < 0.67 ? -OC.laneWidth * 0.55 : OC.laneWidth * 0.55;
-    const kind = pick(['log', 'log', 'rock', 'stump', 'branch']);
+    const center = pathCenterAt(d);
+    const x = center + (laneRoll < 0.34 ? 0 : laneRoll < 0.67 ? -OC.laneWidth * 0.55 : OC.laneWidth * 0.55);
+    const kind = pick(['log', 'log', 'rock', 'stump', 'branch', 'stream']);
     let obj;
-    if (kind === 'log') obj = makeSprite(pick(HORSE_FOREST_ASSETS.logs), 2.9, 1.05, { alphaTest: 0.16, renderOrder: 4 });
-    else if (kind === 'rock') obj = makeSprite(pick(HORSE_FOREST_ASSETS.rocks), 1.55, 1.35, { alphaTest: 0.16, renderOrder: 4 });
-    else if (kind === 'stump') obj = makeSprite(pick(HORSE_FOREST_ASSETS.stumps), 1.25, 1.65, { alphaTest: 0.16, renderOrder: 4 });
-    else obj = makeSprite(pick(HORSE_FOREST_ASSETS.branches), 4.2, 1.4, { alphaTest: 0.18, renderOrder: 5 });
+    if (kind === 'log') obj = makeSprite(pick(HORSE_FOREST_ASSETS.logs), 2.9, 1.05, { alphaTest: 0.16, renderOrder: 5 });
+    else if (kind === 'rock') obj = makeSprite(pick(HORSE_FOREST_ASSETS.rocks), 1.55, 1.35, { alphaTest: 0.16, renderOrder: 5 });
+    else if (kind === 'stump') obj = makeSprite(pick(HORSE_FOREST_ASSETS.stumps), 1.25, 1.65, { alphaTest: 0.16, renderOrder: 5 });
+    else if (kind === 'stream') obj = createStreamObstacle();
+    else obj = makeSprite(pick(HORSE_FOREST_ASSETS.branches), 4.2, 1.4, { alphaTest: 0.18, renderOrder: 6 });
     const isBranch = kind === 'branch';
-    obj.position.set(x, isBranch ? 2.45 : -1.05 + obj.scale.y / 2, -d);
-    obj.userData = { kind: 'obstacle', obstacleType: kind, hit: false, radiusX: isBranch ? 2.2 : 0.85, radiusZ: 1.15, needsJump: !isBranch, needsDuck: isBranch };
+    const isStream = kind === 'stream';
+    obj.position.set(isStream ? center : x, isBranch ? 2.45 : isStream ? -1.565 : -1.05 + obj.scale.y / 2, -d);
+    obj.userData = {
+      kind: 'obstacle',
+      obstacleType: kind,
+      hit: false,
+      radiusX: isBranch ? 2.2 : isStream ? OC.laneWidth * 1.42 : 0.85,
+      radiusZ: isStream ? 1.8 : 1.15,
+      needsJump: !isBranch,
+      needsDuck: isBranch,
+    };
     OC.world.add(obj);
     OC.objects.push(obj);
   }
+}
+
+function createStreamObstacle() {
+  const group = new THREE.Group();
+  const waterMat = new THREE.MeshBasicMaterial({ color: 0x376d87, transparent: true, opacity: 0.82, depthWrite: false });
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(OC.laneWidth * 3.2, 3.2, 1, 1), waterMat);
+  water.rotation.x = -Math.PI / 2;
+  water.renderOrder = 4;
+  group.add(water);
+  const glintMat = new THREE.MeshBasicMaterial({ color: 0x8dd0dc, transparent: true, opacity: 0.45, depthWrite: false });
+  const glint = new THREE.Mesh(new THREE.PlaneGeometry(OC.laneWidth * 2.6, 0.18, 1, 1), glintMat);
+  glint.rotation.x = -Math.PI / 2;
+  glint.position.z = -0.45;
+  group.add(glint);
+  return group;
 }
 
 function addCollectibles(count) {
   for (let i = 0; i < count; i += 1) {
     const d = 45 + Math.random() * (OC.courseLength - 90);
     const laneRoll = Math.random();
-    const x = laneRoll < 0.34 ? 0 : laneRoll < 0.67 ? -OC.laneWidth * 0.55 : OC.laneWidth * 0.55;
+    const center = pathCenterAt(d);
+    const x = center + (laneRoll < 0.34 ? 0 : laneRoll < 0.67 ? -OC.laneWidth * 0.55 : OC.laneWidth * 0.55);
     const y = Math.random() < 0.65 ? 0.2 + Math.random() * 1.2 : 1.8 + Math.random() * 1.3;
-    const obj = makeSprite(pick(HORSE_FOREST_ASSETS.collectibles), 0.82, 0.82, { alphaTest: 0.18, renderOrder: 6 });
+    const obj = makeSprite(pick(HORSE_FOREST_ASSETS.collectibles), 0.82, 0.82, { alphaTest: 0.18, renderOrder: 7 });
     obj.position.set(x, y, -d);
     obj.userData = { kind: 'collectible', collected: false, radius: 0.85, baseScale: 0.82 };
     const light = new THREE.PointLight(0xeec45a, 0.75, 9);
@@ -547,7 +597,7 @@ function startRun() {
   OC.running = true;
   OC.clock.getDelta();
   oc$('obstacle-status').textContent = 'Riding';
-  setResult('Horse ride running. Steer through the path, jump obstacles, and duck low branches.', 'waiting');
+  setResult('Horse ride running. Stay in the corridor, jump obstacles, and duck low branches.', 'waiting');
   if (!OC.frame) OC.frame = requestAnimationFrame(tickRun);
 }
 
@@ -603,25 +653,30 @@ function isDucking() {
 function updateWorldPositions() {
   const bob = OC.running ? Math.sin(performance.now() * 0.012) * 0.035 : 0;
   const duckOffset = isDucking() && OC.player.grounded ? -0.28 : 0;
-  OC.camera.position.set(OC.player.x * 0.42, 1.48 + OC.player.y + bob + duckOffset, 7.8);
-  OC.camera.lookAt(OC.player.x * 0.14, 0.12 + OC.player.y * 0.25 + duckOffset * 0.25, -44);
+  const curve = pathCenterAt(OC.distance);
+  const camX = curve + OC.player.x * 0.42;
+  const lookX = pathCenterAt(OC.distance + 46) + OC.player.x * 0.14;
+  OC.camera.position.set(camX, 1.48 + OC.player.y + bob + duckOffset, 7.8);
+  OC.camera.lookAt(lookX, 0.12 + OC.player.y * 0.25 + duckOffset * 0.25, -44);
   if (OC.world) OC.world.position.z = OC.distance;
 }
 
 function checkCollisions() {
   const playerY = 0.6 + OC.player.y;
+  const px = playerWorldX();
   OC.objects.forEach((obj) => {
     if (!obj.visible) return;
     const worldZ = obj.position.z + OC.world.position.z;
     if (Math.abs(worldZ + 14) > 1.45) return;
-    const dx = Math.abs(obj.position.x - OC.player.x);
+    const dx = Math.abs(obj.position.x - px);
     if (obj.userData.kind === 'obstacle' && !obj.userData.hit) {
       const xHit = dx < obj.userData.radiusX;
       const jumpCleared = obj.userData.needsJump && OC.player.y > 0.65;
       const branchCleared = obj.userData.needsDuck && isDucking();
       if (xHit && !jumpCleared && !branchCleared) {
         obj.userData.hit = true;
-        obj.material.opacity = 0.35;
+        if (obj.material) obj.material.opacity = 0.35;
+        if (obj.children?.length) obj.children.forEach((child) => { if (child.material) child.material.opacity = 0.35; });
         OC.hits += 1;
         OC.score -= 1;
       }
@@ -680,7 +735,7 @@ function drawFrame() {
     }
   });
   OC.scenery.forEach((obj, index) => {
-    if (obj.material) obj.material.opacity = 0.78 + Math.sin(now * 0.0015 + index) * 0.08;
+    if (obj.material) obj.material.opacity = 0.82 + Math.sin(now * 0.0015 + index) * 0.07;
   });
   OC.renderer.render(OC.scene, OC.camera);
 }
@@ -696,7 +751,8 @@ function showObstaclePanel(panelId) {
 function closeOtherPuzzleWorkflows() {
   window.__artifexPatternLock?.close?.();
   window.__artifexPotionMatch?.close?.();
-  document.body.classList.remove('is-pattern-lock', 'is-potion-match');
+  window.__artifexHorseForestRunner?.close?.();
+  document.body.classList.remove('is-pattern-lock', 'is-potion-match', 'is-horse-forest');
 }
 
 function interceptObstacleCourseClicks(event) {
