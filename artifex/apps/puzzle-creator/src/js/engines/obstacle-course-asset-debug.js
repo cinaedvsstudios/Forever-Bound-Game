@@ -1,21 +1,24 @@
-// Horse Forest Ride Asset Debug V1
+// Horse Forest Ride Asset Debug V3
+// Separate debug helper. Checks live horse forest images, modular path WEBPs, GLBs, and planned audio.
 
 const ASSET_ROOT = './assets/obstacle-course/horse-forest/';
-const STYLE_ID = 'horse-asset-debug-v1-style';
+const STYLE_ID = 'horse-asset-debug-v3-style';
 const MODAL_ID = 'horse-asset-debug-modal';
 const BUTTON_ID = 'horse-asset-debug-button';
 
 const ASSETS = [
   ['Backgrounds','image','Main forest ride background','backgrounds/horseridebg.jpg',false],
-  ['Ground','image','Forest floor grass','ground/forest_floor_grass.png',false],
-  ['Ground','image','Forest floor grass variation','ground/forest_floor_grass2.png',false],
-  ['Ground','image','Root/path ground tile','ground/forest_floor_roots_tile_placeholder_1254.png',false],
-  ['Path segments planned','image','Path straight WEBP','path-segments/path_straight.webp',true],
-  ['Path segments planned','image','Path soft curve WEBP','path-segments/path_curve_soft.webp',true],
-  ['Path segments planned','image','Path hard curve WEBP','path-segments/path_curve_hard.webp',true],
-  ['Path segments planned','image','Path fork WEBP','path-segments/path_fork.webp',true],
-  ['Path segments planned','image','Path branch WEBP','path-segments/path_branch.webp',true],
-  ['Path segments planned','image','Path dead end WEBP','path-segments/path_dead_end.webp',true],
+  ['Ground','image','Forest floor grass2 base ground','ground/forest_floor_grass2.png',false],
+  ['Ground archived/reference','image','Forest floor grass','ground/forest_floor_grass.png',true],
+  ['Ground archived/reference','image','Old root/path tile','ground/forest_floor_roots_tile_placeholder_1254.png',true],
+  ['Path segments','image','Path straight','path-segments/pathstraight.webp',false],
+  ['Path segments','image','Path kink','path-segments/pathkink.webp',false],
+  ['Path segments','image','Path left','path-segments/pathleft.webp',false],
+  ['Path segments','image','Path right','path-segments/pathright.webp',false],
+  ['Path segments','image','Path left to straight','path-segments/pathlefttostraight.webp',false],
+  ['Path segments','image','Right to straight','path-segments/righttostraight.webp',false],
+  ['Path segments ignored','image','Split path old/ignored','path-segments/splitpath.webp',true],
+  ['Path segments ignored','image','Split path 2 old/ignored','path-segments/splitpath2.webp',true],
   ['3D trees','glb','Tree','3d/tree.glb',false],
   ['3D trees','glb','Low-poly tree','3d/tree_low-poly.glb',false],
   ['3D trees','glb','Hill top tree','3d/hill_top_tree.glb',false],
@@ -29,6 +32,7 @@ const ASSETS = [
 ].map(([group,type,name,path,optional]) => ({ group, type, name, path, optional }));
 
 function injectStyles() {
+  ['horse-asset-debug-v1-style','horse-asset-debug-v2-style'].forEach((id) => document.getElementById(id)?.remove());
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement('style');
   style.id = STYLE_ID;
@@ -43,22 +47,41 @@ function injectStyles() {
 }
 
 function urlOf(asset) { return `${ASSET_ROOT}${asset.path}`; }
-function bytes(n) { if (!Number.isFinite(n)) return ''; if (n < 1024) return `${n} B`; if (n < 1048576) return `${(n/1024).toFixed(1)} KB`; return `${(n/1048576).toFixed(2)} MB`; }
-function setRow(row, status, detail, cls) { const s = row.querySelector('.hf-asset-status'); s.textContent = status; s.className = `hf-asset-status ${cls}`; row.querySelector('.hf-asset-detail').textContent = detail || ''; }
+function bytes(n) { if (!Number.isFinite(n)) return ''; if (n < 1024) return `${n} B`; if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`; return `${(n / 1048576).toFixed(2)} MB`; }
+function setRow(row, status, detail, cls) { const statusNode = row.querySelector('.hf-asset-status'); statusNode.textContent = status; statusNode.className = `hf-asset-status ${cls}`; row.querySelector('.hf-asset-detail').textContent = detail || ''; }
 
-function checkImage(asset, row) {
-  const img = new Image();
-  img.onload = () => { row.querySelector('.hf-asset-preview').replaceChildren(img); setRow(row, asset.optional ? 'loaded optional' : 'loaded', `${img.naturalWidth} × ${img.naturalHeight}`, 'ok'); };
-  img.onerror = () => setRow(row, asset.optional ? 'missing optional' : 'failed', 'Image could not load.', asset.optional ? 'pending' : 'fail');
-  img.src = `${urlOf(asset)}?debug=${Date.now()}`;
+async function fetchAsset(asset, label) {
+  const response = await fetch(`${urlOf(asset)}?assetDebug=${Date.now()}`, { cache: 'no-store' });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const blob = await response.blob();
+  return { response, blob, detail: `${bytes(blob.size)} · ${response.headers.get('content-type') || label} request ok` };
+}
+
+async function checkImage(asset, row) {
+  try {
+    const { blob, detail } = await fetchAsset(asset, 'image');
+    const objectUrl = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      row.querySelector('.hf-asset-preview').replaceChildren(img);
+      setRow(row, asset.optional ? 'loaded optional' : 'loaded', `${detail} · ${img.naturalWidth} × ${img.naturalHeight}`, 'ok');
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 30000);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      setRow(row, asset.optional ? 'decode failed optional' : 'decode failed', `${detail} · browser could not decode image`, asset.optional ? 'pending' : 'fail');
+    };
+    img.src = objectUrl;
+  } catch (error) {
+    setRow(row, asset.optional ? 'missing optional' : 'failed', error.message, asset.optional ? 'pending' : 'fail');
+  }
 }
 
 async function checkRequest(asset, row, label) {
   try {
-    const res = await fetch(urlOf(asset), { cache: 'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    setRow(row, asset.optional ? 'found optional' : 'found', `${bytes(Number(res.headers.get('content-length')))} · ${label} request ok`, 'ok');
-    return res;
+    const { blob, response } = await fetchAsset(asset, label);
+    setRow(row, asset.optional ? 'found optional' : 'found', `${bytes(blob.size)} · ${response.headers.get('content-type') || label} request ok`, 'ok');
+    return blob;
   } catch (error) {
     setRow(row, asset.optional ? 'missing optional' : 'failed', error.message, asset.optional ? 'pending' : 'fail');
     return null;
@@ -66,10 +89,10 @@ async function checkRequest(asset, row, label) {
 }
 
 async function checkGlb(asset, row) {
-  const res = await checkRequest(asset, row, 'GLB');
-  if (!res) return;
+  const blob = await checkRequest(asset, row, 'GLB');
+  if (!blob) return;
   try {
-    const buffer = await res.arrayBuffer();
+    const buffer = await blob.arrayBuffer();
     const header = new TextDecoder().decode(new Uint8Array(buffer.slice(0, 4)));
     let detail = `${bytes(buffer.byteLength)} · header ${header}`;
     if (header !== 'glTF') detail += ' · WARNING: not binary GLB';
@@ -77,13 +100,25 @@ async function checkGlb(asset, row) {
       const THREE = await import('https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js');
       const { GLTFLoader } = await import('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js');
       const gltf = await new Promise((resolve, reject) => new GLTFLoader().parse(buffer, '', resolve, reject));
-      let meshes = 0; const materials = new Set(); const box = new THREE.Box3();
-      gltf.scene.traverse((obj) => { if (obj.isMesh) { meshes += 1; if (obj.material) materials.add(obj.material.uuid || obj.material.name || meshes); } });
-      box.setFromObject(gltf.scene); const size = box.getSize(new THREE.Vector3());
+      let meshes = 0;
+      const materials = new Set();
+      const box = new THREE.Box3();
+      gltf.scene.traverse((obj) => {
+        if (obj.isMesh) {
+          meshes += 1;
+          if (obj.material) materials.add(obj.material.uuid || obj.material.name || meshes);
+        }
+      });
+      box.setFromObject(gltf.scene);
+      const size = box.getSize(new THREE.Vector3());
       detail += ` · parsed · meshes ${meshes} · materials ${materials.size} · box ${size.x.toFixed(2)}×${size.y.toFixed(2)}×${size.z.toFixed(2)}`;
-    } catch (e) { detail += ` · parser failed: ${e.message}`; }
+    } catch (error) {
+      detail += ` · parser failed: ${error.message}`;
+    }
     setRow(row, asset.optional ? 'loaded optional' : 'loaded', detail, 'ok');
-  } catch (e) { setRow(row, asset.optional ? 'failed optional' : 'failed', e.message, asset.optional ? 'pending' : 'fail'); }
+  } catch (error) {
+    setRow(row, asset.optional ? 'failed optional' : 'failed', error.message, asset.optional ? 'pending' : 'fail');
+  }
 }
 
 function createModal() {
@@ -91,7 +126,7 @@ function createModal() {
   modal.id = MODAL_ID;
   modal.className = 'hf-asset-modal';
   modal.hidden = true;
-  modal.innerHTML = `<div class="hf-asset-head"><div><h2>Horse Forest Asset Debug</h2><div class="hf-asset-small">Checks image previews, audio requests, and GLB request/parse status. Optional planned assets may be missing.</div></div><div><button id="hf-asset-rerun" type="button">Recheck</button> <button id="hf-asset-close" type="button">Close</button></div></div><div class="hf-asset-body"><div class="hf-asset-toolbar"><span id="hf-asset-summary">Ready.</span><span class="hf-asset-path">Root: ${ASSET_ROOT}</span></div><table class="hf-asset-table"><thead><tr><th>Group</th><th>Asset</th><th>Type</th><th>Status</th><th>Preview</th><th>Path / Details</th></tr></thead><tbody id="hf-asset-rows"></tbody></table></div>`;
+  modal.innerHTML = `<div class="hf-asset-head"><div><h2>Horse Forest Asset Debug</h2><div class="hf-asset-small">Checks live images, path WEBPs, audio requests, and GLB request/parse status. Optional reference/planned assets may be missing.</div></div><div><button id="hf-asset-rerun" type="button">Recheck</button> <button id="hf-asset-close" type="button">Close</button></div></div><div class="hf-asset-body"><div class="hf-asset-toolbar"><span id="hf-asset-summary">Ready.</span><span class="hf-asset-path">Root: ${ASSET_ROOT}</span></div><table class="hf-asset-table"><thead><tr><th>Group</th><th>Asset</th><th>Type</th><th>Status</th><th>Preview</th><th>Path / Details</th></tr></thead><tbody id="hf-asset-rows"></tbody></table></div>`;
   document.body.appendChild(modal);
   modal.querySelector('#hf-asset-close').addEventListener('click', () => { modal.hidden = true; });
   modal.querySelector('#hf-asset-rerun').addEventListener('click', runChecks);
@@ -106,7 +141,7 @@ function runChecks() {
   summary.textContent = `Checking ${ASSETS.length} assets...`;
   ASSETS.forEach((asset) => {
     const row = document.createElement('tr');
-    row.innerHTML = `<td>${asset.group}</td><td>${asset.name}${asset.optional ? '<div class="hf-asset-small">optional/planned</div>' : ''}</td><td>${asset.type}</td><td><span class="hf-asset-status pending">pending</span></td><td class="hf-asset-preview"></td><td><div class="hf-asset-path">${urlOf(asset)}</div><div class="hf-asset-small hf-asset-detail"></div></td>`;
+    row.innerHTML = `<td>${asset.group}</td><td>${asset.name}${asset.optional ? '<div class="hf-asset-small">optional/reference</div>' : ''}</td><td>${asset.type}</td><td><span class="hf-asset-status pending">pending</span></td><td class="hf-asset-preview"></td><td><div class="hf-asset-path">${urlOf(asset)}</div><div class="hf-asset-small hf-asset-detail"></div></td>`;
     rows.appendChild(row);
     if (asset.type === 'image') checkImage(asset, row);
     else if (asset.type === 'glb') checkGlb(asset, row);
@@ -117,10 +152,14 @@ function runChecks() {
     const fail = rows.querySelectorAll('.hf-asset-status.fail').length;
     const pending = rows.querySelectorAll('.hf-asset-status.pending').length;
     summary.textContent = `Checked: ${ok} ok · ${fail} failed · ${pending} optional/pending`;
-  }, 2400);
+  }, 3500);
 }
 
-function openModal() { const modal = document.getElementById(MODAL_ID) || createModal(); modal.hidden = false; runChecks(); }
+function openModal() {
+  const modal = document.getElementById(MODAL_ID) || createModal();
+  modal.hidden = false;
+  runChecks();
+}
 
 function ensureButton() {
   if (!document.body.classList.contains('is-obstacle-course') || document.getElementById(BUTTON_ID)) return;
