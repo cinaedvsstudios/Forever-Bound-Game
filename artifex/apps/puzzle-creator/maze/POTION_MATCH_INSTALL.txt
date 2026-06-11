@@ -1,0 +1,13 @@
+Potion Match V1 install
+
+Copy/merge this folder into your existing puzzle-creator folder.
+
+File included:
+puzzle-creator/src/js/engines/potion-match-runtime.js
+
+Then add this import to the bottom of:
+puzzle-creator/src/js/main.js
+
+import './engines/potion-match-runtime.js?v=1.37';
+
+Do not put the old standalone prototype file into the repo. This zip is arranged with puzzle-creator as the root, as requested.

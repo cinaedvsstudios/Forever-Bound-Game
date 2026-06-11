@@ -13,6 +13,7 @@ window.addEventListener('DOMContentLoaded', () => {
   bindImageContrastVisibility();
   patchExportPayload();
   showPuzzleChooser();
+  openWorkflow('maze-labyrinth');
 });
 
 function getDisplayName(engine) {

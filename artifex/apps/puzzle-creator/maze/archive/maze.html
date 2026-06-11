@@ -1,0 +1,2427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D to 3D Maze Extruder</title>
+    <!-- Tailwind CSS for sleek styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js for WebGL rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls for rotatable 3D diorama -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom scrollbar for control panel */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        /* Grid scanline effect for vintage/tech look */
+        .tech-bg {
+            background-size: 20px 20px;
+            background-image: linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen overflow-x-hidden flex flex-col tech-bg">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur px-6 py-4 flex items-center justify-between z-10 shrink-0">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/30 text-emerald-400">
+                <i data-lucide="layers" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">GridExtrude 3D</h1>
+                <p class="text-xs text-slate-400">Transform 2D Maze Images into Explorable 3D Worlds</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2 text-xs bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700/50 text-slate-300">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>WebGL Active</span>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+        
+        <!-- Left Sidebar / Control Panel -->
+        <aside class="w-full lg:w-96 border-r border-slate-800 bg-slate-900/60 backdrop-blur-md flex flex-col overflow-y-auto max-h-[50vh] lg:max-h-[calc(100vh-73px)] shrink-0">
+            
+            <!-- Tab Headers -->
+            <div class="flex border-b border-slate-800 shrink-0">
+                <button id="tab-btn-load" class="flex-1 py-3 px-2 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-400 bg-emerald-950/10 flex items-center justify-center gap-1.5">
+                    <i data-lucide="upload" class="w-4 h-4"></i> Build
+                </button>
+                <button id="tab-btn-style" class="flex-1 py-3 px-2 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5 transition-colors">
+                    <i data-lucide="palette" class="w-4 h-4"></i> Aesthetics
+                </button>
+                <button id="tab-btn-paint" class="flex-1 py-3 px-2 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5 transition-colors">
+                    <i data-lucide="brush" class="w-4 h-4"></i> Paint & Edit
+                </button>
+            </div>
+
+            <!-- Tab Content: Load & Build -->
+            <div id="tab-content-load" class="p-6 space-y-6">
+                <!-- Image Input Section -->
+                <div class="space-y-3">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">1. Select Input Map</label>
+                    
+                    <!-- File Drag & Drop -->
+                    <div id="dropzone" class="border-2 border-dashed border-slate-700 hover:border-emerald-500/50 rounded-xl p-4 text-center cursor-pointer bg-slate-950/40 hover:bg-slate-950/80 transition-all group relative">
+                        <input type="file" id="image-upload" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer">
+                        <div class="space-y-2 pointer-events-none">
+                            <div class="mx-auto w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-emerald-400 transition-colors">
+                                <i data-lucide="image-plus" class="w-5 h-5"></i>
+                            </div>
+                            <p class="text-sm font-medium">Upload custom 2D maze</p>
+                            <p class="text-xs text-slate-500">Drag & drop or click to browse</p>
+                        </div>
+                    </div>
+
+                    <!-- Presets Selector -->
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <button id="btn-preset-reference" class="py-2 px-3 text-xs bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700/60 font-medium transition-all flex items-center justify-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-700"></span> Preset (Reference)
+                        </button>
+                        <button id="btn-preset-procedural" class="py-2 px-3 text-xs bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700/60 font-medium transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="shuffle" class="w-3.5 h-3.5 text-teal-400"></i> Fresh Random
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Extrusion Parameters -->
+                <div class="space-y-4 border-t border-slate-800/80 pt-5">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">2. Parser Tuning</label>
+                    
+                    <!-- Grid Size (Cols/Rows) -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-300">Grid Resolution</span>
+                            <span id="grid-val" class="font-mono text-emerald-400 font-bold">31 x 31</span>
+                        </div>
+                        <input type="range" id="grid-slider" min="11" max="61" step="2" value="31" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                        <span class="block text-[10px] text-slate-500">Must match the row count of your maze for ideal parsing.</span>
+                    </div>
+
+                    <!-- Layout Shape Style (Straight, Natural, Curved) -->
+                    <div class="space-y-2 border-t border-slate-800/40 pt-3">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-300">Layout Shape Style</span>
+                            <span id="layout-style-val" class="font-mono text-emerald-400 font-bold">Straight</span>
+                        </div>
+                        <input type="range" id="layout-style-slider" min="0" max="2" step="1" value="0" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                        <div class="flex justify-between text-[10px] text-slate-500 px-1">
+                            <span>Straight</span>
+                            <span>Natural</span>
+                            <span>Curved</span>
+                        </div>
+                    </div>
+
+                    <!-- Color Threshold -->
+                    <div class="space-y-2 border-t border-slate-800/40 pt-3">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-300">Wall Color Threshold</span>
+                            <span id="threshold-val" class="font-mono text-emerald-400 font-bold">50%</span>
+                        </div>
+                        <input type="range" id="threshold-slider" min="10" max="90" value="50" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                        <span class="block text-[10px] text-slate-500">Adjust if parts of walls or paths are processed incorrectly.</span>
+                    </div>
+
+                    <!-- Auto-Invert colors -->
+                    <div class="flex items-center justify-between p-2.5 bg-slate-950/50 rounded-lg border border-slate-800">
+                        <div class="space-y-0.5">
+                            <span class="text-xs font-medium block">Invert Walls & Paths</span>
+                            <span class="text-[10px] text-slate-500 block">Swap wall nodes for path nodes</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="invert-checkbox" class="sr-only peer">
+                            <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Solve & Navigation -->
+                <div class="space-y-3 border-t border-slate-800/80 pt-5">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">3. Interactive Features</label>
+                    <button id="btn-solve" class="w-full py-2.5 px-4 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-teal-500/10">
+                        <i data-lucide="compass" class="w-4 h-4"></i> Plot Solution Path
+                    </button>
+                    <p class="text-[10px] text-center text-slate-500">Calculates shortest pathway using Breath-First Search (BFS).</p>
+                </div>
+            </div>
+
+            <!-- Tab Content: Aesthetics -->
+            <div id="tab-content-style" class="p-6 space-y-6 hidden">
+                <!-- Heights & Scales -->
+                <div class="space-y-4">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Dimensions & Shapes</label>
+                    
+                    <!-- Wall Height -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-300">3D Wall Height</span>
+                            <span id="wall-height-val" class="font-mono text-emerald-400 font-bold">1.5</span>
+                        </div>
+                        <input type="range" id="wall-height-slider" min="0.2" max="4.0" step="0.1" value="1.5" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                    </div>
+
+                    <!-- Block Gap -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-300">Wall Block Spacing</span>
+                            <span id="gap-val" class="font-mono text-emerald-400 font-bold">0.98</span>
+                        </div>
+                        <input type="range" id="gap-slider" min="0.8" max="1.0" step="0.01" value="0.98" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                    </div>
+
+                    <!-- Block Edges Slider (Sharp, Rough, Smooth) -->
+                    <div class="space-y-2 border-t border-slate-800/40 pt-3">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-300">Block Edge Style</span>
+                            <span id="edge-style-val" class="font-mono text-emerald-400 font-bold">Sharp</span>
+                        </div>
+                        <input type="range" id="edge-style-slider" min="0" max="2" step="1" value="0" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                        <div class="flex justify-between text-[10px] text-slate-500 px-1">
+                            <span>Sharp</span>
+                            <span>Rough</span>
+                            <span>Smooth</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Materials & Visuals -->
+                <div class="space-y-4 border-t border-slate-800/80 pt-5">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Materials</label>
+                    
+                    <!-- Wall Material Style -->
+                    <div class="space-y-2">
+                        <span class="text-xs text-slate-300">Wall Theme Defaults</span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button class="mat-preset-btn py-1.5 px-3 text-xs rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" data-style="hedge">Hedge Theme</button>
+                            <button class="mat-preset-btn py-1.5 px-3 text-xs rounded-md bg-slate-800 text-slate-300 border border-transparent" data-style="stone">Ancient Stone</button>
+                            <button class="mat-preset-btn py-1.5 px-3 text-xs rounded-md bg-slate-800 text-slate-300 border border-transparent" data-style="cyber">Cyberpunk Neon</button>
+                            <button class="mat-preset-btn py-1.5 px-3 text-xs rounded-md bg-slate-800 text-slate-300 border border-transparent" data-style="glass">Frosted Glass</button>
+                        </div>
+                    </div>
+
+                    <!-- Custom Wall Color -->
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-slate-300">Default Wall Color</span>
+                        <input type="color" id="wall-color-picker" value="#005d25" class="w-8 h-8 rounded border-0 bg-transparent cursor-pointer">
+                    </div>
+
+                    <!-- Floor Style -->
+                    <div class="space-y-3">
+                        <span class="text-xs text-slate-300">Floor Surface</span>
+                        <select id="floor-style" class="w-full bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg p-2 focus:ring-1 focus:ring-emerald-500 outline-none">
+                            <option value="soil">Deep Soil Brown (Reference)</option>
+                            <option value="grid">Grid Mesh Grid</option>
+                            <option value="stone">Paved Pathway</option>
+                            <option value="dark">Chamber Obsidian</option>
+                        </select>
+                        
+                        <!-- Tileable Ground Image Loader -->
+                        <div class="bg-slate-950/40 border border-slate-800 p-2.5 rounded-lg space-y-2">
+                            <span class="text-[11px] font-medium text-slate-400 block">Or upload tileable Ground Image:</span>
+                            <div class="flex items-center gap-2">
+                                <input type="file" id="ground-image-upload" accept="image/*" class="hidden">
+                                <button onclick="document.getElementById('ground-image-upload').click()" class="flex-1 py-1.5 px-2.5 bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 text-slate-200 text-xs font-semibold rounded-md flex items-center justify-center gap-1.5 transition-all">
+                                    <i data-lucide="upload-cloud" class="w-3.5 h-3.5 text-teal-400"></i> Upload Ground Texture
+                                </button>
+                                <button id="btn-clear-ground-image" class="p-1.5 bg-slate-800/80 text-rose-400 hover:bg-rose-950/40 rounded-md border border-slate-700/50 transition-all hidden" title="Remove Ground Texture">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Environment Lights -->
+                <div class="space-y-4 border-t border-slate-800/80 pt-5">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Lighting & Camera</label>
+                    
+                    <!-- Ambient Light Strength -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-300">Sun Light Angle</span>
+                            <span id="light-angle-val" class="font-mono text-emerald-400 font-bold">45°</span>
+                        </div>
+                        <input type="range" id="light-angle-slider" min="0" max="360" value="135" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                    </div>
+
+                    <!-- Shadows Toggle -->
+                    <div class="flex items-center justify-between p-2.5 bg-slate-950/50 rounded-lg border border-slate-800">
+                        <div class="space-y-0.5">
+                            <span class="text-xs font-medium block">Casting Soft Shadows</span>
+                            <span class="text-[10px] text-slate-500 block">Requires high-perf GPU capabilities</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="shadows-checkbox" checked class="sr-only peer">
+                            <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Edit & Paint -->
+            <div id="tab-content-paint" class="p-6 space-y-6 hidden">
+                <!-- Editor Tool Selector -->
+                <div class="space-y-3">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">1. Editor Tools</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <!-- Camera / Orbit Tool -->
+                        <button id="tool-btn-camera" class="tool-btn py-2 px-2.5 text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-lg font-medium transition-all flex items-center justify-center gap-1.5" data-tool="camera">
+                            <i data-lucide="move" class="w-3.5 h-3.5"></i> Camera View
+                        </button>
+                        <!-- Paint Brush Tool -->
+                        <button id="tool-btn-paint" class="tool-btn py-2 px-2.5 text-xs bg-slate-800 text-slate-300 border border-transparent rounded-lg font-medium transition-all flex items-center justify-center gap-1.5" data-tool="paint">
+                            <i data-lucide="brush" class="w-3.5 h-3.5"></i> Paint Block
+                        </button>
+                        <!-- Paint Section (Row/Col corridor) Tool -->
+                        <button id="tool-btn-paint-section" class="tool-btn py-2 px-2.5 text-xs bg-slate-800 text-slate-300 border border-transparent rounded-lg font-medium transition-all flex items-center justify-center gap-1.5" data-tool="paintSection" title="Paint entire straight wall corridor section">
+                            <i data-lucide="paint-bucket" class="w-3.5 h-3.5 text-yellow-400"></i> Paint Section
+                        </button>
+                        <!-- Wall Draw/Erase Tool -->
+                        <button id="tool-btn-toggle" class="tool-btn py-2 px-2.5 text-xs bg-slate-800 text-slate-300 border border-transparent rounded-lg font-medium transition-all flex items-center justify-center gap-1.5" data-tool="toggle">
+                            <i data-lucide="wrench" class="w-3.5 h-3.5"></i> Draw / Erase
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Custom Brush Options -->
+                <div class="space-y-4 border-t border-slate-800/80 pt-4">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">2. active brush style</label>
+                        <span id="brush-type-indicator" class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full uppercase font-bold tracking-widest">Color</span>
+                    </div>
+
+                    <!-- Toggle color vs texture paint option -->
+                    <div class="flex items-center gap-2">
+                        <input type="color" id="brush-color-picker" value="#e11d48" class="w-9 h-9 rounded-lg border-2 border-slate-700 bg-transparent cursor-pointer">
+                        <div class="flex-1">
+                            <span class="text-[10px] text-slate-400 block">Brush Flat Hex Color</span>
+                            <span id="brush-color-hex" class="font-mono text-emerald-400 font-bold text-xs uppercase">#e11d48</span>
+                        </div>
+                    </div>
+
+                    <!-- Preset Color Swatches -->
+                    <div class="space-y-1.5">
+                        <div class="grid grid-cols-6 gap-1">
+                            <button class="swatch-btn w-full h-6 rounded border border-slate-700/60 transition-transform active:scale-95" style="background-color: #e11d48;" data-color="#e11d48"></button>
+                            <button class="swatch-btn w-full h-6 rounded border border-slate-700/60 transition-transform active:scale-95" style="background-color: #10b981;" data-color="#10b981"></button>
+                            <button class="swatch-btn w-full h-6 rounded border border-slate-700/60 transition-transform active:scale-95" style="background-color: #3b82f6;" data-color="#3b82f6"></button>
+                            <button class="swatch-btn w-full h-6 rounded border border-slate-700/60 transition-transform active:scale-95" style="background-color: #f59e0b;" data-color="#f59e0b"></button>
+                            <button class="swatch-btn w-full h-6 rounded border border-slate-700/60 transition-transform active:scale-95" style="background-color: #a855f7;" data-color="#a855f7"></button>
+                            <button class="swatch-btn w-full h-6 rounded border border-slate-700/60 transition-transform active:scale-95" style="background-color: #ec4899;" data-color="#ec4899"></button>
+                        </div>
+                    </div>
+
+                    <!-- Tileable Image Texture Brushes (12 Grid Boxes) -->
+                    <div class="space-y-2 pt-2 border-t border-slate-800/50">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-slate-300">3. Paint with Tileable Textures</span>
+                            <span class="text-[9px] text-slate-500">Click to select, upload icon to load custom image</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-4 gap-2" id="texture-brushes-grid">
+                            <!-- Dynamically populated 12 boxes -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paint Utilities -->
+                <div class="space-y-3 border-t border-slate-800/80 pt-5">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">4. Utility actions</label>
+                    <button id="btn-clear-paint" class="w-full py-2 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="trash-2" class="w-4 h-4 text-rose-400"></i> Clear All Paint & Textures
+                    </button>
+                    <p class="text-[10px] text-slate-500 text-center">Restores all blocks back to the default theme colors.</p>
+                </div>
+            </div>
+
+            <!-- Interactive Controller Information Footer -->
+            <div class="mt-auto p-4 bg-slate-950/80 border-t border-slate-800 text-xs text-slate-400 space-y-1 shrink-0">
+                <p class="font-semibold text-slate-300">Navigation Controls:</p>
+                <div class="flex items-center gap-1.5"><i data-lucide="rotate-3d" class="w-3.5 h-3.5 text-emerald-400"></i> Diorama View: Left Click + Drag to rotate</div>
+                <div class="flex items-center gap-1.5"><i data-lucide="move" class="w-3.5 h-3.5 text-emerald-400"></i> Walk View: Use <kbd class="px-1 bg-slate-800 rounded">W</kbd> <kbd class="px-1 bg-slate-800 rounded">A</kbd> <kbd class="px-1 bg-slate-800 rounded">S</kbd> <kbd class="px-1 bg-slate-800 rounded">D</kbd> or Keyboard Arrows</div>
+            </div>
+        </aside>
+
+        <!-- Central Stage Grid -->
+        <section class="flex-1 flex flex-col min-w-0 relative">
+            
+            <!-- Floating Navigation Selector -->
+            <div class="absolute top-4 left-4 z-[5] bg-slate-900/90 backdrop-blur border border-slate-800 rounded-xl p-1 flex items-center space-x-1 shadow-2xl">
+                <button id="view-mode-diorama" class="py-2 px-3 text-xs rounded-lg bg-emerald-500 text-slate-950 font-bold flex items-center gap-1.5 transition-all">
+                    <i data-lucide="unfold-horizontal" class="w-4 h-4"></i> Diorama Camera
+                </button>
+                <button id="view-mode-fps" class="py-2 px-3 text-xs rounded-lg text-slate-300 hover:text-slate-100 hover:bg-slate-800/60 font-medium flex items-center gap-1.5 transition-all">
+                    <i data-lucide="eye" class="w-4 h-4"></i> First-Person Walk
+                </button>
+            </div>
+
+            <div class="absolute top-4 right-4 z-[5] bg-slate-900/90 backdrop-blur border border-slate-800 rounded-xl px-3 py-2 flex items-center space-x-2 text-xs font-medium text-slate-300 shadow-2xl">
+                <span class="flex h-2 w-2 relative">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span id="player-status-indicator">Diorama mode - Drag canvas to spin</span>
+            </div>
+
+            <!-- Dynamic Floating 3D Viewport Zoom controls -->
+            <div class="absolute right-4 top-1/2 -translate-y-1/2 z-[5] bg-slate-900/90 border border-slate-800 rounded-2xl p-2 flex flex-col gap-2 shadow-2xl">
+                <button id="btn-zoom-in" class="w-10 h-10 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-slate-700/60 rounded-xl flex items-center justify-center transition-all" title="Zoom In">
+                    <i data-lucide="zoom-in" class="w-5 h-5"></i>
+                </button>
+                <button id="btn-zoom-reset" class="w-10 h-10 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-400 text-xs font-bold border border-slate-700/60 rounded-xl flex items-center justify-center transition-all" title="Reset Zoom">
+                    FIT
+                </button>
+                <button id="btn-zoom-out" class="w-10 h-10 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 border border-slate-700/60 rounded-xl flex items-center justify-center transition-all" title="Zoom Out">
+                    <i data-lucide="zoom-out" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Virtual On-screen D-Pad for Mobile or First-person ease -->
+            <div id="virtual-dpad" class="absolute bottom-6 right-6 z-[5] bg-slate-900/90 backdrop-blur border border-slate-800 p-4 rounded-2xl flex flex-col items-center gap-1.5 shadow-2xl transition-opacity duration-300 opacity-0 pointer-events-none">
+                <button id="dpad-up" class="w-12 h-12 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 active:scale-95 rounded-xl flex items-center justify-center transition-all"><i data-lucide="chevron-up" class="w-6 h-6"></i></button>
+                <div class="flex gap-1.5">
+                    <button id="dpad-left" class="w-12 h-12 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 active:scale-95 rounded-xl flex items-center justify-center transition-all"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>
+                    <div class="w-12 h-12 flex items-center justify-center text-xs text-slate-500 font-bold">WALK</div>
+                    <button id="dpad-right" class="w-12 h-12 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 active:scale-95 rounded-xl flex items-center justify-center transition-all"><i data-lucide="chevron-right" class="w-6 h-6"></i></button>
+                </div>
+                <button id="dpad-down" class="w-12 h-12 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 active:scale-95 rounded-xl flex items-center justify-center transition-all"><i data-lucide="chevron-down" class="w-6 h-6"></i></button>
+            </div>
+
+            <!-- Canvas/3D Canvas Splitting Layout -->
+            <div class="flex-1 grid grid-rows-2 md:grid-rows-1 md:grid-cols-12 overflow-hidden h-full">
+                
+                <!-- 2D Image Analyzer Preview Panel -->
+                <div class="md:col-span-4 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col min-w-0 bg-slate-950/70">
+                    <div class="px-4 py-3 border-b border-slate-800 bg-slate-900/40 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-400">
+                        <div class="flex items-center gap-1.5">
+                            <i data-lucide="binary" class="w-4 h-4 text-emerald-400"></i>
+                            <span>2D Map Analyzer Matrix</span>
+                        </div>
+                        <span id="analysis-state" class="text-emerald-400">Awaiting Build</span>
+                    </div>
+                    
+                    <div class="flex-1 flex flex-col items-center justify-center p-4 relative min-h-0 text-center">
+                        <div class="relative max-w-full max-h-full flex items-center justify-center border border-slate-800 bg-slate-950 p-2 rounded-xl shadow-2xl">
+                            <!-- Canvas containing analyzed image data with grid overlay -->
+                            <canvas id="analysis-canvas" class="max-w-full max-h-[35vh] md:max-h-[50vh] object-contain block h-auto rounded cursor-crosshair"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Analyzer Info Board -->
+                    <div class="p-3 bg-slate-900/30 border-t border-slate-800 text-[11px] text-slate-400 grid grid-cols-2 gap-4">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3.5 h-3.5 rounded border border-emerald-900 bg-emerald-500/20 inline-block shrink-0"></span>
+                            <span>Detected Walls (Extruded)</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3.5 h-3.5 rounded border border-amber-900/40 bg-amber-900/20 inline-block shrink-0"></span>
+                            <span>Detected Paths (Navigable)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3D Scene Viewport Container -->
+                <div class="md:col-span-8 relative flex-1 flex flex-col min-w-0 min-h-0 bg-slate-950">
+                    <div class="absolute inset-0 w-full h-full cursor-default" id="threejs-container"></div>
+                    
+                    <!-- Interactive Floating Instructions for FPS movement -->
+                    <div id="first-person-helper" class="absolute bottom-4 left-4 z-[5] bg-slate-900/90 border border-slate-800 px-4 py-3 rounded-xl max-w-xs text-xs text-slate-300 hidden flex items-center space-x-3 shadow-2xl animate-bounce">
+                        <div class="p-2 bg-teal-500/10 text-teal-400 border border-teal-500/20 rounded-lg">
+                            <i data-lucide="navigation" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-slate-100">Walk Inside Maze!</p>
+                            <p class="text-slate-400 text-[11px]">Click inside the scene to grab control, then steer with arrows/keys.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- Invisible Image Holder used for canvas processing -->
+    <img id="source-image-loader" class="hidden" alt="Source loader">
+
+    <script>
+        // --- 1. GLOBAL VARIABLES & STATES ---
+        let scene, camera, renderer, orbitControls;
+        let wallGroup, floorMesh, solutionPathLine, hoverGuideMesh;
+        let ambientLight, directionalLight;
+        
+        let mazeMatrix = []; // 2D array representation of parsed maze (1 = Wall, 0 = Path)
+        let colorMatrix = []; // 2D array of specific hex colors
+        let textureMatrix = []; // 2D array of custom texture index applied to blocks
+        let wallMeshes = []; // 2D array of reference meshes
+        let customImageLoaded = false;
+        let startNode = {x: 1, y: 1};
+        let endNode = {x: 29, y: 29};
+        let isPathSolved = false;
+
+        // View Mode: 'diorama' or 'fps'
+        let currentViewMode = 'diorama'; 
+        let player = {
+            x: 1.5,
+            z: 1.5,
+            angle: 0,
+            speed: 0.08,
+            turnSpeed: 0.04
+        };
+        let keys = { w: false, s: false, a: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+
+        // Editor & Tool states
+        let currentTool = 'camera'; // 'camera', 'paint', 'paintSection', 'toggle'
+        let activePaintBrushType = 'color'; // 'color' or 'texture'
+        let activeBrushColor = '#e11d48'; // Default rose pink
+        let activeBrushTextureIndex = null; // selected index 0-11
+        let isDrawing = false;
+        let is2DDrawing = false;
+        let lastDrawToggleState = 1;
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        // Texture storage
+        let loadedTextureImages = []; // Stores image/canvas references for 2D display & Three.js CanvasTexture loaders
+        let loadedThreeTextures = []; // Stores actual usable THREE.CanvasTexture objects
+        let groundCustomTexture = null; // Custom uploaded ground texture reference
+        let activeBaseGeometries = []; // Keeps track of active multi-geometries to properly dispose memory without double-free crashes
+
+        // DOM elements
+        const sourceImageLoader = document.getElementById('source-image-loader');
+        const analysisCanvas = document.getElementById('analysis-canvas');
+        const analysisCtx = analysisCanvas.getContext('2d');
+        const threeContainer = document.getElementById('threejs-container');
+        const gridSlider = document.getElementById('grid-slider');
+        const gridVal = document.getElementById('grid-val');
+        const thresholdSlider = document.getElementById('threshold-slider');
+        const thresholdVal = document.getElementById('threshold-val');
+        const invertCheckbox = document.getElementById('invert-checkbox');
+        const imageUpload = document.getElementById('image-upload');
+        const dropzone = document.getElementById('dropzone');
+        const wallHeightSlider = document.getElementById('wall-height-slider');
+        const wallHeightVal = document.getElementById('wall-height-val');
+        const gapSlider = document.getElementById('gap-slider');
+        const gapVal = document.getElementById('gap-val');
+        const wallColorPicker = document.getElementById('wall-color-picker');
+        const floorStyleSelect = document.getElementById('floor-style');
+        const shadowsCheckbox = document.getElementById('shadows-checkbox');
+        const lightAngleSlider = document.getElementById('light-angle-slider');
+        const lightAngleVal = document.getElementById('light-angle-val');
+        const groundImageUpload = document.getElementById('ground-image-upload');
+        const btnClearGroundImage = document.getElementById('btn-clear-ground-image');
+        
+        const tabBtnLoad = document.getElementById('tab-btn-load');
+        const tabBtnStyle = document.getElementById('tab-btn-style');
+        const tabBtnPaint = document.getElementById('tab-btn-paint');
+        
+        const tabContentLoad = document.getElementById('tab-content-load');
+        const tabContentStyle = document.getElementById('tab-content-style');
+        const tabContentPaint = document.getElementById('tab-content-paint');
+        
+        const viewModeDiorama = document.getElementById('view-mode-diorama');
+        const viewModeFps = document.getElementById('view-mode-fps');
+        const firstPersonHelper = document.getElementById('first-person-helper');
+        const virtualDpad = document.getElementById('virtual-dpad');
+        const playerStatusIndicator = document.getElementById('player-status-indicator');
+        
+        const btnPresetRef = document.getElementById('btn-preset-reference');
+        const btnPresetProc = document.getElementById('btn-preset-procedural');
+        const btnSolve = document.getElementById('btn-solve');
+
+        // Paint components
+        const brushColorPicker = document.getElementById('brush-color-picker');
+        const brushColorHex = document.getElementById('brush-color-hex');
+        const btnClearPaint = document.getElementById('btn-clear-paint');
+        const brushTypeIndicator = document.getElementById('brush-type-indicator');
+        const textureBrushesGrid = document.getElementById('texture-brushes-grid');
+
+        // Zoom Controls
+        const btnZoomIn = document.getElementById('btn-zoom-in');
+        const btnZoomOut = document.getElementById('btn-zoom-out');
+        const btnZoomReset = document.getElementById('btn-zoom-reset');
+
+        // Preset style trackers
+        const edgeStyleSlider = document.getElementById('edge-style-slider');
+        const edgeStyleVal = document.getElementById('edge-style-val');
+        const layoutStyleSlider = document.getElementById('layout-style-slider');
+        const layoutStyleVal = document.getElementById('layout-style-val');
+
+        // Material Presets
+        let wallMaterialPreset = 'hedge'; // 'hedge', 'stone', 'cyber', 'glass'
+
+        // --- 2. INITIALIZATION ---
+        window.addEventListener('load', () => {
+            initDefaultTextures();
+            lucide.createIcons();
+            init3DScene();
+            loadDefaultReferenceMaze();
+            setupEventListeners();
+            animateLoop();
+        });
+
+        // Setup the Three.js Environment
+        function init3DScene() {
+            const width = threeContainer.clientWidth;
+            const height = threeContainer.clientHeight || 500;
+
+            // Scene Creation
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x060b13); // dark deep slate
+            scene.fog = new THREE.FogExp2(0x060b13, 0.015);
+
+            // Camera Setup
+            camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
+            camera.position.set(20, 25, 30);
+
+            // Renderer Setup
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            threeContainer.appendChild(renderer.domElement);
+
+            // Controls setup
+            orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+            orbitControls.enableDamping = true;
+            orbitControls.dampingFactor = 0.05;
+            orbitControls.maxPolarAngle = Math.PI / 2 - 0.05; // Prevent camera going underground
+            orbitControls.minDistance = 3;
+            orbitControls.maxDistance = 150;
+
+            // Lights
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+            scene.add(ambientLight);
+
+            directionalLight = new THREE.DirectionalLight(0xffffff, 0.85);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 1024;
+            directionalLight.shadow.mapSize.height = 1024;
+            directionalLight.shadow.camera.near = 0.5;
+            directionalLight.shadow.camera.far = 150;
+            
+            // Adjust light shadow frustum size for high precision
+            const d = 40;
+            directionalLight.shadow.camera.left = -d;
+            directionalLight.shadow.camera.right = d;
+            directionalLight.shadow.camera.top = d;
+            directionalLight.shadow.camera.bottom = -d;
+            directionalLight.shadow.bias = -0.0005;
+
+            scene.add(directionalLight);
+            updateLightDirection(parseFloat(lightAngleSlider.value));
+
+            // Wall Group
+            wallGroup = new THREE.Group();
+            scene.add(wallGroup);
+
+            // Setup 3D Guide Cursor Box
+            initHoverGuide();
+
+            // Window resize handler
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function initHoverGuide() {
+            const geo = new THREE.BoxGeometry(1.02, 1.5, 1.02);
+            const mat = new THREE.MeshBasicMaterial({
+                color: 0x2dd4bf, // Teal guide
+                wireframe: true,
+                transparent: true,
+                opacity: 0.7
+            });
+            hoverGuideMesh = new THREE.Mesh(geo, mat);
+            hoverGuideMesh.visible = false;
+            scene.add(hoverGuideMesh);
+        }
+
+        function updateLightDirection(angleDegrees) {
+            const angleRadians = (angleDegrees * Math.PI) / 180;
+            const radius = 35;
+            const x = Math.cos(angleRadians) * radius;
+            const z = Math.sin(angleRadians) * radius;
+            directionalLight.position.set(x, 40, z);
+        }
+
+        function onWindowResize() {
+            const width = threeContainer.clientWidth;
+            const height = threeContainer.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        }
+
+        // --- 3. DYNAMIC TILEABLE TEXTURE SYSTEM ---
+        
+        // Procedurally draws 12 gorgeous default tileable textures onto small HTML Canvases
+        function initDefaultTextures() {
+            textureBrushesGrid.innerHTML = ''; // Clear prior nodes
+            
+            for (let i = 0; i < 12; i++) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 128;
+                canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+                
+                generateDefaultPattern(ctx, i);
+                
+                loadedTextureImages[i] = canvas;
+                
+                const tex = new THREE.CanvasTexture(canvas);
+                tex.wrapS = THREE.RepeatWrapping;
+                tex.wrapT = THREE.RepeatWrapping;
+                tex.repeat.set(1, 1);
+                loadedThreeTextures[i] = tex;
+
+                // Build HTML Box representation in Paint sidebar
+                createTextureUIBox(i);
+            }
+        }
+
+        function generateDefaultPattern(ctx, idx) {
+            ctx.clearRect(0, 0, 128, 128);
+
+            switch (idx) {
+                case 0: // Classical Bricks
+                    ctx.fillStyle = '#991b1b'; // Terracotta Red
+                    ctx.fillRect(0, 0, 128, 128);
+                    ctx.strokeStyle = '#f87171'; // Mortar Lines
+                    ctx.lineWidth = 2.5;
+                    for (let y = 0; y <= 128; y += 32) {
+                        ctx.beginPath();
+                        ctx.moveTo(0, y); ctx.lineTo(128, y);
+                        ctx.stroke();
+                        const offset = (y / 32) % 2 === 0 ? 0 : 32;
+                        for (let x = offset; x < 128 + 32; x += 64) {
+                            ctx.beginPath();
+                            ctx.moveTo(x, y); ctx.lineTo(x, y + 32);
+                            ctx.stroke();
+                        }
+                    }
+                    break;
+
+                case 1: // Dense Green Hedge
+                    ctx.fillStyle = '#065f46'; // Forest ground base
+                    ctx.fillRect(0, 0, 128, 128);
+                    // Leaf clumps
+                    for (let i = 0; i < 80; i++) {
+                        ctx.fillStyle = i % 2 === 0 ? '#047857' : '#10b981';
+                        ctx.beginPath();
+                        ctx.arc(Math.random() * 128, Math.random() * 128, 5 + Math.random() * 7, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    // Glowing highlights
+                    ctx.fillStyle = '#34d399';
+                    for (let i = 0; i < 30; i++) {
+                        ctx.beginPath();
+                        ctx.arc(Math.random() * 128, Math.random() * 128, 2 + Math.random() * 3, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    break;
+
+                case 2: // Cyber Tech Mesh / Circuits
+                    ctx.fillStyle = '#030712'; // Black deep background
+                    ctx.fillRect(0, 0, 128, 128);
+                    ctx.strokeStyle = '#06b6d4'; // Cyan grid
+                    ctx.lineWidth = 1;
+                    // Grid blocks
+                    for (let v = 0; v <= 128; v += 16) {
+                        ctx.beginPath();
+                        ctx.moveTo(v, 0); ctx.lineTo(v, 128);
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.moveTo(0, v); ctx.lineTo(128, v);
+                        ctx.stroke();
+                    }
+                    // Technical nodes
+                    ctx.fillStyle = '#22d3ee';
+                    for (let i = 0; i < 4; i++) {
+                        ctx.beginPath();
+                        ctx.arc(32 * (i + 1) - 8, 32 * (i + 1) - 8, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    break;
+
+                case 3: // Dungeons Cobble stone
+                    ctx.fillStyle = '#4b5563'; 
+                    ctx.fillRect(0, 0, 128, 128);
+                    ctx.fillStyle = '#374151';
+                    for(let i = 0; i < 20; i++) {
+                        ctx.fillRect(Math.random()*120, Math.random()*120, 15 + Math.random()*30, 10 + Math.random()*20);
+                    }
+                    ctx.strokeStyle = '#1f2937';
+                    ctx.lineWidth = 2;
+                    for(let i = 0; i < 4; i++) {
+                        ctx.strokeRect(i*32, (i%2)*64, 32, 64);
+                        ctx.strokeRect((i%2)*64, i*32, 64, 32);
+                    }
+                    break;
+
+                case 4: // Rusty Heavy Industrial Plate
+                    ctx.fillStyle = '#7c2d12'; // rust red
+                    ctx.fillRect(0, 0, 128, 128);
+                    ctx.fillStyle = '#b45309'; // bright orange rot spots
+                    for (let i = 0; i < 15; i++) {
+                        ctx.beginPath();
+                        ctx.arc(Math.random() * 128, Math.random() * 128, 6 + Math.random() * 10, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    // Rivets
+                    ctx.fillStyle = '#451a03';
+                    ctx.beginPath();
+                    ctx.arc(16, 16, 4, 0, Math.PI*2);
+                    ctx.arc(112, 16, 4, 0, Math.PI*2);
+                    ctx.arc(16, 112, 4, 0, Math.PI*2);
+                    ctx.arc(112, 112, 4, 0, Math.PI*2);
+                    ctx.fill();
+                    break;
+
+                case 5: // Hazard Alert Stripes
+                    ctx.fillStyle = '#eab308'; // Amber Warning yellow
+                    ctx.fillRect(0, 0, 128, 128);
+                    ctx.fillStyle = '#1e293b'; // Slate dark grey
+                    ctx.lineWidth = 12;
+                    for (let o = -128; o < 256; o += 32) {
+                        ctx.beginPath();
+                        ctx.moveTo(o, -20);
+                        ctx.lineTo(o + 148, 148);
+                        ctx.stroke();
+                    }
+                    break;
+
+                case 6: // Geometric Charcoal Chevron
+                    ctx.fillStyle = '#0f172a';
+                    ctx.fillRect(0, 0, 128, 128);
+                    ctx.strokeStyle = '#334155';
+                    ctx.lineWidth = 8;
+                    for (let y = -64; y < 192; y += 32) {
+                        ctx.beginPath();
+                        ctx.moveTo(0, y);
+                        ctx.lineTo(64, y + 24);
+                        ctx.lineTo(128, y);
+                        ctx.stroke();
+                    }
+                    break;
+
+                case 7: // Futuristic Hex Hive
+                    ctx.fillStyle = '#111827';
+                    ctx.fillRect(0, 0, 128, 128);
+                    ctx.strokeStyle = '#a855f7'; // Purple neon
+                    ctx.lineWidth = 1.5;
+                    const h = 24; // size
+                    const drawHex = (x, y) => {
+                        ctx.beginPath();
+                        for (let s = 0; s < 6; s++) {
+                            const angle = (Math.PI / 3) * s;
+                            ctx.lineTo(x + h * Math.cos(angle), y + h * Math.sin(angle));
+                        }
+                        ctx.closePath();
+                        ctx.stroke();
+                    };
+                    drawHex(64, 64);
+                    drawHex(0, 0); drawHex(128, 0); drawHex(0, 128); drawHex(128, 128);
+                    drawHex(64, -30); drawHex(64, 158);
+                    break;
+
+                case 8: // Natural Fine Wood Planks
+                    ctx.fillStyle = '#78350f'; // Warm Brown
+                    ctx.fillRect(0, 0, 128, 128);
+                    ctx.strokeStyle = '#451a03'; // Planks gap
+                    ctx.lineWidth = 2.5;
+                    for (let x = 0; x <= 128; x += 32) {
+                        ctx.beginPath();
+                        ctx.moveTo(x, 0); ctx.lineTo(x, 128);
+                        ctx.stroke();
+                        // Grain lines
+                        ctx.strokeStyle = '#92400e';
+                        ctx.lineWidth = 1;
+                        for (let k = 0; k < 4; k++) {
+                            ctx.beginPath();
+                            ctx.moveTo(x + 5 + k*5, 0);
+                            ctx.quadraticCurveTo(x + 16, 64, x + 8 + k*4, 128);
+                            ctx.stroke();
+                        }
+                        ctx.strokeStyle = '#451a03';
+                        ctx.lineWidth = 2.5;
+                    }
+                    break;
+
+                case 9: // Digital Matrix Grid
+                    ctx.fillStyle = '#020617';
+                    ctx.fillRect(0, 0, 128, 128);
+                    ctx.fillStyle = '#22c55e'; // Acid Green
+                    ctx.font = 'bold 11px monospace';
+                    for (let col = 0; col < 6; col++) {
+                        for (let r = 0; r < 6; r++) {
+                            const code = String.fromCharCode(33 + Math.floor(Math.random() * 90));
+                            ctx.fillStyle = Math.random() > 0.4 ? '#22c55e' : '#4ade80';
+                            ctx.fillText(code, col * 22 + 4, r * 22 + 16);
+                        }
+                    }
+                    break;
+
+                case 10: // Tight Carbon Fiber
+                    ctx.fillStyle = '#1e293b';
+                    ctx.fillRect(0, 0, 128, 128);
+                    ctx.fillStyle = '#0f172a';
+                    for (let y = 0; y < 128; y += 8) {
+                        for (let x = (y % 16 === 0 ? 0 : 8); x < 128; x += 16) {
+                            ctx.fillRect(x, y, 8, 8);
+                        }
+                    }
+                    break;
+
+                case 11: // Hot Lava Cracks
+                    ctx.fillStyle = '#18181b'; // Ash obsidian ground
+                    ctx.fillRect(0, 0, 128, 128);
+                    ctx.strokeStyle = '#ea580c'; // magma glow orange
+                    ctx.lineWidth = 3;
+                    ctx.shadowColor = '#f97316';
+                    ctx.shadowBlur = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 20); ctx.lineTo(40, 60); ctx.lineTo(128, 40);
+                    ctx.moveTo(40, 60); ctx.lineTo(70, 128);
+                    ctx.moveTo(0, 90); ctx.lineTo(30, 80); ctx.lineTo(70, 128);
+                    ctx.stroke();
+                    // clear shadow settings so we don't bleed into future drawings
+                    ctx.shadowBlur = 0;
+                    break;
+            }
+        }
+
+        // Creates a highly tactile box with preview overlay trigger custom loaders inside
+        function createTextureUIBox(idx) {
+            const wrapper = document.createElement('div');
+            wrapper.className = "relative aspect-square rounded-xl bg-slate-950 border-2 border-slate-800 hover:border-emerald-500/50 cursor-pointer overflow-hidden transition-all group group-tex-box";
+            wrapper.setAttribute('data-index', idx);
+
+            const canvasPreview = document.createElement('canvas');
+            canvasPreview.className = "w-full h-full object-cover pointer-events-none";
+            canvasPreview.width = 64;
+            canvasPreview.height = 64;
+            
+            // Draw thumbnail representation
+            const thumbCtx = canvasPreview.getContext('2d');
+            thumbCtx.drawImage(loadedTextureImages[idx], 0, 0, 64, 64);
+
+            // Trigger upload icon in corner
+            const uploadBtn = document.createElement('button');
+            uploadBtn.className = "absolute bottom-1 right-1 p-1 rounded-md bg-slate-900/90 text-slate-400 hover:text-emerald-400 border border-slate-700/60 opacity-0 group-hover:opacity-100 transition-opacity z-[4]";
+            uploadBtn.innerHTML = `<i data-lucide="upload" class="w-3 h-3"></i>`;
+            
+            // File input specifically tied to this slot
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.className = "hidden";
+
+            wrapper.appendChild(canvasPreview);
+            wrapper.appendChild(uploadBtn);
+            wrapper.appendChild(fileInput);
+
+            // Selection handler
+            wrapper.addEventListener('click', (e) => {
+                if (e.target === uploadBtn || uploadBtn.contains(e.target)) {
+                    fileInput.click();
+                    return;
+                }
+                
+                // Select this texture as the active brush
+                selectTextureAsBrush(idx);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const customImg = new Image();
+                        customImg.onload = function() {
+                            // Render custom uploaded image onto texture canvases
+                            const texCtx = loadedTextureImages[idx].getContext('2d');
+                            texCtx.clearRect(0,0,128,128);
+                            texCtx.drawImage(customImg, 0, 0, 128, 128);
+                            
+                            // Recreate Three texture references
+                            loadedThreeTextures[idx].needsUpdate = true;
+                            
+                            // Redraw UI Thumbnail preview
+                            thumbCtx.clearRect(0,0,64,64);
+                            thumbCtx.drawImage(customImg, 0, 0, 64, 64);
+
+                            // Select newly custom loaded texture
+                            selectTextureAsBrush(idx);
+
+                            // Rebuild 3D world to apply newly customized image to any blocks using this texture slot index
+                            build3DWorld();
+                        };
+                        customImg.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            textureBrushesGrid.appendChild(wrapper);
+            lucide.createIcons();
+        }
+
+        function selectTextureAsBrush(idx) {
+            activePaintBrushType = 'texture';
+            activeBrushTextureIndex = idx;
+            brushTypeIndicator.innerText = `Tex Slot #${idx + 1}`;
+            brushTypeIndicator.className = "text-[10px] bg-teal-500/10 text-teal-400 border border-teal-500/30 px-2 py-0.5 rounded-full uppercase font-bold tracking-widest";
+
+            // Mark this slot container visually as selected
+            const blocks = document.querySelectorAll('.group-tex-box');
+            blocks.forEach((blk, i) => {
+                if (i === idx) {
+                    blk.classList.add('border-emerald-500', 'scale-95', 'shadow-lg', 'shadow-emerald-500/20');
+                } else {
+                    blk.classList.remove('border-emerald-500', 'scale-95', 'shadow-lg', 'shadow-emerald-500/20');
+                }
+            });
+
+            // Automatically switch editor tool to paint when clicking a swatch
+            if (currentTool !== 'paint' && currentTool !== 'paintSection') {
+                setTool('paint');
+            }
+        }
+
+
+        // --- 4. MAZE GENERATORS / LOADER ---
+        
+        function loadDefaultReferenceMaze() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 600;
+            tempCanvas.height = 600;
+            const ctx = tempCanvas.getContext('2d');
+
+            ctx.fillStyle = '#6E553F'; 
+            ctx.fillRect(0, 0, 600, 600);
+
+            ctx.strokeStyle = '#00401A'; 
+            ctx.lineWidth = 14;
+            ctx.lineCap = 'square';
+            ctx.lineJoin = 'miter';
+
+            ctx.strokeRect(40, 40, 520, 520);
+
+            ctx.fillStyle = '#6E553F';
+            ctx.fillRect(35, 43, 30, 20); 
+            ctx.fillRect(535, 520, 30, 20); 
+
+            let randSeed = 42;
+            function seededRandom() {
+                let x = Math.sin(randSeed++) * 10000;
+                return x - Math.floor(x);
+            }
+
+            const size = 31;
+            const gridCells = Array(size).fill(0).map(() => Array(size).fill(1)); 
+            
+            function generateDFS(x, y) {
+                gridCells[y][x] = 0;
+                const directions = [
+                    [0, -2], [2, 0], [0, 2], [-2, 0]
+                ];
+                for (let i = directions.length - 1; i > 0; i--) {
+                    const j = Math.floor(seededRandom() * (i + 1));
+                    [directions[i], directions[j]] = [directions[j], directions[i]];
+                }
+
+                for (let [dx, dy] of directions) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (nx > 0 && nx < size - 1 && ny > 0 && ny < size - 1 && gridCells[ny][nx] === 1) {
+                        gridCells[ny - dy / 2][nx - dx / 2] = 0;
+                        generateDFS(nx, ny);
+                    }
+                }
+            }
+
+            generateDFS(1, 1);
+            
+            gridCells[0][1] = 0;
+            gridCells[size-1][size-2] = 0;
+
+            const blockW = 520 / size;
+            ctx.fillStyle = '#00401A'; 
+            for(let r = 0; r < size; r++) {
+                for(let c = 0; c < size; c++) {
+                    if (gridCells[r][c] === 1) {
+                        ctx.fillRect(40 + c * blockW - 0.5, 40 + r * blockW - 0.5, blockW + 1, blockW + 1);
+                    }
+                }
+            }
+
+            sourceImageLoader.src = tempCanvas.toDataURL();
+            sourceImageLoader.onload = () => {
+                processImageAndRebuild3D();
+            };
+        }
+
+        function generateProceduralMaze() {
+            const size = parseInt(gridSlider.value);
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 600;
+            tempCanvas.height = 600;
+            const ctx = tempCanvas.getContext('2d');
+
+            ctx.fillStyle = '#4A3728'; 
+            ctx.fillRect(0, 0, 600, 600);
+
+            const gridCells = Array(size).fill(0).map(() => Array(size).fill(1));
+            
+            function generateDFS(x, y) {
+                gridCells[y][x] = 0;
+                const directions = [[0, -2], [2, 0], [0, 2], [-2, 0]];
+                directions.sort(() => Math.random() - 0.5);
+
+                for (let [dx, dy] of directions) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (nx > 0 && nx < size - 1 && ny > 0 && ny < size - 1 && gridCells[ny][nx] === 1) {
+                        gridCells[ny - dy / 2][nx - dx / 2] = 0;
+                        generateDFS(nx, ny);
+                    }
+                }
+            }
+            generateDFS(1, 1);
+            
+            gridCells[0][1] = 0;
+            gridCells[size-1][size-2] = 0;
+
+            const blockW = 520 / size;
+            ctx.fillStyle = '#14532D'; 
+            for(let r = 0; r < size; r++) {
+                for(let c = 0; c < size; c++) {
+                    if (gridCells[r][c] === 1) {
+                        ctx.fillRect(40 + c * blockW - 0.5, 40 + r * blockW - 0.5, blockW + 1, blockW + 1);
+                    }
+                }
+            }
+
+            sourceImageLoader.src = tempCanvas.toDataURL();
+            sourceImageLoader.onload = () => {
+                processImageAndRebuild3D();
+            };
+        }
+
+        imageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    sourceImageLoader.src = event.target.result;
+                    sourceImageLoader.onload = () => {
+                        customImageLoaded = true;
+                        processImageAndRebuild3D();
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('border-emerald-500', 'bg-slate-900/80');
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('border-emerald-500', 'bg-slate-900/80');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('border-emerald-500', 'bg-slate-900/80');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    sourceImageLoader.src = event.target.result;
+                    sourceImageLoader.onload = () => {
+                        customImageLoaded = true;
+                        processImageAndRebuild3D();
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+
+        // --- 5. IMAGE PROCESSING & CLUSTERING ---
+        
+        function processImageAndRebuild3D() {
+            document.getElementById('analysis-state').innerText = "Analyzing...";
+            document.getElementById('analysis-state').classList.replace('text-emerald-400', 'text-amber-400');
+            
+            const size = parseInt(gridSlider.value);
+            analysisCanvas.width = 300;
+            analysisCanvas.height = 300;
+            
+            analysisCtx.drawImage(sourceImageLoader, 0, 0, 300, 300);
+            const imgData = analysisCtx.getImageData(0, 0, 300, 300);
+            const data = imgData.data;
+
+            const cellW = 300 / size;
+            const cellH = 300 / size;
+            
+            mazeMatrix = Array(size).fill(0).map(() => Array(size).fill(0));
+            // Initialize Edit state buffers
+            colorMatrix = Array(size).fill(null).map(() => Array(size).fill(null));
+            textureMatrix = Array(size).fill(null).map(() => Array(size).fill(null));
+            wallMeshes = Array(size).fill(null).map(() => Array(size).fill(null));
+
+            const samples = []; 
+            
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    const px = Math.floor(c * cellW + cellW / 2);
+                    const py = Math.floor(r * cellH + cellH / 2);
+                    const index = (py * 300 + px) * 4;
+                    
+                    const red = data[index];
+                    const green = data[index + 1];
+                    const blue = data[index + 2];
+                    
+                    samples.push({ r: red, g: green, b: blue, row: r, col: c });
+                }
+            }
+
+            let c1 = { r: samples[0].r, g: samples[0].g, b: samples[0].b };
+            let c2 = null;
+            let maxDist = -1;
+            
+            for (let s of samples) {
+                const dist = Math.sqrt(Math.pow(s.r - c1.r, 2) + Math.pow(s.g - c1.g, 2) + Math.pow(s.b - c1.b, 2));
+                if (dist > maxDist) {
+                    maxDist = dist;
+                    c2 = { r: s.r, g: s.g, b: s.b };
+                }
+            }
+
+            for (let iter = 0; iter < 4; iter++) {
+                let cluster1Sum = { r: 0, g: 0, b: 0, count: 0 };
+                let cluster2Sum = { r: 0, g: 0, b: 0, count: 0 };
+
+                for (let s of samples) {
+                    const dist1 = Math.pow(s.r - c1.r, 2) + Math.pow(s.g - c1.g, 2) + Math.pow(s.b - c1.b, 2);
+                    const dist2 = Math.pow(s.r - c2.r, 2) + Math.pow(s.g - c2.g, 2) + Math.pow(s.b - c2.b, 2);
+
+                    if (dist1 < dist2) {
+                        cluster1Sum.r += s.r;
+                        cluster1Sum.g += s.g;
+                        cluster1Sum.b += s.b;
+                        cluster1Sum.count++;
+                    } else {
+                        cluster2Sum.r += s.r;
+                        cluster2Sum.g += s.g;
+                        cluster2Sum.b += s.b;
+                        cluster2Sum.count++;
+                    }
+                }
+
+                if (cluster1Sum.count > 0) {
+                    c1 = { r: cluster1Sum.r / cluster1Sum.count, g: cluster1Sum.g / cluster1Sum.count, b: cluster1Sum.b / cluster1Sum.count };
+                }
+                if (cluster2Sum.count > 0) {
+                    c2 = { r: cluster2Sum.r / cluster2Sum.count, g: cluster2Sum.g / cluster2Sum.count, b: cluster2Sum.b / cluster2Sum.count };
+                }
+            }
+
+            const threshold = parseInt(thresholdSlider.value) / 100; 
+            const invert = invertCheckbox.checked;
+
+            for (let s of samples) {
+                const dist1 = Math.sqrt(Math.pow(s.r - c1.r, 2) + Math.pow(s.g - c1.g, 2) + Math.pow(s.b - c1.b, 2));
+                const dist2 = Math.sqrt(Math.pow(s.r - c2.r, 2) + Math.pow(s.g - c2.g, 2) + Math.pow(s.b - c2.b, 2));
+                const totalDist = dist1 + dist2;
+                
+                const wallCloseness = dist2 / (totalDist || 1); 
+
+                let isWall = wallCloseness > (1 - threshold);
+                if (invert) isWall = !isWall;
+
+                mazeMatrix[s.row][s.col] = isWall ? 1 : 0;
+            }
+
+            locateStartAndEndNodes(size);
+            redrawOverlayCanvas(size, cellW, cellH);
+            build3DWorld();
+
+            document.getElementById('analysis-state').innerText = "Parsed Successfully";
+            document.getElementById('analysis-state').classList.replace('text-amber-400', 'text-emerald-400');
+        }
+
+        function locateStartAndEndNodes(size) {
+            let pathCells = [];
+            
+            for (let c = 0; c < size; c++) {
+                if (mazeMatrix[0][c] === 0) pathCells.push({x: c, y: 0});
+                if (mazeMatrix[size - 1][c] === 0) pathCells.push({x: c, y: size - 1});
+            }
+            for (let r = 1; r < size - 1; r++) {
+                if (mazeMatrix[r][0] === 0) pathCells.push({x: 0, y: r});
+                if (mazeMatrix[r][size - 1] === 0) pathCells.push({x: size - 1, y: r});
+            }
+
+            if (pathCells.length >= 2) {
+                startNode = pathCells[0];
+                endNode = pathCells[pathCells.length - 1];
+            } else {
+                startNode = {x: 1, y: 1};
+                endNode = {x: size - 2, y: size - 2};
+            }
+            
+            const layoutStyle = parseInt(layoutStyleSlider.value);
+            const startPos = getLayoutPosition(startNode.x + 0.5, startNode.y + 0.5, size, layoutStyle);
+            player.x = startPos.x;
+            player.z = startPos.z;
+        }
+
+        function redrawOverlayCanvas(size, cellW, cellH) {
+            analysisCtx.drawImage(sourceImageLoader, 0, 0, 300, 300);
+            
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    if (mazeMatrix[r][c] === 1) {
+                        // Check if we have a tileable image painted
+                        if (textureMatrix[r] && textureMatrix[r][c] !== null) {
+                            const texIdx = textureMatrix[r][c];
+                            const texCanvas = loadedTextureImages[texIdx];
+                            if (texCanvas) {
+                                analysisCtx.drawImage(texCanvas, c * cellW, r * cellH, cellW, cellH);
+                            } else {
+                                analysisCtx.fillStyle = '#06b6d4';
+                                analysisCtx.fillRect(c * cellW, r * cellH, cellW, cellH);
+                            }
+                        }
+                        // Use customized flat color if painted
+                        else if (colorMatrix[r] && colorMatrix[r][c]) {
+                            analysisCtx.fillStyle = colorMatrix[r][c]; 
+                            analysisCtx.fillRect(c * cellW, r * cellH, cellW, cellH);
+                        } else {
+                            analysisCtx.fillStyle = 'rgba(16, 185, 129, 0.45)'; 
+                            analysisCtx.fillRect(c * cellW, r * cellH, cellW, cellH);
+                        }
+                        analysisCtx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+                        analysisCtx.lineWidth = 1;
+                        analysisCtx.strokeRect(c * cellW, r * cellH, cellW, cellH);
+                    } else {
+                        analysisCtx.fillStyle = 'rgba(245, 158, 11, 0.35)';
+                        analysisCtx.beginPath();
+                        analysisCtx.arc(c * cellW + cellW/2, r * cellH + cellH/2, Math.min(cellW, cellH) * 0.25, 0, Math.PI*2);
+                        analysisCtx.fill();
+                    }
+                }
+            }
+
+            // Highlight Start/End
+            analysisCtx.fillStyle = '#ef4444'; 
+            analysisCtx.beginPath();
+            analysisCtx.arc(startNode.x * cellW + cellW/2, startNode.y * cellH + cellH/2, Math.min(cellW, cellH) * 0.4, 0, Math.PI*2);
+            analysisCtx.fill();
+
+            analysisCtx.fillStyle = '#3b82f6'; 
+            analysisCtx.beginPath();
+            analysisCtx.arc(endNode.x * cellW + cellW/2, endNode.y * cellH + cellH/2, Math.min(cellW, cellH) * 0.4, 0, Math.PI*2);
+            analysisCtx.fill();
+        }
+
+        // Mathematical coordinate bending algorithm for rows and columns
+        function getLayoutPosition(c, r, size, layoutStyle) {
+            let posX = c;
+            let posZ = r;
+            if (layoutStyle === 1) { // Natural: organic slight wiggles
+                posX += Math.sin(r * 0.5) * 0.18 + Math.cos(c * 0.5) * 0.12;
+                posZ += Math.cos(r * 0.5) * 0.12 + Math.sin(c * 0.5) * 0.18;
+            } else if (layoutStyle === 2) { // Curved: sweeping wave warp
+                posX += Math.sin(r * 0.25) * 0.6 + Math.cos(c * 0.2) * 0.3;
+                posZ += Math.cos(c * 0.25) * 0.6 + Math.sin(r * 0.2) * 0.3;
+            }
+            return { x: posX, z: posZ };
+        }
+
+        // Helper to construct highly customizable bevel path shapes for rounded Smooth blocks
+        function createRoundedRectShape(width, depth, radius) {
+            const shape = new THREE.Shape();
+            const x = -width / 2;
+            const y = -depth / 2;
+            const w = width;
+            const h = depth;
+            const r = Math.min(radius, width / 2, depth / 2);
+            
+            shape.moveTo(x + r, y);
+            shape.lineTo(x + w - r, y);
+            shape.quadraticCurveTo(x + w, y, x + w, y + r);
+            shape.lineTo(x + w, y + h - r);
+            shape.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            shape.lineTo(x + r, y + h);
+            shape.quadraticCurveTo(x, y + h, x, y + h - r);
+            shape.lineTo(x, y + r);
+            shape.quadraticCurveTo(x, y, x + r, y);
+            
+            return shape;
+        }
+
+
+        // --- 6. THREE.JS 3D RECONSTRUCTION & STYLING ---
+
+        // Helper to retrieve correct block material matching theme presets & custom overrides
+        function getWallMaterial(row, col) {
+            const size = mazeMatrix.length;
+
+            // Priority 1: Check if an image texture was painted on this specific cell
+            if (textureMatrix[row] && textureMatrix[row][col] !== null) {
+                const texIdx = textureMatrix[row][col];
+                const activeTex = loadedThreeTextures[texIdx];
+                return new THREE.MeshStandardMaterial({
+                    map: activeTex,
+                    roughness: 0.6,
+                    metalness: 0.1
+                });
+            }
+
+            // Priority 2: Use custom color painted if color was applied
+            const customColorStr = (colorMatrix[row] && colorMatrix[row][col]) || wallColorPicker.value;
+            const customColor = new THREE.Color(customColorStr);
+            
+            let wallMat;
+            if (wallMaterialPreset === 'hedge') {
+                wallMat = new THREE.MeshStandardMaterial({
+                    color: customColor,
+                    roughness: 0.9,
+                    metalness: 0.0,
+                    bumpScale: 0.05
+                });
+            } else if (wallMaterialPreset === 'stone') {
+                wallMat = new THREE.MeshStandardMaterial({
+                    color: ((colorMatrix[row] && colorMatrix[row][col])) ? customColor : 0x64748b,
+                    roughness: 0.8,
+                    metalness: 0.1
+                });
+            } else if (wallMaterialPreset === 'cyber') {
+                wallMat = new THREE.MeshStandardMaterial({
+                    color: 0x111827, 
+                    roughness: 0.1,
+                    metalness: 0.9,
+                    emissive: customColor,
+                    emissiveIntensity: 0.35
+                });
+            } else if (wallMaterialPreset === 'glass') {
+                wallMat = new THREE.MeshPhysicalMaterial({
+                    color: customColor,
+                    transparent: true,
+                    opacity: 0.75,
+                    roughness: 0.1,
+                    metalness: 0.1,
+                    transmission: 0.9,
+                    ior: 1.5
+                });
+            }
+            return wallMat;
+        }
+
+        function build3DWorld() {
+            // Dispose of previously compiled base geometries to prevent GPU memory leaks
+            activeBaseGeometries.forEach(g => g.dispose());
+            activeBaseGeometries = [];
+
+            while(wallGroup.children.length > 0){
+                const obj = wallGroup.children[0];
+                wallGroup.remove(obj);
+                // Don't dispose geometry here because they are shared base geometries now disposed collectively above
+                if (obj.material) {
+                    if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+                    else obj.material.dispose();
+                }
+            }
+
+            if (solutionPathLine) {
+                scene.remove(solutionPathLine);
+                solutionPathLine = null;
+                isPathSolved = false;
+            }
+
+            const size = mazeMatrix.length;
+            const wallHeight = parseFloat(wallHeightSlider.value);
+            const boxScale = parseFloat(gapSlider.value);
+            const edgeStyle = parseInt(edgeStyleSlider.value); // 0 = Sharp, 1 = Rough, 2 = Smooth
+            const layoutStyle = parseInt(layoutStyleSlider.value); // 0 = Straight, 1 = Natural, 2 = Curved
+
+            // Recreate floor
+            if (floorMesh) {
+                scene.remove(floorMesh);
+                floorMesh.geometry.dispose();
+                floorMesh.material.dispose();
+            }
+
+            let floorMat;
+
+            // Check if there is a custom ground texture uploaded
+            if (groundCustomTexture) {
+                floorMat = new THREE.MeshStandardMaterial({
+                    map: groundCustomTexture,
+                    roughness: 0.8,
+                    metalness: 0.1
+                });
+            } else {
+                const selectedFloorStyle = floorStyleSelect.value;
+                if (selectedFloorStyle === 'soil') {
+                    floorMat = new THREE.MeshStandardMaterial({ color: 0x422A1D, roughness: 0.9, metalness: 0.05 });
+                } else if (selectedFloorStyle === 'grid') {
+                    floorMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4, metalness: 0.2, wireframe: true });
+                } else if (selectedFloorStyle === 'stone') {
+                    floorMat = new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.7, metalness: 0.1 });
+                } else {
+                    floorMat = new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.2, metalness: 0.9 });
+                }
+            }
+
+            const floorGeo = new THREE.PlaneGeometry(size + 10, size + 10);
+            floorMesh = new THREE.Mesh(floorGeo, floorMat);
+            floorMesh.rotation.x = -Math.PI / 2;
+            floorMesh.position.set(size / 2 - 0.5, 0, size / 2 - 0.5);
+            floorMesh.receiveShadow = shadowsCheckbox.checked;
+            scene.add(floorMesh);
+
+            // Compile the shared base geometries depending on edge style
+            if (edgeStyle === 0) { // Sharp
+                const geom = new THREE.BoxGeometry(1, wallHeight, 1);
+                activeBaseGeometries.push(geom);
+            } else if (edgeStyle === 1) { // Rough: unique fractured rock displacements
+                for (let g = 0; g < 3; g++) {
+                    const geom = new THREE.BoxGeometry(1, wallHeight, 1, 3, 3, 3);
+                    const pos = geom.attributes.position;
+                    for (let i = 0; i < pos.count; i++) {
+                        const y = pos.getY(i);
+                        // Do not deform bottom vertices so blocks sit flat on floor
+                        if (y > -wallHeight / 2 + 0.05) {
+                            pos.setX(i, pos.getX(i) + (Math.random() - 0.5) * 0.12);
+                            pos.setY(i, y + (Math.random() - 0.5) * 0.12);
+                            pos.setZ(i, pos.getZ(i) + (Math.random() - 0.5) * 0.12);
+                        }
+                    }
+                    geom.computeVertexNormals();
+                    activeBaseGeometries.push(geom);
+                }
+            } else { // Smooth: rounded shape bevel extrusion
+                const shape = createRoundedRectShape(1, 1, 0.18);
+                const extrudeSettings = {
+                    depth: wallHeight - 0.1,
+                    bevelEnabled: true,
+                    bevelSegments: 4,
+                    steps: 1,
+                    bevelSize: 0.08,
+                    bevelThickness: 0.08,
+                    curveSegments: 8
+                };
+                const geom = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                geom.center(); // align pivot
+                geom.rotateX(Math.PI / 2); // orient upright
+                activeBaseGeometries.push(geom);
+            }
+
+            wallMeshes = Array(size).fill(null).map(() => Array(size).fill(null));
+
+            // Populate individual block meshes
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    if (mazeMatrix[r][c] === 1) {
+                        const wallMat = getWallMaterial(r, c);
+                        
+                        // Select a random geometry from the compile pool
+                        const wallGeo = activeBaseGeometries[Math.floor(Math.random() * activeBaseGeometries.length)];
+                        const block = new THREE.Mesh(wallGeo, wallMat);
+                        
+                        block.scale.set(boxScale, 1, boxScale);
+                        
+                        // Warp coordinates based on the layout slider style
+                        const pos = getLayoutPosition(c, r, size, layoutStyle);
+                        block.position.set(pos.x, wallHeight / 2, pos.z);
+                        
+                        block.castShadow = shadowsCheckbox.checked;
+                        block.receiveShadow = shadowsCheckbox.checked;
+                        
+                        // Register coordinates in userData for raycast actions
+                        block.userData = { row: r, col: c };
+                        
+                        wallGroup.add(block);
+                        wallMeshes[r][c] = block;
+                    }
+                }
+            }
+
+            orbitControls.target.set(size / 2 - 0.5, wallHeight / 2, size / 2 - 0.5);
+            orbitControls.update();
+        }
+
+
+        // --- 7. BFS PATHFINDER / MAZE SOLVER ---
+
+        function runMazeSolver() {
+            if (mazeMatrix.length === 0) return;
+
+            const size = mazeMatrix.length;
+            const queue = [[startNode]];
+            const visited = new Set();
+            visited.add(`${startNode.x},${startNode.y}`);
+
+            let solutionPath = null;
+
+            while (queue.length > 0) {
+                const path = queue.shift();
+                const current = path[path.length - 1];
+
+                if (current.x === endNode.x && current.y === endNode.y) {
+                    solutionPath = path;
+                    break;
+                }
+
+                const neighbors = [
+                    {x: current.x + 1, y: current.y},
+                    {x: current.x - 1, y: current.y},
+                    {x: current.x, y: current.y + 1},
+                    {x: current.x, y: current.y - 1}
+                ];
+
+                for (let n of neighbors) {
+                    if (n.x >= 0 && n.x < size && n.y >= 0 && n.y < size) {
+                        if (mazeMatrix[n.y][n.x] === 0) {
+                            const key = `${n.x},${n.y}`;
+                            if (!visited.has(key)) {
+                                visited.add(key);
+                                queue.push([...path, n]);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (solutionPath) {
+                drawSolutionPath3D(solutionPath);
+                isPathSolved = true;
+            } else {
+                showTemporaryBanner("Unable to find path from entrance to exit. Adjust grid settings or thresholds!");
+            }
+        }
+
+        function drawSolutionPath3D(path) {
+            if (solutionPathLine) {
+                scene.remove(solutionPathLine);
+                solutionPathLine = null;
+            }
+
+            const wallHeight = parseFloat(wallHeightSlider.value);
+            const size = mazeMatrix.length;
+            const layoutStyle = parseInt(layoutStyleSlider.value);
+            const points = [];
+
+            const startPos = getLayoutPosition(startNode.x, startNode.y, size, layoutStyle);
+            points.push(new THREE.Vector3(startPos.x, 0.05, startPos.z - 1.5));
+            for (let node of path) {
+                const pos = getLayoutPosition(node.x, node.y, size, layoutStyle);
+                points.push(new THREE.Vector3(pos.x, 0.08, pos.z));
+            }
+            const endPos = getLayoutPosition(endNode.x, endNode.y, size, layoutStyle);
+            points.push(new THREE.Vector3(endPos.x, 0.05, endPos.z + 1.5));
+
+            const curve = new THREE.CatmullRomCurve3(points);
+            const tubeGeo = new THREE.TubeGeometry(curve, path.length * 4, 0.15, 8, false);
+            
+            const tubeMat = new THREE.MeshBasicMaterial({
+                color: 0x2dd4bf, 
+                transparent: true,
+                opacity: 0.85
+            });
+
+            solutionPathLine = new THREE.Mesh(tubeGeo, tubeMat);
+            scene.add(solutionPathLine);
+        }
+
+        function showTemporaryBanner(message) {
+            const banner = document.createElement('div');
+            banner.className = "fixed bottom-5 left-1/2 -translate-x-1/2 z-50 bg-rose-900/90 text-rose-100 px-6 py-3 rounded-xl border border-rose-700/60 font-semibold shadow-2xl flex items-center gap-3 transition-opacity duration-300";
+            banner.innerHTML = `<i data-lucide="alert-triangle" class="w-5 h-5 text-rose-300"></i> <span>${message}</span>`;
+            document.body.appendChild(banner);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                banner.style.opacity = '0';
+                setTimeout(() => banner.remove(), 300);
+            }, 5000);
+        }
+
+
+        // --- 8. CAMERA FPS WALK CONTROL LOGIC & ZOOM HUD ---
+
+        function setViewMode(mode) {
+            currentViewMode = mode;
+            const size = mazeMatrix.length || 31;
+            const layoutStyle = parseInt(layoutStyleSlider.value);
+            
+            if (mode === 'fps') {
+                orbitControls.enabled = false;
+                setTool('camera'); 
+
+                viewModeDiorama.className = "py-2 px-3 text-xs rounded-lg text-slate-300 hover:text-slate-100 hover:bg-slate-800/60 font-medium flex items-center gap-1.5 transition-all";
+                viewModeFps.className = "py-2 px-3 text-xs rounded-lg bg-teal-500 text-slate-950 font-bold flex items-center gap-1.5 transition-all";
+                
+                firstPersonHelper.classList.remove('hidden');
+                virtualDpad.classList.remove('opacity-0', 'pointer-events-none');
+                playerStatusIndicator.innerText = "First-Person Mode active!";
+
+                const startPos = getLayoutPosition(startNode.x + 0.5, startNode.y + 0.5, size, layoutStyle);
+                player.x = startPos.x;
+                player.z = startPos.z;
+                player.angle = Math.PI; 
+                
+                updateCameraFPSPosition();
+            } else {
+                orbitControls.enabled = true;
+                camera.fov = 60; // Reset FOV
+                camera.updateProjectionMatrix();
+
+                viewModeDiorama.className = "py-2 px-3 text-xs rounded-lg bg-emerald-500 text-slate-950 font-bold flex items-center gap-1.5 transition-all";
+                viewModeFps.className = "py-2 px-3 text-xs rounded-lg text-slate-300 hover:text-slate-100 hover:bg-slate-800/60 font-medium flex items-center gap-1.5 transition-all";
+
+                firstPersonHelper.classList.add('hidden');
+                virtualDpad.classList.add('opacity-0', 'pointer-events-none');
+                playerStatusIndicator.innerText = "Diorama mode - Drag canvas to spin";
+
+                zoomFitDiorama();
+            }
+        }
+
+        // Camera zooming functions
+        function handleZoom(direction) {
+            if (currentViewMode === 'fps') {
+                // Adjust Field-of-View (FOV) for camera zoom inside walking perspective
+                if (direction === 'in') {
+                    camera.fov = Math.max(25, camera.fov - 4);
+                } else {
+                    camera.fov = Math.min(100, camera.fov + 4);
+                }
+                camera.updateProjectionMatrix();
+                playerStatusIndicator.innerText = `FOV: ${camera.fov}°`;
+            } else {
+                // Diorama Viewport Zoom - Modify orbit distance from target pivot
+                const targetDir = new THREE.Vector3().subVectors(camera.position, orbitControls.target).normalize();
+                const currentDist = camera.position.distanceTo(orbitControls.target);
+                let newDist = currentDist;
+                
+                if (direction === 'in') {
+                    newDist = Math.max(3, currentDist * 0.82);
+                } else {
+                    newDist = Math.min(150, currentDist * 1.18);
+                }
+                
+                camera.position.copy(orbitControls.target).addScaledVector(targetDir, newDist);
+                orbitControls.update();
+            }
+        }
+
+        function zoomFitDiorama() {
+            const size = mazeMatrix.length || 31;
+            const wallHeight = parseFloat(wallHeightSlider.value);
+            orbitControls.target.set(size / 2 - 0.5, wallHeight / 2, size / 2 - 0.5);
+            camera.position.set(size * 0.82, size * 0.9, size * 1.1);
+            orbitControls.update();
+        }
+
+        function handleFPSMovement() {
+            if (currentViewMode !== 'fps') return;
+
+            let moveForward = keys.w || keys.ArrowUp;
+            let moveBackward = keys.s || keys.ArrowDown;
+            let turnLeft = keys.a || keys.ArrowLeft;
+            let turnRight = keys.d || keys.ArrowRight;
+
+            if (turnLeft) player.angle += player.turnSpeed;
+            if (turnRight) player.angle -= player.turnSpeed;
+
+            let dx = 0;
+            let dz = 0;
+
+            if (moveForward) {
+                dx += Math.sin(player.angle) * player.speed;
+                dz += Math.cos(player.angle) * player.speed;
+            }
+            if (moveBackward) {
+                dx -= Math.sin(player.angle) * player.speed;
+                dz -= Math.cos(player.angle) * player.speed;
+            }
+
+            const buffer = 0.35;
+            const newX = player.x + dx;
+            const newZ = player.z + dz;
+
+            if (!checkWallCollision(newX, player.z, buffer)) {
+                player.x = newX;
+            }
+            if (!checkWallCollision(player.x, newZ, buffer)) {
+                player.z = newZ;
+            }
+
+            updateCameraFPSPosition();
+        }
+
+        // Bounding-box distance checker for warped layout geometries
+        function checkWallCollision(x, z, r) {
+            const size = mazeMatrix.length;
+            const layoutStyle = parseInt(layoutStyleSlider.value);
+            
+            const playerCellX = Math.floor(x);
+            const playerCellZ = Math.floor(z);
+            const searchRadius = 2;
+            
+            for (let row = playerCellZ - searchRadius; row <= playerCellZ + searchRadius; row++) {
+                for (let col = playerCellX - searchRadius; col <= playerCellX + searchRadius; col++) {
+                    if (row >= 0 && row < size && col >= 0 && col < size) {
+                        if (mazeMatrix[row][col] === 1) {
+                            const pos = getLayoutPosition(col, row, size, layoutStyle);
+                            const dx = Math.abs(x - pos.x);
+                            const dz = Math.abs(z - pos.z);
+                            const limit = 0.5 + r; 
+                            if (dx < limit && dz < limit) {
+                                return true; 
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (x < -1 || x >= size + 1 || z < -1 || z >= size + 1) return true;
+            return false;
+        }
+
+        function updateCameraFPSPosition() {
+            const wallHeight = parseFloat(wallHeightSlider.value);
+            const eyeHeight = wallHeight * 0.65;
+
+            camera.position.set(player.x, eyeHeight, player.z);
+
+            const targetX = player.x + Math.sin(player.angle);
+            const targetZ = player.z + Math.cos(player.angle);
+            
+            camera.lookAt(targetX, eyeHeight, targetZ);
+        }
+
+
+        // --- 9. EDIT MODE & PAINT ENGINE LOGIC ---
+
+        function setTool(toolName) {
+            currentTool = toolName;
+
+            // Highlight active tool buttons in the panel
+            const buttons = document.querySelectorAll('.tool-btn');
+            buttons.forEach(btn => {
+                if (btn.getAttribute('data-tool') === toolName) {
+                    btn.className = "tool-btn py-2 px-2.5 text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-lg font-medium transition-all flex items-center justify-center gap-1.5";
+                } else {
+                    btn.className = "tool-btn py-2 px-2.5 text-xs bg-slate-800 text-slate-300 border border-transparent rounded-lg font-medium transition-all flex items-center justify-center gap-1.5";
+                }
+            });
+
+            // Disable OrbitControls if painting, carving or sampling to avoid camera spinning
+            if (toolName === 'camera' || currentViewMode === 'fps') {
+                orbitControls.enabled = true;
+                if (hoverGuideMesh) hoverGuideMesh.visible = false;
+            } else {
+                orbitControls.enabled = false;
+            }
+        }
+
+        function updateBrushColor(color) {
+            activePaintBrushType = 'color';
+            activeBrushColor = color;
+            brushColorPicker.value = color;
+            brushColorHex.innerText = color;
+            brushTypeIndicator.innerText = "Color";
+            brushTypeIndicator.className = "text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full uppercase font-bold tracking-widest";
+
+            // Unhighlight texture slots since we changed back to flat color painting
+            const blocks = document.querySelectorAll('.group-tex-box');
+            blocks.forEach(blk => blk.classList.remove('border-emerald-500', 'scale-95', 'shadow-lg', 'shadow-emerald-500/20'));
+
+            if (currentTool !== 'paint' && currentTool !== 'paintSection') {
+                setTool('paint');
+            }
+        }
+
+        // Apply selected paintbrush values (either flat color or tileable texture reference) onto single coordinate
+        function applyPaintToCell(row, col) {
+            if (mazeMatrix[row][col] !== 1) return; // Only walls
+
+            if (activePaintBrushType === 'color') {
+                colorMatrix[row][col] = activeBrushColor;
+                textureMatrix[row][col] = null;
+            } else {
+                colorMatrix[row][col] = null;
+                textureMatrix[row][col] = activeBrushTextureIndex;
+            }
+
+            // Instantly update material of the existing 3D block
+            const block = wallMeshes[row][col];
+            if (block) {
+                const newMat = getWallMaterial(row, col);
+                const oldMat = block.material;
+                block.material = newMat;
+                if (oldMat) {
+                    if (Array.isArray(oldMat)) oldMat.forEach(m => m.dispose());
+                    else oldMat.dispose();
+                }
+            }
+        }
+
+        // Paints contiguous wall elements along the horizontal & vertical straight line from starting clicked cell
+        function paintStraightCorridorSection(row, col) {
+            if (mazeMatrix[row][col] !== 1) return;
+
+            // 4 Cardinal straight search directions
+            const directions = [
+                { dr: 0, dc: 1 },  // East
+                { dr: 0, dc: -1 }, // West
+                { dr: 1, dc: 0 },  // South
+                { dr: -1, dc: 0 }  // North
+            ];
+
+            // Paint starting cell itself
+            applyPaintToCell(row, col);
+
+            // Traverse along each direction and paint as long as contiguous cells remain walls (1)
+            directions.forEach(dir => {
+                let r = row + dir.dr;
+                let c = col + dir.dc;
+                while (r >= 0 && r < mazeMatrix.length && c >= 0 && c < mazeMatrix[r].length && mazeMatrix[r][c] === 1) {
+                    applyPaintToCell(r, c);
+                    r += dir.dr;
+                    c += dir.dc;
+                }
+            });
+
+            // Synchronize 2D overview representation
+            const cellW = 300 / mazeMatrix.length;
+            const cellH = 300 / mazeMatrix.length;
+            redrawOverlayCanvas(mazeMatrix.length, cellW, cellH);
+        }
+
+        function paintCell(row, col) {
+            applyPaintToCell(row, col);
+
+            // Sync 2D Canvas display
+            const cellW = 300 / mazeMatrix.length;
+            const cellH = 300 / mazeMatrix.length;
+            redrawOverlayCanvas(mazeMatrix.length, cellW, cellH);
+        }
+
+        // Live draw/erase state updates (1 <-> 0)
+        function toggleCell(row, col, targetState) {
+            if (mazeMatrix[row][col] === targetState) return;
+
+            mazeMatrix[row][col] = targetState;
+            const wallHeight = parseFloat(wallHeightSlider.value);
+            const boxScale = parseFloat(gapSlider.value);
+            const edgeStyle = parseInt(edgeStyleSlider.value);
+            const layoutStyle = parseInt(layoutStyleSlider.value);
+
+            if (targetState === 1) {
+                // Instantiate and place a brand new 3D Wall
+                const wallGeo = activeBaseGeometries[Math.floor(Math.random() * activeBaseGeometries.length)] || new THREE.BoxGeometry(1, wallHeight, 1);
+                const wallMat = getWallMaterial(row, col);
+                const block = new THREE.Mesh(wallGeo, wallMat);
+                
+                block.scale.set(boxScale, 1, boxScale);
+                
+                const pos = getLayoutPosition(col, row, mazeMatrix.length, layoutStyle);
+                block.position.set(pos.x, wallHeight / 2, pos.z);
+                
+                block.castShadow = shadowsCheckbox.checked;
+                block.receiveShadow = shadowsCheckbox.checked;
+                block.userData = { row: row, col: col };
+                
+                wallGroup.add(block);
+                wallMeshes[row][col] = block;
+            } else {
+                // Delete existing block
+                const block = wallMeshes[row][col];
+                if (block) {
+                    wallGroup.remove(block);
+                    // Don't dispose geometry directly as it's owned by the activeBaseGeometries cache pool
+                    if (Array.isArray(block.material)) block.material.forEach(m => m.dispose());
+                    else block.material.dispose();
+                    wallMeshes[row][col] = null;
+                }
+                colorMatrix[row][col] = null;
+                textureMatrix[row][col] = null;
+            }
+
+            // Sync 2D Canvas display & solver
+            const cellW = 300 / mazeMatrix.length;
+            const cellH = 300 / mazeMatrix.length;
+            redrawOverlayCanvas(mazeMatrix.length, cellW, cellH);
+
+            if (isPathSolved) {
+                runMazeSolver();
+            }
+        }
+
+        function clearCustomPaintOverrides() {
+            const size = mazeMatrix.length;
+            colorMatrix = Array(size).fill(null).map(() => Array(size).fill(null));
+            textureMatrix = Array(size).fill(null).map(() => Array(size).fill(null));
+            build3DWorld();
+
+            const cellW = 300 / size;
+            const cellH = 300 / size;
+            redrawOverlayCanvas(size, cellW, cellH);
+            showTemporaryBanner("All customized paint & texture overrides cleared!");
+        }
+
+
+        // --- 10. INTERACTIVE POINTER RAYCASTS (3D/2D) ---
+
+        function handle3DPointer(e) {
+            if (currentTool === 'camera' || currentViewMode === 'fps') return;
+
+            const rect = renderer.domElement.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            // Fetch intersects against walls or the floor
+            const intersects = raycaster.intersectObjects([floorMesh, ...wallGroup.children]);
+            if (intersects.length > 0) {
+                const hit = intersects[0];
+                const size = mazeMatrix.length;
+                const layoutStyle = parseInt(layoutStyleSlider.value);
+
+                if (currentTool === 'paint') {
+                    if (hit.object !== floorMesh) {
+                        const { row, col } = hit.object.userData;
+                        paintCell(row, col);
+                    }
+                } else if (currentTool === 'paintSection') {
+                    if (hit.object !== floorMesh) {
+                        const { row, col } = hit.object.userData;
+                        paintStraightCorridorSection(row, col);
+                    }
+                } else if (currentTool === 'toggle') {
+                    if (hit.object === floorMesh) {
+                        const col = Math.round(hit.point.x);
+                        const row = Math.round(hit.point.z);
+                        if (row >= 0 && row < size && col >= 0 && col < size) {
+                            toggleCell(row, col, 1);
+                        }
+                    } else {
+                        const { row, col } = hit.object.userData;
+                        toggleCell(row, col, 0);
+                    }
+                }
+            }
+        }
+
+        function handle3DPointerMove(e) {
+            if (currentViewMode === 'fps') return;
+
+            // Highlight guide cube overlay
+            if (currentTool !== 'camera' && hoverGuideMesh) {
+                const rect = renderer.domElement.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+
+                const intersects = raycaster.intersectObjects([floorMesh, ...wallGroup.children]);
+                if (intersects.length > 0) {
+                    const hit = intersects[0];
+                    const size = mazeMatrix.length;
+                    const wallHeight = parseFloat(wallHeightSlider.value);
+                    const layoutStyle = parseInt(layoutStyleSlider.value);
+
+                    hoverGuideMesh.scale.set(1.02, wallHeight / 1.5, 1.02);
+
+                    if (hit.object === floorMesh) {
+                        const col = Math.round(hit.point.x);
+                        const row = Math.round(hit.point.z);
+                        if (row >= 0 && row < size && col >= 0 && col < size) {
+                            const pos = getLayoutPosition(col, row, size, layoutStyle);
+                            hoverGuideMesh.position.set(pos.x, wallHeight / 2, pos.z);
+                            hoverGuideMesh.visible = true;
+                        } else {
+                            hoverGuideMesh.visible = false;
+                        }
+                    } else {
+                        const { row, col } = hit.object.userData;
+                        const pos = getLayoutPosition(col, row, size, layoutStyle);
+                        hoverGuideMesh.position.set(pos.x, wallHeight / 2, pos.z);
+                        hoverGuideMesh.visible = true;
+                    }
+                } else {
+                    hoverGuideMesh.visible = false;
+                }
+            }
+
+            // Handle continuous drag-drawing in 3D (only for default draw or paint, not section)
+            if (isDrawing && (currentTool === 'paint' || currentTool === 'toggle')) {
+                handle3DPointer(e);
+            }
+        }
+
+        // 2D Canvas Editor Paint interactions
+        function handle2DPointerAction(e) {
+            const rect = analysisCanvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+
+            const size = mazeMatrix.length;
+            const cellW = rect.width / size;
+            const cellH = rect.height / size;
+
+            const col = Math.floor(x / cellW);
+            const row = Math.floor(y / cellH);
+
+            if (row >= 0 && row < size && col >= 0 && col < size) {
+                if (currentTool === 'paint') {
+                    paintCell(row, col);
+                } else if (currentTool === 'paintSection') {
+                    paintStraightCorridorSection(row, col);
+                } else if (currentTool === 'toggle') {
+                    const targetState = e.type === 'mousedown' || e.type === 'touchstart' ? (mazeMatrix[row][col] === 1 ? 0 : 1) : lastDrawToggleState;
+                    if (e.type === 'mousedown' || e.type === 'touchstart') {
+                        lastDrawToggleState = targetState;
+                    }
+                    toggleCell(row, col, targetState);
+                }
+            }
+        }
+
+
+        // --- 11. EVENTS & LISTENERS ---
+
+        function setupEventListeners() {
+            // Tab Header Swapping
+            tabBtnLoad.addEventListener('click', () => {
+                tabBtnLoad.className = "flex-1 py-3 px-2 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-400 bg-emerald-950/10 flex items-center justify-center gap-1.5";
+                tabBtnStyle.className = "flex-1 py-3 px-2 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5 transition-colors";
+                tabBtnPaint.className = "flex-1 py-3 px-2 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5 transition-colors";
+                tabContentLoad.classList.remove('hidden');
+                tabContentStyle.classList.add('hidden');
+                tabContentPaint.classList.add('hidden');
+            });
+
+            tabBtnStyle.addEventListener('click', () => {
+                tabBtnStyle.className = "flex-1 py-3 px-2 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-400 bg-emerald-950/10 flex items-center justify-center gap-1.5";
+                tabBtnLoad.className = "flex-1 py-3 px-2 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5 transition-colors";
+                tabBtnPaint.className = "flex-1 py-3 px-2 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5 transition-colors";
+                tabContentStyle.classList.remove('hidden');
+                tabContentLoad.classList.add('hidden');
+                tabContentPaint.classList.add('hidden');
+            });
+
+            tabBtnPaint.addEventListener('click', () => {
+                tabBtnPaint.className = "flex-1 py-3 px-2 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-400 bg-emerald-950/10 flex items-center justify-center gap-1.5";
+                tabBtnLoad.className = "flex-1 py-3 px-2 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5 transition-colors";
+                tabBtnStyle.className = "flex-1 py-3 px-2 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5 transition-colors";
+                tabContentPaint.classList.remove('hidden');
+                tabContentLoad.classList.add('hidden');
+                tabContentStyle.classList.add('hidden');
+            });
+
+            // Sliders updating UI labels
+            gridSlider.addEventListener('input', (e) => {
+                gridVal.innerText = `${e.target.value} x ${e.target.value}`;
+            });
+            gridSlider.addEventListener('change', () => {
+                if (customImageLoaded) {
+                    processImageAndRebuild3D();
+                } else {
+                    generateProceduralMaze();
+                }
+            });
+
+            thresholdSlider.addEventListener('input', (e) => {
+                thresholdVal.innerText = `${e.target.value}%`;
+            });
+            thresholdSlider.addEventListener('change', processImageAndRebuild3D);
+            invertCheckbox.addEventListener('change', processImageAndRebuild3D);
+
+            wallHeightSlider.addEventListener('input', (e) => {
+                wallHeightVal.innerText = e.target.value;
+                build3DWorld();
+                if (isPathSolved) runMazeSolver(); 
+            });
+
+            gapSlider.addEventListener('input', (e) => {
+                gapVal.innerText = e.target.value;
+                build3DWorld();
+            });
+
+            wallColorPicker.addEventListener('change', build3DWorld);
+            floorStyleSelect.addEventListener('change', () => {
+                // Clear custom floor file if they pick a standard dropdown preset
+                if (groundCustomTexture) {
+                    groundCustomTexture = null;
+                    btnClearGroundImage.classList.add('hidden');
+                }
+                build3DWorld();
+            });
+            shadowsCheckbox.addEventListener('change', build3DWorld);
+
+            lightAngleSlider.addEventListener('input', (e) => {
+                lightAngleVal.innerText = `${e.target.value}°`;
+                updateLightDirection(parseFloat(e.target.value));
+            });
+
+            // Dynamic Edges Slider handler (Sharp, Rough, Smooth)
+            const edgeNames = ["Sharp", "Rough", "Smooth"];
+            edgeStyleSlider.addEventListener('input', (e) => {
+                edgeStyleVal.innerText = edgeNames[e.target.value];
+                build3DWorld();
+            });
+
+            // Dynamic Path Layout Slider handler (Straight, Natural, Curved)
+            const layoutNames = ["Straight", "Natural", "Curved"];
+            layoutStyleSlider.addEventListener('input', (e) => {
+                layoutStyleVal.innerText = layoutNames[e.target.value];
+                build3DWorld();
+                
+                // Reposition player starting position aligned with layout shift
+                const size = mazeMatrix.length || 31;
+                const layoutStyle = parseInt(e.target.value);
+                const startPos = getLayoutPosition(startNode.x + 0.5, startNode.y + 0.5, size, layoutStyle);
+                player.x = startPos.x;
+                player.z = startPos.z;
+
+                if (isPathSolved) runMazeSolver();
+            });
+
+            // Ground Image file uploader
+            groundImageUpload.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const img = new Image();
+                        img.onload = function() {
+                            const tex = new THREE.Texture(img);
+                            tex.wrapS = THREE.RepeatWrapping;
+                            tex.wrapT = THREE.RepeatWrapping;
+                            // Set high frequency repeating structure
+                            const repeatScale = mazeMatrix.length ? mazeMatrix.length / 4 : 8;
+                            tex.repeat.set(repeatScale, repeatScale);
+                            tex.needsUpdate = true;
+                            
+                            groundCustomTexture = tex;
+                            btnClearGroundImage.classList.remove('hidden');
+                            build3DWorld();
+                        };
+                        img.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            btnClearGroundImage.addEventListener('click', () => {
+                groundCustomTexture = null;
+                btnClearGroundImage.classList.add('hidden');
+                build3DWorld();
+                showTemporaryBanner("Custom floor texture removed!");
+            });
+
+            // Aesthetics presets
+            const matButtons = document.querySelectorAll('.mat-preset-btn');
+            matButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    matButtons.forEach(b => b.className = "mat-preset-btn py-1.5 px-3 text-xs rounded-md bg-slate-800 text-slate-300 border border-transparent");
+                    btn.className = "mat-preset-btn py-1.5 px-3 text-xs rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
+                    wallMaterialPreset = btn.getAttribute('data-style');
+                    build3DWorld();
+                });
+            });
+
+            // Paint swatch presets (Colors)
+            const swatches = document.querySelectorAll('.swatch-btn');
+            swatches.forEach(sw => {
+                sw.addEventListener('click', () => {
+                    updateBrushColor(sw.getAttribute('data-color'));
+                });
+            });
+
+            brushColorPicker.addEventListener('input', (e) => {
+                updateBrushColor(e.target.value);
+            });
+
+            // Tools switching triggers
+            const toolButtons = document.querySelectorAll('.tool-btn');
+            toolButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    setTool(btn.getAttribute('data-tool'));
+                });
+            });
+
+            btnClearPaint.addEventListener('click', clearCustomPaintOverrides);
+
+            // View Modes & Solver triggers
+            viewModeDiorama.addEventListener('click', () => setViewMode('diorama'));
+            viewModeFps.addEventListener('click', () => setViewMode('fps'));
+            btnPresetRef.addEventListener('click', loadDefaultReferenceMaze);
+            btnPresetProc.addEventListener('click', generateProceduralMaze);
+            btnSolve.addEventListener('click', runMazeSolver);
+
+            // Camera Viewport Zoom Controls
+            btnZoomIn.addEventListener('click', () => handleZoom('in'));
+            btnZoomOut.addEventListener('click', () => handleZoom('out'));
+            btnZoomReset.addEventListener('click', () => {
+                if (currentViewMode === 'fps') {
+                    camera.fov = 60;
+                    camera.updateProjectionMatrix();
+                } else {
+                    zoomFitDiorama();
+                }
+            });
+
+            // Pointer/Raycast Listeners (3D Viewport)
+            threeContainer.addEventListener('mousedown', (e) => {
+                isDrawing = true;
+                handle3DPointer(e);
+            });
+            threeContainer.addEventListener('mousemove', handle3DPointerMove);
+            window.addEventListener('mouseup', () => {
+                isDrawing = false;
+            });
+
+            threeContainer.addEventListener('touchstart', (e) => {
+                isDrawing = true;
+                handle3DPointer(e);
+            }, { passive: true });
+            threeContainer.addEventListener('touchmove', handle3DPointerMove, { passive: true });
+            window.addEventListener('touchend', () => {
+                isDrawing = false;
+            });
+
+            // Pointer/Paint Listeners (2D Map Canvas)
+            analysisCanvas.addEventListener('mousedown', (e) => {
+                is2DDrawing = true;
+                handle2DPointerAction(e);
+            });
+            analysisCanvas.addEventListener('mousemove', (e) => {
+                if (is2DDrawing && (currentTool === 'paint' || currentTool === 'toggle')) {
+                    handle2DPointerAction(e);
+                }
+            });
+            window.addEventListener('mouseup', () => {
+                is2DDrawing = false;
+            });
+
+            analysisCanvas.addEventListener('touchstart', (e) => {
+                is2DDrawing = true;
+                handle2DPointerAction(e);
+            }, { passive: true });
+            analysisCanvas.addEventListener('touchmove', (e) => {
+                if (is2DDrawing && (currentTool === 'paint' || currentTool === 'toggle')) {
+                    handle2DPointerAction(e);
+                }
+            }, { passive: true });
+            window.addEventListener('touchend', () => {
+                is2DDrawing = false;
+            });
+
+            // FPS Keyboard inputs
+            window.addEventListener('keydown', (e) => {
+                if (e.key in keys) {
+                    keys[e.key] = true;
+                    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                        e.preventDefault();
+                    }
+                }
+            });
+
+            window.addEventListener('keyup', (e) => {
+                if (e.key in keys) {
+                    keys[e.key] = false;
+                }
+            });
+
+            setupVirtualDpadListeners();
+        }
+
+        function setupVirtualDpadListeners() {
+            const dpadUp = document.getElementById('dpad-up');
+            const dpadDown = document.getElementById('dpad-down');
+            const dpadLeft = document.getElementById('dpad-left');
+            const dpadRight = document.getElementById('dpad-right');
+
+            const bindDpad = (el, keyName) => {
+                el.addEventListener('mousedown', () => keys[keyName] = true);
+                el.addEventListener('mouseup', () => keys[keyName] = false);
+                el.addEventListener('mouseleave', () => keys[keyName] = false);
+
+                el.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    keys[keyName] = true;
+                });
+                el.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    keys[keyName] = false;
+                });
+            };
+
+            bindDpad(dpadUp, 'w');
+            bindDpad(dpadDown, 's');
+            bindDpad(dpadLeft, 'a');
+            bindDpad(dpadRight, 'd');
+        }
+
+
+        // --- 12. RENDER CYCLE ANIMATION LOOP ---
+
+        function animateLoop() {
+            requestAnimationFrame(animateLoop);
+
+            if (currentViewMode === 'fps') {
+                handleFPSMovement();
+            } else {
+                orbitControls.update();
+            }
+
+            // Pulsating glow for Solution Path overlay
+            if (solutionPathLine && solutionPathLine.material) {
+                const time = Date.now() * 0.003;
+                solutionPathLine.material.opacity = 0.6 + Math.sin(time) * 0.25;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+    </script>
+</body>
+</html>
