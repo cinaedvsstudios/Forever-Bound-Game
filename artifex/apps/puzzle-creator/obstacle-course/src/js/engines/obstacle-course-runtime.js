@@ -1,4 +1,4 @@
-// Obstacle Course V2.5 / Horse Forest Runner V29
+// Obstacle Course V2.5 / Horse Forest Runner V29.1
 // Clean consolidated live engine: no layout/control patch stack.
 // Features: horse POV, modular transparent WEBP path segments, forest_floor_grass2 ground,
 // hold-to-move forward/backward, Ctrl duck, hold-extended jump, and off-path slow-trot penalty.
@@ -42,10 +42,29 @@ const ASSETS = {
   ],
 };
 
+
+const AUDIO_ASSETS = {
+  snort: `${ASSET_BASE}audio/horse_snort.wav`,
+  neigh: `${ASSET_BASE}audio/horse_neigh.mp3`,
+  gallopSlow: `${ASSET_BASE}audio/horse_gallop_slow.mp3`,
+  gallopFull: `${ASSET_BASE}audio/horse_gallop_full.mp3`,
+  land: `${ASSET_BASE}audio/horse_land.mp3`,
+  forest: `${ASSET_BASE}audio/forest_ambience.mp3`,
+  bush: `${ASSET_BASE}audio/bush.mp3`,
+};
+
+const AUDIO = {
+  ready: false,
+  clips: new Map(),
+  lastVoiceAt: 0,
+  lastBushAt: 0,
+  wasForwardMoving: false,
+};
+
 const TEMPLATES = {
   horse_forest_easy: { label: 'Obstacle Course', obstacleRate: 1 },
-  horse_forest_dense: { label: 'Dense Forest Ride', obstacleRate: 1.35 },
-  horse_forest_night: { label: 'Moonlit Forest Ride', obstacleRate: 1.15 },
+  horse_forest_dense: { label: 'Dense Forest Course', obstacleRate: 1.35 },
+  horse_forest_night: { label: 'Moonlit Forest Course', obstacleRate: 1.15 },
 };
 
 const OC = {
@@ -60,6 +79,11 @@ const OC = {
   speed: BASE_SPEED,
   currentSpeed: 0,
   targetSpeed: 0,
+  startAssistTime: 0,
+  screenBrightness: 1,
+  screenTint: '#000000',
+  screenTintStrength: 0,
+  sceneryDistance: 1.6,
   steerSpeed: 9,
   laneWidth: 2.7,
   distance: 0,
@@ -114,6 +138,93 @@ const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const rand = (min, max) => min + Math.random() * (max - min);
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
 
+
+function audioSupported() {
+  return typeof Audio !== 'undefined';
+}
+
+function makeAudio(src, options = {}) {
+  if (!audioSupported()) return null;
+  const audio = new Audio(src);
+  audio.preload = options.preload || 'auto';
+  audio.loop = Boolean(options.loop);
+  audio.volume = options.volume ?? 0.8;
+  return audio;
+}
+
+function ensureAudioReady() {
+  if (AUDIO.ready) return;
+  AUDIO.ready = true;
+  AUDIO.clips.set('snort', makeAudio(AUDIO_ASSETS.snort, { volume: 0.72 }));
+  AUDIO.clips.set('neigh', makeAudio(AUDIO_ASSETS.neigh, { volume: 0.72 }));
+  AUDIO.clips.set('land', makeAudio(AUDIO_ASSETS.land, { volume: 0.55 }));
+  AUDIO.clips.set('bush', makeAudio(AUDIO_ASSETS.bush, { volume: 0.46 }));
+  AUDIO.clips.set('forest', makeAudio(AUDIO_ASSETS.forest, { loop: true, volume: 0.18 }));
+  AUDIO.clips.set('gallopSlow', makeAudio(AUDIO_ASSETS.gallopSlow, { loop: true, volume: 0.38 }));
+  AUDIO.clips.set('gallopFull', makeAudio(AUDIO_ASSETS.gallopFull, { loop: true, volume: 0.46 }));
+}
+
+function playClip(id, options = {}) {
+  ensureAudioReady();
+  const clip = AUDIO.clips.get(id);
+  if (!clip) return;
+  try {
+    if (!options.allowOverlap) clip.currentTime = 0;
+    if (options.volume !== undefined) clip.volume = options.volume;
+    const play = clip.play();
+    if (play?.catch) play.catch(() => {});
+  } catch (_) {}
+}
+
+function setLoop(id, active, volume) {
+  ensureAudioReady();
+  const clip = AUDIO.clips.get(id);
+  if (!clip) return;
+  if (volume !== undefined) clip.volume = volume;
+  if (active) {
+    const play = clip.play();
+    if (play?.catch) play.catch(() => {});
+  } else {
+    clip.pause();
+  }
+}
+
+function stopMotionLoops() {
+  setLoop('gallopSlow', false);
+  setLoop('gallopFull', false);
+}
+
+function stopAllAudio() {
+  ['forest', 'gallopSlow', 'gallopFull'].forEach((id) => setLoop(id, false));
+}
+
+function playRandomHorseVoice(force = false) {
+  ensureAudioReady();
+  const now = performance.now();
+  if (!force && now - AUDIO.lastVoiceAt < 6500) return;
+  AUDIO.lastVoiceAt = now;
+  playClip(Math.random() < 0.58 ? 'neigh' : 'snort');
+}
+
+function playBushRustle() {
+  const now = performance.now();
+  if (now - AUDIO.lastBushAt < 900) return;
+  AUDIO.lastBushAt = now;
+  playClip('bush');
+}
+
+function updateRideAudio() {
+  if (!OC.active) return;
+  const forward = OC.running && !OC.complete && OC.currentSpeed > 1.2;
+  const fast = forward && OC.currentSpeed > OC.speed * 0.62;
+  const slow = forward && !fast;
+  if (forward && !AUDIO.wasForwardMoving) playRandomHorseVoice();
+  AUDIO.wasForwardMoving = forward;
+  setLoop('forest', OC.running || OC.active, 0.16);
+  setLoop('gallopSlow', slow, 0.34);
+  setLoop('gallopFull', fast, 0.44);
+}
+
 function pathCenterAt(distance) {
   if (!OC.pathSequence.length) return 0;
   const index = clamp(Math.floor(distance / SEGMENT_WORLD_STEP), 0, OC.pathSequence.length - 1);
@@ -152,17 +263,33 @@ function makeLayer(id, label, group, options = {}) {
     y: 0,
     z: 0,
     scale: 1,
+    tint: '#ffffff',
   };
   OC.layers.set(id, layer);
   applyLayer(layer);
   return layer;
 }
 
+function rememberBaseScale(node) {
+  if (!node?.userData) return;
+  if (!node.userData.__ocBaseScale) node.userData.__ocBaseScale = node.scale.clone();
+}
+
+function applyLayerObjectScale(layer, node) {
+  rememberBaseScale(node);
+  const base = node.userData?.__ocBaseScale;
+  if (!base) return;
+  const s = layer.scale || 1;
+  if (layer.id === 'path') node.scale.set(base.x * s, base.y, base.z);
+  else if (['trees', 'rocks', 'collectibles', 'obstacles'].includes(layer.id)) node.scale.copy(base).multiplyScalar(s);
+}
+
 function applyLayer(layer) {
   if (!layer || !layer.group) return;
   layer.group.visible = isLayerDisplayed(layer);
   layer.group.position.set(layer.x, layer.y, layer.z);
-  layer.group.scale.setScalar(layer.scale || 1);
+  layer.group.scale.setScalar(['trees', 'rocks', 'collectibles', 'obstacles', 'path'].includes(layer.id) ? 1 : (layer.scale || 1));
+  layer.group.children.forEach((child) => applyLayerObjectScale(layer, child));
   layer.group.traverse((node) => {
     node.renderOrder = layer.order;
     if (!node.material) return;
@@ -170,6 +297,7 @@ function applyLayer(layer) {
     materials.forEach((mat) => {
       mat.transparent = layer.opacity < 1 || mat.transparent;
       mat.opacity = layer.opacity;
+      if (mat.color && layer.tint && layer.tint !== '#ffffff') mat.color.multiply(new THREE.Color(layer.tint));
       mat.needsUpdate = true;
     });
   });
@@ -196,7 +324,7 @@ function injectStyles() {
     .obstacle-view-card{min-height:0;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}.obstacle-side-card{min-height:0;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
     .obstacle-header-line{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid rgba(124,202,210,.18);padding-bottom:12px}.obstacle-header-line h2{font-family:'Cinzel',serif;margin:3px 0 0;font-size:1.38rem}.obstacle-header-line p{margin:8px 0 0;color:var(--muted,#c9bfae);font-size:.78rem;line-height:1.42}.obstacle-status-pill{border:1px solid rgba(238,196,90,.34);border-radius:999px;color:#eec45a;padding:6px 10px;font-size:.68rem;font-weight:900;white-space:nowrap}
     .obstacle-three-wrap{position:relative;aspect-ratio:16/9;border:1px solid rgba(124,202,210,.18);border-radius:18px;overflow:hidden;background:#07101c;flex:0 0 auto}.obstacle-three-wrap canvas{display:block;width:100%!important;height:100%!important}.obstacle-three-wrap:after{content:'';position:absolute;left:0;right:0;bottom:0;height:72px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(10,8,5,.34));pointer-events:none;z-index:2}
-    .obstacle-horse-overlay{position:absolute;left:50%;bottom:-26px;z-index:5;width:330px;height:190px;margin-left:-165px;pointer-events:none;filter:drop-shadow(0 7px 9px rgba(0,0,0,.72));opacity:.98;background:url('${ASSETS.horse}') center bottom / contain no-repeat}.obstacle-hud{position:absolute;left:14px;right:14px;bottom:12px;z-index:6;display:flex;justify-content:space-between;gap:12px;pointer-events:none;color:var(--cream,#f4ead4);font-size:.74rem;text-shadow:0 2px 5px rgba(0,0,0,.8)}.obstacle-reticle{position:absolute;left:50%;top:50%;z-index:4;width:34px;height:34px;margin:-17px 0 0 -17px;border:1px solid rgba(238,196,90,.35);border-radius:50%;box-shadow:0 0 16px rgba(238,196,90,.16);pointer-events:none}
+    .obstacle-horse-overlay{position:absolute;left:50%;bottom:-38px;z-index:5;width:430px;height:247px;margin-left:-215px;pointer-events:none;filter:drop-shadow(0 7px 9px rgba(0,0,0,.72));opacity:.98;background-image:url('${ASSETS.horse}');background-repeat:no-repeat;background-size:700% 100%;background-position:50% 100%;transition:background-position .08s linear}.obstacle-hud{position:absolute;left:14px;right:14px;bottom:12px;z-index:6;display:flex;justify-content:space-between;gap:12px;pointer-events:none;color:var(--cream,#f4ead4);font-size:.74rem;text-shadow:0 2px 5px rgba(0,0,0,.8)}.obstacle-speed-badge{position:absolute;right:14px;top:12px;z-index:7;border:1px solid rgba(238,196,90,.5);border-radius:999px;background:rgba(5,8,13,.74);color:var(--gold,#eec45a);padding:7px 10px;font-size:.72rem;font-weight:900;text-shadow:0 2px 5px rgba(0,0,0,.8)}.obstacle-tint-overlay{position:absolute;inset:0;z-index:6;pointer-events:none;background:var(--oc-tint,#000);opacity:var(--oc-tint-opacity,0);mix-blend-mode:soft-light}.wide-button.is-running,#obstacle-start.is-running,#obstacle-start-left.is-running{border-color:rgba(158,230,164,.95);background:rgba(36,120,62,.9);box-shadow:0 0 0 2px rgba(158,230,164,.22),0 0 18px rgba(158,230,164,.2)}#obstacle-pause.is-paused,#obstacle-pause-left.is-paused{border-color:rgba(238,196,90,.9);background:rgba(95,63,9,.88)}.obstacle-reticle{position:absolute;left:50%;top:50%;z-index:4;width:34px;height:34px;margin:-17px 0 0 -17px;border:1px solid rgba(238,196,90,.35);border-radius:50%;box-shadow:0 0 16px rgba(238,196,90,.16);pointer-events:none}
     .obstacle-control-row,.hf-button-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.obstacle-control-row button,.hf-button-row button,.hf-layer-panel button,#horse-run-controls-left-slot button{min-height:34px;border:1px solid rgba(124,202,125,.28);border-radius:9px;background:rgba(20,72,37,.58);color:var(--cream,#f4ead4);font-weight:900;cursor:pointer}.obstacle-control-row{display:none!important}#horse-run-controls-left-slot{display:grid;grid-template-columns:1fr;gap:8px;margin:10px 0 12px;padding:10px;border:1px solid rgba(238,196,90,.28);border-radius:12px;background:rgba(82,55,10,.18)}
     .obstacle-help-strip{display:flex;justify-content:space-between;gap:10px;color:var(--muted,#c9bfae);font-size:.72rem;line-height:1.35}.obstacle-side-card h3{font-family:'Cinzel',serif;margin:0;font-size:1rem}.obstacle-metric{display:flex;justify-content:space-between;border:1px solid rgba(124,202,210,.2);border-radius:11px;padding:8px;color:var(--muted,#c9bfae);font-size:.73rem}.obstacle-metric strong{color:var(--cream,#f4ead4)}.obstacle-result{min-height:46px;border:1px solid rgba(124,202,210,.22);border-radius:11px;padding:9px;color:var(--muted,#c9bfae);font-size:.74rem;line-height:1.35}.obstacle-result[data-state='success']{border-color:#69ad70;color:#9ee6a4;background:#214b2b}.obstacle-result[data-state='failure']{border-color:#cc6d55;color:#f0a088;background:#4a1d1a}.obstacle-result[data-state='warn']{border-color:#c9a64a;color:#eec45a;background:#3c2c12}
     .hf-overview-middle{flex:0 0 auto;min-height:300px;display:block;margin-top:10px;padding:10px;border:1px solid rgba(238,196,90,.42);border-radius:14px;background:rgba(0,0,0,.18);box-sizing:border-box;overflow:hidden}.hf-overview-row{display:grid;grid-template-columns:78px 1fr;gap:8px;align-items:start}.hf-key{border:1px solid rgba(238,196,90,.35);border-radius:10px;padding:7px;background:rgba(0,0,0,.24);font-size:.61rem;color:var(--muted,#c9bfae);line-height:1.35}.hf-overview-scroll{width:100%;height:280px;overflow-y:auto;overflow-x:hidden;border:1px solid rgba(238,196,90,.55);border-radius:12px;background:#111914}.hf-overview{display:block;width:100%;min-height:280px;background:#111914;touch-action:none;cursor:crosshair}.hf-layer-panel{border:1px solid rgba(124,202,210,.2);border-radius:12px;padding:10px;background:rgba(0,0,0,.20)}.hf-layer-panel label{display:block;color:var(--muted,#c9bfae);font-size:.68rem;margin:6px 0 3px}.hf-layer-panel select,.hf-layer-panel input{width:100%;box-sizing:border-box;background:#0b1219;color:var(--cream,#f4ead4);border:1px solid rgba(124,202,210,.25);border-radius:8px;padding:6px}.hf-slider-row{display:grid;grid-template-columns:58px 1fr 48px;align-items:center;gap:6px;font-size:.66rem;color:var(--muted,#c9bfae)}.hf-slider-row output{text-align:right;color:#eec45a}.hf-small-note{font-size:.66rem;line-height:1.35;color:var(--muted,#c9bfae);margin:0}.hf-export-json-button{min-height:34px;border:1px solid rgba(238,196,90,.45);border-radius:9px;background:rgba(82,55,10,.72);color:var(--cream,#f4ead4);font-weight:900;cursor:pointer}
@@ -220,6 +348,7 @@ export function openObstacleCourseWorkflow() {
 }
 
 export function closeObstacleCourseWorkflow() {
+  stopAllAudio();
   if (!OC.mounted) return;
   OC.active = false;
   pauseRun();
@@ -243,7 +372,7 @@ function ensureMounted() {
     <div class="obstacle-workspace">
       <section class="obstacle-view-card">
         <div class="obstacle-header-line"><div><p class="eyebrow">Obstacle Course · V2.5</p><h2 id="obstacle-title">Obstacle Course</h2><p id="obstacle-objective">Horse forest obstacle course using modular transparent WEBP path segments over forest_floor_grass2.</p></div><span id="obstacle-status" class="obstacle-status-pill">Ready</span></div>
-        <div id="obstacle-three-host" class="obstacle-three-wrap"><div class="obstacle-reticle"></div><div class="obstacle-horse-overlay"></div><div class="obstacle-hud"><span>Hold ↑/W move · ↓/S back · Ctrl duck · Space jump</span><span id="obstacle-course-summary">0m / 0m</span></div></div>
+        <div id="obstacle-three-host" class="obstacle-three-wrap"><div class="obstacle-reticle"></div><div class="obstacle-horse-overlay"></div><div class="obstacle-tint-overlay"></div><div id="obstacle-speed-badge" class="obstacle-speed-badge">Speed 0</div><div class="obstacle-hud"><span>Start Test = begin run · Hold ↑/W move · ↓/S back · Ctrl duck · Space jump</span><span id="obstacle-course-summary">0m / 0m</span></div></div>
         <div class="obstacle-help-strip"><span>Path pieces use 1000×2000 WEBP with 250px overlap. Off path slows to trot.</span><span id="hf-tree-status">GLB trees: loading…</span></div>
         <div class="obstacle-control-row"><button id="obstacle-start" type="button">Start Test</button><button id="obstacle-pause" type="button">Pause</button><button id="obstacle-reset-run" type="button">Reset Run</button></div>
         <div id="hf-overview-middle-shell" class="hf-overview-middle"><div class="hf-overview-row"><div class="hf-key"><b>Key</b><br>Path<br>Tree<br>Rock<br>Collectible<br>Obstacle</div><div id="hf-overview-scroll" class="hf-overview-scroll"><canvas id="hf-overview" class="hf-overview" width="360" height="300"></canvas></div></div></div>
@@ -262,13 +391,14 @@ function ensureMounted() {
   OC.panels.id = 'obstacle-course-panels';
   OC.panels.hidden = true;
   OC.panels.innerHTML = `
-    <section class="panel tool-panel obstacle-panel" data-obstacle-panel="build"><div class="panel-title-row"><div><p class="eyebrow">01 · Construction</p><h2>Horse Ride</h2></div><span class="status-pill is-waiting">V29</span></div><p class="obstacle-panel-copy">Course editor controls use transparent path segment WEBPs over forest_floor_grass2.</p><label class="field-block"><span>Course Template</span><select id="obstacle-template"><option value="horse_forest_easy">Obstacle Course</option><option value="horse_forest_dense">Dense Forest Ride</option><option value="horse_forest_night">Moonlit Forest Ride</option></select></label><label class="range-row"><span>Difficulty <output id="obstacle-difficulty-out">2</output></span><input id="obstacle-difficulty" type="range" min="1" max="5" value="2" /></label><label class="range-row"><span>Course Duration <output id="obstacle-duration-out">45s</output></span><input id="obstacle-duration" type="range" min="20" max="300" step="5" value="45" /></label><button id="obstacle-regenerate" class="wide-button" type="button">Regenerate Course</button><div id="horse-run-controls-left-slot"><button id="obstacle-start-left" type="button">Start Test</button><button id="obstacle-pause-left" type="button">Pause</button><button id="obstacle-reset-run-left" type="button">Reset Run</button></div></section>
-    <section class="panel tool-panel obstacle-panel" data-obstacle-panel="display" hidden><div class="panel-title-row"><div><p class="eyebrow">02 · Display</p><h2>Ground Relief</h2></div></div><label class="range-row"><span>Bump Strength <output id="obstacle-bump-out">0.12</output></span><input id="obstacle-bump" type="range" min="0" max="0.45" step="0.01" value="0.12" /></label><label class="range-row"><span>Displacement Strength <output id="obstacle-displacement-out">0.035</output></span><input id="obstacle-displacement" type="range" min="0" max="0.18" step="0.005" value="0.035" /></label><label class="range-row"><span>Horse Speed <output id="obstacle-speed-out">34</output></span><input id="obstacle-speed" type="range" min="18" max="64" step="2" value="34" /></label><label class="range-row"><span>Lane Width <output id="obstacle-lane-width-out">2.7</output></span><input id="obstacle-lane-width" type="range" min="1.8" max="5" step="0.1" value="2.7" /></label></section>
+    <section class="panel tool-panel obstacle-panel" data-obstacle-panel="build"><div class="panel-title-row"><div><p class="eyebrow">01 · Construction</p><h2>Obstacle Course</h2></div><span class="status-pill is-waiting">V2.5</span></div><p class="obstacle-panel-copy">Course editor controls use transparent path segment WEBPs over forest_floor_grass2.</p><label class="field-block"><span>Course Template</span><select id="obstacle-template"><option value="horse_forest_easy">Obstacle Course</option><option value="horse_forest_dense">Dense Forest Course</option><option value="horse_forest_night">Moonlit Forest Course</option></select></label><label class="range-row"><span>Difficulty <output id="obstacle-difficulty-out">2</output></span><input id="obstacle-difficulty" type="range" min="1" max="5" value="2" /></label><label class="range-row"><span>Course Duration <output id="obstacle-duration-out">45s</output></span><input id="obstacle-duration" type="range" min="20" max="300" step="5" value="45" /></label><button id="obstacle-regenerate" class="wide-button" type="button">Regenerate Obstacle Course</button><label class="range-row"><span>Forest Edge Distance <output id="obstacle-scenery-distance-out">1.6</output></span><input id="obstacle-scenery-distance" type="range" min="0.6" max="6" step="0.1" value="1.6" /></label><section class="hf-key-panel"><h3>Overview Key</h3><div class="hf-key-list"><div><span class="hf-key-dot hf-key-path"></span>Path</div><div><span class="hf-key-dot hf-key-tree"></span>Tree</div><div><span class="hf-key-dot hf-key-rock"></span>Rock</div><div><span class="hf-key-dot hf-key-collectible"></span>Collectible</div><div><span class="hf-key-dot hf-key-obstacle"></span>Obstacle</div></div></section><div id="horse-run-controls-left-slot"><button id="obstacle-start-left" type="button">Start Test</button><button id="obstacle-pause-left" type="button">Pause</button><button id="obstacle-reset-run-left" type="button">Reset Run</button></div></section>
+    <section class="panel tool-panel obstacle-panel" data-obstacle-panel="display" hidden><div class="panel-title-row"><div><p class="eyebrow">02 · Display</p><h2>Ground Relief</h2></div></div><label class="range-row"><span>Bump Strength <output id="obstacle-bump-out">0.12</output></span><input id="obstacle-bump" type="range" min="0" max="0.45" step="0.01" value="0.12" /></label><label class="range-row"><span>Displacement Strength <output id="obstacle-displacement-out">0.035</output></span><input id="obstacle-displacement" type="range" min="0" max="0.18" step="0.005" value="0.035" /></label><label class="range-row"><span>Horse Speed <output id="obstacle-speed-out">34</output></span><input id="obstacle-speed" type="range" min="18" max="64" step="2" value="34" /></label><label class="range-row"><span>Overall Brightness <output id="obstacle-brightness-out">100%</output></span><input id="obstacle-brightness" type="range" min="55" max="150" step="5" value="100" /></label><label class="field-block"><span>Screen Tint</span><input id="obstacle-tint" type="color" value="#000000" /></label><label class="range-row"><span>Tint Strength <output id="obstacle-tint-strength-out">0%</output></span><input id="obstacle-tint-strength" type="range" min="0" max="65" step="5" value="0" /></label><label class="range-row"><span>Lane Width <output id="obstacle-lane-width-out">2.7</output></span><input id="obstacle-lane-width" type="range" min="1.8" max="5" step="0.1" value="2.7" /></label></section>
     <section class="panel tool-panel obstacle-panel" data-obstacle-panel="logic" hidden><div class="panel-title-row"><div><p class="eyebrow">03 · Logic</p><h2>Scoring</h2></div></div><label class="range-row"><span>Success Score <output id="obstacle-success-score-out">20</output></span><input id="obstacle-success-score" type="range" min="0" max="80" step="5" value="20" /></label></section>`;
   leftBody.appendChild(OC.panels);
   OC.host = oc$('obstacle-three-host');
   setupThreeScene();
   bindControls();
+  updateScreenFilters();
   OC.mounted = true;
 }
 
@@ -300,6 +430,10 @@ function bindControls() {
   oc$('obstacle-difficulty').addEventListener('input', (e) => { OC.difficulty = Number(e.target.value); oc$('obstacle-difficulty-out').textContent = String(OC.difficulty); regenerateCourse(); });
   oc$('obstacle-duration').addEventListener('input', (e) => { OC.duration = Math.min(OC.maxDuration, Number(e.target.value)); oc$('obstacle-duration-out').textContent = `${OC.duration}s`; regenerateCourse(); });
   oc$('obstacle-speed').addEventListener('input', (e) => { OC.speed = Number(e.target.value); oc$('obstacle-speed-out').textContent = String(OC.speed); regenerateCourse(); });
+  oc$('obstacle-scenery-distance')?.addEventListener('input', (e) => { OC.sceneryDistance = Number(e.target.value); oc$('obstacle-scenery-distance-out').textContent = OC.sceneryDistance.toFixed(1); regenerateCourse(); });
+  oc$('obstacle-brightness')?.addEventListener('input', (e) => { OC.screenBrightness = Number(e.target.value) / 100; oc$('obstacle-brightness-out').textContent = `${e.target.value}%`; updateScreenFilters(); });
+  oc$('obstacle-tint')?.addEventListener('input', (e) => { OC.screenTint = e.target.value; updateScreenFilters(); });
+  oc$('obstacle-tint-strength')?.addEventListener('input', (e) => { OC.screenTintStrength = Number(e.target.value) / 100; oc$('obstacle-tint-strength-out').textContent = `${e.target.value}%`; updateScreenFilters(); });
   oc$('obstacle-lane-width').addEventListener('input', (e) => { OC.laneWidth = Number(e.target.value); oc$('obstacle-lane-width-out').textContent = OC.laneWidth.toFixed(1); regenerateCourse(); });
   oc$('obstacle-bump').addEventListener('input', (e) => { OC.bumpStrength = Number(e.target.value); oc$('obstacle-bump-out').textContent = OC.bumpStrength.toFixed(2); updateGroundRelief(); });
   oc$('obstacle-displacement').addEventListener('input', (e) => { OC.displacementStrength = Number(e.target.value); oc$('obstacle-displacement-out').textContent = OC.displacementStrength.toFixed(3); updateGroundRelief(); });
@@ -320,20 +454,35 @@ function bindControls() {
   window.addEventListener('keyup', handleKeyUp, true);
 }
 
+function normaliseGameKey(event) {
+  const key = String(event.key || '').toLowerCase();
+  const code = String(event.code || '').toLowerCase();
+  if (key === 'arrowup' || key === 'w' || code === 'keyw') return 'forward';
+  if (key === 'arrowdown' || key === 's' || code === 'keys') return 'back';
+  if (key === 'arrowleft' || key === 'a' || code === 'keya') return 'left';
+  if (key === 'arrowright' || key === 'd' || code === 'keyd') return 'right';
+  if (key === 'control' || code === 'controlleft' || code === 'controlright') return 'duck';
+  if (key === ' ' || code === 'space') return 'jump';
+  return null;
+}
+
 function handleKeyDown(event) {
   if (!OC.active) return;
-  const key = event.key.toLowerCase();
-  if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'a', 'd', 'w', 's', ' ', 'control'].includes(key)) {
-    event.preventDefault();
-    OC.keys.add(key);
-    if ((key === ' ' || event.code === 'Space') && !event.repeat) startJump();
-  }
+  const gameKey = normaliseGameKey(event);
+  if (!gameKey) return;
+  event.preventDefault();
+  event.stopPropagation();
+  OC.keys.add(gameKey);
+  if (gameKey === 'jump' && !event.repeat) startJump();
 }
 function handleKeyUp(event) {
   if (!OC.active) return;
-  const key = event.key.toLowerCase();
-  OC.keys.delete(key);
-  if (key === ' ' || event.code === 'Space') OC.player.jumpingHeld = false;
+  const gameKey = normaliseGameKey(event);
+  if (!gameKey) return;
+  event.preventDefault();
+  event.stopPropagation();
+  OC.keys.delete(gameKey);
+  if (gameKey === 'jump') OC.player.jumpingHeld = false;
 }
 
 function bindLayerControls() {
@@ -403,7 +552,7 @@ function createLayerSliders() {
   const host = oc$('hf-layer-sliders');
   if (!host) return;
   host.innerHTML = '';
-  [['x', 'X', -30, 30, 0.1], ['z', 'Z', -80, 80, 0.5], ['y', 'Y', -10, 10, 0.1], ['scale', 'Scale', 0.1, 4, 0.05], ['opacity', 'Alpha', 0, 1, 0.05], ['order', 'Order', -20, 40, 1]].forEach(([prop, label, min, max, step]) => {
+  [['x', 'X', -30, 30, 0.1], ['z', 'Z', -80, 80, 0.5], ['y', 'Y', -10, 10, 0.1], ['scale', 'Object Size', 0.1, 4, 0.05], ['opacity', 'Alpha', 0, 1, 0.05], ['order', 'Order', -20, 40, 1]].forEach(([prop, label, min, max, step]) => {
     const row = document.createElement('div');
     row.className = 'hf-slider-row';
     row.innerHTML = `<span>${label}</span><input id="hf-layer-${prop}" type="range" min="${min}" max="${max}" step="${step}"><output id="hf-layer-${prop}-out"></output>`;
@@ -554,7 +703,7 @@ function buildTreeCorridor(parent) {
 function addTreeAt(parent, distance, side, height, extra) {
   const tree = createModelTree(height);
   if (!tree) return;
-  const x = pathCenterAt(distance) + side * (OC.laneWidth * 1.45 + extra + rand(0.3, 1.2));
+  const x = pathCenterAt(distance) + side * (OC.laneWidth * 0.85 + OC.sceneryDistance + extra * 0.28 + rand(0.25, 0.9));
   tree.position.set(x, GROUND_Y, -distance);
   tree.rotation.y = rand(0, Math.PI * 2);
   parent.add(tree);
@@ -577,7 +726,7 @@ function createModelTree(targetHeight) {
 }
 function scatterForestFloorDetail(parent) {
   for (let d = 18; d < OC.courseLength + 260; d += rand(9, 15)) {
-    [-1, 1].forEach((side) => addSceneryRock(parent, pathCenterAt(d) + side * rand(5, 12), d + rand(-4, 4)));
+    [-1, 1].forEach((side) => addSceneryRock(parent, pathCenterAt(d) + side * rand(OC.laneWidth + 0.8, OC.laneWidth + OC.sceneryDistance + 3.0), d + rand(-4, 4)));
   }
 }
 function addSceneryRock(parent, x, distance) {
@@ -629,24 +778,62 @@ function addCollectibles(count) {
   }
 }
 
+function syncRunButtons() {
+  const running = OC.running && !OC.complete;
+  ['obstacle-start', 'obstacle-start-left'].forEach((id) => oc$(id)?.classList.toggle('is-running', running));
+  ['obstacle-pause', 'obstacle-pause-left'].forEach((id) => oc$(id)?.classList.toggle('is-paused', !running && OC.distance > 0 && !OC.complete));
+}
+
+function updateHorseSprite() {
+  const horse = document.querySelector('.obstacle-horse-overlay');
+  if (!horse) return;
+  let frame = 3;
+  if (OC.keys.has('left')) frame = 1;
+  if (OC.keys.has('right')) frame = 5;
+  if (OC.keys.has('left') && OC.keys.has('right')) frame = 3;
+  horse.style.backgroundPosition = `${(frame / 6) * 100}% 100%`;
+}
+
+function updateScreenFilters() {
+  if (OC.host) OC.host.style.setProperty('--oc-brightness', String(OC.screenBrightness || 1));
+  const tint = document.querySelector('.obstacle-tint-overlay');
+  if (tint) {
+    tint.style.setProperty('--oc-tint', OC.screenTint || '#000000');
+    tint.style.setProperty('--oc-tint-opacity', String(OC.screenTintStrength || 0));
+  }
+}
+
 function startRun() {
+  ensureAudioReady();
+  playRandomHorseVoice(true);
+  setLoop('forest', true, 0.16);
   OC.running = true;
   OC.complete = false;
+  OC.startAssistTime = 1.2;
+  if (OC.currentSpeed < 2.4) OC.currentSpeed = 2.4;
   OC.clock?.start();
   oc$('obstacle-status').textContent = 'Riding';
-  setResult('Hold ↑/W to move. Stay on the transparent path or the horse slows to a trot.', 'waiting');
+  setResult('Run started. The horse walks forward briefly on its own; hold ↑/W to keep moving and speed up.', 'waiting');
+  syncRunButtons();
 }
 function pauseRun() {
   OC.running = false;
   OC.targetSpeed = 0;
+  OC.startAssistTime = 0;
+  AUDIO.wasForwardMoving = false;
+  stopMotionLoops();
   if (oc$('obstacle-status')) oc$('obstacle-status').textContent = 'Paused';
+  syncRunButtons();
 }
 function resetRun(quiet = false) {
   OC.running = false;
+  stopMotionLoops();
+  AUDIO.wasForwardMoving = false;
   OC.complete = false;
   OC.distance = 0;
   OC.currentSpeed = 0;
   OC.targetSpeed = 0;
+  OC.startAssistTime = 0;
   OC.score = 0;
   OC.hits = 0;
   OC.jumps = 0;
@@ -660,6 +847,7 @@ function resetRun(quiet = false) {
   OC.objects.forEach((obj) => { obj.visible = true; if (obj.userData) { obj.userData.hit = false; obj.userData.collected = false; } });
   updateStats();
   if (!quiet) setResult('Course reset. Start the test when ready.', 'waiting');
+  syncRunButtons();
   drawFrame();
   drawOverview();
 }
@@ -682,18 +870,22 @@ function loop() {
 function drawFrame(dt = 0) {
   if (!OC.renderer || !OC.scene || !OC.camera) return;
   if (OC.running && !OC.complete) updateRun(dt);
+  updateHorseSprite();
   updateCamera();
   OC.renderer.render(OC.scene, OC.camera);
 }
 function updateRun(dt) {
   let steer = 0;
-  if (OC.keys.has('arrowleft') || OC.keys.has('a')) steer -= 1;
-  if (OC.keys.has('arrowright') || OC.keys.has('d')) steer += 1;
+  if (OC.keys.has('left')) steer -= 1;
+  if (OC.keys.has('right')) steer += 1;
   OC.player.x = clamp(OC.player.x + steer * OC.steerSpeed * dt, -OC.laneWidth * 1.8, OC.laneWidth * 1.8);
 
-  if (OC.keys.has('arrowup') || OC.keys.has('w')) OC.targetSpeed = OC.speed;
-  else if (OC.keys.has('arrowdown') || OC.keys.has('s')) OC.targetSpeed = BACK_SPEED;
-  else OC.targetSpeed = 0;
+  if (OC.keys.has('forward')) OC.targetSpeed = OC.speed;
+  else if (OC.keys.has('back')) OC.targetSpeed = BACK_SPEED;
+  else if (OC.startAssistTime > 0) {
+    OC.targetSpeed = Math.max(6, Math.min(12, OC.speed * 0.35));
+    OC.startAssistTime = Math.max(0, OC.startAssistTime - dt);
+  } else OC.targetSpeed = 0;
 
   const status = pathStatus();
   let cappedTarget = OC.targetSpeed;
@@ -702,7 +894,11 @@ function updateRun(dt) {
   const rate = Math.abs(cappedTarget) > Math.abs(OC.currentSpeed) ? ACCEL : DECEL;
   OC.currentSpeed += clamp(cappedTarget - OC.currentSpeed, -rate * dt, rate * dt);
   OC.distance = Math.max(0, OC.distance + OC.currentSpeed * dt);
-  if (status === 'off' && OC.targetSpeed > 0) setResult('Off path: horse slowed to a trot. Steer back onto the road.', 'warn');
+  updateRideAudio();
+  if (status === 'off' && OC.targetSpeed > 0) {
+    playBushRustle();
+    setResult('Off path: horse slowed to a trot. Steer back onto the road.', 'warn');
+  }
   if (status === 'edge' && OC.targetSpeed > 0) setResult('Path edge: horse slowing. Steer toward the centre.', 'warn');
 
   updatePhysics(dt);
@@ -725,11 +921,13 @@ function updatePhysics(dt) {
     OC.player.vy -= 22 * dt;
     OC.player.y += OC.player.vy * dt;
     if (OC.player.y <= 0) {
+      const landed = !OC.player.grounded;
       OC.player.y = 0;
       OC.player.vy = 0;
       OC.player.grounded = true;
       OC.player.jumpingHeld = false;
       OC.player.jumpHoldTime = 0;
+      if (landed) playClip('land', { volume: 0.48 });
     }
   }
 }
@@ -749,6 +947,8 @@ function updateObjects() {
       obj.userData.hit = true;
       OC.hits += 1;
       OC.score = Math.max(0, OC.score - 3);
+      playBushRustle();
+      if (Math.random() < 0.38) playRandomHorseVoice();
       setResult('Hit obstacle. Jump with Space.', 'warn');
     }
   });
@@ -765,6 +965,12 @@ function updateStats() {
   oc$('obstacle-collected').textContent = String(OC.collected);
   oc$('obstacle-hits').textContent = String(OC.hits);
   oc$('obstacle-course-summary').textContent = `${Math.round(OC.distance)}m / ${Math.round(OC.courseLength)}m`;
+  const speedBadge = oc$('obstacle-speed-badge');
+  if (speedBadge) {
+    const speed = Math.max(0, Math.round(OC.currentSpeed));
+    const gait = speed < 3 ? 'Stopped' : speed < OC.speed * 0.45 ? 'Trot' : speed < OC.speed * 0.75 ? 'Canter' : 'Gallop';
+    speedBadge.textContent = `${gait} · ${speed}`;
+  }
 }
 function setResult(text, state = 'waiting') {
   const result = oc$('obstacle-result');

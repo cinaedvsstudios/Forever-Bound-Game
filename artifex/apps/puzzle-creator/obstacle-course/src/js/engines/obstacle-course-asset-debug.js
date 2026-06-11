@@ -1,4 +1,4 @@
-// Obstacle Course Asset Debug V3
+// Obstacle Course Asset Debug V3.1
 // Separate debug helper. Checks live obstacle course images, modular path WEBPs, GLBs, and planned audio.
 
 const ASSET_ROOT = './assets/';
@@ -26,9 +26,13 @@ const ASSETS = [
   ['3D trees','glb','Pine with awkward teenage face','3d/pine_with_awkward_teenage_face.glb',true],
   ['3D rocks','glb','Low-poly rock','3d/rock_low-poly.glb',false],
   ['3D rocks','glb','Low-poly stone','3d/stone_low-poly.glb',false],
-  ['Audio planned','audio','Slow gallop','audio/horse_gallop_slow.mp3',true],
-  ['Audio planned','audio','Full gallop','audio/horse_gallop_full.mp3',true],
-  ['Audio planned','audio','Landing','audio/horse_landing.mp3',true]
+  ['Audio','audio','Slow gallop loop','audio/horse_gallop_slow.mp3',false],
+  ['Audio','audio','Full gallop loop','audio/horse_gallop_full.mp3',false],
+  ['Audio','audio','Landing','audio/horse_land.mp3',false],
+  ['Audio','audio','Horse neigh','audio/horse_neigh.mp3',false],
+  ['Audio','audio','Horse snort','audio/horse_snort.wav',false],
+  ['Audio','audio','Forest ambience','audio/forest_ambience.mp3',false],
+  ['Audio','audio','Bush rustle','audio/bush.mp3',false]
 ].map(([group,type,name,path,optional]) => ({ group, type, name, path, optional }));
 
 function injectStyles() {
