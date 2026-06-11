@@ -4,8 +4,8 @@
 // before final visual assets are selected. Optional registered asset_ links define what will
 // eventually render at those positions; actual playable-preview rendering belongs to a later pass.
 
-import '../../../../../shared/project-folder/project-folder-client.js?v=0.1.0';
-import { openRegisteredContentPicker } from '../../../../../shared/registered-content/registered-content-picker.js?v=1.29.1';
+import '../../../../../../shared/project-folder/project-folder-client.js?v=2.5';
+import { openRegisteredContentPicker } from '../../../../../../shared/registered-content/registered-content-picker.js?v=2.5';
 import { isInsideShape } from './maze-shape-generator.js';
 
 const $ = (id) => document.getElementById(id);

@@ -1,16 +1,16 @@
 const SCHEMA = 'cinaedvs.artifex.puzzle.v1';
 
 const textureLibrary = [
-  { id: 'bricks', name: 'Bricks', src: 'bricks.jpg' },
-  { id: 'cave', name: 'Cave', src: 'cave.jpg' },
-  { id: 'cobblestone', name: 'Cobble', src: 'cobblestone.jpg' },
-  { id: 'wood', name: 'Wood', src: 'wood.jpg' },
-  { id: 'blocks', name: 'Blocks', src: 'blocks.jpg' },
-  { id: 'castle', name: 'Castle', src: 'castle.jpg' },
-  { id: 'dirt', name: 'Dirt', src: 'dirt.jpeg' },
-  { id: 'hedges', name: 'Hedges', src: 'hedges.jpg' },
-  { id: 'thorns', name: 'Thorns', src: 'thorns.jpeg' },
-  { id: 'marble', name: 'Marble', src: 'marble.jpg' }
+  { id: 'bricks', name: 'Bricks', src: 'assets/bricks.jpg', rootSrc: '../bricks.jpg' },
+  { id: 'cave', name: 'Cave', src: 'assets/cave.jpg', rootSrc: '../cave.jpg' },
+  { id: 'cobblestone', name: 'Cobble', src: 'assets/cobblestone.jpg', rootSrc: '../cobblestone.jpg' },
+  { id: 'wood', name: 'Wood', src: 'assets/wood.jpg', rootSrc: '../wood.jpg' },
+  { id: 'blocks', name: 'Blocks', src: 'assets/blocks.jpg', rootSrc: '../blocks.jpg' },
+  { id: 'castle', name: 'Castle', src: 'assets/castle.jpg', rootSrc: '../castle.jpg' },
+  { id: 'dirt', name: 'Dirt', src: 'assets/dirt.jpeg', rootSrc: '../dirt.jpeg' },
+  { id: 'hedges', name: 'Hedges', src: 'assets/hedges.jpg', rootSrc: '../hedges.jpg' },
+  { id: 'thorns', name: 'Thorns', src: 'assets/thorns.jpeg', rootSrc: '../thorns.jpeg' },
+  { id: 'marble', name: 'Marble', src: 'assets/marble.jpg', rootSrc: '../marble.jpg' }
 ];
 
 const palette = ['#24513a', '#7b5a32', '#8b3f2f', '#b37a37', '#7fd2cf', '#684b8f', '#2b3341', '#e1c073'];
@@ -248,7 +248,7 @@ function buildPalettes() {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'texture-button';
-      button.style.backgroundImage = `url(${texture.src})`;
+      button.style.backgroundImage = texture.rootSrc ? `url(${texture.src}), url(${texture.rootSrc})` : `url(${texture.src})`;
       button.innerHTML = `<span>${texture.name}</span>`;
       button.addEventListener('click', () => applyTexture(texture.id));
       textureBox.appendChild(button);
@@ -322,6 +322,7 @@ function preloadTextures() {
   textureLibrary.forEach((texture) => {
     const image = new Image();
     image.onload = () => drawPreview();
+    image.onerror = () => { if (texture.rootSrc && image.src !== new URL(texture.rootSrc, window.location.href).href) image.src = texture.rootSrc; };
     image.src = texture.src;
     state.textureImages[texture.id] = image;
   });

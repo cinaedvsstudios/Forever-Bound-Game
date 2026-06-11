@@ -4,8 +4,8 @@
 // Door movement and connection placement remain owned by maze-connections.js.
 // Portal visual/effect selection remains pending the later Portal Registry stage.
 
-import '../../../../../shared/project-folder/project-folder-client.js?v=0.1.0';
-import { openRegisteredContentPicker } from '../../../../../shared/registered-content/registered-content-picker.js?v=1.29.1';
+import '../../../../../../shared/project-folder/project-folder-client.js?v=2.5';
+import { openRegisteredContentPicker } from '../../../../../../shared/registered-content/registered-content-picker.js?v=2.5';
 
 const $ = (id) => document.getElementById(id);
 const EDITOR_ID = 'door-visual-link-editor';

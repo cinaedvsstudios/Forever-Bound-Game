@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Forever Bound Puzzle Modules</title>
+  <title>Forever Bound Puzzle Modules V2.5</title>
   <style>
     :root{
       --cream:#f4ead4;
@@ -28,53 +28,80 @@
     }
     main{max-width:1120px;margin:0 auto;padding:56px 22px}
     .eyebrow{letter-spacing:.18em;text-transform:uppercase;color:var(--green);font-size:.72rem;font-weight:900;margin:0 0 10px}
-    h1{font-family:Georgia,serif;font-size:clamp(2rem,5vw,4.1rem);line-height:.96;margin:0 0 14px}
+    .title-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:0 0 14px}
+    h1{font-family:Georgia,serif;font-size:clamp(2rem,5vw,4.1rem);line-height:.96;margin:0}
+    .version-pill{border:1px solid rgba(238,196,90,.58);border-radius:999px;padding:7px 12px;color:var(--gold);font-size:.78rem;font-weight:900;letter-spacing:.1em;background:rgba(238,196,90,.08)}
     .intro{max-width:760px;color:var(--muted);font-size:1rem;line-height:1.55;margin:0 0 30px}
     .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
-    a.card{
-      display:flex;flex-direction:column;gap:12px;min-height:250px;
+    a.card,button.card{
+      display:flex;flex-direction:column;gap:12px;min-height:250px;width:100%;
       padding:22px;border:1px solid rgba(190,139,222,.42);border-radius:24px;
       background:linear-gradient(180deg,rgba(18,11,24,.92),rgba(6,19,11,.78));
       color:inherit;text-decoration:none;box-shadow:0 20px 55px rgba(0,0,0,.36);
       transition:transform .15s ease,border-color .15s ease,background .15s ease;
+      font:inherit;text-align:left;
     }
     a.card:hover{transform:translateY(-4px);border-color:rgba(238,196,90,.78);background:linear-gradient(180deg,rgba(25,15,33,.96),rgba(9,31,18,.86))}
+    button.card.placeholder{cursor:default;opacity:.78;border-style:dashed;background:linear-gradient(180deg,rgba(18,11,24,.62),rgba(6,19,11,.5))}
     .icon{font-size:2.6rem}
     h2{font-family:Georgia,serif;margin:0;font-size:1.55rem}
     p{margin:0;color:var(--muted);line-height:1.45}
     .tag{margin-top:auto;align-self:flex-start;border:1px solid rgba(158,230,164,.38);border-radius:999px;padding:7px 10px;color:var(--green);font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
+    .placeholder .tag{border-color:rgba(238,196,90,.35);color:var(--gold)}
     footer{margin-top:28px;padding-top:18px;border-top:1px solid rgba(190,139,222,.28);color:var(--muted);font-size:.82rem;line-height:1.45}
     @media(max-width:840px){.grid{grid-template-columns:1fr}main{padding-top:34px}}
   </style>
 </head>
 <body>
   <main>
-    <p class="eyebrow">Artifex recovery launcher</p>
-    <h1>Forever Bound Puzzle Modules</h1>
-    <p class="intro">This package keeps each recovered puzzle isolated in its own folder. Open a module below; if one puzzle breaks, the others stay separate.</p>
+    <p class="eyebrow">Artifex Puzzle Creator</p>
+    <div class="title-row"><h1>Forever Bound Puzzle Modules</h1><span class="version-pill">V2.5</span></div>
+    <p class="intro">Choose a puzzle module to author. Maze, Potion and Pattern are available now. The remaining module buttons are placeholders so the menu layout matches the full Puzzle Creator set.</p>
     <section class="grid" aria-label="Puzzle modules">
       <a class="card" href="maze/index.html">
         <span class="icon">迷</span>
         <h2>Labyrinth Maze</h2>
-        <p>Recovered Artifex maze authoring surface with maze generation, preview controls, route data, features, doors, organic walls and decoration markers.</p>
-        <span class="tag">Open Maze</span>
+        <p>Maze authoring surface with maze generation, preview controls, route data, features, doors, organic walls and decoration markers.</p>
+        <span class="tag">Open Maze · V2.5</span>
       </a>
       <a class="card" href="potion/index.html">
         <span class="icon">⚗️</span>
         <h2>Potion Match</h2>
-        <p>Standalone potion recipe/order puzzle with ingredient tray, challenge mode and crafting-style authoring controls.</p>
-        <span class="tag">Open Potion</span>
+        <p>Potion recipe/order puzzle with ingredient tray, challenge mode and crafting-style authoring controls.</p>
+        <span class="tag">Open Potion · V2.5</span>
       </a>
       <a class="card" href="pattern/index.html">
         <span class="icon">◈</span>
         <h2>Pattern Lock</h2>
-        <p>Isolated surface-pattern puzzle rebuilt as a safe standalone module with rotatable forms, emoji/sign placement and validation.</p>
-        <span class="tag">Open Pattern</span>
+        <p>Surface-pattern puzzle with rotatable forms, emoji/sign placement and validation.</p>
+        <span class="tag">Open Pattern · V2.5</span>
       </a>
+      <button class="card placeholder" type="button" disabled>
+        <span class="icon">🐎</span>
+        <h2>Horse Ride</h2>
+        <p></p>
+        <span class="tag">Placeholder · V2.5</span>
+      </button>
+      <button class="card placeholder" type="button" disabled>
+        <span class="icon">⚔️</span>
+        <h2>Arena Trial</h2>
+        <p></p>
+        <span class="tag">Placeholder · V2.5</span>
+      </button>
+      <button class="card placeholder" type="button" disabled>
+        <span class="icon">⛰️</span>
+        <h2>Obstacle Course</h2>
+        <p></p>
+        <span class="tag">Placeholder · V2.5</span>
+      </button>
+      <button class="card placeholder" type="button" disabled>
+        <span class="icon">☠️</span>
+        <h2>Hazard Puzzle</h2>
+        <p></p>
+        <span class="tag">Placeholder · V2.5</span>
+      </button>
     </section>
-    <footer>
-      Recovery package: maze, potion and pattern only. Horse ride assets were used only as a possible missing-asset source and are not included as a module here.
-    </footer>
+    <footer>Forever Bound Puzzle Creator · V2.5</footer>
   </main>
 </body>
 </html>

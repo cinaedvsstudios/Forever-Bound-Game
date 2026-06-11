@@ -2,8 +2,8 @@
 // Owns feature selection and setup UI for collection objects.
 // Connection feature setup is rendered by maze-connections.js inside the shared setup host.
 
-import '../../../../../shared/project-folder/project-folder-client.js?v=0.1.0';
-import { openRegisteredContentPicker } from '../../../../../shared/registered-content/registered-content-picker.js?v=1.29.1';
+import '../../../../../../shared/project-folder/project-folder-client.js?v=2.5';
+import { openRegisteredContentPicker } from '../../../../../../shared/registered-content/registered-content-picker.js?v=2.5';
 import { isInsideShape } from './maze-shape-generator.js';
 
 const $ = (id) => document.getElementById(id);
