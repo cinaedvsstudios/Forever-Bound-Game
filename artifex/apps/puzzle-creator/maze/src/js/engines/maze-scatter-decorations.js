@@ -4,7 +4,8 @@
 // before final visual assets are selected. Optional registered asset_ links define what will
 // eventually render at those positions; actual playable-preview rendering belongs to a later pass.
 
-const openRegisteredContentPicker = async () => null;
+import '../../../../../shared/project-folder/project-folder-client.js?v=0.1.0';
+import { openRegisteredContentPicker } from '../../../../../shared/registered-content/registered-content-picker.js?v=1.29.1';
 import { isInsideShape } from './maze-shape-generator.js';
 
 const $ = (id) => document.getElementById(id);

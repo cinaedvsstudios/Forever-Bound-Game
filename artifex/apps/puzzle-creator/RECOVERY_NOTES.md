@@ -1,13 +1,9 @@
-# Forever Bound Puzzle Modules Recovery
+# Forever Bound Puzzle Modules — Maze / Potion / Pattern
 
-Top-level launcher:
-- `index.html`
+This package uses one top-level launcher menu and three isolated puzzle folders:
 
-Included puzzle folders:
-- `maze/` — isolated maze module using the recovered maze files from the supplied `puzzle-creator.zip`.
-- `potion/` — standalone Potion Match V2 Dual Mode page plus preserved integrated runtime.
-- `pattern/` — standalone Pattern Lock rebuild, because the supplied recovery zip only contained downloader placeholders for the historical Pattern Lock files.
+- `maze/` — recovered Artifex Puzzle Creator shell, patched to open directly into Labyrinth Maze. This is intended to match the full Artifex-style reference layout: header, left control panels, large maze preview, and floating Overview window.
+- `potion/` — preserved standalone potion module from the previous package.
+- `pattern/` — preserved standalone pattern module from the previous package.
 
-Excluded:
-- Horse ride / obstacle course as a module. Horse assets were not included here except as a possible source reference in the user's supplied zip.
-- Live GitHub changes. This package does not modify the repository.
+Horse ride / horse race assets and pages are intentionally not included in this package.
