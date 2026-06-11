@@ -1,4 +1,4 @@
-// Obstacle Course V2.5
+// Obstacle Course V2.5 / Horse Forest Runner V29
 // Clean consolidated live engine: no layout/control patch stack.
 // Features: horse POV, modular transparent WEBP path segments, forest_floor_grass2 ground,
 // hold-to-move forward/backward, Ctrl duck, hold-extended jump, and off-path slow-trot penalty.
@@ -44,8 +44,8 @@ const ASSETS = {
 
 const TEMPLATES = {
   horse_forest_easy: { label: 'Obstacle Course', obstacleRate: 1 },
-  horse_forest_dense: { label: 'Dense Forest Course', obstacleRate: 1.35 },
-  horse_forest_night: { label: 'Moonlit Forest Course', obstacleRate: 1.15 },
+  horse_forest_dense: { label: 'Dense Forest Ride', obstacleRate: 1.35 },
+  horse_forest_night: { label: 'Moonlit Forest Ride', obstacleRate: 1.15 },
 };
 
 const OC = {
@@ -242,7 +242,7 @@ function ensureMounted() {
   OC.stage.innerHTML = `
     <div class="obstacle-workspace">
       <section class="obstacle-view-card">
-        <div class="obstacle-header-line"><div><p class="eyebrow">Obstacle Course · Obstacle Course V2.5</p><h2 id="obstacle-title">Obstacle Course</h2><p id="obstacle-objective">Transparent modular WEBP path segments over forest_floor_grass2.</p></div><span id="obstacle-status" class="obstacle-status-pill">Ready</span></div>
+        <div class="obstacle-header-line"><div><p class="eyebrow">Obstacle Course · V2.5</p><h2 id="obstacle-title">Obstacle Course</h2><p id="obstacle-objective">Horse forest obstacle course using modular transparent WEBP path segments over forest_floor_grass2.</p></div><span id="obstacle-status" class="obstacle-status-pill">Ready</span></div>
         <div id="obstacle-three-host" class="obstacle-three-wrap"><div class="obstacle-reticle"></div><div class="obstacle-horse-overlay"></div><div class="obstacle-hud"><span>Hold ↑/W move · ↓/S back · Ctrl duck · Space jump</span><span id="obstacle-course-summary">0m / 0m</span></div></div>
         <div class="obstacle-help-strip"><span>Path pieces use 1000×2000 WEBP with 250px overlap. Off path slows to trot.</span><span id="hf-tree-status">GLB trees: loading…</span></div>
         <div class="obstacle-control-row"><button id="obstacle-start" type="button">Start Test</button><button id="obstacle-pause" type="button">Pause</button><button id="obstacle-reset-run" type="button">Reset Run</button></div>
@@ -262,7 +262,7 @@ function ensureMounted() {
   OC.panels.id = 'obstacle-course-panels';
   OC.panels.hidden = true;
   OC.panels.innerHTML = `
-    <section class="panel tool-panel obstacle-panel" data-obstacle-panel="build"><div class="panel-title-row"><div><p class="eyebrow">01 · Construction</p><h2>Obstacle Course</h2></div><span class="status-pill is-waiting">V2.5</span></div><p class="obstacle-panel-copy">Course editor controls use transparent path segment WEBPs over forest_floor_grass2.</p><label class="field-block"><span>Course Template</span><select id="obstacle-template"><option value="horse_forest_easy">Obstacle Course</option><option value="horse_forest_dense">Dense Forest Course</option><option value="horse_forest_night">Moonlit Forest Course</option></select></label><label class="range-row"><span>Difficulty <output id="obstacle-difficulty-out">2</output></span><input id="obstacle-difficulty" type="range" min="1" max="5" value="2" /></label><label class="range-row"><span>Course Duration <output id="obstacle-duration-out">45s</output></span><input id="obstacle-duration" type="range" min="20" max="300" step="5" value="45" /></label><button id="obstacle-regenerate" class="wide-button" type="button">Regenerate Obstacle Course</button><div id="horse-run-controls-left-slot"><button id="obstacle-start-left" type="button">Start Test</button><button id="obstacle-pause-left" type="button">Pause</button><button id="obstacle-reset-run-left" type="button">Reset Run</button></div></section>
+    <section class="panel tool-panel obstacle-panel" data-obstacle-panel="build"><div class="panel-title-row"><div><p class="eyebrow">01 · Construction</p><h2>Horse Ride</h2></div><span class="status-pill is-waiting">V29</span></div><p class="obstacle-panel-copy">Course editor controls use transparent path segment WEBPs over forest_floor_grass2.</p><label class="field-block"><span>Course Template</span><select id="obstacle-template"><option value="horse_forest_easy">Obstacle Course</option><option value="horse_forest_dense">Dense Forest Ride</option><option value="horse_forest_night">Moonlit Forest Ride</option></select></label><label class="range-row"><span>Difficulty <output id="obstacle-difficulty-out">2</output></span><input id="obstacle-difficulty" type="range" min="1" max="5" value="2" /></label><label class="range-row"><span>Course Duration <output id="obstacle-duration-out">45s</output></span><input id="obstacle-duration" type="range" min="20" max="300" step="5" value="45" /></label><button id="obstacle-regenerate" class="wide-button" type="button">Regenerate Course</button><div id="horse-run-controls-left-slot"><button id="obstacle-start-left" type="button">Start Test</button><button id="obstacle-pause-left" type="button">Pause</button><button id="obstacle-reset-run-left" type="button">Reset Run</button></div></section>
     <section class="panel tool-panel obstacle-panel" data-obstacle-panel="display" hidden><div class="panel-title-row"><div><p class="eyebrow">02 · Display</p><h2>Ground Relief</h2></div></div><label class="range-row"><span>Bump Strength <output id="obstacle-bump-out">0.12</output></span><input id="obstacle-bump" type="range" min="0" max="0.45" step="0.01" value="0.12" /></label><label class="range-row"><span>Displacement Strength <output id="obstacle-displacement-out">0.035</output></span><input id="obstacle-displacement" type="range" min="0" max="0.18" step="0.005" value="0.035" /></label><label class="range-row"><span>Horse Speed <output id="obstacle-speed-out">34</output></span><input id="obstacle-speed" type="range" min="18" max="64" step="2" value="34" /></label><label class="range-row"><span>Lane Width <output id="obstacle-lane-width-out">2.7</output></span><input id="obstacle-lane-width" type="range" min="1.8" max="5" step="0.1" value="2.7" /></label></section>
     <section class="panel tool-panel obstacle-panel" data-obstacle-panel="logic" hidden><div class="panel-title-row"><div><p class="eyebrow">03 · Logic</p><h2>Scoring</h2></div></div><label class="range-row"><span>Success Score <output id="obstacle-success-score-out">20</output></span><input id="obstacle-success-score" type="range" min="0" max="80" step="5" value="20" /></label></section>`;
   leftBody.appendChild(OC.panels);
@@ -361,7 +361,7 @@ function resizeRenderer() {
 function loadTexture(url, options = {}) {
   const key = `${url}::${options.repeat ? options.repeat.join('x') : 'single'}`;
   if (OC.textureCache.has(key)) return OC.textureCache.get(key);
-  const texture = OC.textureLoader.load(`${url}?v=2.5`, undefined, undefined, () => console.warn('[HorseForest] texture failed', url));
+  const texture = OC.textureLoader.load(`${url}?v=29`, undefined, undefined, () => console.warn('[HorseForest] texture failed', url));
   if ('colorSpace' in texture && THREE.SRGBColorSpace) texture.colorSpace = THREE.SRGBColorSpace;
   else texture.encoding = THREE.sRGBEncoding;
   texture.minFilter = THREE.LinearFilter;
@@ -776,7 +776,7 @@ function setResult(text, state = 'waiting') {
 function loadTreeModels() {
   if (OC.treeLoadStarted) return;
   OC.treeLoadStarted = true;
-  ASSETS.trees.forEach((url) => OC.gltfLoader.load(`${url}?v=2.5`, (gltf) => {
+  ASSETS.trees.forEach((url) => OC.gltfLoader.load(`${url}?v=29`, (gltf) => {
     if (!gltf.scene) return;
     gltf.scene.traverse((node) => { if (node.isMesh) node.receiveShadow = true; });
     OC.treeModels.push(gltf.scene);
@@ -858,12 +858,12 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 else boot();
 
 window.__artifexObstacleCourse = {
-  version: 'V2.5-clean-path-segments',
+  version: 'V29-clean-path-segments',
   open: openObstacleCourseWorkflow,
   close: closeObstacleCourseWorkflow,
   regenerate: regenerateCourse,
   getState: () => ({
-    version: 'V2.5-clean-path-segments',
+    version: 'V29-clean-path-segments',
     runtimeStructure: 'single live obstacle-course-runtime.js plus separate asset debug helper',
     distance: OC.distance,
     courseLength: OC.courseLength,

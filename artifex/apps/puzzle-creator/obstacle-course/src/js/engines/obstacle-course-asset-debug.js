@@ -1,10 +1,10 @@
-// Obstacle Course Asset Debug V2.5
+// Obstacle Course Asset Debug V3
 // Separate debug helper. Checks live obstacle course images, modular path WEBPs, GLBs, and planned audio.
 
 const ASSET_ROOT = './assets/';
-const STYLE_ID = 'obstacle-asset-debug-v25-style';
-const MODAL_ID = 'obstacle-asset-debug-modal';
-const BUTTON_ID = 'obstacle-asset-debug-button';
+const STYLE_ID = 'horse-asset-debug-v3-style';
+const MODAL_ID = 'horse-asset-debug-modal';
+const BUTTON_ID = 'horse-asset-debug-button';
 
 const ASSETS = [
   ['Backgrounds','image','Main forest ride background','backgrounds/horseridebg.jpg',false],
@@ -126,7 +126,7 @@ function createModal() {
   modal.id = MODAL_ID;
   modal.className = 'hf-asset-modal';
   modal.hidden = true;
-  modal.innerHTML = `<div class="hf-asset-head"><div><h2>Obstacle Course Asset Debug</h2><div class="hf-asset-small">Checks live images, path WEBPs, audio requests, and GLB request/parse status. Optional reference/planned assets may be missing.</div></div><div><button id="hf-asset-rerun" type="button">Recheck</button> <button id="hf-asset-close" type="button">Close</button></div></div><div class="hf-asset-body"><div class="hf-asset-toolbar"><span id="hf-asset-summary">Ready.</span><span class="hf-asset-path">Root: ${ASSET_ROOT}</span></div><table class="hf-asset-table"><thead><tr><th>Group</th><th>Asset</th><th>Type</th><th>Status</th><th>Preview</th><th>Path / Details</th></tr></thead><tbody id="hf-asset-rows"></tbody></table></div>`;
+  modal.innerHTML = `<div class="hf-asset-head"><div><h2>Horse Forest Asset Debug</h2><div class="hf-asset-small">Checks live images, path WEBPs, audio requests, and GLB request/parse status. Optional reference/planned assets may be missing.</div></div><div><button id="hf-asset-rerun" type="button">Recheck</button> <button id="hf-asset-close" type="button">Close</button></div></div><div class="hf-asset-body"><div class="hf-asset-toolbar"><span id="hf-asset-summary">Ready.</span><span class="hf-asset-path">Root: ${ASSET_ROOT}</span></div><table class="hf-asset-table"><thead><tr><th>Group</th><th>Asset</th><th>Type</th><th>Status</th><th>Preview</th><th>Path / Details</th></tr></thead><tbody id="hf-asset-rows"></tbody></table></div>`;
   document.body.appendChild(modal);
   modal.querySelector('#hf-asset-close').addEventListener('click', () => { modal.hidden = true; });
   modal.querySelector('#hf-asset-rerun').addEventListener('click', runChecks);
