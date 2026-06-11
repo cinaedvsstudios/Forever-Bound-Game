@@ -1084,3 +1084,579 @@ window.__artifexObstacleCourse = {
     importedTrees: OC.treeModels.length,
   }),
 };
+
+// --- V2.5 obstacle-course final control/asset patch ---
+(function installObstacleCourseV25FinalPatch(){
+  if (OC.__v25FinalPatchInstalled) return;
+  OC.__v25FinalPatchInstalled = true;
+
+  ASSETS.trees = [
+    `${ASSET_BASE}3d/tree.glb`,
+    `${ASSET_BASE}3d/tree_low-poly.glb`,
+    `${ASSET_BASE}3d/tree_gn.glb`,
+    `${ASSET_BASE}3d/hill_top_tree.glb`,
+    `${ASSET_BASE}3d/oak_trees.glb`,
+    `${ASSET_BASE}3d/pine_tree.glb`,
+    `${ASSET_BASE}3d/pine_tree__ps1_low_poly.glb`,
+    `${ASSET_BASE}3d/small_pine.glb`,
+    `${ASSET_BASE}3d/dead_tree.glb`,
+    `${ASSET_BASE}3d/pine_with_awkward_teenage_face.glb`,
+  ];
+  ASSETS.rocks = [
+    `${ASSET_BASE}3d/rock_low-poly.glb`,
+    `${ASSET_BASE}3d/stone_low-poly.glb`,
+  ];
+  ASSETS.details = [
+    `${ASSET_BASE}3d/low_poly_fern.glb`,
+    `${ASSET_BASE}3d/stylized_glowing_mushrooms.glb`,
+  ];
+  ASSETS.sharedArrows = '../../../shared/ui/defaultarrows.webp';
+  ASSETS.sharedIcons = '../../../shared/ui/defaulticons.webp';
+
+  OC.laneWidth = Math.max(3.1, OC.laneWidth * 1.15);
+  OC.pathVisualWidth = 27.6;
+  OC.sceneryDistance = 1.1;
+  OC.offPathTime = 0;
+  OC.lastPathStatus = 'on';
+  OC.gridEnabled = false;
+  OC.gridOffsetX = 0;
+  OC.gridOffsetZ = 0;
+  OC.layerDefaults = { brightness: 1, contrast: 1, saturation: 1, tintStrength: 0, tint: '#ffffff' };
+  OC.rockModels = [];
+  OC.detailModels = [];
+  OC.assetPreloadStarted = false;
+  OC.assetsEssentialReady = false;
+  OC.assetLoadTotal = 0;
+  OC.assetLoadDone = 0;
+  OC.assetLoadFailed = 0;
+
+  const oldEnsureMounted = ensureMounted;
+  ensureMounted = function ensureMountedPatched(){
+    oldEnsureMounted();
+    installFinalUiPatch();
+    createGridOverlay();
+    preloadEssentialAssets();
+  };
+
+  const oldMakeLayer = makeLayer;
+  makeLayer = function makeLayerPatched(id, label, group, options = {}) {
+    const layer = oldMakeLayer(id, label, group, options);
+    layer.brightness = options.brightness ?? 1;
+    layer.contrast = options.contrast ?? 1;
+    layer.saturation = options.saturation ?? 1;
+    layer.tintStrength = options.tintStrength ?? 0;
+    layer.tint = options.tint ?? '#ffffff';
+    return layer;
+  };
+
+  pathStatus = function pathStatusPatched() {
+    const abs = Math.abs(OC.player.x);
+    const playableWidth = OC.laneWidth * 1.12;
+    if (abs > playableWidth) return 'off';
+    if (abs > playableWidth * 0.78) return 'edge';
+    return 'on';
+  };
+
+  generatePathSequence = function generatePathSequencePatched() {
+    OC.pathSequence = [];
+    let pos = 'centre';
+    const count = Math.ceil((OC.courseLength + 420) / SEGMENT_WORLD_STEP);
+    for (let i = 0; i < count; i += 1) {
+      let choices;
+      if (pos === 'left') choices = [ASSETS.pathSegments.leftToStraight];
+      else if (pos === 'right') choices = [ASSETS.pathSegments.rightToStraight];
+      else choices = [ASSETS.pathSegments.straight, ASSETS.pathSegments.straight, ASSETS.pathSegments.kink, ASSETS.pathSegments.left, ASSETS.pathSegments.right];
+      const def = pick(choices);
+      const distance = i * SEGMENT_WORLD_STEP;
+      const startX = PATH_POSITIONS[def.start] ?? 0;
+      const endX = PATH_POSITIONS[def.end] ?? 0;
+      OC.pathSequence.push({ ...def, distance, startX, endX });
+      pos = def.end;
+    }
+  };
+
+  buildPathSegments = function buildPathSegmentsPatched(parent) {
+    OC.pathSequence.forEach((seg) => {
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(OC.pathVisualWidth || 27.6, SEGMENT_WORLD_LENGTH, 1, 1), getPathMaterial(seg));
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.position.set((seg.startX + seg.endX) / 2, GROUND_Y + 0.048, -seg.distance - SEGMENT_WORLD_LENGTH / 2);
+      mesh.renderOrder = 4;
+      parent.add(mesh);
+    });
+  };
+
+  buildTreeCorridor = function buildTreeCorridorPatched(parent) {
+    const step = OC.templateId === 'horse_forest_dense' ? 13 : 17;
+    for (let d = 24; d < OC.courseLength + 250; d += step) {
+      [-1, 1].forEach((side) => {
+        for (let row = 0; row < 5; row += 1) {
+          const edge = OC.laneWidth + OC.sceneryDistance + row * rand(2.2, 4.3);
+          const height = row < 1 ? rand(5.5, 9.5) : rand(8, 17);
+          addTreeAt(parent, d + rand(-7, 9), side, height, edge);
+        }
+      });
+    }
+  };
+
+  addTreeAt = function addTreeAtPatched(parent, distance, side, height, extra) {
+    const tree = createModelFromBucket(OC.treeModels, height) || createFallbackTree(height);
+    if (!tree) return;
+    const x = pathCenterAt(distance) + side * extra;
+    tree.position.set(x, GROUND_Y, -distance);
+    tree.rotation.y = rand(0, Math.PI * 2);
+    tree.rotation.x = rand(-0.04, 0.04);
+    tree.rotation.z = rand(-0.025, 0.025);
+    tree.scale.multiplyScalar(rand(0.86, 1.18));
+    parent.add(tree);
+    OC.placed.push({ type: 'tree', x, z: -distance, mesh: tree });
+  };
+
+  createModelTree = function createModelTreePatched(targetHeight) {
+    return createModelFromBucket(OC.treeModels, targetHeight) || createFallbackTree(targetHeight);
+  };
+
+  createRock = function createRockPatched() {
+    const model = createModelFromBucket(OC.rockModels, rand(0.9, 1.8));
+    if (model) return model;
+    const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rand(0.45, 0.75), 0), new THREE.MeshLambertMaterial({ color: Math.random() < 0.5 ? 0x62655c : 0x3e443a, flatShading: true }));
+    rock.scale.set(rand(0.8, 1.4), rand(0.45, 0.9), rand(0.75, 1.3));
+    rock.rotation.set(rand(0, Math.PI), rand(0, Math.PI), rand(0, Math.PI));
+    return rock;
+  };
+
+  scatterForestFloorDetail = function scatterForestFloorDetailPatched(parent) {
+    for (let d = 14; d < OC.courseLength + 260; d += rand(6, 12)) {
+      [-1, 1].forEach((side) => {
+        addSceneryRock(parent, pathCenterAt(d) + side * rand(OC.laneWidth + 0.55, OC.laneWidth + 4.5), d + rand(-4, 4));
+        if (Math.random() < 0.66) addDetailAt(parent, d + rand(-4, 4), side, rand(OC.laneWidth + 0.4, OC.laneWidth + 5.6));
+      });
+    }
+  };
+
+  loadTreeModels = function loadTreeModelsPatched() {
+    if (OC.treeLoadStarted) return;
+    OC.treeLoadStarted = true;
+    loadModelLibrary(ASSETS.trees, OC.treeModels, 'GLB trees');
+    loadModelLibrary(ASSETS.rocks, OC.rockModels, 'GLB rocks');
+    loadModelLibrary(ASSETS.details, OC.detailModels, 'GLB details');
+  };
+
+  createLayerSliders = function createLayerSlidersPatched() {
+    const host = oc$('hf-layer-sliders');
+    if (!host) return;
+    host.innerHTML = '';
+    [
+      ['x', 'X', -30, 30, 0.1, 0],
+      ['z', 'Z', -80, 80, 0.5, 0],
+      ['y', 'Y', -10, 10, 0.1, 0],
+      ['scale', 'Object Size', 0.1, 4, 0.05, 1],
+      ['opacity', 'Alpha', 0, 1, 0.05, 1],
+      ['brightness', 'Bright', 0.35, 2.0, 0.05, 1],
+      ['contrast', 'Contrast', 0.5, 1.8, 0.05, 1],
+      ['saturation', 'Saturation', 0, 2.2, 0.05, 1],
+      ['tintStrength', 'Tint Amt', 0, 1, 0.05, 0],
+      ['order', 'Order', -20, 40, 1, 0],
+    ].forEach(([prop, label, min, max, step, fallback]) => {
+      const row = document.createElement('div');
+      row.className = 'hf-slider-row';
+      row.innerHTML = `<span>${label}</span><input id="hf-layer-${prop}" type="range" min="${min}" max="${max}" step="${step}"><output id="hf-layer-${prop}-out"></output>`;
+      host.appendChild(row);
+      row.querySelector('input').addEventListener('input', (e) => {
+        const l = OC.layers.get(OC.selectedLayerId);
+        if (!l) return;
+        l[prop] = Number(e.target.value);
+        applyLayer(l);
+        syncLayerOutputs();
+        drawFrame();
+        drawOverview();
+      });
+      const layer = OC.layers.get(OC.selectedLayerId);
+      if (layer && layer[prop] === undefined) layer[prop] = fallback;
+    });
+    const tintRow = document.createElement('label');
+    tintRow.className = 'field-block';
+    tintRow.innerHTML = `<span>Layer Tint</span><input id="hf-layer-tint" type="color" value="#ffffff">`;
+    host.appendChild(tintRow);
+    tintRow.querySelector('input').addEventListener('input', (e) => {
+      const l = OC.layers.get(OC.selectedLayerId);
+      if (!l) return;
+      l.tint = e.target.value;
+      applyLayer(l);
+      drawFrame();
+    });
+  };
+
+  syncLayerOutputs = function syncLayerOutputsPatched() {
+    const l = OC.layers.get(OC.selectedLayerId);
+    if (!l) return;
+    ['x', 'z', 'y', 'scale', 'opacity', 'brightness', 'contrast', 'saturation', 'tintStrength', 'order'].forEach((prop) => {
+      const out = oc$(`hf-layer-${prop}-out`);
+      if (!out) return;
+      const value = l[prop] ?? (['scale','opacity','brightness','contrast','saturation'].includes(prop) ? 1 : 0);
+      out.textContent = prop === 'order' ? String(value) : Number(value).toFixed(2);
+    });
+  };
+
+  syncLayerControls = function syncLayerControlsPatched() {
+    const l = OC.layers.get(OC.selectedLayerId);
+    if (!l) return;
+    ['x', 'z', 'y', 'scale', 'opacity', 'brightness', 'contrast', 'saturation', 'tintStrength', 'order'].forEach((prop) => {
+      const input = oc$(`hf-layer-${prop}`);
+      if (!input) return;
+      const value = l[prop] ?? (['scale','opacity','brightness','contrast','saturation'].includes(prop) ? 1 : 0);
+      input.value = value;
+    });
+    const tint = oc$('hf-layer-tint');
+    if (tint) tint.value = l.tint || '#ffffff';
+    syncLayerOutputs();
+  };
+
+  applyLayer = function applyLayerPatched(layer) {
+    if (!layer || !layer.group) return;
+    layer.visible = layer.visible !== false;
+    layer.opacity = layer.opacity ?? 1;
+    layer.scale = layer.scale ?? 1;
+    layer.brightness = layer.brightness ?? 1;
+    layer.contrast = layer.contrast ?? 1;
+    layer.saturation = layer.saturation ?? 1;
+    layer.tintStrength = layer.tintStrength ?? 0;
+    layer.tint = layer.tint || '#ffffff';
+    layer.group.visible = isLayerDisplayed(layer);
+    layer.group.position.set(layer.x || 0, layer.y || 0, layer.z || 0);
+    layer.group.scale.setScalar(['trees', 'rocks', 'collectibles', 'obstacles', 'path'].includes(layer.id) ? 1 : (layer.scale || 1));
+    layer.group.children.forEach((child) => applyLayerObjectScale(layer, child));
+    layer.group.traverse((node) => {
+      node.renderOrder = layer.order || 0;
+      if (!node.material) return;
+      const materials = Array.isArray(node.material) ? node.material : [node.material];
+      materials.forEach((mat) => applyMaterialVisuals(mat, layer));
+    });
+  };
+
+  updateRun = function updateRunPatched(dt) {
+    let steer = 0;
+    if (OC.keys.has('left')) steer -= 1;
+    if (OC.keys.has('right')) steer += 1;
+    const sideStep = OC.currentSpeed < 1.5 ? 1.45 : 1;
+    OC.player.x = clamp(OC.player.x + steer * OC.steerSpeed * sideStep * dt, -OC.laneWidth * 1.95, OC.laneWidth * 1.95);
+
+    if (OC.keys.has('forward')) OC.targetSpeed = OC.speed;
+    else if (OC.keys.has('back')) OC.targetSpeed = BACK_SPEED;
+    else if (OC.startAssistTime > 0) {
+      OC.targetSpeed = Math.max(6, Math.min(12, OC.speed * 0.35));
+      OC.startAssistTime = Math.max(0, OC.startAssistTime - dt);
+    } else OC.targetSpeed = 0;
+
+    const status = pathStatus();
+    if (status === 'off') OC.offPathTime += dt;
+    else OC.offPathTime = 0;
+    let cappedTarget = OC.targetSpeed;
+    if (status === 'off' && cappedTarget > SLOW_TROT_SPEED) cappedTarget = SLOW_TROT_SPEED;
+    if (status === 'edge' && cappedTarget > OC.speed * 0.62) cappedTarget = OC.speed * 0.62;
+    const rate = Math.abs(cappedTarget) > Math.abs(OC.currentSpeed) ? ACCEL : DECEL;
+    OC.currentSpeed += clamp(cappedTarget - OC.currentSpeed, -rate * dt, rate * dt);
+    OC.distance = Math.max(0, OC.distance + OC.currentSpeed * dt);
+    updateRideAudio();
+
+    if (status === 'off' && OC.targetSpeed > 0) {
+      playBushRustle();
+      setResult('Off path: steer back toward the road.', 'warn');
+    } else if (status === 'edge' && OC.targetSpeed > 0) {
+      setResult('Path edge: horse slowing. Steer toward the centre.', 'warn');
+    } else if (OC.lastPathStatus !== 'on' && status === 'on') {
+      setResult('Back on path. Hold ↑/W to accelerate.', 'waiting');
+    }
+    OC.lastPathStatus = status;
+    updateOffPathWarning(status);
+
+    updatePhysics(dt);
+    updateObjects();
+    OC.score += dt * (status === 'off' ? 0.15 : 0.6);
+    updateStats();
+    if (OC.distance >= OC.courseLength) {
+      OC.complete = true;
+      pauseRun();
+      setResult(OC.score >= OC.successScore ? 'Course complete.' : 'Course complete, but score is below target.', OC.score >= OC.successScore ? 'success' : 'failure');
+    }
+  };
+
+  updateCamera = function updateCameraPatched() {
+    const center = pathCenterAt(OC.distance);
+    const x = center + OC.player.x;
+    OC.world.position.x = -(OC.gridOffsetX || 0);
+    OC.world.position.z = OC.distance - (OC.gridOffsetZ || 0);
+    if (OC.grid) {
+      OC.grid.visible = Boolean(OC.gridEnabled);
+      OC.grid.position.set(OC.gridOffsetX || 0, GROUND_Y + 0.075, -(OC.gridOffsetZ || 0));
+    }
+    OC.camera.position.set(x * 0.16, 1.8 + OC.player.y * 0.55, 8.4);
+    OC.camera.lookAt(x * 0.35, 0.35 + OC.player.y * 0.35, -28);
+  };
+
+  updateStats = function updateStatsPatched() {
+    oc$('obstacle-score').textContent = String(Math.round(OC.score));
+    oc$('obstacle-collected').textContent = String(OC.collected);
+    oc$('obstacle-hits').textContent = String(OC.hits);
+    oc$('obstacle-course-summary').textContent = `${Math.round(OC.distance)}m / ${Math.round(OC.courseLength)}m`;
+    const speedBadge = oc$('obstacle-speed-badge');
+    if (speedBadge) {
+      const speed = Math.max(0, Math.round(OC.currentSpeed));
+      const max = Math.max(1, OC.speed);
+      const pct = clamp(speed / max, 0, 1) * 100;
+      const status = pathStatus();
+      const gait = status === 'off' ? 'Off Path' : speed < 3 ? 'Stopped' : speed < max * 0.45 ? 'Trot' : speed < max * 0.75 ? 'Canter' : 'Gallop';
+      if (!speedBadge.querySelector('.oc-speed-fill')) {
+        speedBadge.innerHTML = `<div class="oc-speed-label"><span id="oc-speed-state">Stopped</span><b id="oc-speed-value">0</b></div><div class="oc-speed-track"><div class="oc-speed-fill"></div></div><div id="oc-offpath-label" class="oc-offpath-label"></div>`;
+      }
+      speedBadge.querySelector('#oc-speed-state').textContent = gait;
+      speedBadge.querySelector('#oc-speed-value').textContent = `${speed}/${Math.round(max)}`;
+      speedBadge.querySelector('.oc-speed-fill').style.width = `${pct}%`;
+    }
+  };
+
+  resetRun = function resetRunPatched(quiet = false) {
+    OC.running = false;
+    stopMotionLoops();
+    AUDIO.wasForwardMoving = false;
+    OC.complete = false;
+    OC.offPathTime = 0;
+    OC.lastPathStatus = 'on';
+    OC.distance = 0;
+    OC.currentSpeed = 0;
+    OC.targetSpeed = 0;
+    OC.startAssistTime = 0;
+    OC.score = 0;
+    OC.hits = 0;
+    OC.jumps = 0;
+    OC.collected = 0;
+    OC.player.x = 0;
+    OC.player.y = 0;
+    OC.player.vy = 0;
+    OC.player.grounded = true;
+    OC.player.jumpingHeld = false;
+    OC.player.jumpHoldTime = 0;
+    OC.objects.forEach((obj) => { obj.visible = true; if (obj.userData) { obj.userData.hit = false; obj.userData.collected = false; } });
+    updateOffPathWarning('on');
+    updateStats();
+    if (!quiet) setResult('Course reset. Start the test when ready.', 'waiting');
+    syncRunButtons();
+    drawFrame();
+    drawOverview();
+  };
+
+  drawOverview = function drawOverviewPatched() {
+    const c = oc$('hf-overview');
+    if (!c) return;
+    const wantedHeight = Math.max(300, Math.min(2200, Math.round((OC.courseLength + 300) / 3.2)));
+    if (c.height !== wantedHeight) c.height = wantedHeight;
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.fillStyle = '#111914';
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.strokeStyle = '#d09a55';
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    for (let d = 0; d < OC.courseLength; d += 18) {
+      const point = worldToOverview(pathCenterAt(d), -d);
+      if (d === 0) ctx.moveTo(point.x, point.y);
+      else ctx.lineTo(point.x, point.y);
+    }
+    ctx.stroke();
+    OC.placed.forEach((obj) => {
+      const point = worldToOverview(obj.x, obj.z);
+      ctx.fillStyle = obj.type === 'tree' ? '#48a24a' : obj.type === 'rock' ? '#aaa' : obj.type === 'collectible' ? '#eec45a' : '#b04b35';
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, obj.type === 'tree' ? 4 : 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.strokeStyle = '#eec45a';
+    ctx.strokeRect(1, 1, c.width - 2, c.height - 2);
+  };
+
+  function installFinalUiPatch() {
+    injectFinalStyles();
+    const overviewRow = document.querySelector('.hf-overview-row');
+    if (overviewRow) overviewRow.style.gridTemplateColumns = '1fr';
+    document.querySelectorAll('.hf-overview-row > .hf-key').forEach((node) => node.remove());
+    const keyPanel = document.querySelector('.hf-key-panel .hf-key-list');
+    if (keyPanel) {
+      keyPanel.innerHTML = `<div><span class="hf-key-dot hf-key-path"></span>Path</div><div><span class="hf-key-dot hf-key-tree"></span>Tree</div><div><span class="hf-key-dot hf-key-rock"></span>Rock</div><div><span class="hf-key-dot hf-key-collectible"></span>Collectible</div><div><span class="hf-key-dot hf-key-obstacle"></span>Obstacle</div>`;
+    }
+    if (OC.host && !oc$('oc-offpath-arrow')) {
+      const arrow = document.createElement('div');
+      arrow.id = 'oc-offpath-arrow';
+      arrow.className = 'oc-offpath-arrow';
+      arrow.textContent = '➜';
+      OC.host.appendChild(arrow);
+    }
+    const displayPanel = document.querySelector('[data-obstacle-panel="display"]');
+    if (displayPanel && !oc$('obstacle-contrast')) {
+      displayPanel.insertAdjacentHTML('beforeend', `<label class="range-row"><span>Overall Contrast <output id="obstacle-contrast-out">100%</output></span><input id="obstacle-contrast" type="range" min="55" max="160" step="5" value="100" /></label><label class="range-row"><span>Overall Saturation <output id="obstacle-saturation-out">100%</output></span><input id="obstacle-saturation" type="range" min="0" max="180" step="5" value="100" /></label><section class="hf-grid-panel"><h3>Overlay Grid</h3><label class="field-check"><input id="oc-grid-toggle" type="checkbox"> Show ground zero grid</label><label class="range-row"><span>Grid X Origin <output id="oc-grid-x-out">0.0</output></span><input id="oc-grid-x" type="range" min="-20" max="20" step="0.5" value="0"></label><label class="range-row"><span>Grid Z Origin <output id="oc-grid-z-out">0.0</output></span><input id="oc-grid-z" type="range" min="-80" max="80" step="1" value="0"></label></section>`);
+      bindFinalUiControls();
+    }
+  }
+
+  function bindFinalUiControls() {
+    oc$('obstacle-contrast')?.addEventListener('input', (e) => { OC.screenContrast = Number(e.target.value) / 100; oc$('obstacle-contrast-out').textContent = `${e.target.value}%`; updateScreenFilters(); });
+    oc$('obstacle-saturation')?.addEventListener('input', (e) => { OC.screenSaturation = Number(e.target.value) / 100; oc$('obstacle-saturation-out').textContent = `${e.target.value}%`; updateScreenFilters(); });
+    oc$('oc-grid-toggle')?.addEventListener('change', (e) => { OC.gridEnabled = e.target.checked; drawFrame(); });
+    oc$('oc-grid-x')?.addEventListener('input', (e) => { OC.gridOffsetX = Number(e.target.value); oc$('oc-grid-x-out').textContent = OC.gridOffsetX.toFixed(1); drawFrame(); });
+    oc$('oc-grid-z')?.addEventListener('input', (e) => { OC.gridOffsetZ = Number(e.target.value); oc$('oc-grid-z-out').textContent = OC.gridOffsetZ.toFixed(1); drawFrame(); });
+  }
+
+  function injectFinalStyles() {
+    if (oc$('oc-v25-final-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'oc-v25-final-styles';
+    style.textContent = `
+      .obstacle-three-wrap canvas{filter:brightness(var(--oc-brightness,1)) contrast(var(--oc-contrast,1)) saturate(var(--oc-saturation,1));}
+      .obstacle-horse-overlay{width:340px!important;height:388px!important;margin-left:-170px!important;bottom:-116px!important;background-size:700% 100%!important;background-position:50% 100%;}
+      .obstacle-speed-badge{width:190px!important;border-radius:16px!important;padding:8px 10px!important;background:rgba(7,8,12,.84)!important;}
+      .oc-speed-label{display:flex;justify-content:space-between;gap:8px;font-size:.68rem;color:#f4ead4;margin-bottom:4px}.oc-speed-label b{color:#eec45a}.oc-speed-track{height:17px;border:2px solid rgba(238,196,90,.5);border-radius:999px;background:rgba(65,12,12,.7);overflow:hidden;box-shadow:inset 0 0 7px rgba(0,0,0,.85)}.oc-speed-fill{height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#ff1f14,#ff7a1c,#ffd35b);box-shadow:0 0 10px rgba(255,104,32,.78);transition:width .08s linear}.oc-offpath-label{min-height:16px;margin-top:3px;font-size:.72rem;font-weight:900;color:#ff4b36;text-align:center;letter-spacing:.04em}.oc-offpath-arrow{position:absolute;left:50%;top:42%;z-index:8;width:80px;height:80px;margin:-40px 0 0 -40px;display:none;place-items:center;border-radius:50%;font-size:4.4rem;font-weight:900;color:#ff3b24;text-shadow:0 2px 8px rgba(0,0,0,.9);background-image:url('../../../shared/ui/defaultarrows.webp');background-size:cover;background-position:center;animation:ocPulseArrow 0.9s ease-in-out infinite;pointer-events:none}.oc-offpath-arrow.is-visible{display:grid}.oc-offpath-arrow.is-left{transform:scaleX(-1)}@keyframes ocPulseArrow{0%,100%{translate:0 0;scale:.92}50%{translate:0 -11px;scale:1.12}}
+      .hf-overview-row{grid-template-columns:1fr!important}.hf-overview-row>.hf-key{display:none!important}.hf-key-panel{border:1px solid rgba(238,196,90,.3);border-radius:12px;padding:10px;margin:10px 0;background:rgba(0,0,0,.22)}.hf-key-panel h3{margin:0 0 8px;font-family:'Cinzel',serif;font-size:.95rem}.hf-key-list{display:grid;gap:5px;font-size:.78rem}.hf-key-list div{display:flex;align-items:center;gap:8px}.hf-key-dot{width:13px;height:13px;border-radius:50%;display:inline-block;border:1px solid rgba(255,255,255,.4)}.hf-key-path{background:#d09a55}.hf-key-tree{background:#48a24a}.hf-key-rock{background:#aaa}.hf-key-collectible{background:#eec45a}.hf-key-obstacle{background:#b04b35}.hf-grid-panel{border:1px solid rgba(124,202,210,.2);border-radius:12px;padding:10px;margin-top:10px;background:rgba(0,0,0,.2)}.field-check{display:flex!important;gap:8px;align-items:center;color:var(--muted,#c9bfae);font-size:.72rem}.field-check input{width:auto!important}.oc-loading-assets{position:absolute;left:14px;top:12px;z-index:7;border:1px solid rgba(124,202,210,.35);border-radius:999px;background:rgba(5,8,13,.74);padding:7px 10px;font-size:.7rem;font-weight:900;color:#9ee6a4;pointer-events:none}.oc-loading-assets.is-ready{color:#eec45a;border-color:rgba(238,196,90,.45)}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function createGridOverlay() {
+    if (!OC.scene || OC.grid) return;
+    OC.grid = new THREE.GridHelper(80, 40, 0xeec45a, 0x4c7f55);
+    OC.grid.position.set(0, GROUND_Y + 0.075, 0);
+    OC.grid.material.transparent = true;
+    OC.grid.material.opacity = 0.55;
+    OC.grid.visible = false;
+    OC.scene.add(OC.grid);
+  }
+
+  function preloadEssentialAssets() {
+    if (OC.assetPreloadStarted || !OC.host) return;
+    OC.assetPreloadStarted = true;
+    const urls = [ASSETS.horse, ASSETS.background, ASSETS.ground, ...Object.values(ASSETS.pathSegments).map((seg) => seg.file)];
+    OC.assetLoadTotal = urls.length;
+    OC.assetLoadDone = 0;
+    OC.assetLoadFailed = 0;
+    const badge = document.createElement('div');
+    badge.id = 'oc-loading-assets';
+    badge.className = 'oc-loading-assets';
+    badge.textContent = `Loading assets 0 / ${OC.assetLoadTotal}`;
+    OC.host.appendChild(badge);
+    setStartButtonsDisabled(true);
+    urls.forEach((url) => {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        if (img.naturalWidth < 1) OC.assetLoadFailed += 1;
+        OC.assetLoadDone += 1;
+        badge.textContent = `Loading assets ${OC.assetLoadDone} / ${OC.assetLoadTotal}`;
+        if (OC.assetLoadDone >= OC.assetLoadTotal) {
+          OC.assetsEssentialReady = true;
+          badge.classList.add('is-ready');
+          badge.textContent = OC.assetLoadFailed ? `Assets loaded (${OC.assetLoadFailed} missing)` : 'Assets loaded';
+          setStartButtonsDisabled(false);
+          setTimeout(() => badge.remove(), 2600);
+        }
+      };
+      img.src = `${url}?preload=${Date.now()}`;
+    });
+  }
+
+  function setStartButtonsDisabled(disabled) {
+    ['obstacle-start','obstacle-start-left'].forEach((id) => {
+      const button = oc$(id);
+      if (button) {
+        button.disabled = disabled;
+        button.textContent = disabled ? 'Loading Assets…' : 'Start Test';
+      }
+    });
+  }
+
+  function loadModelLibrary(urls, bucket, label) {
+    urls.forEach((url) => OC.gltfLoader.load(`${url}?v=29.2`, (gltf) => {
+      if (!gltf.scene) return;
+      gltf.scene.traverse((node) => { if (node.isMesh) node.receiveShadow = true; });
+      bucket.push(gltf.scene);
+      if (oc$('hf-tree-status')) oc$('hf-tree-status').textContent = `${label}: ${bucket.length} loaded`;
+      if (OC.active) regenerateCourse();
+    }, undefined, (error) => console.warn('[HorseForest] GLB failed:', url, error)));
+  }
+
+  function createModelFromBucket(bucket, targetHeight) {
+    if (!bucket?.length) return null;
+    const root = pick(bucket).clone(true);
+    root.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(root);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    root.scale.multiplyScalar(targetHeight / Math.max(size.y, 0.001));
+    root.updateMatrixWorld(true);
+    const box2 = new THREE.Box3().setFromObject(root);
+    const wrapper = new THREE.Group();
+    wrapper.add(root);
+    root.position.set(-(box2.min.x + box2.max.x) / 2, -box2.min.y, -(box2.min.z + box2.max.z) / 2);
+    wrapper.rotation.y = rand(0, Math.PI * 2);
+    wrapper.scale.multiplyScalar(rand(0.82, 1.18));
+    return wrapper;
+  }
+
+  function createFallbackTree(targetHeight) {
+    const group = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.22, targetHeight * 0.45, 8), new THREE.MeshLambertMaterial({ color: 0x4f2e18 }));
+    trunk.position.y = targetHeight * 0.225;
+    const crown = new THREE.Mesh(new THREE.ConeGeometry(targetHeight * 0.18, targetHeight * 0.65, 9), new THREE.MeshLambertMaterial({ color: 0x183c1d }));
+    crown.position.y = targetHeight * 0.72;
+    group.add(trunk, crown);
+    return group;
+  }
+
+  function addDetailAt(parent, distance, side, extra) {
+    const detail = createModelFromBucket(OC.detailModels, rand(0.45, 1.1));
+    if (!detail) return;
+    const x = pathCenterAt(distance) + side * extra;
+    detail.position.set(x, GROUND_Y, -distance);
+    detail.rotation.y = rand(0, Math.PI * 2);
+    parent.add(detail);
+    OC.placed.push({ type: 'rock', x, z: -distance, mesh: detail });
+  }
+
+  function applyMaterialVisuals(mat, layer) {
+    if (!mat.userData) mat.userData = {};
+    if (mat.color && !mat.userData.__ocBaseColor) mat.userData.__ocBaseColor = mat.color.clone();
+    mat.transparent = layer.opacity < 1 || mat.transparent;
+    mat.opacity = layer.opacity;
+    if (mat.color && mat.userData.__ocBaseColor) {
+      const base = mat.userData.__ocBaseColor.clone();
+      const hsl = { h: 0, s: 0, l: 0 };
+      base.getHSL(hsl);
+      hsl.s = clamp(hsl.s * (layer.saturation ?? 1), 0, 1);
+      hsl.l = clamp(((hsl.l - 0.5) * (layer.contrast ?? 1)) + 0.5, 0, 1);
+      base.setHSL(hsl.h, hsl.s, hsl.l);
+      base.multiplyScalar(layer.brightness ?? 1);
+      if (layer.tint && layer.tintStrength > 0) base.lerp(new THREE.Color(layer.tint), layer.tintStrength);
+      mat.color.copy(base);
+    }
+    mat.needsUpdate = true;
+  }
+
+  function updateOffPathWarning(status) {
+    const arrow = oc$('oc-offpath-arrow');
+    const label = oc$('oc-offpath-label');
+    if (!arrow || !label) return;
+    if (status === 'off' && OC.offPathTime >= 5) {
+      const goRight = OC.player.x < 0;
+      arrow.classList.add('is-visible');
+      arrow.classList.toggle('is-left', !goRight);
+      label.textContent = goRight ? 'Off Path 👉' : '👈 Off Path';
+    } else {
+      arrow.classList.remove('is-visible');
+      label.textContent = status === 'off' ? 'Off Path' : '';
+    }
+  }
+
+  const oldUpdateScreenFilters = updateScreenFilters;
+  updateScreenFilters = function updateScreenFiltersPatched() {
+    oldUpdateScreenFilters();
+    if (OC.host) {
+      OC.host.style.setProperty('--oc-contrast', String(OC.screenContrast || 1));
+      OC.host.style.setProperty('--oc-saturation', String(OC.screenSaturation || 1));
+    }
+  };
+})();

@@ -8,24 +8,30 @@ const BUTTON_ID = 'horse-asset-debug-button';
 
 const ASSETS = [
   ['Backgrounds','image','Main forest ride background','backgrounds/horseridebg.jpg',false],
+  ['Foreground','image','Horse 7-frame sprite sheet','foreground/horse.png',false],
   ['Ground','image','Forest floor grass2 base ground','ground/forest_floor_grass2.png',false],
-  ['Ground archived/reference','image','Forest floor grass','ground/forest_floor_grass.png',true],
-  ['Ground archived/reference','image','Old root/path tile','ground/forest_floor_roots_tile_placeholder_1254.png',true],
   ['Path segments','image','Path straight','path-segments/pathstraight.webp',false],
   ['Path segments','image','Path kink','path-segments/pathkink.webp',false],
   ['Path segments','image','Path left','path-segments/pathleft.webp',false],
   ['Path segments','image','Path right','path-segments/pathright.webp',false],
   ['Path segments','image','Path left to straight','path-segments/pathlefttostraight.webp',false],
   ['Path segments','image','Right to straight','path-segments/righttostraight.webp',false],
-  ['Path segments ignored','image','Split path old/ignored','path-segments/splitpath.webp',true],
-  ['Path segments ignored','image','Split path 2 old/ignored','path-segments/splitpath2.webp',true],
-  ['3D trees','glb','Tree','3d/tree.glb',false],
-  ['3D trees','glb','Low-poly tree','3d/tree_low-poly.glb',false],
+  ['3D trees','glb','Dead tree','3d/dead_tree.glb',false],
   ['3D trees','glb','Hill top tree','3d/hill_top_tree.glb',false],
-  ['3D trees','glb','Small pine','3d/small_pine.glb',false],
-  ['3D trees','glb','Pine with awkward teenage face','3d/pine_with_awkward_teenage_face.glb',true],
+  ['3D details','glb','Low poly fern','3d/low_poly_fern.glb',false],
+  ['3D trees','glb','Oak trees','3d/oak_trees.glb',false],
+  ['3D trees','glb','Pine tree','3d/pine_tree.glb',false],
+  ['3D trees','glb','Pine tree PS1 low poly','3d/pine_tree__ps1_low_poly.glb',false],
+  ['3D trees','glb','Pine with awkward teenage face','3d/pine_with_awkward_teenage_face.glb',false],
   ['3D rocks','glb','Low-poly rock','3d/rock_low-poly.glb',false],
+  ['3D trees','glb','Small pine','3d/small_pine.glb',false],
   ['3D rocks','glb','Low-poly stone','3d/stone_low-poly.glb',false],
+  ['3D details','glb','Stylized glowing mushrooms','3d/stylized_glowing_mushrooms.glb',false],
+  ['3D trees','glb','Tree','3d/tree.glb',false],
+  ['3D trees','glb','Tree gn','3d/tree_gn.glb',false],
+  ['3D trees','glb','Low-poly tree','3d/tree_low-poly.glb',false],
+  ['Shared UI','image','Default icons sheet','../../../shared/ui/defaulticons.webp',true],
+  ['Shared UI','image','Default arrows sheet','../../../shared/ui/defaultarrows.webp',true],
   ['Audio','audio','Slow gallop loop','audio/horse_gallop_slow.mp3',false],
   ['Audio','audio','Full gallop loop','audio/horse_gallop_full.mp3',false],
   ['Audio','audio','Landing','audio/horse_land.mp3',false],
@@ -50,7 +56,7 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
-function urlOf(asset) { return `${ASSET_ROOT}${asset.path}`; }
+function urlOf(asset) { return asset.path.startsWith('../') ? asset.path : `${ASSET_ROOT}${asset.path}`; }
 function bytes(n) { if (!Number.isFinite(n)) return ''; if (n < 1024) return `${n} B`; if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`; return `${(n / 1048576).toFixed(2)} MB`; }
 function setRow(row, status, detail, cls) { const statusNode = row.querySelector('.hf-asset-status'); statusNode.textContent = status; statusNode.className = `hf-asset-status ${cls}`; row.querySelector('.hf-asset-detail').textContent = detail || ''; }
 
