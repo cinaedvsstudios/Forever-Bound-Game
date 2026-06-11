@@ -1,13 +1,9 @@
-# Maze module
+# Maze Module
 
-This folder is an isolated Labyrinth Maze recovery module.
+This folder now uses `index.html` as a self-contained fixed standalone maze module.
 
-Open `index.html` in a browser. It contains:
-- maze-only launcher setup
-- recovered maze runtime and consolidation modules
-- local texture images
-- local schema/sample data
+The original recovered V1.35 maze shell that was rendering incorrectly in the isolated package has been preserved as:
 
-Notes:
-- Shared Artifex registered-content imports were patched to safe local no-op fallbacks so this folder can run without the full repository-level `shared/` directory.
-- Potion, pattern and horse-ride modules are not loaded from this folder.
+`recovered-original-index-broken.html`
+
+The fixed module keeps maze generation, blank maze, solution plotting, overview, image-reference parsing, visual controls, texture use, import JSON, copy JSON, and download JSON in one isolated page so it does not depend on the old shared Artifex launcher/runtime wiring.
