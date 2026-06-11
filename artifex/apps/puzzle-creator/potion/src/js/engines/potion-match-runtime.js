@@ -248,7 +248,7 @@ function ensureMounted() {
   PM.panels.hidden = true;
   PM.panels.innerHTML = `
     <section class="panel tool-panel potion-panel" data-potion-panel="build">
-      <div class="panel-title-row"><div><p class="eyebrow">01 · Construction</p><h2>Potion Match</h2></div><span class="status-pill is-waiting">V3</span></div>
+      <div class="panel-title-row"><div><p class="eyebrow">01 · Construction</p><h2>Potion Match</h2></div><span class="status-pill is-waiting">V2.5</span></div>
       <p class="potion-panel-copy">Dual mode prototype with ingredient authoring. Defaults are examples only and can be removed.</p>
       <label class="field-block"><span>Mode</span><select id="potion-mode"><option value="challenge">Challenge Potion Puzzle</option><option value="crafting">Crafting Skill</option></select></label>
       <label class="field-block"><span>Recipe Preset</span><select id="potion-recipe-select"></select></label>
