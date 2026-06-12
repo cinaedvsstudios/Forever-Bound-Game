@@ -1,4 +1,4 @@
-// Obstacle Course Asset Debug V3.6
+// Obstacle Course Asset Debug V3.7
 // Separate debug helper. Checks live obstacle course images, modular path WEBPs, GLBs, and planned audio.
 
 const ASSET_ROOT = './assets/';

@@ -1,12 +1,12 @@
-// Obstacle Course V2.7.4 / Horse Forest Runner
+// Obstacle Course V2.7.5 / Horse Forest Runner
 // Consolidated runtime: no post-load patch stack.
 // The obstacle-course UI, generation, alpha-path logic, GLB controls, overview, HUD, and JSON settings live here.
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
 
-const VERSION = 'V2.7.4';
-const CACHE_VERSION = '2.7.4';
+const VERSION = 'V2.7.5';
+const CACHE_VERSION = '2.7.5';
 const ASSET_BASE = './assets/';
 const SHARED_UI_BASE = '../../../shared/ui/';
 const GROUND_Y = -1.62;
@@ -104,8 +104,10 @@ const OC = {
   bumpStrength: 0.12,
   displacementStrength: 0.035,
   vanishX: 0,
-  vanishY: 0.35,
+  vanishY: 0,
   cameraAngle: 0,
+  backgroundZoom: 1.1,
+  backgroundJumpShift: 0,
   gridEnabled: false,
   overviewPathOverlay: true,
   whiteBackground: false,
@@ -221,7 +223,7 @@ function injectStyles() {
     .obstacle-header-line{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;border-bottom:1px solid rgba(238,196,90,.22);padding-bottom:12px;margin-bottom:14px}
     .obstacle-header-line h2{font-family:Cinzel,Georgia,serif;margin:.2rem 0;font-size:1.35rem}.obstacle-header-line .eyebrow{font-size:.66rem;color:#9ee6a4;font-weight:900;letter-spacing:.18em;text-transform:uppercase}
     .obstacle-header-line p{margin:.3rem 0;color:#c9bfae;font-size:.78rem}.obstacle-status-pill{border:1px solid rgba(238,196,90,.55);border-radius:999px;padding:8px 10px;color:#eec45a;font-weight:900;font-size:.72rem}
-    .obstacle-three-wrap{position:relative;width:100%;aspect-ratio:16/9;min-height:360px;border:1px solid rgba(124,202,125,.24);border-radius:14px;overflow:hidden;background:#05080d}
+    .obstacle-three-wrap{position:relative;width:100%;aspect-ratio:16/9;min-height:360px;border:1px solid rgba(124,202,125,.24);border-radius:14px;overflow:hidden;background-color:#05080d;background-image:var(--oc-bg-image,none);background-repeat:no-repeat;background-size:var(--oc-bg-size,110%) auto;background-position:var(--oc-bg-x,50%) var(--oc-bg-y,50%)}
     .obstacle-three-wrap canvas{display:block;width:100%!important;height:100%!important;filter:brightness(var(--oc-brightness,1)) contrast(var(--oc-contrast,1)) saturate(var(--oc-saturation,1))}
     .obstacle-tint-overlay{position:absolute;inset:0;z-index:6;pointer-events:none;background:var(--oc-tint,#000);opacity:var(--oc-tint-opacity,0);mix-blend-mode:color}
     .obstacle-horse-overlay{position:absolute;left:50%;bottom:-38px;z-index:7;width:430px;height:247px;margin-left:-215px;pointer-events:none;filter:drop-shadow(0 7px 9px rgba(0,0,0,.72));opacity:.98;background-image:url('${ASSETS.horse}');background-repeat:no-repeat;background-size:700% 100%;background-position:50% 100%;transition:background-position .08s linear}
@@ -326,7 +328,7 @@ function mountLeftPanel() {
       <label class="field-check"><input id="oc-ground-grid-toggle" type="checkbox"> Show ground grid</label>
       <label class="field-check"><input id="oc-overview-path-overlay" type="checkbox" checked> Show path alpha on overview</label>
       <label class="range-row"><span>Vanishing Point X <output id="oc-vp-x-out">${(OC.vanishX || 0).toFixed(1)}</output></span><input id="oc-vp-x" type="range" min="-100" max="100" step="0.5" value="${OC.vanishX || 0}"></label>
-      <label class="range-row"><span>Vanishing Point Y <output id="oc-vp-y-out">${(OC.vanishY ?? 0.35).toFixed(2)}</output></span><input id="oc-vp-y" type="range" min="-100" max="100" step="0.5" value="${OC.vanishY ?? 0.35}"></label>
+      <label class="range-row"><span>Vanishing Point Y <output id="oc-vp-y-out">${(OC.vanishY || 0).toFixed(2)}</output></span><input id="oc-vp-y" type="range" min="-100" max="100" step="0.5" value="${OC.vanishY || 0}"></label>
       <label class="range-row"><span>View Angle <output id="oc-vp-angle-out">${(OC.cameraAngle || 0).toFixed(1)}</output></span><input id="oc-vp-angle" type="range" min="-100" max="100" step="0.5" value="${OC.cameraAngle || 0}"></label>
     </section>
     <section class="hf-control-section"><h3>Overview Key</h3><div class="hf-key-list"><div><span class="hf-key-dot hf-key-path"></span>Path</div><div><span class="hf-key-dot hf-key-tree"></span>Tree</div><div><span class="hf-key-dot hf-key-rock"></span>Rock</div><div><span class="hf-key-dot hf-key-collectible"></span>Collectible</div><div><span class="hf-key-dot hf-key-obstacle"></span>Obstacle</div></div></section>
@@ -334,11 +336,18 @@ function mountLeftPanel() {
   `;
 }
 
+let sceneryDistanceRegenTimer = 0;
+
+function scheduleSceneryRegenerate() {
+  clearTimeout(sceneryDistanceRegenTimer);
+  sceneryDistanceRegenTimer = setTimeout(() => regenerateCourse(), 180);
+}
+
 function bindInputs() {
   $('obstacle-template')?.addEventListener('change', (event) => { OC.templateId = event.target.value; regenerateCourse(); });
   $('obstacle-difficulty')?.addEventListener('input', (event) => { OC.difficulty = Number(event.target.value); $('obstacle-difficulty-out').textContent = OC.difficulty; });
   $('obstacle-distance')?.addEventListener('input', (event) => { OC.courseLength = Number(event.target.value); $('obstacle-distance-out').textContent = OC.courseLength; updateStats(); });
-  $('obstacle-scenery-distance')?.addEventListener('input', (event) => { OC.sceneryDistance = Number(event.target.value); $('obstacle-scenery-distance-out').textContent = OC.sceneryDistance.toFixed(1); });
+  $('obstacle-scenery-distance')?.addEventListener('input', (event) => { OC.sceneryDistance = Number(event.target.value); $('obstacle-scenery-distance-out').textContent = OC.sceneryDistance.toFixed(1); scheduleSceneryRegenerate(); });
   $('obstacle-regenerate')?.addEventListener('click', regenerateCourse);
   $('obstacle-start')?.addEventListener('click', startRun);
   $('obstacle-pause')?.addEventListener('click', pauseRun);
@@ -388,18 +397,20 @@ function initThree() {
   OC.clock = new THREE.Clock();
   applyCamera();
   resizeRenderer();
+  applyBackgroundPlate();
   drawFrame();
 }
 
 function applyCamera() {
   if (!OC.camera) return;
-  const camX = (OC.vanishX || 0) * 0.04;
-  const lookX = (OC.vanishX || 0) * 0.08;
-  const lookY = GROUND_Y + (OC.vanishY || 0) * 0.06;
+  const camX = (OC.vanishX || 0) * 0.035;
+  const lookX = (OC.vanishX || 0) * 0.07;
+  const lookY = GROUND_Y + (OC.vanishY || 0) * 0.05;
   OC.camera.position.set(camX, 4.4, 10.8);
   OC.camera.lookAt(lookX, lookY, -92);
   OC.camera.rotation.z += (OC.cameraAngle || 0) * 0.0035;
   OC.camera.updateProjectionMatrix();
+  applyBackgroundPlate();
 }
 
 function resizeRenderer() {
@@ -410,6 +421,29 @@ function resizeRenderer() {
   OC.camera.updateProjectionMatrix();
   OC.renderer.setSize(width, height);
 }
+
+function applyBackgroundPlate() {
+  if (!OC.stage) return;
+  if (OC.whiteBackground) {
+    OC.stage.style.setProperty('--oc-bg-image', 'none');
+    OC.stage.style.backgroundColor = '#ffffff';
+    return;
+  }
+  const x = 50 + (OC.vanishX || 0) * 0.18;
+  const y = 50 + (OC.vanishY || 0) * 0.18 + (OC.backgroundJumpShift || 0);
+  const zoom = Math.max(100, Math.round((OC.backgroundZoom || 1.1) * 100));
+  OC.stage.style.backgroundColor = '#05080d';
+  OC.stage.style.setProperty('--oc-bg-image', `url("${ASSETS.background}?v=${CACHE_VERSION}")`);
+  OC.stage.style.setProperty('--oc-bg-size', `${zoom}%`);
+  OC.stage.style.setProperty('--oc-bg-x', `${clamp(x, -25, 125)}%`);
+  OC.stage.style.setProperty('--oc-bg-y', `${clamp(y, -25, 125)}%`);
+}
+
+function updateBackgroundJumpShift() {
+  OC.backgroundJumpShift = clamp((OC.player.y || 0) * 3.5, 0, 18);
+  applyBackgroundPlate();
+}
+
 
 function loadTexture(url, options = {}) {
   const key = `${url}|${JSON.stringify(options)}`;
@@ -783,10 +817,8 @@ function nudgeSelectedOrder(delta) {
 
 function toggleWhiteBackground() {
   OC.whiteBackground = !OC.whiteBackground;
-  if (OC.scene) {
-    OC.scene.background = OC.whiteBackground ? new THREE.Color(0xffffff) : loadTexture(ASSETS.background);
-  }
-  if (OC.stage) OC.stage.style.background = OC.whiteBackground ? '#fff' : '#05080d';
+  if (OC.scene) OC.scene.background = null;
+  applyBackgroundPlate();
   drawFrame();
 }
 
@@ -879,7 +911,8 @@ function buildMaterials() {
   const groundMap = loadTexture(ASSETS.ground, { repeat: [1, Math.max(1, length / OC.groundTextureWorldSize)], repeatX: false });
   groundMap.wrapS = THREE.ClampToEdgeWrapping;
   groundMap.wrapT = THREE.RepeatWrapping;
-  if (!OC.whiteBackground) OC.scene.background = loadTexture(ASSETS.background);
+  OC.scene.background = null;
+  applyBackgroundPlate();
   OC.groundMaterial = new THREE.MeshStandardMaterial({
     map: groundMap,
     bumpMap: groundMap,
@@ -1390,6 +1423,8 @@ function updateRun(dt) {
     }
   }
 
+  updateBackgroundJumpShift();
+
   const status = pathStatus();
   if (status === 'off') OC.offPathTime += dt;
   else OC.offPathTime = 0;
@@ -1709,6 +1744,7 @@ function exportJsonSettings() {
     vanishX: OC.vanishX,
     vanishY: OC.vanishY,
     cameraAngle: OC.cameraAngle,
+    backgroundZoom: OC.backgroundZoom,
     visual: {
       brightness: OC.screenBrightness,
       contrast: OC.screenContrast,
@@ -1741,6 +1777,7 @@ async function importJsonSettings(event) {
     if (data.vanishX !== undefined) OC.vanishX = Number(data.vanishX);
     if (data.vanishY !== undefined) OC.vanishY = Number(data.vanishY);
     if (data.cameraAngle !== undefined) OC.cameraAngle = Number(data.cameraAngle);
+    if (data.backgroundZoom !== undefined) OC.backgroundZoom = Number(data.backgroundZoom);
     if (data.visual) {
       OC.screenBrightness = data.visual.brightness ?? OC.screenBrightness;
       OC.screenContrast = data.visual.contrast ?? OC.screenContrast;
