@@ -1,4 +1,4 @@
-// Obstacle Course V2.6.7 / Horse Forest Runner V29.7
+// Obstacle Course V2.6.8 / Horse Forest Runner V29.8
 // Clean consolidated live engine: no layout/control patch stack.
 // Features: horse POV, modular transparent WEBP path segments, forest_ground WEBP ground,
 // hold-to-move forward/backward, Ctrl duck, hold-extended jump, and off-path slow-trot penalty.
@@ -371,7 +371,7 @@ function ensureMounted() {
   OC.stage.innerHTML = `
     <div class="obstacle-workspace">
       <section class="obstacle-view-card">
-        <div class="obstacle-header-line"><div><p class="eyebrow">Obstacle Course · V2.6.7</p><h2 id="obstacle-title">Obstacle Course</h2><p id="obstacle-objective">Horse forest obstacle course using modular transparent WEBP path segments over forest_ground.webp.</p></div><span id="obstacle-status" class="obstacle-status-pill">Ready</span></div>
+        <div class="obstacle-header-line"><div><p class="eyebrow">Obstacle Course · V2.6.8</p><h2 id="obstacle-title">Obstacle Course</h2><p id="obstacle-objective">Horse forest obstacle course using modular transparent WEBP path segments over forest_ground.webp.</p></div><span id="obstacle-status" class="obstacle-status-pill">Ready</span></div>
         <div id="obstacle-three-host" class="obstacle-three-wrap"><div class="obstacle-reticle"></div><div class="obstacle-horse-overlay"></div><div class="obstacle-tint-overlay"></div><div id="obstacle-speed-badge" class="obstacle-speed-badge">Speed 0</div><div class="obstacle-hud"><span>Start Test = begin run · Hold ↑/W move · ↓/S back · Ctrl duck · Space jump</span><span id="obstacle-course-summary">0m / 0m</span></div></div>
         <div class="obstacle-help-strip"><span>Path pieces use 1000×2000 WEBP with 250px overlap. Off path slows to trot.</span><span id="hf-tree-status">GLB trees: loading…</span></div>
         <div class="obstacle-control-row"><button id="obstacle-start" type="button">Start Test</button><button id="obstacle-pause" type="button">Pause</button><button id="obstacle-reset-run" type="button">Reset Run</button></div>
@@ -391,7 +391,7 @@ function ensureMounted() {
   OC.panels.id = 'obstacle-course-panels';
   OC.panels.hidden = true;
   OC.panels.innerHTML = `
-    <section class="panel tool-panel obstacle-panel" data-obstacle-panel="build"><div class="panel-title-row"><div><p class="eyebrow">01 · Construction</p><h2>Obstacle Course</h2></div><span class="status-pill is-waiting">V2.6.7</span></div><p class="obstacle-panel-copy">Course editor controls use transparent path segment WEBPs over forest_ground.webp.</p><label class="field-block"><span>Course Template</span><select id="obstacle-template"><option value="horse_forest_easy">Obstacle Course</option><option value="horse_forest_dense">Dense Forest Course</option><option value="horse_forest_night">Moonlit Forest Course</option></select></label><label class="range-row"><span>Difficulty <output id="obstacle-difficulty-out">2</output></span><input id="obstacle-difficulty" type="range" min="1" max="5" value="2" /></label><label class="range-row"><span>Course Duration <output id="obstacle-duration-out">45s</output></span><input id="obstacle-duration" type="range" min="20" max="300" step="5" value="45" /></label><button id="obstacle-regenerate" class="wide-button" type="button">Regenerate Obstacle Course</button><label class="range-row"><span>Forest Edge Distance <output id="obstacle-scenery-distance-out">1.6</output></span><input id="obstacle-scenery-distance" type="range" min="0.6" max="6" step="0.1" value="1.6" /></label><section class="hf-key-panel"><h3>Overview Key</h3><div class="hf-key-list"><div><span class="hf-key-dot hf-key-path"></span>Path</div><div><span class="hf-key-dot hf-key-tree"></span>Tree</div><div><span class="hf-key-dot hf-key-rock"></span>Rock</div><div><span class="hf-key-dot hf-key-collectible"></span>Collectible</div><div><span class="hf-key-dot hf-key-obstacle"></span>Obstacle</div></div></section><div id="horse-run-controls-left-slot"><button id="obstacle-start-left" type="button">Start Test</button><button id="obstacle-pause-left" type="button">Pause</button><button id="obstacle-reset-run-left" type="button">Reset Run</button></div></section>
+    <section class="panel tool-panel obstacle-panel" data-obstacle-panel="build"><div class="panel-title-row"><div><p class="eyebrow">01 · Construction</p><h2>Obstacle Course</h2></div><span class="status-pill is-waiting">V2.6.8</span></div><p class="obstacle-panel-copy">Course editor controls use transparent path segment WEBPs over forest_ground.webp.</p><label class="field-block"><span>Course Template</span><select id="obstacle-template"><option value="horse_forest_easy">Obstacle Course</option><option value="horse_forest_dense">Dense Forest Course</option><option value="horse_forest_night">Moonlit Forest Course</option></select></label><label class="range-row"><span>Difficulty <output id="obstacle-difficulty-out">2</output></span><input id="obstacle-difficulty" type="range" min="1" max="5" value="2" /></label><label class="range-row"><span>Course Duration <output id="obstacle-duration-out">45s</output></span><input id="obstacle-duration" type="range" min="20" max="300" step="5" value="45" /></label><button id="obstacle-regenerate" class="wide-button" type="button">Regenerate Obstacle Course</button><label class="range-row"><span>Forest Edge Distance <output id="obstacle-scenery-distance-out">1.6</output></span><input id="obstacle-scenery-distance" type="range" min="0.6" max="6" step="0.1" value="1.6" /></label><section class="hf-key-panel"><h3>Overview Key</h3><div class="hf-key-list"><div><span class="hf-key-dot hf-key-path"></span>Path</div><div><span class="hf-key-dot hf-key-tree"></span>Tree</div><div><span class="hf-key-dot hf-key-rock"></span>Rock</div><div><span class="hf-key-dot hf-key-collectible"></span>Collectible</div><div><span class="hf-key-dot hf-key-obstacle"></span>Obstacle</div></div></section><div id="horse-run-controls-left-slot"><button id="obstacle-start-left" type="button">Start Test</button><button id="obstacle-pause-left" type="button">Pause</button><button id="obstacle-reset-run-left" type="button">Reset Run</button></div></section>
     <section class="panel tool-panel obstacle-panel" data-obstacle-panel="display" hidden><div class="panel-title-row"><div><p class="eyebrow">02 · Display</p><h2>Ground Relief</h2></div></div><label class="range-row"><span>Bump Strength <output id="obstacle-bump-out">0.12</output></span><input id="obstacle-bump" type="range" min="0" max="0.45" step="0.01" value="0.12" /></label><label class="range-row"><span>Displacement Strength <output id="obstacle-displacement-out">0.035</output></span><input id="obstacle-displacement" type="range" min="0" max="0.18" step="0.005" value="0.035" /></label><label class="range-row"><span>Horse Speed <output id="obstacle-speed-out">34</output></span><input id="obstacle-speed" type="range" min="18" max="64" step="2" value="34" /></label><label class="range-row"><span>Overall Brightness <output id="obstacle-brightness-out">100%</output></span><input id="obstacle-brightness" type="range" min="55" max="150" step="5" value="100" /></label><label class="field-block"><span>Screen Tint</span><input id="obstacle-tint" type="color" value="#000000" /></label><label class="range-row"><span>Tint Strength <output id="obstacle-tint-strength-out">0%</output></span><input id="obstacle-tint-strength" type="range" min="0" max="65" step="5" value="0" /></label><label class="range-row"><span>Lane Width <output id="obstacle-lane-width-out">2.7</output></span><input id="obstacle-lane-width" type="range" min="1.8" max="5" step="0.1" value="2.7" /></label></section>
     <section class="panel tool-panel obstacle-panel" data-obstacle-panel="logic" hidden><div class="panel-title-row"><div><p class="eyebrow">03 · Logic</p><h2>Scoring</h2></div></div><label class="range-row"><span>Success Score <output id="obstacle-success-score-out">20</output></span><input id="obstacle-success-score" type="range" min="0" max="80" step="5" value="20" /></label></section>`;
   leftBody.appendChild(OC.panels);
@@ -1670,7 +1670,7 @@ window.__artifexObstacleCourse = {
   if (OC.__v262PatchInstalled) return;
   OC.__v262PatchInstalled = true;
 
-  OC.versionLabel = 'V2.6.7';
+  OC.versionLabel = 'V2.6.8';
   OC.vanishX = OC.vanishX ?? 0;
   OC.vanishY = OC.vanishY ?? 0.35;
   OC.whiteBackground = false;
@@ -2108,8 +2108,8 @@ window.__artifexObstacleCourse = {
     injectV262Styles();
     document.querySelectorAll('.obstacle-reticle').forEach((node) => node.remove());
     const title = document.querySelector('.obstacle-header-line .eyebrow');
-    if (title) title.textContent = 'Obstacle Course · V2.6.7';
-    document.querySelectorAll('.status-pill').forEach((node) => { if (/V2\.6/.test(node.textContent)) node.textContent = 'V2.6.7'; });
+    if (title) title.textContent = 'Obstacle Course · V2.6.8';
+    document.querySelectorAll('.status-pill').forEach((node) => { if (/V2\.6/.test(node.textContent)) node.textContent = 'V2.6.8'; });
     if (OC.host) {
       const arrow = oc$('oc-offpath-arrow') || document.createElement('div');
       arrow.id = 'oc-offpath-arrow';
@@ -2167,12 +2167,12 @@ window.__artifexObstacleCourse = {
 })();
 
 
-// --- V2.6.7 obstacle-course ground alpha fix pass ---
+// --- V2.6.8 obstacle-course ground alpha fix pass ---
 (function installObstacleCourseV264Patch(){
   if (OC.__v264PatchInstalled) return;
   OC.__v264PatchInstalled = true;
 
-  OC.versionLabel = 'V2.6.7';
+  OC.versionLabel = 'V2.6.8';
   OC.pathVisualWidth = Math.max(OC.pathVisualWidth || 0, 31.8);
   OC.groundVisualWidth = 220;
   OC.groundTextureWorldSize = 220;
@@ -2188,7 +2188,7 @@ window.__artifexObstacleCourse = {
   function refreshVisibleVersionsV264() {
     document.querySelectorAll('.version-pill,.status-pill,.obstacle-header-line .eyebrow').forEach((node) => {
       if (/V2\.6\.|Obstacle Course/.test(node.textContent || '')) {
-        node.textContent = node.classList?.contains('eyebrow') ? 'Obstacle Course · V2.6.7' : 'V2.6.7';
+        node.textContent = node.classList?.contains('eyebrow') ? 'Obstacle Course · V2.6.8' : 'V2.6.8';
       }
     });
   }
@@ -2738,12 +2738,12 @@ window.__artifexObstacleCourse = {
 })();
 
 
-// --- V2.6.7 obstacle-course HUD, alpha collectibles, overview, grid, and controls correction ---
+// --- V2.6.8 obstacle-course HUD, alpha collectibles, overview, grid, and controls correction ---
 (function installObstacleCourseV267Patch(){
   if (OC.__v267PatchInstalled) return;
   OC.__v267PatchInstalled = true;
 
-  OC.versionLabel = 'V2.6.7';
+  OC.versionLabel = 'V2.6.8';
   OC.pathAlphaThreshold = 96;
   OC.collectibleAlphaThreshold = 150;
   OC.vanishX = OC.vanishX ?? 0;
@@ -2756,10 +2756,10 @@ window.__artifexObstacleCourse = {
   const factorToSignedV267 = (value) => Math.round((Number(value || 1) - 1) * 10);
 
   function refreshVisibleVersionsV267() {
-    document.title = document.title.replace(/V2\.\d+(?:\.\d+)?/g, 'V2.6.7');
+    document.title = document.title.replace(/V2\.\d+(?:\.\d+)?/g, 'V2.6.8');
     document.querySelectorAll('.version-pill,.status-pill,.obstacle-header-line .eyebrow').forEach((node) => {
       if (/V2\.|Obstacle Course/.test(node.textContent || '')) {
-        node.textContent = node.classList?.contains('eyebrow') ? 'Obstacle Course · V2.6.7' : 'V2.6.7';
+        node.textContent = node.classList?.contains('eyebrow') ? 'Obstacle Course · V2.6.8' : 'V2.6.8';
       }
     });
   }
@@ -3131,7 +3131,7 @@ window.__artifexObstacleCourse = {
         }
         if (data.movement?.speed || data.speed) OC.speed = Number(data.movement?.speed || data.speed);
         if (data.courseLength) OC.courseLength = Number(data.courseLength);
-        rebuildScene();
+        regenerateCourse();
         setResult('Imported obstacle course JSON settings.', 'success');
       } catch (error) {
         setResult(`JSON import failed: ${error.message}`, 'failure');
@@ -3196,15 +3196,6 @@ window.__artifexObstacleCourse = {
     updateScreenFilters();
     drawOverview();
   };
-
-  const previousRebuildSceneV267 = rebuildScene;
-  rebuildScene = function rebuildSceneV267() {
-    previousRebuildSceneV267();
-    installVisibleHelpersV267();
-    applyAllLayers();
-    drawOverview();
-  };
-
   function injectStylesV267() {
     if (oc$('oc-v267-styles')) return;
     const style = document.createElement('style');
