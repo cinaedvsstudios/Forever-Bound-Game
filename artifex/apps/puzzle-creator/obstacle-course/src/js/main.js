@@ -1,6 +1,6 @@
-import './engines/obstacle-course-asset-debug.js?v=2.7.8';
+import './engines/obstacle-course-asset-debug.js?v=2.7.9';
 
-const VERSION = 'V2.7.8';
+const VERSION = 'V2.7.9';
 
 function mountBootMessage(message, detail = '') {
   const rightPanel = document.querySelector('.right-panel') || document.body;
@@ -17,7 +17,7 @@ function mountBootMessage(message, detail = '') {
 async function bootObstacleCourse() {
   mountBootMessage('Loading obstacle course…');
   try {
-    const module = await import('./engines/obstacle-course-runtime.js?v=2.7.8');
+    const module = await import('./engines/obstacle-course-runtime.js?v=2.7.9');
     document.getElementById('obstacle-course-boot-message')?.remove();
     requestAnimationFrame(() => module.openObstacleCourseWorkflow());
   } catch (error) {

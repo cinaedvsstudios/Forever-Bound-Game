@@ -1,12 +1,12 @@
-// Obstacle Course V2.7.8 / Horse Forest Runner
+// Obstacle Course V2.7.9 / Horse Forest Runner
 // Consolidated runtime: no post-load patch stack.
 // The obstacle-course UI, generation, alpha-path logic, GLB controls, overview, HUD, and JSON settings live here.
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
 
-const VERSION = 'V2.7.8';
-const CACHE_VERSION = '2.7.8';
+const VERSION = 'V2.7.9';
+const CACHE_VERSION = '2.7.9';
 const ASSET_BASE = './assets/';
 const SHARED_UI_BASE = '../../../shared/ui/';
 const GROUND_Y = -1.62;
@@ -736,18 +736,26 @@ const $ = (id) => document.getElementById(id);
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const rand = (min, max) => min + Math.random() * (max - min);
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
-const signedToFactor = (value) => clamp(1 + (Number(value || 0) / 10), 0.05, 8);
-const factorToSigned = (value) => Math.round((Number(value || 1) - 1) * 10);
-const sliderToVisualFactor = (value) => clamp(1 + (Number(value || 0) / 100), 0.5, 2);
+const signedToFactor = (value) => {
+  const v = Number(value || 0);
+  return v >= 0 ? clamp(1 + (v / 100) * 3, 1, 4) : clamp(1 + (v / 100) * 0.95, 0.05, 1);
+};
+const factorToSigned = (value) => {
+  const f = Number(value || 1);
+  return Math.round(f >= 1 ? ((f - 1) / 3) * 100 : ((f - 1) / 0.95) * 100);
+};
+const sliderToVisualFactor = (value) => clamp(1 + (Number(value || 0) / 100), 0, 2.5);
 const visualFactorToSlider = (value) => Math.round((Number(value || 1) - 1) * 100);
-const sliderToGlobalBrightness = (value) => clamp(1 + (Number(value || 0) / 100), 0.5, 1.5);
-const globalBrightnessToSlider = (value) => Math.round((Number(value || 1) - 1) * 100);
-const sliderToGlobalContrast = (value) => clamp(1 + (Number(value || 0) / 100), 0.5, 1.5);
-const globalContrastToSlider = (value) => Math.round((Number(value || 1) - 1) * 100);
-const sliderToGlobalSaturation = (value) => clamp(1 + (Number(value || 0) / 100), 0.5, 2);
-const globalSaturationToSlider = (value) => Math.round((Number(value || 1) - 1) * 100);
-const tintToSlider = (value) => Math.round(clamp(Number(value || 0), 0, 1) * 50);
-const sliderToTint = (value) => clamp(Number(value || 0) / 50, 0, 1);
+const sliderToGlobalBrightness = (value) => sliderToVisualFactor(value);
+const globalBrightnessToSlider = (value) => visualFactorToSlider(value);
+const sliderToGlobalContrast = (value) => sliderToVisualFactor(value);
+const globalContrastToSlider = (value) => visualFactorToSlider(value);
+const sliderToGlobalSaturation = (value) => sliderToVisualFactor(value);
+const globalSaturationToSlider = (value) => visualFactorToSlider(value);
+const sliderToOpacity = (value) => clamp(1 + Math.min(Number(value || 0), 0) / 100, 0, 1);
+const opacityToSlider = (value) => Math.round((Number(value ?? 1) - 1) * 100);
+const tintToSlider = (value) => Math.round(clamp(Number(value || 0), 0, 1) * 100);
+const sliderToTint = (value) => clamp(Number(value || 0) / 100, 0, 1);
 
 export function openObstacleCourseWorkflow() {
   ensureMounted();
@@ -762,6 +770,7 @@ function ensureMounted() {
   updateDocumentVersion();
   injectStyles();
   mountLayout();
+  enhanceStaticRangeSteppers();
   bindInputs();
   initThree();
   preloadAssets().then(() => {
@@ -792,10 +801,10 @@ function injectStyles() {
     .obstacle-horse-overlay{position:absolute;left:50%;bottom:-38px;z-index:7;width:430px;height:247px;margin-left:-215px;pointer-events:none;filter:drop-shadow(0 7px 9px rgba(0,0,0,.72));opacity:.98;background-image:url('${ASSETS.horse}');background-repeat:no-repeat;background-size:700% 100%;background-position:50% 100%;transition:background-position .08s linear}
     .obstacle-hud{position:absolute;left:14px;right:14px;bottom:12px;z-index:8;display:flex;justify-content:space-between;gap:12px;pointer-events:none;color:#f4ead4;font-size:.75rem;text-shadow:0 2px 5px rgba(0,0,0,.8)}
     .obstacle-speed-badge{position:absolute;right:14px;top:12px;z-index:9;width:260px;background:transparent;border:0;padding:0;color:#f4ead4;pointer-events:none}
-    .oc-powerbar-wrap{position:relative;width:230px;height:73px;margin:0 auto 4px;overflow:visible}
-    .oc-powerbar-empty,.oc-powerbar-full,.oc-powerbar-full-clip{position:absolute;left:0;top:0;width:230px;height:73px;background-image:url('${ASSETS.powerbars}');background-repeat:no-repeat;background-size:230px auto;pointer-events:none}
-    .oc-powerbar-empty{background-position:0 -175px}.oc-powerbar-full-clip{overflow:hidden;width:0;background:none;transition:width .08s linear}.oc-powerbar-full{background-position:0 -104px}
-    .oc-powerbar-emoji{position:absolute;left:14px;top:19px;z-index:3;font-size:24px;line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.8))}
+    .oc-powerbar-wrap{position:relative;width:230px;height:50px;margin:0 auto 4px;overflow:visible}
+    .oc-powerbar-empty,.oc-powerbar-full,.oc-powerbar-full-clip{position:absolute;left:0;top:0;width:230px;height:50px;background-image:url('${ASSETS.powerbars}');background-repeat:no-repeat;background-size:230px auto;pointer-events:none}
+    .oc-powerbar-empty{background-position:0 -124px}.oc-powerbar-full-clip{overflow:hidden;width:0;background:none;transition:width .08s linear}.oc-powerbar-full{background-position:0 -86px}
+    .oc-powerbar-emoji{position:absolute;left:14px;top:11px;z-index:3;font-size:24px;line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.8))}
     .oc-speed-label{display:flex;gap:8px;justify-content:flex-end;align-items:center;font-size:.72rem;font-weight:900;color:#eec45a}
     .oc-offpath-label{font-size:.72rem;font-weight:900;color:#ff7373;text-align:right}
     .oc-offpath-arrow{position:absolute;left:50%;top:42%;z-index:10;width:104px;height:104px;margin:-52px 0 0 -52px;display:none;background-image:url('${ASSETS.arrows}');background-repeat:no-repeat;background-size:200% 200%;background-color:transparent;border:0;border-radius:0;color:transparent;text-shadow:none;box-shadow:none;filter:drop-shadow(0 7px 10px rgba(0,0,0,.78));animation:ocPulseArrow .9s ease-in-out infinite;pointer-events:none}
@@ -887,6 +896,51 @@ let sceneryDistanceRegenTimer = 0;
 function scheduleSceneryRegenerate() {
   clearTimeout(sceneryDistanceRegenTimer);
   sceneryDistanceRegenTimer = setTimeout(() => regenerateCourse(), 180);
+}
+
+
+
+function enhanceStaticRangeSteppers(scope = document) {
+  scope.querySelectorAll('.range-row').forEach((row) => {
+    if (row.classList.contains('oc-enhanced-range') || row.dataset.stepperReady === '1') return;
+    const input = row.querySelector('input[type="range"]');
+    const output = row.querySelector('output');
+    if (!input || !output) return;
+    row.dataset.stepperReady = '1';
+    const wrap = document.createElement('span');
+    wrap.className = 'oc-range-stepper';
+    const down = document.createElement('button');
+    down.type = 'button';
+    down.className = 'oc-range-step';
+    down.textContent = '<';
+    const up = document.createElement('button');
+    up.type = 'button';
+    up.className = 'oc-range-step';
+    up.textContent = '>';
+    const number = document.createElement('input');
+    number.type = 'number';
+    number.className = 'oc-range-value';
+    number.min = input.min;
+    number.max = input.max;
+    number.step = input.step || '1';
+    number.value = output.textContent || input.value || '0';
+    output.replaceWith(number);
+    wrap.append(down, number, up);
+    input.parentElement.querySelector('span')?.appendChild(wrap);
+
+    const commit = (value) => {
+      const min = Number(input.min || -100);
+      const max = Number(input.max || 100);
+      const v = clamp(Number(value || 0), min, max);
+      input.value = v;
+      number.value = formatNumber(v);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    input.addEventListener('input', () => { number.value = formatNumber(input.value); });
+    number.addEventListener('change', () => commit(number.value));
+    down.addEventListener('click', (event) => { event.preventDefault(); event.stopPropagation(); commit(Number(input.value || 0) - Number(input.step || 1)); });
+    up.addEventListener('click', (event) => { event.preventDefault(); event.stopPropagation(); commit(Number(input.value || 0) + Number(input.step || 1)); });
+  });
 }
 
 
@@ -1175,12 +1229,20 @@ function ensureVisualShader(mat) {
   if (!mat || mat.userData?.ocVisualShaderInstalled) return;
   mat.userData.ocVisualShaderInstalled = true;
   mat.userData.ocVisualUniforms = null;
+  mat.userData.ocVisualConfig = mat.userData.ocVisualConfig || {
+    brightness: 1,
+    contrast: 1,
+    saturation: 1,
+    tint: '#ffffff',
+    tintStrength: 0,
+  };
   mat.onBeforeCompile = (shader) => {
-    shader.uniforms.ocBrightness = { value: 1 };
-    shader.uniforms.ocContrast = { value: 1 };
-    shader.uniforms.ocSaturation = { value: 1 };
-    shader.uniforms.ocTintColor = { value: new THREE.Color('#ffffff') };
-    shader.uniforms.ocTintStrength = { value: 0 };
+    const cfg = mat.userData.ocVisualConfig || {};
+    shader.uniforms.ocBrightness = { value: cfg.brightness ?? 1 };
+    shader.uniforms.ocContrast = { value: cfg.contrast ?? 1 };
+    shader.uniforms.ocSaturation = { value: cfg.saturation ?? 1 };
+    shader.uniforms.ocTintColor = { value: new THREE.Color(cfg.tint || '#ffffff') };
+    shader.uniforms.ocTintStrength = { value: clamp(cfg.tintStrength || 0, 0, 1) };
     mat.userData.ocVisualUniforms = shader.uniforms;
     shader.fragmentShader = shader.fragmentShader.replace('#include <dithering_fragment>', `
       vec3 ocCol = gl_FragColor.rgb;
@@ -1193,22 +1255,31 @@ function ensureVisualShader(mat) {
       #include <dithering_fragment>
     `);
   };
-  mat.customProgramCacheKey = () => 'oc-visual-shader-v1';
+  mat.customProgramCacheKey = () => 'oc-visual-shader-v2';
   mat.needsUpdate = true;
 }
 
 function updateVisualShaderUniforms(mat, cfg) {
+  if (!mat) return;
+  const visualConfig = {
+    brightness: cfg.brightness ?? 1,
+    contrast: cfg.contrast ?? 1,
+    saturation: cfg.saturation ?? 1,
+    tint: cfg.tint || '#ffffff',
+    tintStrength: clamp(cfg.tintStrength || 0, 0, 1),
+  };
+  mat.userData.ocVisualConfig = visualConfig;
   ensureVisualShader(mat);
   const uniforms = mat.userData?.ocVisualUniforms;
-  if (!uniforms) {
+  if (uniforms) {
+    uniforms.ocBrightness.value = visualConfig.brightness;
+    uniforms.ocContrast.value = visualConfig.contrast;
+    uniforms.ocSaturation.value = visualConfig.saturation;
+    uniforms.ocTintColor.value.set(visualConfig.tint);
+    uniforms.ocTintStrength.value = visualConfig.tintStrength;
+  } else {
     mat.needsUpdate = true;
-    return;
   }
-  uniforms.ocBrightness.value = cfg.brightness ?? 1;
-  uniforms.ocContrast.value = cfg.contrast ?? 1;
-  uniforms.ocSaturation.value = cfg.saturation ?? 1;
-  uniforms.ocTintColor.value.set(cfg.tint || '#ffffff');
-  uniforms.ocTintStrength.value = clamp(cfg.tintStrength || 0, 0, 1);
 }
 
 function applyVisualToMaterial(mat, cfg) {
@@ -1266,29 +1337,50 @@ function populateLayerSelect() {
 }
 
 function buildSliderRow(host, prefix, prop, label, min, max, step, value, handler) {
-  const row = document.createElement('label');
-  row.className = 'range-row';
-  row.innerHTML = `<span>${label} <output id="${prefix}-${prop}-out">${formatNumber(value)}</output></span><input id="${prefix}-${prop}" type="range" min="${min}" max="${max}" step="${step}" value="${value}">`;
+  const row = document.createElement('div');
+  row.className = 'range-row oc-enhanced-range';
+  const id = `${prefix}-${prop}`;
+  const numericValue = Number(value || 0);
+  row.innerHTML = `
+    <span class="oc-range-title">${label}</span>
+    <span class="oc-range-stepper">
+      <button type="button" class="oc-range-step" data-delta="-1" aria-label="${label} down">&lt;</button>
+      <input id="${id}-value" class="oc-range-value" type="number" min="${min}" max="${max}" step="${step}" value="${formatNumber(numericValue)}">
+      <button type="button" class="oc-range-step" data-delta="1" aria-label="${label} up">&gt;</button>
+    </span>
+    <input id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${numericValue}">
+  `;
   host.appendChild(row);
-  row.querySelector('input').addEventListener('input', (event) => {
-    const v = Number(event.target.value || 0);
-    row.querySelector('output').textContent = formatNumber(v);
-    handler(v);
-  });
-}
+  const slider = row.querySelector(`#${id}`);
+  const number = row.querySelector(`#${id}-value`);
 
-function formatNumber(v) {
-  return Number.isInteger(Number(v)) ? String(Number(v)) : Number(v).toFixed(2);
+  const commit = (raw) => {
+    const v = clamp(Number(raw || 0), Number(min), Number(max));
+    slider.value = v;
+    number.value = formatNumber(v);
+    handler(v);
+  };
+
+  slider.addEventListener('input', (event) => commit(event.target.value));
+  number.addEventListener('change', (event) => commit(event.target.value));
+  row.querySelectorAll('.oc-range-step').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const delta = Number(button.dataset.delta || 0) * Number(step || 1);
+      commit(Number(slider.value || 0) + delta);
+    });
+  });
 }
 
 function createGlobalSliders() {
   const host = $('hf-global-sliders');
   if (!host) return;
   host.innerHTML = '';
-  buildSliderRow(host, 'hf-global', 'brightness', 'Brightness', -50, 50, 1, globalBrightnessToSlider(OC.screenBrightness), (v) => { OC.screenBrightness = sliderToGlobalBrightness(v); updateScreenFilters(); });
-  buildSliderRow(host, 'hf-global', 'contrast', 'Contrast', -50, 50, 1, globalContrastToSlider(OC.screenContrast), (v) => { OC.screenContrast = sliderToGlobalContrast(v); updateScreenFilters(); });
-  buildSliderRow(host, 'hf-global', 'saturation', 'Saturation', -50, 100, 1, globalSaturationToSlider(OC.screenSaturation), (v) => { OC.screenSaturation = sliderToGlobalSaturation(v); updateScreenFilters(); });
-  buildSliderRow(host, 'hf-global', 'tintStrength', 'Tint Amt', 0, 50, 1, tintToSlider(OC.screenTintStrength), (v) => { OC.screenTintStrength = sliderToTint(v); updateScreenFilters(); });
+  buildSliderRow(host, 'hf-global', 'brightness', 'Brightness', -100, 100, 1, globalBrightnessToSlider(OC.screenBrightness), (v) => { OC.screenBrightness = sliderToGlobalBrightness(v); updateScreenFilters(); });
+  buildSliderRow(host, 'hf-global', 'contrast', 'Contrast', -100, 100, 1, globalContrastToSlider(OC.screenContrast), (v) => { OC.screenContrast = sliderToGlobalContrast(v); updateScreenFilters(); });
+  buildSliderRow(host, 'hf-global', 'saturation', 'Saturation', -100, 100, 1, globalSaturationToSlider(OC.screenSaturation), (v) => { OC.screenSaturation = sliderToGlobalSaturation(v); updateScreenFilters(); });
+  buildSliderRow(host, 'hf-global', 'tintStrength', 'Tint Amt', -100, 100, 1, tintToSlider(OC.screenTintStrength), (v) => { OC.screenTintStrength = sliderToTint(v); updateScreenFilters(); });
   const tintRow = document.createElement('label');
   tintRow.className = 'field-block';
   tintRow.innerHTML = `<span>Screen Tint</span><input id="hf-global-tint" type="color" value="${OC.screenTint}">`;
@@ -1316,17 +1408,18 @@ function createLayerSliders() {
   layer.brightnessOffset = layer.brightnessOffset ?? visualFactorToSlider(layer.brightness);
   layer.contrastOffset = layer.contrastOffset ?? visualFactorToSlider(layer.contrast);
   layer.saturationOffset = layer.saturationOffset ?? visualFactorToSlider(layer.saturation);
+  layer.opacityOffset = layer.opacityOffset ?? opacityToSlider(layer.opacity);
 
-  buildSliderRow(host, 'hf-layer', 'x', 'X', -50, 50, 0.5, layer.x || 0, (v) => { layer.x = v; applyLayer(layer); drawFrame(); drawOverview(); });
-  buildSliderRow(host, 'hf-layer', 'z', 'Z', -50, 50, 0.5, layer.z || 0, (v) => { layer.z = v; applyLayer(layer); drawFrame(); drawOverview(); });
-  buildSliderRow(host, 'hf-layer', 'y', 'Y', -50, 50, 0.5, layer.y || 0, (v) => { layer.y = v; applyLayer(layer); drawFrame(); });
-  buildSliderRow(host, 'hf-layer', 'scaleOffset', 'Scale', -50, 50, 1, layer.scaleOffset, (v) => { layer.scaleOffset = v; layer.scale = signedToFactor(v); applyLayer(layer); drawFrame(); drawOverview(); });
-  buildSliderRow(host, 'hf-layer', 'opacity', 'Opacity', 0, 1, 0.02, layer.opacity ?? 1, (v) => { layer.opacity = v; applyLayer(layer); drawFrame(); });
-  buildSliderRow(host, 'hf-layer', 'brightnessOffset', 'Bright', -50, 50, 1, layer.brightnessOffset, (v) => { layer.brightnessOffset = v; layer.brightness = sliderToVisualFactor(v); applyLayer(layer); drawFrame(); });
-  buildSliderRow(host, 'hf-layer', 'contrastOffset', 'Contrast', -50, 50, 1, layer.contrastOffset, (v) => { layer.contrastOffset = v; layer.contrast = sliderToVisualFactor(v); applyLayer(layer); drawFrame(); });
-  buildSliderRow(host, 'hf-layer', 'saturationOffset', 'Saturation', -50, 100, 1, layer.saturationOffset, (v) => { layer.saturationOffset = v; layer.saturation = sliderToVisualFactor(v); applyLayer(layer); drawFrame(); });
-  buildSliderRow(host, 'hf-layer', 'tintStrength', 'Tint Amt', 0, 50, 1, tintToSlider(layer.tintStrength), (v) => { layer.tintStrength = sliderToTint(v); applyLayer(layer); drawFrame(); });
-  buildSliderRow(host, 'hf-layer', 'order', 'Order', -50, 50, 1, layer.order || 0, (v) => { layer.order = v; applyLayer(layer); drawFrame(); });
+  buildSliderRow(host, 'hf-layer', 'x', 'X', -100, 100, 1, layer.x || 0, (v) => { layer.x = v; applyLayer(layer); drawFrame(); drawOverview(); });
+  buildSliderRow(host, 'hf-layer', 'z', 'Z', -100, 100, 1, layer.z || 0, (v) => { layer.z = v; applyLayer(layer); drawFrame(); drawOverview(); });
+  buildSliderRow(host, 'hf-layer', 'y', 'Y', -100, 100, 1, layer.y || 0, (v) => { layer.y = v; applyLayer(layer); drawFrame(); });
+  buildSliderRow(host, 'hf-layer', 'scaleOffset', 'Scale', -100, 100, 1, layer.scaleOffset, (v) => { layer.scaleOffset = v; layer.scale = signedToFactor(v); applyLayer(layer); drawFrame(); drawOverview(); });
+  buildSliderRow(host, 'hf-layer', 'opacityOffset', 'Opacity', -100, 100, 1, layer.opacityOffset, (v) => { layer.opacityOffset = v; layer.opacity = sliderToOpacity(v); applyLayer(layer); drawFrame(); });
+  buildSliderRow(host, 'hf-layer', 'brightnessOffset', 'Bright', -100, 100, 1, layer.brightnessOffset, (v) => { layer.brightnessOffset = v; layer.brightness = sliderToVisualFactor(v); applyLayer(layer); drawFrame(); });
+  buildSliderRow(host, 'hf-layer', 'contrastOffset', 'Contrast', -100, 100, 1, layer.contrastOffset, (v) => { layer.contrastOffset = v; layer.contrast = sliderToVisualFactor(v); applyLayer(layer); drawFrame(); });
+  buildSliderRow(host, 'hf-layer', 'saturationOffset', 'Saturation', -100, 100, 1, layer.saturationOffset, (v) => { layer.saturationOffset = v; layer.saturation = sliderToVisualFactor(v); applyLayer(layer); drawFrame(); });
+  buildSliderRow(host, 'hf-layer', 'tintStrength', 'Tint Amt', -100, 100, 1, tintToSlider(layer.tintStrength), (v) => { layer.tintStrength = sliderToTint(v); applyLayer(layer); drawFrame(); });
+  buildSliderRow(host, 'hf-layer', 'order', 'Order', -100, 100, 1, layer.order || 0, (v) => { layer.order = v; applyLayer(layer); drawFrame(); });
   const tintRow = document.createElement('label');
   tintRow.className = 'field-block';
   tintRow.innerHTML = `<span>Layer Tint</span><input id="hf-layer-tint" type="color" value="${layer.tint || '#ffffff'}">`;
@@ -1361,16 +1454,17 @@ function createGlbAssetSliders(host) {
   });
   const cfg = glbControl(OC.selectedGlbAssetUrl);
   if (!cfg) return;
-  buildSliderRow(host, 'hf-glb', 'x', 'X', -50, 50, 0.5, cfg.x || 0, (v) => { cfg.x = v; applyAllGlbAssetControls(); });
-  buildSliderRow(host, 'hf-glb', 'z', 'Z', -50, 50, 0.5, cfg.z || 0, (v) => { cfg.z = v; applyAllGlbAssetControls(); });
-  buildSliderRow(host, 'hf-glb', 'y', 'Y', -50, 50, 0.5, cfg.y || 0, (v) => { cfg.y = v; applyAllGlbAssetControls(); });
-  buildSliderRow(host, 'hf-glb', 'scaleOffset', 'Scale', -50, 50, 1, cfg.scaleOffset || 0, (v) => { cfg.scaleOffset = v; cfg.scale = signedToFactor(v); applyAllGlbAssetControls(); });
-  buildSliderRow(host, 'hf-glb', 'opacity', 'Opacity', 0, 1, 0.02, cfg.opacity ?? 1, (v) => { cfg.opacity = v; applyAllGlbAssetControls(); });
-  buildSliderRow(host, 'hf-glb', 'brightnessOffset', 'Bright', -50, 50, 1, cfg.brightnessOffset || 0, (v) => { cfg.brightnessOffset = v; cfg.brightness = sliderToVisualFactor(v); applyAllGlbAssetControls(); });
-  buildSliderRow(host, 'hf-glb', 'contrastOffset', 'Contrast', -50, 50, 1, cfg.contrastOffset || 0, (v) => { cfg.contrastOffset = v; cfg.contrast = sliderToVisualFactor(v); applyAllGlbAssetControls(); });
-  buildSliderRow(host, 'hf-glb', 'saturationOffset', 'Saturation', -50, 100, 1, cfg.saturationOffset || 0, (v) => { cfg.saturationOffset = v; cfg.saturation = sliderToVisualFactor(v); applyAllGlbAssetControls(); });
-  buildSliderRow(host, 'hf-glb', 'tintStrength', 'Tint Amt', 0, 50, 1, tintToSlider(cfg.tintStrength), (v) => { cfg.tintStrength = sliderToTint(v); applyAllGlbAssetControls(); });
-  buildSliderRow(host, 'hf-glb', 'order', 'Order', -50, 50, 1, cfg.order || 0, (v) => { cfg.order = v; applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'x', 'X', -100, 100, 1, cfg.x || 0, (v) => { cfg.x = v; applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'z', 'Z', -100, 100, 1, cfg.z || 0, (v) => { cfg.z = v; applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'y', 'Y', -100, 100, 1, cfg.y || 0, (v) => { cfg.y = v; applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'scaleOffset', 'Scale', -100, 100, 1, cfg.scaleOffset || 0, (v) => { cfg.scaleOffset = v; cfg.scale = signedToFactor(v); applyAllGlbAssetControls(); });
+  cfg.opacityOffset = cfg.opacityOffset ?? opacityToSlider(cfg.opacity);
+  buildSliderRow(host, 'hf-glb', 'opacityOffset', 'Opacity', -100, 100, 1, cfg.opacityOffset, (v) => { cfg.opacityOffset = v; cfg.opacity = sliderToOpacity(v); applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'brightnessOffset', 'Bright', -100, 100, 1, cfg.brightnessOffset || 0, (v) => { cfg.brightnessOffset = v; cfg.brightness = sliderToVisualFactor(v); applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'contrastOffset', 'Contrast', -100, 100, 1, cfg.contrastOffset || 0, (v) => { cfg.contrastOffset = v; cfg.contrast = sliderToVisualFactor(v); applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'saturationOffset', 'Saturation', -100, 100, 1, cfg.saturationOffset || 0, (v) => { cfg.saturationOffset = v; cfg.saturation = sliderToVisualFactor(v); applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'tintStrength', 'Tint Amt', -100, 100, 1, tintToSlider(cfg.tintStrength), (v) => { cfg.tintStrength = sliderToTint(v); applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'order', 'Order', -100, 100, 1, cfg.order || 0, (v) => { cfg.order = v; applyAllGlbAssetControls(); });
   const tintRow = document.createElement('label');
   tintRow.className = 'field-block';
   tintRow.innerHTML = `<span>GLB Tint</span><input id="hf-glb-tint" type="color" value="${cfg.tint || '#ffffff'}">`;
@@ -1411,19 +1505,10 @@ function toggleWhiteBackground() {
 }
 
 function updateScreenFilters() {
-  const brightness = clamp(OC.screenBrightness || 1, 0.1, 3);
-  const contrast = clamp(OC.screenContrast || 1, 0.1, 3);
-  const saturation = clamp(OC.screenSaturation || 1, 0.1, 4);
+  const brightness = clamp(OC.screenBrightness || 1, 0, 2.5);
+  const contrast = clamp(OC.screenContrast || 1, 0, 2.5);
+  const saturation = clamp(OC.screenSaturation || 1, 0, 2.5);
   const filter = `brightness(${brightness}) contrast(${contrast}) saturate(${saturation})`;
-
-  const targets = [document.documentElement, document.body, OC.host, OC.stage].filter(Boolean);
-  targets.forEach((node) => {
-    node.style.setProperty('--oc-brightness', String(brightness));
-    node.style.setProperty('--oc-contrast', String(contrast));
-    node.style.setProperty('--oc-saturation', String(saturation));
-    node.style.setProperty('--oc-tint', OC.screenTint || '#000000');
-    node.style.setProperty('--oc-tint-opacity', String(clamp(OC.screenTintStrength || 0, 0, 1)));
-  });
 
   const canvas = OC.renderer?.domElement;
   if (canvas) canvas.style.filter = filter;
@@ -1437,7 +1522,6 @@ function updateScreenFilters() {
 
   renderOnce();
 }
-
 
 function normalizePathSegmentId(id) {
   const key = String(id || '').trim();
@@ -1996,6 +2080,7 @@ function refreshGlbSelectionBoxes() {
 function startRun() {
   document.activeElement?.blur?.();
   OC.stage?.focus?.();
+  startRenderLoop();
   if (!OC.requiredReady) {
     setResult('Cannot start: required obstacle-course assets are missing.', 'failure');
     return;
@@ -2014,6 +2099,7 @@ function pauseRun() {
   OC.running = !OC.running;
   OC.paused = !OC.running;
   if (!OC.running) stopMotionLoops();
+  startRenderLoop();
   updateStats();
 }
 
@@ -2046,20 +2132,34 @@ function resetRun(silent = false) {
   drawOverview();
 }
 
+function isTextEntryTarget(event) {
+  const target = event.target;
+  if (!target) return false;
+  if (target.isContentEditable) return true;
+  const tag = String(target.tagName || '').toLowerCase();
+  if (tag === 'textarea' || tag === 'select') return true;
+  if (tag !== 'input') return false;
+  const type = String(target.type || 'text').toLowerCase();
+  return !['range', 'button', 'checkbox', 'color', 'radio'].includes(type);
+}
+
 function handleKeyDown(event) {
+  if (isTextEntryTarget(event)) return;
   const key = normalizeKey(event);
   if (!key) return;
   OC.keys.add(key);
-  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','Control'].includes(event.key)) event.preventDefault();
+  event.preventDefault();
   if (key === 'jump') OC.player.jumpingHeld = true;
+  if (OC.active) startRenderLoop();
 }
 
 function handleKeyUp(event) {
+  if (isTextEntryTarget(event)) return;
   const key = normalizeKey(event);
   if (!key) return;
   OC.keys.delete(key);
   if (key === 'jump') OC.player.jumpingHeld = false;
-  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','Control'].includes(event.key)) event.preventDefault();
+  event.preventDefault();
 }
 
 function normalizeKey(event) {
@@ -2160,6 +2260,7 @@ function checkInteractions() {
 
 function completeRun() {
   OC.complete = true;
+  OC.active = false;
   OC.running = false;
   OC.currentSpeed = 0;
   OC.targetSpeed = 0;
@@ -2302,19 +2403,24 @@ function renderOnce() {
   OC.renderer.render(OC.scene, OC.camera);
 }
 
-function drawFrame() {
-  if (!OC.renderer || !OC.scene || !OC.camera) return;
-  if (OC.renderLoopRunning && !OC.renderLoopTick) {
-    renderOnce();
-    return;
-  }
+function startRenderLoop() {
+  if (OC.renderLoopRunning) return;
   OC.renderLoopRunning = true;
-  OC.renderLoopTick = true;
+  OC.clock?.getDelta?.();
+  OC.frame = requestAnimationFrame(animateFrame);
+}
+
+function animateFrame() {
+  if (!OC.renderLoopRunning) return;
   const dt = Math.min(0.033, OC.clock?.getDelta?.() || 0.016);
   if (OC.active) updateRun(dt);
   renderOnce();
-  OC.renderLoopTick = false;
-  OC.frame = requestAnimationFrame(drawFrame);
+  OC.frame = requestAnimationFrame(animateFrame);
+}
+
+function drawFrame() {
+  startRenderLoop();
+  renderOnce();
 }
 
 function worldToOverview(x, z) {
