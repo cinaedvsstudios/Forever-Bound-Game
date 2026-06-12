@@ -1,16 +1,15 @@
-// Obstacle Course V2.6.8 / Horse Forest Runner V29.8
-// Clean consolidated live engine: no layout/control patch stack.
-// Features: horse POV, modular transparent WEBP path segments, forest_ground WEBP ground,
-// hold-to-move forward/backward, Ctrl duck, hold-extended jump, and off-path slow-trot penalty.
+// Obstacle Course V2.7.0 / Horse Forest Runner
+// Consolidated runtime: no post-load patch stack.
+// The obstacle-course UI, generation, alpha-path logic, GLB controls, overview, HUD, and JSON settings live here.
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
 
+const VERSION = 'V2.7.0';
+const CACHE_VERSION = '2.7.0';
 const ASSET_BASE = './assets/';
+const SHARED_UI_BASE = '../../../shared/ui/';
 const GROUND_Y = -1.62;
-const SEGMENT_HEIGHT_PX = 2000;
-const SEGMENT_OVERLAP_PX = 250;
-const SEGMENT_STEP_PX = SEGMENT_HEIGHT_PX - SEGMENT_OVERLAP_PX;
 const SEGMENT_WORLD_LENGTH = 80;
 const SEGMENT_WORLD_OVERLAP = 10;
 const SEGMENT_WORLD_STEP = SEGMENT_WORLD_LENGTH - SEGMENT_WORLD_OVERLAP;
@@ -18,211 +17,831 @@ const PATH_POSITIONS = { left: -6.3, centre: 0, center: 0, right: 6.3 };
 const BASE_SPEED = 34;
 const BACK_SPEED = -7;
 const SLOW_TROT_SPEED = 8;
-const ACCEL = 22;
-const DECEL = 24;
+const ACCEL = 24;
+const DECEL = 26;
 
 const ASSETS = {
   horse: `${ASSET_BASE}foreground/horse.png`,
   background: `${ASSET_BASE}backgrounds/horseridebg.jpg`,
   ground: `${ASSET_BASE}ground/forest_ground.webp`,
+  powerbars: `${ASSET_BASE}ui/powerbars.png`,
+  arrows: `${SHARED_UI_BASE}defaultarrows.webp`,
   pathSegments: {
-    straight: { id: 'pathstraight', label: 'Straight', file: `${ASSET_BASE}path-segments/pathstraight.webp`, start: 'centre', end: 'centre' },
-    kink: { id: 'pathkink', label: 'Kink', file: `${ASSET_BASE}path-segments/pathkink.webp`, start: 'centre', end: 'centre' },
-    left: { id: 'pathleft', label: 'Move left', file: `${ASSET_BASE}path-segments/pathleft.webp`, start: 'centre', end: 'left' },
-    right: { id: 'pathright', label: 'Move right', file: `${ASSET_BASE}path-segments/pathright.webp`, start: 'centre', end: 'right' },
-    leftToStraight: { id: 'pathlefttostraight', label: 'Left to centre', file: `${ASSET_BASE}path-segments/pathlefttostraight.webp`, start: 'left', end: 'centre' },
-    rightToStraight: { id: 'righttostraight', label: 'Right to centre', file: `${ASSET_BASE}path-segments/righttostraight.webp`, start: 'right', end: 'centre' },
+    straight: { key: 'straight', id: 'pathstraight', label: 'Straight', file: `${ASSET_BASE}path-segments/pathstraight.webp`, start: 'centre', end: 'centre' },
+    kink: { key: 'kink', id: 'pathkink', label: 'Kink', file: `${ASSET_BASE}path-segments/pathkink.webp`, start: 'centre', end: 'centre' },
+    left: { key: 'left', id: 'pathleft', label: 'Move left', file: `${ASSET_BASE}path-segments/pathleft.webp`, start: 'centre', end: 'left' },
+    right: { key: 'right', id: 'pathright', label: 'Move right', file: `${ASSET_BASE}path-segments/pathright.webp`, start: 'centre', end: 'right' },
+    leftToStraight: { key: 'leftToStraight', id: 'pathlefttostraight', label: 'Left to centre', file: `${ASSET_BASE}path-segments/pathlefttostraight.webp`, start: 'left', end: 'centre' },
+    rightToStraight: { key: 'rightToStraight', id: 'righttostraight', label: 'Right to centre', file: `${ASSET_BASE}path-segments/righttostraight.webp`, start: 'right', end: 'centre' },
   },
-  trees: [
-    `${ASSET_BASE}3d/tree.glb`,
-    `${ASSET_BASE}3d/tree_low-poly.glb`,
-    `${ASSET_BASE}3d/hill_top_tree.glb`,
-    `${ASSET_BASE}3d/small_pine.glb`,
-    `${ASSET_BASE}3d/pine_with_awkward_teenage_face.glb`,
-  ],
+  audio: {
+    snort: `${ASSET_BASE}audio/horse_snort.wav`,
+    neigh: `${ASSET_BASE}audio/horse_neigh.mp3`,
+    gallopSlow: `${ASSET_BASE}audio/horse_gallop_slow.mp3`,
+    gallopFull: `${ASSET_BASE}audio/horse_gallop_full.mp3`,
+    land: `${ASSET_BASE}audio/horse_land.mp3`,
+    forest: `${ASSET_BASE}audio/forest_ambience.mp3`,
+    bush: `${ASSET_BASE}audio/bush.mp3`,
+  }
 };
 
-
-const AUDIO_ASSETS = {
-  snort: `${ASSET_BASE}audio/horse_snort.wav`,
-  neigh: `${ASSET_BASE}audio/horse_neigh.mp3`,
-  gallopSlow: `${ASSET_BASE}audio/horse_gallop_slow.mp3`,
-  gallopFull: `${ASSET_BASE}audio/horse_gallop_full.mp3`,
-  land: `${ASSET_BASE}audio/horse_land.mp3`,
-  forest: `${ASSET_BASE}audio/forest_ambience.mp3`,
-  bush: `${ASSET_BASE}audio/bush.mp3`,
-};
-
-const AUDIO = {
-  ready: false,
-  clips: new Map(),
-  lastVoiceAt: 0,
-  lastBushAt: 0,
-  wasForwardMoving: false,
-};
+const GLB_ASSETS = [
+  { url: `${ASSET_BASE}3d/dead_tree.glb`, label: 'Dead tree', type: 'tree', scale: 10, density: 0.55 },
+  { url: `${ASSET_BASE}3d/hill_top_tree.glb`, label: 'Hill top tree', type: 'tree', scale: 9, density: 0.45 },
+  { url: `${ASSET_BASE}3d/low_poly_fern.glb`, label: 'Low poly fern', type: 'detail', scale: 1.6, density: 0.75 },
+  { url: `${ASSET_BASE}3d/fern.glb`, label: 'Fern', type: 'detail', scale: 1.5, density: 0.75, optional: true },
+  { url: `${ASSET_BASE}3d/tall_bush.glb`, label: 'Tall bush', type: 'detail', scale: 2.2, density: 0.65, optional: true },
+  { url: `${ASSET_BASE}3d/oak_trees.glb`, label: 'Oak trees', type: 'tree', scale: 11, density: 0.55 },
+  { url: `${ASSET_BASE}3d/pine_tree.glb`, label: 'Pine tree', type: 'tree', scale: 13, density: 0.85 },
+  { url: `${ASSET_BASE}3d/pine_tree__ps1_low_poly.glb`, label: 'Pine tree PS1', type: 'tree', scale: 12, density: 0.6 },
+  { url: `${ASSET_BASE}3d/pine_with_awkward_teenage_face.glb`, label: 'Pine face', type: 'tree', scale: 12, density: 0.25 },
+  { url: `${ASSET_BASE}3d/small_pine.glb`, label: 'Small pine', type: 'tree', scale: 7, density: 0.8 },
+  { url: `${ASSET_BASE}3d/tree.glb`, label: 'Tree', type: 'tree', scale: 10, density: 0.75 },
+  { url: `${ASSET_BASE}3d/tree_gn.glb`, label: 'Tree gn', type: 'tree', scale: 11, density: 0.45 },
+  { url: `${ASSET_BASE}3d/tree_low-poly.glb`, label: 'Low poly tree', type: 'tree', scale: 10, density: 0.75 },
+  { url: `${ASSET_BASE}3d/rock_low-poly.glb`, label: 'Rock', type: 'rock', scale: 1.25, density: 0.8 },
+  { url: `${ASSET_BASE}3d/stone_low-poly.glb`, label: 'Stone', type: 'rock', scale: 1.1, density: 0.75 },
+  { url: `${ASSET_BASE}3d/stylized_glowing_mushrooms.glb`, label: 'Glowing mushrooms', type: 'collectible', scale: 1.55, density: 0.38, value: 3 },
+  { url: `${ASSET_BASE}3d/moneysack.glb`, label: 'Money sack', type: 'collectible', scale: 1.35, density: 0.24, value: 7, optional: true },
+];
 
 const TEMPLATES = {
-  horse_forest_easy: { label: 'Obstacle Course', obstacleRate: 1 },
-  horse_forest_dense: { label: 'Dense Forest Course', obstacleRate: 1.35 },
-  horse_forest_night: { label: 'Moonlit Forest Course', obstacleRate: 1.15 },
+  horse_forest_easy: { label: 'Obstacle Course', obstacleRate: 1, treeRate: 1, rockRate: 1, detailRate: 1 },
+  horse_forest_dense: { label: 'Dense Forest Course', obstacleRate: 1.35, treeRate: 1.65, rockRate: 1.15, detailRate: 1.4 },
+  horse_forest_night: { label: 'Moonlit Forest Course', obstacleRate: 1.15, treeRate: 1.25, rockRate: 1.1, detailRate: 1.2 },
 };
 
 const OC = {
+  version: VERSION,
   mounted: false,
   active: false,
   running: false,
+  paused: false,
   complete: false,
   templateId: 'horse_forest_easy',
   difficulty: 2,
-  duration: 45,
-  maxDuration: 300,
+  courseLength: 1500,
   speed: BASE_SPEED,
   currentSpeed: 0,
   targetSpeed: 0,
   startAssistTime: 0,
-  screenBrightness: 1,
-  screenTint: '#000000',
-  screenTintStrength: 0,
-  sceneryDistance: 1.6,
-  steerSpeed: 9,
-  laneWidth: 2.7,
   distance: 0,
-  courseLength: 1530,
   score: 0,
   hits: 0,
   jumps: 0,
   collected: 0,
   successScore: 20,
+  offPathTime: 0,
+  pathHintDirection: 'right',
+  pathAlphaThreshold: 96,
+  collectibleAlphaThreshold: 150,
+  pathVisualWidth: 31.8,
+  laneWidth: 2.7,
+  groundVisualWidth: 220,
+  groundTextureWorldSize: 220,
+  sceneryDistance: 1.6,
+  steerSpeed: 18,
   bumpStrength: 0.12,
   displacementStrength: 0.035,
+  vanishX: 0,
+  vanishY: 0.35,
+  gridEnabled: false,
+  overviewPathOverlay: true,
+  whiteBackground: false,
+  screenBrightness: 1,
+  screenContrast: 1,
+  screenSaturation: 1,
+  screenTint: '#000000',
+  screenTintStrength: 0,
   keys: new Set(),
-  player: {
-    x: 0,
-    y: 0,
-    vy: 0,
-    grounded: true,
-    jumpingHeld: false,
-    jumpHoldTime: 0,
-    maxJumpHoldTime: 0.68,
-  },
+  player: { x: 0, y: 0, vy: 0, grounded: true, jumpingHeld: false, jumpHoldTime: 0, maxJumpHoldTime: 0.68 },
   pathSequence: [],
   objects: [],
   placed: [],
-  treeModels: [],
-  treeLoadStarted: false,
+  glbInstances: [],
+  glbTemplates: new Map(),
+  glbAssetUrls: GLB_ASSETS.map((asset) => asset.url),
+  glbControls: new Map(),
+  selectedGlbAssetUrl: '',
+  selectionBoxes: [],
   selectedLayerId: 'path',
   soloLayerId: null,
-  paintMode: 'path-alpha',
-  brushSize: 18,
-  brushStrength: 0.5,
-  isPainting: false,
+  layers: new Map(),
+  pathAlphaMaps: new Map(),
+  requiredReady: false,
+  loadingDone: false,
+  loadingTotal: 0,
+  loadingCount: 0,
+  textureLoader: null,
+  gltfLoader: null,
+  textureCache: new Map(),
+  pathMaterialCache: new Map(),
+  audioReady: false,
+  audioClips: new Map(),
+  lastVoiceAt: 0,
+  lastBushAt: 0,
+  wasForwardMoving: false,
   host: null,
+  leftPanel: null,
+  rightPanel: null,
   stage: null,
-  panels: null,
   scene: null,
   camera: null,
   renderer: null,
   world: null,
+  grid: null,
   clock: null,
   frame: null,
-  textureLoader: null,
-  textureCache: new Map(),
-  pathMaterialCache: new Map(),
-  gltfLoader: null,
   groundMaterial: null,
-  layers: new Map(),
 };
 
-const oc$ = (id) => document.getElementById(id);
+const $ = (id) => document.getElementById(id);
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const rand = (min, max) => min + Math.random() * (max - min);
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
+const signedToFactor = (value) => clamp(1 + (Number(value || 0) / 10), 0.05, 8);
+const factorToSigned = (value) => Math.round((Number(value || 1) - 1) * 10);
 
-
-function audioSupported() {
-  return typeof Audio !== 'undefined';
+export function openObstacleCourseWorkflow() {
+  ensureMounted();
 }
 
-function makeAudio(src, options = {}) {
-  if (!audioSupported()) return null;
-  const audio = new Audio(src);
-  audio.preload = options.preload || 'auto';
-  audio.loop = Boolean(options.loop);
-  audio.volume = options.volume ?? 0.8;
-  return audio;
+function ensureMounted() {
+  if (OC.mounted) return;
+  OC.mounted = true;
+  OC.leftPanel = document.querySelector('.left-panel-body') || document.querySelector('.left-panel') || document.body;
+  OC.rightPanel = document.querySelector('.right-panel') || document.body;
+  updateDocumentVersion();
+  injectStyles();
+  mountLayout();
+  bindInputs();
+  initThree();
+  preloadAssets().finally(() => {
+    OC.requiredReady = true;
+    regenerateCourse();
+    updateStats();
+    setResult('Obstacle course ready.', 'success');
+  });
 }
 
-function ensureAudioReady() {
-  if (AUDIO.ready) return;
-  AUDIO.ready = true;
-  AUDIO.clips.set('snort', makeAudio(AUDIO_ASSETS.snort, { volume: 0.72 }));
-  AUDIO.clips.set('neigh', makeAudio(AUDIO_ASSETS.neigh, { volume: 0.72 }));
-  AUDIO.clips.set('land', makeAudio(AUDIO_ASSETS.land, { volume: 0.55 }));
-  AUDIO.clips.set('bush', makeAudio(AUDIO_ASSETS.bush, { volume: 0.46 }));
-  AUDIO.clips.set('forest', makeAudio(AUDIO_ASSETS.forest, { loop: true, volume: 0.18 }));
-  AUDIO.clips.set('gallopSlow', makeAudio(AUDIO_ASSETS.gallopSlow, { loop: true, volume: 0.38 }));
-  AUDIO.clips.set('gallopFull', makeAudio(AUDIO_ASSETS.gallopFull, { loop: true, volume: 0.46 }));
+function updateDocumentVersion() {
+  document.title = `Obstacle Course · Puzzle Creator ${VERSION} · Forever Bound`;
+  document.querySelectorAll('.version-pill,.status-pill').forEach((node) => {
+    if (/V\d/.test(node.textContent || '')) node.textContent = VERSION;
+  });
 }
 
-function playClip(id, options = {}) {
-  ensureAudioReady();
-  const clip = AUDIO.clips.get(id);
-  if (!clip) return;
-  try {
-    if (!options.allowOverlap) clip.currentTime = 0;
-    if (options.volume !== undefined) clip.volume = options.volume;
-    const play = clip.play();
-    if (play?.catch) play.catch(() => {});
-  } catch (_) {}
+function injectStyles() {
+  if ($('oc-consolidated-styles')) return;
+  const style = document.createElement('style');
+  style.id = 'oc-consolidated-styles';
+  style.textContent = `
+    .obstacle-app{height:100%;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:12px;padding:14px;overflow:hidden}
+    .obstacle-main-card,.obstacle-side-card{min-height:0;border:1px solid rgba(238,196,90,.32);border-radius:16px;background:rgba(5,10,16,.9);box-shadow:0 20px 70px rgba(0,0,0,.34);padding:16px;overflow:auto}
+    .obstacle-header-line{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;border-bottom:1px solid rgba(238,196,90,.22);padding-bottom:12px;margin-bottom:14px}
+    .obstacle-header-line h2{font-family:Cinzel,Georgia,serif;margin:.2rem 0;font-size:1.35rem}.obstacle-header-line .eyebrow{font-size:.66rem;color:#9ee6a4;font-weight:900;letter-spacing:.18em;text-transform:uppercase}
+    .obstacle-header-line p{margin:.3rem 0;color:#c9bfae;font-size:.78rem}.obstacle-status-pill{border:1px solid rgba(238,196,90,.55);border-radius:999px;padding:8px 10px;color:#eec45a;font-weight:900;font-size:.72rem}
+    .obstacle-three-wrap{position:relative;width:100%;aspect-ratio:16/9;min-height:360px;border:1px solid rgba(124,202,125,.24);border-radius:14px;overflow:hidden;background:#05080d}
+    .obstacle-three-wrap canvas{display:block;width:100%!important;height:100%!important;filter:brightness(var(--oc-brightness,1)) contrast(var(--oc-contrast,1)) saturate(var(--oc-saturation,1))!important}
+    .obstacle-tint-overlay{position:absolute;inset:0;z-index:6;pointer-events:none;background:var(--oc-tint,#000);opacity:var(--oc-tint-opacity,0);mix-blend-mode:color}
+    .obstacle-horse-overlay{position:absolute;left:50%;bottom:-38px;z-index:7;width:430px;height:247px;margin-left:-215px;pointer-events:none;filter:drop-shadow(0 7px 9px rgba(0,0,0,.72));opacity:.98;background-image:url('${ASSETS.horse}');background-repeat:no-repeat;background-size:700% 100%;background-position:50% 100%;transition:background-position .08s linear}
+    .obstacle-hud{position:absolute;left:14px;right:14px;bottom:12px;z-index:8;display:flex;justify-content:space-between;gap:12px;pointer-events:none;color:#f4ead4;font-size:.75rem;text-shadow:0 2px 5px rgba(0,0,0,.8)}
+    .obstacle-speed-badge{position:absolute;right:14px;top:12px;z-index:9;width:260px;background:transparent;border:0;padding:0;color:#f4ead4;pointer-events:none}
+    .oc-powerbar-wrap{position:relative;width:230px;height:73px;margin:0 auto 4px;overflow:visible}
+    .oc-powerbar-empty,.oc-powerbar-full,.oc-powerbar-full-clip{position:absolute;left:0;top:0;width:230px;height:73px;background-image:url('${ASSETS.powerbars}');background-repeat:no-repeat;background-size:230px auto;pointer-events:none}
+    .oc-powerbar-empty{background-position:0 -175px}.oc-powerbar-full-clip{overflow:hidden;width:0;background:none;transition:width .08s linear}.oc-powerbar-full{background-position:0 -104px}
+    .oc-powerbar-emoji{position:absolute;left:14px;top:19px;z-index:3;font-size:24px;line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.8))}
+    .oc-speed-label{display:flex;gap:8px;justify-content:flex-end;align-items:center;font-size:.72rem;font-weight:900;color:#eec45a}
+    .oc-offpath-label{font-size:.72rem;font-weight:900;color:#ff7373;text-align:right}
+    .oc-offpath-arrow{position:absolute;left:50%;top:42%;z-index:10;width:104px;height:104px;margin:-52px 0 0 -52px;display:none;background-image:url('${ASSETS.arrows}');background-repeat:no-repeat;background-size:200% 200%;background-color:transparent;border:0;border-radius:0;color:transparent;text-shadow:none;box-shadow:none;filter:drop-shadow(0 7px 10px rgba(0,0,0,.78));animation:ocPulseArrow .9s ease-in-out infinite;pointer-events:none}
+    .oc-offpath-arrow.is-visible{display:block}.oc-offpath-arrow.dir-left{background-position:0% 100%}.oc-offpath-arrow.dir-right{background-position:100% 100%}@keyframes ocPulseArrow{0%,100%{transform:translateY(0) scale(.92)}50%{transform:translateY(-11px) scale(1.12)}}
+    .hf-run-controls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}.hf-run-controls button,.wide-button,.hf-export-json-button{min-height:36px;border:1px solid rgba(124,202,125,.35);border-radius:10px;background:rgba(20,72,37,.64);color:#f4ead4;font-weight:900;cursor:pointer}.hf-run-controls button:hover,.wide-button:hover,.hf-export-json-button:hover{border-color:rgba(238,196,90,.75)}
+    .hf-run-controls button.is-running{border-color:rgba(158,230,164,.95);background:rgba(36,120,62,.9);box-shadow:0 0 0 2px rgba(158,230,164,.22),0 0 18px rgba(158,230,164,.2)}.hf-run-controls button.is-paused{border-color:rgba(238,196,90,.95);background:rgba(95,63,9,.88)}
+    .hf-layer-panel,.hf-control-section{border:1px solid rgba(124,202,125,.22);border-radius:14px;padding:12px;background:rgba(7,14,22,.72);margin-bottom:12px}.hf-layer-panel h3,.hf-control-section h3{font-family:Cinzel,Georgia,serif;margin:.1rem 0 .75rem;font-size:.95rem}
+    label.field-block,.range-row{display:block;color:#c9bfae;font-size:.72rem;font-weight:800;margin:9px 0}.field-block span,.range-row span{display:flex;justify-content:space-between;gap:8px;margin-bottom:5px}.field-block select,.field-block input,.range-row input{width:100%;min-width:0}.field-block select{background:#0b1219;color:#f4ead4;border:1px solid rgba(124,202,125,.28);border-radius:10px;padding:8px}.range-row output{color:#eec45a}
+    .hf-button-row{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.hf-button-row button{min-height:34px;border:1px solid rgba(124,202,125,.35);border-radius:9px;background:rgba(20,72,37,.62);color:#f4ead4;font-weight:900}
+    .field-check{display:flex;align-items:center;gap:8px;color:#c9bfae;font-size:.72rem;font-weight:800;margin:8px 0}.field-check input{width:auto}
+    .hf-overview-wrap{margin-top:12px;border:1px solid rgba(238,196,90,.25);border-radius:12px;overflow:auto;background:#101914;max-height:390px}.hf-overview{display:block;width:100%;height:auto;min-height:250px}
+    .hf-key-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;color:#c9bfae;font-size:.72rem}.hf-key-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}.hf-key-path{background:#eec45a}.hf-key-tree{background:#48a24a}.hf-key-rock{background:#aaa}.hf-key-collectible{background:#5be5ff}.hf-key-obstacle{background:#b04b35}
+    .oc-result{min-height:24px;margin:8px 0;color:#eec45a;font-size:.75rem}.oc-result.failure{color:#ff9a9a}.oc-result.success{color:#9ee6a4}
+    .oc-loading{color:#eec45a;font-size:.72rem;font-weight:900;margin-top:8px}.right-preview-layout,.overview-window,.render-viewport{display:none!important}
+  `;
+  document.head.appendChild(style);
 }
 
-function setLoop(id, active, volume) {
-  ensureAudioReady();
-  const clip = AUDIO.clips.get(id);
-  if (!clip) return;
-  if (volume !== undefined) clip.volume = volume;
-  if (active) {
-    const play = clip.play();
-    if (play?.catch) play.catch(() => {});
-  } else {
-    clip.pause();
+function mountLayout() {
+  OC.rightPanel.innerHTML = `
+    <div class="obstacle-app">
+      <section class="obstacle-main-card">
+        <div class="obstacle-header-line">
+          <div><p class="eyebrow">Obstacle Course · ${VERSION}</p><h2 id="obstacle-title">Obstacle Course</h2><p id="obstacle-objective">Horse forest obstacle course using alpha-tested transparent path segments over forest_ground.webp.</p></div>
+          <span id="obstacle-status" class="obstacle-status-pill">Loading</span>
+        </div>
+        <div id="obstacle-stage" class="obstacle-three-wrap">
+          <div class="obstacle-tint-overlay"></div>
+          <div id="obstacle-speed-badge" class="obstacle-speed-badge"></div>
+          <div id="oc-offpath-arrow" class="oc-offpath-arrow dir-right"></div>
+          <div id="obstacle-horse" class="obstacle-horse-overlay"></div>
+          <div class="obstacle-hud"><span id="obstacle-distance-readout">Distance 0 / ${OC.courseLength}</span><span id="obstacle-score-readout">Score 0</span></div>
+        </div>
+        <div class="hf-run-controls">
+          <button id="obstacle-start" type="button">Start Test</button>
+          <button id="obstacle-pause" type="button">Pause</button>
+          <button id="obstacle-reset-run" type="button">Reset Run</button>
+        </div>
+        <div id="obstacle-result" class="oc-result"></div>
+        <div id="oc-loading" class="oc-loading">Loading assets 0 / 0</div>
+        <section class="hf-overview-wrap"><canvas id="hf-overview" class="hf-overview" width="280" height="500"></canvas></section>
+      </section>
+      <aside class="obstacle-side-card">
+        <section class="hf-control-section"><h3>Construction</h3>
+          <label class="field-block"><span>Course Template</span><select id="obstacle-template"><option value="horse_forest_easy">Obstacle Course</option><option value="horse_forest_dense">Dense Forest Course</option><option value="horse_forest_night">Moonlit Forest Course</option></select></label>
+          <label class="range-row"><span>Difficulty <output id="obstacle-difficulty-out">${OC.difficulty}</output></span><input id="obstacle-difficulty" type="range" min="1" max="5" step="1" value="${OC.difficulty}"></label>
+          <label class="range-row"><span>Course Distance <output id="obstacle-distance-out">${OC.courseLength}</output></span><input id="obstacle-distance" type="range" min="700" max="3000" step="50" value="${OC.courseLength}"></label>
+          <label class="range-row"><span>Forest Distance From Path Edge <output id="obstacle-scenery-distance-out">${OC.sceneryDistance.toFixed(1)}</output></span><input id="obstacle-scenery-distance" type="range" min="0.2" max="10" step="0.1" value="${OC.sceneryDistance}"></label>
+          <button id="obstacle-regenerate" class="wide-button" type="button">Regenerate Obstacle Course</button>
+        </section>
+        <section class="hf-layer-panel"><h3>View Helpers</h3>
+          <label class="field-check"><input id="oc-ground-grid-toggle" type="checkbox"> Show ground grid</label>
+          <label class="field-check"><input id="oc-overview-path-overlay" type="checkbox" checked> Show path alpha on overview</label>
+          <label class="range-row"><span>Vanishing Point X <output id="oc-vp-x-out">0.0</output></span><input id="oc-vp-x" type="range" min="-50" max="50" step="0.5" value="0"></label>
+          <label class="range-row"><span>Vanishing Point Y <output id="oc-vp-y-out">0.35</output></span><input id="oc-vp-y" type="range" min="-50" max="50" step="0.5" value="0.35"></label>
+        </section>
+        <section class="hf-layer-panel"><h3>Global Visual</h3>
+          <div id="hf-global-sliders"></div>
+        </section>
+        <section class="hf-layer-panel"><h3>Layer Controls</h3>
+          <label class="field-block"><span>Selected layer</span><select id="hf-layer-select"></select></label>
+          <div class="hf-button-row"><button id="hf-layer-visible" type="button">Hide/Show</button><button id="hf-layer-solo" type="button">Solo</button><button id="hf-layer-all" type="button">All</button></div>
+          <div class="hf-button-row" style="margin-top:7px"><button id="hf-layer-above" type="button">Above</button><button id="hf-layer-below" type="button">Below</button><button id="hf-white-bg" type="button">BG White</button></div>
+          <div id="hf-layer-sliders"></div>
+        </section>
+        <section class="hf-control-section"><h3>Overview Key</h3><div class="hf-key-list"><div><span class="hf-key-dot hf-key-path"></span>Path</div><div><span class="hf-key-dot hf-key-tree"></span>Tree</div><div><span class="hf-key-dot hf-key-rock"></span>Rock</div><div><span class="hf-key-dot hf-key-collectible"></span>Collectible</div><div><span class="hf-key-dot hf-key-obstacle"></span>Obstacle</div></div></section>
+        <section class="hf-control-section"><h3>Settings</h3><button id="hf-export-json" class="hf-export-json-button" type="button">Download JSON</button><input id="hf-import-json-file" type="file" accept="application/json,.json" hidden><button id="hf-import-json" class="hf-export-json-button" type="button" style="margin-top:8px">Import JSON Settings</button></section>
+      </aside>
+    </div>
+  `;
+  OC.stage = $('obstacle-stage');
+  mountLeftPanel();
+  populateLayerSelect();
+  createGlobalSliders();
+  createLayerSliders();
+  updateStats();
+}
+
+function mountLeftPanel() {
+  if (!OC.leftPanel) return;
+  OC.leftPanel.innerHTML = `
+    <section class="panel tool-panel obstacle-panel"><div class="panel-title-row"><div><p class="eyebrow">Obstacle Course · ${VERSION}</p><h2>Obstacle Course</h2></div><span class="status-pill">${VERSION}</span></div><p class="obstacle-panel-copy">Course editor controls use transparent path segment WEBPs over forest_ground.webp.</p><p class="hint-text">Forest Distance From Path Edge controls X distance from the visible path edge, not forward Z distance.</p></section>
+  `;
+}
+
+function bindInputs() {
+  $('obstacle-template')?.addEventListener('change', (event) => { OC.templateId = event.target.value; regenerateCourse(); });
+  $('obstacle-difficulty')?.addEventListener('input', (event) => { OC.difficulty = Number(event.target.value); $('obstacle-difficulty-out').textContent = OC.difficulty; });
+  $('obstacle-distance')?.addEventListener('input', (event) => { OC.courseLength = Number(event.target.value); $('obstacle-distance-out').textContent = OC.courseLength; updateStats(); });
+  $('obstacle-scenery-distance')?.addEventListener('input', (event) => { OC.sceneryDistance = Number(event.target.value); $('obstacle-scenery-distance-out').textContent = OC.sceneryDistance.toFixed(1); });
+  $('obstacle-regenerate')?.addEventListener('click', regenerateCourse);
+  $('obstacle-start')?.addEventListener('click', startRun);
+  $('obstacle-pause')?.addEventListener('click', pauseRun);
+  $('obstacle-reset-run')?.addEventListener('click', () => resetRun(false));
+  $('hf-layer-select')?.addEventListener('change', (event) => { OC.selectedLayerId = event.target.value; createLayerSliders(); refreshGlbSelectionBoxes(); drawOverview(); });
+  $('hf-layer-visible')?.addEventListener('click', toggleSelectedLayerVisible);
+  $('hf-layer-solo')?.addEventListener('click', toggleSelectedLayerSolo);
+  $('hf-layer-all')?.addEventListener('click', () => { OC.soloLayerId = null; applyAllLayers(); drawOverview(); });
+  $('hf-layer-above')?.addEventListener('click', () => nudgeSelectedOrder(1));
+  $('hf-layer-below')?.addEventListener('click', () => nudgeSelectedOrder(-1));
+  $('hf-white-bg')?.addEventListener('click', toggleWhiteBackground);
+  $('oc-ground-grid-toggle')?.addEventListener('change', (event) => { OC.gridEnabled = event.target.checked; if (OC.grid) OC.grid.visible = OC.gridEnabled; drawFrame(); });
+  $('oc-overview-path-overlay')?.addEventListener('change', (event) => { OC.overviewPathOverlay = event.target.checked; drawOverview(); });
+  $('oc-vp-x')?.addEventListener('input', (event) => { OC.vanishX = Number(event.target.value); $('oc-vp-x-out').textContent = OC.vanishX.toFixed(1); applyCamera(); drawFrame(); });
+  $('oc-vp-y')?.addEventListener('input', (event) => { OC.vanishY = Number(event.target.value); $('oc-vp-y-out').textContent = OC.vanishY.toFixed(2); applyCamera(); drawFrame(); });
+  $('hf-export-json')?.addEventListener('click', exportJsonSettings);
+  $('hf-import-json')?.addEventListener('click', () => $('hf-import-json-file')?.click());
+  $('hf-import-json-file')?.addEventListener('change', importJsonSettings);
+  window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('keyup', handleKeyUp);
+  window.addEventListener('resize', resizeRenderer);
+}
+
+function initThree() {
+  OC.textureLoader = new THREE.TextureLoader();
+  OC.gltfLoader = new GLTFLoader();
+  OC.scene = new THREE.Scene();
+  OC.camera = new THREE.PerspectiveCamera(55, 16 / 9, 0.1, 5000);
+  OC.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  OC.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  OC.renderer.outputEncoding = THREE.sRGBEncoding;
+  OC.stage.appendChild(OC.renderer.domElement);
+  OC.world = new THREE.Group();
+  OC.scene.add(OC.world);
+  OC.scene.add(new THREE.HemisphereLight(0xffffff, 0x203020, 1.25));
+  const sun = new THREE.DirectionalLight(0xffffff, 1.05);
+  sun.position.set(-8, 16, 8);
+  OC.scene.add(sun);
+  OC.grid = new THREE.GridHelper(140, 70, 0xeec45a, 0x2d5b42);
+  OC.grid.position.y = GROUND_Y + 0.08;
+  OC.grid.visible = false;
+  OC.scene.add(OC.grid);
+  OC.clock = new THREE.Clock();
+  applyCamera();
+  resizeRenderer();
+  drawFrame();
+}
+
+function applyCamera() {
+  if (!OC.camera) return;
+  const camX = (OC.vanishX || 0) * 0.04;
+  const lookX = (OC.vanishX || 0) * 0.08;
+  const lookY = GROUND_Y + (OC.vanishY || 0) * 0.06;
+  OC.camera.position.set(camX, 4.4, 10.8);
+  OC.camera.lookAt(lookX, lookY, -92);
+  OC.camera.updateProjectionMatrix();
+}
+
+function resizeRenderer() {
+  if (!OC.renderer || !OC.stage || !OC.camera) return;
+  const width = Math.max(1, OC.stage.clientWidth);
+  const height = Math.max(300, Math.round(width * 9 / 16));
+  OC.camera.aspect = width / height;
+  OC.camera.updateProjectionMatrix();
+  OC.renderer.setSize(width, height);
+}
+
+function loadTexture(url, options = {}) {
+  const key = `${url}|${JSON.stringify(options)}`;
+  if (OC.textureCache.has(key)) return OC.textureCache.get(key);
+  const texture = OC.textureLoader.load(`${url}?v=${CACHE_VERSION}`, undefined, undefined, () => console.warn('[ObstacleCourse] texture failed', url));
+  texture.encoding = THREE.sRGBEncoding;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  if (options.repeat) {
+    texture.wrapS = options.repeatX === false ? THREE.ClampToEdgeWrapping : THREE.RepeatWrapping;
+    texture.wrapT = options.repeatY === false ? THREE.ClampToEdgeWrapping : THREE.RepeatWrapping;
+    texture.repeat.set(options.repeat[0], options.repeat[1]);
+  }
+  OC.textureCache.set(key, texture);
+  return texture;
+}
+
+function setLoading(count, total) {
+  OC.loadingCount = count;
+  OC.loadingTotal = total;
+  const node = $('oc-loading');
+  if (node) node.textContent = `Loading assets ${count} / ${total}`;
+}
+
+async function preloadAssets() {
+  const required = [
+    ASSETS.horse, ASSETS.background, ASSETS.ground, ASSETS.powerbars, ASSETS.arrows,
+    ...Object.values(ASSETS.pathSegments).map((item) => item.file),
+  ];
+  const optionalGlb = GLB_ASSETS;
+  const total = required.length + optionalGlb.length;
+  let count = 0;
+  setLoading(0, total);
+
+  await Promise.all(required.map((url) => new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => { count += 1; setLoading(count, total); resolve(true); };
+    img.onerror = () => { count += 1; setLoading(count, total); console.warn('[ObstacleCourse] required image failed', url); resolve(false); };
+    img.src = `${url}?v=${CACHE_VERSION}`;
+  })));
+
+  ensurePathAlphaMaps();
+
+  await Promise.all(optionalGlb.map((asset) => loadGlbAsset(asset).finally(() => {
+    count += 1;
+    setLoading(count, total);
+  })));
+
+  OC.loadingDone = true;
+  const node = $('oc-loading');
+  if (node) node.textContent = `Loading assets ${count} / ${total} complete`;
+}
+
+function loadGlbAsset(asset) {
+  return new Promise((resolve) => {
+    OC.gltfLoader.load(`${asset.url}?v=${CACHE_VERSION}`, (gltf) => {
+      const scene = gltf.scene || gltf.scenes?.[0];
+      if (scene) {
+        normalizeGlbTemplate(scene);
+        OC.glbTemplates.set(asset.url, { asset, scene });
+      }
+      resolve(true);
+    }, undefined, (error) => {
+      if (!asset.optional) console.warn('[ObstacleCourse] GLB failed', asset.url, error);
+      resolve(false);
+    });
+  });
+}
+
+function normalizeGlbTemplate(root) {
+  root.traverse((node) => {
+    if (node.isMesh) {
+      node.castShadow = false;
+      node.receiveShadow = true;
+      if (node.material) {
+        const mats = Array.isArray(node.material) ? node.material : [node.material];
+        mats.forEach((mat) => {
+          if (mat.map) mat.map.encoding = THREE.sRGBEncoding;
+          mat.transparent = mat.transparent || false;
+        });
+      }
+    }
+  });
+}
+
+function makeLayer(id, label, group, options = {}) {
+  const layer = {
+    id, label, group,
+    visible: options.visible ?? true,
+    opacity: options.opacity ?? 1,
+    x: options.x ?? 0,
+    y: options.y ?? 0,
+    z: options.z ?? 0,
+    scale: options.scale ?? 1,
+    brightness: options.brightness ?? 1,
+    contrast: options.contrast ?? 1,
+    saturation: options.saturation ?? 1,
+    tint: options.tint ?? '#ffffff',
+    tintStrength: options.tintStrength ?? 0,
+    order: options.order ?? 0,
+  };
+  OC.layers.set(id, layer);
+  return layer;
+}
+
+function isLayerDisplayed(layer) {
+  if (!layer) return false;
+  if (OC.soloLayerId) return layer.id === OC.soloLayerId;
+  return layer.visible;
+}
+
+function rememberBaseScale(node) {
+  if (!node?.userData) return;
+  if (!node.userData.baseScale) node.userData.baseScale = node.scale.clone();
+}
+
+function rememberBaseMaterial(mat) {
+  if (!mat?.userData) mat.userData = {};
+  if (mat.color && !mat.userData.baseColor) mat.userData.baseColor = mat.color.clone();
+}
+
+function applyVisualToMaterial(mat, cfg) {
+  if (!mat) return;
+  rememberBaseMaterial(mat);
+  const opacity = cfg.opacity ?? 1;
+  mat.transparent = opacity < 0.995 || mat.transparent;
+  mat.opacity = opacity;
+  if (mat.color && mat.userData.baseColor) {
+    const color = mat.userData.baseColor.clone();
+    const brightness = cfg.brightness ?? 1;
+    const saturation = cfg.saturation ?? 1;
+    color.multiplyScalar(brightness);
+    if (saturation !== 1) {
+      const hsl = {};
+      color.getHSL(hsl);
+      color.setHSL(hsl.h, clamp(hsl.s * saturation, 0, 1), clamp(hsl.l, 0, 1));
+    }
+    if (cfg.tint && cfg.tint !== '#ffffff' && (cfg.tintStrength || 0) > 0) {
+      color.lerp(new THREE.Color(cfg.tint), clamp(cfg.tintStrength, 0, 1));
+    }
+    mat.color.copy(color);
+  }
+  mat.needsUpdate = true;
+}
+
+function applyLayer(layer) {
+  if (!layer?.group) return;
+  layer.group.visible = isLayerDisplayed(layer);
+  layer.group.position.set(layer.x || 0, layer.y || 0, layer.z || 0);
+  layer.group.scale.setScalar(['ground'].includes(layer.id) ? (layer.scale || 1) : 1);
+  layer.group.children.forEach((child) => {
+    rememberBaseScale(child);
+    if (!['ground'].includes(layer.id)) {
+      const base = child.userData.baseScale || child.scale;
+      child.scale.copy(base).multiplyScalar(layer.scale || 1);
+    }
+  });
+  layer.group.traverse((node) => {
+    node.renderOrder = layer.order || 0;
+    if (!node.material) return;
+    const mats = Array.isArray(node.material) ? node.material : [node.material];
+    mats.forEach((mat) => applyVisualToMaterial(mat, layer));
+  });
+}
+
+function applyAllLayers() {
+  OC.layers.forEach(applyLayer);
+  applyAllGlbAssetControls();
+}
+
+function populateLayerSelect() {
+  const select = $('hf-layer-select');
+  if (!select) return;
+  const selected = OC.selectedLayerId;
+  const options = [
+    ['ground', 'Forest ground'],
+    ['path', 'Path'],
+    ['trees', 'Trees'],
+    ['rocks', 'Rocks'],
+    ['details', 'Ferns / bushes'],
+    ['collectibles', 'Collectibles'],
+    ['obstacles', 'Obstacles'],
+    ['glbAsset', 'GLB Asset'],
+  ];
+  select.innerHTML = options.map(([id, label]) => `<option value="${id}">${label}</option>`).join('');
+  select.value = options.some(([id]) => id === selected) ? selected : 'path';
+  OC.selectedLayerId = select.value;
+}
+
+function buildSliderRow(host, prefix, prop, label, min, max, step, value, handler) {
+  const row = document.createElement('label');
+  row.className = 'range-row';
+  row.innerHTML = `<span>${label} <output id="${prefix}-${prop}-out">${formatNumber(value)}</output></span><input id="${prefix}-${prop}" type="range" min="${min}" max="${max}" step="${step}" value="${value}">`;
+  host.appendChild(row);
+  row.querySelector('input').addEventListener('input', (event) => {
+    const v = Number(event.target.value || 0);
+    row.querySelector('output').textContent = formatNumber(v);
+    handler(v);
+  });
+}
+
+function formatNumber(v) {
+  return Number.isInteger(Number(v)) ? String(Number(v)) : Number(v).toFixed(2);
+}
+
+function createGlobalSliders() {
+  const host = $('hf-global-sliders');
+  if (!host) return;
+  host.innerHTML = '';
+  buildSliderRow(host, 'hf-global', 'brightness', 'Brightness', -50, 50, 1, factorToSigned(OC.screenBrightness), (v) => { OC.screenBrightness = signedToFactor(v); updateScreenFilters(); });
+  buildSliderRow(host, 'hf-global', 'contrast', 'Contrast', -50, 50, 1, factorToSigned(OC.screenContrast), (v) => { OC.screenContrast = signedToFactor(v); updateScreenFilters(); });
+  buildSliderRow(host, 'hf-global', 'saturation', 'Saturation', -50, 50, 1, factorToSigned(OC.screenSaturation), (v) => { OC.screenSaturation = signedToFactor(v); updateScreenFilters(); });
+  buildSliderRow(host, 'hf-global', 'tintStrength', 'Tint Amt', 0, 1, 0.02, OC.screenTintStrength, (v) => { OC.screenTintStrength = v; updateScreenFilters(); });
+  const tintRow = document.createElement('label');
+  tintRow.className = 'field-block';
+  tintRow.innerHTML = `<span>Screen Tint</span><input id="hf-global-tint" type="color" value="${OC.screenTint}">`;
+  host.appendChild(tintRow);
+  tintRow.querySelector('input').addEventListener('input', (event) => { OC.screenTint = event.target.value; updateScreenFilters(); });
+}
+
+function createLayerSliders() {
+  const host = $('hf-layer-sliders');
+  if (!host) return;
+  host.innerHTML = '';
+  if (OC.selectedLayerId === 'glbAsset') {
+    createGlbAssetSliders(host);
+    return;
+  }
+  const layer = OC.layers.get(OC.selectedLayerId);
+  if (!layer) {
+    host.innerHTML = '<p class="hint-text">No layer selected.</p>';
+    return;
+  }
+  layer.scaleOffset = layer.scaleOffset ?? factorToSigned(layer.scale);
+  layer.brightnessOffset = layer.brightnessOffset ?? factorToSigned(layer.brightness);
+  layer.contrastOffset = layer.contrastOffset ?? factorToSigned(layer.contrast);
+  layer.saturationOffset = layer.saturationOffset ?? factorToSigned(layer.saturation);
+
+  buildSliderRow(host, 'hf-layer', 'x', 'X', -50, 50, 0.5, layer.x || 0, (v) => { layer.x = v; applyLayer(layer); drawFrame(); drawOverview(); });
+  buildSliderRow(host, 'hf-layer', 'z', 'Z', -50, 50, 0.5, layer.z || 0, (v) => { layer.z = v; applyLayer(layer); drawFrame(); drawOverview(); });
+  buildSliderRow(host, 'hf-layer', 'y', 'Y', -50, 50, 0.5, layer.y || 0, (v) => { layer.y = v; applyLayer(layer); drawFrame(); });
+  buildSliderRow(host, 'hf-layer', 'scaleOffset', 'Scale', -50, 50, 1, layer.scaleOffset, (v) => { layer.scaleOffset = v; layer.scale = signedToFactor(v); applyLayer(layer); drawFrame(); drawOverview(); });
+  buildSliderRow(host, 'hf-layer', 'opacity', 'Opacity', 0, 1, 0.02, layer.opacity ?? 1, (v) => { layer.opacity = v; applyLayer(layer); drawFrame(); });
+  buildSliderRow(host, 'hf-layer', 'brightnessOffset', 'Bright', -50, 50, 1, layer.brightnessOffset, (v) => { layer.brightnessOffset = v; layer.brightness = signedToFactor(v); applyLayer(layer); drawFrame(); });
+  buildSliderRow(host, 'hf-layer', 'contrastOffset', 'Contrast', -50, 50, 1, layer.contrastOffset, (v) => { layer.contrastOffset = v; layer.contrast = signedToFactor(v); applyLayer(layer); drawFrame(); });
+  buildSliderRow(host, 'hf-layer', 'saturationOffset', 'Saturation', -50, 50, 1, layer.saturationOffset, (v) => { layer.saturationOffset = v; layer.saturation = signedToFactor(v); applyLayer(layer); drawFrame(); });
+  buildSliderRow(host, 'hf-layer', 'tintStrength', 'Tint Amt', 0, 1, 0.02, layer.tintStrength || 0, (v) => { layer.tintStrength = v; applyLayer(layer); drawFrame(); });
+  buildSliderRow(host, 'hf-layer', 'order', 'Order', -50, 50, 1, layer.order || 0, (v) => { layer.order = v; applyLayer(layer); drawFrame(); });
+  const tintRow = document.createElement('label');
+  tintRow.className = 'field-block';
+  tintRow.innerHTML = `<span>Layer Tint</span><input id="hf-layer-tint" type="color" value="${layer.tint || '#ffffff'}">`;
+  host.appendChild(tintRow);
+  tintRow.querySelector('input').addEventListener('input', (event) => { layer.tint = event.target.value; applyLayer(layer); drawFrame(); });
+}
+
+function glbControl(url) {
+  if (!url) return null;
+  if (!OC.glbControls.has(url)) {
+    OC.glbControls.set(url, { x: 0, y: 0, z: 0, scale: 1, scaleOffset: 0, opacity: 1, brightness: 1, brightnessOffset: 0, contrast: 1, contrastOffset: 0, saturation: 1, saturationOffset: 0, tint: '#ffffff', tintStrength: 0, order: 0 });
+  }
+  return OC.glbControls.get(url);
+}
+
+function createGlbAssetSliders(host) {
+  const urls = Array.from(new Set([...OC.glbAssetUrls, ...OC.glbInstances.map((obj) => obj.userData.glbAssetUrl).filter(Boolean)]));
+  if (!OC.selectedGlbAssetUrl && urls.length) OC.selectedGlbAssetUrl = urls[0];
+  const row = document.createElement('label');
+  row.className = 'field-block';
+  row.innerHTML = `<span>GLB Asset</span><select id="hf-glb-asset-select">${urls.map((url) => `<option value="${url}">${url.split('/').pop()}</option>`).join('')}</select>`;
+  host.appendChild(row);
+  const select = row.querySelector('select');
+  select.value = OC.selectedGlbAssetUrl;
+  select.addEventListener('change', (event) => {
+    OC.selectedGlbAssetUrl = event.target.value;
+    refreshGlbSelectionBoxes();
+    createLayerSliders();
+    drawOverview();
+  });
+  const cfg = glbControl(OC.selectedGlbAssetUrl);
+  if (!cfg) return;
+  buildSliderRow(host, 'hf-glb', 'x', 'X', -50, 50, 0.5, cfg.x || 0, (v) => { cfg.x = v; applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'z', 'Z', -50, 50, 0.5, cfg.z || 0, (v) => { cfg.z = v; applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'y', 'Y', -50, 50, 0.5, cfg.y || 0, (v) => { cfg.y = v; applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'scaleOffset', 'Scale', -50, 50, 1, cfg.scaleOffset || 0, (v) => { cfg.scaleOffset = v; cfg.scale = signedToFactor(v); applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'opacity', 'Opacity', 0, 1, 0.02, cfg.opacity ?? 1, (v) => { cfg.opacity = v; applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'brightnessOffset', 'Bright', -50, 50, 1, cfg.brightnessOffset || 0, (v) => { cfg.brightnessOffset = v; cfg.brightness = signedToFactor(v); applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'contrastOffset', 'Contrast', -50, 50, 1, cfg.contrastOffset || 0, (v) => { cfg.contrastOffset = v; cfg.contrast = signedToFactor(v); applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'saturationOffset', 'Saturation', -50, 50, 1, cfg.saturationOffset || 0, (v) => { cfg.saturationOffset = v; cfg.saturation = signedToFactor(v); applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'tintStrength', 'Tint Amt', 0, 1, 0.02, cfg.tintStrength || 0, (v) => { cfg.tintStrength = v; applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'order', 'Order', -50, 50, 1, cfg.order || 0, (v) => { cfg.order = v; applyAllGlbAssetControls(); });
+  const tintRow = document.createElement('label');
+  tintRow.className = 'field-block';
+  tintRow.innerHTML = `<span>GLB Tint</span><input id="hf-glb-tint" type="color" value="${cfg.tint || '#ffffff'}">`;
+  host.appendChild(tintRow);
+  tintRow.querySelector('input').addEventListener('input', (event) => { cfg.tint = event.target.value; applyAllGlbAssetControls(); });
+  refreshGlbSelectionBoxes();
+}
+
+function toggleSelectedLayerVisible() {
+  const layer = OC.layers.get(OC.selectedLayerId);
+  if (!layer) return;
+  layer.visible = !layer.visible;
+  applyAllLayers();
+  drawOverview();
+}
+
+function toggleSelectedLayerSolo() {
+  if (!OC.layers.has(OC.selectedLayerId)) return;
+  OC.soloLayerId = OC.soloLayerId === OC.selectedLayerId ? null : OC.selectedLayerId;
+  applyAllLayers();
+  drawOverview();
+}
+
+function nudgeSelectedOrder(delta) {
+  const layer = OC.layers.get(OC.selectedLayerId);
+  if (!layer) return;
+  layer.order = (layer.order || 0) + delta;
+  applyLayer(layer);
+  createLayerSliders();
+  drawFrame();
+}
+
+function toggleWhiteBackground() {
+  OC.whiteBackground = !OC.whiteBackground;
+  if (OC.scene) {
+    OC.scene.background = OC.whiteBackground ? new THREE.Color(0xffffff) : loadTexture(ASSETS.background);
+  }
+  if (OC.stage) OC.stage.style.background = OC.whiteBackground ? '#fff' : '#05080d';
+  drawFrame();
+}
+
+function updateScreenFilters() {
+  const canvas = OC.renderer?.domElement;
+  const filter = `brightness(${OC.screenBrightness || 1}) contrast(${OC.screenContrast || 1}) saturate(${OC.screenSaturation || 1})`;
+  if (canvas) canvas.style.filter = filter;
+  if (OC.host) {
+    OC.host.style.setProperty('--oc-brightness', String(OC.screenBrightness || 1));
+    OC.host.style.setProperty('--oc-contrast', String(OC.screenContrast || 1));
+    OC.host.style.setProperty('--oc-saturation', String(OC.screenSaturation || 1));
+  }
+  const tint = document.querySelector('.obstacle-tint-overlay');
+  if (tint) {
+    tint.style.setProperty('--oc-tint', OC.screenTint || '#000000');
+    tint.style.setProperty('--oc-tint-opacity', String(OC.screenTintStrength || 0));
   }
 }
 
-function stopMotionLoops() {
-  setLoop('gallopSlow', false);
-  setLoop('gallopFull', false);
+function generatePathSequence() {
+  OC.pathSequence = [];
+  let pos = 'centre';
+  const count = Math.ceil((OC.courseLength + 420) / SEGMENT_WORLD_STEP);
+  for (let i = 0; i < count; i += 1) {
+    let choices;
+    if (pos === 'left') choices = [ASSETS.pathSegments.straight, ASSETS.pathSegments.kink, ASSETS.pathSegments.leftToStraight, ASSETS.pathSegments.leftToStraight];
+    else if (pos === 'right') choices = [ASSETS.pathSegments.straight, ASSETS.pathSegments.kink, ASSETS.pathSegments.rightToStraight, ASSETS.pathSegments.rightToStraight];
+    else choices = [ASSETS.pathSegments.straight, ASSETS.pathSegments.straight, ASSETS.pathSegments.kink, ASSETS.pathSegments.left, ASSETS.pathSegments.right];
+    let def = pick(choices);
+    if (pos !== 'centre' && def.start === 'centre') def = pos === 'left' ? ASSETS.pathSegments.leftToStraight : ASSETS.pathSegments.rightToStraight;
+    const distance = i * SEGMENT_WORLD_STEP;
+    const startX = PATH_POSITIONS[def.start] ?? PATH_POSITIONS[pos] ?? 0;
+    const endX = PATH_POSITIONS[def.end] ?? startX;
+    OC.pathSequence.push({ ...def, distance, startX, endX });
+    pos = def.end;
+  }
 }
 
-function stopAllAudio() {
-  ['forest', 'gallopSlow', 'gallopFull'].forEach((id) => setLoop(id, false));
+function clearWorld() {
+  if (!OC.world) return;
+  while (OC.world.children.length) {
+    const child = OC.world.children.pop();
+    child.traverse?.((node) => {
+      node.geometry?.dispose?.();
+      if (Array.isArray(node.material)) node.material.forEach((mat) => mat.dispose?.());
+      else node.material?.dispose?.();
+    });
+  }
+  OC.objects = [];
+  OC.placed = [];
+  OC.glbInstances = [];
+  clearSelectionBoxes();
 }
 
-function playRandomHorseVoice(force = false) {
-  ensureAudioReady();
-  const now = performance.now();
-  if (!force && now - AUDIO.lastVoiceAt < 6500) return;
-  AUDIO.lastVoiceAt = now;
-  playClip(Math.random() < 0.58 ? 'neigh' : 'snort');
+function regenerateCourse() {
+  if (!OC.world || !OC.scene) return;
+  clearWorld();
+  OC.layers.clear();
+  OC.distance = 0;
+  resetRun(true);
+  buildMaterials();
+  buildWorld();
+  const template = TEMPLATES[OC.templateId] || TEMPLATES.horse_forest_easy;
+  addObstacles(Math.round((7 + OC.difficulty * 4) * template.obstacleRate));
+  addCollectibles(5 + OC.difficulty * 2);
+  populateLayerSelect();
+  applyAllLayers();
+  updateTemplateText();
+  updateStats();
+  drawOverview();
+  drawFrame();
 }
 
-function playBushRustle() {
-  const now = performance.now();
-  if (now - AUDIO.lastBushAt < 900) return;
-  AUDIO.lastBushAt = now;
-  playClip('bush');
+function buildMaterials() {
+  const length = Math.max(OC.courseLength + 780, SEGMENT_WORLD_STEP * 6);
+  const groundMap = loadTexture(ASSETS.ground, { repeat: [1, Math.max(1, length / OC.groundTextureWorldSize)], repeatX: false });
+  groundMap.wrapS = THREE.ClampToEdgeWrapping;
+  groundMap.wrapT = THREE.RepeatWrapping;
+  if (!OC.whiteBackground) OC.scene.background = loadTexture(ASSETS.background);
+  OC.groundMaterial = new THREE.MeshStandardMaterial({
+    map: groundMap,
+    bumpMap: groundMap,
+    displacementMap: groundMap,
+    bumpScale: OC.bumpStrength,
+    displacementScale: OC.displacementStrength,
+    roughness: 1,
+    metalness: 0,
+    transparent: true,
+    alphaTest: 0.01,
+    opacity: 1,
+    depthWrite: false,
+    side: THREE.DoubleSide
+  });
 }
 
-function updateRideAudio() {
-  if (!OC.active) return;
-  const forward = OC.running && !OC.complete && OC.currentSpeed > 1.2;
-  const fast = forward && OC.currentSpeed > OC.speed * 0.62;
-  const slow = forward && !fast;
-  if (forward && !AUDIO.wasForwardMoving) playRandomHorseVoice();
-  AUDIO.wasForwardMoving = forward;
-  setLoop('forest', OC.running || OC.active, 0.16);
-  setLoop('gallopSlow', slow, 0.34);
-  setLoop('gallopFull', fast, 0.44);
+function buildWorld() {
+  const groundLayer = new THREE.Group();
+  const pathLayer = new THREE.Group();
+  const treeLayer = new THREE.Group();
+  const rockLayer = new THREE.Group();
+  const detailLayer = new THREE.Group();
+  const collectibleLayer = new THREE.Group();
+  const obstacleLayer = new THREE.Group();
+  OC.world.add(groundLayer, pathLayer, treeLayer, rockLayer, detailLayer, collectibleLayer, obstacleLayer);
+  makeLayer('ground', 'Forest ground', groundLayer, { order: 0 });
+  makeLayer('path', 'Path', pathLayer, { order: 4 });
+  makeLayer('trees', 'Trees', treeLayer, { order: 12 });
+  makeLayer('rocks', 'Rocks', rockLayer, { order: 13 });
+  makeLayer('details', 'Ferns / bushes', detailLayer, { order: 14 });
+  makeLayer('collectibles', 'Collectibles', collectibleLayer, { order: 15 });
+  makeLayer('obstacles', 'Obstacles', obstacleLayer, { order: 16 });
+  generatePathSequence();
+  buildGround(groundLayer);
+  buildPathSegments(pathLayer);
+  buildTreeCorridor(treeLayer);
+  scatterForestFloorDetail(rockLayer);
+  scatterPathEdgeDetails(detailLayer);
+}
+
+function buildGround(parent) {
+  const length = Math.max(OC.courseLength + 780, SEGMENT_WORLD_STEP * 6);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(OC.groundVisualWidth, length, 36, 96), OC.groundMaterial);
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.set(0, GROUND_Y, -length / 2 + 120);
+  ground.renderOrder = 0;
+  parent.add(ground);
+}
+
+function getPathMaterial(def) {
+  if (OC.pathMaterialCache.has(def.id)) return OC.pathMaterialCache.get(def.id);
+  const texture = loadTexture(def.file);
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, alphaTest: 0.03, depthWrite: false, side: THREE.DoubleSide });
+  OC.pathMaterialCache.set(def.id, material);
+  return material;
+}
+
+function buildPathSegments(parent) {
+  OC.pathSequence.forEach((seg) => {
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(OC.pathVisualWidth, SEGMENT_WORLD_LENGTH, 1, 1), getPathMaterial(seg));
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.set((seg.startX + seg.endX) / 2, GROUND_Y + 0.052, -seg.distance - SEGMENT_WORLD_LENGTH / 2);
+    mesh.renderOrder = 4;
+    mesh.userData.pathSegment = seg;
+    parent.add(mesh);
+  });
 }
 
 function pathCenterAt(distance) {
@@ -238,2988 +857,710 @@ function playerWorldX() {
   return pathCenterAt(OC.distance) + OC.player.x;
 }
 
-function pathStatus() {
-  const abs = Math.abs(OC.player.x);
-  if (abs > OC.laneWidth * 0.95) return 'off';
-  if (abs > OC.laneWidth * 0.70) return 'edge';
-  return 'on';
+function ensurePathAlphaMaps() {
+  Object.values(ASSETS.pathSegments).forEach(loadPathAlphaMap);
 }
 
-function isLayerDisplayed(layer) {
-  if (!layer) return false;
-  if (OC.soloLayerId) return layer.id === OC.soloLayerId;
-  return layer.visible;
-}
-
-function makeLayer(id, label, group, options = {}) {
-  const layer = {
-    id,
-    label,
-    group,
-    visible: options.visible ?? true,
-    opacity: options.opacity ?? 1,
-    order: options.order ?? 0,
-    x: 0,
-    y: 0,
-    z: 0,
-    scale: 1,
-    tint: '#ffffff',
+function loadPathAlphaMap(def) {
+  if (!def || OC.pathAlphaMaps.has(def.id)) return;
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth || img.width;
+      canvas.height = img.naturalHeight || img.height;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0);
+      OC.pathAlphaMaps.set(def.id, { width: canvas.width, height: canvas.height, data: ctx.getImageData(0, 0, canvas.width, canvas.height).data });
+    } catch (error) {
+      console.warn('[ObstacleCourse] path alpha map failed', def.id, error);
+      OC.pathAlphaMaps.set(def.id, null);
+    }
   };
-  OC.layers.set(id, layer);
-  applyLayer(layer);
-  return layer;
+  img.onerror = () => OC.pathAlphaMaps.set(def.id, null);
+  img.src = `${def.file}?v=${CACHE_VERSION}`;
 }
 
-function rememberBaseScale(node) {
-  if (!node?.userData) return;
-  if (!node.userData.__ocBaseScale) node.userData.__ocBaseScale = node.scale.clone();
+function alphaSegmentAt(distance) {
+  if (!OC.pathSequence.length) return null;
+  const index = clamp(Math.floor(distance / SEGMENT_WORLD_STEP), 0, OC.pathSequence.length - 1);
+  return OC.pathSequence[index] || null;
 }
 
-function applyLayerObjectScale(layer, node) {
-  rememberBaseScale(node);
-  const base = node.userData?.__ocBaseScale;
-  if (!base) return;
-  const s = layer.scale || 1;
-  if (layer.id === 'path') node.scale.set(base.x * s, base.y, base.z);
-  else if (['trees', 'rocks', 'collectibles', 'obstacles'].includes(layer.id)) node.scale.copy(base).multiplyScalar(s);
-}
-
-function applyLayer(layer) {
-  if (!layer || !layer.group) return;
-  layer.group.visible = isLayerDisplayed(layer);
-  layer.group.position.set(layer.x, layer.y, layer.z);
-  layer.group.scale.setScalar(['trees', 'rocks', 'collectibles', 'obstacles', 'path'].includes(layer.id) ? 1 : (layer.scale || 1));
-  layer.group.children.forEach((child) => applyLayerObjectScale(layer, child));
-  layer.group.traverse((node) => {
-    node.renderOrder = layer.order;
-    if (!node.material) return;
-    const materials = Array.isArray(node.material) ? node.material : [node.material];
-    materials.forEach((mat) => {
-      mat.transparent = layer.opacity < 1 || mat.transparent;
-      mat.opacity = layer.opacity;
-      if (mat.color && layer.tint && layer.tint !== '#ffffff') mat.color.multiply(new THREE.Color(layer.tint));
-      mat.needsUpdate = true;
-    });
-  });
-}
-
-function applyAllLayers() {
-  OC.layers.forEach((layer) => applyLayer(layer));
-  populateLayerSelect();
-  drawFrame();
-  drawOverview();
-}
-
-function injectStyles() {
-  if (oc$('obstacle-course-pov-styles')) return;
-  const style = document.createElement('style');
-  style.id = 'obstacle-course-pov-styles';
-  style.textContent = `
-    .is-obstacle-course .right-preview-layout,.is-obstacle-course .overview-window{display:none!important}
-    .is-obstacle-course .left-panel-body>[data-panel-content],.is-obstacle-course #puzzle-launcher-panel{display:none!important}
-    .is-obstacle-course [data-workflow-menu],.is-obstacle-course [data-workflow-only]{display:none!important}
-    .obstacle-course-stage{height:calc(100vh - 92px);overflow:hidden;padding:12px 14px 14px;background:#05080d;color:var(--cream,#f4ead4);box-sizing:border-box}
-    .obstacle-workspace{display:grid;grid-template-columns:minmax(560px,1fr) 320px;gap:14px;align-items:stretch;height:100%;min-height:0}
-    .obstacle-view-card,.obstacle-side-card{border:1px solid rgba(124,202,210,.24);border-radius:16px;background:rgba(7,14,22,.84);box-shadow:0 12px 34px rgba(0,0,0,.28)}
-    .obstacle-view-card{min-height:0;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}.obstacle-side-card{min-height:0;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
-    .obstacle-header-line{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid rgba(124,202,210,.18);padding-bottom:12px}.obstacle-header-line h2{font-family:'Cinzel',serif;margin:3px 0 0;font-size:1.38rem}.obstacle-header-line p{margin:8px 0 0;color:var(--muted,#c9bfae);font-size:.78rem;line-height:1.42}.obstacle-status-pill{border:1px solid rgba(238,196,90,.34);border-radius:999px;color:#eec45a;padding:6px 10px;font-size:.68rem;font-weight:900;white-space:nowrap}
-    .obstacle-three-wrap{position:relative;aspect-ratio:16/9;border:1px solid rgba(124,202,210,.18);border-radius:18px;overflow:hidden;background:#07101c;flex:0 0 auto}.obstacle-three-wrap canvas{display:block;width:100%!important;height:100%!important}.obstacle-three-wrap:after{content:'';position:absolute;left:0;right:0;bottom:0;height:72px;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(10,8,5,.34));pointer-events:none;z-index:2}
-    .obstacle-horse-overlay{position:absolute;left:50%;bottom:-38px;z-index:5;width:430px;height:247px;margin-left:-215px;pointer-events:none;filter:drop-shadow(0 7px 9px rgba(0,0,0,.72));opacity:.98;background-image:url('${ASSETS.horse}');background-repeat:no-repeat;background-size:700% 100%;background-position:50% 100%;transition:background-position .08s linear}.obstacle-hud{position:absolute;left:14px;right:14px;bottom:12px;z-index:6;display:flex;justify-content:space-between;gap:12px;pointer-events:none;color:var(--cream,#f4ead4);font-size:.74rem;text-shadow:0 2px 5px rgba(0,0,0,.8)}.obstacle-speed-badge{position:absolute;right:14px;top:12px;z-index:7;border:1px solid rgba(238,196,90,.5);border-radius:999px;background:rgba(5,8,13,.74);color:var(--gold,#eec45a);padding:7px 10px;font-size:.72rem;font-weight:900;text-shadow:0 2px 5px rgba(0,0,0,.8)}.obstacle-tint-overlay{position:absolute;inset:0;z-index:6;pointer-events:none;background:var(--oc-tint,#000);opacity:var(--oc-tint-opacity,0);mix-blend-mode:soft-light}.wide-button.is-running,#obstacle-start.is-running,#obstacle-start-left.is-running{border-color:rgba(158,230,164,.95);background:rgba(36,120,62,.9);box-shadow:0 0 0 2px rgba(158,230,164,.22),0 0 18px rgba(158,230,164,.2)}#obstacle-pause.is-paused,#obstacle-pause-left.is-paused{border-color:rgba(238,196,90,.9);background:rgba(95,63,9,.88)}.obstacle-reticle{position:absolute;left:50%;top:50%;z-index:4;width:34px;height:34px;margin:-17px 0 0 -17px;border:1px solid rgba(238,196,90,.35);border-radius:50%;box-shadow:0 0 16px rgba(238,196,90,.16);pointer-events:none}
-    .obstacle-control-row,.hf-button-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.obstacle-control-row button,.hf-button-row button,.hf-layer-panel button,#horse-run-controls-left-slot button{min-height:34px;border:1px solid rgba(124,202,125,.28);border-radius:9px;background:rgba(20,72,37,.58);color:var(--cream,#f4ead4);font-weight:900;cursor:pointer}.obstacle-control-row{display:none!important}#horse-run-controls-left-slot{display:grid;grid-template-columns:1fr;gap:8px;margin:10px 0 12px;padding:10px;border:1px solid rgba(238,196,90,.28);border-radius:12px;background:rgba(82,55,10,.18)}
-    .obstacle-help-strip{display:flex;justify-content:space-between;gap:10px;color:var(--muted,#c9bfae);font-size:.72rem;line-height:1.35}.obstacle-side-card h3{font-family:'Cinzel',serif;margin:0;font-size:1rem}.obstacle-metric{display:flex;justify-content:space-between;border:1px solid rgba(124,202,210,.2);border-radius:11px;padding:8px;color:var(--muted,#c9bfae);font-size:.73rem}.obstacle-metric strong{color:var(--cream,#f4ead4)}.obstacle-result{min-height:46px;border:1px solid rgba(124,202,210,.22);border-radius:11px;padding:9px;color:var(--muted,#c9bfae);font-size:.74rem;line-height:1.35}.obstacle-result[data-state='success']{border-color:#69ad70;color:#9ee6a4;background:#214b2b}.obstacle-result[data-state='failure']{border-color:#cc6d55;color:#f0a088;background:#4a1d1a}.obstacle-result[data-state='warn']{border-color:#c9a64a;color:#eec45a;background:#3c2c12}
-    .hf-overview-middle{flex:0 0 auto;min-height:300px;display:block;margin-top:10px;padding:10px;border:1px solid rgba(238,196,90,.42);border-radius:14px;background:rgba(0,0,0,.18);box-sizing:border-box;overflow:hidden}.hf-overview-row{display:grid;grid-template-columns:78px 1fr;gap:8px;align-items:start}.hf-key{border:1px solid rgba(238,196,90,.35);border-radius:10px;padding:7px;background:rgba(0,0,0,.24);font-size:.61rem;color:var(--muted,#c9bfae);line-height:1.35}.hf-overview-scroll{width:100%;height:280px;overflow-y:auto;overflow-x:hidden;border:1px solid rgba(238,196,90,.55);border-radius:12px;background:#111914}.hf-overview{display:block;width:100%;min-height:280px;background:#111914;touch-action:none;cursor:crosshair}.hf-layer-panel{border:1px solid rgba(124,202,210,.2);border-radius:12px;padding:10px;background:rgba(0,0,0,.20)}.hf-layer-panel label{display:block;color:var(--muted,#c9bfae);font-size:.68rem;margin:6px 0 3px}.hf-layer-panel select,.hf-layer-panel input{width:100%;box-sizing:border-box;background:#0b1219;color:var(--cream,#f4ead4);border:1px solid rgba(124,202,210,.25);border-radius:8px;padding:6px}.hf-slider-row{display:grid;grid-template-columns:58px 1fr 48px;align-items:center;gap:6px;font-size:.66rem;color:var(--muted,#c9bfae)}.hf-slider-row output{text-align:right;color:#eec45a}.hf-small-note{font-size:.66rem;line-height:1.35;color:var(--muted,#c9bfae);margin:0}.hf-export-json-button{min-height:34px;border:1px solid rgba(238,196,90,.45);border-radius:9px;background:rgba(82,55,10,.72);color:var(--cream,#f4ead4);font-weight:900;cursor:pointer}
-    @media(max-width:1120px){.obstacle-workspace{grid-template-columns:1fr}.obstacle-side-card{height:360px}.obstacle-course-stage{height:auto;overflow:auto}}
-  `;
-  document.head.appendChild(style);
-}
-
-export function openObstacleCourseWorkflow() {
-  ensureMounted();
-  OC.active = true;
-  document.body.classList.add('is-obstacle-course');
-  document.body.classList.remove('is-puzzle-brief', 'is-puzzle-chooser');
-  oc$('puzzle-launcher-panel')?.setAttribute('hidden', '');
-  OC.stage.hidden = false;
-  OC.panels.hidden = false;
-  showObstaclePanel('build');
-  resizeRenderer();
-  regenerateCourse();
-  drawFrame();
-}
-
-export function closeObstacleCourseWorkflow() {
-  stopAllAudio();
-  if (!OC.mounted) return;
-  OC.active = false;
-  pauseRun();
-  document.body.classList.remove('is-obstacle-course');
-  OC.stage.hidden = true;
-  OC.panels.hidden = true;
-}
-
-function ensureMounted() {
-  if (OC.mounted) return;
-  injectStyles();
-  const rightPanel = document.querySelector('.right-panel');
-  const leftBody = document.querySelector('.left-panel-body');
-  if (!rightPanel || !leftBody) return;
-
-  OC.stage = document.createElement('section');
-  OC.stage.id = 'obstacle-course-stage';
-  OC.stage.className = 'obstacle-course-stage';
-  OC.stage.hidden = true;
-  OC.stage.innerHTML = `
-    <div class="obstacle-workspace">
-      <section class="obstacle-view-card">
-        <div class="obstacle-header-line"><div><p class="eyebrow">Obstacle Course · V2.6.8</p><h2 id="obstacle-title">Obstacle Course</h2><p id="obstacle-objective">Horse forest obstacle course using modular transparent WEBP path segments over forest_ground.webp.</p></div><span id="obstacle-status" class="obstacle-status-pill">Ready</span></div>
-        <div id="obstacle-three-host" class="obstacle-three-wrap"><div class="obstacle-reticle"></div><div class="obstacle-horse-overlay"></div><div class="obstacle-tint-overlay"></div><div id="obstacle-speed-badge" class="obstacle-speed-badge">Speed 0</div><div class="obstacle-hud"><span>Start Test = begin run · Hold ↑/W move · ↓/S back · Ctrl duck · Space jump</span><span id="obstacle-course-summary">0m / 0m</span></div></div>
-        <div class="obstacle-help-strip"><span>Path pieces use 1000×2000 WEBP with 250px overlap. Off path slows to trot.</span><span id="hf-tree-status">GLB trees: loading…</span></div>
-        <div class="obstacle-control-row"><button id="obstacle-start" type="button">Start Test</button><button id="obstacle-pause" type="button">Pause</button><button id="obstacle-reset-run" type="button">Reset Run</button></div>
-        <div id="hf-overview-middle-shell" class="hf-overview-middle"><div class="hf-overview-row"><div class="hf-key"><b>Key</b><br>Path<br>Tree<br>Rock<br>Collectible<br>Obstacle</div><div id="hf-overview-scroll" class="hf-overview-scroll"><canvas id="hf-overview" class="hf-overview" width="360" height="300"></canvas></div></div></div>
-      </section>
-      <aside class="obstacle-side-card">
-        <div class="hf-button-row"><button id="hf-view-ride" type="button">Ride View</button><button id="hf-view-overview" type="button">Overview</button><button id="hf-redraw" type="button">Redraw</button></div>
-        <section class="hf-layer-panel"><h3>Layer Controls</h3><label>Selected layer</label><select id="hf-layer-select"></select><div class="hf-button-row"><button id="hf-layer-visible" type="button">Hide/Show</button><button id="hf-layer-solo" type="button">Solo</button><button id="hf-layer-clear-solo" type="button">All</button></div><div class="hf-button-row"><button id="hf-layer-up" type="button">Above</button><button id="hf-layer-down" type="button">Below</button><button id="hf-bg-white" type="button">BG White</button></div><div id="hf-layer-sliders"></div></section>
-        <section class="hf-layer-panel"><h3>Paint / Place</h3><label>Tool</label><select id="hf-paint-mode"><option value="path-alpha">Alpha paint: path edge</option><option value="tree">Place GLB tree</option><option value="rock">Place rock</option><option value="collectible">Place collectible</option><option value="obstacle">Place obstacle</option><option value="erase">Erase nearby item</option></select><div class="hf-slider-row"><span>Size</span><input id="hf-brush-size" type="range" min="4" max="80" value="18"><output id="hf-brush-size-out">18</output></div><div class="hf-slider-row"><span>Alpha</span><input id="hf-brush-strength" type="range" min="0" max="1" step="0.05" value="0.5"><output id="hf-brush-strength-out">0.50</output></div><p class="hf-small-note">Route pieces obey entry/exit positions and are placed with 250px-style overlaps.</p></section>
-        <button id="hf-export-json" class="hf-export-json-button" type="button">Download JSON</button>
-        <div class="obstacle-metric"><span>Score</span><strong id="obstacle-score">0</strong></div><div class="obstacle-metric"><span>Collected</span><strong id="obstacle-collected">0</strong></div><div class="obstacle-metric"><span>Hits</span><strong id="obstacle-hits">0</strong></div><div class="obstacle-metric"><span>Target</span><strong id="obstacle-target-score">20</strong></div><div id="obstacle-result" class="obstacle-result">Ride waiting. Start the test when ready.</div>
-      </aside>
-    </div>`;
-  rightPanel.prepend(OC.stage);
-
-  OC.panels = document.createElement('div');
-  OC.panels.id = 'obstacle-course-panels';
-  OC.panels.hidden = true;
-  OC.panels.innerHTML = `
-    <section class="panel tool-panel obstacle-panel" data-obstacle-panel="build"><div class="panel-title-row"><div><p class="eyebrow">01 · Construction</p><h2>Obstacle Course</h2></div><span class="status-pill is-waiting">V2.6.8</span></div><p class="obstacle-panel-copy">Course editor controls use transparent path segment WEBPs over forest_ground.webp.</p><label class="field-block"><span>Course Template</span><select id="obstacle-template"><option value="horse_forest_easy">Obstacle Course</option><option value="horse_forest_dense">Dense Forest Course</option><option value="horse_forest_night">Moonlit Forest Course</option></select></label><label class="range-row"><span>Difficulty <output id="obstacle-difficulty-out">2</output></span><input id="obstacle-difficulty" type="range" min="1" max="5" value="2" /></label><label class="range-row"><span>Course Duration <output id="obstacle-duration-out">45s</output></span><input id="obstacle-duration" type="range" min="20" max="300" step="5" value="45" /></label><button id="obstacle-regenerate" class="wide-button" type="button">Regenerate Obstacle Course</button><label class="range-row"><span>Forest Edge Distance <output id="obstacle-scenery-distance-out">1.6</output></span><input id="obstacle-scenery-distance" type="range" min="0.6" max="6" step="0.1" value="1.6" /></label><section class="hf-key-panel"><h3>Overview Key</h3><div class="hf-key-list"><div><span class="hf-key-dot hf-key-path"></span>Path</div><div><span class="hf-key-dot hf-key-tree"></span>Tree</div><div><span class="hf-key-dot hf-key-rock"></span>Rock</div><div><span class="hf-key-dot hf-key-collectible"></span>Collectible</div><div><span class="hf-key-dot hf-key-obstacle"></span>Obstacle</div></div></section><div id="horse-run-controls-left-slot"><button id="obstacle-start-left" type="button">Start Test</button><button id="obstacle-pause-left" type="button">Pause</button><button id="obstacle-reset-run-left" type="button">Reset Run</button></div></section>
-    <section class="panel tool-panel obstacle-panel" data-obstacle-panel="display" hidden><div class="panel-title-row"><div><p class="eyebrow">02 · Display</p><h2>Ground Relief</h2></div></div><label class="range-row"><span>Bump Strength <output id="obstacle-bump-out">0.12</output></span><input id="obstacle-bump" type="range" min="0" max="0.45" step="0.01" value="0.12" /></label><label class="range-row"><span>Displacement Strength <output id="obstacle-displacement-out">0.035</output></span><input id="obstacle-displacement" type="range" min="0" max="0.18" step="0.005" value="0.035" /></label><label class="range-row"><span>Horse Speed <output id="obstacle-speed-out">34</output></span><input id="obstacle-speed" type="range" min="18" max="64" step="2" value="34" /></label><label class="range-row"><span>Overall Brightness <output id="obstacle-brightness-out">100%</output></span><input id="obstacle-brightness" type="range" min="55" max="150" step="5" value="100" /></label><label class="field-block"><span>Screen Tint</span><input id="obstacle-tint" type="color" value="#000000" /></label><label class="range-row"><span>Tint Strength <output id="obstacle-tint-strength-out">0%</output></span><input id="obstacle-tint-strength" type="range" min="0" max="65" step="5" value="0" /></label><label class="range-row"><span>Lane Width <output id="obstacle-lane-width-out">2.7</output></span><input id="obstacle-lane-width" type="range" min="1.8" max="5" step="0.1" value="2.7" /></label></section>
-    <section class="panel tool-panel obstacle-panel" data-obstacle-panel="logic" hidden><div class="panel-title-row"><div><p class="eyebrow">03 · Logic</p><h2>Scoring</h2></div></div><label class="range-row"><span>Success Score <output id="obstacle-success-score-out">20</output></span><input id="obstacle-success-score" type="range" min="0" max="80" step="5" value="20" /></label></section>`;
-  leftBody.appendChild(OC.panels);
-  OC.host = oc$('obstacle-three-host');
-  setupThreeScene();
-  bindControls();
-  updateScreenFilters();
-  OC.mounted = true;
-}
-
-function setupThreeScene() {
-  OC.textureLoader = new THREE.TextureLoader();
-  OC.gltfLoader = new GLTFLoader();
-  OC.scene = new THREE.Scene();
-  OC.scene.fog = new THREE.Fog(0x102018, 60, 520);
-  OC.camera = new THREE.PerspectiveCamera(66, 16 / 9, 0.1, 1200);
-  OC.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-  OC.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  OC.host.prepend(OC.renderer.domElement);
-  OC.clock = new THREE.Clock();
-  OC.scene.add(new THREE.HemisphereLight(0xd8f0ff, 0x20301c, 1.15));
-  const sun = new THREE.DirectionalLight(0xfff0d0, 1.15);
-  sun.position.set(-8, 16, 12);
-  OC.scene.add(sun);
-  OC.world = new THREE.Group();
-  OC.scene.add(OC.world);
-  buildMaterials();
-  loadTreeModels();
-  window.addEventListener('resize', resizeRenderer);
-  resizeRenderer();
-  OC.frame = requestAnimationFrame(loop);
-}
-
-function bindControls() {
-  oc$('obstacle-template').addEventListener('change', (e) => { OC.templateId = e.target.value; regenerateCourse(); });
-  oc$('obstacle-difficulty').addEventListener('input', (e) => { OC.difficulty = Number(e.target.value); oc$('obstacle-difficulty-out').textContent = String(OC.difficulty); regenerateCourse(); });
-  oc$('obstacle-duration').addEventListener('input', (e) => { OC.duration = Math.min(OC.maxDuration, Number(e.target.value)); oc$('obstacle-duration-out').textContent = `${OC.duration}s`; regenerateCourse(); });
-  oc$('obstacle-speed').addEventListener('input', (e) => { OC.speed = Number(e.target.value); oc$('obstacle-speed-out').textContent = String(OC.speed); regenerateCourse(); });
-  oc$('obstacle-scenery-distance')?.addEventListener('input', (e) => { OC.sceneryDistance = Number(e.target.value); oc$('obstacle-scenery-distance-out').textContent = OC.sceneryDistance.toFixed(1); regenerateCourse(); });
-  oc$('obstacle-brightness')?.addEventListener('input', (e) => { OC.screenBrightness = Number(e.target.value) / 100; oc$('obstacle-brightness-out').textContent = `${e.target.value}%`; updateScreenFilters(); });
-  oc$('obstacle-tint')?.addEventListener('input', (e) => { OC.screenTint = e.target.value; updateScreenFilters(); });
-  oc$('obstacle-tint-strength')?.addEventListener('input', (e) => { OC.screenTintStrength = Number(e.target.value) / 100; oc$('obstacle-tint-strength-out').textContent = `${e.target.value}%`; updateScreenFilters(); });
-  oc$('obstacle-lane-width').addEventListener('input', (e) => { OC.laneWidth = Number(e.target.value); oc$('obstacle-lane-width-out').textContent = OC.laneWidth.toFixed(1); regenerateCourse(); });
-  oc$('obstacle-bump').addEventListener('input', (e) => { OC.bumpStrength = Number(e.target.value); oc$('obstacle-bump-out').textContent = OC.bumpStrength.toFixed(2); updateGroundRelief(); });
-  oc$('obstacle-displacement').addEventListener('input', (e) => { OC.displacementStrength = Number(e.target.value); oc$('obstacle-displacement-out').textContent = OC.displacementStrength.toFixed(3); updateGroundRelief(); });
-  oc$('obstacle-success-score')?.addEventListener('input', (e) => { OC.successScore = Number(e.target.value); oc$('obstacle-success-score-out').textContent = String(OC.successScore); oc$('obstacle-target-score').textContent = String(OC.successScore); });
-  oc$('obstacle-regenerate').addEventListener('click', regenerateCourse);
-  oc$('obstacle-start').addEventListener('click', startRun);
-  oc$('obstacle-pause').addEventListener('click', pauseRun);
-  oc$('obstacle-reset-run').addEventListener('click', () => resetRun(false));
-  oc$('obstacle-start-left').addEventListener('click', startRun);
-  oc$('obstacle-pause-left').addEventListener('click', pauseRun);
-  oc$('obstacle-reset-run-left').addEventListener('click', () => resetRun(false));
-  oc$('hf-view-ride').addEventListener('click', drawFrame);
-  oc$('hf-view-overview').addEventListener('click', () => { drawOverview(); drawFrame(); });
-  oc$('hf-redraw').addEventListener('click', () => { drawOverview(); drawFrame(); });
-  oc$('hf-export-json').addEventListener('click', downloadJson);
-  bindLayerControls();
-  window.addEventListener('keydown', handleKeyDown, true);
-  window.addEventListener('keyup', handleKeyUp, true);
-}
-
-function normaliseGameKey(event) {
-  const key = String(event.key || '').toLowerCase();
-  const code = String(event.code || '').toLowerCase();
-  if (key === 'arrowup' || key === 'w' || code === 'keyw') return 'forward';
-  if (key === 'arrowdown' || key === 's' || code === 'keys') return 'back';
-  if (key === 'arrowleft' || key === 'a' || code === 'keya') return 'left';
-  if (key === 'arrowright' || key === 'd' || code === 'keyd') return 'right';
-  if (key === 'control' || code === 'controlleft' || code === 'controlright') return 'duck';
-  if (key === ' ' || code === 'space') return 'jump';
-  return null;
-}
-
-function handleKeyDown(event) {
-  if (!OC.active) return;
-  const gameKey = normaliseGameKey(event);
-  if (!gameKey) return;
-  event.preventDefault();
-  event.stopPropagation();
-  OC.keys.add(gameKey);
-  if (gameKey === 'jump' && !event.repeat) startJump();
-}
-function handleKeyUp(event) {
-  if (!OC.active) return;
-  const gameKey = normaliseGameKey(event);
-  if (!gameKey) return;
-  event.preventDefault();
-  event.stopPropagation();
-  OC.keys.delete(gameKey);
-  if (gameKey === 'jump') OC.player.jumpingHeld = false;
-}
-
-function bindLayerControls() {
-  oc$('hf-layer-select').addEventListener('change', (e) => { OC.selectedLayerId = e.target.value; syncLayerControls(); });
-  oc$('hf-layer-visible').addEventListener('click', () => { const l = OC.layers.get(OC.selectedLayerId); if (!l) return; l.visible = !l.visible; applyAllLayers(); });
-  oc$('hf-layer-solo').addEventListener('click', () => { OC.soloLayerId = OC.selectedLayerId; applyAllLayers(); });
-  oc$('hf-layer-clear-solo').addEventListener('click', () => { OC.soloLayerId = null; applyAllLayers(); });
-  oc$('hf-bg-white').addEventListener('click', () => { if (OC.scene) OC.scene.background = new THREE.Color(0xffffff); });
-  oc$('hf-layer-up').addEventListener('click', () => { const l = OC.layers.get(OC.selectedLayerId); if (!l) return; l.order += 1; applyLayer(l); syncLayerControls(); drawFrame(); });
-  oc$('hf-layer-down').addEventListener('click', () => { const l = OC.layers.get(OC.selectedLayerId); if (!l) return; l.order -= 1; applyLayer(l); syncLayerControls(); drawFrame(); });
-  oc$('hf-paint-mode').addEventListener('change', (e) => { OC.paintMode = e.target.value; });
-  oc$('hf-brush-size').addEventListener('input', (e) => { OC.brushSize = Number(e.target.value); oc$('hf-brush-size-out').textContent = String(OC.brushSize); });
-  oc$('hf-brush-strength').addEventListener('input', (e) => { OC.brushStrength = Number(e.target.value); oc$('hf-brush-strength-out').textContent = OC.brushStrength.toFixed(2); });
-}
-
-function resizeRenderer() {
-  if (!OC.renderer || !OC.host || !OC.camera) return;
-  const width = Math.max(1, OC.host.clientWidth);
-  const height = Math.max(300, Math.round(width * 9 / 16));
-  OC.camera.aspect = width / height;
-  OC.camera.updateProjectionMatrix();
-  OC.renderer.setSize(width, height);
-}
-
-function loadTexture(url, options = {}) {
-  const key = `${url}::${options.repeat ? options.repeat.join('x') : 'single'}`;
-  if (OC.textureCache.has(key)) return OC.textureCache.get(key);
-  const texture = OC.textureLoader.load(`${url}?v=29`, undefined, undefined, () => console.warn('[HorseForest] texture failed', url));
-  if ('colorSpace' in texture && THREE.SRGBColorSpace) texture.colorSpace = THREE.SRGBColorSpace;
-  else texture.encoding = THREE.sRGBEncoding;
-  texture.minFilter = THREE.LinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  if (options.repeat) {
-    texture.wrapS = options.repeatX === false ? THREE.ClampToEdgeWrapping : THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(options.repeat[0], options.repeat[1]);
+function sampleAlpha(map, u, v, radius = 1) {
+  if (!map?.data) return null;
+  const cx = clamp(Math.round(u * (map.width - 1)), 0, map.width - 1);
+  const cy = clamp(Math.round(v * (map.height - 1)), 0, map.height - 1);
+  let maxAlpha = 0;
+  for (let yy = -radius; yy <= radius; yy += 1) {
+    const py = clamp(cy + yy, 0, map.height - 1);
+    for (let xx = -radius; xx <= radius; xx += 1) {
+      const px = clamp(cx + xx, 0, map.width - 1);
+      maxAlpha = Math.max(maxAlpha, map.data[(py * map.width + px) * 4 + 3] || 0);
+    }
   }
-  OC.textureCache.set(key, texture);
-  return texture;
+  return maxAlpha;
 }
 
-function buildMaterials() {
-  const groundMap = loadTexture(ASSETS.ground, { repeat: [1, 44], repeatX: false });
-  OC.scene.background = loadTexture(ASSETS.background);
-  OC.groundMaterial = new THREE.MeshStandardMaterial({ map: groundMap, bumpMap: groundMap, displacementMap: groundMap, bumpScale: OC.bumpStrength, displacementScale: OC.displacementStrength, roughness: 1, metalness: 0 });
+function pathAlphaAtWorld(worldX, distance) {
+  const seg = alphaSegmentAt(distance);
+  if (!seg) return null;
+  const map = OC.pathAlphaMaps.get(seg.id);
+  if (!map) return null;
+  const width = OC.pathVisualWidth;
+  const meshCenterX = (seg.startX + seg.endX) / 2;
+  const u = clamp(((worldX - meshCenterX) / width) + 0.5, 0, 1);
+  const t = clamp((distance - seg.distance) / SEGMENT_WORLD_LENGTH, 0, 1);
+  return Math.max(sampleAlpha(map, u, t, 2) || 0, sampleAlpha(map, u, 1 - t, 2) || 0);
 }
-function updateGroundRelief() {
-  if (OC.groundMaterial) {
-    OC.groundMaterial.bumpScale = OC.bumpStrength;
-    OC.groundMaterial.displacementScale = OC.displacementStrength;
-    OC.groundMaterial.needsUpdate = true;
+
+function nearestVisiblePathX(distance, fromX) {
+  const seg = alphaSegmentAt(distance);
+  if (!seg) return pathCenterAt(distance);
+  const width = OC.pathVisualWidth;
+  const meshCenterX = (seg.startX + seg.endX) / 2;
+  let best = null;
+  const step = Math.max(0.35, width / 48);
+  for (let x = meshCenterX - width * 0.49; x <= meshCenterX + width * 0.49; x += step) {
+    const alpha = pathAlphaAtWorld(x, distance) || 0;
+    if (alpha >= OC.pathAlphaThreshold) {
+      const dist = Math.abs(x - fromX);
+      if (!best || dist < best.dist) best = { x, dist, alpha };
+    }
   }
-  drawFrame();
+  return best?.x ?? pathCenterAt(distance);
 }
 
-function getPathMaterial(def) {
-  if (OC.pathMaterialCache.has(def.id)) return OC.pathMaterialCache.get(def.id);
-  const texture = loadTexture(def.file);
-  texture.wrapS = THREE.ClampToEdgeWrapping;
-  texture.wrapT = THREE.ClampToEdgeWrapping;
-  const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, alphaTest: 0.03, depthWrite: false, side: THREE.DoubleSide });
-  OC.pathMaterialCache.set(def.id, material);
-  return material;
-}
-
-function createLayerSliders() {
-  const host = oc$('hf-layer-sliders');
-  if (!host) return;
-  host.innerHTML = '';
-  [['x', 'X', -30, 30, 0.1], ['z', 'Z', -80, 80, 0.5], ['y', 'Y', -10, 10, 0.1], ['scale', 'Object Size', 0.1, 4, 0.05], ['opacity', 'Alpha', 0, 1, 0.05], ['order', 'Order', -20, 40, 1]].forEach(([prop, label, min, max, step]) => {
-    const row = document.createElement('div');
-    row.className = 'hf-slider-row';
-    row.innerHTML = `<span>${label}</span><input id="hf-layer-${prop}" type="range" min="${min}" max="${max}" step="${step}"><output id="hf-layer-${prop}-out"></output>`;
-    host.appendChild(row);
-    row.querySelector('input').addEventListener('input', (e) => {
-      const l = OC.layers.get(OC.selectedLayerId);
-      if (!l) return;
-      l[prop] = Number(e.target.value);
-      applyLayer(l);
-      syncLayerOutputs();
-      drawFrame();
-      drawOverview();
-    });
-  });
-}
-function populateLayerSelect() {
-  const select = oc$('hf-layer-select');
-  if (!select) return;
-  const previous = select.value || OC.selectedLayerId;
-  select.innerHTML = '';
-  [...OC.layers.values()].sort((a, b) => a.order - b.order).forEach((l) => {
-    const opt = document.createElement('option');
-    opt.value = l.id;
-    opt.textContent = `${l.label}${OC.soloLayerId === l.id ? ' (solo)' : l.visible ? '' : ' (hidden)'}`;
-    select.appendChild(opt);
-  });
-  if (OC.layers.has(previous)) OC.selectedLayerId = previous;
-  select.value = OC.selectedLayerId;
-  createLayerSliders();
-  syncLayerControls();
-}
-function syncLayerOutputs() {
-  const l = OC.layers.get(OC.selectedLayerId);
-  if (!l) return;
-  ['x', 'z', 'y', 'scale', 'opacity', 'order'].forEach((prop) => {
-    const out = oc$(`hf-layer-${prop}-out`);
-    if (out) out.textContent = prop === 'order' ? String(l[prop]) : Number(l[prop]).toFixed(2);
-  });
-}
-function syncLayerControls() {
-  const l = OC.layers.get(OC.selectedLayerId);
-  if (!l) return;
-  ['x', 'z', 'y', 'scale', 'opacity', 'order'].forEach((prop) => {
-    const input = oc$(`hf-layer-${prop}`);
-    if (input) input.value = l[prop];
-  });
-  syncLayerOutputs();
-}
-
-function generatePathSequence() {
-  OC.pathSequence = [];
-  let pos = 'centre';
-  const defs = Object.values(ASSETS.pathSegments);
-  const count = Math.ceil((OC.courseLength + 420) / SEGMENT_WORLD_STEP);
-  for (let i = 0; i < count; i += 1) {
-    const forcedReturn = pos === 'left' ? ASSETS.pathSegments.leftToStraight : pos === 'right' ? ASSETS.pathSegments.rightToStraight : null;
-    let def;
-    if (forcedReturn) def = Math.random() < 0.62 ? forcedReturn : (pos === 'left' ? ASSETS.pathSegments.right : ASSETS.pathSegments.left);
-    else def = pick([ASSETS.pathSegments.straight, ASSETS.pathSegments.straight, ASSETS.pathSegments.kink, ASSETS.pathSegments.left, ASSETS.pathSegments.right]);
-    const distance = i * SEGMENT_WORLD_STEP;
-    const startX = PATH_POSITIONS[def.start] ?? 0;
-    const endX = PATH_POSITIONS[def.end] ?? 0;
-    OC.pathSequence.push({ ...def, distance, startX, endX });
-    pos = def.end;
+function visibleCollectiblePathX(distance) {
+  const centre = pathCenterAt(distance);
+  const seg = alphaSegmentAt(distance);
+  if (!seg) return centre;
+  const width = OC.pathVisualWidth;
+  const meshCenterX = (seg.startX + seg.endX) / 2;
+  const candidates = [];
+  const step = Math.max(0.35, width / 44);
+  for (let x = meshCenterX - width * 0.48; x <= meshCenterX + width * 0.48; x += step) {
+    const alpha = pathAlphaAtWorld(x, distance) || 0;
+    if (alpha >= OC.collectibleAlphaThreshold) candidates.push({ x, alpha, bias: Math.abs(x - centre) });
   }
+  if (!candidates.length) return centre;
+  candidates.sort((a, b) => (a.bias - b.bias) || (b.alpha - a.alpha));
+  return pick(candidates.slice(0, Math.min(8, candidates.length))).x;
 }
 
-function regenerateCourse() {
-  if (!OC.world) return;
-  clearWorld();
-  OC.layers.clear();
-  OC.duration = Math.min(OC.maxDuration, OC.duration);
-  OC.courseLength = Math.max(900, OC.duration * OC.speed);
-  resetRun(true);
-  buildWorld();
-  addObstacles(Math.round((8 + OC.difficulty * 5) * (TEMPLATES[OC.templateId]?.obstacleRate || 1)));
-  addCollectibles(8 + OC.difficulty * 3);
-  updateTemplateText();
-  populateLayerSelect();
-  applyAllLayers();
-  drawFrame();
-  drawOverview();
-}
-function disposeGroup(group) {
-  while (group?.children?.length) {
-    const child = group.children.pop();
-    child.traverse?.((node) => {
-      node.geometry?.dispose?.();
-      if (Array.isArray(node.material)) node.material.forEach((mat) => mat.dispose?.());
-      else node.material?.dispose?.();
-    });
+function pathStatus() {
+  const worldX = playerWorldX();
+  const alpha = pathAlphaAtWorld(worldX, OC.distance);
+  if (alpha === null) {
+    const abs = Math.abs(OC.player.x);
+    return abs > OC.laneWidth * 0.95 ? 'off' : abs > OC.laneWidth * 0.7 ? 'edge' : 'on';
   }
+  if (alpha >= OC.pathAlphaThreshold) return 'on';
+  const nearest = nearestVisiblePathX(OC.distance, worldX);
+  OC.pathHintDirection = nearest < worldX ? 'left' : 'right';
+  return 'off';
 }
-function clearWorld() {
-  disposeGroup(OC.world);
-  OC.objects = [];
-  OC.placed = [];
-}
-function updateTemplateText() {
-  const t = TEMPLATES[OC.templateId] || TEMPLATES.horse_forest_easy;
-  oc$('obstacle-title').textContent = t.label;
-  oc$('obstacle-target-score').textContent = String(OC.successScore);
-}
-function buildWorld() {
-  const groundLayer = new THREE.Group();
-  const pathLayer = new THREE.Group();
-  const treeLayer = new THREE.Group();
-  const rockLayer = new THREE.Group();
-  const collectibleLayer = new THREE.Group();
-  const obstacleLayer = new THREE.Group();
-  const paintLayer = new THREE.Group();
-  OC.world.add(groundLayer, pathLayer, treeLayer, rockLayer, collectibleLayer, obstacleLayer, paintLayer);
-  makeLayer('ground', 'Forest ground', groundLayer, { order: 0 });
-  makeLayer('path', 'Transparent path segments', pathLayer, { order: 3 });
-  makeLayer('paint-decals', 'Paint / alpha decals', paintLayer, { order: 11 });
-  makeLayer('trees', 'GLB trees', treeLayer, { order: 12 });
-  makeLayer('rocks', 'Rocks', rockLayer, { order: 13 });
-  makeLayer('collectibles', 'Collectibles', collectibleLayer, { order: 15 });
-  makeLayer('obstacles', 'Obstacles', obstacleLayer, { order: 16 });
-  generatePathSequence();
-  buildGround(groundLayer);
-  buildPathSegments(pathLayer);
-  buildTreeCorridor(treeLayer);
-  scatterForestFloorDetail(rockLayer);
-}
-function buildGround(parent) {
-  const mat = OC.groundMaterial || new THREE.MeshStandardMaterial({ color: 0x4c653f, roughness: 1 });
-  for (let d = 0; d < OC.courseLength + 360; d += SEGMENT_WORLD_STEP) {
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(70, SEGMENT_WORLD_STEP + 2, 28, 18), mat);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.set(0, GROUND_Y, -d - SEGMENT_WORLD_STEP / 2);
-    parent.add(ground);
-  }
-}
-function buildPathSegments(parent) {
-  OC.pathSequence.forEach((seg) => {
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(24, SEGMENT_WORLD_LENGTH, 1, 1), getPathMaterial(seg));
-    mesh.rotation.x = -Math.PI / 2;
-    mesh.position.set((seg.startX + seg.endX) / 2, GROUND_Y + 0.048, -seg.distance - SEGMENT_WORLD_LENGTH / 2);
-    mesh.renderOrder = 4;
-    parent.add(mesh);
-  });
-}
-function buildTreeCorridor(parent) {
-  const step = OC.templateId === 'horse_forest_dense' ? 18 : 24;
-  for (let d = 30; d < OC.courseLength + 230; d += step) [-1, 1].forEach((side) => addTreeAt(parent, d + rand(-3, 8), side, rand(8, 15), rand(3, 9)));
-}
-function addTreeAt(parent, distance, side, height, extra) {
-  const tree = createModelTree(height);
-  if (!tree) return;
-  const x = pathCenterAt(distance) + side * (OC.laneWidth * 0.85 + OC.sceneryDistance + extra * 0.28 + rand(0.25, 0.9));
-  tree.position.set(x, GROUND_Y, -distance);
-  tree.rotation.y = rand(0, Math.PI * 2);
-  parent.add(tree);
-  OC.placed.push({ type: 'tree', x, z: -distance, mesh: tree });
-}
-function createModelTree(targetHeight) {
-  if (!OC.treeModels.length) return null;
-  const root = pick(OC.treeModels).clone(true);
+
+function createGlbModel(type, targetHeight) {
+  const assets = GLB_ASSETS.filter((asset) => asset.type === type && OC.glbTemplates.has(asset.url));
+  if (!assets.length) return null;
+  const asset = pick(assets);
+  const template = OC.glbTemplates.get(asset.url);
+  const root = template.scene.clone(true);
+  const wrapper = new THREE.Group();
+  wrapper.add(root);
   root.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(root);
   const size = new THREE.Vector3();
   box.getSize(size);
-  root.scale.multiplyScalar(targetHeight / Math.max(size.y, 0.001));
+  const scale = (targetHeight || asset.scale || 1) / Math.max(size.y, 0.001);
+  root.scale.multiplyScalar(scale);
   root.updateMatrixWorld(true);
   const box2 = new THREE.Box3().setFromObject(root);
-  const wrapper = new THREE.Group();
-  wrapper.add(root);
   root.position.set(-(box2.min.x + box2.max.x) / 2, -box2.min.y, -(box2.min.z + box2.max.z) / 2);
+  wrapper.userData.glbAssetUrl = asset.url;
+  wrapper.userData.glbAssetLabel = asset.label;
+  wrapper.userData.ocType = asset.type;
+  wrapper.userData.baseScale = wrapper.scale.clone();
   return wrapper;
 }
-function scatterForestFloorDetail(parent) {
-  for (let d = 18; d < OC.courseLength + 260; d += rand(9, 15)) {
-    [-1, 1].forEach((side) => addSceneryRock(parent, pathCenterAt(d) + side * rand(OC.laneWidth + 0.8, OC.laneWidth + OC.sceneryDistance + 3.0), d + rand(-4, 4)));
+
+function registerGlbInstance(obj, assetType, x, z) {
+  obj.userData.basePosition = obj.position.clone();
+  obj.userData.baseScale = obj.scale.clone();
+  obj.userData.ocType = assetType || obj.userData.ocType || 'glb';
+  OC.glbInstances.push(obj);
+  OC.placed.push({ type: obj.userData.ocType, x, z, mesh: obj });
+}
+
+function buildTreeCorridor(parent) {
+  const template = TEMPLATES[OC.templateId] || TEMPLATES.horse_forest_easy;
+  const step = Math.max(11, 22 / template.treeRate);
+  for (let d = 26; d < OC.courseLength + 250; d += step) {
+    [-1, 1].forEach((side) => {
+      for (let row = 0; row < 5; row += 1) {
+        if (Math.random() > 0.78 && row > 1) continue;
+        const offset = (OC.pathVisualWidth * 0.5) + OC.sceneryDistance + row * rand(2.6, 4.8) + rand(0.2, 1.6);
+        addTreeAt(parent, d + rand(-6, 9), side, offset, rand(6.5, 15));
+      }
+    });
   }
 }
+
+function addTreeAt(parent, distance, side, offset, height) {
+  const tree = createGlbModel('tree', height);
+  if (!tree) return;
+  const x = pathCenterAt(distance) + side * offset;
+  tree.position.set(x, GROUND_Y, -distance);
+  tree.rotation.y = rand(0, Math.PI * 2);
+  parent.add(tree);
+  registerGlbInstance(tree, 'tree', x, -distance);
+}
+
+function scatterForestFloorDetail(parent) {
+  const template = TEMPLATES[OC.templateId] || TEMPLATES.horse_forest_easy;
+  for (let d = 18; d < OC.courseLength + 260; d += rand(10, 18) / template.rockRate) {
+    [-1, 1].forEach((side) => addSceneryRock(parent, pathCenterAt(d) + side * rand(OC.pathVisualWidth * 0.5 + 0.8, OC.pathVisualWidth * 0.5 + OC.sceneryDistance + 5), d + rand(-4, 4)));
+  }
+}
+
 function addSceneryRock(parent, x, distance) {
-  const rock = createRock();
-  rock.position.set(x, GROUND_Y + 0.18, -distance);
-  rock.scale.multiplyScalar(rand(0.55, 0.95));
+  const rock = createGlbModel('rock', rand(0.7, 1.6)) || new THREE.Mesh(new THREE.DodecahedronGeometry(rand(0.35, 0.9), 0), new THREE.MeshStandardMaterial({ color: 0x6d665a, roughness: 1 }));
+  rock.position.set(x, GROUND_Y + 0.15, -distance);
+  rock.rotation.y = rand(0, Math.PI * 2);
   parent.add(rock);
-  OC.placed.push({ type: 'rock', x, z: -distance, mesh: rock });
+  registerGlbInstance(rock, 'rock', x, -distance);
 }
-function createRock() {
-  const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rand(0.45, 0.75), 0), new THREE.MeshLambertMaterial({ color: Math.random() < 0.5 ? 0x62655c : 0x3e443a, flatShading: true }));
-  rock.scale.set(rand(0.8, 1.4), rand(0.45, 0.9), rand(0.75, 1.3));
-  rock.rotation.set(rand(0, Math.PI), rand(0, Math.PI), rand(0, Math.PI));
-  return rock;
+
+function scatterPathEdgeDetails(parent) {
+  const template = TEMPLATES[OC.templateId] || TEMPLATES.horse_forest_easy;
+  for (let d = 22; d < OC.courseLength + 230; d += rand(8, 14) / template.detailRate) {
+    [-1, 1].forEach((side) => {
+      if (Math.random() > 0.68) return;
+      const detail = createGlbModel('detail', rand(0.9, 2.2));
+      if (!detail) return;
+      const x = pathCenterAt(d) + side * rand(OC.pathVisualWidth * 0.38, OC.pathVisualWidth * 0.54);
+      detail.position.set(x, GROUND_Y + 0.02, -d);
+      detail.rotation.y = rand(0, Math.PI * 2);
+      parent.add(detail);
+      registerGlbInstance(detail, 'detail', x, -d);
+    });
+  }
 }
-function createLog() {
-  const group = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 3.6, 14), new THREE.MeshLambertMaterial({ color: 0x5a3519 }));
-  body.rotation.z = Math.PI / 2;
-  group.add(body);
-  return group;
-}
+
 function addObstacles(count) {
   const parent = OC.layers.get('obstacles')?.group || OC.world;
   for (let i = 0; i < count; i += 1) {
-    const distance = 70 + Math.random() * (OC.courseLength - 120);
-    const center = pathCenterAt(distance);
-    const x = center + pick([-1, 0, 1]) * OC.laneWidth * 0.55;
-    const obj = Math.random() < 0.72 ? createLog() : createRock();
-    obj.position.set(x, GROUND_Y + 0.35, -distance);
-    obj.userData = { kind: 'obstacle', hit: false, radiusX: 0.9, needsJump: true };
+    const distance = 85 + Math.random() * Math.max(80, OC.courseLength - 170);
+    const x = visibleCollectiblePathX(distance) + rand(-1.2, 1.2);
+    const obj = createGlbModel('rock', rand(1.4, 2.8)) || new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), new THREE.MeshStandardMaterial({ color: 0x55423d, roughness: 1 }));
+    obj.position.set(x, GROUND_Y + 0.3, -distance);
+    obj.rotation.y = rand(0, Math.PI * 2);
+    obj.userData.kind = 'obstacle';
+    obj.userData.radius = 1.25;
     parent.add(obj);
     OC.objects.push(obj);
-    OC.placed.push({ type: 'log', x: obj.position.x, z: obj.position.z, mesh: obj });
+    registerGlbInstance(obj, 'obstacle', x, -distance);
   }
 }
+
 function addCollectibles(count) {
   const parent = OC.layers.get('collectibles')?.group || OC.world;
-  const geo = new THREE.OctahedronGeometry(0.32, 0);
-  for (let i = 0; i < count; i += 1) {
-    const distance = 45 + Math.random() * (OC.courseLength - 90);
-    const center = pathCenterAt(distance);
-    const obj = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xeec45a, transparent: true, opacity: 0.9 }));
-    obj.position.set(center + pick([-1, 0, 1]) * OC.laneWidth * 0.55, rand(-0.4, 1.6), -distance);
-    obj.userData = { kind: 'collectible', collected: false, radius: 0.85 };
+  const total = Math.max(3, Math.round(count * 0.7));
+  for (let i = 0; i < total; i += 1) {
+    const distance = 65 + Math.random() * Math.max(80, OC.courseLength - 120);
+    const x = visibleCollectiblePathX(distance);
+    const obj = createGlbModel('collectible', Math.random() < 0.55 ? rand(1.3, 1.8) : rand(0.9, 1.35)) || new THREE.Mesh(new THREE.OctahedronGeometry(0.46, 0), new THREE.MeshBasicMaterial({ color: 0xeec45a, transparent: true, opacity: 0.95 }));
+    obj.position.set(x, GROUND_Y + rand(0.22, 0.62), -distance);
+    obj.rotation.y = rand(0, Math.PI * 2);
+    obj.userData.kind = 'collectible';
+    obj.userData.collected = false;
+    obj.userData.radius = 1.15;
+    obj.userData.value = GLB_ASSETS.find((asset) => asset.url === obj.userData.glbAssetUrl)?.value || 1;
+    obj.userData.visiblePathOnly = true;
     parent.add(obj);
     OC.objects.push(obj);
-    OC.placed.push({ type: 'collectible', x: obj.position.x, z: obj.position.z, mesh: obj });
+    registerGlbInstance(obj, 'collectible', x, -distance);
   }
 }
 
-function syncRunButtons() {
-  const running = OC.running && !OC.complete;
-  ['obstacle-start', 'obstacle-start-left'].forEach((id) => oc$(id)?.classList.toggle('is-running', running));
-  ['obstacle-pause', 'obstacle-pause-left'].forEach((id) => oc$(id)?.classList.toggle('is-paused', !running && OC.distance > 0 && !OC.complete));
+function glbConfigFor(url) {
+  return url ? glbControl(url) : null;
 }
 
-function updateHorseSprite() {
-  const horse = document.querySelector('.obstacle-horse-overlay');
-  if (!horse) return;
-  let frame = 3;
-  if (OC.keys.has('left')) frame = 1;
-  if (OC.keys.has('right')) frame = 5;
-  if (OC.keys.has('left') && OC.keys.has('right')) frame = 3;
-  horse.style.backgroundPosition = `${(frame / 6) * 100}% 100%`;
+function applyAllGlbAssetControls() {
+  OC.glbInstances.forEach((obj) => {
+    const cfg = glbConfigFor(obj.userData.glbAssetUrl);
+    if (!cfg) return;
+    const basePos = obj.userData.basePosition || obj.position;
+    const baseScale = obj.userData.baseScale || obj.scale;
+    obj.position.set(basePos.x + (cfg.x || 0), basePos.y + (cfg.y || 0), basePos.z + (cfg.z || 0));
+    obj.scale.copy(baseScale).multiplyScalar(cfg.scale || 1);
+    obj.traverse((node) => {
+      node.renderOrder = cfg.order || 0;
+      if (!node.material) return;
+      const mats = Array.isArray(node.material) ? node.material : [node.material];
+      mats.forEach((mat) => applyVisualToMaterial(mat, cfg));
+    });
+  });
+  refreshGlbSelectionBoxes();
+  drawFrame();
+  drawOverview();
 }
 
-function updateScreenFilters() {
-  if (OC.host) OC.host.style.setProperty('--oc-brightness', String(OC.screenBrightness || 1));
-  const tint = document.querySelector('.obstacle-tint-overlay');
-  if (tint) {
-    tint.style.setProperty('--oc-tint', OC.screenTint || '#000000');
-    tint.style.setProperty('--oc-tint-opacity', String(OC.screenTintStrength || 0));
-  }
+function clearSelectionBoxes() {
+  OC.selectionBoxes.forEach((box) => {
+    box.parent?.remove(box);
+    box.dispose?.();
+  });
+  OC.selectionBoxes = [];
+}
+
+function refreshGlbSelectionBoxes() {
+  clearSelectionBoxes();
+  if (OC.selectedLayerId !== 'glbAsset' || !OC.selectedGlbAssetUrl || !OC.scene) return;
+  OC.glbInstances.filter((obj) => obj.userData.glbAssetUrl === OC.selectedGlbAssetUrl).forEach((obj) => {
+    const helper = new THREE.BoxHelper(obj, 0xeec45a);
+    helper.renderOrder = 999;
+    OC.scene.add(helper);
+    OC.selectionBoxes.push(helper);
+  });
 }
 
 function startRun() {
-  ensureAudioReady();
-  playRandomHorseVoice(true);
-  setLoop('forest', true, 0.16);
+  if (!OC.requiredReady) return;
+  OC.active = true;
   OC.running = true;
+  OC.paused = false;
   OC.complete = false;
   OC.startAssistTime = 1.2;
-  if (OC.currentSpeed < 2.4) OC.currentSpeed = 2.4;
-  OC.clock?.start();
-  oc$('obstacle-status').textContent = 'Riding';
-  setResult('Run started. The horse walks forward briefly on its own; hold ↑/W to keep moving and speed up.', 'waiting');
-  syncRunButtons();
+  ensureAudioReady();
+  playRandomHorseVoice(true);
+  updateStats();
 }
+
 function pauseRun() {
-  OC.running = false;
-  OC.targetSpeed = 0;
-  OC.startAssistTime = 0;
-  AUDIO.wasForwardMoving = false;
-  stopMotionLoops();
-  if (oc$('obstacle-status')) oc$('obstacle-status').textContent = 'Paused';
-  syncRunButtons();
+  OC.running = !OC.running;
+  OC.paused = !OC.running;
+  if (!OC.running) stopMotionLoops();
+  updateStats();
 }
-function resetRun(quiet = false) {
+
+function resetRun(silent = false) {
   OC.running = false;
-  stopMotionLoops();
-  AUDIO.wasForwardMoving = false;
+  OC.paused = false;
   OC.complete = false;
-  OC.distance = 0;
   OC.currentSpeed = 0;
   OC.targetSpeed = 0;
-  OC.startAssistTime = 0;
+  OC.distance = 0;
   OC.score = 0;
   OC.hits = 0;
   OC.jumps = 0;
   OC.collected = 0;
+  OC.offPathTime = 0;
   OC.player.x = 0;
   OC.player.y = 0;
   OC.player.vy = 0;
   OC.player.grounded = true;
-  OC.player.jumpingHeld = false;
-  OC.player.jumpHoldTime = 0;
-  OC.objects.forEach((obj) => { obj.visible = true; if (obj.userData) { obj.userData.hit = false; obj.userData.collected = false; } });
+  OC.objects.forEach((obj) => {
+    if (obj.userData.kind === 'collectible') {
+      obj.visible = true;
+      obj.userData.collected = false;
+    }
+  });
+  stopMotionLoops();
+  if (!silent) setResult('Run reset.', 'success');
   updateStats();
-  if (!quiet) setResult('Course reset. Start the test when ready.', 'waiting');
-  syncRunButtons();
   drawFrame();
   drawOverview();
 }
-function startJump() {
-  if (!OC.active || !OC.player.grounded) return;
-  OC.player.vy = 7.6;
-  OC.player.grounded = false;
-  OC.player.jumpingHeld = true;
-  OC.player.jumpHoldTime = 0;
-  OC.jumps += 1;
-  updateStats();
+
+function handleKeyDown(event) {
+  const key = normalizeKey(event);
+  if (!key) return;
+  OC.keys.add(key);
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','Control'].includes(event.key)) event.preventDefault();
+  if (key === 'jump') OC.player.jumpingHeld = true;
 }
-function loop() {
-  if (OC.active) {
-    const dt = Math.min(0.05, OC.clock?.getDelta?.() || 0.016);
-    drawFrame(dt);
-  }
-  OC.frame = requestAnimationFrame(loop);
+
+function handleKeyUp(event) {
+  const key = normalizeKey(event);
+  if (!key) return;
+  OC.keys.delete(key);
+  if (key === 'jump') OC.player.jumpingHeld = false;
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','Control'].includes(event.key)) event.preventDefault();
 }
-function drawFrame(dt = 0) {
-  if (!OC.renderer || !OC.scene || !OC.camera) return;
-  if (OC.running && !OC.complete) updateRun(dt);
-  updateHorseSprite();
-  updateCamera();
-  OC.renderer.render(OC.scene, OC.camera);
+
+function normalizeKey(event) {
+  const key = event.key.toLowerCase();
+  if (key === 'w' || key === 'arrowup') return 'forward';
+  if (key === 's' || key === 'arrowdown') return 'back';
+  if (key === 'a' || key === 'arrowleft') return 'left';
+  if (key === 'd' || key === 'arrowright') return 'right';
+  if (key === ' ' || key === 'spacebar') return 'jump';
+  if (key === 'control' || key === 'ctrl') return 'duck';
+  return null;
 }
+
 function updateRun(dt) {
-  let steer = 0;
-  if (OC.keys.has('left')) steer -= 1;
-  if (OC.keys.has('right')) steer += 1;
-  OC.player.x = clamp(OC.player.x + steer * OC.steerSpeed * dt, -OC.laneWidth * 1.8, OC.laneWidth * 1.8);
+  if (!OC.active) return;
+  const steer = (OC.keys.has('right') ? 1 : 0) - (OC.keys.has('left') ? 1 : 0);
+  if (steer) OC.player.x += steer * OC.steerSpeed * dt;
+  OC.player.x = clamp(OC.player.x, -OC.pathVisualWidth * 0.55, OC.pathVisualWidth * 0.55);
 
-  if (OC.keys.has('forward')) OC.targetSpeed = OC.speed;
-  else if (OC.keys.has('back')) OC.targetSpeed = BACK_SPEED;
-  else if (OC.startAssistTime > 0) {
-    OC.targetSpeed = Math.max(6, Math.min(12, OC.speed * 0.35));
-    OC.startAssistTime = Math.max(0, OC.startAssistTime - dt);
-  } else OC.targetSpeed = 0;
-
-  const status = pathStatus();
-  let cappedTarget = OC.targetSpeed;
-  if (status === 'off' && cappedTarget > SLOW_TROT_SPEED) cappedTarget = SLOW_TROT_SPEED;
-  if (status === 'edge' && cappedTarget > OC.speed * 0.55) cappedTarget = OC.speed * 0.55;
-  const rate = Math.abs(cappedTarget) > Math.abs(OC.currentSpeed) ? ACCEL : DECEL;
-  OC.currentSpeed += clamp(cappedTarget - OC.currentSpeed, -rate * dt, rate * dt);
-  OC.distance = Math.max(0, OC.distance + OC.currentSpeed * dt);
-  updateRideAudio();
-  if (status === 'off' && OC.targetSpeed > 0) {
-    playBushRustle();
-    setResult('Off path: horse slowed to a trot. Steer back onto the road.', 'warn');
+  if (OC.player.grounded && OC.keys.has('jump')) {
+    OC.player.grounded = false;
+    OC.player.vy = 8.5;
+    OC.player.jumpHoldTime = 0;
+    OC.jumps += 1;
+    playClip('land', { volume: 0.2 });
   }
-  if (status === 'edge' && OC.targetSpeed > 0) setResult('Path edge: horse slowing. Steer toward the centre.', 'warn');
-
-  updatePhysics(dt);
-  updateObjects();
-  OC.score += dt * (status === 'off' ? 0.15 : 0.6);
-  updateStats();
-  if (OC.distance >= OC.courseLength) {
-    OC.complete = true;
-    pauseRun();
-    setResult(OC.score >= OC.successScore ? 'Course complete.' : 'Course complete, but score is below target.', OC.score >= OC.successScore ? 'success' : 'failure');
-  }
-}
-function updatePhysics(dt) {
-  if (OC.player.jumpingHeld && !OC.player.grounded && OC.player.jumpHoldTime < OC.player.maxJumpHoldTime) {
-    OC.player.vy += 9.5 * dt;
-    OC.player.jumpHoldTime += dt;
-  }
-  if (OC.player.jumpHoldTime >= OC.player.maxJumpHoldTime) OC.player.jumpingHeld = false;
   if (!OC.player.grounded) {
-    OC.player.vy -= 22 * dt;
+    const holdBoost = OC.keys.has('jump') && OC.player.jumpHoldTime < OC.player.maxJumpHoldTime ? 3.3 : 0;
+    OC.player.jumpHoldTime += dt;
+    OC.player.vy += (-18 + holdBoost) * dt;
     OC.player.y += OC.player.vy * dt;
     if (OC.player.y <= 0) {
-      const landed = !OC.player.grounded;
       OC.player.y = 0;
       OC.player.vy = 0;
       OC.player.grounded = true;
-      OC.player.jumpingHeld = false;
-      OC.player.jumpHoldTime = 0;
-      if (landed) playClip('land', { volume: 0.48 });
+      playClip('land', { volume: 0.5 });
     }
   }
+
+  const status = pathStatus();
+  if (status === 'off') OC.offPathTime += dt;
+  else OC.offPathTime = 0;
+
+  let desired = 0;
+  if (OC.keys.has('forward')) desired = OC.speed;
+  if (OC.keys.has('back')) desired = BACK_SPEED;
+  if (OC.startAssistTime > 0) {
+    desired = Math.max(desired, OC.speed * 0.72);
+    OC.startAssistTime -= dt;
+  }
+  if (status === 'off' && desired > SLOW_TROT_SPEED) desired = SLOW_TROT_SPEED;
+  if (status === 'edge' && desired > OC.speed * 0.65) desired = OC.speed * 0.65;
+  OC.targetSpeed = desired;
+  const rate = Math.abs(OC.targetSpeed) > Math.abs(OC.currentSpeed) ? ACCEL : DECEL;
+  const diff = OC.targetSpeed - OC.currentSpeed;
+  OC.currentSpeed += clamp(diff, -rate * dt, rate * dt);
+  if (Math.abs(OC.currentSpeed) < 0.05) OC.currentSpeed = 0;
+  if (OC.running && !OC.paused) {
+    OC.distance += OC.currentSpeed * dt;
+  }
+  if (OC.distance >= OC.courseLength) completeRun();
+
+  checkInteractions();
+  updateRideAudio();
+  updateOffPathWarning(status);
+  updateHorseFrame(steer);
+  updateStats();
 }
-function updateObjects() {
-  const x = playerWorldX();
+
+function checkInteractions() {
+  const px = playerWorldX();
+  const pz = -OC.distance;
+  const py = OC.player.y;
   OC.objects.forEach((obj) => {
-    const distance = -obj.position.z;
-    const delta = distance - OC.distance;
-    if (delta < -8 || delta > 8 || !obj.visible) return;
-    if (obj.userData.kind === 'collectible' && !obj.userData.collected && Math.hypot(obj.position.x - x, obj.position.y - (OC.player.y + 0.3)) < obj.userData.radius) {
+    if (!obj.visible) return;
+    const dx = obj.position.x - px;
+    const dz = obj.position.z - pz;
+    const dy = obj.position.y - (GROUND_Y + py);
+    const radius = obj.userData.radius || 1;
+    const dist = Math.sqrt(dx * dx + dz * dz + dy * dy);
+    if (obj.userData.kind === 'collectible' && !obj.userData.collected && dist < radius + 0.9) {
       obj.userData.collected = true;
       obj.visible = false;
       OC.collected += 1;
-      OC.score += 4;
-    }
-    if (obj.userData.kind === 'obstacle' && !obj.userData.hit && Math.abs(obj.position.x - x) < obj.userData.radiusX && Math.abs(delta) < 1.4 && OC.player.y < 0.75) {
+      OC.score += obj.userData.value || 1;
+      playClip('snort', { volume: 0.38 });
+    } else if (obj.userData.kind === 'obstacle' && dist < radius + 0.7 && !obj.userData.hit) {
       obj.userData.hit = true;
       OC.hits += 1;
-      OC.score = Math.max(0, OC.score - 3);
+      OC.score = Math.max(0, OC.score - 1);
       playBushRustle();
-      if (Math.random() < 0.38) playRandomHorseVoice();
-      setResult('Hit obstacle. Jump with Space.', 'warn');
     }
   });
 }
-function updateCamera() {
-  const center = pathCenterAt(OC.distance);
-  const x = center + OC.player.x;
-  OC.world.position.z = OC.distance;
-  OC.camera.position.set(x * 0.16, 1.8 + OC.player.y * 0.55, 8.4);
-  OC.camera.lookAt(x * 0.35, 0.35 + OC.player.y * 0.35, -28);
-}
-function updateStats() {
-  oc$('obstacle-score').textContent = String(Math.round(OC.score));
-  oc$('obstacle-collected').textContent = String(OC.collected);
-  oc$('obstacle-hits').textContent = String(OC.hits);
-  oc$('obstacle-course-summary').textContent = `${Math.round(OC.distance)}m / ${Math.round(OC.courseLength)}m`;
-  const speedBadge = oc$('obstacle-speed-badge');
-  if (speedBadge) {
-    const speed = Math.max(0, Math.round(OC.currentSpeed));
-    const gait = speed < 3 ? 'Stopped' : speed < OC.speed * 0.45 ? 'Trot' : speed < OC.speed * 0.75 ? 'Canter' : 'Gallop';
-    speedBadge.textContent = `${gait} · ${speed}`;
-  }
-}
-function setResult(text, state = 'waiting') {
-  const result = oc$('obstacle-result');
-  if (!result) return;
-  result.textContent = text;
-  result.dataset.state = state;
+
+function completeRun() {
+  OC.complete = true;
+  OC.running = false;
+  OC.currentSpeed = 0;
+  OC.targetSpeed = 0;
+  stopMotionLoops();
+  setResult(`Complete. Score ${OC.score}, collectibles ${OC.collected}, hits ${OC.hits}.`, 'success');
 }
 
-function loadTreeModels() {
-  if (OC.treeLoadStarted) return;
-  OC.treeLoadStarted = true;
-  ASSETS.trees.forEach((url) => OC.gltfLoader.load(`${url}?v=29`, (gltf) => {
-    if (!gltf.scene) return;
-    gltf.scene.traverse((node) => { if (node.isMesh) node.receiveShadow = true; });
-    OC.treeModels.push(gltf.scene);
-    if (oc$('hf-tree-status')) oc$('hf-tree-status').textContent = `GLB trees: ${OC.treeModels.length} loaded`;
-    if (OC.active) regenerateCourse();
-  }, undefined, (error) => console.warn('[HorseForest] GLB tree failed:', url, error)));
+function updateOffPathWarning(status) {
+  const arrow = $('oc-offpath-arrow');
+  const label = $('oc-offpath-label');
+  const show = status === 'off' && OC.offPathTime >= 2;
+  if (arrow) {
+    arrow.classList.toggle('is-visible', show);
+    arrow.classList.toggle('dir-left', OC.pathHintDirection === 'left');
+    arrow.classList.toggle('dir-right', OC.pathHintDirection !== 'left');
+  }
+  if (label) {
+    label.textContent = show ? (OC.pathHintDirection === 'left' ? '← Off Path' : 'Off Path →') : '';
+  }
+}
+
+function updateHorseFrame(steer) {
+  const horse = $('obstacle-horse');
+  if (!horse) return;
+  let frame = 3;
+  if (steer < 0) frame = OC.currentSpeed > 8 ? 1 : 2;
+  if (steer > 0) frame = OC.currentSpeed > 8 ? 5 : 4;
+  horse.style.backgroundPosition = `${(frame / 6) * 100}% 100%`;
+}
+
+function updateStats() {
+  const speed = Math.max(0, Math.round(OC.currentSpeed));
+  const max = Math.max(1, Math.round(OC.speed));
+  const status = pathStatus();
+  const gait = status === 'off' ? 'Off Path' : speed < 3 ? 'Stopped' : speed < max * 0.45 ? 'Trot' : speed < max * 0.75 ? 'Canter' : 'Gallop';
+  const clip = document.querySelector('.oc-powerbar-full-clip');
+  if (clip) clip.style.width = `${clamp(speed / max, 0, 1) * 100}%`;
+  const state = $('oc-speed-state');
+  const value = $('oc-speed-value');
+  if (!state || !value) {
+    const badge = $('obstacle-speed-badge');
+    if (badge) {
+      badge.innerHTML = `<div class="oc-powerbar-wrap"><div class="oc-powerbar-emoji">🐴</div><div class="oc-powerbar-empty"></div><div class="oc-powerbar-full-clip"><div class="oc-powerbar-full"></div></div></div><div class="oc-speed-label"><span id="oc-speed-state"></span><b id="oc-speed-value"></b></div><div id="oc-offpath-label" class="oc-offpath-label"></div>`;
+      const newClip = document.querySelector('.oc-powerbar-full-clip');
+      if (newClip) newClip.style.width = `${clamp(speed / max, 0, 1) * 100}%`;
+    }
+  }
+  if ($('oc-speed-state')) $('oc-speed-state').textContent = gait;
+  if ($('oc-speed-value')) $('oc-speed-value').textContent = `${speed}/${max}`;
+  if ($('obstacle-distance-readout')) $('obstacle-distance-readout').textContent = `Distance ${Math.max(0, Math.round(OC.distance))} / ${Math.round(OC.courseLength)}`;
+  if ($('obstacle-score-readout')) $('obstacle-score-readout').textContent = `Score ${OC.score} · Collected ${OC.collected} · Hits ${OC.hits}`;
+  const statusNode = $('obstacle-status');
+  if (statusNode) statusNode.textContent = OC.complete ? 'Complete' : OC.running ? 'Running' : OC.paused ? 'Paused' : OC.requiredReady ? 'Ready' : 'Loading';
+  $('obstacle-start')?.classList.toggle('is-running', OC.running);
+  $('obstacle-pause')?.classList.toggle('is-paused', OC.paused);
+}
+
+function updateTemplateText() {
+  const title = $('obstacle-title');
+  const objective = $('obstacle-objective');
+  if (title) title.textContent = TEMPLATES[OC.templateId]?.label || 'Obstacle Course';
+  if (objective) objective.textContent = 'Horse forest obstacle course using visible path alpha, GLB scenery, and collectible scoring.';
+}
+
+function setResult(message, type = '') {
+  const node = $('obstacle-result');
+  if (!node) return;
+  node.textContent = message;
+  node.className = `oc-result ${type || ''}`;
+}
+
+function ensureAudioReady() {
+  if (OC.audioReady || typeof Audio === 'undefined') return;
+  OC.audioReady = true;
+  Object.entries(ASSETS.audio).forEach(([key, src]) => {
+    const audio = new Audio(src);
+    audio.preload = 'auto';
+    audio.loop = ['forest', 'gallopSlow', 'gallopFull'].includes(key);
+    audio.volume = key === 'forest' ? 0.16 : 0.45;
+    OC.audioClips.set(key, audio);
+  });
+}
+
+function playClip(id, options = {}) {
+  ensureAudioReady();
+  const clip = OC.audioClips.get(id);
+  if (!clip) return;
+  try {
+    if (!options.allowOverlap) clip.currentTime = 0;
+    if (options.volume !== undefined) clip.volume = options.volume;
+    const play = clip.play();
+    if (play?.catch) play.catch(() => {});
+  } catch (_) {}
+}
+
+function setLoop(id, active, volume) {
+  ensureAudioReady();
+  const clip = OC.audioClips.get(id);
+  if (!clip) return;
+  if (volume !== undefined) clip.volume = volume;
+  if (active) {
+    const play = clip.play();
+    if (play?.catch) play.catch(() => {});
+  } else clip.pause();
+}
+
+function stopMotionLoops() {
+  setLoop('gallopSlow', false);
+  setLoop('gallopFull', false);
+}
+
+function playRandomHorseVoice(force = false) {
+  const now = performance.now();
+  if (!force && now - OC.lastVoiceAt < 6500) return;
+  OC.lastVoiceAt = now;
+  playClip(Math.random() < 0.58 ? 'neigh' : 'snort');
+}
+
+function playBushRustle() {
+  const now = performance.now();
+  if (now - OC.lastBushAt < 900) return;
+  OC.lastBushAt = now;
+  playClip('bush');
+}
+
+function updateRideAudio() {
+  const forward = OC.running && !OC.complete && OC.currentSpeed > 1.2;
+  const fast = forward && OC.currentSpeed > OC.speed * 0.62;
+  if (forward && !OC.wasForwardMoving) playRandomHorseVoice();
+  OC.wasForwardMoving = forward;
+  setLoop('forest', OC.active, 0.16);
+  setLoop('gallopSlow', forward && !fast, 0.34);
+  setLoop('gallopFull', fast, 0.44);
+}
+
+function drawFrame() {
+  if (!OC.renderer || !OC.scene || !OC.camera) return;
+  const dt = Math.min(0.033, OC.clock?.getDelta?.() || 0.016);
+  if (OC.active) updateRun(dt);
+  OC.selectionBoxes.forEach((box) => box.update());
+  OC.renderer.render(OC.scene, OC.camera);
+  OC.frame = requestAnimationFrame(drawFrame);
 }
 
 function worldToOverview(x, z) {
-  const c = oc$('hf-overview');
-  return { x: (x + 24) / 48 * c.width, y: (-z) / (OC.courseLength + 300) * c.height };
+  const c = $('hf-overview');
+  const width = c?.width || 280;
+  const height = c?.height || 500;
+  const ox = width / 2 + x * 5.1;
+  const oy = height - 28 + z * 0.17;
+  return { x: ox, y: oy };
 }
+
 function drawOverview() {
-  const c = oc$('hf-overview');
+  const c = $('hf-overview');
   if (!c) return;
-  const wantedHeight = Math.max(300, Math.min(2200, Math.round((OC.courseLength + 300) / 3.2)));
-  if (c.height !== wantedHeight) c.height = wantedHeight;
+  const height = Math.max(340, Math.min(2400, Math.round((OC.courseLength + 300) / 3.0)));
+  if (c.height !== height) c.height = height;
   const ctx = c.getContext('2d');
   ctx.clearRect(0, 0, c.width, c.height);
-  ctx.fillStyle = '#111914';
+  ctx.fillStyle = '#101914';
   ctx.fillRect(0, 0, c.width, c.height);
+
+  if (OC.overviewPathOverlay) {
+    ctx.fillStyle = 'rgba(238,196,90,.26)';
+    for (let d = 0; d < OC.courseLength; d += 9) {
+      const seg = alphaSegmentAt(d);
+      if (!seg) continue;
+      const meshCenterX = (seg.startX + seg.endX) / 2;
+      for (let x = meshCenterX - OC.pathVisualWidth * 0.50; x <= meshCenterX + OC.pathVisualWidth * 0.50; x += 1.1) {
+        if ((pathAlphaAtWorld(x, d) || 0) >= OC.pathAlphaThreshold) {
+          const p = worldToOverview(x, -d);
+          ctx.fillRect(p.x - 1.2, p.y - 1.2, 2.4, 2.4);
+        }
+      }
+    }
+  }
+
   ctx.strokeStyle = '#d09a55';
-  ctx.lineWidth = 6;
+  ctx.lineWidth = 4;
   ctx.beginPath();
   for (let d = 0; d < OC.courseLength; d += 18) {
-    const point = worldToOverview(pathCenterAt(d), -d);
-    if (d === 0) ctx.moveTo(point.x, point.y);
-    else ctx.lineTo(point.x, point.y);
+    const p = worldToOverview(pathCenterAt(d), -d);
+    if (d === 0) ctx.moveTo(p.x, p.y);
+    else ctx.lineTo(p.x, p.y);
   }
   ctx.stroke();
-  OC.placed.forEach((obj) => {
-    const point = worldToOverview(obj.x, obj.z);
-    ctx.fillStyle = obj.type === 'tree' ? '#48a24a' : obj.type === 'rock' ? '#aaa' : obj.type === 'collectible' ? '#eec45a' : '#b04b35';
+
+  const seen = new Set();
+  const markers = [];
+  [...OC.placed, ...OC.objects.map((obj) => ({ type: obj.userData.kind || obj.userData.ocType, x: obj.position.x, z: obj.position.z, mesh: obj }))].forEach((item) => {
+    const key = item.mesh?.uuid || `${item.type}:${item.x}:${item.z}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    markers.push(item);
+  });
+
+  markers.forEach((item) => {
+    const p = worldToOverview(item.x, item.z);
+    const type = item.type;
+    ctx.fillStyle = type === 'tree' ? '#48a24a' : type === 'rock' ? '#aaa' : type === 'detail' ? '#73c470' : type === 'collectible' ? '#5be5ff' : '#b04b35';
     ctx.beginPath();
-    ctx.arc(point.x, point.y, obj.type === 'tree' ? 4 : 3, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, type === 'tree' ? 4 : 3.3, 0, Math.PI * 2);
     ctx.fill();
   });
+
+  const player = worldToOverview(playerWorldX(), -OC.distance);
+  ctx.fillStyle = '#f4ead4';
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, 5, 0, Math.PI * 2);
+  ctx.fill();
   ctx.strokeStyle = '#eec45a';
   ctx.strokeRect(1, 1, c.width - 2, c.height - 2);
 }
 
-function downloadJson() {
-  const payload = window.__artifexObstacleCourse.getState();
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+function exportJsonSettings() {
+  const config = {
+    engine: 'obstacle-course',
+    version: VERSION,
+    templateId: OC.templateId,
+    difficulty: OC.difficulty,
+    courseLength: OC.courseLength,
+    speed: OC.speed,
+    sceneryDistance: OC.sceneryDistance,
+    pathVisualWidth: OC.pathVisualWidth,
+    vanishX: OC.vanishX,
+    vanishY: OC.vanishY,
+    visual: {
+      brightness: OC.screenBrightness,
+      contrast: OC.screenContrast,
+      saturation: OC.screenSaturation,
+      tint: OC.screenTint,
+      tintStrength: OC.screenTintStrength,
+    },
+    pathSegments: OC.pathSequence.map((seg) => ({ id: seg.key || seg.id, start: seg.start, end: seg.end, distance: seg.distance })),
+    layers: Object.fromEntries(Array.from(OC.layers).map(([id, layer]) => [id, { visible: layer.visible, opacity: layer.opacity, x: layer.x, y: layer.y, z: layer.z, scale: layer.scale, order: layer.order, brightness: layer.brightness, contrast: layer.contrast, saturation: layer.saturation, tint: layer.tint, tintStrength: layer.tintStrength }])),
+    glbControls: Object.fromEntries(OC.glbControls),
+  };
+  const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `obstacle-course-settings-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
-  document.body.appendChild(a);
+  a.download = `obstacle-course-settings-${VERSION.toLowerCase().replace(/\./g, '-')}.json`;
   a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  URL.revokeObjectURL(a.href);
 }
 
-function showObstaclePanel(panelId) {
-  document.querySelectorAll('[data-obstacle-panel]').forEach((panel) => {
-    panel.hidden = panel.dataset.obstaclePanel !== panelId;
-    panel.classList.toggle('is-active', panel.dataset.obstaclePanel === panelId);
-  });
-}
-
-function installOpenIntercept() {
-  document.addEventListener('click', (event) => {
-    const button = event.target.closest("[data-engine='obstacle-course']");
-    if (!button) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    document.querySelectorAll('.puzzle-type-option, .engine-button[data-engine]').forEach((candidate) => {
-      const active = candidate.dataset.engine === 'obstacle-course';
-      candidate.classList.toggle('is-active', active);
-      candidate.classList.toggle('is-selected', active);
-    });
-    openObstacleCourseWorkflow();
-  }, true);
-}
-function boot() {
-  installOpenIntercept();
-}
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
-else boot();
-
-window.__artifexObstacleCourse = {
-  version: 'V29-clean-path-segments',
-  open: openObstacleCourseWorkflow,
-  close: closeObstacleCourseWorkflow,
-  regenerate: regenerateCourse,
-  getState: () => ({
-    version: 'V29-clean-path-segments',
-    runtimeStructure: 'single live obstacle-course-runtime.js plus separate asset debug helper',
-    distance: OC.distance,
-    courseLength: OC.courseLength,
-    score: OC.score,
-    hits: OC.hits,
-    collected: OC.collected,
-    jumps: OC.jumps,
-    movement: { speed: OC.speed, currentSpeed: OC.currentSpeed, targetSpeed: OC.targetSpeed, pathStatus: pathStatus() },
-    pathSegmentPixels: { height: SEGMENT_HEIGHT_PX, overlap: SEGMENT_OVERLAP_PX, step: SEGMENT_STEP_PX },
-    pathSegments: OC.pathSequence.map((seg) => ({ id: seg.id, start: seg.start, end: seg.end, distance: seg.distance })),
-    groundTexture: 'forest_ground.webp',
-    importedTrees: OC.treeModels.length,
-  }),
-};
-
-// --- V2.6 obstacle-course final control/asset patch ---
-(function installObstacleCourseV26FinalPatch(){
-  if (OC.__v26FinalPatchInstalled) return;
-  OC.__v26FinalPatchInstalled = true;
-
-  ASSETS.trees = [
-    `${ASSET_BASE}3d/tree.glb`,
-    `${ASSET_BASE}3d/tree_low-poly.glb`,
-    `${ASSET_BASE}3d/tree_gn.glb`,
-    `${ASSET_BASE}3d/hill_top_tree.glb`,
-    `${ASSET_BASE}3d/oak_trees.glb`,
-    `${ASSET_BASE}3d/pine_tree.glb`,
-    `${ASSET_BASE}3d/pine_tree__ps1_low_poly.glb`,
-    `${ASSET_BASE}3d/small_pine.glb`,
-    `${ASSET_BASE}3d/dead_tree.glb`,
-    `${ASSET_BASE}3d/pine_with_awkward_teenage_face.glb`,
-  ];
-  ASSETS.rocks = [
-    `${ASSET_BASE}3d/rock_low-poly.glb`,
-    `${ASSET_BASE}3d/stone_low-poly.glb`,
-  ];
-  ASSETS.details = [
-    `${ASSET_BASE}3d/low_poly_fern.glb`,
-    `${ASSET_BASE}3d/stylized_glowing_mushrooms.glb`,
-  ];
-  ASSETS.sharedArrows = '../../../shared/ui/defaultarrows.webp';
-  ASSETS.sharedIcons = '../../../shared/ui/defaulticons.webp';
-
-  OC.laneWidth = Math.max(3.1, OC.laneWidth * 1.15);
-  OC.pathVisualWidth = 27.6;
-  OC.sceneryDistance = 1.1;
-  OC.offPathTime = 0;
-  OC.lastPathStatus = 'on';
-  OC.gridEnabled = false;
-  OC.gridOffsetX = 0;
-  OC.gridOffsetZ = 0;
-  OC.layerDefaults = { brightness: 1, contrast: 1, saturation: 1, tintStrength: 0, tint: '#ffffff' };
-  OC.rockModels = [];
-  OC.detailModels = [];
-  OC.assetPreloadStarted = false;
-  OC.assetsEssentialReady = false;
-  OC.assetLoadTotal = 0;
-  OC.assetLoadDone = 0;
-  OC.assetLoadFailed = 0;
-
-  const oldEnsureMounted = ensureMounted;
-  ensureMounted = function ensureMountedPatched(){
-    oldEnsureMounted();
-    installFinalUiPatch();
-    createGridOverlay();
-    preloadEssentialAssets();
-  };
-
-  const oldMakeLayer = makeLayer;
-  makeLayer = function makeLayerPatched(id, label, group, options = {}) {
-    const layer = oldMakeLayer(id, label, group, options);
-    layer.brightness = options.brightness ?? 1;
-    layer.contrast = options.contrast ?? 1;
-    layer.saturation = options.saturation ?? 1;
-    layer.tintStrength = options.tintStrength ?? 0;
-    layer.tint = options.tint ?? '#ffffff';
-    return layer;
-  };
-
-  pathStatus = function pathStatusPatched() {
-    const abs = Math.abs(OC.player.x);
-    const playableWidth = OC.laneWidth * 1.12;
-    if (abs > playableWidth) return 'off';
-    if (abs > playableWidth * 0.78) return 'edge';
-    return 'on';
-  };
-
-  generatePathSequence = function generatePathSequencePatched() {
-    OC.pathSequence = [];
-    let pos = 'centre';
-    const count = Math.ceil((OC.courseLength + 420) / SEGMENT_WORLD_STEP);
-    for (let i = 0; i < count; i += 1) {
-      let choices;
-      if (pos === 'left') choices = [ASSETS.pathSegments.leftToStraight];
-      else if (pos === 'right') choices = [ASSETS.pathSegments.rightToStraight];
-      else choices = [ASSETS.pathSegments.straight, ASSETS.pathSegments.straight, ASSETS.pathSegments.kink, ASSETS.pathSegments.left, ASSETS.pathSegments.right];
-      const def = pick(choices);
-      const distance = i * SEGMENT_WORLD_STEP;
-      const startX = PATH_POSITIONS[def.start] ?? 0;
-      const endX = PATH_POSITIONS[def.end] ?? 0;
-      OC.pathSequence.push({ ...def, distance, startX, endX });
-      pos = def.end;
+async function importJsonSettings(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    if (data.templateId) OC.templateId = data.templateId;
+    if (data.difficulty) OC.difficulty = Number(data.difficulty);
+    if (data.courseLength) OC.courseLength = Number(data.courseLength);
+    if (data.sceneryDistance !== undefined) OC.sceneryDistance = Number(data.sceneryDistance);
+    if (data.pathVisualWidth) OC.pathVisualWidth = Number(data.pathVisualWidth);
+    if (data.vanishX !== undefined) OC.vanishX = Number(data.vanishX);
+    if (data.vanishY !== undefined) OC.vanishY = Number(data.vanishY);
+    if (data.visual) {
+      OC.screenBrightness = data.visual.brightness ?? OC.screenBrightness;
+      OC.screenContrast = data.visual.contrast ?? OC.screenContrast;
+      OC.screenSaturation = data.visual.saturation ?? OC.screenSaturation;
+      OC.screenTint = data.visual.tint ?? OC.screenTint;
+      OC.screenTintStrength = data.visual.tintStrength ?? OC.screenTintStrength;
     }
-  };
-
-  buildPathSegments = function buildPathSegmentsPatched(parent) {
-    OC.pathSequence.forEach((seg) => {
-      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(OC.pathVisualWidth || 27.6, SEGMENT_WORLD_LENGTH, 1, 1), getPathMaterial(seg));
-      mesh.rotation.x = -Math.PI / 2;
-      mesh.position.set((seg.startX + seg.endX) / 2, GROUND_Y + 0.048, -seg.distance - SEGMENT_WORLD_LENGTH / 2);
-      mesh.renderOrder = 4;
-      parent.add(mesh);
-    });
-  };
-
-  buildTreeCorridor = function buildTreeCorridorPatched(parent) {
-    const step = OC.templateId === 'horse_forest_dense' ? 13 : 17;
-    for (let d = 24; d < OC.courseLength + 250; d += step) {
-      [-1, 1].forEach((side) => {
-        for (let row = 0; row < 5; row += 1) {
-          const edge = OC.laneWidth + OC.sceneryDistance + row * rand(2.2, 4.3);
-          const height = row < 1 ? rand(5.5, 9.5) : rand(8, 17);
-          addTreeAt(parent, d + rand(-7, 9), side, height, edge);
-        }
-      });
+    if (data.glbControls) {
+      OC.glbControls = new Map(Object.entries(data.glbControls));
     }
-  };
-
-  addTreeAt = function addTreeAtPatched(parent, distance, side, height, extra) {
-    const tree = createModelFromBucket(OC.treeModels, height) || createFallbackTree(height);
-    if (!tree) return;
-    const x = pathCenterAt(distance) + side * extra;
-    tree.position.set(x, GROUND_Y, -distance);
-    tree.rotation.y = rand(0, Math.PI * 2);
-    tree.rotation.x = rand(-0.04, 0.04);
-    tree.rotation.z = rand(-0.025, 0.025);
-    tree.scale.multiplyScalar(rand(0.86, 1.18));
-    parent.add(tree);
-    OC.placed.push({ type: 'tree', x, z: -distance, mesh: tree });
-  };
-
-  createModelTree = function createModelTreePatched(targetHeight) {
-    return createModelFromBucket(OC.treeModels, targetHeight) || createFallbackTree(targetHeight);
-  };
-
-  createRock = function createRockPatched() {
-    const model = createModelFromBucket(OC.rockModels, rand(0.9, 1.8));
-    if (model) return model;
-    const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rand(0.45, 0.75), 0), new THREE.MeshLambertMaterial({ color: Math.random() < 0.5 ? 0x62655c : 0x3e443a, flatShading: true }));
-    rock.scale.set(rand(0.8, 1.4), rand(0.45, 0.9), rand(0.75, 1.3));
-    rock.rotation.set(rand(0, Math.PI), rand(0, Math.PI), rand(0, Math.PI));
-    return rock;
-  };
-
-  scatterForestFloorDetail = function scatterForestFloorDetailPatched(parent) {
-    for (let d = 14; d < OC.courseLength + 260; d += rand(6, 12)) {
-      [-1, 1].forEach((side) => {
-        addSceneryRock(parent, pathCenterAt(d) + side * rand(OC.laneWidth + 0.55, OC.laneWidth + 4.5), d + rand(-4, 4));
-        if (Math.random() < 0.66) addDetailAt(parent, d + rand(-4, 4), side, rand(OC.laneWidth + 0.4, OC.laneWidth + 5.6));
-      });
-    }
-  };
-
-  loadTreeModels = function loadTreeModelsPatched() {
-    if (OC.treeLoadStarted) return;
-    OC.treeLoadStarted = true;
-    loadModelLibrary(ASSETS.trees, OC.treeModels, 'GLB trees');
-    loadModelLibrary(ASSETS.rocks, OC.rockModels, 'GLB rocks');
-    loadModelLibrary(ASSETS.details, OC.detailModels, 'GLB details');
-  };
-
-  createLayerSliders = function createLayerSlidersPatched() {
-    const host = oc$('hf-layer-sliders');
-    if (!host) return;
-    host.innerHTML = '';
-    [
-      ['x', 'X', -30, 30, 0.1, 0],
-      ['z', 'Z', -80, 80, 0.5, 0],
-      ['y', 'Y', -10, 10, 0.1, 0],
-      ['scale', 'Object Size', 0.1, 4, 0.05, 1],
-      ['opacity', 'Alpha', 0, 1, 0.05, 1],
-      ['brightness', 'Bright', 0.35, 2.0, 0.05, 1],
-      ['contrast', 'Contrast', 0.5, 1.8, 0.05, 1],
-      ['saturation', 'Saturation', 0, 2.2, 0.05, 1],
-      ['tintStrength', 'Tint Amt', 0, 1, 0.05, 0],
-      ['order', 'Order', -20, 40, 1, 0],
-    ].forEach(([prop, label, min, max, step, fallback]) => {
-      const row = document.createElement('div');
-      row.className = 'hf-slider-row';
-      row.innerHTML = `<span>${label}</span><input id="hf-layer-${prop}" type="range" min="${min}" max="${max}" step="${step}"><output id="hf-layer-${prop}-out"></output>`;
-      host.appendChild(row);
-      row.querySelector('input').addEventListener('input', (e) => {
-        const l = OC.layers.get(OC.selectedLayerId);
-        if (!l) return;
-        l[prop] = Number(e.target.value);
-        applyLayer(l);
-        syncLayerOutputs();
-        drawFrame();
-        drawOverview();
-      });
-      const layer = OC.layers.get(OC.selectedLayerId);
-      if (layer && layer[prop] === undefined) layer[prop] = fallback;
-    });
-    const tintRow = document.createElement('label');
-    tintRow.className = 'field-block';
-    tintRow.innerHTML = `<span>Layer Tint</span><input id="hf-layer-tint" type="color" value="#ffffff">`;
-    host.appendChild(tintRow);
-    tintRow.querySelector('input').addEventListener('input', (e) => {
-      const l = OC.layers.get(OC.selectedLayerId);
-      if (!l) return;
-      l.tint = e.target.value;
-      applyLayer(l);
-      drawFrame();
-    });
-  };
-
-  syncLayerOutputs = function syncLayerOutputsPatched() {
-    const l = OC.layers.get(OC.selectedLayerId);
-    if (!l) return;
-    ['x', 'z', 'y', 'scale', 'opacity', 'brightness', 'contrast', 'saturation', 'tintStrength', 'order'].forEach((prop) => {
-      const out = oc$(`hf-layer-${prop}-out`);
-      if (!out) return;
-      const value = l[prop] ?? (['scale','opacity','brightness','contrast','saturation'].includes(prop) ? 1 : 0);
-      out.textContent = prop === 'order' ? String(value) : Number(value).toFixed(2);
-    });
-  };
-
-  syncLayerControls = function syncLayerControlsPatched() {
-    const l = OC.layers.get(OC.selectedLayerId);
-    if (!l) return;
-    ['x', 'z', 'y', 'scale', 'opacity', 'brightness', 'contrast', 'saturation', 'tintStrength', 'order'].forEach((prop) => {
-      const input = oc$(`hf-layer-${prop}`);
-      if (!input) return;
-      const value = l[prop] ?? (['scale','opacity','brightness','contrast','saturation'].includes(prop) ? 1 : 0);
-      input.value = value;
-    });
-    const tint = oc$('hf-layer-tint');
-    if (tint) tint.value = l.tint || '#ffffff';
-    syncLayerOutputs();
-  };
-
-  applyLayer = function applyLayerPatched(layer) {
-    if (!layer || !layer.group) return;
-    layer.visible = layer.visible !== false;
-    layer.opacity = layer.opacity ?? 1;
-    layer.scale = layer.scale ?? 1;
-    layer.brightness = layer.brightness ?? 1;
-    layer.contrast = layer.contrast ?? 1;
-    layer.saturation = layer.saturation ?? 1;
-    layer.tintStrength = layer.tintStrength ?? 0;
-    layer.tint = layer.tint || '#ffffff';
-    layer.group.visible = isLayerDisplayed(layer);
-    layer.group.position.set(layer.x || 0, layer.y || 0, layer.z || 0);
-    layer.group.scale.setScalar(['trees', 'rocks', 'collectibles', 'obstacles', 'path'].includes(layer.id) ? 1 : (layer.scale || 1));
-    layer.group.children.forEach((child) => applyLayerObjectScale(layer, child));
-    layer.group.traverse((node) => {
-      node.renderOrder = layer.order || 0;
-      if (!node.material) return;
-      const materials = Array.isArray(node.material) ? node.material : [node.material];
-      materials.forEach((mat) => applyMaterialVisuals(mat, layer));
-    });
-  };
-
-  updateRun = function updateRunPatched(dt) {
-    let steer = 0;
-    if (OC.keys.has('left')) steer -= 1;
-    if (OC.keys.has('right')) steer += 1;
-    const sideStep = OC.currentSpeed < 1.5 ? 1.45 : 1;
-    OC.player.x = clamp(OC.player.x + steer * OC.steerSpeed * sideStep * dt, -OC.laneWidth * 1.95, OC.laneWidth * 1.95);
-
-    if (OC.keys.has('forward')) OC.targetSpeed = OC.speed;
-    else if (OC.keys.has('back')) OC.targetSpeed = BACK_SPEED;
-    else if (OC.startAssistTime > 0) {
-      OC.targetSpeed = Math.max(6, Math.min(12, OC.speed * 0.35));
-      OC.startAssistTime = Math.max(0, OC.startAssistTime - dt);
-    } else OC.targetSpeed = 0;
-
-    const status = pathStatus();
-    if (status === 'off') OC.offPathTime += dt;
-    else OC.offPathTime = 0;
-    let cappedTarget = OC.targetSpeed;
-    if (status === 'off' && cappedTarget > SLOW_TROT_SPEED) cappedTarget = SLOW_TROT_SPEED;
-    if (status === 'edge' && cappedTarget > OC.speed * 0.62) cappedTarget = OC.speed * 0.62;
-    const rate = Math.abs(cappedTarget) > Math.abs(OC.currentSpeed) ? ACCEL : DECEL;
-    OC.currentSpeed += clamp(cappedTarget - OC.currentSpeed, -rate * dt, rate * dt);
-    OC.distance = Math.max(0, OC.distance + OC.currentSpeed * dt);
-    updateRideAudio();
-
-    if (status === 'off' && OC.targetSpeed > 0) {
-      playBushRustle();
-      setResult('Off path: steer back toward the road.', 'warn');
-    } else if (status === 'edge' && OC.targetSpeed > 0) {
-      setResult('Path edge: horse slowing. Steer toward the centre.', 'warn');
-    } else if (OC.lastPathStatus !== 'on' && status === 'on') {
-      setResult('Back on path. Hold ↑/W to accelerate.', 'waiting');
-    }
-    OC.lastPathStatus = status;
-    updateOffPathWarning(status);
-
-    updatePhysics(dt);
-    updateObjects();
-    OC.score += dt * (status === 'off' ? 0.15 : 0.6);
-    updateStats();
-    if (OC.distance >= OC.courseLength) {
-      OC.complete = true;
-      pauseRun();
-      setResult(OC.score >= OC.successScore ? 'Course complete.' : 'Course complete, but score is below target.', OC.score >= OC.successScore ? 'success' : 'failure');
-    }
-  };
-
-  updateCamera = function updateCameraPatched() {
-    const center = pathCenterAt(OC.distance);
-    const x = center + OC.player.x;
-    OC.world.position.x = -(OC.gridOffsetX || 0);
-    OC.world.position.z = OC.distance - (OC.gridOffsetZ || 0);
-    if (OC.grid) {
-      OC.grid.visible = Boolean(OC.gridEnabled);
-      OC.grid.position.set(OC.gridOffsetX || 0, GROUND_Y + 0.075, -(OC.gridOffsetZ || 0));
-    }
-    OC.camera.position.set(x * 0.16, 1.8 + OC.player.y * 0.55, 8.4);
-    OC.camera.lookAt(x * 0.35, 0.35 + OC.player.y * 0.35, -28);
-  };
-
-  updateStats = function updateStatsPatched() {
-    oc$('obstacle-score').textContent = String(Math.round(OC.score));
-    oc$('obstacle-collected').textContent = String(OC.collected);
-    oc$('obstacle-hits').textContent = String(OC.hits);
-    oc$('obstacle-course-summary').textContent = `${Math.round(OC.distance)}m / ${Math.round(OC.courseLength)}m`;
-    const speedBadge = oc$('obstacle-speed-badge');
-    if (speedBadge) {
-      const speed = Math.max(0, Math.round(OC.currentSpeed));
-      const max = Math.max(1, OC.speed);
-      const pct = clamp(speed / max, 0, 1) * 100;
-      const status = pathStatus();
-      const gait = status === 'off' ? 'Off Path' : speed < 3 ? 'Stopped' : speed < max * 0.45 ? 'Trot' : speed < max * 0.75 ? 'Canter' : 'Gallop';
-      if (!speedBadge.querySelector('.oc-speed-fill')) {
-        speedBadge.innerHTML = `<div class="oc-speed-label"><span id="oc-speed-state">Stopped</span><b id="oc-speed-value">0</b></div><div class="oc-speed-track"><div class="oc-speed-fill"></div></div><div id="oc-offpath-label" class="oc-offpath-label"></div>`;
-      }
-      speedBadge.querySelector('#oc-speed-state').textContent = gait;
-      speedBadge.querySelector('#oc-speed-value').textContent = `${speed}/${Math.round(max)}`;
-      speedBadge.querySelector('.oc-speed-fill').style.width = `${pct}%`;
-    }
-  };
-
-  resetRun = function resetRunPatched(quiet = false) {
-    OC.running = false;
-    stopMotionLoops();
-    AUDIO.wasForwardMoving = false;
-    OC.complete = false;
-    OC.offPathTime = 0;
-    OC.lastPathStatus = 'on';
-    OC.distance = 0;
-    OC.currentSpeed = 0;
-    OC.targetSpeed = 0;
-    OC.startAssistTime = 0;
-    OC.score = 0;
-    OC.hits = 0;
-    OC.jumps = 0;
-    OC.collected = 0;
-    OC.player.x = 0;
-    OC.player.y = 0;
-    OC.player.vy = 0;
-    OC.player.grounded = true;
-    OC.player.jumpingHeld = false;
-    OC.player.jumpHoldTime = 0;
-    OC.objects.forEach((obj) => { obj.visible = true; if (obj.userData) { obj.userData.hit = false; obj.userData.collected = false; } });
-    updateOffPathWarning('on');
-    updateStats();
-    if (!quiet) setResult('Course reset. Start the test when ready.', 'waiting');
-    syncRunButtons();
-    drawFrame();
-    drawOverview();
-  };
-
-  drawOverview = function drawOverviewPatched() {
-    const c = oc$('hf-overview');
-    if (!c) return;
-    const wantedHeight = Math.max(300, Math.min(2200, Math.round((OC.courseLength + 300) / 3.2)));
-    if (c.height !== wantedHeight) c.height = wantedHeight;
-    const ctx = c.getContext('2d');
-    ctx.clearRect(0, 0, c.width, c.height);
-    ctx.fillStyle = '#111914';
-    ctx.fillRect(0, 0, c.width, c.height);
-    ctx.strokeStyle = '#d09a55';
-    ctx.lineWidth = 8;
-    ctx.beginPath();
-    for (let d = 0; d < OC.courseLength; d += 18) {
-      const point = worldToOverview(pathCenterAt(d), -d);
-      if (d === 0) ctx.moveTo(point.x, point.y);
-      else ctx.lineTo(point.x, point.y);
-    }
-    ctx.stroke();
-    OC.placed.forEach((obj) => {
-      const point = worldToOverview(obj.x, obj.z);
-      ctx.fillStyle = obj.type === 'tree' ? '#48a24a' : obj.type === 'rock' ? '#aaa' : obj.type === 'collectible' ? '#eec45a' : '#b04b35';
-      ctx.beginPath();
-      ctx.arc(point.x, point.y, obj.type === 'tree' ? 4 : 3, 0, Math.PI * 2);
-      ctx.fill();
-    });
-    ctx.strokeStyle = '#eec45a';
-    ctx.strokeRect(1, 1, c.width - 2, c.height - 2);
-  };
-
-  function installFinalUiPatch() {
-    injectFinalStyles();
-    const overviewRow = document.querySelector('.hf-overview-row');
-    if (overviewRow) overviewRow.style.gridTemplateColumns = '1fr';
-    document.querySelectorAll('.hf-overview-row > .hf-key').forEach((node) => node.remove());
-    const keyPanel = document.querySelector('.hf-key-panel .hf-key-list');
-    if (keyPanel) {
-      keyPanel.innerHTML = `<div><span class="hf-key-dot hf-key-path"></span>Path</div><div><span class="hf-key-dot hf-key-tree"></span>Tree</div><div><span class="hf-key-dot hf-key-rock"></span>Rock</div><div><span class="hf-key-dot hf-key-collectible"></span>Collectible</div><div><span class="hf-key-dot hf-key-obstacle"></span>Obstacle</div>`;
-    }
-    if (OC.host && !oc$('oc-offpath-arrow')) {
-      const arrow = document.createElement('div');
-      arrow.id = 'oc-offpath-arrow';
-      arrow.className = 'oc-offpath-arrow';
-      arrow.textContent = '➜';
-      OC.host.appendChild(arrow);
-    }
-    const displayPanel = document.querySelector('[data-obstacle-panel="display"]');
-    if (displayPanel && !oc$('obstacle-contrast')) {
-      displayPanel.insertAdjacentHTML('beforeend', `<label class="range-row"><span>Overall Contrast <output id="obstacle-contrast-out">100%</output></span><input id="obstacle-contrast" type="range" min="55" max="160" step="5" value="100" /></label><label class="range-row"><span>Overall Saturation <output id="obstacle-saturation-out">100%</output></span><input id="obstacle-saturation" type="range" min="0" max="180" step="5" value="100" /></label><section class="hf-grid-panel"><h3>Overlay Grid</h3><label class="field-check"><input id="oc-grid-toggle" type="checkbox"> Show ground zero grid</label><label class="range-row"><span>Grid X Origin <output id="oc-grid-x-out">0.0</output></span><input id="oc-grid-x" type="range" min="-20" max="20" step="0.5" value="0"></label><label class="range-row"><span>Grid Z Origin <output id="oc-grid-z-out">0.0</output></span><input id="oc-grid-z" type="range" min="-80" max="80" step="1" value="0"></label></section>`);
-      bindFinalUiControls();
-    }
-  }
-
-  function bindFinalUiControls() {
-    oc$('obstacle-contrast')?.addEventListener('input', (e) => { OC.screenContrast = Number(e.target.value) / 100; oc$('obstacle-contrast-out').textContent = `${e.target.value}%`; updateScreenFilters(); });
-    oc$('obstacle-saturation')?.addEventListener('input', (e) => { OC.screenSaturation = Number(e.target.value) / 100; oc$('obstacle-saturation-out').textContent = `${e.target.value}%`; updateScreenFilters(); });
-    oc$('oc-grid-toggle')?.addEventListener('change', (e) => { OC.gridEnabled = e.target.checked; drawFrame(); });
-    oc$('oc-grid-x')?.addEventListener('input', (e) => { OC.gridOffsetX = Number(e.target.value); oc$('oc-grid-x-out').textContent = OC.gridOffsetX.toFixed(1); drawFrame(); });
-    oc$('oc-grid-z')?.addEventListener('input', (e) => { OC.gridOffsetZ = Number(e.target.value); oc$('oc-grid-z-out').textContent = OC.gridOffsetZ.toFixed(1); drawFrame(); });
-  }
-
-  function injectFinalStyles() {
-    if (oc$('oc-v26-final-styles')) return;
-    const style = document.createElement('style');
-    style.id = 'oc-v26-final-styles';
-    style.textContent = `
-      .obstacle-three-wrap canvas{filter:brightness(var(--oc-brightness,1)) contrast(var(--oc-contrast,1)) saturate(var(--oc-saturation,1));}
-      .obstacle-horse-overlay{width:340px!important;height:388px!important;margin-left:-170px!important;bottom:-116px!important;background-size:700% 100%!important;background-position:50% 100%;}
-      .obstacle-speed-badge{width:190px!important;border-radius:16px!important;padding:8px 10px!important;background:rgba(7,8,12,.84)!important;}
-      .oc-speed-label{display:flex;justify-content:space-between;gap:8px;font-size:.68rem;color:#f4ead4;margin-bottom:4px}.oc-speed-label b{color:#eec45a}.oc-speed-track{height:17px;border:2px solid rgba(238,196,90,.5);border-radius:999px;background:rgba(65,12,12,.7);overflow:hidden;box-shadow:inset 0 0 7px rgba(0,0,0,.85)}.oc-speed-fill{height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#ff1f14,#ff7a1c,#ffd35b);box-shadow:0 0 10px rgba(255,104,32,.78);transition:width .08s linear}.oc-offpath-label{min-height:16px;margin-top:3px;font-size:.72rem;font-weight:900;color:#ff4b36;text-align:center;letter-spacing:.04em}.oc-offpath-arrow{position:absolute;left:50%;top:42%;z-index:8;width:80px;height:80px;margin:-40px 0 0 -40px;display:none;place-items:center;border-radius:50%;font-size:4.4rem;font-weight:900;color:#ff3b24;text-shadow:0 2px 8px rgba(0,0,0,.9);background-image:url('../../../shared/ui/defaultarrows.webp');background-size:cover;background-position:center;animation:ocPulseArrow 0.9s ease-in-out infinite;pointer-events:none}.oc-offpath-arrow.is-visible{display:grid}.oc-offpath-arrow.is-left{transform:scaleX(-1)}@keyframes ocPulseArrow{0%,100%{translate:0 0;scale:.92}50%{translate:0 -11px;scale:1.12}}
-      .hf-overview-row{grid-template-columns:1fr!important}.hf-overview-row>.hf-key{display:none!important}.hf-key-panel{border:1px solid rgba(238,196,90,.3);border-radius:12px;padding:10px;margin:10px 0;background:rgba(0,0,0,.22)}.hf-key-panel h3{margin:0 0 8px;font-family:'Cinzel',serif;font-size:.95rem}.hf-key-list{display:grid;gap:5px;font-size:.78rem}.hf-key-list div{display:flex;align-items:center;gap:8px}.hf-key-dot{width:13px;height:13px;border-radius:50%;display:inline-block;border:1px solid rgba(255,255,255,.4)}.hf-key-path{background:#d09a55}.hf-key-tree{background:#48a24a}.hf-key-rock{background:#aaa}.hf-key-collectible{background:#eec45a}.hf-key-obstacle{background:#b04b35}.hf-grid-panel{border:1px solid rgba(124,202,210,.2);border-radius:12px;padding:10px;margin-top:10px;background:rgba(0,0,0,.2)}.field-check{display:flex!important;gap:8px;align-items:center;color:var(--muted,#c9bfae);font-size:.72rem}.field-check input{width:auto!important}.oc-loading-assets{position:absolute;left:14px;top:12px;z-index:7;border:1px solid rgba(124,202,210,.35);border-radius:999px;background:rgba(5,8,13,.74);padding:7px 10px;font-size:.7rem;font-weight:900;color:#9ee6a4;pointer-events:none}.oc-loading-assets.is-ready{color:#eec45a;border-color:rgba(238,196,90,.45)}
-    `;
-    document.head.appendChild(style);
-  }
-
-  function createGridOverlay() {
-    if (!OC.scene || OC.grid) return;
-    OC.grid = new THREE.GridHelper(80, 40, 0xeec45a, 0x4c7f55);
-    OC.grid.position.set(0, GROUND_Y + 0.075, 0);
-    OC.grid.material.transparent = true;
-    OC.grid.material.opacity = 0.55;
-    OC.grid.visible = false;
-    OC.scene.add(OC.grid);
-  }
-
-  function preloadEssentialAssets() {
-    if (OC.assetPreloadStarted || !OC.host) return;
-    OC.assetPreloadStarted = true;
-    const urls = [ASSETS.horse, ASSETS.background, ASSETS.ground, ...Object.values(ASSETS.pathSegments).map((seg) => seg.file)];
-    OC.assetLoadTotal = urls.length;
-    OC.assetLoadDone = 0;
-    OC.assetLoadFailed = 0;
-    const badge = document.createElement('div');
-    badge.id = 'oc-loading-assets';
-    badge.className = 'oc-loading-assets';
-    badge.textContent = `Loading assets 0 / ${OC.assetLoadTotal}`;
-    OC.host.appendChild(badge);
-    setStartButtonsDisabled(true);
-    urls.forEach((url) => {
-      const img = new Image();
-      img.onload = img.onerror = () => {
-        if (img.naturalWidth < 1) OC.assetLoadFailed += 1;
-        OC.assetLoadDone += 1;
-        badge.textContent = `Loading assets ${OC.assetLoadDone} / ${OC.assetLoadTotal}`;
-        if (OC.assetLoadDone >= OC.assetLoadTotal) {
-          OC.assetsEssentialReady = true;
-          badge.classList.add('is-ready');
-          badge.textContent = OC.assetLoadFailed ? `Assets loaded (${OC.assetLoadFailed} missing)` : 'Assets loaded';
-          setStartButtonsDisabled(false);
-          setTimeout(() => badge.remove(), 2600);
-        }
-      };
-      img.src = `${url}?preload=${Date.now()}`;
-    });
-  }
-
-  function setStartButtonsDisabled(disabled) {
-    ['obstacle-start','obstacle-start-left'].forEach((id) => {
-      const button = oc$(id);
-      if (button) {
-        button.disabled = disabled;
-        button.textContent = disabled ? 'Loading Assets…' : 'Start Test';
-      }
-    });
-  }
-
-  function loadModelLibrary(urls, bucket, label) {
-    urls.forEach((url) => OC.gltfLoader.load(`${url}?v=29.3`, (gltf) => {
-      if (!gltf.scene) return;
-      gltf.scene.traverse((node) => { if (node.isMesh) node.receiveShadow = true; });
-      bucket.push(gltf.scene);
-      if (oc$('hf-tree-status')) oc$('hf-tree-status').textContent = `${label}: ${bucket.length} loaded`;
-      if (OC.active) regenerateCourse();
-    }, undefined, (error) => console.warn('[HorseForest] GLB failed:', url, error)));
-  }
-
-  function createModelFromBucket(bucket, targetHeight) {
-    if (!bucket?.length) return null;
-    const root = pick(bucket).clone(true);
-    root.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(root);
-    const size = new THREE.Vector3();
-    box.getSize(size);
-    root.scale.multiplyScalar(targetHeight / Math.max(size.y, 0.001));
-    root.updateMatrixWorld(true);
-    const box2 = new THREE.Box3().setFromObject(root);
-    const wrapper = new THREE.Group();
-    wrapper.add(root);
-    root.position.set(-(box2.min.x + box2.max.x) / 2, -box2.min.y, -(box2.min.z + box2.max.z) / 2);
-    wrapper.rotation.y = rand(0, Math.PI * 2);
-    wrapper.scale.multiplyScalar(rand(0.82, 1.18));
-    return wrapper;
-  }
-
-  function createFallbackTree(targetHeight) {
-    const group = new THREE.Group();
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.22, targetHeight * 0.45, 8), new THREE.MeshLambertMaterial({ color: 0x4f2e18 }));
-    trunk.position.y = targetHeight * 0.225;
-    const crown = new THREE.Mesh(new THREE.ConeGeometry(targetHeight * 0.18, targetHeight * 0.65, 9), new THREE.MeshLambertMaterial({ color: 0x183c1d }));
-    crown.position.y = targetHeight * 0.72;
-    group.add(trunk, crown);
-    return group;
-  }
-
-  function addDetailAt(parent, distance, side, extra) {
-    const detail = createModelFromBucket(OC.detailModels, rand(0.45, 1.1));
-    if (!detail) return;
-    const x = pathCenterAt(distance) + side * extra;
-    detail.position.set(x, GROUND_Y, -distance);
-    detail.rotation.y = rand(0, Math.PI * 2);
-    parent.add(detail);
-    OC.placed.push({ type: 'rock', x, z: -distance, mesh: detail });
-  }
-
-  function applyMaterialVisuals(mat, layer) {
-    if (!mat.userData) mat.userData = {};
-    if (mat.color && !mat.userData.__ocBaseColor) mat.userData.__ocBaseColor = mat.color.clone();
-    mat.transparent = layer.opacity < 1 || mat.transparent;
-    mat.opacity = layer.opacity;
-    if (mat.color && mat.userData.__ocBaseColor) {
-      const base = mat.userData.__ocBaseColor.clone();
-      const hsl = { h: 0, s: 0, l: 0 };
-      base.getHSL(hsl);
-      hsl.s = clamp(hsl.s * (layer.saturation ?? 1), 0, 1);
-      hsl.l = clamp(((hsl.l - 0.5) * (layer.contrast ?? 1)) + 0.5, 0, 1);
-      base.setHSL(hsl.h, hsl.s, hsl.l);
-      base.multiplyScalar(layer.brightness ?? 1);
-      if (layer.tint && layer.tintStrength > 0) base.lerp(new THREE.Color(layer.tint), layer.tintStrength);
-      mat.color.copy(base);
-    }
-    mat.needsUpdate = true;
-  }
-
-  function updateOffPathWarning(status) {
-    const arrow = oc$('oc-offpath-arrow');
-    const label = oc$('oc-offpath-label');
-    if (!arrow || !label) return;
-    arrow.textContent = '';
-    if (status === 'off' && OC.offPathTime >= 2) {
-      const goRight = OC.player.x < 0;
-      arrow.classList.add('is-visible');
-      arrow.classList.toggle('dir-right', goRight);
-      arrow.classList.toggle('dir-left', !goRight);
-      arrow.classList.remove('is-left');
-      label.textContent = goRight ? 'Off Path →' : '← Off Path';
-    } else {
-      arrow.classList.remove('is-visible', 'dir-right', 'dir-left', 'is-left');
-      label.textContent = status === 'off' ? 'Off Path' : '';
-    }
-  }
-
-  const oldUpdateScreenFilters = updateScreenFilters;
-  updateScreenFilters = function updateScreenFiltersPatched() {
-    oldUpdateScreenFilters();
-    if (OC.host) {
-      OC.host.style.setProperty('--oc-contrast', String(OC.screenContrast || 1));
-      OC.host.style.setProperty('--oc-saturation', String(OC.screenSaturation || 1));
-    }
-  };
-})();
-
-
-// --- V2.6.4 obstacle-course view, GLB asset, collectible, and arrow patch ---
-(function installObstacleCourseV262Patch(){
-  if (OC.__v262PatchInstalled) return;
-  OC.__v262PatchInstalled = true;
-
-  OC.versionLabel = 'V2.6.8';
-  OC.vanishX = OC.vanishX ?? 0;
-  OC.vanishY = OC.vanishY ?? 0.35;
-  OC.whiteBackground = false;
-  OC.glbAssetControls = OC.glbAssetControls || new Map();
-  OC.glbInstances = OC.glbInstances || [];
-  OC.glbSelectionHelpers = OC.glbSelectionHelpers || [];
-  OC.selectedGlbAssetUrl = OC.selectedGlbAssetUrl || '';
-  OC.collectibleModels = OC.collectibleModels || [];
-
-  ASSETS.collectibleModels = [
-    `${ASSET_BASE}3d/stylized_glowing_mushrooms.glb`,
-    `${ASSET_BASE}3d/moneysack.glb`,
-  ];
-  ASSETS.details = [
-    `${ASSET_BASE}3d/low_poly_fern.glb`,
-  ];
-
-  const GLB_ASSET_URLS = [
-    ...(ASSETS.trees || []),
-    ...(ASSETS.rocks || []),
-    ...(ASSETS.details || []),
-    ...(ASSETS.collectibleModels || []),
-  ];
-
-  const fileName = (url) => String(url || '').split('/').pop() || String(url || 'GLB asset');
-
-  function glbControl(url) {
-    const key = url || '__none__';
-    if (!OC.glbAssetControls.has(key)) {
-      OC.glbAssetControls.set(key, {
-        x: 0,
-        y: 0,
-        z: 0,
-        scale: 1,
-        opacity: 1,
-        brightness: 1,
-        contrast: 1,
-        saturation: 1,
-        tintStrength: 0,
-        tint: '#ffffff',
-        order: 18,
-      });
-    }
-    return OC.glbAssetControls.get(key);
-  }
-
-  function makeModelEntry(url, gltf) {
-    return { url, name: fileName(url), scene: gltf.scene };
-  }
-
-  function loadCatalog(urls, bucket, label) {
-    urls.forEach((url) => {
-      if (bucket.some((entry) => entry.url === url)) return;
-      OC.gltfLoader.load(`${url}?v=2.6.4`, (gltf) => {
-        if (!gltf.scene) return;
-        gltf.scene.traverse((node) => {
-          if (node.isMesh) {
-            node.castShadow = true;
-            node.receiveShadow = true;
-            if (node.material) {
-              const mats = Array.isArray(node.material) ? node.material : [node.material];
-              mats.forEach((mat) => {
-                if (mat.color && !mat.userData?.__ocBaseColor) {
-                  mat.userData = mat.userData || {};
-                  mat.userData.__ocBaseColor = mat.color.clone();
-                }
-              });
-            }
-          }
-        });
-        bucket.push(makeModelEntry(url, gltf));
-        if (oc$('hf-tree-status')) oc$('hf-tree-status').textContent = `${label}: ${bucket.length} loaded`;
-        refreshGlbAssetSelectOptions();
-        if (OC.active) regenerateCourse();
-      }, undefined, (error) => console.warn('[HorseForest] GLB failed:', url, error));
-    });
-  }
-
-  loadTreeModels = function loadTreeModelsV262() {
-    if (OC.treeLoadStarted) return;
-    OC.treeLoadStarted = true;
-    loadCatalog(ASSETS.trees || [], OC.treeModels, 'GLB trees');
-    loadCatalog(ASSETS.rocks || [], OC.rockModels, 'GLB rocks');
-    loadCatalog(ASSETS.details || [], OC.detailModels, 'GLB ferns');
-    loadCatalog(ASSETS.collectibleModels || [], OC.collectibleModels, 'GLB collectibles');
-  };
-
-  function createGlbModel(bucket, targetHeight) {
-    if (!bucket?.length) return null;
-    const entry = pick(bucket);
-    const root = entry.scene.clone(true);
-    root.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(root);
-    const size = box.getSize(new THREE.Vector3());
-    const scale = targetHeight / Math.max(size.y, 0.001);
-    root.scale.multiplyScalar(scale);
-    root.updateMatrixWorld(true);
-    const box2 = new THREE.Box3().setFromObject(root);
-    const wrapper = new THREE.Group();
-    wrapper.userData.glbAssetUrl = entry.url;
-    wrapper.userData.glbAssetName = entry.name;
-    wrapper.add(root);
-    root.position.set(-(box2.min.x + box2.max.x) / 2, -box2.min.y, -(box2.min.z + box2.max.z) / 2);
-    wrapper.rotation.y = rand(0, Math.PI * 2);
-    wrapper.scale.multiplyScalar(rand(0.88, 1.15));
-    wrapper.traverse((node) => {
-      node.userData = node.userData || {};
-      node.userData.glbAssetUrl = entry.url;
-      node.userData.glbAssetName = entry.name;
-    });
-    return wrapper;
-  }
-
-  function createSimpleTree(targetHeight) {
-    const group = new THREE.Group();
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.22, targetHeight * 0.45, 8), new THREE.MeshLambertMaterial({ color: 0x4f2e18 }));
-    trunk.position.y = targetHeight * 0.225;
-    const crown = new THREE.Mesh(new THREE.ConeGeometry(targetHeight * 0.18, targetHeight * 0.65, 9), new THREE.MeshLambertMaterial({ color: 0x183c1d }));
-    crown.position.y = targetHeight * 0.72;
-    group.add(trunk, crown);
-    return group;
-  }
-
-  function registerGlbInstance(obj, type, x, z) {
-    if (!obj) return;
-    obj.userData = obj.userData || {};
-    obj.userData.ocType = type;
-    obj.userData.basePosition = obj.position.clone();
-    obj.userData.baseScale = obj.scale.clone();
-    if (obj.userData.glbAssetUrl) OC.glbInstances.push(obj);
-    OC.placed.push({ type, x, z, mesh: obj });
-    applyGlbAssetControls(obj);
-  }
-
-  function applyGlbAssetControls(obj) {
-    const url = obj?.userData?.glbAssetUrl;
-    if (!url) return;
-    const cfg = glbControl(url);
-    const basePosition = obj.userData.basePosition || obj.position.clone();
-    const baseScale = obj.userData.baseScale || obj.scale.clone();
-    obj.position.set(basePosition.x + cfg.x, basePosition.y + cfg.y, basePosition.z + cfg.z);
-    obj.scale.copy(baseScale).multiplyScalar(cfg.scale || 1);
-    obj.renderOrder = cfg.order || 0;
-    obj.traverse((node) => {
-      node.renderOrder = cfg.order || 0;
-      if (!node.material) return;
-      const mats = Array.isArray(node.material) ? node.material : [node.material];
-      mats.forEach((mat) => applyMaterialVisuals(mat, cfg));
-    });
-  }
-
-  function applyAllGlbAssetControls() {
-    (OC.glbInstances || []).forEach((obj) => applyGlbAssetControls(obj));
-    refreshGlbSelectionBoxes();
-  }
-
-  const priorClearWorld = clearWorld;
-  clearWorld = function clearWorldV262() {
-    clearGlbSelectionBoxes();
-    OC.glbInstances = [];
-    priorClearWorld();
-  };
-
-  createModelTree = function createModelTreeV262(targetHeight) {
-    return createGlbModel(OC.treeModels, targetHeight) || createSimpleTree(targetHeight);
-  };
-
-  createRock = function createRockV262() {
-    const model = createGlbModel(OC.rockModels, rand(0.9, 1.8));
-    if (model) return model;
-    const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rand(0.45, 0.75), 0), new THREE.MeshLambertMaterial({ color: Math.random() < 0.5 ? 0x62655c : 0x3e443a, flatShading: true }));
-    rock.scale.set(rand(0.8, 1.4), rand(0.45, 0.9), rand(0.75, 1.3));
-    rock.rotation.set(rand(0, Math.PI), rand(0, Math.PI), rand(0, Math.PI));
-    return rock;
-  };
-
-  addTreeAt = function addTreeAtV262(parent, distance, side, height, extra) {
-    const tree = createModelTree(height);
-    if (!tree) return;
-    const x = pathCenterAt(distance) + side * extra;
-    tree.position.set(x, GROUND_Y, -distance);
-    tree.rotation.y = rand(0, Math.PI * 2);
-    tree.rotation.x = rand(-0.04, 0.04);
-    tree.rotation.z = rand(-0.025, 0.025);
-    tree.scale.multiplyScalar(rand(0.86, 1.18));
-    parent.add(tree);
-    registerGlbInstance(tree, 'tree', x, -distance);
-  };
-
-  function addFernAt(parent, distance, side, extra) {
-    const fern = createGlbModel(OC.detailModels, rand(0.65, 1.25));
-    if (!fern) return;
-    const x = pathCenterAt(distance) + side * extra;
-    fern.position.set(x, GROUND_Y + 0.02, -distance);
-    fern.rotation.y = rand(0, Math.PI * 2);
-    parent.add(fern);
-    registerGlbInstance(fern, 'rock', x, -distance);
-  }
-
-  scatterForestFloorDetail = function scatterForestFloorDetailV262(parent) {
-    for (let d = 12; d < OC.courseLength + 260; d += rand(5, 9)) {
-      [-1, 1].forEach((side) => {
-        if (Math.random() < 0.42) {
-          addSceneryRock(parent, pathCenterAt(d) + side * rand(OC.laneWidth + 1.0, OC.laneWidth + 5.2), d + rand(-4, 4));
-        }
-        if (Math.random() < 0.92) {
-          addFernAt(parent, d + rand(-4, 4), side, rand(OC.laneWidth * 0.96, OC.laneWidth * 1.32));
-        }
-      });
-    }
-  };
-
-  const priorAddSceneryRock = addSceneryRock;
-  addSceneryRock = function addSceneryRockV262(parent, x, distance) {
-    const rock = createRock();
-    rock.position.set(x, GROUND_Y + 0.18, -distance);
-    rock.scale.multiplyScalar(rand(0.55, 0.95));
-    parent.add(rock);
-    registerGlbInstance(rock, 'rock', x, -distance);
-  };
-
-  addCollectibles = function addCollectiblesV262(count) {
-    const parent = OC.layers.get('collectibles')?.group || OC.world;
-    const targetCount = Math.max(4, Math.round(count * 0.55));
-    const fallbackGeo = new THREE.OctahedronGeometry(0.42, 0);
-    for (let i = 0; i < targetCount; i += 1) {
-      const distance = 45 + Math.random() * Math.max(30, OC.courseLength - 90);
-      const center = pathCenterAt(distance);
-      const obj = createGlbModel(OC.collectibleModels, Math.random() < 0.56 ? rand(1.2, 1.8) : rand(0.75, 1.25)) || new THREE.Mesh(fallbackGeo, new THREE.MeshBasicMaterial({ color: 0xeec45a, transparent: true, opacity: 0.9 }));
-      const x = center + pick([-0.22, 0, 0.22]) * OC.laneWidth;
-      obj.position.set(x, GROUND_Y + rand(0.12, 0.55), -distance);
-      obj.rotation.y = rand(0, Math.PI * 2);
-      obj.userData.kind = 'collectible';
-      obj.userData.collected = false;
-      obj.userData.radius = 1.15;
-      parent.add(obj);
-      OC.objects.push(obj);
-      registerGlbInstance(obj, 'collectible', obj.position.x, obj.position.z);
-    }
-  };
-
-  function clearGlbSelectionBoxes() {
-    (OC.glbSelectionHelpers || []).forEach((helper) => {
-      helper.parent?.remove(helper);
-      helper.geometry?.dispose?.();
-      helper.material?.dispose?.();
-    });
-    OC.glbSelectionHelpers = [];
-  }
-
-  function refreshGlbSelectionBoxes() {
-    clearGlbSelectionBoxes();
-    if (!OC.scene || !OC.selectedGlbAssetUrl) return;
-    (OC.glbInstances || []).forEach((obj) => {
-      if (!obj?.visible || obj.userData?.glbAssetUrl !== OC.selectedGlbAssetUrl) return;
-      const helper = new THREE.BoxHelper(obj, 0xeec45a);
-      helper.userData.isGlbSelectionHelper = true;
-      OC.scene.add(helper);
-      OC.glbSelectionHelpers.push(helper);
-    });
-  }
-
-  function updateGlbSelectionBoxes() {
-    (OC.glbSelectionHelpers || []).forEach((helper) => helper.update?.());
-  }
-
-  const priorDrawFrame = drawFrame;
-  drawFrame = function drawFrameV262(dt = 0) {
-    priorDrawFrame(dt);
-    updateGlbSelectionBoxes();
-  };
-
-  function buildGlbAssetControls(host) {
-    host.innerHTML = '';
-    const selector = document.createElement('label');
-    selector.className = 'field-block';
-    selector.innerHTML = `<span>GLB Asset</span><select id="hf-glb-asset-select"></select>`;
-    host.appendChild(selector);
-    refreshGlbAssetSelectOptions();
-    const select = selector.querySelector('select');
-    select.addEventListener('change', (event) => {
-      OC.selectedGlbAssetUrl = event.target.value;
-      syncLayerControls();
-      applyAllGlbAssetControls();
-      drawFrame();
-    });
-    if (!OC.selectedGlbAssetUrl && select.options.length) OC.selectedGlbAssetUrl = select.value;
-    select.value = OC.selectedGlbAssetUrl;
-
-    [
-      ['x', 'X', -30, 30, 0.1, 0],
-      ['z', 'Z', -80, 80, 0.5, 0],
-      ['y', 'Y', -10, 10, 0.1, 0],
-      ['scale', 'Object Size', 0.1, 8, 0.05, 1],
-      ['opacity', 'Alpha', 0, 1, 0.05, 1],
-      ['brightness', 'Bright', 0.1, 10, 0.05, 1],
-      ['contrast', 'Contrast', 0.1, 4, 0.05, 1],
-      ['saturation', 'Saturation', 0, 6, 0.05, 1],
-      ['tintStrength', 'Tint Amt', 0, 1, 0.05, 0],
-      ['order', 'Order', -20, 80, 1, 18],
-    ].forEach(([prop, label, min, max, step, fallback]) => {
-      const row = document.createElement('div');
-      row.className = 'hf-slider-row';
-      row.innerHTML = `<span>${label}</span><input id="hf-glb-${prop}" type="range" min="${min}" max="${max}" step="${step}"><output id="hf-glb-${prop}-out"></output>`;
-      host.appendChild(row);
-      row.querySelector('input').addEventListener('input', (event) => {
-        const cfg = glbControl(OC.selectedGlbAssetUrl);
-        cfg[prop] = Number(event.target.value);
-        syncGlbOutputs();
-        applyAllGlbAssetControls();
-        drawFrame();
-        drawOverview();
-      });
-      const cfg = glbControl(OC.selectedGlbAssetUrl);
-      if (cfg[prop] === undefined) cfg[prop] = fallback;
-    });
-    const tintRow = document.createElement('label');
-    tintRow.className = 'field-block';
-    tintRow.innerHTML = `<span>GLB Tint</span><input id="hf-glb-tint" type="color" value="#ffffff">`;
-    host.appendChild(tintRow);
-    tintRow.querySelector('input').addEventListener('input', (event) => {
-      const cfg = glbControl(OC.selectedGlbAssetUrl);
-      cfg.tint = event.target.value;
-      applyAllGlbAssetControls();
-      drawFrame();
-    });
-    syncGlbControls();
-    refreshGlbSelectionBoxes();
-  }
-
-  function refreshGlbAssetSelectOptions() {
-    const select = oc$('hf-glb-asset-select');
-    if (!select) return;
-    const urls = Array.from(new Set([...GLB_ASSET_URLS, ...(OC.glbInstances || []).map((obj) => obj.userData.glbAssetUrl).filter(Boolean)]));
-    const previous = select.value || OC.selectedGlbAssetUrl || urls[0] || '';
-    select.innerHTML = '';
-    urls.forEach((url) => {
-      const opt = document.createElement('option');
-      opt.value = url;
-      opt.textContent = fileName(url);
-      select.appendChild(opt);
-    });
-    OC.selectedGlbAssetUrl = urls.includes(previous) ? previous : (urls[0] || '');
-    select.value = OC.selectedGlbAssetUrl;
-  }
-
-  function syncGlbOutputs() {
-    const cfg = glbControl(OC.selectedGlbAssetUrl);
-    ['x', 'z', 'y', 'scale', 'opacity', 'brightness', 'contrast', 'saturation', 'tintStrength', 'order'].forEach((prop) => {
-      const out = oc$(`hf-glb-${prop}-out`);
-      if (!out) return;
-      const value = cfg[prop] ?? (['scale','opacity','brightness','contrast','saturation'].includes(prop) ? 1 : 0);
-      out.textContent = prop === 'order' ? String(value) : Number(value).toFixed(2);
-    });
-  }
-
-  function syncGlbControls() {
-    const cfg = glbControl(OC.selectedGlbAssetUrl);
-    ['x', 'z', 'y', 'scale', 'opacity', 'brightness', 'contrast', 'saturation', 'tintStrength', 'order'].forEach((prop) => {
-      const input = oc$(`hf-glb-${prop}`);
-      if (!input) return;
-      input.value = cfg[prop] ?? (['scale','opacity','brightness','contrast','saturation'].includes(prop) ? 1 : 0);
-    });
-    const tint = oc$('hf-glb-tint');
-    if (tint) tint.value = cfg.tint || '#ffffff';
-    syncGlbOutputs();
-  }
-
-  const priorCreateLayerSliders = createLayerSliders;
-  createLayerSliders = function createLayerSlidersV262() {
-    const host = oc$('hf-layer-sliders');
-    if (!host) return;
-    if (OC.selectedLayerId === 'glbAsset') return buildGlbAssetControls(host);
-    priorCreateLayerSliders();
-  };
-
-  populateLayerSelect = function populateLayerSelectV262() {
-    const select = oc$('hf-layer-select');
-    if (!select) return;
-    const previous = select.value || OC.selectedLayerId;
-    select.innerHTML = '';
-    [...OC.layers.values()].sort((a, b) => a.order - b.order).forEach((l) => {
-      const opt = document.createElement('option');
-      opt.value = l.id;
-      opt.textContent = `${l.label}${OC.soloLayerId === l.id ? ' (solo)' : l.visible ? '' : ' (hidden)'}`;
-      select.appendChild(opt);
-    });
-    const glbOpt = document.createElement('option');
-    glbOpt.value = 'glbAsset';
-    glbOpt.textContent = 'GLB Asset';
-    select.appendChild(glbOpt);
-    OC.selectedLayerId = previous === 'glbAsset' || OC.layers.has(previous) ? previous : 'path';
-    select.value = OC.selectedLayerId;
-    createLayerSliders();
-    syncLayerControls();
-  };
-
-  const priorSyncLayerControls = syncLayerControls;
-  syncLayerControls = function syncLayerControlsV262() {
-    if (OC.selectedLayerId === 'glbAsset') return syncGlbControls();
-    clearGlbSelectionBoxes();
-    priorSyncLayerControls();
-  };
-
-  const priorSyncLayerOutputs = syncLayerOutputs;
-  syncLayerOutputs = function syncLayerOutputsV262() {
-    if (OC.selectedLayerId === 'glbAsset') return syncGlbOutputs();
-    priorSyncLayerOutputs();
-  };
-
-  const priorUpdateCamera = updateCamera;
-  updateCamera = function updateCameraV262() {
-    const center = pathCenterAt(OC.distance);
-    const x = center + OC.player.x;
-    OC.world.position.x = -(OC.gridOffsetX || 0);
-    OC.world.position.z = OC.distance - (OC.gridOffsetZ || 0);
-    if (OC.grid) {
-      OC.grid.visible = Boolean(OC.gridEnabled);
-      OC.grid.position.set(OC.gridOffsetX || 0, GROUND_Y + 0.075, -(OC.gridOffsetZ || 0));
-    }
-    OC.camera.position.set(x * 0.16, 1.8 + OC.player.y * 0.55, 8.4);
-    OC.camera.lookAt((x * 0.35) + (OC.vanishX || 0), (OC.vanishY ?? 0.35) + OC.player.y * 0.35, -28);
-  };
-
-  // The off-path warning function is scoped inside the V2.6.1 patch block.
-  // Its implementation is updated there; do not reassign it here or the module fails to load.
-
-  const priorEnsureMounted = ensureMounted;
-  ensureMounted = function ensureMountedV262() {
-    priorEnsureMounted();
-    installV262Ui();
-  };
-
-  function installV262Ui() {
-    injectV262Styles();
-    document.querySelectorAll('.obstacle-reticle').forEach((node) => node.remove());
-    const title = document.querySelector('.obstacle-header-line .eyebrow');
-    if (title) title.textContent = 'Obstacle Course · V2.6.8';
-    document.querySelectorAll('.status-pill').forEach((node) => { if (/V2\.6/.test(node.textContent)) node.textContent = 'V2.6.8'; });
-    if (OC.host) {
-      const arrow = oc$('oc-offpath-arrow') || document.createElement('div');
-      arrow.id = 'oc-offpath-arrow';
-      arrow.className = 'oc-offpath-arrow';
-      arrow.textContent = '';
-      if (!arrow.parentElement) OC.host.appendChild(arrow);
-    }
-    const displayPanel = document.querySelector('[data-obstacle-panel="display"]');
-    if (displayPanel && !oc$('oc-vanish-x')) {
-      displayPanel.insertAdjacentHTML('beforeend', `<section class="hf-grid-panel"><h3>Vanishing Point</h3><label class="range-row"><span>VP X <output id="oc-vanish-x-out">0.0</output></span><input id="oc-vanish-x" type="range" min="-12" max="12" step="0.1" value="0"></label><label class="range-row"><span>VP Y <output id="oc-vanish-y-out">0.35</output></span><input id="oc-vanish-y" type="range" min="-3" max="8" step="0.05" value="0.35"></label></section>`);
-      oc$('oc-vanish-x')?.addEventListener('input', (event) => { OC.vanishX = Number(event.target.value); oc$('oc-vanish-x-out').textContent = OC.vanishX.toFixed(1); drawFrame(); });
-      oc$('oc-vanish-y')?.addEventListener('input', (event) => { OC.vanishY = Number(event.target.value); oc$('oc-vanish-y-out').textContent = OC.vanishY.toFixed(2); drawFrame(); });
-    }
-    const bright = oc$('obstacle-brightness');
-    if (bright) {
-      bright.max = '1000';
-      if (Number(bright.value) > 1000) bright.value = '1000';
-    }
-    const bgButton = oc$('hf-bg-white');
-    if (bgButton && !bgButton.dataset.ocV262Bound) {
-      bgButton.dataset.ocV262Bound = '1';
-      bgButton.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        OC.whiteBackground = !OC.whiteBackground;
-        if (OC.scene) OC.scene.background = OC.whiteBackground ? new THREE.Color(0xffffff) : loadTexture(ASSETS.background);
-        bgButton.classList.toggle('is-running', OC.whiteBackground);
-        drawFrame();
-      }, true);
-    }
-    const layerSelect = oc$('hf-layer-select');
-    if (layerSelect && ![...layerSelect.options].some((opt) => opt.value === 'glbAsset')) populateLayerSelect();
-  }
-
-  function injectV262Styles() {
-    if (oc$('oc-v262-styles')) return;
-    const style = document.createElement('style');
-    style.id = 'oc-v262-styles';
-    style.textContent = `
-      .obstacle-reticle{display:none!important}
-      .oc-offpath-arrow{position:absolute!important;left:50%!important;top:42%!important;z-index:8!important;width:148px!important;height:148px!important;margin:-74px 0 0 -74px!important;display:none;background-image:url('../../../shared/ui/defaultarrows.webp')!important;background-repeat:no-repeat!important;background-size:200% 200%!important;background-color:transparent!important;border:0!important;border-radius:0!important;color:transparent!important;text-shadow:none!important;filter:drop-shadow(0 9px 12px rgba(0,0,0,.82));animation:ocPulseArrowClean .9s ease-in-out infinite;pointer-events:none!important}.oc-offpath-arrow.is-visible{display:block!important}.oc-offpath-arrow.dir-left{background-position:0% 100%!important}.oc-offpath-arrow.dir-right{background-position:100% 100%!important}@keyframes ocPulseArrowClean{0%,100%{transform:translateY(0) scale(.92)}50%{transform:translateY(-11px) scale(1.12)}}
-      .hf-glb-selected-note{margin:7px 0 0;color:#eec45a;font-size:.68rem;line-height:1.25}.hf-layer-panel option[value="glbAsset"]{font-weight:900;color:#eec45a}.obstacle-three-wrap canvas{filter:brightness(var(--oc-brightness,1)) contrast(var(--oc-contrast,1)) saturate(var(--oc-saturation,1))!important;}
-    `;
-    document.head.appendChild(style);
-  }
-
-  const priorUpdateScreenFilters2 = updateScreenFilters;
-  updateScreenFilters = function updateScreenFiltersV262() {
-    priorUpdateScreenFilters2();
-    if (OC.host) {
-      OC.host.style.setProperty('--oc-contrast', String(OC.screenContrast || 1));
-      OC.host.style.setProperty('--oc-saturation', String(OC.screenSaturation || 1));
-    }
-  };
-})();
-
-
-// --- V2.6.8 obstacle-course ground alpha fix pass ---
-(function installObstacleCourseV264Patch(){
-  if (OC.__v264PatchInstalled) return;
-  OC.__v264PatchInstalled = true;
-
-  OC.versionLabel = 'V2.6.8';
-  OC.pathVisualWidth = Math.max(OC.pathVisualWidth || 0, 31.8);
-  OC.groundVisualWidth = 220;
-  OC.groundTextureWorldSize = 220;
-  OC.steerSpeed = Math.max(OC.steerSpeed || 0, 18);
-  OC.pathAlphaMaps = OC.pathAlphaMaps || new Map();
-  OC.pathAlphaStarted = false;
-  OC.pathHintDirection = 'right';
-
-  const signedToFactor = (value) => clamp(1 + (Number(value || 0) / 10), 0.05, 8);
-  const factorToSigned = (value) => Math.round((Number(value || 1) - 1) * 10);
-  const pathDefs = () => Object.values(ASSETS.pathSegments || {});
-
-  function refreshVisibleVersionsV264() {
-    document.querySelectorAll('.version-pill,.status-pill,.obstacle-header-line .eyebrow').forEach((node) => {
-      if (/V2\.6\.|Obstacle Course/.test(node.textContent || '')) {
-        node.textContent = node.classList?.contains('eyebrow') ? 'Obstacle Course · V2.6.8' : 'V2.6.8';
-      }
-    });
-  }
-
-  function groundTextureV264() {
-    const tex = loadTexture(ASSETS.ground, { repeat: [1, 1], repeatX: false });
-    tex.wrapS = THREE.ClampToEdgeWrapping;
-    tex.wrapT = THREE.RepeatWrapping;
-    const length = Math.max(OC.courseLength + 760, SEGMENT_WORLD_STEP * 6);
-    tex.repeat.set(1, Math.max(1, length / (OC.groundTextureWorldSize || 220)));
-    tex.needsUpdate = true;
-    return tex;
-  }
-
-  buildMaterials = function buildMaterialsV264() {
-    const groundMap = groundTextureV264();
-    OC.scene.background = loadTexture(ASSETS.background);
-    OC.groundMaterial = new THREE.MeshStandardMaterial({
-      map: groundMap,
-      // Do not assign this texture as alphaMap: Three.js alphaMap uses colour brightness,
-      // which makes dark opaque ground pixels transparent. The WebP's real alpha channel
-      // is respected through the map texture when transparent=true.
-      bumpMap: groundMap,
-      displacementMap: groundMap,
-      bumpScale: OC.bumpStrength,
-      displacementScale: OC.displacementStrength,
-      roughness: 1,
-      metalness: 0,
-      transparent: true,
-      alphaTest: 0.02,
-      opacity: 1,
-      depthWrite: false,
-      side: THREE.DoubleSide
-    });
-    OC.groundMaterial.needsUpdate = true;
-  };
-
-  buildGround = function buildGroundV264(parent) {
-    const mat = OC.groundMaterial || new THREE.MeshStandardMaterial({ color: 0x4c653f, roughness: 1, side: THREE.DoubleSide });
-    const length = Math.max(OC.courseLength + 780, SEGMENT_WORLD_STEP * 6);
-    const width = OC.groundVisualWidth || 220;
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(width, length, 36, 96), mat);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.set(0, GROUND_Y, -length / 2 + 120);
-    ground.renderOrder = 0;
-    parent.add(ground);
-  };
-
-  buildPathSegments = function buildPathSegmentsV264(parent) {
-    OC.pathSequence.forEach((seg) => {
-      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(OC.pathVisualWidth || 31.8, SEGMENT_WORLD_LENGTH, 1, 1), getPathMaterial(seg));
-      mesh.rotation.x = -Math.PI / 2;
-      mesh.position.set((seg.startX + seg.endX) / 2, GROUND_Y + 0.052, -seg.distance - SEGMENT_WORLD_LENGTH / 2);
-      mesh.renderOrder = 4;
-      mesh.userData.pathSegment = seg;
-      parent.add(mesh);
-    });
-  };
-
-  function loadPathAlphaMapV264(def) {
-    if (!def || OC.pathAlphaMaps.has(def.id)) return;
-    const img = new Image();
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth || img.width;
-        canvas.height = img.naturalHeight || img.height;
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        ctx.drawImage(img, 0, 0);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-        OC.pathAlphaMaps.set(def.id, { width: canvas.width, height: canvas.height, data: imageData });
-      } catch (error) {
-        console.warn('[ObstacleCourse] path alpha map failed:', def.id, error);
-        OC.pathAlphaMaps.set(def.id, null);
-      }
-    };
-    img.onerror = () => OC.pathAlphaMaps.set(def.id, null);
-    img.src = `${def.file}?alpha=2.6.4`;
-  }
-
-  function ensurePathAlphaMapsV264() {
-    if (OC.pathAlphaStarted) return;
-    OC.pathAlphaStarted = true;
-    pathDefs().forEach(loadPathAlphaMapV264);
-  }
-
-  function currentPathSegmentV264(distance = OC.distance) {
-    if (!OC.pathSequence?.length) return null;
-    const index = clamp(Math.floor(distance / SEGMENT_WORLD_STEP), 0, OC.pathSequence.length - 1);
-    return OC.pathSequence[index] || null;
-  }
-
-  function sampleAlphaMapV264(map, u, v, radius = 2) {
-    if (!map || !map.data || !map.width || !map.height) return null;
-    const cx = clamp(Math.round(u * (map.width - 1)), 0, map.width - 1);
-    const cy = clamp(Math.round(v * (map.height - 1)), 0, map.height - 1);
-    let maxAlpha = 0;
-    for (let y = -radius; y <= radius; y += 1) {
-      const py = clamp(cy + y, 0, map.height - 1);
-      for (let x = -radius; x <= radius; x += 1) {
-        const px = clamp(cx + x, 0, map.width - 1);
-        const alpha = map.data[(py * map.width + px) * 4 + 3] || 0;
-        if (alpha > maxAlpha) maxAlpha = alpha;
-      }
-    }
-    return maxAlpha;
-  }
-
-  function pathAlphaAtWorldV264(worldX, distance = OC.distance) {
-    const seg = currentPathSegmentV264(distance);
-    if (!seg) return null;
-    const map = OC.pathAlphaMaps.get(seg.id);
-    if (!map) return null;
-    const meshCenterX = (seg.startX + seg.endX) / 2;
-    const width = OC.pathVisualWidth || 31.8;
-    const u = clamp(((worldX - meshCenterX) / width) + 0.5, 0, 1);
-    const t = clamp((distance - seg.distance) / SEGMENT_WORLD_LENGTH, 0, 1);
-    // Texture orientation has varied between the renderer and source previews, so sample both vertical directions.
-    const a1 = sampleAlphaMapV264(map, u, 1 - t, 2);
-    const a2 = sampleAlphaMapV264(map, u, t, 2);
-    return Math.max(a1 ?? 0, a2 ?? 0);
-  }
-
-  function alphaPathStateV264(distance = OC.distance) {
-    const worldX = pathCenterAt(distance) + OC.player.x;
-    const bodyOffsets = [-0.85, -0.42, 0, 0.42, 0.85];
-    let bodyAlpha = 0;
-    let alphaReady = false;
-    for (const offset of bodyOffsets) {
-      const a = pathAlphaAtWorldV264(worldX + offset, distance);
-      if (a !== null) alphaReady = true;
-      if ((a || 0) > bodyAlpha) bodyAlpha = a || 0;
-    }
-    if (!alphaReady) {
-      const abs = Math.abs(OC.player.x);
-      const playableWidth = OC.laneWidth * 1.18;
-      return {
-        status: abs > playableWidth ? 'off' : abs > playableWidth * 0.78 ? 'edge' : 'on',
-        hint: OC.player.x < 0 ? 'right' : 'left',
-        alpha: null,
-        distanceToPath: 0
-      };
-    }
-    if (bodyAlpha >= 64) return { status: 'on', hint: OC.pathHintDirection || 'right', alpha: bodyAlpha, distanceToPath: 0 };
-    let best = null;
-    for (let step = 0.45; step <= 13.5; step += 0.45) {
-      const leftAlpha = pathAlphaAtWorldV264(worldX - step, distance) || 0;
-      const rightAlpha = pathAlphaAtWorldV264(worldX + step, distance) || 0;
-      if (leftAlpha >= 64 && (!best || step < best.dist)) best = { dir: 'left', dist: step, alpha: leftAlpha };
-      if (rightAlpha >= 64 && (!best || step < best.dist)) best = { dir: 'right', dist: step, alpha: rightAlpha };
-      if (best) break;
-    }
-    if (best) {
-      OC.pathHintDirection = best.dir;
-      return { status: best.dist <= 1.35 ? 'edge' : 'off', hint: best.dir, alpha: best.alpha, distanceToPath: best.dist };
-    }
-    const seg = currentPathSegmentV264(distance);
-    const meshCenterX = seg ? (seg.startX + seg.endX) / 2 : pathCenterAt(distance);
-    const hint = worldX < meshCenterX ? 'right' : 'left';
-    OC.pathHintDirection = hint;
-    return { status: 'off', hint, alpha: bodyAlpha, distanceToPath: 99 };
-  }
-
-  pathStatus = function pathStatusV264() {
-    return alphaPathStateV264().status;
-  };
-
-  function updateOffPathWarningV264(status) {
-    const arrow = oc$('oc-offpath-arrow');
-    const label = oc$('oc-offpath-label');
-    if (!arrow || !label) return;
-    const state = alphaPathStateV264();
-    const hint = state.hint || 'right';
-    if (status === 'off' && OC.offPathTime >= 2) {
-      arrow.classList.add('is-visible');
-      arrow.classList.toggle('dir-right', hint === 'right');
-      arrow.classList.toggle('dir-left', hint === 'left');
-      label.textContent = hint === 'right' ? 'Off Path →' : '← Off Path';
-    } else {
-      arrow.classList.remove('is-visible', 'dir-right', 'dir-left', 'is-left');
-      label.textContent = status === 'off' ? 'Off Path' : '';
-    }
-  }
-
-  updateRun = function updateRunV264(dt) {
-    let steer = 0;
-    if (OC.keys.has('left')) steer -= 1;
-    if (OC.keys.has('right')) steer += 1;
-    const stateBeforeMove = alphaPathStateV264();
-    const recoveryBoost = stateBeforeMove.status === 'off' ? 2.35 : stateBeforeMove.status === 'edge' ? 1.9 : 1.55;
-    const slowBoost = OC.currentSpeed < 6 ? 1.35 : 1;
-    OC.player.x = clamp(OC.player.x + steer * OC.steerSpeed * recoveryBoost * slowBoost * dt, -((OC.pathVisualWidth || 31.8) * 0.72), ((OC.pathVisualWidth || 31.8) * 0.72));
-
-    if (OC.keys.has('forward')) OC.targetSpeed = OC.speed;
-    else if (OC.keys.has('back')) OC.targetSpeed = BACK_SPEED;
-    else if (OC.startAssistTime > 0) {
-      OC.targetSpeed = Math.max(6, Math.min(12, OC.speed * 0.35));
-      OC.startAssistTime = Math.max(0, OC.startAssistTime - dt);
-    } else OC.targetSpeed = 0;
-
-    const status = pathStatus();
-    if (status === 'off') OC.offPathTime += dt;
-    else OC.offPathTime = 0;
-    let cappedTarget = OC.targetSpeed;
-    if (status === 'off' && cappedTarget > SLOW_TROT_SPEED) cappedTarget = SLOW_TROT_SPEED;
-    if (status === 'edge' && cappedTarget > OC.speed * 0.74) cappedTarget = OC.speed * 0.74;
-    const rate = Math.abs(cappedTarget) > Math.abs(OC.currentSpeed) ? ACCEL * 1.2 : DECEL;
-    OC.currentSpeed += clamp(cappedTarget - OC.currentSpeed, -rate * dt, rate * dt);
-    OC.distance = Math.max(0, OC.distance + OC.currentSpeed * dt);
-    updateRideAudio();
-
-    if (status === 'off' && OC.targetSpeed > 0) {
-      playBushRustle();
-      const hint = alphaPathStateV264().hint === 'right' ? 'right' : 'left';
-      setResult(`Off path: steer ${hint} toward the visible road.`, 'warn');
-    } else if (status === 'edge' && OC.targetSpeed > 0) {
-      setResult('Path edge: horse slowing. Steer toward the visible road.', 'warn');
-    } else if (OC.lastPathStatus !== 'on' && status === 'on') {
-      setResult('Back on path. Hold ↑/W to accelerate.', 'waiting');
-    }
-    OC.lastPathStatus = status;
-    updateOffPathWarningV264(status);
-
-    updatePhysics(dt);
-    updateObjects();
-    OC.score += dt * (status === 'off' ? 0.15 : 0.6);
-    updateStats();
-    if (OC.distance >= OC.courseLength) finishRun();
-  };
-
-  resetRun = function resetRunV264(quiet = false) {
-    OC.running = false;
-    stopMotionLoops();
-    AUDIO.wasForwardMoving = false;
-    OC.complete = false;
-    OC.offPathTime = 0;
-    OC.lastPathStatus = 'on';
-    OC.pathHintDirection = 'right';
-    OC.distance = 0;
-    OC.currentSpeed = 0;
-    OC.targetSpeed = 0;
-    OC.startAssistTime = 0;
-    OC.score = 0;
-    OC.hits = 0;
-    OC.jumps = 0;
-    OC.collected = 0;
-    OC.player.x = 0;
-    OC.player.y = 0;
-    OC.player.vy = 0;
-    OC.player.grounded = true;
-    OC.player.jumpingHeld = false;
-    OC.player.jumpHoldTime = 0;
-    OC.objects.forEach((obj) => { obj.visible = true; if (obj.userData) { obj.userData.hit = false; obj.userData.collected = false; } });
-    updateOffPathWarningV264('on');
-    updateStats();
-    if (!quiet) setResult('Course reset. Start the test when ready.', 'waiting');
-    syncRunButtons();
-    drawFrame();
-    drawOverview();
-  };
-
-  function applyMaterialVisualsV264(mat, cfg) {
-    if (!mat.userData) mat.userData = {};
-    if (mat.color && !mat.userData.__ocBaseColor) mat.userData.__ocBaseColor = mat.color.clone();
-    const opacity = cfg.opacity ?? 1;
-    mat.transparent = opacity < 0.995 || mat.transparent;
-    mat.opacity = opacity;
-    if (mat.color && mat.userData.__ocBaseColor) {
-      const base = mat.userData.__ocBaseColor.clone();
-      const hsl = { h: 0, s: 0, l: 0 };
-      base.getHSL(hsl);
-      hsl.s = clamp(hsl.s * (cfg.saturation ?? 1), 0, 1);
-      hsl.l = clamp(((hsl.l - 0.5) * (cfg.contrast ?? 1)) + 0.5, 0, 1);
-      base.setHSL(hsl.h, hsl.s, hsl.l);
-      base.multiplyScalar(cfg.brightness ?? 1);
-      if (cfg.tint && (cfg.tintStrength || 0) > 0) base.lerp(new THREE.Color(cfg.tint), clamp(cfg.tintStrength, 0, 1));
-      mat.color.copy(base);
-    }
-    mat.needsUpdate = true;
-  }
-
-  applyLayer = function applyLayerV264(layer) {
-    if (!layer || !layer.group) return;
-    layer.visible = layer.visible !== false;
-    layer.opacity = layer.opacity ?? 1;
-    layer.scale = layer.scale ?? 1;
-    layer.brightness = layer.brightness ?? 1;
-    layer.contrast = layer.contrast ?? 1;
-    layer.saturation = layer.saturation ?? 1;
-    layer.tintStrength = layer.tintStrength ?? 0;
-    layer.tint = layer.tint || '#ffffff';
-    layer.group.visible = isLayerDisplayed(layer);
-    layer.group.position.set(layer.x || 0, layer.y || 0, layer.z || 0);
-    layer.group.scale.setScalar(['trees', 'rocks', 'collectibles', 'obstacles', 'path'].includes(layer.id) ? 1 : (layer.scale || 1));
-    layer.group.children.forEach((child) => applyLayerObjectScale(layer, child));
-    layer.group.traverse((node) => {
-      node.renderOrder = layer.order || 0;
-      if (!node.material) return;
-      const materials = Array.isArray(node.material) ? node.material : [node.material];
-      materials.forEach((mat) => applyMaterialVisualsV264(mat, layer));
-    });
-  };
-
-  function glbControlV264(url) {
-    const key = url || '__none__';
-    if (!OC.glbAssetControls.has(key)) OC.glbAssetControls.set(key, {});
-    const cfg = OC.glbAssetControls.get(key);
-    cfg.x = cfg.x ?? 0; cfg.y = cfg.y ?? 0; cfg.z = cfg.z ?? 0;
-    cfg.scaleOffset = cfg.scaleOffset ?? factorToSigned(cfg.scale ?? 1);
-    cfg.scale = signedToFactor(cfg.scaleOffset);
-    cfg.opacity = cfg.opacity ?? 1;
-    cfg.brightnessOffset = cfg.brightnessOffset ?? factorToSigned(cfg.brightness ?? 1);
-    cfg.contrastOffset = cfg.contrastOffset ?? factorToSigned(cfg.contrast ?? 1);
-    cfg.saturationOffset = cfg.saturationOffset ?? factorToSigned(cfg.saturation ?? 1);
-    cfg.brightness = signedToFactor(cfg.brightnessOffset);
-    cfg.contrast = signedToFactor(cfg.contrastOffset);
-    cfg.saturation = signedToFactor(cfg.saturationOffset);
-    cfg.tintStrength = cfg.tintStrength ?? 0;
-    cfg.tint = cfg.tint || '#ffffff';
-    cfg.order = cfg.order ?? 18;
-    return cfg;
-  }
-
-  function applyGlbAssetControlsV264(obj) {
-    const url = obj?.userData?.glbAssetUrl;
-    if (!url) return;
-    const cfg = glbControlV264(url);
-    const basePosition = obj.userData.basePosition || obj.position.clone();
-    const baseScale = obj.userData.baseScale || obj.scale.clone();
-    obj.position.set(basePosition.x + cfg.x, basePosition.y + cfg.y, basePosition.z + cfg.z);
-    obj.scale.copy(baseScale).multiplyScalar(cfg.scale || 1);
-    obj.renderOrder = cfg.order || 0;
-    obj.traverse((node) => {
-      node.renderOrder = cfg.order || 0;
-      if (!node.material) return;
-      const mats = Array.isArray(node.material) ? node.material : [node.material];
-      mats.forEach((mat) => applyMaterialVisualsV264(mat, cfg));
-    });
-  }
-
-  function refreshGlbSelectionBoxesV264() {
-    (OC.glbSelectionHelpers || []).forEach((helper) => {
-      helper.parent?.remove(helper);
-      helper.geometry?.dispose?.();
-      helper.material?.dispose?.();
-    });
-    OC.glbSelectionHelpers = [];
-    if (!OC.scene || OC.selectedLayerId !== 'glbAsset' || !OC.selectedGlbAssetUrl) return;
-    (OC.glbInstances || []).forEach((obj) => {
-      if (!obj?.visible || obj.userData?.glbAssetUrl !== OC.selectedGlbAssetUrl) return;
-      const helper = new THREE.BoxHelper(obj, 0xeec45a);
-      helper.userData.isGlbSelectionHelper = true;
-      OC.scene.add(helper);
-      OC.glbSelectionHelpers.push(helper);
-    });
-  }
-
-  function applyAllGlbAssetControlsV264() {
-    (OC.glbInstances || []).forEach(applyGlbAssetControlsV264);
-    refreshGlbSelectionBoxesV264();
-  }
-
-  function buildSignedSliderRow(host, idPrefix, prop, label, min, max, step, value, onInput) {
-    const row = document.createElement('div');
-    row.className = 'hf-slider-row';
-    row.innerHTML = `<span>${label}</span><input id="${idPrefix}-${prop}" type="range" min="${min}" max="${max}" step="${step}" value="${value}"><output id="${idPrefix}-${prop}-out">${Number(value).toFixed(step < 1 ? 2 : 0)}</output>`;
-    host.appendChild(row);
-    const input = row.querySelector('input');
-    const out = row.querySelector('output');
-    input.addEventListener('input', (event) => {
-      const v = Number(event.target.value);
-      out.textContent = Number(v).toFixed(step < 1 ? 2 : 0);
-      onInput(v);
-    });
-    return input;
-  }
-
-  createLayerSliders = function createLayerSlidersV264() {
-    const host = oc$('hf-layer-sliders');
-    if (!host) return;
-    host.innerHTML = '';
-    if (OC.selectedLayerId === 'glbAsset') {
-      const selector = document.createElement('label');
-      selector.className = 'field-block';
-      selector.innerHTML = `<span>GLB Asset</span><select id="hf-glb-asset-select"></select><p class="hf-glb-selected-note">Selected GLB is boxed in the preview; controls affect every occurrence of that file.</p>`;
-      host.appendChild(selector);
-      const urls = Array.from(new Set([...(Object.values(ASSETS).flat?.() || []), ...(OC.glbInstances || []).map((obj) => obj.userData?.glbAssetUrl).filter(Boolean)]))
-        .filter((url) => typeof url === 'string' && url.endsWith('.glb'));
-      const select = selector.querySelector('select');
-      urls.forEach((url) => {
-        const opt = document.createElement('option');
-        opt.value = url;
-        opt.textContent = String(url).split('/').pop();
-        select.appendChild(opt);
-      });
-      OC.selectedGlbAssetUrl = urls.includes(OC.selectedGlbAssetUrl) ? OC.selectedGlbAssetUrl : (urls[0] || '');
-      select.value = OC.selectedGlbAssetUrl;
-      select.addEventListener('change', () => { OC.selectedGlbAssetUrl = select.value; createLayerSliders(); applyAllGlbAssetControlsV264(); });
-      const cfg = glbControlV264(OC.selectedGlbAssetUrl);
-      buildSignedSliderRow(host, 'hf-glb', 'x', 'X', -50, 50, 0.5, cfg.x, (v) => { cfg.x = v; applyAllGlbAssetControlsV264(); drawFrame(); drawOverview(); });
-      buildSignedSliderRow(host, 'hf-glb', 'z', 'Z', -50, 50, 0.5, cfg.z, (v) => { cfg.z = v; applyAllGlbAssetControlsV264(); drawFrame(); drawOverview(); });
-      buildSignedSliderRow(host, 'hf-glb', 'y', 'Y', -50, 50, 0.5, cfg.y, (v) => { cfg.y = v; applyAllGlbAssetControlsV264(); drawFrame(); });
-      buildSignedSliderRow(host, 'hf-glb', 'scaleOffset', 'Object Size', -50, 50, 1, cfg.scaleOffset, (v) => { cfg.scaleOffset = v; cfg.scale = signedToFactor(v); applyAllGlbAssetControlsV264(); drawFrame(); drawOverview(); });
-      buildSignedSliderRow(host, 'hf-glb', 'opacity', 'Opacity', 0, 1, 0.02, cfg.opacity, (v) => { cfg.opacity = v; applyAllGlbAssetControlsV264(); drawFrame(); });
-      buildSignedSliderRow(host, 'hf-glb', 'brightnessOffset', 'Bright', -50, 50, 1, cfg.brightnessOffset, (v) => { cfg.brightnessOffset = v; cfg.brightness = signedToFactor(v); applyAllGlbAssetControlsV264(); drawFrame(); });
-      buildSignedSliderRow(host, 'hf-glb', 'contrastOffset', 'Contrast', -50, 50, 1, cfg.contrastOffset, (v) => { cfg.contrastOffset = v; cfg.contrast = signedToFactor(v); applyAllGlbAssetControlsV264(); drawFrame(); });
-      buildSignedSliderRow(host, 'hf-glb', 'saturationOffset', 'Saturation', -50, 50, 1, cfg.saturationOffset, (v) => { cfg.saturationOffset = v; cfg.saturation = signedToFactor(v); applyAllGlbAssetControlsV264(); drawFrame(); });
-      buildSignedSliderRow(host, 'hf-glb', 'tintStrength', 'Tint Amt', 0, 1, 0.02, cfg.tintStrength, (v) => { cfg.tintStrength = v; applyAllGlbAssetControlsV264(); drawFrame(); });
-      buildSignedSliderRow(host, 'hf-glb', 'order', 'Order', -50, 50, 1, cfg.order, (v) => { cfg.order = v; applyAllGlbAssetControlsV264(); drawFrame(); });
-      const tintRow = document.createElement('label');
-      tintRow.className = 'field-block';
-      tintRow.innerHTML = `<span>GLB Tint</span><input id="hf-glb-tint" type="color" value="${cfg.tint || '#ffffff'}">`;
-      host.appendChild(tintRow);
-      tintRow.querySelector('input').addEventListener('input', (event) => { cfg.tint = event.target.value; applyAllGlbAssetControlsV264(); drawFrame(); });
-      refreshGlbSelectionBoxesV264();
-      return;
-    }
-    const l = OC.layers.get(OC.selectedLayerId);
-    if (!l) return;
-    l.scaleOffset = l.scaleOffset ?? factorToSigned(l.scale ?? 1);
-    l.brightnessOffset = l.brightnessOffset ?? factorToSigned(l.brightness ?? 1);
-    l.contrastOffset = l.contrastOffset ?? factorToSigned(l.contrast ?? 1);
-    l.saturationOffset = l.saturationOffset ?? factorToSigned(l.saturation ?? 1);
-    buildSignedSliderRow(host, 'hf-layer', 'x', 'X', -50, 50, 0.5, l.x || 0, (v) => { l.x = v; applyLayer(l); drawFrame(); drawOverview(); });
-    buildSignedSliderRow(host, 'hf-layer', 'z', 'Z', -50, 50, 0.5, l.z || 0, (v) => { l.z = v; applyLayer(l); drawFrame(); drawOverview(); });
-    buildSignedSliderRow(host, 'hf-layer', 'y', 'Y', -50, 50, 0.5, l.y || 0, (v) => { l.y = v; applyLayer(l); drawFrame(); });
-    buildSignedSliderRow(host, 'hf-layer', 'scaleOffset', 'Object Size', -50, 50, 1, l.scaleOffset, (v) => { l.scaleOffset = v; l.scale = signedToFactor(v); applyLayer(l); drawFrame(); drawOverview(); });
-    buildSignedSliderRow(host, 'hf-layer', 'opacity', 'Opacity', 0, 1, 0.02, l.opacity ?? 1, (v) => { l.opacity = v; applyLayer(l); drawFrame(); });
-    buildSignedSliderRow(host, 'hf-layer', 'brightnessOffset', 'Bright', -50, 50, 1, l.brightnessOffset, (v) => { l.brightnessOffset = v; l.brightness = signedToFactor(v); applyLayer(l); drawFrame(); });
-    buildSignedSliderRow(host, 'hf-layer', 'contrastOffset', 'Contrast', -50, 50, 1, l.contrastOffset, (v) => { l.contrastOffset = v; l.contrast = signedToFactor(v); applyLayer(l); drawFrame(); });
-    buildSignedSliderRow(host, 'hf-layer', 'saturationOffset', 'Saturation', -50, 50, 1, l.saturationOffset, (v) => { l.saturationOffset = v; l.saturation = signedToFactor(v); applyLayer(l); drawFrame(); });
-    buildSignedSliderRow(host, 'hf-layer', 'tintStrength', 'Tint Amt', 0, 1, 0.02, l.tintStrength || 0, (v) => { l.tintStrength = v; applyLayer(l); drawFrame(); });
-    buildSignedSliderRow(host, 'hf-layer', 'order', 'Order', -50, 50, 1, l.order || 0, (v) => { l.order = v; applyLayer(l); drawFrame(); });
-    const tintRow = document.createElement('label');
-    tintRow.className = 'field-block';
-    tintRow.innerHTML = `<span>Layer Tint</span><input id="hf-layer-tint" type="color" value="${l.tint || '#ffffff'}">`;
-    host.appendChild(tintRow);
-    tintRow.querySelector('input').addEventListener('input', (event) => { l.tint = event.target.value; applyLayer(l); drawFrame(); });
-  };
-
-  syncLayerControls = function syncLayerControlsV264() {
-    createLayerSliders();
-  };
-  syncLayerOutputs = function syncLayerOutputsV264() {};
-
-  function setDisplaySliderV264(id, rawValue, handler) {
-    const input = oc$(id);
-    if (!input) return;
-    input.min = '-50';
-    input.max = '50';
-    input.step = '1';
-    input.value = String(rawValue || 0);
-    input.addEventListener('input', (event) => {
-      event.stopImmediatePropagation();
-      const v = Number(event.target.value || 0);
-      const out = oc$(`${id}-out`);
-      if (out) out.textContent = String(v);
-      handler(v);
-      updateScreenFilters();
-    }, true);
-  }
-
-  function installDisplayControlsV264() {
-    setDisplaySliderV264('obstacle-brightness', 0, (v) => { OC.screenBrightness = signedToFactor(v); });
-    setDisplaySliderV264('obstacle-contrast', 0, (v) => { OC.screenContrast = signedToFactor(v); });
-    setDisplaySliderV264('obstacle-saturation', 0, (v) => { OC.screenSaturation = signedToFactor(v); });
-    const tintStrength = oc$('obstacle-tint-strength');
-    if (tintStrength) {
-      tintStrength.min = '0'; tintStrength.max = '50'; tintStrength.step = '1';
-      tintStrength.addEventListener('input', (event) => {
-        event.stopImmediatePropagation();
-        const v = Number(event.target.value || 0);
-        OC.screenTintStrength = clamp(v / 50, 0, 1);
-        const out = oc$('obstacle-tint-strength-out');
-        if (out) out.textContent = String(v);
-        updateScreenFilters();
-      }, true);
-    }
-  }
-
-  const previousUpdateScreenFiltersV264 = updateScreenFilters;
-  updateScreenFilters = function updateScreenFiltersV264() {
-    previousUpdateScreenFiltersV264();
-    if (OC.host) {
-      OC.host.style.setProperty('--oc-brightness', String(OC.screenBrightness || 1));
-      OC.host.style.setProperty('--oc-contrast', String(OC.screenContrast || 1));
-      OC.host.style.setProperty('--oc-saturation', String(OC.screenSaturation || 1));
-    }
-    const tint = document.querySelector('.obstacle-tint-overlay');
-    if (tint) {
-      tint.style.setProperty('--oc-tint', OC.screenTint || '#000000');
-      tint.style.setProperty('--oc-tint-opacity', String(OC.screenTintStrength || 0));
-      tint.style.mixBlendMode = 'color';
-    }
-  };
-
-  function installV264Ui() {
-    refreshVisibleVersionsV264();
-    ensurePathAlphaMapsV264();
-    installDisplayControlsV264();
-    const objective = oc$('obstacle-objective');
-    if (objective) objective.textContent = 'Horse forest obstacle course using alpha-tested transparent path segments over forest_ground.webp with the base ground alpha preserved.';
-    const layerSelect = oc$('hf-layer-select');
-    if (layerSelect && ![...layerSelect.options].some((opt) => opt.value === 'glbAsset')) populateLayerSelect();
-    const bgButton = oc$('hf-bg-white');
-    if (bgButton) bgButton.textContent = OC.whiteBackground ? 'BG Normal' : 'BG White';
-  }
-
-  const previousEnsureMountedV264 = ensureMounted;
-  ensureMounted = function ensureMountedV264() {
-    previousEnsureMountedV264();
-    installV264Ui();
-  };
-
-  const previousRegenerateCourseV264 = regenerateCourse;
-  regenerateCourse = function regenerateCourseV264() {
-    previousRegenerateCourseV264();
-    ensurePathAlphaMapsV264();
-    applyAllGlbAssetControlsV264();
-    installV264Ui();
-  };
-
-  const previousUpdateCameraV264 = updateCamera;
-  updateCamera = function updateCameraV264() {
-    previousUpdateCameraV264();
-    if (OC.camera) {
-      const center = pathCenterAt(OC.distance);
-      const x = center + OC.player.x;
-      OC.camera.lookAt((x * 0.35) + (OC.vanishX || 0), (OC.vanishY ?? 0.35) + OC.player.y * 0.35, -28);
-    }
-  };
-
-  function injectV264Styles() {
-    if (oc$('oc-v264-styles')) return;
-    const style = document.createElement('style');
-    style.id = 'oc-v264-styles';
-    style.textContent = `
-      .obstacle-three-wrap canvas{filter:brightness(var(--oc-brightness,1)) contrast(var(--oc-contrast,1)) saturate(var(--oc-saturation,1))!important;}
-      .oc-offpath-arrow{width:104px!important;height:104px!important;margin:-52px 0 0 -52px!important;background-image:url('../../../shared/ui/defaultarrows.webp')!important;background-size:200% 200%!important;background-repeat:no-repeat!important;background-color:transparent!important;border:0!important;border-radius:0!important;color:transparent!important;text-shadow:none!important;box-shadow:none!important;filter:drop-shadow(0 7px 10px rgba(0,0,0,.78))!important;}
-      .oc-offpath-arrow.dir-left{background-position:0% 100%!important}.oc-offpath-arrow.dir-right{background-position:100% 100%!important}
-      .hf-slider-row{grid-template-columns:74px 1fr 54px!important}.hf-glb-selected-note{color:#eec45a!important;}
-    `;
-    document.head.appendChild(style);
-  }
-
-  injectV264Styles();
-})();
-
-
-// --- V2.6.8 obstacle-course HUD, alpha collectibles, overview, grid, and controls correction ---
-(function installObstacleCourseV267Patch(){
-  if (OC.__v267PatchInstalled) return;
-  OC.__v267PatchInstalled = true;
-
-  OC.versionLabel = 'V2.6.8';
-  OC.pathAlphaThreshold = 96;
-  OC.collectibleAlphaThreshold = 150;
-  OC.vanishX = OC.vanishX ?? 0;
-  OC.vanishY = OC.vanishY ?? 0.35;
-  OC.gridEnabled = Boolean(OC.gridEnabled);
-  OC.gridOffsetX = OC.gridOffsetX || 0;
-  OC.gridOffsetZ = OC.gridOffsetZ || 0;
-
-  const signedToFactorV267 = (value) => clamp(1 + (Number(value || 0) / 10), 0.05, 8);
-  const factorToSignedV267 = (value) => Math.round((Number(value || 1) - 1) * 10);
-
-  function refreshVisibleVersionsV267() {
-    document.title = document.title.replace(/V2\.\d+(?:\.\d+)?/g, 'V2.6.8');
-    document.querySelectorAll('.version-pill,.status-pill,.obstacle-header-line .eyebrow').forEach((node) => {
-      if (/V2\.|Obstacle Course/.test(node.textContent || '')) {
-        node.textContent = node.classList?.contains('eyebrow') ? 'Obstacle Course · V2.6.8' : 'V2.6.8';
-      }
-    });
-  }
-
-  function alphaSegmentAtV267(distance) {
-    if (!OC.pathSequence?.length) return null;
-    const index = clamp(Math.floor(distance / SEGMENT_WORLD_STEP), 0, OC.pathSequence.length - 1);
-    return OC.pathSequence[index] || null;
-  }
-
-  function sampleAlphaV267(map, u, v, radius = 1) {
-    if (!map || !map.data || !map.width || !map.height) return null;
-    const cx = clamp(Math.round(u * (map.width - 1)), 0, map.width - 1);
-    const cy = clamp(Math.round(v * (map.height - 1)), 0, map.height - 1);
-    let maxAlpha = 0;
-    for (let yy = -radius; yy <= radius; yy += 1) {
-      const py = clamp(cy + yy, 0, map.height - 1);
-      for (let xx = -radius; xx <= radius; xx += 1) {
-        const px = clamp(cx + xx, 0, map.width - 1);
-        const alpha = map.data[(py * map.width + px) * 4 + 3] || 0;
-        if (alpha > maxAlpha) maxAlpha = alpha;
-      }
-    }
-    return maxAlpha;
-  }
-
-  function pathAlphaAtWorldV267(worldX, distance) {
-    const seg = alphaSegmentAtV267(distance);
-    if (!seg) return null;
-    const map = OC.pathAlphaMaps?.get(seg.id);
-    if (!map) return null;
-    const width = OC.pathVisualWidth || 31.8;
-    const meshCenterX = (seg.startX + seg.endX) / 2;
-    const u = clamp(((worldX - meshCenterX) / width) + 0.5, 0, 1);
-    const t = clamp((distance - seg.distance) / SEGMENT_WORLD_LENGTH, 0, 1);
-    const a1 = sampleAlphaV267(map, u, t, 2);
-    const a2 = sampleAlphaV267(map, u, 1 - t, 2);
-    return Math.max(a1 || 0, a2 || 0);
-  }
-
-  function findVisiblePathXForCollectibleV267(distance) {
-    ensurePathAlphaMapsV264?.();
-    const seg = alphaSegmentAtV267(distance);
-    const centre = pathCenterAt(distance);
-    if (!seg) return centre;
-    const width = OC.pathVisualWidth || 31.8;
-    const meshCenterX = (seg.startX + seg.endX) / 2;
-    const candidates = [];
-    const step = Math.max(0.35, width / 44);
-    for (let x = meshCenterX - width * 0.48; x <= meshCenterX + width * 0.48; x += step) {
-      const alpha = pathAlphaAtWorldV267(x, distance);
-      if ((alpha || 0) >= (OC.collectibleAlphaThreshold || 150)) {
-        candidates.push({ x, alpha: alpha || 0, centreBias: Math.abs(x - centre) });
-      }
-    }
-    if (!candidates.length) return centre;
-    candidates.sort((a, b) => (a.centreBias - b.centreBias) || (b.alpha - a.alpha));
-    const top = candidates.slice(0, Math.min(7, candidates.length));
-    return pick(top).x;
-  }
-
-  const previousAddCollectiblesV267 = addCollectibles;
-  addCollectibles = function addCollectiblesV267(count) {
-    const parent = OC.layers.get('collectibles')?.group || OC.world;
-    const targetCount = Math.max(3, Math.round(count * 0.46));
-    const fallbackGeo = new THREE.OctahedronGeometry(0.42, 0);
-    for (let i = 0; i < targetCount; i += 1) {
-      const distance = 48 + Math.random() * Math.max(30, OC.courseLength - 100);
-      const x = findVisiblePathXForCollectibleV267(distance);
-      const obj = createGlbModel?.(OC.collectibleModels, Math.random() < 0.62 ? rand(1.15, 1.7) : rand(0.8, 1.2))
-        || new THREE.Mesh(fallbackGeo, new THREE.MeshBasicMaterial({ color: 0xeec45a, transparent: true, opacity: 0.9 }));
-      obj.position.set(x, GROUND_Y + rand(0.16, 0.58), -distance);
-      obj.rotation.y = rand(0, Math.PI * 2);
-      obj.userData.kind = 'collectible';
-      obj.userData.collected = false;
-      obj.userData.radius = 1.15;
-      obj.userData.visiblePathOnly = true;
-      parent.add(obj);
-      OC.objects.push(obj);
-      if (typeof registerGlbInstance === 'function') registerGlbInstance(obj, 'collectible', obj.position.x, obj.position.z);
-      else OC.placed.push({ type: 'collectible', x: obj.position.x, z: obj.position.z, mesh: obj });
-    }
-  };
-
-  applyLayerObjectScale = function applyLayerObjectScaleV267(layer, node) {
-    rememberBaseScale(node);
-    const base = node.userData?.__ocBaseScale || node.userData?.baseScale || node.scale;
-    if (!base) return;
-    const s = layer.scale || 1;
-    node.scale.copy(base).multiplyScalar(s);
-  };
-
-  applyLayer = function applyLayerV267(layer) {
-    if (!layer || !layer.group) return;
-    layer.group.visible = isLayerDisplayed(layer);
-    layer.group.position.set(layer.x || 0, layer.y || 0, layer.z || 0);
-    layer.group.scale.setScalar(['trees', 'rocks', 'collectibles', 'obstacles', 'path'].includes(layer.id) ? 1 : (layer.scale || 1));
-    layer.group.children.forEach((child) => applyLayerObjectScale(layer, child));
-    layer.group.traverse((node) => {
-      node.renderOrder = layer.order || 0;
-      if (!node.material) return;
-      const materials = Array.isArray(node.material) ? node.material : [node.material];
-      materials.forEach((mat) => {
-        if (!mat.userData) mat.userData = {};
-        if (mat.color && !mat.userData.__ocBaseColor) mat.userData.__ocBaseColor = mat.color.clone();
-        const opacity = layer.opacity ?? 1;
-        mat.transparent = opacity < 0.995 || mat.transparent;
-        mat.opacity = opacity;
-        if (mat.color && mat.userData.__ocBaseColor) {
-          const color = mat.userData.__ocBaseColor.clone();
-          const brightness = layer.brightness || 1;
-          const saturation = layer.saturation || 1;
-          const tintStrength = layer.tintStrength || 0;
-          color.multiplyScalar(brightness);
-          if (saturation !== 1) {
-            const hsl = {};
-            color.getHSL(hsl);
-            color.setHSL(hsl.h, clamp(hsl.s * saturation, 0, 1), hsl.l);
-          }
-          if (layer.tint && layer.tint !== '#ffffff' && tintStrength > 0) {
-            color.lerp(new THREE.Color(layer.tint), clamp(tintStrength, 0, 1));
-          }
-          mat.color.copy(color);
-        }
-        mat.needsUpdate = true;
-      });
-    });
-  };
-
-  function renderFilterStringV267() {
-    const b = OC.screenBrightness || 1;
-    const c = OC.screenContrast || 1;
-    const s = OC.screenSaturation || 1;
-    return `brightness(${b}) contrast(${c}) saturate(${s})`;
-  }
-
-  const previousUpdateScreenFiltersV267 = updateScreenFilters;
-  updateScreenFilters = function updateScreenFiltersV267() {
-    previousUpdateScreenFiltersV267();
-    const filter = renderFilterStringV267();
-    if (OC.host) {
-      OC.host.style.setProperty('--oc-brightness', String(OC.screenBrightness || 1));
-      OC.host.style.setProperty('--oc-contrast', String(OC.screenContrast || 1));
-      OC.host.style.setProperty('--oc-saturation', String(OC.screenSaturation || 1));
-    }
-    const canvas = OC.renderer?.domElement || OC.host?.querySelector('canvas');
-    if (canvas) canvas.style.filter = filter;
-    const wrap = OC.host?.querySelector('.obstacle-three-wrap');
-    if (wrap) wrap.style.filter = filter;
-    const tint = document.querySelector('.obstacle-tint-overlay');
-    if (tint) {
-      tint.style.setProperty('--oc-tint', OC.screenTint || '#000000');
-      tint.style.setProperty('--oc-tint-opacity', String(OC.screenTintStrength || 0));
-      tint.style.mixBlendMode = 'color';
-    }
-  };
-
-  function buildSliderRowV267(host, prefix, prop, label, min, max, step, value, handler) {
-    const row = document.createElement('div');
-    row.className = 'hf-slider-row';
-    row.innerHTML = `<span>${label}</span><input id="${prefix}-${prop}" type="range" min="${min}" max="${max}" step="${step}" value="${value ?? 0}"><output id="${prefix}-${prop}-out">${value ?? 0}</output>`;
-    host.appendChild(row);
-    row.querySelector('input').addEventListener('input', (event) => {
-      const v = Number(event.target.value || 0);
-      row.querySelector('output').textContent = Number.isInteger(v) ? String(v) : v.toFixed(2);
-      handler(v);
-    });
-  }
-
-  createLayerSliders = function createLayerSlidersV267() {
-    const host = oc$('hf-layer-sliders');
-    if (!host) return;
-    host.innerHTML = '';
-    if (OC.selectedLayerId === 'glbAsset') {
-      const urls = Array.from(new Set([...(OC.glbAssetUrls || []), ...(OC.glbInstances || []).map((obj) => obj.userData?.glbAssetUrl).filter(Boolean)]));
-      const select = document.createElement('label');
-      select.className = 'field-block';
-      select.innerHTML = `<span>GLB Asset</span><select id="hf-glb-asset-select">${urls.map((url) => `<option value="${url}">${url.split('/').pop()}</option>`).join('')}</select>`;
-      host.appendChild(select);
-      const picker = select.querySelector('select');
-      if (picker) {
-        picker.value = OC.selectedGlbAssetUrl || urls[0] || '';
-        OC.selectedGlbAssetUrl = picker.value;
-        picker.addEventListener('change', (event) => {
-          OC.selectedGlbAssetUrl = event.target.value;
-          refreshGlbSelectionBoxesV264?.();
-          createLayerSliders();
-          drawOverview();
-        });
-      }
-      const cfg = glbControl?.(OC.selectedGlbAssetUrl) || {};
-      cfg.scaleOffset = cfg.scaleOffset ?? factorToSignedV267(cfg.scale ?? 1);
-      cfg.brightnessOffset = cfg.brightnessOffset ?? factorToSignedV267(cfg.brightness ?? 1);
-      cfg.contrastOffset = cfg.contrastOffset ?? factorToSignedV267(cfg.contrast ?? 1);
-      cfg.saturationOffset = cfg.saturationOffset ?? factorToSignedV267(cfg.saturation ?? 1);
-      const applyGlb = () => { applyAllGlbAssetControlsV264?.(); refreshGlbSelectionBoxesV264?.(); drawFrame(); drawOverview(); };
-      buildSliderRowV267(host, 'hf-glb', 'x', 'X', -50, 50, 0.5, cfg.x || 0, (v) => { cfg.x = v; applyGlb(); });
-      buildSliderRowV267(host, 'hf-glb', 'z', 'Z', -50, 50, 0.5, cfg.z || 0, (v) => { cfg.z = v; applyGlb(); });
-      buildSliderRowV267(host, 'hf-glb', 'y', 'Y', -50, 50, 0.5, cfg.y || 0, (v) => { cfg.y = v; applyGlb(); });
-      buildSliderRowV267(host, 'hf-glb', 'scaleOffset', 'Scale', -50, 50, 1, cfg.scaleOffset, (v) => { cfg.scaleOffset = v; cfg.scale = signedToFactorV267(v); applyGlb(); });
-      buildSliderRowV267(host, 'hf-glb', 'opacity', 'Opacity', 0, 1, 0.02, cfg.opacity ?? 1, (v) => { cfg.opacity = v; applyGlb(); });
-      buildSliderRowV267(host, 'hf-glb', 'brightnessOffset', 'Bright', -50, 50, 1, cfg.brightnessOffset, (v) => { cfg.brightnessOffset = v; cfg.brightness = signedToFactorV267(v); applyGlb(); });
-      buildSliderRowV267(host, 'hf-glb', 'contrastOffset', 'Contrast', -50, 50, 1, cfg.contrastOffset, (v) => { cfg.contrastOffset = v; cfg.contrast = signedToFactorV267(v); applyGlb(); });
-      buildSliderRowV267(host, 'hf-glb', 'saturationOffset', 'Saturation', -50, 50, 1, cfg.saturationOffset, (v) => { cfg.saturationOffset = v; cfg.saturation = signedToFactorV267(v); applyGlb(); });
-      buildSliderRowV267(host, 'hf-glb', 'tintStrength', 'Tint Amt', 0, 1, 0.02, cfg.tintStrength || 0, (v) => { cfg.tintStrength = v; applyGlb(); });
-      buildSliderRowV267(host, 'hf-glb', 'order', 'Order', -50, 50, 1, cfg.order || 0, (v) => { cfg.order = v; applyGlb(); });
-      const tintRow = document.createElement('label');
-      tintRow.className = 'field-block';
-      tintRow.innerHTML = `<span>GLB Tint</span><input id="hf-glb-tint" type="color" value="${cfg.tint || '#ffffff'}">`;
-      host.appendChild(tintRow);
-      tintRow.querySelector('input').addEventListener('input', (event) => { cfg.tint = event.target.value; applyGlb(); });
-      return;
-    }
-
-    const l = OC.layers.get(OC.selectedLayerId);
-    if (!l) return;
-    l.scaleOffset = l.scaleOffset ?? factorToSignedV267(l.scale ?? 1);
-    l.brightnessOffset = l.brightnessOffset ?? factorToSignedV267(l.brightness ?? 1);
-    l.contrastOffset = l.contrastOffset ?? factorToSignedV267(l.contrast ?? 1);
-    l.saturationOffset = l.saturationOffset ?? factorToSignedV267(l.saturation ?? 1);
-    buildSliderRowV267(host, 'hf-layer', 'x', 'X', -50, 50, 0.5, l.x || 0, (v) => { l.x = v; applyLayer(l); drawFrame(); drawOverview(); });
-    buildSliderRowV267(host, 'hf-layer', 'z', 'Z', -50, 50, 0.5, l.z || 0, (v) => { l.z = v; applyLayer(l); drawFrame(); drawOverview(); });
-    buildSliderRowV267(host, 'hf-layer', 'y', 'Y', -50, 50, 0.5, l.y || 0, (v) => { l.y = v; applyLayer(l); drawFrame(); });
-    buildSliderRowV267(host, 'hf-layer', 'scaleOffset', 'Scale', -50, 50, 1, l.scaleOffset, (v) => { l.scaleOffset = v; l.scale = signedToFactorV267(v); applyLayer(l); drawFrame(); drawOverview(); });
-    buildSliderRowV267(host, 'hf-layer', 'opacity', 'Opacity', 0, 1, 0.02, l.opacity ?? 1, (v) => { l.opacity = v; applyLayer(l); drawFrame(); });
-    buildSliderRowV267(host, 'hf-layer', 'brightnessOffset', 'Bright', -50, 50, 1, l.brightnessOffset, (v) => { l.brightnessOffset = v; l.brightness = signedToFactorV267(v); applyLayer(l); drawFrame(); });
-    buildSliderRowV267(host, 'hf-layer', 'contrastOffset', 'Contrast', -50, 50, 1, l.contrastOffset, (v) => { l.contrastOffset = v; l.contrast = signedToFactorV267(v); applyLayer(l); drawFrame(); });
-    buildSliderRowV267(host, 'hf-layer', 'saturationOffset', 'Saturation', -50, 50, 1, l.saturationOffset, (v) => { l.saturationOffset = v; l.saturation = signedToFactorV267(v); applyLayer(l); drawFrame(); });
-    buildSliderRowV267(host, 'hf-layer', 'tintStrength', 'Tint Amt', 0, 1, 0.02, l.tintStrength || 0, (v) => { l.tintStrength = v; applyLayer(l); drawFrame(); });
-    buildSliderRowV267(host, 'hf-layer', 'order', 'Order', -50, 50, 1, l.order || 0, (v) => { l.order = v; applyLayer(l); drawFrame(); });
-    const tintRow = document.createElement('label');
-    tintRow.className = 'field-block';
-    tintRow.innerHTML = `<span>Layer Tint</span><input id="hf-layer-tint" type="color" value="${l.tint || '#ffffff'}">`;
-    host.appendChild(tintRow);
-    tintRow.querySelector('input').addEventListener('input', (event) => { l.tint = event.target.value; applyLayer(l); drawFrame(); });
-  };
-
-  drawOverview = function drawOverviewV267() {
-    const c = oc$('hf-overview');
-    if (!c) return;
-    const wantedHeight = Math.max(300, Math.min(2200, Math.round((OC.courseLength + 300) / 3.2)));
-    if (c.height !== wantedHeight) c.height = wantedHeight;
-    const ctx = c.getContext('2d');
-    ctx.clearRect(0, 0, c.width, c.height);
-    ctx.fillStyle = '#101914';
-    ctx.fillRect(0, 0, c.width, c.height);
-
-    if (OC.overviewPathOverlay !== false) {
-      ctx.fillStyle = 'rgba(238,196,90,.26)';
-      for (let d = 0; d < OC.courseLength; d += 9) {
-        const seg = alphaSegmentAtV267(d);
-        if (!seg) continue;
-        const width = OC.pathVisualWidth || 31.8;
-        const meshCenterX = (seg.startX + seg.endX) / 2;
-        for (let wx = meshCenterX - width * 0.50; wx <= meshCenterX + width * 0.50; wx += 1.1) {
-          if ((pathAlphaAtWorldV267(wx, d) || 0) >= (OC.pathAlphaThreshold || 96)) {
-            const p = worldToOverview(wx, -d);
-            ctx.fillRect(p.x - 1.5, p.y - 1.5, 3, 3);
-          }
-        }
-      }
-    }
-
-    ctx.strokeStyle = '#d09a55';
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    for (let d = 0; d < OC.courseLength; d += 18) {
-      const point = worldToOverview(pathCenterAt(d), -d);
-      if (d === 0) ctx.moveTo(point.x, point.y);
-      else ctx.lineTo(point.x, point.y);
-    }
-    ctx.stroke();
-
-    const seen = new Set();
-    const markers = [];
-    (OC.placed || []).forEach((obj) => {
-      const mesh = obj.mesh;
-      const key = mesh?.uuid || `${obj.type}:${obj.x}:${obj.z}`;
-      if (seen.has(key)) return;
-      seen.add(key);
-      markers.push({ type: obj.type, x: obj.x, z: obj.z });
-    });
-    (OC.objects || []).forEach((obj) => {
-      const key = obj.uuid || `${obj.userData?.kind}:${obj.position.x}:${obj.position.z}`;
-      if (seen.has(key)) return;
-      seen.add(key);
-      markers.push({ type: obj.userData?.kind || obj.userData?.ocType || 'obstacle', x: obj.position.x, z: obj.position.z });
-    });
-    (OC.glbInstances || []).forEach((obj) => {
-      const key = obj.uuid;
-      if (!key || seen.has(key)) return;
-      seen.add(key);
-      markers.push({ type: obj.userData?.ocType || 'tree', x: obj.position.x, z: obj.position.z });
-    });
-
-    markers.forEach((obj) => {
-      const point = worldToOverview(obj.x, obj.z);
-      const type = obj.type;
-      ctx.fillStyle = type === 'tree' ? '#48a24a' : type === 'rock' ? '#aaa' : type === 'collectible' ? '#eec45a' : '#b04b35';
-      ctx.beginPath();
-      ctx.arc(point.x, point.y, type === 'tree' ? 4 : type === 'collectible' ? 4 : 3, 0, Math.PI * 2);
-      ctx.fill();
-    });
-
-    ctx.strokeStyle = '#eec45a';
-    ctx.strokeRect(1, 1, c.width - 2, c.height - 2);
-  };
-
-  function installPowerBarV267() {
-    const speedBadge = oc$('obstacle-speed-badge');
-    if (!speedBadge || speedBadge.dataset.powerbar === 'v267') return;
-    speedBadge.dataset.powerbar = 'v267';
-    speedBadge.innerHTML = `<div class="oc-powerbar-wrap"><div class="oc-powerbar-emoji">🐴</div><div class="oc-powerbar-empty"></div><div class="oc-powerbar-full-clip"><div class="oc-powerbar-full"></div></div></div><div class="oc-speed-label"><span id="oc-speed-state">Stopped</span><b id="oc-speed-value">0</b></div><div id="oc-offpath-label" class="oc-offpath-label"></div>`;
-  }
-
-  const previousUpdateStatsV267 = updateStats;
-  updateStats = function updateStatsV267() {
-    previousUpdateStatsV267();
-    installPowerBarV267();
-    const speed = Math.max(0, Math.round(OC.currentSpeed));
-    const max = Math.max(1, OC.speed);
-    const pct = clamp(speed / max, 0, 1) * 100;
-    const status = pathStatus();
-    const gait = status === 'off' ? 'Off Path' : speed < 3 ? 'Stopped' : speed < max * 0.45 ? 'Trot' : speed < max * 0.75 ? 'Canter' : 'Gallop';
-    const clip = document.querySelector('.oc-powerbar-full-clip');
-    if (clip) clip.style.width = `${pct}%`;
-    const state = oc$('oc-speed-state');
-    const value = oc$('oc-speed-value');
-    if (state) state.textContent = gait;
-    if (value) value.textContent = `${speed}/${Math.round(max)}`;
-  };
-
-  function installImportSettingsV267() {
-    const exportButton = oc$('hf-export-json');
-    if (!exportButton || oc$('hf-import-json')) return;
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'application/json,.json';
-    input.id = 'hf-import-json-file';
-    input.style.display = 'none';
-    const btn = document.createElement('button');
-    btn.id = 'hf-import-json';
-    btn.className = 'hf-export-json-button';
-    btn.type = 'button';
-    btn.textContent = 'Import JSON Settings';
-    btn.style.marginTop = '8px';
-    exportButton.insertAdjacentElement('afterend', input);
-    input.insertAdjacentElement('afterend', btn);
-    btn.addEventListener('click', () => input.click());
-    input.addEventListener('change', async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      try {
-        const data = JSON.parse(await file.text());
-        if (Array.isArray(data.pathSegments) && data.pathSegments.length) {
-          OC.pathSequence = data.pathSegments.map((seg, i) => {
-            const def = ASSETS.pathSegments[seg.id] || Object.values(ASSETS.pathSegments).find((item) => item.id === seg.id) || ASSETS.pathSegments.straight;
-            const distance = Number(seg.distance ?? i * SEGMENT_WORLD_STEP);
-            return {
-              ...def,
-              id: def.id,
-              start: seg.start || def.start,
-              end: seg.end || def.end,
-              startX: PATH_POSITIONS[seg.start || def.start] ?? 0,
-              endX: PATH_POSITIONS[seg.end || def.end] ?? 0,
-              distance
-            };
-          });
-        }
-        if (data.movement?.speed || data.speed) OC.speed = Number(data.movement?.speed || data.speed);
-        if (data.courseLength) OC.courseLength = Number(data.courseLength);
-        regenerateCourse();
-        setResult('Imported obstacle course JSON settings.', 'success');
-      } catch (error) {
-        setResult(`JSON import failed: ${error.message}`, 'failure');
-      } finally {
-        input.value = '';
-      }
-    });
-  }
-
-  function installVisibleHelpersV267() {
-    refreshVisibleVersionsV267();
-    installPowerBarV267();
-    installImportSettingsV267();
-
-    const sideCard = document.querySelector('.obstacle-side-card');
-    if (sideCard && !oc$('oc-vp-x-visible')) {
-      const section = document.createElement('section');
-      section.className = 'hf-layer-panel';
-      section.innerHTML = `<h3>View Helpers</h3><label class="field-check"><input id="oc-ground-grid-toggle" type="checkbox"> Show ground grid</label><label class="field-check"><input id="oc-overview-path-overlay" type="checkbox" checked> Show path alpha on overview</label><label class="range-row"><span>Vanishing Point X <output id="oc-vp-x-visible-out">${(OC.vanishX || 0).toFixed(1)}</output></span><input id="oc-vp-x-visible" type="range" min="-50" max="50" step="0.5" value="${OC.vanishX || 0}"></label><label class="range-row"><span>Vanishing Point Y <output id="oc-vp-y-visible-out">${(OC.vanishY ?? 0.35).toFixed(2)}</output></span><input id="oc-vp-y-visible" type="range" min="-50" max="50" step="0.5" value="${OC.vanishY ?? 0.35}"></label>`;
-      const layerPanel = sideCard.querySelector('.hf-layer-panel');
-      layerPanel?.insertAdjacentElement('afterend', section);
-      oc$('oc-ground-grid-toggle')?.addEventListener('change', (event) => {
-        OC.gridEnabled = event.target.checked;
-        if (OC.grid) OC.grid.visible = OC.gridEnabled;
-        drawFrame();
-      });
-      oc$('oc-overview-path-overlay')?.addEventListener('change', (event) => {
-        OC.overviewPathOverlay = event.target.checked;
-        drawOverview();
-      });
-      oc$('oc-vp-x-visible')?.addEventListener('input', (event) => {
-        OC.vanishX = Number(event.target.value);
-        oc$('oc-vp-x-visible-out').textContent = OC.vanishX.toFixed(1);
-        drawFrame();
-      });
-      oc$('oc-vp-y-visible')?.addEventListener('input', (event) => {
-        OC.vanishY = Number(event.target.value);
-        oc$('oc-vp-y-visible-out').textContent = OC.vanishY.toFixed(2);
-        drawFrame();
-      });
-    }
-
-    document.querySelectorAll('.hf-slider-row span').forEach((span) => {
-      if (span.textContent === 'Object Size') span.textContent = 'Scale';
-      if (span.textContent === 'Alpha') span.textContent = 'Opacity';
-    });
-  }
-
-  const previousEnsureMountedV267 = ensureMounted;
-  ensureMounted = function ensureMountedV267() {
-    previousEnsureMountedV267();
-    installVisibleHelpersV267();
+    regenerateCourse();
     updateScreenFilters();
-    createLayerSliders();
-    drawOverview();
-  };
-
-  const previousRegenerateCourseV267 = regenerateCourse;
-  regenerateCourse = function regenerateCourseV267() {
-    previousRegenerateCourseV267();
-    installVisibleHelpersV267();
-    updateScreenFilters();
-    drawOverview();
-  };
-  function injectStylesV267() {
-    if (oc$('oc-v267-styles')) return;
-    const style = document.createElement('style');
-    style.id = 'oc-v267-styles';
-    style.textContent = `
-      .oc-powerbar-wrap{position:relative;width:230px;height:73px;margin:0 auto 4px;overflow:visible}
-      .oc-powerbar-empty,.oc-powerbar-full,.oc-powerbar-full-clip{position:absolute;left:0;top:0;width:230px;height:73px;background-image:url('./assets/ui/powerbars.png');background-repeat:no-repeat;background-size:230px auto;pointer-events:none}
-      .oc-powerbar-empty{background-position:0 -175px}
-      .oc-powerbar-full-clip{overflow:hidden;width:0;background:none;transition:width .08s linear}
-      .oc-powerbar-full{background-position:0 -104px}
-      .oc-powerbar-emoji{position:absolute;left:14px;top:19px;z-index:3;font-size:24px;line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.8));pointer-events:none}
-      .obstacle-speed-badge{width:260px!important;background:transparent!important;border:0!important;padding:0!important;box-shadow:none!important}
-      .obstacle-three-wrap canvas{filter:brightness(var(--oc-brightness,1)) contrast(var(--oc-contrast,1)) saturate(var(--oc-saturation,1))!important}
-      .field-check{display:flex!important;align-items:center;gap:8px;color:var(--muted,#c9bfae);font-size:.72rem;font-weight:800;margin:8px 0}.field-check input{width:auto!important}
-      .hf-export-json-button + #hf-import-json-file + .hf-export-json-button{display:block;width:100%}
-    `;
-    document.head.appendChild(style);
+    setResult('Imported obstacle course JSON settings.', 'success');
+  } catch (error) {
+    setResult(`JSON import failed: ${error.message}`, 'failure');
+  } finally {
+    event.target.value = '';
   }
-
-  injectStylesV267();
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => { injectStylesV267(); installVisibleHelpersV267(); }, { once: true });
-  } else {
-    injectStylesV267();
-    installVisibleHelpersV267();
-  }
-})();
+}
