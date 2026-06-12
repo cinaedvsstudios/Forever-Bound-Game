@@ -1,12 +1,12 @@
-// Obstacle Course V2.7.1 / Horse Forest Runner
+// Obstacle Course V2.7.2 / Horse Forest Runner
 // Consolidated runtime: no post-load patch stack.
 // The obstacle-course UI, generation, alpha-path logic, GLB controls, overview, HUD, and JSON settings live here.
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
 
-const VERSION = 'V2.7.1';
-const CACHE_VERSION = '2.7.1';
+const VERSION = 'V2.7.2';
+const CACHE_VERSION = '2.7.2';
 const ASSET_BASE = './assets/';
 const SHARED_UI_BASE = '../../../shared/ui/';
 const GROUND_Y = -1.62;
@@ -134,6 +134,8 @@ const OC = {
   loadingDone: false,
   renderLoopRunning: false,
   renderLoopTick: false,
+  overviewRaf: 0,
+  selectedLayerHelper: null,
   loadingTotal: 0,
   loadingCount: 0,
   textureLoader: null,
@@ -209,7 +211,7 @@ function injectStyles() {
     .obstacle-header-line h2{font-family:Cinzel,Georgia,serif;margin:.2rem 0;font-size:1.35rem}.obstacle-header-line .eyebrow{font-size:.66rem;color:#9ee6a4;font-weight:900;letter-spacing:.18em;text-transform:uppercase}
     .obstacle-header-line p{margin:.3rem 0;color:#c9bfae;font-size:.78rem}.obstacle-status-pill{border:1px solid rgba(238,196,90,.55);border-radius:999px;padding:8px 10px;color:#eec45a;font-weight:900;font-size:.72rem}
     .obstacle-three-wrap{position:relative;width:100%;aspect-ratio:16/9;min-height:360px;border:1px solid rgba(124,202,125,.24);border-radius:14px;overflow:hidden;background:#05080d}
-    .obstacle-three-wrap canvas{display:block;width:100%!important;height:100%!important;filter:brightness(var(--oc-brightness,1)) contrast(var(--oc-contrast,1)) saturate(var(--oc-saturation,1))!important}
+    .obstacle-three-wrap canvas{display:block;width:100%!important;height:100%!important;filter:brightness(var(--oc-brightness,1)) contrast(var(--oc-contrast,1)) saturate(var(--oc-saturation,1))}
     .obstacle-tint-overlay{position:absolute;inset:0;z-index:6;pointer-events:none;background:var(--oc-tint,#000);opacity:var(--oc-tint-opacity,0);mix-blend-mode:color}
     .obstacle-horse-overlay{position:absolute;left:50%;bottom:-38px;z-index:7;width:430px;height:247px;margin-left:-215px;pointer-events:none;filter:drop-shadow(0 7px 9px rgba(0,0,0,.72));opacity:.98;background-image:url('${ASSETS.horse}');background-repeat:no-repeat;background-size:700% 100%;background-position:50% 100%;transition:background-position .08s linear}
     .obstacle-hud{position:absolute;left:14px;right:14px;bottom:12px;z-index:8;display:flex;justify-content:space-between;gap:12px;pointer-events:none;color:#f4ead4;font-size:.75rem;text-shadow:0 2px 5px rgba(0,0,0,.8)}
@@ -261,38 +263,24 @@ function mountLayout() {
         <section class="hf-overview-wrap"><canvas id="hf-overview" class="hf-overview" width="280" height="500"></canvas></section>
       </section>
       <aside class="obstacle-side-card">
-        <section class="hf-control-section"><h3>Construction</h3>
-          <label class="field-block"><span>Course Template</span><select id="obstacle-template"><option value="horse_forest_easy">Obstacle Course</option><option value="horse_forest_dense">Dense Forest Course</option><option value="horse_forest_night">Moonlit Forest Course</option></select></label>
-          <label class="range-row"><span>Difficulty <output id="obstacle-difficulty-out">${OC.difficulty}</output></span><input id="obstacle-difficulty" type="range" min="1" max="5" step="1" value="${OC.difficulty}"></label>
-          <label class="range-row"><span>Course Distance <output id="obstacle-distance-out">${OC.courseLength}</output></span><input id="obstacle-distance" type="range" min="700" max="3000" step="50" value="${OC.courseLength}"></label>
-          <label class="range-row"><span>Forest Distance From Path Edge <output id="obstacle-scenery-distance-out">${OC.sceneryDistance.toFixed(1)}</output></span><input id="obstacle-scenery-distance" type="range" min="0.2" max="10" step="0.1" value="${OC.sceneryDistance}"></label>
-          <button id="obstacle-regenerate" class="wide-button" type="button">Regenerate Obstacle Course</button>
-        </section>
-        <section class="hf-layer-panel"><h3>View Helpers</h3>
-          <label class="field-check"><input id="oc-ground-grid-toggle" type="checkbox"> Show ground grid</label>
-          <label class="field-check"><input id="oc-overview-path-overlay" type="checkbox" checked> Show path alpha on overview</label>
-          <label class="range-row"><span>Vanishing Point X <output id="oc-vp-x-out">0.0</output></span><input id="oc-vp-x" type="range" min="-50" max="50" step="0.5" value="0"></label>
-          <label class="range-row"><span>Vanishing Point Y <output id="oc-vp-y-out">0.35</output></span><input id="oc-vp-y" type="range" min="-50" max="50" step="0.5" value="0.35"></label>
+        <section class="hf-layer-panel"><h3>Layer Controls</h3>
+          <label class="field-block"><span>Selected layer</span><select id="hf-layer-select"><option value="path">Path</option></select></label>
+          <div class="hf-button-row"><button id="hf-layer-visible" type="button">Hide/Show</button><button id="hf-layer-solo" type="button">Solo</button><button id="hf-layer-all" type="button">All</button></div>
+          <div class="hf-button-row" style="margin-top:7px"><button id="hf-layer-above" type="button">Above</button><button id="hf-layer-below" type="button">Below</button><button id="hf-white-bg" type="button">BG White</button></div>
+          <div id="hf-layer-selected-label" class="hint-text" style="margin-top:8px">Layer controls load after the course generates.</div>
+          <div id="hf-layer-sliders"></div>
         </section>
         <section class="hf-layer-panel"><h3>Global Visual</h3>
           <div id="hf-global-sliders"></div>
         </section>
-        <section class="hf-layer-panel"><h3>Layer Controls</h3>
-          <label class="field-block"><span>Selected layer</span><select id="hf-layer-select"></select></label>
-          <div class="hf-button-row"><button id="hf-layer-visible" type="button">Hide/Show</button><button id="hf-layer-solo" type="button">Solo</button><button id="hf-layer-all" type="button">All</button></div>
-          <div class="hf-button-row" style="margin-top:7px"><button id="hf-layer-above" type="button">Above</button><button id="hf-layer-below" type="button">Below</button><button id="hf-white-bg" type="button">BG White</button></div>
-          <div id="hf-layer-sliders"></div>
-        </section>
-        <section class="hf-control-section"><h3>Overview Key</h3><div class="hf-key-list"><div><span class="hf-key-dot hf-key-path"></span>Path</div><div><span class="hf-key-dot hf-key-tree"></span>Tree</div><div><span class="hf-key-dot hf-key-rock"></span>Rock</div><div><span class="hf-key-dot hf-key-collectible"></span>Collectible</div><div><span class="hf-key-dot hf-key-obstacle"></span>Obstacle</div></div></section>
-        <section class="hf-control-section"><h3>Settings</h3><button id="hf-export-json" class="hf-export-json-button" type="button">Download JSON</button><input id="hf-import-json-file" type="file" accept="application/json,.json" hidden><button id="hf-import-json" class="hf-export-json-button" type="button" style="margin-top:8px">Import JSON Settings</button></section>
       </aside>
     </div>
   `;
+  OC.host = OC.rightPanel.querySelector('.obstacle-app');
   OC.stage = $('obstacle-stage');
   mountLeftPanel();
-  populateLayerSelect();
   createGlobalSliders();
-  createLayerSliders();
+  updateScreenFilters();
   updateStats();
 }
 
@@ -300,6 +288,21 @@ function mountLeftPanel() {
   if (!OC.leftPanel) return;
   OC.leftPanel.innerHTML = `
     <section class="panel tool-panel obstacle-panel"><div class="panel-title-row"><div><p class="eyebrow">Obstacle Course · ${VERSION}</p><h2>Obstacle Course</h2></div><span class="status-pill">${VERSION}</span></div><p class="obstacle-panel-copy">Course editor controls use transparent path segment WEBPs over forest_ground.webp.</p><p class="hint-text">Forest Distance From Path Edge controls X distance from the visible path edge, not forward Z distance.</p></section>
+    <section class="hf-control-section"><h3>Construction</h3>
+      <label class="field-block"><span>Course Template</span><select id="obstacle-template"><option value="horse_forest_easy">Obstacle Course</option><option value="horse_forest_dense">Dense Forest Course</option><option value="horse_forest_night">Moonlit Forest Course</option></select></label>
+      <label class="range-row"><span>Difficulty <output id="obstacle-difficulty-out">${OC.difficulty}</output></span><input id="obstacle-difficulty" type="range" min="1" max="5" step="1" value="${OC.difficulty}"></label>
+      <label class="range-row"><span>Course Distance <output id="obstacle-distance-out">${OC.courseLength}</output></span><input id="obstacle-distance" type="range" min="700" max="3000" step="50" value="${OC.courseLength}"></label>
+      <label class="range-row"><span>Forest Distance From Path Edge <output id="obstacle-scenery-distance-out">${OC.sceneryDistance.toFixed(1)}</output></span><input id="obstacle-scenery-distance" type="range" min="0.2" max="10" step="0.1" value="${OC.sceneryDistance}"></label>
+      <button id="obstacle-regenerate" class="wide-button" type="button">Regenerate Obstacle Course</button>
+    </section>
+    <section class="hf-layer-panel"><h3>View Helpers</h3>
+      <label class="field-check"><input id="oc-ground-grid-toggle" type="checkbox"> Show ground grid</label>
+      <label class="field-check"><input id="oc-overview-path-overlay" type="checkbox" checked> Show path alpha on overview</label>
+      <label class="range-row"><span>Vanishing Point X <output id="oc-vp-x-out">${(OC.vanishX || 0).toFixed(1)}</output></span><input id="oc-vp-x" type="range" min="-50" max="50" step="0.5" value="${OC.vanishX || 0}"></label>
+      <label class="range-row"><span>Vanishing Point Y <output id="oc-vp-y-out">${(OC.vanishY ?? 0.35).toFixed(2)}</output></span><input id="oc-vp-y" type="range" min="-50" max="50" step="0.5" value="${OC.vanishY ?? 0.35}"></label>
+    </section>
+    <section class="hf-control-section"><h3>Overview Key</h3><div class="hf-key-list"><div><span class="hf-key-dot hf-key-path"></span>Path</div><div><span class="hf-key-dot hf-key-tree"></span>Tree</div><div><span class="hf-key-dot hf-key-rock"></span>Rock</div><div><span class="hf-key-dot hf-key-collectible"></span>Collectible</div><div><span class="hf-key-dot hf-key-obstacle"></span>Obstacle</div></div></section>
+    <section class="hf-control-section"><h3>Settings</h3><button id="hf-export-json" class="hf-export-json-button" type="button">Download JSON</button><input id="hf-import-json-file" type="file" accept="application/json,.json" hidden><button id="hf-import-json" class="hf-export-json-button" type="button" style="margin-top:8px">Import JSON Settings</button></section>
   `;
 }
 
@@ -627,8 +630,11 @@ function createLayerSliders() {
   const host = $('hf-layer-sliders');
   if (!host) return;
   host.innerHTML = '';
+  const label = $('hf-layer-selected-label');
+  if (label) label.textContent = OC.selectedLayerId === 'glbAsset' ? 'Selected: GLB Asset' : `Selected: ${OC.layers.get(OC.selectedLayerId)?.label || OC.selectedLayerId}`;
   if (OC.selectedLayerId === 'glbAsset') {
     createGlbAssetSliders(host);
+    refreshGlbSelectionBoxes();
     return;
   }
   const layer = OC.layers.get(OC.selectedLayerId);
@@ -656,7 +662,9 @@ function createLayerSliders() {
   tintRow.innerHTML = `<span>Layer Tint</span><input id="hf-layer-tint" type="color" value="${layer.tint || '#ffffff'}">`;
   host.appendChild(tintRow);
   tintRow.querySelector('input').addEventListener('input', (event) => { layer.tint = event.target.value; applyLayer(layer); drawFrame(); });
+  refreshGlbSelectionBoxes();
 }
+
 
 function glbControl(url) {
   if (!url) return null;
@@ -735,19 +743,24 @@ function toggleWhiteBackground() {
 }
 
 function updateScreenFilters() {
-  const canvas = OC.renderer?.domElement;
   const filter = `brightness(${OC.screenBrightness || 1}) contrast(${OC.screenContrast || 1}) saturate(${OC.screenSaturation || 1})`;
+  const targets = [document.documentElement, OC.host, OC.stage].filter(Boolean);
+  targets.forEach((node) => {
+    node.style.setProperty('--oc-brightness', String(OC.screenBrightness || 1));
+    node.style.setProperty('--oc-contrast', String(OC.screenContrast || 1));
+    node.style.setProperty('--oc-saturation', String(OC.screenSaturation || 1));
+    node.style.setProperty('--oc-tint', OC.screenTint || '#000000');
+    node.style.setProperty('--oc-tint-opacity', String(OC.screenTintStrength || 0));
+  });
+  const canvas = OC.renderer?.domElement;
   if (canvas) canvas.style.filter = filter;
-  if (OC.host) {
-    OC.host.style.setProperty('--oc-brightness', String(OC.screenBrightness || 1));
-    OC.host.style.setProperty('--oc-contrast', String(OC.screenContrast || 1));
-    OC.host.style.setProperty('--oc-saturation', String(OC.screenSaturation || 1));
-  }
   const tint = document.querySelector('.obstacle-tint-overlay');
   if (tint) {
     tint.style.setProperty('--oc-tint', OC.screenTint || '#000000');
     tint.style.setProperty('--oc-tint-opacity', String(OC.screenTintStrength || 0));
+    tint.style.opacity = String(OC.screenTintStrength || 0);
   }
+  renderOnce();
 }
 
 function generatePathSequence() {
@@ -1006,7 +1019,7 @@ function visibleCollectiblePathX(distance) {
       if (alpha >= OC.pathAlphaThreshold) candidates.push({ x, alpha, bias: Math.abs(x - centre) });
     }
   }
-  if (!candidates.length) return centre;
+  if (!candidates.length) return null;
   candidates.sort((a, b) => (a.bias - b.bias) || (b.alpha - a.alpha));
   return pick(candidates.slice(0, Math.min(8, candidates.length))).x;
 }
@@ -1058,13 +1071,18 @@ function registerGlbInstance(obj, assetType, x, z) {
 
 function buildTreeCorridor(parent) {
   const template = TEMPLATES[OC.templateId] || TEMPLATES.horse_forest_easy;
-  const step = Math.max(11, 22 / template.treeRate);
-  for (let d = 26; d < OC.courseLength + 250; d += step) {
+  const step = Math.max(32, 52 / template.treeRate);
+  const maxTrees = Math.min(170, Math.round(70 + OC.courseLength / 18));
+  let made = 0;
+  for (let d = 32; d < OC.courseLength + 210 && made < maxTrees; d += step) {
     [-1, 1].forEach((side) => {
-      for (let row = 0; row < 5; row += 1) {
-        if (Math.random() > 0.78 && row > 1) continue;
-        const offset = (OC.pathVisualWidth * 0.5) + OC.sceneryDistance + row * rand(2.6, 4.8) + rand(0.2, 1.6);
-        addTreeAt(parent, d + rand(-6, 9), side, offset, rand(6.5, 15));
+      if (made >= maxTrees) return;
+      const rows = OC.templateId === 'horse_forest_dense' ? 3 : 2;
+      for (let row = 0; row < rows && made < maxTrees; row += 1) {
+        if (row > 0 && Math.random() > 0.62) continue;
+        const offset = (OC.pathVisualWidth * 0.5) + OC.sceneryDistance + row * rand(4.2, 7.5) + rand(0.4, 2.2);
+        addTreeAt(parent, d + rand(-8, 10), side, offset, rand(6.5, 15));
+        made += 1;
       }
     });
   }
@@ -1082,8 +1100,14 @@ function addTreeAt(parent, distance, side, offset, height) {
 
 function scatterForestFloorDetail(parent) {
   const template = TEMPLATES[OC.templateId] || TEMPLATES.horse_forest_easy;
-  for (let d = 18; d < OC.courseLength + 260; d += rand(10, 18) / template.rockRate) {
-    [-1, 1].forEach((side) => addSceneryRock(parent, pathCenterAt(d) + side * rand(OC.pathVisualWidth * 0.5 + 0.8, OC.pathVisualWidth * 0.5 + OC.sceneryDistance + 5), d + rand(-4, 4)));
+  const maxRocks = Math.min(120, Math.round(42 + OC.courseLength / 28));
+  let made = 0;
+  for (let d = 22; d < OC.courseLength + 240 && made < maxRocks; d += rand(18, 34) / template.rockRate) {
+    [-1, 1].forEach((side) => {
+      if (made >= maxRocks || Math.random() > 0.74) return;
+      addSceneryRock(parent, pathCenterAt(d) + side * rand(OC.pathVisualWidth * 0.5 + 1.2, OC.pathVisualWidth * 0.5 + OC.sceneryDistance + 7), d + rand(-5, 5));
+      made += 1;
+    });
   }
 }
 
@@ -1097,16 +1121,20 @@ function addSceneryRock(parent, x, distance) {
 
 function scatterPathEdgeDetails(parent) {
   const template = TEMPLATES[OC.templateId] || TEMPLATES.horse_forest_easy;
-  for (let d = 22; d < OC.courseLength + 230; d += rand(8, 14) / template.detailRate) {
+  const maxDetails = Math.min(160, Math.round(55 + OC.courseLength / 20));
+  let made = 0;
+  for (let d = 28; d < OC.courseLength + 220 && made < maxDetails; d += rand(18, 30) / template.detailRate) {
     [-1, 1].forEach((side) => {
-      if (Math.random() > 0.68) return;
+      if (made >= maxDetails || Math.random() > 0.72) return;
       const detail = createGlbModel('detail', rand(0.9, 2.2));
       if (!detail) return;
-      const x = pathCenterAt(d) + side * rand(OC.pathVisualWidth * 0.38, OC.pathVisualWidth * 0.54);
+      const edgeX = nearestVisiblePathX(d, pathCenterAt(d) + side * (OC.pathVisualWidth * 0.48));
+      const x = edgeX + side * rand(0.45, 1.9);
       detail.position.set(x, GROUND_Y + 0.02, -d);
       detail.rotation.y = rand(0, Math.PI * 2);
       parent.add(detail);
       registerGlbInstance(detail, 'detail', x, -d);
+      made += 1;
     });
   }
 }
@@ -1115,7 +1143,8 @@ function addObstacles(count) {
   const parent = OC.layers.get('obstacles')?.group || OC.world;
   for (let i = 0; i < count; i += 1) {
     const distance = 85 + Math.random() * Math.max(80, OC.courseLength - 170);
-    const x = visibleCollectiblePathX(distance) + rand(-1.2, 1.2);
+    const visibleX = visibleCollectiblePathX(distance);
+    const x = (visibleX === null || visibleX === undefined ? pathCenterAt(distance) : visibleX) + rand(-1.2, 1.2);
     const obj = createGlbModel('rock', rand(1.4, 2.8)) || new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), new THREE.MeshStandardMaterial({ color: 0x55423d, roughness: 1 }));
     obj.position.set(x, GROUND_Y + 0.3, -distance);
     obj.rotation.y = rand(0, Math.PI * 2);
@@ -1133,6 +1162,7 @@ function addCollectibles(count) {
   for (let i = 0; i < total; i += 1) {
     const distance = 65 + Math.random() * Math.max(80, OC.courseLength - 120);
     const x = visibleCollectiblePathX(distance);
+    if (x === null || x === undefined) continue;
     const obj = createGlbModel('collectible', Math.random() < 0.55 ? rand(1.3, 1.8) : rand(0.9, 1.35)) || new THREE.Mesh(new THREE.OctahedronGeometry(0.46, 0), new THREE.MeshBasicMaterial({ color: 0xeec45a, transparent: true, opacity: 0.95 }));
     obj.position.set(x, GROUND_Y + rand(0.22, 0.62), -distance);
     obj.rotation.y = rand(0, Math.PI * 2);
@@ -1181,13 +1211,22 @@ function clearSelectionBoxes() {
 
 function refreshGlbSelectionBoxes() {
   clearSelectionBoxes();
-  if (OC.selectedLayerId !== 'glbAsset' || !OC.selectedGlbAssetUrl || !OC.scene) return;
-  OC.glbInstances.filter((obj) => obj.userData.glbAssetUrl === OC.selectedGlbAssetUrl).forEach((obj) => {
-    const helper = new THREE.BoxHelper(obj, 0xeec45a);
-    helper.renderOrder = 999;
-    OC.scene.add(helper);
-    OC.selectionBoxes.push(helper);
-  });
+  if (!OC.scene) return;
+  if (OC.selectedLayerId === 'glbAsset' && OC.selectedGlbAssetUrl) {
+    OC.glbInstances.filter((obj) => obj.userData.glbAssetUrl === OC.selectedGlbAssetUrl).forEach((obj) => {
+      const helper = new THREE.BoxHelper(obj, 0xeec45a);
+      helper.renderOrder = 999;
+      OC.scene.add(helper);
+      OC.selectionBoxes.push(helper);
+    });
+    return;
+  }
+  const layer = OC.layers.get(OC.selectedLayerId);
+  if (!layer?.group || !layer.group.children.length) return;
+  const helper = new THREE.BoxHelper(layer.group, 0xeec45a);
+  helper.renderOrder = 999;
+  OC.scene.add(helper);
+  OC.selectionBoxes.push(helper);
 }
 
 function startRun() {
@@ -1518,9 +1557,17 @@ function worldToOverview(x, z) {
 }
 
 function drawOverview() {
+  if (OC.overviewRaf) return;
+  OC.overviewRaf = requestAnimationFrame(() => {
+    OC.overviewRaf = 0;
+    renderOverview();
+  });
+}
+
+function renderOverview() {
   const c = $('hf-overview');
   if (!c) return;
-  const height = Math.max(340, Math.min(2400, Math.round((OC.courseLength + 300) / 3.0)));
+  const height = Math.max(340, Math.min(1800, Math.round((OC.courseLength + 300) / 3.4)));
   if (c.height !== height) c.height = height;
   const ctx = c.getContext('2d');
   ctx.clearRect(0, 0, c.width, c.height);
@@ -1528,15 +1575,15 @@ function drawOverview() {
   ctx.fillRect(0, 0, c.width, c.height);
 
   if (OC.overviewPathOverlay) {
-    ctx.fillStyle = 'rgba(238,196,90,.26)';
-    for (let d = 0; d < OC.courseLength; d += 9) {
+    ctx.fillStyle = 'rgba(238,196,90,.28)';
+    for (let d = 0; d < OC.courseLength; d += 18) {
       const seg = alphaSegmentAt(d);
       if (!seg) continue;
       const meshCenterX = (seg.startX + seg.endX) / 2;
-      for (let x = meshCenterX - OC.pathVisualWidth * 0.50; x <= meshCenterX + OC.pathVisualWidth * 0.50; x += 1.1) {
+      for (let x = meshCenterX - OC.pathVisualWidth * 0.50; x <= meshCenterX + OC.pathVisualWidth * 0.50; x += 2.4) {
         if ((pathAlphaAtWorld(x, d) || 0) >= OC.pathAlphaThreshold) {
           const p = worldToOverview(x, -d);
-          ctx.fillRect(p.x - 1.2, p.y - 1.2, 2.4, 2.4);
+          ctx.fillRect(p.x - 1.3, p.y - 1.3, 2.6, 2.6);
         }
       }
     }
@@ -1545,7 +1592,7 @@ function drawOverview() {
   ctx.strokeStyle = '#d09a55';
   ctx.lineWidth = 4;
   ctx.beginPath();
-  for (let d = 0; d < OC.courseLength; d += 18) {
+  for (let d = 0; d < OC.courseLength; d += 20) {
     const p = worldToOverview(pathCenterAt(d), -d);
     if (d === 0) ctx.moveTo(p.x, p.y);
     else ctx.lineTo(p.x, p.y);
@@ -1561,13 +1608,25 @@ function drawOverview() {
     markers.push(item);
   });
 
+  const selectedType = OC.selectedLayerId === 'trees' ? 'tree'
+    : OC.selectedLayerId === 'rocks' ? 'rock'
+    : OC.selectedLayerId === 'details' ? 'detail'
+    : OC.selectedLayerId === 'collectibles' ? 'collectible'
+    : OC.selectedLayerId === 'obstacles' ? 'obstacle'
+    : null;
+
   markers.forEach((item) => {
     const p = worldToOverview(item.x, item.z);
     const type = item.type;
     ctx.fillStyle = type === 'tree' ? '#48a24a' : type === 'rock' ? '#aaa' : type === 'detail' ? '#73c470' : type === 'collectible' ? '#5be5ff' : '#b04b35';
     ctx.beginPath();
-    ctx.arc(p.x, p.y, type === 'tree' ? 4 : 3.3, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, type === selectedType ? 5.6 : type === 'tree' ? 3.7 : 3.1, 0, Math.PI * 2);
     ctx.fill();
+    if (type === selectedType) {
+      ctx.strokeStyle = '#eec45a';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
   });
 
   const player = worldToOverview(playerWorldX(), -OC.distance);
