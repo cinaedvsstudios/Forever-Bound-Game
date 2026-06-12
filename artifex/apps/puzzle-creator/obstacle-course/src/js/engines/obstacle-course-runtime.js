@@ -1,4 +1,4 @@
-// Obstacle Course V2.6.1 / Horse Forest Runner V29.1
+// Obstacle Course V2.6.2 / Horse Forest Runner V29.2
 // Clean consolidated live engine: no layout/control patch stack.
 // Features: horse POV, modular transparent WEBP path segments, forest_ground WEBP ground,
 // hold-to-move forward/backward, Ctrl duck, hold-extended jump, and off-path slow-trot penalty.
@@ -371,7 +371,7 @@ function ensureMounted() {
   OC.stage.innerHTML = `
     <div class="obstacle-workspace">
       <section class="obstacle-view-card">
-        <div class="obstacle-header-line"><div><p class="eyebrow">Obstacle Course · V2.6.1</p><h2 id="obstacle-title">Obstacle Course</h2><p id="obstacle-objective">Horse forest obstacle course using modular transparent WEBP path segments over forest_ground.webp.</p></div><span id="obstacle-status" class="obstacle-status-pill">Ready</span></div>
+        <div class="obstacle-header-line"><div><p class="eyebrow">Obstacle Course · V2.6.2</p><h2 id="obstacle-title">Obstacle Course</h2><p id="obstacle-objective">Horse forest obstacle course using modular transparent WEBP path segments over forest_ground.webp.</p></div><span id="obstacle-status" class="obstacle-status-pill">Ready</span></div>
         <div id="obstacle-three-host" class="obstacle-three-wrap"><div class="obstacle-reticle"></div><div class="obstacle-horse-overlay"></div><div class="obstacle-tint-overlay"></div><div id="obstacle-speed-badge" class="obstacle-speed-badge">Speed 0</div><div class="obstacle-hud"><span>Start Test = begin run · Hold ↑/W move · ↓/S back · Ctrl duck · Space jump</span><span id="obstacle-course-summary">0m / 0m</span></div></div>
         <div class="obstacle-help-strip"><span>Path pieces use 1000×2000 WEBP with 250px overlap. Off path slows to trot.</span><span id="hf-tree-status">GLB trees: loading…</span></div>
         <div class="obstacle-control-row"><button id="obstacle-start" type="button">Start Test</button><button id="obstacle-pause" type="button">Pause</button><button id="obstacle-reset-run" type="button">Reset Run</button></div>
@@ -391,7 +391,7 @@ function ensureMounted() {
   OC.panels.id = 'obstacle-course-panels';
   OC.panels.hidden = true;
   OC.panels.innerHTML = `
-    <section class="panel tool-panel obstacle-panel" data-obstacle-panel="build"><div class="panel-title-row"><div><p class="eyebrow">01 · Construction</p><h2>Obstacle Course</h2></div><span class="status-pill is-waiting">V2.6.1</span></div><p class="obstacle-panel-copy">Course editor controls use transparent path segment WEBPs over forest_ground.webp.</p><label class="field-block"><span>Course Template</span><select id="obstacle-template"><option value="horse_forest_easy">Obstacle Course</option><option value="horse_forest_dense">Dense Forest Course</option><option value="horse_forest_night">Moonlit Forest Course</option></select></label><label class="range-row"><span>Difficulty <output id="obstacle-difficulty-out">2</output></span><input id="obstacle-difficulty" type="range" min="1" max="5" value="2" /></label><label class="range-row"><span>Course Duration <output id="obstacle-duration-out">45s</output></span><input id="obstacle-duration" type="range" min="20" max="300" step="5" value="45" /></label><button id="obstacle-regenerate" class="wide-button" type="button">Regenerate Obstacle Course</button><label class="range-row"><span>Forest Edge Distance <output id="obstacle-scenery-distance-out">1.6</output></span><input id="obstacle-scenery-distance" type="range" min="0.6" max="6" step="0.1" value="1.6" /></label><section class="hf-key-panel"><h3>Overview Key</h3><div class="hf-key-list"><div><span class="hf-key-dot hf-key-path"></span>Path</div><div><span class="hf-key-dot hf-key-tree"></span>Tree</div><div><span class="hf-key-dot hf-key-rock"></span>Rock</div><div><span class="hf-key-dot hf-key-collectible"></span>Collectible</div><div><span class="hf-key-dot hf-key-obstacle"></span>Obstacle</div></div></section><div id="horse-run-controls-left-slot"><button id="obstacle-start-left" type="button">Start Test</button><button id="obstacle-pause-left" type="button">Pause</button><button id="obstacle-reset-run-left" type="button">Reset Run</button></div></section>
+    <section class="panel tool-panel obstacle-panel" data-obstacle-panel="build"><div class="panel-title-row"><div><p class="eyebrow">01 · Construction</p><h2>Obstacle Course</h2></div><span class="status-pill is-waiting">V2.6.2</span></div><p class="obstacle-panel-copy">Course editor controls use transparent path segment WEBPs over forest_ground.webp.</p><label class="field-block"><span>Course Template</span><select id="obstacle-template"><option value="horse_forest_easy">Obstacle Course</option><option value="horse_forest_dense">Dense Forest Course</option><option value="horse_forest_night">Moonlit Forest Course</option></select></label><label class="range-row"><span>Difficulty <output id="obstacle-difficulty-out">2</output></span><input id="obstacle-difficulty" type="range" min="1" max="5" value="2" /></label><label class="range-row"><span>Course Duration <output id="obstacle-duration-out">45s</output></span><input id="obstacle-duration" type="range" min="20" max="300" step="5" value="45" /></label><button id="obstacle-regenerate" class="wide-button" type="button">Regenerate Obstacle Course</button><label class="range-row"><span>Forest Edge Distance <output id="obstacle-scenery-distance-out">1.6</output></span><input id="obstacle-scenery-distance" type="range" min="0.6" max="6" step="0.1" value="1.6" /></label><section class="hf-key-panel"><h3>Overview Key</h3><div class="hf-key-list"><div><span class="hf-key-dot hf-key-path"></span>Path</div><div><span class="hf-key-dot hf-key-tree"></span>Tree</div><div><span class="hf-key-dot hf-key-rock"></span>Rock</div><div><span class="hf-key-dot hf-key-collectible"></span>Collectible</div><div><span class="hf-key-dot hf-key-obstacle"></span>Obstacle</div></div></section><div id="horse-run-controls-left-slot"><button id="obstacle-start-left" type="button">Start Test</button><button id="obstacle-pause-left" type="button">Pause</button><button id="obstacle-reset-run-left" type="button">Reset Run</button></div></section>
     <section class="panel tool-panel obstacle-panel" data-obstacle-panel="display" hidden><div class="panel-title-row"><div><p class="eyebrow">02 · Display</p><h2>Ground Relief</h2></div></div><label class="range-row"><span>Bump Strength <output id="obstacle-bump-out">0.12</output></span><input id="obstacle-bump" type="range" min="0" max="0.45" step="0.01" value="0.12" /></label><label class="range-row"><span>Displacement Strength <output id="obstacle-displacement-out">0.035</output></span><input id="obstacle-displacement" type="range" min="0" max="0.18" step="0.005" value="0.035" /></label><label class="range-row"><span>Horse Speed <output id="obstacle-speed-out">34</output></span><input id="obstacle-speed" type="range" min="18" max="64" step="2" value="34" /></label><label class="range-row"><span>Overall Brightness <output id="obstacle-brightness-out">100%</output></span><input id="obstacle-brightness" type="range" min="55" max="150" step="5" value="100" /></label><label class="field-block"><span>Screen Tint</span><input id="obstacle-tint" type="color" value="#000000" /></label><label class="range-row"><span>Tint Strength <output id="obstacle-tint-strength-out">0%</output></span><input id="obstacle-tint-strength" type="range" min="0" max="65" step="5" value="0" /></label><label class="range-row"><span>Lane Width <output id="obstacle-lane-width-out">2.7</output></span><input id="obstacle-lane-width" type="range" min="1.8" max="5" step="0.1" value="2.7" /></label></section>
     <section class="panel tool-panel obstacle-panel" data-obstacle-panel="logic" hidden><div class="panel-title-row"><div><p class="eyebrow">03 · Logic</p><h2>Scoring</h2></div></div><label class="range-row"><span>Success Score <output id="obstacle-success-score-out">20</output></span><input id="obstacle-success-score" type="range" min="0" max="80" step="5" value="20" /></label></section>`;
   leftBody.appendChild(OC.panels);
@@ -1086,7 +1086,7 @@ window.__artifexObstacleCourse = {
 };
 
 // --- V2.6 obstacle-course final control/asset patch ---
-(function installObstacleCourseV25FinalPatch(){
+(function installObstacleCourseV26FinalPatch(){
   if (OC.__v26FinalPatchInstalled) return;
   OC.__v26FinalPatchInstalled = true;
 
@@ -1654,6 +1654,522 @@ window.__artifexObstacleCourse = {
   const oldUpdateScreenFilters = updateScreenFilters;
   updateScreenFilters = function updateScreenFiltersPatched() {
     oldUpdateScreenFilters();
+    if (OC.host) {
+      OC.host.style.setProperty('--oc-contrast', String(OC.screenContrast || 1));
+      OC.host.style.setProperty('--oc-saturation', String(OC.screenSaturation || 1));
+    }
+  };
+})();
+
+
+// --- V2.6.2 obstacle-course view, GLB asset, collectible, and arrow patch ---
+(function installObstacleCourseV262Patch(){
+  if (OC.__v262PatchInstalled) return;
+  OC.__v262PatchInstalled = true;
+
+  OC.versionLabel = 'V2.6.2';
+  OC.vanishX = OC.vanishX ?? 0;
+  OC.vanishY = OC.vanishY ?? 0.35;
+  OC.whiteBackground = false;
+  OC.glbAssetControls = OC.glbAssetControls || new Map();
+  OC.glbInstances = OC.glbInstances || [];
+  OC.glbSelectionHelpers = OC.glbSelectionHelpers || [];
+  OC.selectedGlbAssetUrl = OC.selectedGlbAssetUrl || '';
+  OC.collectibleModels = OC.collectibleModels || [];
+
+  ASSETS.collectibleModels = [
+    `${ASSET_BASE}3d/stylized_glowing_mushrooms.glb`,
+    `${ASSET_BASE}3d/moneysack.glb`,
+  ];
+  ASSETS.details = [
+    `${ASSET_BASE}3d/low_poly_fern.glb`,
+  ];
+
+  const GLB_ASSET_URLS = [
+    ...(ASSETS.trees || []),
+    ...(ASSETS.rocks || []),
+    ...(ASSETS.details || []),
+    ...(ASSETS.collectibleModels || []),
+  ];
+
+  const fileName = (url) => String(url || '').split('/').pop() || String(url || 'GLB asset');
+
+  function glbControl(url) {
+    const key = url || '__none__';
+    if (!OC.glbAssetControls.has(key)) {
+      OC.glbAssetControls.set(key, {
+        x: 0,
+        y: 0,
+        z: 0,
+        scale: 1,
+        opacity: 1,
+        brightness: 1,
+        contrast: 1,
+        saturation: 1,
+        tintStrength: 0,
+        tint: '#ffffff',
+        order: 18,
+      });
+    }
+    return OC.glbAssetControls.get(key);
+  }
+
+  function makeModelEntry(url, gltf) {
+    return { url, name: fileName(url), scene: gltf.scene };
+  }
+
+  function loadCatalog(urls, bucket, label) {
+    urls.forEach((url) => {
+      if (bucket.some((entry) => entry.url === url)) return;
+      OC.gltfLoader.load(`${url}?v=2.6.2`, (gltf) => {
+        if (!gltf.scene) return;
+        gltf.scene.traverse((node) => {
+          if (node.isMesh) {
+            node.castShadow = true;
+            node.receiveShadow = true;
+            if (node.material) {
+              const mats = Array.isArray(node.material) ? node.material : [node.material];
+              mats.forEach((mat) => {
+                if (mat.color && !mat.userData?.__ocBaseColor) {
+                  mat.userData = mat.userData || {};
+                  mat.userData.__ocBaseColor = mat.color.clone();
+                }
+              });
+            }
+          }
+        });
+        bucket.push(makeModelEntry(url, gltf));
+        if (oc$('hf-tree-status')) oc$('hf-tree-status').textContent = `${label}: ${bucket.length} loaded`;
+        refreshGlbAssetSelectOptions();
+        if (OC.active) regenerateCourse();
+      }, undefined, (error) => console.warn('[HorseForest] GLB failed:', url, error));
+    });
+  }
+
+  loadTreeModels = function loadTreeModelsV262() {
+    if (OC.treeLoadStarted) return;
+    OC.treeLoadStarted = true;
+    loadCatalog(ASSETS.trees || [], OC.treeModels, 'GLB trees');
+    loadCatalog(ASSETS.rocks || [], OC.rockModels, 'GLB rocks');
+    loadCatalog(ASSETS.details || [], OC.detailModels, 'GLB ferns');
+    loadCatalog(ASSETS.collectibleModels || [], OC.collectibleModels, 'GLB collectibles');
+  };
+
+  function createGlbModel(bucket, targetHeight) {
+    if (!bucket?.length) return null;
+    const entry = pick(bucket);
+    const root = entry.scene.clone(true);
+    root.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(root);
+    const size = box.getSize(new THREE.Vector3());
+    const scale = targetHeight / Math.max(size.y, 0.001);
+    root.scale.multiplyScalar(scale);
+    root.updateMatrixWorld(true);
+    const box2 = new THREE.Box3().setFromObject(root);
+    const wrapper = new THREE.Group();
+    wrapper.userData.glbAssetUrl = entry.url;
+    wrapper.userData.glbAssetName = entry.name;
+    wrapper.add(root);
+    root.position.set(-(box2.min.x + box2.max.x) / 2, -box2.min.y, -(box2.min.z + box2.max.z) / 2);
+    wrapper.rotation.y = rand(0, Math.PI * 2);
+    wrapper.scale.multiplyScalar(rand(0.88, 1.15));
+    wrapper.traverse((node) => {
+      node.userData = node.userData || {};
+      node.userData.glbAssetUrl = entry.url;
+      node.userData.glbAssetName = entry.name;
+    });
+    return wrapper;
+  }
+
+  function createSimpleTree(targetHeight) {
+    const group = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.22, targetHeight * 0.45, 8), new THREE.MeshLambertMaterial({ color: 0x4f2e18 }));
+    trunk.position.y = targetHeight * 0.225;
+    const crown = new THREE.Mesh(new THREE.ConeGeometry(targetHeight * 0.18, targetHeight * 0.65, 9), new THREE.MeshLambertMaterial({ color: 0x183c1d }));
+    crown.position.y = targetHeight * 0.72;
+    group.add(trunk, crown);
+    return group;
+  }
+
+  function registerGlbInstance(obj, type, x, z) {
+    if (!obj) return;
+    obj.userData = obj.userData || {};
+    obj.userData.ocType = type;
+    obj.userData.basePosition = obj.position.clone();
+    obj.userData.baseScale = obj.scale.clone();
+    if (obj.userData.glbAssetUrl) OC.glbInstances.push(obj);
+    OC.placed.push({ type, x, z, mesh: obj });
+    applyGlbAssetControls(obj);
+  }
+
+  function applyGlbAssetControls(obj) {
+    const url = obj?.userData?.glbAssetUrl;
+    if (!url) return;
+    const cfg = glbControl(url);
+    const basePosition = obj.userData.basePosition || obj.position.clone();
+    const baseScale = obj.userData.baseScale || obj.scale.clone();
+    obj.position.set(basePosition.x + cfg.x, basePosition.y + cfg.y, basePosition.z + cfg.z);
+    obj.scale.copy(baseScale).multiplyScalar(cfg.scale || 1);
+    obj.renderOrder = cfg.order || 0;
+    obj.traverse((node) => {
+      node.renderOrder = cfg.order || 0;
+      if (!node.material) return;
+      const mats = Array.isArray(node.material) ? node.material : [node.material];
+      mats.forEach((mat) => applyMaterialVisuals(mat, cfg));
+    });
+  }
+
+  function applyAllGlbAssetControls() {
+    (OC.glbInstances || []).forEach((obj) => applyGlbAssetControls(obj));
+    refreshGlbSelectionBoxes();
+  }
+
+  const priorClearWorld = clearWorld;
+  clearWorld = function clearWorldV262() {
+    clearGlbSelectionBoxes();
+    OC.glbInstances = [];
+    priorClearWorld();
+  };
+
+  createModelTree = function createModelTreeV262(targetHeight) {
+    return createGlbModel(OC.treeModels, targetHeight) || createSimpleTree(targetHeight);
+  };
+
+  createRock = function createRockV262() {
+    const model = createGlbModel(OC.rockModels, rand(0.9, 1.8));
+    if (model) return model;
+    const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rand(0.45, 0.75), 0), new THREE.MeshLambertMaterial({ color: Math.random() < 0.5 ? 0x62655c : 0x3e443a, flatShading: true }));
+    rock.scale.set(rand(0.8, 1.4), rand(0.45, 0.9), rand(0.75, 1.3));
+    rock.rotation.set(rand(0, Math.PI), rand(0, Math.PI), rand(0, Math.PI));
+    return rock;
+  };
+
+  addTreeAt = function addTreeAtV262(parent, distance, side, height, extra) {
+    const tree = createModelTree(height);
+    if (!tree) return;
+    const x = pathCenterAt(distance) + side * extra;
+    tree.position.set(x, GROUND_Y, -distance);
+    tree.rotation.y = rand(0, Math.PI * 2);
+    tree.rotation.x = rand(-0.04, 0.04);
+    tree.rotation.z = rand(-0.025, 0.025);
+    tree.scale.multiplyScalar(rand(0.86, 1.18));
+    parent.add(tree);
+    registerGlbInstance(tree, 'tree', x, -distance);
+  };
+
+  function addFernAt(parent, distance, side, extra) {
+    const fern = createGlbModel(OC.detailModels, rand(0.65, 1.25));
+    if (!fern) return;
+    const x = pathCenterAt(distance) + side * extra;
+    fern.position.set(x, GROUND_Y + 0.02, -distance);
+    fern.rotation.y = rand(0, Math.PI * 2);
+    parent.add(fern);
+    registerGlbInstance(fern, 'rock', x, -distance);
+  }
+
+  scatterForestFloorDetail = function scatterForestFloorDetailV262(parent) {
+    for (let d = 12; d < OC.courseLength + 260; d += rand(5, 9)) {
+      [-1, 1].forEach((side) => {
+        if (Math.random() < 0.42) {
+          addSceneryRock(parent, pathCenterAt(d) + side * rand(OC.laneWidth + 1.0, OC.laneWidth + 5.2), d + rand(-4, 4));
+        }
+        if (Math.random() < 0.92) {
+          addFernAt(parent, d + rand(-4, 4), side, rand(OC.laneWidth * 0.96, OC.laneWidth * 1.32));
+        }
+      });
+    }
+  };
+
+  const priorAddSceneryRock = addSceneryRock;
+  addSceneryRock = function addSceneryRockV262(parent, x, distance) {
+    const rock = createRock();
+    rock.position.set(x, GROUND_Y + 0.18, -distance);
+    rock.scale.multiplyScalar(rand(0.55, 0.95));
+    parent.add(rock);
+    registerGlbInstance(rock, 'rock', x, -distance);
+  };
+
+  addCollectibles = function addCollectiblesV262(count) {
+    const parent = OC.layers.get('collectibles')?.group || OC.world;
+    const targetCount = Math.max(4, Math.round(count * 0.55));
+    const fallbackGeo = new THREE.OctahedronGeometry(0.42, 0);
+    for (let i = 0; i < targetCount; i += 1) {
+      const distance = 45 + Math.random() * Math.max(30, OC.courseLength - 90);
+      const center = pathCenterAt(distance);
+      const obj = createGlbModel(OC.collectibleModels, Math.random() < 0.56 ? rand(1.2, 1.8) : rand(0.75, 1.25)) || new THREE.Mesh(fallbackGeo, new THREE.MeshBasicMaterial({ color: 0xeec45a, transparent: true, opacity: 0.9 }));
+      const x = center + pick([-0.22, 0, 0.22]) * OC.laneWidth;
+      obj.position.set(x, GROUND_Y + rand(0.12, 0.55), -distance);
+      obj.rotation.y = rand(0, Math.PI * 2);
+      obj.userData.kind = 'collectible';
+      obj.userData.collected = false;
+      obj.userData.radius = 1.15;
+      parent.add(obj);
+      OC.objects.push(obj);
+      registerGlbInstance(obj, 'collectible', obj.position.x, obj.position.z);
+    }
+  };
+
+  function clearGlbSelectionBoxes() {
+    (OC.glbSelectionHelpers || []).forEach((helper) => {
+      helper.parent?.remove(helper);
+      helper.geometry?.dispose?.();
+      helper.material?.dispose?.();
+    });
+    OC.glbSelectionHelpers = [];
+  }
+
+  function refreshGlbSelectionBoxes() {
+    clearGlbSelectionBoxes();
+    if (!OC.scene || !OC.selectedGlbAssetUrl) return;
+    (OC.glbInstances || []).forEach((obj) => {
+      if (!obj?.visible || obj.userData?.glbAssetUrl !== OC.selectedGlbAssetUrl) return;
+      const helper = new THREE.BoxHelper(obj, 0xeec45a);
+      helper.userData.isGlbSelectionHelper = true;
+      OC.scene.add(helper);
+      OC.glbSelectionHelpers.push(helper);
+    });
+  }
+
+  function updateGlbSelectionBoxes() {
+    (OC.glbSelectionHelpers || []).forEach((helper) => helper.update?.());
+  }
+
+  const priorDrawFrame = drawFrame;
+  drawFrame = function drawFrameV262(dt = 0) {
+    priorDrawFrame(dt);
+    updateGlbSelectionBoxes();
+  };
+
+  function buildGlbAssetControls(host) {
+    host.innerHTML = '';
+    const selector = document.createElement('label');
+    selector.className = 'field-block';
+    selector.innerHTML = `<span>GLB Asset</span><select id="hf-glb-asset-select"></select>`;
+    host.appendChild(selector);
+    refreshGlbAssetSelectOptions();
+    const select = selector.querySelector('select');
+    select.addEventListener('change', (event) => {
+      OC.selectedGlbAssetUrl = event.target.value;
+      syncLayerControls();
+      applyAllGlbAssetControls();
+      drawFrame();
+    });
+    if (!OC.selectedGlbAssetUrl && select.options.length) OC.selectedGlbAssetUrl = select.value;
+    select.value = OC.selectedGlbAssetUrl;
+
+    [
+      ['x', 'X', -30, 30, 0.1, 0],
+      ['z', 'Z', -80, 80, 0.5, 0],
+      ['y', 'Y', -10, 10, 0.1, 0],
+      ['scale', 'Object Size', 0.1, 8, 0.05, 1],
+      ['opacity', 'Alpha', 0, 1, 0.05, 1],
+      ['brightness', 'Bright', 0.1, 10, 0.05, 1],
+      ['contrast', 'Contrast', 0.1, 4, 0.05, 1],
+      ['saturation', 'Saturation', 0, 6, 0.05, 1],
+      ['tintStrength', 'Tint Amt', 0, 1, 0.05, 0],
+      ['order', 'Order', -20, 80, 1, 18],
+    ].forEach(([prop, label, min, max, step, fallback]) => {
+      const row = document.createElement('div');
+      row.className = 'hf-slider-row';
+      row.innerHTML = `<span>${label}</span><input id="hf-glb-${prop}" type="range" min="${min}" max="${max}" step="${step}"><output id="hf-glb-${prop}-out"></output>`;
+      host.appendChild(row);
+      row.querySelector('input').addEventListener('input', (event) => {
+        const cfg = glbControl(OC.selectedGlbAssetUrl);
+        cfg[prop] = Number(event.target.value);
+        syncGlbOutputs();
+        applyAllGlbAssetControls();
+        drawFrame();
+        drawOverview();
+      });
+      const cfg = glbControl(OC.selectedGlbAssetUrl);
+      if (cfg[prop] === undefined) cfg[prop] = fallback;
+    });
+    const tintRow = document.createElement('label');
+    tintRow.className = 'field-block';
+    tintRow.innerHTML = `<span>GLB Tint</span><input id="hf-glb-tint" type="color" value="#ffffff">`;
+    host.appendChild(tintRow);
+    tintRow.querySelector('input').addEventListener('input', (event) => {
+      const cfg = glbControl(OC.selectedGlbAssetUrl);
+      cfg.tint = event.target.value;
+      applyAllGlbAssetControls();
+      drawFrame();
+    });
+    syncGlbControls();
+    refreshGlbSelectionBoxes();
+  }
+
+  function refreshGlbAssetSelectOptions() {
+    const select = oc$('hf-glb-asset-select');
+    if (!select) return;
+    const urls = Array.from(new Set([...GLB_ASSET_URLS, ...(OC.glbInstances || []).map((obj) => obj.userData.glbAssetUrl).filter(Boolean)]));
+    const previous = select.value || OC.selectedGlbAssetUrl || urls[0] || '';
+    select.innerHTML = '';
+    urls.forEach((url) => {
+      const opt = document.createElement('option');
+      opt.value = url;
+      opt.textContent = fileName(url);
+      select.appendChild(opt);
+    });
+    OC.selectedGlbAssetUrl = urls.includes(previous) ? previous : (urls[0] || '');
+    select.value = OC.selectedGlbAssetUrl;
+  }
+
+  function syncGlbOutputs() {
+    const cfg = glbControl(OC.selectedGlbAssetUrl);
+    ['x', 'z', 'y', 'scale', 'opacity', 'brightness', 'contrast', 'saturation', 'tintStrength', 'order'].forEach((prop) => {
+      const out = oc$(`hf-glb-${prop}-out`);
+      if (!out) return;
+      const value = cfg[prop] ?? (['scale','opacity','brightness','contrast','saturation'].includes(prop) ? 1 : 0);
+      out.textContent = prop === 'order' ? String(value) : Number(value).toFixed(2);
+    });
+  }
+
+  function syncGlbControls() {
+    const cfg = glbControl(OC.selectedGlbAssetUrl);
+    ['x', 'z', 'y', 'scale', 'opacity', 'brightness', 'contrast', 'saturation', 'tintStrength', 'order'].forEach((prop) => {
+      const input = oc$(`hf-glb-${prop}`);
+      if (!input) return;
+      input.value = cfg[prop] ?? (['scale','opacity','brightness','contrast','saturation'].includes(prop) ? 1 : 0);
+    });
+    const tint = oc$('hf-glb-tint');
+    if (tint) tint.value = cfg.tint || '#ffffff';
+    syncGlbOutputs();
+  }
+
+  const priorCreateLayerSliders = createLayerSliders;
+  createLayerSliders = function createLayerSlidersV262() {
+    const host = oc$('hf-layer-sliders');
+    if (!host) return;
+    if (OC.selectedLayerId === 'glbAsset') return buildGlbAssetControls(host);
+    priorCreateLayerSliders();
+  };
+
+  populateLayerSelect = function populateLayerSelectV262() {
+    const select = oc$('hf-layer-select');
+    if (!select) return;
+    const previous = select.value || OC.selectedLayerId;
+    select.innerHTML = '';
+    [...OC.layers.values()].sort((a, b) => a.order - b.order).forEach((l) => {
+      const opt = document.createElement('option');
+      opt.value = l.id;
+      opt.textContent = `${l.label}${OC.soloLayerId === l.id ? ' (solo)' : l.visible ? '' : ' (hidden)'}`;
+      select.appendChild(opt);
+    });
+    const glbOpt = document.createElement('option');
+    glbOpt.value = 'glbAsset';
+    glbOpt.textContent = 'GLB Asset';
+    select.appendChild(glbOpt);
+    OC.selectedLayerId = previous === 'glbAsset' || OC.layers.has(previous) ? previous : 'path';
+    select.value = OC.selectedLayerId;
+    createLayerSliders();
+    syncLayerControls();
+  };
+
+  const priorSyncLayerControls = syncLayerControls;
+  syncLayerControls = function syncLayerControlsV262() {
+    if (OC.selectedLayerId === 'glbAsset') return syncGlbControls();
+    clearGlbSelectionBoxes();
+    priorSyncLayerControls();
+  };
+
+  const priorSyncLayerOutputs = syncLayerOutputs;
+  syncLayerOutputs = function syncLayerOutputsV262() {
+    if (OC.selectedLayerId === 'glbAsset') return syncGlbOutputs();
+    priorSyncLayerOutputs();
+  };
+
+  const priorUpdateCamera = updateCamera;
+  updateCamera = function updateCameraV262() {
+    const center = pathCenterAt(OC.distance);
+    const x = center + OC.player.x;
+    OC.world.position.x = -(OC.gridOffsetX || 0);
+    OC.world.position.z = OC.distance - (OC.gridOffsetZ || 0);
+    if (OC.grid) {
+      OC.grid.visible = Boolean(OC.gridEnabled);
+      OC.grid.position.set(OC.gridOffsetX || 0, GROUND_Y + 0.075, -(OC.gridOffsetZ || 0));
+    }
+    OC.camera.position.set(x * 0.16, 1.8 + OC.player.y * 0.55, 8.4);
+    OC.camera.lookAt((x * 0.35) + (OC.vanishX || 0), (OC.vanishY ?? 0.35) + OC.player.y * 0.35, -28);
+  };
+
+  updateOffPathWarning = function updateOffPathWarningV262(status) {
+    const arrow = oc$('oc-offpath-arrow');
+    const label = oc$('oc-offpath-label');
+    if (!arrow || !label) return;
+    arrow.textContent = '';
+    if (status === 'off' && OC.offPathTime >= 2) {
+      const goRight = OC.player.x < 0;
+      arrow.classList.add('is-visible');
+      arrow.classList.toggle('dir-right', goRight);
+      arrow.classList.toggle('dir-left', !goRight);
+      label.textContent = goRight ? 'Off Path →' : '← Off Path';
+    } else {
+      arrow.classList.remove('is-visible', 'dir-right', 'dir-left');
+      label.textContent = status === 'off' ? 'Off Path' : '';
+    }
+  };
+
+  const priorEnsureMounted = ensureMounted;
+  ensureMounted = function ensureMountedV262() {
+    priorEnsureMounted();
+    installV262Ui();
+  };
+
+  function installV262Ui() {
+    injectV262Styles();
+    document.querySelectorAll('.obstacle-reticle').forEach((node) => node.remove());
+    const title = document.querySelector('.obstacle-header-line .eyebrow');
+    if (title) title.textContent = 'Obstacle Course · V2.6.2';
+    document.querySelectorAll('.status-pill').forEach((node) => { if (/V2\.6/.test(node.textContent)) node.textContent = 'V2.6.2'; });
+    if (OC.host) {
+      const arrow = oc$('oc-offpath-arrow') || document.createElement('div');
+      arrow.id = 'oc-offpath-arrow';
+      arrow.className = 'oc-offpath-arrow';
+      arrow.textContent = '';
+      if (!arrow.parentElement) OC.host.appendChild(arrow);
+    }
+    const displayPanel = document.querySelector('[data-obstacle-panel="display"]');
+    if (displayPanel && !oc$('oc-vanish-x')) {
+      displayPanel.insertAdjacentHTML('beforeend', `<section class="hf-grid-panel"><h3>Vanishing Point</h3><label class="range-row"><span>VP X <output id="oc-vanish-x-out">0.0</output></span><input id="oc-vanish-x" type="range" min="-12" max="12" step="0.1" value="0"></label><label class="range-row"><span>VP Y <output id="oc-vanish-y-out">0.35</output></span><input id="oc-vanish-y" type="range" min="-3" max="8" step="0.05" value="0.35"></label></section>`);
+      oc$('oc-vanish-x')?.addEventListener('input', (event) => { OC.vanishX = Number(event.target.value); oc$('oc-vanish-x-out').textContent = OC.vanishX.toFixed(1); drawFrame(); });
+      oc$('oc-vanish-y')?.addEventListener('input', (event) => { OC.vanishY = Number(event.target.value); oc$('oc-vanish-y-out').textContent = OC.vanishY.toFixed(2); drawFrame(); });
+    }
+    const bright = oc$('obstacle-brightness');
+    if (bright) {
+      bright.max = '1000';
+      if (Number(bright.value) > 1000) bright.value = '1000';
+    }
+    const bgButton = oc$('hf-bg-white');
+    if (bgButton && !bgButton.dataset.ocV262Bound) {
+      bgButton.dataset.ocV262Bound = '1';
+      bgButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        OC.whiteBackground = !OC.whiteBackground;
+        if (OC.scene) OC.scene.background = OC.whiteBackground ? new THREE.Color(0xffffff) : loadTexture(ASSETS.background);
+        bgButton.classList.toggle('is-running', OC.whiteBackground);
+        drawFrame();
+      }, true);
+    }
+    const layerSelect = oc$('hf-layer-select');
+    if (layerSelect && ![...layerSelect.options].some((opt) => opt.value === 'glbAsset')) populateLayerSelect();
+  }
+
+  function injectV262Styles() {
+    if (oc$('oc-v262-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'oc-v262-styles';
+    style.textContent = `
+      .obstacle-reticle{display:none!important}
+      .oc-offpath-arrow{position:absolute!important;left:50%!important;top:42%!important;z-index:8!important;width:148px!important;height:148px!important;margin:-74px 0 0 -74px!important;display:none;background-image:url('../../../shared/ui/defaultarrows.webp')!important;background-repeat:no-repeat!important;background-size:200% 200%!important;background-color:transparent!important;border:0!important;border-radius:0!important;color:transparent!important;text-shadow:none!important;filter:drop-shadow(0 9px 12px rgba(0,0,0,.82));animation:ocPulseArrowClean .9s ease-in-out infinite;pointer-events:none!important}.oc-offpath-arrow.is-visible{display:block!important}.oc-offpath-arrow.dir-left{background-position:0% 100%!important}.oc-offpath-arrow.dir-right{background-position:100% 100%!important}@keyframes ocPulseArrowClean{0%,100%{transform:translateY(0) scale(.92)}50%{transform:translateY(-11px) scale(1.12)}}
+      .hf-glb-selected-note{margin:7px 0 0;color:#eec45a;font-size:.68rem;line-height:1.25}.hf-layer-panel option[value="glbAsset"]{font-weight:900;color:#eec45a}.obstacle-three-wrap canvas{filter:brightness(var(--oc-brightness,1)) contrast(var(--oc-contrast,1)) saturate(var(--oc-saturation,1))!important;}
+    `;
+    document.head.appendChild(style);
+  }
+
+  const priorUpdateScreenFilters2 = updateScreenFilters;
+  updateScreenFilters = function updateScreenFiltersV262() {
+    priorUpdateScreenFilters2();
     if (OC.host) {
       OC.host.style.setProperty('--oc-contrast', String(OC.screenContrast || 1));
       OC.host.style.setProperty('--oc-saturation', String(OC.screenSaturation || 1));

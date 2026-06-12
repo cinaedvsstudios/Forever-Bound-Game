@@ -1,4 +1,4 @@
-// Obstacle Course Asset Debug V3.1
+// Obstacle Course Asset Debug V3.2
 // Separate debug helper. Checks live obstacle course images, modular path WEBPs, GLBs, and planned audio.
 
 const ASSET_ROOT = './assets/';
@@ -9,7 +9,7 @@ const BUTTON_ID = 'horse-asset-debug-button';
 const ASSETS = [
   ['Backgrounds','image','Main forest ride background','backgrounds/horseridebg.jpg',false],
   ['Foreground','image','Horse 7-frame sprite sheet','foreground/horse.png',false],
-  ['Ground','image','Forest floor grass2 base ground','ground/forest_floor_grass2.png',false],
+  ['Ground','image','Forest ground Z-tile texture','ground/forest_ground.webp',false],
   ['Path segments','image','Path straight','path-segments/pathstraight.webp',false],
   ['Path segments','image','Path kink','path-segments/pathkink.webp',false],
   ['Path segments','image','Path left','path-segments/pathleft.webp',false],
@@ -26,7 +26,8 @@ const ASSETS = [
   ['3D rocks','glb','Low-poly rock','3d/rock_low-poly.glb',false],
   ['3D trees','glb','Small pine','3d/small_pine.glb',false],
   ['3D rocks','glb','Low-poly stone','3d/stone_low-poly.glb',false],
-  ['3D details','glb','Stylized glowing mushrooms','3d/stylized_glowing_mushrooms.glb',false],
+  ['3D collectibles','glb','Stylized glowing mushrooms','3d/stylized_glowing_mushrooms.glb',false],
+  ['3D collectibles','glb','Moneysack collectible','3d/moneysack.glb',false],
   ['3D trees','glb','Tree','3d/tree.glb',false],
   ['3D trees','glb','Tree gn','3d/tree_gn.glb',false],
   ['3D trees','glb','Low-poly tree','3d/tree_low-poly.glb',false],
