@@ -1,4 +1,4 @@
-// Obstacle Course Asset Debug V3.8
+// Obstacle Course Asset Debug V3.9
 // Separate debug helper. Checks live obstacle course images, modular path WEBPs, GLBs, and planned audio.
 
 const ASSET_ROOT = './assets/';
@@ -198,7 +198,6 @@ function boot() {
   const observer = new MutationObserver(ensureButton);
   observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'hidden'] });
   document.addEventListener('click', () => requestAnimationFrame(ensureButton), true);
-  setInterval(ensureButton, 600);
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });

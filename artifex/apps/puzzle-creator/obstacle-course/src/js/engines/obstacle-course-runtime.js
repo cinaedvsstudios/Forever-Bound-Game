@@ -1,12 +1,12 @@
-// Obstacle Course V2.7.6 / Horse Forest Runner
+// Obstacle Course V2.7.7 / Horse Forest Runner
 // Consolidated runtime: no post-load patch stack.
 // The obstacle-course UI, generation, alpha-path logic, GLB controls, overview, HUD, and JSON settings live here.
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
 
-const VERSION = 'V2.7.6';
-const CACHE_VERSION = '2.7.6';
+const VERSION = 'V2.7.7';
+const CACHE_VERSION = '2.7.7';
 const ASSET_BASE = './assets/';
 const SHARED_UI_BASE = '../../../shared/ui/';
 const GROUND_Y = -1.62;
@@ -762,7 +762,6 @@ function ensureMounted() {
   updateDocumentVersion();
   injectStyles();
   mountLayout();
-  mountHeaderControls();
   bindInputs();
   bindHeaderControls();
   initThree();
@@ -833,10 +832,9 @@ function mountLayout() {
   OC.rightPanel.innerHTML = `
     <div class="obstacle-app">
       <section class="obstacle-main-card">
-        <div id="oc-inline-topbar-source" hidden></div>
         <div id="obstacle-stage" class="obstacle-three-wrap">
+          <div id="oc-loading-overlay" class="oc-loading-overlay"><div class="oc-loading-spinner"></div><strong id="oc-loading-overlay-title">Loading obstacle course assets</strong><span id="oc-loading-overlay-count">Assets 0 / 0</span></div>
           <div class="obstacle-tint-overlay"></div>
-          <div id="obstacle-speed-badge" class="obstacle-speed-badge"></div>
           <div id="oc-offpath-arrow" class="oc-offpath-arrow dir-right"></div>
           <div id="obstacle-horse" class="obstacle-horse-overlay"></div>
           <div class="obstacle-hud"><span id="obstacle-distance-readout">Distance 0 / ${OC.courseLength}</span><span id="obstacle-score-readout">Score 0</span></div>
@@ -897,31 +895,6 @@ function scheduleSceneryRegenerate() {
   sceneryDistanceRegenTimer = setTimeout(() => regenerateCourse(), 180);
 }
 
-
-function mountHeaderControls() {
-  const header = document.querySelector('.app-header');
-  if (!header) return;
-  let host = document.getElementById('oc-app-header-controls');
-  if (!host) {
-    host = document.createElement('section');
-    host.id = 'oc-app-header-controls';
-    host.className = 'oc-app-header-controls';
-    host.innerHTML = `
-      <div class="oc-head-run">
-        <button id="obstacle-start" type="button">Start Test</button>
-        <button id="obstacle-pause" type="button">Pause</button>
-        <button id="obstacle-reset-run" type="button">Reset Run</button>
-        <span id="oc-debug-button-slot"></span>
-      </div>
-      <div class="oc-head-status">
-        <strong id="obstacle-status">Loading</strong>
-        <span id="oc-top-load">Assets 0 / 0</span>
-        <span id="oc-top-info">Distance 0 / ${OC.courseLength}</span>
-      </div>
-    `;
-    header.insertBefore(host, header.firstChild);
-  }
-}
 
 function bindHeaderControls() {
   document.getElementById('obstacle-start')?.addEventListener('click', startRun);
@@ -1052,6 +1025,8 @@ function setLoading(count, total) {
   if (node) node.textContent = `Loading ${message}`;
   const top = $('oc-top-load');
   if (top) top.textContent = message;
+  const overlayCount = $('oc-loading-overlay-count');
+  if (overlayCount) overlayCount.textContent = message;
 }
 
 async function preloadAssets() {
@@ -1089,6 +1064,12 @@ async function preloadAssets() {
 
   OC.loadingDone = true;
   OC.requiredReady = OC.requiredAssetFailures.length === 0;
+  const overlay = $('oc-loading-overlay');
+  if (overlay) overlay.hidden = OC.requiredReady;
+  const title = $('oc-loading-overlay-title');
+  if (title && !OC.requiredReady) title.textContent = 'Required assets missing';
+  const startButton = $('obstacle-start');
+  if (startButton) startButton.disabled = !OC.requiredReady;
   const node = $('oc-loading');
   if (node) {
     node.textContent = OC.requiredReady
@@ -2213,21 +2194,13 @@ function updateStats() {
   const gait = status === 'off' ? 'Off Path' : speed < 3 ? 'Stopped' : speed < max * 0.45 ? 'Trot' : speed < max * 0.75 ? 'Canter' : 'Gallop';
   const clip = document.querySelector('.oc-powerbar-full-clip');
   if (clip) clip.style.width = `${clamp(speed / max, 0, 1) * 100}%`;
-  const state = $('oc-speed-state');
-  const value = $('oc-speed-value');
-  if (!state || !value) {
-    const badge = $('obstacle-speed-badge');
-    if (badge) {
-      badge.innerHTML = `<div class="oc-powerbar-wrap"><div class="oc-powerbar-emoji">🐴</div><div class="oc-powerbar-empty"></div><div class="oc-powerbar-full-clip"><div class="oc-powerbar-full"></div></div></div><div class="oc-speed-label"><span id="oc-speed-state"></span><b id="oc-speed-value"></b></div><div id="oc-offpath-label" class="oc-offpath-label"></div>`;
-      const newClip = document.querySelector('.oc-powerbar-full-clip');
-      if (newClip) newClip.style.width = `${clamp(speed / max, 0, 1) * 100}%`;
-    }
-  }
+
   if ($('oc-speed-state')) $('oc-speed-state').textContent = gait;
   if ($('oc-speed-value')) $('oc-speed-value').textContent = `${speed}/${max}`;
   if ($('obstacle-distance-readout')) $('obstacle-distance-readout').textContent = `Distance ${Math.max(0, Math.round(OC.distance))} / ${Math.round(OC.courseLength)}`;
   if ($('obstacle-score-readout')) $('obstacle-score-readout').textContent = `Score ${OC.score} · Collected ${OC.collected} · Hits ${OC.hits}`;
   if ($('oc-top-info')) $('oc-top-info').textContent = `Distance ${Math.max(0, Math.round(OC.distance))}/${Math.round(OC.courseLength)} · Score ${OC.score} · Collected ${OC.collected}/${OC.objects.filter((obj) => obj.userData.kind === 'collectible').length}`;
+
   const statusNode = $('obstacle-status');
   if (statusNode) statusNode.textContent = OC.complete ? 'Complete' : OC.running ? 'Running' : OC.paused ? 'Paused' : OC.requiredReady ? 'Ready' : 'Loading';
   $('obstacle-start')?.classList.toggle('is-running', OC.running);
