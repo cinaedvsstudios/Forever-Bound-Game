@@ -1,12 +1,12 @@
-// Obstacle Course V2.7.5 / Horse Forest Runner
+// Obstacle Course V2.7.6 / Horse Forest Runner
 // Consolidated runtime: no post-load patch stack.
 // The obstacle-course UI, generation, alpha-path logic, GLB controls, overview, HUD, and JSON settings live here.
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
 
-const VERSION = 'V2.7.5';
-const CACHE_VERSION = '2.7.5';
+const VERSION = 'V2.7.6';
+const CACHE_VERSION = '2.7.6';
 const ASSET_BASE = './assets/';
 const SHARED_UI_BASE = '../../../shared/ui/';
 const GROUND_Y = -1.62;
@@ -65,6 +65,572 @@ const GLB_ASSETS = [
   { url: `${ASSET_BASE}3d/moneysack.glb`, label: 'Money sack', type: 'collectible', scale: 1.35, density: 0.24, value: 7, optional: true },
 ];
 
+const DEFAULT_SETTINGS = {
+  "engine": "obstacle-course",
+  "version": "V2.7.5",
+  "templateId": "horse_forest_easy",
+  "difficulty": 2,
+  "courseLength": 1500,
+  "speed": 34,
+  "sceneryDistance": 1.6,
+  "pathVisualWidth": 31.8,
+  "vanishX": 0,
+  "vanishY": 26.5,
+  "cameraAngle": 0,
+  "backgroundZoom": 1.1,
+  "visual": {
+    "brightness": 1,
+    "contrast": 1,
+    "saturation": 1,
+    "tint": "#000000",
+    "tintStrength": 0
+  },
+  "pathSegments": [
+    {
+      "id": "right",
+      "start": "centre",
+      "end": "right",
+      "distance": 0
+    },
+    {
+      "id": "rightToStraight",
+      "start": "right",
+      "end": "centre",
+      "distance": 70
+    },
+    {
+      "id": "kink",
+      "start": "centre",
+      "end": "centre",
+      "distance": 140
+    },
+    {
+      "id": "kink",
+      "start": "centre",
+      "end": "centre",
+      "distance": 210
+    },
+    {
+      "id": "kink",
+      "start": "centre",
+      "end": "centre",
+      "distance": 280
+    },
+    {
+      "id": "right",
+      "start": "centre",
+      "end": "right",
+      "distance": 350
+    },
+    {
+      "id": "rightToStraight",
+      "start": "right",
+      "end": "centre",
+      "distance": 420
+    },
+    {
+      "id": "straight",
+      "start": "centre",
+      "end": "centre",
+      "distance": 490
+    },
+    {
+      "id": "straight",
+      "start": "centre",
+      "end": "centre",
+      "distance": 560
+    },
+    {
+      "id": "kink",
+      "start": "centre",
+      "end": "centre",
+      "distance": 630
+    },
+    {
+      "id": "kink",
+      "start": "centre",
+      "end": "centre",
+      "distance": 700
+    },
+    {
+      "id": "left",
+      "start": "centre",
+      "end": "left",
+      "distance": 770
+    },
+    {
+      "id": "leftToStraight",
+      "start": "left",
+      "end": "centre",
+      "distance": 840
+    },
+    {
+      "id": "left",
+      "start": "centre",
+      "end": "left",
+      "distance": 910
+    },
+    {
+      "id": "leftToStraight",
+      "start": "left",
+      "end": "centre",
+      "distance": 980
+    },
+    {
+      "id": "kink",
+      "start": "centre",
+      "end": "centre",
+      "distance": 1050
+    },
+    {
+      "id": "kink",
+      "start": "centre",
+      "end": "centre",
+      "distance": 1120
+    },
+    {
+      "id": "left",
+      "start": "centre",
+      "end": "left",
+      "distance": 1190
+    },
+    {
+      "id": "leftToStraight",
+      "start": "left",
+      "end": "centre",
+      "distance": 1260
+    },
+    {
+      "id": "left",
+      "start": "centre",
+      "end": "left",
+      "distance": 1330
+    },
+    {
+      "id": "leftToStraight",
+      "start": "left",
+      "end": "centre",
+      "distance": 1400
+    },
+    {
+      "id": "kink",
+      "start": "centre",
+      "end": "centre",
+      "distance": 1470
+    },
+    {
+      "id": "right",
+      "start": "centre",
+      "end": "right",
+      "distance": 1540
+    },
+    {
+      "id": "rightToStraight",
+      "start": "right",
+      "end": "centre",
+      "distance": 1610
+    },
+    {
+      "id": "left",
+      "start": "centre",
+      "end": "left",
+      "distance": 1680
+    },
+    {
+      "id": "leftToStraight",
+      "start": "left",
+      "end": "centre",
+      "distance": 1750
+    },
+    {
+      "id": "kink",
+      "start": "centre",
+      "end": "centre",
+      "distance": 1820
+    },
+    {
+      "id": "kink",
+      "start": "centre",
+      "end": "centre",
+      "distance": 1890
+    }
+  ],
+  "layers": {
+    "ground": {
+      "visible": true,
+      "opacity": 0.84,
+      "x": 0,
+      "y": 1.5,
+      "z": 0,
+      "scale": 0.19999999999999996,
+      "order": 0,
+      "brightness": 0.62,
+      "contrast": 1,
+      "saturation": 1,
+      "tint": "#ffffff",
+      "tintStrength": 0
+    },
+    "path": {
+      "visible": true,
+      "opacity": 0.56,
+      "x": 0,
+      "y": -2.5,
+      "z": -6,
+      "scale": 1.4,
+      "order": 4,
+      "brightness": 0.5,
+      "contrast": 0.8,
+      "saturation": 0.5,
+      "tint": "#7a6a47",
+      "tintStrength": 0.26
+    },
+    "trees": {
+      "visible": true,
+      "opacity": 1,
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "order": 12,
+      "brightness": 1,
+      "contrast": 1,
+      "saturation": 1,
+      "tint": "#ffffff",
+      "tintStrength": 0
+    },
+    "rocks": {
+      "visible": true,
+      "opacity": 1,
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "order": 13,
+      "brightness": 1,
+      "contrast": 1,
+      "saturation": 1,
+      "tint": "#ffffff",
+      "tintStrength": 0
+    },
+    "details": {
+      "visible": true,
+      "opacity": 1,
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "order": 14,
+      "brightness": 1,
+      "contrast": 1,
+      "saturation": 1,
+      "tint": "#ffffff",
+      "tintStrength": 0
+    },
+    "collectibles": {
+      "visible": true,
+      "opacity": 1,
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "order": 15,
+      "brightness": 1,
+      "contrast": 1,
+      "saturation": 1,
+      "tint": "#ffffff",
+      "tintStrength": 0
+    },
+    "obstacles": {
+      "visible": true,
+      "opacity": 1,
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "order": 16,
+      "brightness": 1,
+      "contrast": 1,
+      "saturation": 1,
+      "tint": "#ffffff",
+      "tintStrength": 0
+    }
+  },
+  "glbControls": {
+    "./assets/3d/tree_low-poly.glb": {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "scaleOffset": 0,
+      "opacity": 1,
+      "brightness": 1,
+      "brightnessOffset": 0,
+      "contrast": 1,
+      "contrastOffset": 0,
+      "saturation": 1,
+      "saturationOffset": 0,
+      "tint": "#ffffff",
+      "tintStrength": 0,
+      "order": 0
+    },
+    "./assets/3d/pine_with_awkward_teenage_face.glb": {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "scaleOffset": 0,
+      "opacity": 1,
+      "brightness": 1,
+      "brightnessOffset": 0,
+      "contrast": 1,
+      "contrastOffset": 0,
+      "saturation": 1,
+      "saturationOffset": 0,
+      "tint": "#ffffff",
+      "tintStrength": 0,
+      "order": 0
+    },
+    "./assets/3d/hill_top_tree.glb": {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "scaleOffset": 0,
+      "opacity": 1,
+      "brightness": 1,
+      "brightnessOffset": 0,
+      "contrast": 1,
+      "contrastOffset": 0,
+      "saturation": 1,
+      "saturationOffset": 0,
+      "tint": "#ffffff",
+      "tintStrength": 0,
+      "order": 0
+    },
+    "./assets/3d/tree.glb": {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "scaleOffset": 0,
+      "opacity": 1,
+      "brightness": 1,
+      "brightnessOffset": 0,
+      "contrast": 1,
+      "contrastOffset": 0,
+      "saturation": 1,
+      "saturationOffset": 0,
+      "tint": "#ffffff",
+      "tintStrength": 0,
+      "order": 0
+    },
+    "./assets/3d/pine_tree.glb": {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "scaleOffset": 0,
+      "opacity": 1,
+      "brightness": 1,
+      "brightnessOffset": 0,
+      "contrast": 1,
+      "contrastOffset": 0,
+      "saturation": 1,
+      "saturationOffset": 0,
+      "tint": "#ffffff",
+      "tintStrength": 0,
+      "order": 0
+    },
+    "./assets/3d/small_pine.glb": {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "scaleOffset": 0,
+      "opacity": 1,
+      "brightness": 1,
+      "brightnessOffset": 0,
+      "contrast": 1,
+      "contrastOffset": 0,
+      "saturation": 1,
+      "saturationOffset": 0,
+      "tint": "#ffffff",
+      "tintStrength": 0,
+      "order": 0
+    },
+    "./assets/3d/oak_trees.glb": {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "scaleOffset": 0,
+      "opacity": 1,
+      "brightness": 1,
+      "brightnessOffset": 0,
+      "contrast": 1,
+      "contrastOffset": 0,
+      "saturation": 1,
+      "saturationOffset": 0,
+      "tint": "#ffffff",
+      "tintStrength": 0,
+      "order": 0
+    },
+    "./assets/3d/tree_gn.glb": {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "scaleOffset": 0,
+      "opacity": 1,
+      "brightness": 1,
+      "brightnessOffset": 0,
+      "contrast": 1,
+      "contrastOffset": 0,
+      "saturation": 1,
+      "saturationOffset": 0,
+      "tint": "#ffffff",
+      "tintStrength": 0,
+      "order": 0
+    },
+    "./assets/3d/dead_tree.glb": {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "scaleOffset": 0,
+      "opacity": 1,
+      "brightness": 1,
+      "brightnessOffset": 0,
+      "contrast": 1,
+      "contrastOffset": 0,
+      "saturation": 1,
+      "saturationOffset": 0,
+      "tint": "#ffffff",
+      "tintStrength": 0,
+      "order": 0
+    },
+    "./assets/3d/stone_low-poly.glb": {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "scaleOffset": 0,
+      "opacity": 1,
+      "brightness": 1,
+      "brightnessOffset": 0,
+      "contrast": 1,
+      "contrastOffset": 0,
+      "saturation": 1,
+      "saturationOffset": 0,
+      "tint": "#ffffff",
+      "tintStrength": 0,
+      "order": 0
+    },
+    "./assets/3d/rock_low-poly.glb": {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "scaleOffset": 0,
+      "opacity": 1,
+      "brightness": 1,
+      "brightnessOffset": 0,
+      "contrast": 1,
+      "contrastOffset": 0,
+      "saturation": 1,
+      "saturationOffset": 0,
+      "tint": "#ffffff",
+      "tintStrength": 0,
+      "order": 0
+    },
+    "./assets/3d/tall_bush.glb": {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "scaleOffset": 0,
+      "opacity": 1,
+      "brightness": 1,
+      "brightnessOffset": 0,
+      "contrast": 1,
+      "contrastOffset": 0,
+      "saturation": 1,
+      "saturationOffset": 0,
+      "tint": "#ffffff",
+      "tintStrength": 0,
+      "order": 0
+    },
+    "./assets/3d/low_poly_fern.glb": {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "scaleOffset": 0,
+      "opacity": 1,
+      "brightness": 1,
+      "brightnessOffset": 0,
+      "contrast": 1,
+      "contrastOffset": 0,
+      "saturation": 1,
+      "saturationOffset": 0,
+      "tint": "#ffffff",
+      "tintStrength": 0,
+      "order": 0
+    },
+    "./assets/3d/fern.glb": {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "scaleOffset": 0,
+      "opacity": 1,
+      "brightness": 1,
+      "brightnessOffset": 0,
+      "contrast": 1,
+      "contrastOffset": 0,
+      "saturation": 1,
+      "saturationOffset": 0,
+      "tint": "#ffffff",
+      "tintStrength": 0,
+      "order": 0
+    },
+    "./assets/3d/moneysack.glb": {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "scaleOffset": 0,
+      "opacity": 1,
+      "brightness": 1,
+      "brightnessOffset": 0,
+      "contrast": 1,
+      "contrastOffset": 0,
+      "saturation": 1,
+      "saturationOffset": 0,
+      "tint": "#ffffff",
+      "tintStrength": 0,
+      "order": 0
+    },
+    "./assets/3d/stylized_glowing_mushrooms.glb": {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "scale": 1,
+      "scaleOffset": 0,
+      "opacity": 1,
+      "brightness": 1,
+      "brightnessOffset": 0,
+      "contrast": 1,
+      "contrastOffset": 0,
+      "saturation": 1,
+      "saturationOffset": 0,
+      "tint": "#ffffff",
+      "tintStrength": 0,
+      "order": 0
+    }
+  }
+};
+
 const TEMPLATES = {
   horse_forest_easy: { label: 'Obstacle Course', obstacleRate: 1, treeRate: 1, rockRate: 1, detailRate: 1 },
   horse_forest_dense: { label: 'Dense Forest Course', obstacleRate: 1.35, treeRate: 1.65, rockRate: 1.15, detailRate: 1.4 },
@@ -119,6 +685,8 @@ const OC = {
   keys: new Set(),
   player: { x: 0, y: 0, vy: 0, grounded: true, jumpingHeld: false, jumpHoldTime: 0, maxJumpHoldTime: 0.68 },
   pathSequence: [],
+  customPathSequence: null,
+  defaultSettingsApplied: false,
   objects: [],
   placed: [],
   glbInstances: [],
@@ -190,10 +758,13 @@ function ensureMounted() {
   OC.mounted = true;
   OC.leftPanel = document.querySelector('.left-panel-body') || document.querySelector('.left-panel') || document.body;
   OC.rightPanel = document.querySelector('.right-panel') || document.body;
+  applyDefaultSettings();
   updateDocumentVersion();
   injectStyles();
   mountLayout();
+  mountHeaderControls();
   bindInputs();
+  bindHeaderControls();
   initThree();
   preloadAssets().then(() => {
     if (!OC.requiredReady) {
@@ -262,24 +833,7 @@ function mountLayout() {
   OC.rightPanel.innerHTML = `
     <div class="obstacle-app">
       <section class="obstacle-main-card">
-        <div class="oc-topbar">
-          <div class="oc-top-title">
-            <p class="eyebrow">Obstacle Course · ${VERSION}</p>
-            <h2 id="obstacle-title">Obstacle Course</h2>
-            <p id="obstacle-objective">Horse forest obstacle course using alpha-tested transparent path segments over forest_ground.webp.</p>
-          </div>
-          <div class="oc-top-actions">
-            <button id="obstacle-start" type="button">Start Test</button>
-            <button id="obstacle-pause" type="button">Pause</button>
-            <button id="obstacle-reset-run" type="button">Reset Run</button>
-            <span id="oc-debug-button-slot"></span>
-            <div class="oc-top-status">
-              <span id="obstacle-status">Loading</span>
-              <small id="oc-top-load">Assets 0 / 0</small>
-              <small id="oc-top-info">Distance 0 / ${OC.courseLength}</small>
-            </div>
-          </div>
-        </div>
+        <div id="oc-inline-topbar-source" hidden></div>
         <div id="obstacle-stage" class="obstacle-three-wrap">
           <div class="obstacle-tint-overlay"></div>
           <div id="obstacle-speed-badge" class="obstacle-speed-badge"></div>
@@ -343,15 +897,44 @@ function scheduleSceneryRegenerate() {
   sceneryDistanceRegenTimer = setTimeout(() => regenerateCourse(), 180);
 }
 
+
+function mountHeaderControls() {
+  const header = document.querySelector('.app-header');
+  if (!header) return;
+  let host = document.getElementById('oc-app-header-controls');
+  if (!host) {
+    host = document.createElement('section');
+    host.id = 'oc-app-header-controls';
+    host.className = 'oc-app-header-controls';
+    host.innerHTML = `
+      <div class="oc-head-run">
+        <button id="obstacle-start" type="button">Start Test</button>
+        <button id="obstacle-pause" type="button">Pause</button>
+        <button id="obstacle-reset-run" type="button">Reset Run</button>
+        <span id="oc-debug-button-slot"></span>
+      </div>
+      <div class="oc-head-status">
+        <strong id="obstacle-status">Loading</strong>
+        <span id="oc-top-load">Assets 0 / 0</span>
+        <span id="oc-top-info">Distance 0 / ${OC.courseLength}</span>
+      </div>
+    `;
+    header.insertBefore(host, header.firstChild);
+  }
+}
+
+function bindHeaderControls() {
+  document.getElementById('obstacle-start')?.addEventListener('click', startRun);
+  document.getElementById('obstacle-pause')?.addEventListener('click', pauseRun);
+  document.getElementById('obstacle-reset-run')?.addEventListener('click', () => resetRun(false));
+}
+
 function bindInputs() {
   $('obstacle-template')?.addEventListener('change', (event) => { OC.templateId = event.target.value; regenerateCourse(); });
   $('obstacle-difficulty')?.addEventListener('input', (event) => { OC.difficulty = Number(event.target.value); $('obstacle-difficulty-out').textContent = OC.difficulty; });
   $('obstacle-distance')?.addEventListener('input', (event) => { OC.courseLength = Number(event.target.value); $('obstacle-distance-out').textContent = OC.courseLength; updateStats(); });
   $('obstacle-scenery-distance')?.addEventListener('input', (event) => { OC.sceneryDistance = Number(event.target.value); $('obstacle-scenery-distance-out').textContent = OC.sceneryDistance.toFixed(1); scheduleSceneryRegenerate(); });
   $('obstacle-regenerate')?.addEventListener('click', regenerateCourse);
-  $('obstacle-start')?.addEventListener('click', startRun);
-  $('obstacle-pause')?.addEventListener('click', pauseRun);
-  $('obstacle-reset-run')?.addEventListener('click', () => resetRun(false));
   $('hf-layer-select')?.addEventListener('change', (event) => { OC.selectedLayerId = event.target.value; createLayerSliders(); refreshGlbSelectionBoxes(); drawOverview(); });
   $('hf-layer-visible')?.addEventListener('click', toggleSelectedLayerVisible);
   $('hf-layer-solo')?.addEventListener('click', toggleSelectedLayerSolo);
@@ -603,33 +1186,54 @@ function rememberBaseMaterial(mat) {
   if (mat.color && !mat.userData.baseColor) mat.userData.baseColor = mat.color.clone();
 }
 
+
+function ensureVisualShader(mat) {
+  if (!mat || mat.userData?.ocVisualShaderInstalled) return;
+  mat.userData.ocVisualShaderInstalled = true;
+  mat.userData.ocVisualUniforms = null;
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.ocBrightness = { value: 1 };
+    shader.uniforms.ocContrast = { value: 1 };
+    shader.uniforms.ocSaturation = { value: 1 };
+    shader.uniforms.ocTintColor = { value: new THREE.Color('#ffffff') };
+    shader.uniforms.ocTintStrength = { value: 0 };
+    mat.userData.ocVisualUniforms = shader.uniforms;
+    shader.fragmentShader = shader.fragmentShader.replace('#include <dithering_fragment>', `
+      vec3 ocCol = gl_FragColor.rgb;
+      ocCol = (ocCol - 0.5) * ocContrast + 0.5;
+      float ocGray = dot(ocCol, vec3(0.299, 0.587, 0.114));
+      ocCol = mix(vec3(ocGray), ocCol, ocSaturation);
+      ocCol *= ocBrightness;
+      ocCol = mix(ocCol, ocTintColor, ocTintStrength);
+      gl_FragColor.rgb = clamp(ocCol, 0.0, 1.0);
+      #include <dithering_fragment>
+    `);
+  };
+  mat.customProgramCacheKey = () => 'oc-visual-shader-v1';
+  mat.needsUpdate = true;
+}
+
+function updateVisualShaderUniforms(mat, cfg) {
+  ensureVisualShader(mat);
+  const uniforms = mat.userData?.ocVisualUniforms;
+  if (!uniforms) {
+    mat.needsUpdate = true;
+    return;
+  }
+  uniforms.ocBrightness.value = cfg.brightness ?? 1;
+  uniforms.ocContrast.value = cfg.contrast ?? 1;
+  uniforms.ocSaturation.value = cfg.saturation ?? 1;
+  uniforms.ocTintColor.value.set(cfg.tint || '#ffffff');
+  uniforms.ocTintStrength.value = clamp(cfg.tintStrength || 0, 0, 1);
+}
+
 function applyVisualToMaterial(mat, cfg) {
   if (!mat) return;
   rememberBaseMaterial(mat);
   const opacity = cfg.opacity ?? 1;
   mat.transparent = opacity < 0.995 || mat.transparent;
   mat.opacity = opacity;
-  if (mat.color && mat.userData.baseColor) {
-    const color = mat.userData.baseColor.clone();
-    const brightness = cfg.brightness ?? 1;
-    const contrast = cfg.contrast ?? 1;
-    const saturation = cfg.saturation ?? 1;
-    color.multiplyScalar(brightness);
-    if (contrast !== 1) {
-      color.r = clamp((color.r - 0.5) * contrast + 0.5, 0, 1);
-      color.g = clamp((color.g - 0.5) * contrast + 0.5, 0, 1);
-      color.b = clamp((color.b - 0.5) * contrast + 0.5, 0, 1);
-    }
-    if (saturation !== 1) {
-      const hsl = {};
-      color.getHSL(hsl);
-      color.setHSL(hsl.h, clamp(hsl.s * saturation, 0, 1), clamp(hsl.l, 0, 1));
-    }
-    if (cfg.tint && cfg.tint !== '#ffffff' && (cfg.tintStrength || 0) > 0) {
-      color.lerp(new THREE.Color(cfg.tint), clamp(cfg.tintStrength, 0, 1));
-    }
-    mat.color.copy(color);
-  }
+  updateVisualShaderUniforms(mat, cfg);
   mat.needsUpdate = true;
 }
 
@@ -850,7 +1454,86 @@ function updateScreenFilters() {
   renderOnce();
 }
 
+
+function normalizePathSegmentId(id) {
+  const key = String(id || '').trim();
+  if (ASSETS.pathSegments[key]) return key;
+  const found = Object.entries(ASSETS.pathSegments).find(([, def]) => def.id === key || def.key === key);
+  return found?.[0] || 'straight';
+}
+
+function applySettingsObject(data, options = {}) {
+  if (!data || typeof data !== 'object') return;
+  if (data.templateId) OC.templateId = data.templateId;
+  if (data.difficulty !== undefined) OC.difficulty = Number(data.difficulty);
+  if (data.courseLength !== undefined) OC.courseLength = Number(data.courseLength);
+  if (data.speed !== undefined) OC.speed = Number(data.speed);
+  if (data.sceneryDistance !== undefined) OC.sceneryDistance = Number(data.sceneryDistance);
+  if (data.pathVisualWidth !== undefined) OC.pathVisualWidth = Number(data.pathVisualWidth);
+  if (data.vanishX !== undefined) OC.vanishX = Number(data.vanishX);
+  if (data.vanishY !== undefined) OC.vanishY = Number(data.vanishY);
+  if (data.cameraAngle !== undefined) OC.cameraAngle = Number(data.cameraAngle);
+  if (data.backgroundZoom !== undefined) OC.backgroundZoom = Number(data.backgroundZoom);
+  if (data.visual) {
+    OC.screenBrightness = data.visual.brightness ?? OC.screenBrightness;
+    OC.screenContrast = data.visual.contrast ?? OC.screenContrast;
+    OC.screenSaturation = data.visual.saturation ?? OC.screenSaturation;
+    OC.screenTint = data.visual.tint ?? OC.screenTint;
+    OC.screenTintStrength = data.visual.tintStrength ?? OC.screenTintStrength;
+  }
+  if (data.pathSegments && Array.isArray(data.pathSegments)) {
+    OC.customPathSequence = data.pathSegments.map((seg, i) => {
+      const key = normalizePathSegmentId(seg.id);
+      const def = ASSETS.pathSegments[key] || ASSETS.pathSegments.straight;
+      const start = seg.start || def.start;
+      const end = seg.end || def.end;
+      const distance = Number(seg.distance ?? i * SEGMENT_WORLD_STEP);
+      return { ...def, key, id: def.id, start, end, startX: PATH_POSITIONS[start] ?? 0, endX: PATH_POSITIONS[end] ?? 0, distance };
+    });
+  }
+  if (data.layers) {
+    Object.entries(data.layers).forEach(([id, cfg]) => {
+      const pending = OC.pendingLayerSettings || (OC.pendingLayerSettings = {});
+      pending[id] = { ...(pending[id] || {}), ...cfg };
+      const layer = OC.layers.get(id);
+      if (layer) Object.assign(layer, cfg);
+    });
+  }
+  if (data.glbControls) OC.glbControls = new Map(Object.entries(data.glbControls));
+  if (options.updateUi) syncUiFromState();
+}
+
+function applyDefaultSettings() {
+  if (OC.defaultSettingsApplied) return;
+  applySettingsObject(DEFAULT_SETTINGS);
+  OC.defaultSettingsApplied = true;
+}
+
+function syncUiFromState() {
+  if ($('obstacle-template')) $('obstacle-template').value = OC.templateId;
+  if ($('obstacle-difficulty')) $('obstacle-difficulty').value = OC.difficulty;
+  if ($('obstacle-difficulty-out')) $('obstacle-difficulty-out').textContent = OC.difficulty;
+  if ($('obstacle-distance')) $('obstacle-distance').value = OC.courseLength;
+  if ($('obstacle-distance-out')) $('obstacle-distance-out').textContent = OC.courseLength;
+  if ($('obstacle-scenery-distance')) $('obstacle-scenery-distance').value = OC.sceneryDistance;
+  if ($('obstacle-scenery-distance-out')) $('obstacle-scenery-distance-out').textContent = Number(OC.sceneryDistance).toFixed(1);
+  if ($('oc-vp-x')) $('oc-vp-x').value = OC.vanishX || 0;
+  if ($('oc-vp-x-out')) $('oc-vp-x-out').textContent = Number(OC.vanishX || 0).toFixed(1);
+  if ($('oc-vp-y')) $('oc-vp-y').value = OC.vanishY || 0;
+  if ($('oc-vp-y-out')) $('oc-vp-y-out').textContent = Number(OC.vanishY || 0).toFixed(2);
+  if ($('oc-vp-angle')) $('oc-vp-angle').value = OC.cameraAngle || 0;
+  if ($('oc-vp-angle-out')) $('oc-vp-angle-out').textContent = Number(OC.cameraAngle || 0).toFixed(1);
+  createGlobalSliders();
+  createLayerSliders();
+  updateScreenFilters();
+}
+
+
 function generatePathSequence() {
+  if (OC.customPathSequence?.length) {
+    OC.pathSequence = OC.customPathSequence.map((seg) => ({ ...seg }));
+    return;
+  }
   OC.pathSequence = [];
   let pos = 'centre';
   const count = Math.ceil((OC.courseLength + 420) / SEGMENT_WORLD_STEP);
@@ -929,6 +1612,14 @@ function buildMaterials() {
   });
 }
 
+function applyPendingLayerSettings() {
+  if (!OC.pendingLayerSettings) return;
+  Object.entries(OC.pendingLayerSettings).forEach(([id, cfg]) => {
+    const layer = OC.layers.get(id);
+    if (layer) Object.assign(layer, cfg);
+  });
+}
+
 function buildWorld() {
   const groundLayer = new THREE.Group();
   const pathLayer = new THREE.Group();
@@ -945,6 +1636,7 @@ function buildWorld() {
   makeLayer('details', 'Ferns / bushes', detailLayer, { order: 14 });
   makeLayer('collectibles', 'Collectibles', collectibleLayer, { order: 15 });
   makeLayer('obstacles', 'Obstacles', obstacleLayer, { order: 16 });
+  applyPendingLayerSettings();
   generatePathSequence();
   buildGround(groundLayer);
   buildPathSegments(pathLayer);
@@ -1387,13 +2079,14 @@ function handleKeyUp(event) {
 }
 
 function normalizeKey(event) {
-  const key = event.key.toLowerCase();
-  if (key === 'w' || key === 'arrowup') return 'forward';
-  if (key === 's' || key === 'arrowdown') return 'back';
-  if (key === 'a' || key === 'arrowleft') return 'left';
-  if (key === 'd' || key === 'arrowright') return 'right';
-  if (key === ' ' || key === 'spacebar') return 'jump';
-  if (key === 'control' || key === 'ctrl') return 'duck';
+  const key = String(event.key || '').toLowerCase();
+  const code = String(event.code || '').toLowerCase();
+  if (key === 'w' || key === 'arrowup' || code === 'keyw' || code === 'arrowup') return 'forward';
+  if (key === 's' || key === 'arrowdown' || code === 'keys' || code === 'arrowdown') return 'back';
+  if (key === 'a' || key === 'arrowleft' || code === 'keya' || code === 'arrowleft') return 'left';
+  if (key === 'd' || key === 'arrowright' || code === 'keyd' || code === 'arrowright') return 'right';
+  if (key === ' ' || key === 'spacebar' || key === 'space' || code === 'space') return 'jump';
+  if (key === 'control' || key === 'ctrl' || code === 'controlleft' || code === 'controlright') return 'duck';
   return null;
 }
 
@@ -1769,25 +2462,7 @@ async function importJsonSettings(event) {
   if (!file) return;
   try {
     const data = JSON.parse(await file.text());
-    if (data.templateId) OC.templateId = data.templateId;
-    if (data.difficulty) OC.difficulty = Number(data.difficulty);
-    if (data.courseLength) OC.courseLength = Number(data.courseLength);
-    if (data.sceneryDistance !== undefined) OC.sceneryDistance = Number(data.sceneryDistance);
-    if (data.pathVisualWidth) OC.pathVisualWidth = Number(data.pathVisualWidth);
-    if (data.vanishX !== undefined) OC.vanishX = Number(data.vanishX);
-    if (data.vanishY !== undefined) OC.vanishY = Number(data.vanishY);
-    if (data.cameraAngle !== undefined) OC.cameraAngle = Number(data.cameraAngle);
-    if (data.backgroundZoom !== undefined) OC.backgroundZoom = Number(data.backgroundZoom);
-    if (data.visual) {
-      OC.screenBrightness = data.visual.brightness ?? OC.screenBrightness;
-      OC.screenContrast = data.visual.contrast ?? OC.screenContrast;
-      OC.screenSaturation = data.visual.saturation ?? OC.screenSaturation;
-      OC.screenTint = data.visual.tint ?? OC.screenTint;
-      OC.screenTintStrength = data.visual.tintStrength ?? OC.screenTintStrength;
-    }
-    if (data.glbControls) {
-      OC.glbControls = new Map(Object.entries(data.glbControls));
-    }
+    applySettingsObject(data, { updateUi: true });
     regenerateCourse();
     updateScreenFilters();
     setResult('Imported obstacle course JSON settings.', 'success');
