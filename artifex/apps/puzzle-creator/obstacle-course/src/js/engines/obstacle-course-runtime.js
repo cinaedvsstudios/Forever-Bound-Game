@@ -1,12 +1,12 @@
-// Obstacle Course V2.7.0 / Horse Forest Runner
+// Obstacle Course V2.7.1 / Horse Forest Runner
 // Consolidated runtime: no post-load patch stack.
 // The obstacle-course UI, generation, alpha-path logic, GLB controls, overview, HUD, and JSON settings live here.
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
 
-const VERSION = 'V2.7.0';
-const CACHE_VERSION = '2.7.0';
+const VERSION = 'V2.7.1';
+const CACHE_VERSION = '2.7.1';
 const ASSET_BASE = './assets/';
 const SHARED_UI_BASE = '../../../shared/ui/';
 const GROUND_Y = -1.62;
@@ -128,8 +128,12 @@ const OC = {
   soloLayerId: null,
   layers: new Map(),
   pathAlphaMaps: new Map(),
+  pathAlphaPromises: new Map(),
+  requiredAssetFailures: [],
   requiredReady: false,
   loadingDone: false,
+  renderLoopRunning: false,
+  renderLoopTick: false,
   loadingTotal: 0,
   loadingCount: 0,
   textureLoader: null,
@@ -176,8 +180,11 @@ function ensureMounted() {
   mountLayout();
   bindInputs();
   initThree();
-  preloadAssets().finally(() => {
-    OC.requiredReady = true;
+  preloadAssets().then(() => {
+    if (!OC.requiredReady) {
+      updateStats();
+      return;
+    }
     regenerateCourse();
     updateStats();
     setResult('Obstacle course ready.', 'success');
@@ -392,23 +399,32 @@ function setLoading(count, total) {
 }
 
 async function preloadAssets() {
-  const required = [
-    ASSETS.horse, ASSETS.background, ASSETS.ground, ASSETS.powerbars, ASSETS.arrows,
+  const requiredImages = [
+    ASSETS.horse,
+    ASSETS.background,
+    ASSETS.ground,
+    ASSETS.powerbars,
+    ASSETS.arrows,
     ...Object.values(ASSETS.pathSegments).map((item) => item.file),
   ];
+  const requiredAlpha = Object.values(ASSETS.pathSegments);
   const optionalGlb = GLB_ASSETS;
-  const total = required.length + optionalGlb.length;
+  const total = requiredImages.length + requiredAlpha.length + optionalGlb.length;
   let count = 0;
+  OC.requiredAssetFailures = [];
   setLoading(0, total);
 
-  await Promise.all(required.map((url) => new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => { count += 1; setLoading(count, total); resolve(true); };
-    img.onerror = () => { count += 1; setLoading(count, total); console.warn('[ObstacleCourse] required image failed', url); resolve(false); };
-    img.src = `${url}?v=${CACHE_VERSION}`;
+  await Promise.all(requiredImages.map((url) => preloadImage(url).then((ok) => {
+    count += 1;
+    setLoading(count, total);
+    if (!ok) OC.requiredAssetFailures.push(url);
   })));
 
-  ensurePathAlphaMaps();
+  await Promise.all(requiredAlpha.map((def) => loadPathAlphaMap(def).then((ok) => {
+    count += 1;
+    setLoading(count, total);
+    if (!ok) OC.requiredAssetFailures.push(def.file);
+  })));
 
   await Promise.all(optionalGlb.map((asset) => loadGlbAsset(asset).finally(() => {
     count += 1;
@@ -416,8 +432,28 @@ async function preloadAssets() {
   })));
 
   OC.loadingDone = true;
+  OC.requiredReady = OC.requiredAssetFailures.length === 0;
   const node = $('oc-loading');
-  if (node) node.textContent = `Loading assets ${count} / ${total} complete`;
+  if (node) {
+    node.textContent = OC.requiredReady
+      ? `Loading assets ${count} / ${total} complete`
+      : `Missing required assets: ${OC.requiredAssetFailures.length}`;
+  }
+  if (!OC.requiredReady) {
+    setResult(`Required asset failure: ${OC.requiredAssetFailures.join(', ')}`, 'failure');
+  }
+}
+
+function preloadImage(url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => {
+      console.warn('[ObstacleCourse] required image failed', url);
+      resolve(false);
+    };
+    img.src = `${url}?v=${CACHE_VERSION}`;
+  });
 }
 
 function loadGlbAsset(asset) {
@@ -761,11 +797,13 @@ function regenerateCourse() {
   addObstacles(Math.round((7 + OC.difficulty * 4) * template.obstacleRate));
   addCollectibles(5 + OC.difficulty * 2);
   populateLayerSelect();
+  createLayerSliders();
   applyAllLayers();
+  refreshGlbSelectionBoxes();
   updateTemplateText();
   updateStats();
   drawOverview();
-  drawFrame();
+  renderOnce();
 }
 
 function buildMaterials() {
@@ -858,28 +896,46 @@ function playerWorldX() {
 }
 
 function ensurePathAlphaMaps() {
-  Object.values(ASSETS.pathSegments).forEach(loadPathAlphaMap);
+  return Promise.all(Object.values(ASSETS.pathSegments).map(loadPathAlphaMap));
 }
 
 function loadPathAlphaMap(def) {
-  if (!def || OC.pathAlphaMaps.has(def.id)) return;
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = () => {
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth || img.width;
-      canvas.height = img.naturalHeight || img.height;
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      ctx.drawImage(img, 0, 0);
-      OC.pathAlphaMaps.set(def.id, { width: canvas.width, height: canvas.height, data: ctx.getImageData(0, 0, canvas.width, canvas.height).data });
-    } catch (error) {
-      console.warn('[ObstacleCourse] path alpha map failed', def.id, error);
+  if (!def) return Promise.resolve(false);
+  if (OC.pathAlphaMaps.has(def.id)) return Promise.resolve(Boolean(OC.pathAlphaMaps.get(def.id)));
+  if (OC.pathAlphaPromises.has(def.id)) return OC.pathAlphaPromises.get(def.id);
+
+  const promise = new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0);
+        OC.pathAlphaMaps.set(def.id, {
+          width: canvas.width,
+          height: canvas.height,
+          data: ctx.getImageData(0, 0, canvas.width, canvas.height).data
+        });
+        resolve(true);
+      } catch (error) {
+        console.warn('[ObstacleCourse] path alpha map failed', def.id, error);
+        OC.pathAlphaMaps.set(def.id, null);
+        resolve(false);
+      }
+    };
+    img.onerror = () => {
+      console.warn('[ObstacleCourse] path alpha map image failed', def.file);
       OC.pathAlphaMaps.set(def.id, null);
-    }
-  };
-  img.onerror = () => OC.pathAlphaMaps.set(def.id, null);
-  img.src = `${def.file}?v=${CACHE_VERSION}`;
+      resolve(false);
+    };
+    img.src = `${def.file}?v=${CACHE_VERSION}`;
+  });
+
+  OC.pathAlphaPromises.set(def.id, promise);
+  return promise;
 }
 
 function alphaSegmentAt(distance) {
@@ -943,6 +999,12 @@ function visibleCollectiblePathX(distance) {
   for (let x = meshCenterX - width * 0.48; x <= meshCenterX + width * 0.48; x += step) {
     const alpha = pathAlphaAtWorld(x, distance) || 0;
     if (alpha >= OC.collectibleAlphaThreshold) candidates.push({ x, alpha, bias: Math.abs(x - centre) });
+  }
+  if (!candidates.length) {
+    for (let x = meshCenterX - width * 0.48; x <= meshCenterX + width * 0.48; x += step) {
+      const alpha = pathAlphaAtWorld(x, distance) || 0;
+      if (alpha >= OC.pathAlphaThreshold) candidates.push({ x, alpha, bias: Math.abs(x - centre) });
+    }
   }
   if (!candidates.length) return centre;
   candidates.sort((a, b) => (a.bias - b.bias) || (b.alpha - a.alpha));
@@ -1129,7 +1191,10 @@ function refreshGlbSelectionBoxes() {
 }
 
 function startRun() {
-  if (!OC.requiredReady) return;
+  if (!OC.requiredReady) {
+    setResult('Cannot start: required obstacle-course assets are missing.', 'failure');
+    return;
+  }
   OC.active = true;
   OC.running = true;
   OC.paused = false;
@@ -1422,12 +1487,24 @@ function updateRideAudio() {
   setLoop('gallopFull', fast, 0.44);
 }
 
-function drawFrame() {
+function renderOnce() {
   if (!OC.renderer || !OC.scene || !OC.camera) return;
-  const dt = Math.min(0.033, OC.clock?.getDelta?.() || 0.016);
-  if (OC.active) updateRun(dt);
   OC.selectionBoxes.forEach((box) => box.update());
   OC.renderer.render(OC.scene, OC.camera);
+}
+
+function drawFrame() {
+  if (!OC.renderer || !OC.scene || !OC.camera) return;
+  if (OC.renderLoopRunning && !OC.renderLoopTick) {
+    renderOnce();
+    return;
+  }
+  OC.renderLoopRunning = true;
+  OC.renderLoopTick = true;
+  const dt = Math.min(0.033, OC.clock?.getDelta?.() || 0.016);
+  if (OC.active) updateRun(dt);
+  renderOnce();
+  OC.renderLoopTick = false;
   OC.frame = requestAnimationFrame(drawFrame);
 }
 
