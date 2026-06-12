@@ -48,7 +48,7 @@ function injectStyles() {
   const style = document.createElement('style');
   style.id = STYLE_ID;
   style.textContent = `
-    .hf-asset-debug-button{min-height:34px;border:1px solid rgba(144,192,255,.45);border-radius:9px;background:rgba(36,62,92,.72);color:var(--cream,#f4ead4);font-weight:900;cursor:pointer;margin:0 0 6px}
+    .hf-asset-debug-button{min-height:34px;border:1px solid rgba(144,192,255,.45);border-radius:9px;background:rgba(36,62,92,.72);color:var(--cream,#f4ead4);font-weight:900;cursor:pointer;margin:0;padding:0 11px}
     .hf-asset-modal{position:fixed;inset:42px;z-index:99999;border:1px solid rgba(238,196,90,.55);border-radius:18px;background:rgba(5,10,16,.98);color:#f4ead4;box-shadow:0 24px 80px rgba(0,0,0,.7);display:flex;flex-direction:column;overflow:hidden}.hf-asset-modal[hidden]{display:none!important}
     .hf-asset-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 16px;border-bottom:1px solid rgba(238,196,90,.22);background:rgba(22,29,40,.96)}.hf-asset-head h2{margin:0;font-size:1rem;font-family:Georgia,serif}.hf-asset-head button{border:1px solid rgba(238,196,90,.4);border-radius:9px;background:rgba(82,55,10,.72);color:#f4ead4;font-weight:900;padding:8px 10px;cursor:pointer}
     .hf-asset-body{padding:12px 14px;overflow:auto}.hf-asset-toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px;color:#c9bfae;font-size:.75rem}.hf-asset-table{width:100%;border-collapse:collapse;font-size:.72rem}.hf-asset-table th,.hf-asset-table td{border-bottom:1px solid rgba(238,196,90,.14);padding:7px 6px;text-align:left;vertical-align:top}.hf-asset-table th{position:sticky;top:0;background:#101722;z-index:1;color:#eec45a}.hf-asset-status{font-weight:900}.hf-asset-status.ok{color:#9ee6a4}.hf-asset-status.fail{color:#ff9a84}.hf-asset-status.pending{color:#eec45a}.hf-asset-preview img{max-width:92px;max-height:52px;object-fit:cover;border:1px solid rgba(255,255,255,.18);border-radius:6px;background:#111}.hf-asset-path{font-family:monospace;color:#c9bfae;word-break:break-all}.hf-asset-small{color:#c9bfae;font-size:.66rem;line-height:1.25}
@@ -173,18 +173,24 @@ function openModal() {
 }
 
 function ensureButton() {
-  if (!document.body.classList.contains('is-obstacle-course') || document.getElementById(BUTTON_ID)) return;
-  const stage = document.getElementById('obstacle-course-stage');
-  if (!stage || stage.hidden) return;
-  const anchor = document.getElementById('hf-export-json') || stage.querySelector('.obstacle-side-card .hf-button-row:first-child');
+  if (!document.body.classList.contains('is-obstacle-course')) return;
+  let button = document.getElementById(BUTTON_ID);
+  const slot = document.getElementById('oc-debug-button-slot');
+  const legacyAnchor = document.getElementById('hf-export-json') || document.querySelector('.obstacle-side-card .hf-button-row:first-child');
+  const anchor = slot || legacyAnchor;
   if (!anchor) return;
-  const button = document.createElement('button');
-  button.id = BUTTON_ID;
-  button.className = 'hf-asset-debug-button';
-  button.type = 'button';
-  button.textContent = 'Asset Debug';
-  button.addEventListener('click', openModal);
-  anchor.insertAdjacentElement('afterend', button);
+
+  if (!button) {
+    button = document.createElement('button');
+    button.id = BUTTON_ID;
+    button.className = 'hf-asset-debug-button';
+    button.type = 'button';
+    button.textContent = 'Asset Debug';
+    button.addEventListener('click', openModal);
+  }
+
+  if (slot && button.parentElement !== slot) slot.appendChild(button);
+  else if (!slot && legacyAnchor && button.parentElement !== legacyAnchor.parentElement) legacyAnchor.insertAdjacentElement('afterend', button);
 }
 
 function boot() {

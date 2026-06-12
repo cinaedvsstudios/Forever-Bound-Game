@@ -1,12 +1,12 @@
-// Obstacle Course V2.7.2 / Horse Forest Runner
+// Obstacle Course V2.7.3 / Horse Forest Runner
 // Consolidated runtime: no post-load patch stack.
 // The obstacle-course UI, generation, alpha-path logic, GLB controls, overview, HUD, and JSON settings live here.
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
 
-const VERSION = 'V2.7.2';
-const CACHE_VERSION = '2.7.2';
+const VERSION = 'V2.7.3';
+const CACHE_VERSION = '2.7.3';
 const ASSET_BASE = './assets/';
 const SHARED_UI_BASE = '../../../shared/ui/';
 const GROUND_Y = -1.62;
@@ -234,6 +234,13 @@ function injectStyles() {
     .hf-key-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;color:#c9bfae;font-size:.72rem}.hf-key-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}.hf-key-path{background:#eec45a}.hf-key-tree{background:#48a24a}.hf-key-rock{background:#aaa}.hf-key-collectible{background:#5be5ff}.hf-key-obstacle{background:#b04b35}
     .oc-result{min-height:24px;margin:8px 0;color:#eec45a;font-size:.75rem}.oc-result.failure{color:#ff9a9a}.oc-result.success{color:#9ee6a4}
     .oc-loading{color:#eec45a;font-size:.72rem;font-weight:900;margin-top:8px}.right-preview-layout,.overview-window,.render-viewport{display:none!important}
+    .oc-topbar{display:grid;grid-template-columns:minmax(260px,1fr) auto;gap:12px;align-items:center;border:1px solid rgba(238,196,90,.26);border-radius:14px;background:rgba(7,14,22,.86);padding:10px 12px;margin-bottom:12px}
+    .oc-topbar h2{font-family:Cinzel,Georgia,serif;margin:.15rem 0;font-size:1.12rem}.oc-topbar .eyebrow{font-size:.62rem;color:#9ee6a4;font-weight:900;letter-spacing:.16em;text-transform:uppercase;margin:0}
+    .oc-topbar p{margin:.2rem 0 0;color:#c9bfae;font-size:.7rem;line-height:1.25}.oc-top-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+    .oc-top-actions button{min-height:34px;border:1px solid rgba(124,202,125,.38);border-radius:10px;background:rgba(20,72,37,.72);color:#f4ead4;font-weight:900;cursor:pointer;padding:0 11px}
+    .oc-top-actions button:hover{border-color:rgba(238,196,90,.75)}.oc-top-actions button.is-running{border-color:rgba(158,230,164,.95);background:rgba(36,120,62,.9);box-shadow:0 0 0 2px rgba(158,230,164,.22),0 0 18px rgba(158,230,164,.2)}.oc-top-actions button.is-paused{border-color:rgba(238,196,90,.95);background:rgba(95,63,9,.88)}
+    .oc-top-status{display:grid;gap:2px;min-width:190px;border:1px solid rgba(238,196,90,.45);border-radius:10px;background:rgba(5,10,16,.74);padding:7px 9px;color:#eec45a;font-size:.66rem;font-weight:900;line-height:1.25}.oc-top-status small{color:#c9bfae;font-size:.62rem;font-weight:800}
+
   `;
   document.head.appendChild(style);
 }
@@ -242,9 +249,23 @@ function mountLayout() {
   OC.rightPanel.innerHTML = `
     <div class="obstacle-app">
       <section class="obstacle-main-card">
-        <div class="obstacle-header-line">
-          <div><p class="eyebrow">Obstacle Course · ${VERSION}</p><h2 id="obstacle-title">Obstacle Course</h2><p id="obstacle-objective">Horse forest obstacle course using alpha-tested transparent path segments over forest_ground.webp.</p></div>
-          <span id="obstacle-status" class="obstacle-status-pill">Loading</span>
+        <div class="oc-topbar">
+          <div class="oc-top-title">
+            <p class="eyebrow">Obstacle Course · ${VERSION}</p>
+            <h2 id="obstacle-title">Obstacle Course</h2>
+            <p id="obstacle-objective">Horse forest obstacle course using alpha-tested transparent path segments over forest_ground.webp.</p>
+          </div>
+          <div class="oc-top-actions">
+            <button id="obstacle-start" type="button">Start Test</button>
+            <button id="obstacle-pause" type="button">Pause</button>
+            <button id="obstacle-reset-run" type="button">Reset Run</button>
+            <span id="oc-debug-button-slot"></span>
+            <div class="oc-top-status">
+              <span id="obstacle-status">Loading</span>
+              <small id="oc-top-load">Assets 0 / 0</small>
+              <small id="oc-top-info">Distance 0 / ${OC.courseLength}</small>
+            </div>
+          </div>
         </div>
         <div id="obstacle-stage" class="obstacle-three-wrap">
           <div class="obstacle-tint-overlay"></div>
@@ -252,11 +273,6 @@ function mountLayout() {
           <div id="oc-offpath-arrow" class="oc-offpath-arrow dir-right"></div>
           <div id="obstacle-horse" class="obstacle-horse-overlay"></div>
           <div class="obstacle-hud"><span id="obstacle-distance-readout">Distance 0 / ${OC.courseLength}</span><span id="obstacle-score-readout">Score 0</span></div>
-        </div>
-        <div class="hf-run-controls">
-          <button id="obstacle-start" type="button">Start Test</button>
-          <button id="obstacle-pause" type="button">Pause</button>
-          <button id="obstacle-reset-run" type="button">Reset Run</button>
         </div>
         <div id="obstacle-result" class="oc-result"></div>
         <div id="oc-loading" class="oc-loading">Loading assets 0 / 0</div>
@@ -397,8 +413,11 @@ function loadTexture(url, options = {}) {
 function setLoading(count, total) {
   OC.loadingCount = count;
   OC.loadingTotal = total;
+  const message = `Assets ${count} / ${total}`;
   const node = $('oc-loading');
-  if (node) node.textContent = `Loading assets ${count} / ${total}`;
+  if (node) node.textContent = `Loading ${message}`;
+  const top = $('oc-top-load');
+  if (top) top.textContent = message;
 }
 
 async function preloadAssets() {
@@ -441,6 +460,12 @@ async function preloadAssets() {
     node.textContent = OC.requiredReady
       ? `Loading assets ${count} / ${total} complete`
       : `Missing required assets: ${OC.requiredAssetFailures.length}`;
+  }
+  const top = $('oc-top-load');
+  if (top) {
+    top.textContent = OC.requiredReady
+      ? `Assets ${count} / ${total} loaded`
+      : `Missing required: ${OC.requiredAssetFailures.length}`;
   }
   if (!OC.requiredReady) {
     setResult(`Required asset failure: ${OC.requiredAssetFailures.join(', ')}`, 'failure');
@@ -1442,6 +1467,7 @@ function updateStats() {
   if ($('oc-speed-value')) $('oc-speed-value').textContent = `${speed}/${max}`;
   if ($('obstacle-distance-readout')) $('obstacle-distance-readout').textContent = `Distance ${Math.max(0, Math.round(OC.distance))} / ${Math.round(OC.courseLength)}`;
   if ($('obstacle-score-readout')) $('obstacle-score-readout').textContent = `Score ${OC.score} · Collected ${OC.collected} · Hits ${OC.hits}`;
+  if ($('oc-top-info')) $('oc-top-info').textContent = `Distance ${Math.max(0, Math.round(OC.distance))}/${Math.round(OC.courseLength)} · Score ${OC.score} · Collected ${OC.collected}/${OC.objects.filter((obj) => obj.userData.kind === 'collectible').length}`;
   const statusNode = $('obstacle-status');
   if (statusNode) statusNode.textContent = OC.complete ? 'Complete' : OC.running ? 'Running' : OC.paused ? 'Paused' : OC.requiredReady ? 'Ready' : 'Loading';
   $('obstacle-start')?.classList.toggle('is-running', OC.running);
