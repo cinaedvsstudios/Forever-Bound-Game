@@ -1,12 +1,12 @@
-// Obstacle Course V2.7.3 / Horse Forest Runner
+// Obstacle Course V2.7.4 / Horse Forest Runner
 // Consolidated runtime: no post-load patch stack.
 // The obstacle-course UI, generation, alpha-path logic, GLB controls, overview, HUD, and JSON settings live here.
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
 
-const VERSION = 'V2.7.3';
-const CACHE_VERSION = '2.7.3';
+const VERSION = 'V2.7.4';
+const CACHE_VERSION = '2.7.4';
 const ASSET_BASE = './assets/';
 const SHARED_UI_BASE = '../../../shared/ui/';
 const GROUND_Y = -1.62;
@@ -105,6 +105,7 @@ const OC = {
   displacementStrength: 0.035,
   vanishX: 0,
   vanishY: 0.35,
+  cameraAngle: 0,
   gridEnabled: false,
   overviewPathOverlay: true,
   whiteBackground: false,
@@ -167,6 +168,16 @@ const rand = (min, max) => min + Math.random() * (max - min);
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
 const signedToFactor = (value) => clamp(1 + (Number(value || 0) / 10), 0.05, 8);
 const factorToSigned = (value) => Math.round((Number(value || 1) - 1) * 10);
+const sliderToVisualFactor = (value) => clamp(1 + (Number(value || 0) / 100), 0.5, 2);
+const visualFactorToSlider = (value) => Math.round((Number(value || 1) - 1) * 100);
+const sliderToGlobalBrightness = (value) => clamp(1 + (Number(value || 0) / 100), 0.5, 1.5);
+const globalBrightnessToSlider = (value) => Math.round((Number(value || 1) - 1) * 100);
+const sliderToGlobalContrast = (value) => clamp(1 + (Number(value || 0) / 100), 0.5, 1.5);
+const globalContrastToSlider = (value) => Math.round((Number(value || 1) - 1) * 100);
+const sliderToGlobalSaturation = (value) => clamp(1 + (Number(value || 0) / 100), 0.5, 2);
+const globalSaturationToSlider = (value) => Math.round((Number(value || 1) - 1) * 100);
+const tintToSlider = (value) => Math.round(clamp(Number(value || 0), 0, 1) * 50);
+const sliderToTint = (value) => clamp(Number(value || 0) / 50, 0, 1);
 
 export function openObstacleCourseWorkflow() {
   ensureMounted();
@@ -314,8 +325,9 @@ function mountLeftPanel() {
     <section class="hf-layer-panel"><h3>View Helpers</h3>
       <label class="field-check"><input id="oc-ground-grid-toggle" type="checkbox"> Show ground grid</label>
       <label class="field-check"><input id="oc-overview-path-overlay" type="checkbox" checked> Show path alpha on overview</label>
-      <label class="range-row"><span>Vanishing Point X <output id="oc-vp-x-out">${(OC.vanishX || 0).toFixed(1)}</output></span><input id="oc-vp-x" type="range" min="-50" max="50" step="0.5" value="${OC.vanishX || 0}"></label>
-      <label class="range-row"><span>Vanishing Point Y <output id="oc-vp-y-out">${(OC.vanishY ?? 0.35).toFixed(2)}</output></span><input id="oc-vp-y" type="range" min="-50" max="50" step="0.5" value="${OC.vanishY ?? 0.35}"></label>
+      <label class="range-row"><span>Vanishing Point X <output id="oc-vp-x-out">${(OC.vanishX || 0).toFixed(1)}</output></span><input id="oc-vp-x" type="range" min="-100" max="100" step="0.5" value="${OC.vanishX || 0}"></label>
+      <label class="range-row"><span>Vanishing Point Y <output id="oc-vp-y-out">${(OC.vanishY ?? 0.35).toFixed(2)}</output></span><input id="oc-vp-y" type="range" min="-100" max="100" step="0.5" value="${OC.vanishY ?? 0.35}"></label>
+      <label class="range-row"><span>View Angle <output id="oc-vp-angle-out">${(OC.cameraAngle || 0).toFixed(1)}</output></span><input id="oc-vp-angle" type="range" min="-100" max="100" step="0.5" value="${OC.cameraAngle || 0}"></label>
     </section>
     <section class="hf-control-section"><h3>Overview Key</h3><div class="hf-key-list"><div><span class="hf-key-dot hf-key-path"></span>Path</div><div><span class="hf-key-dot hf-key-tree"></span>Tree</div><div><span class="hf-key-dot hf-key-rock"></span>Rock</div><div><span class="hf-key-dot hf-key-collectible"></span>Collectible</div><div><span class="hf-key-dot hf-key-obstacle"></span>Obstacle</div></div></section>
     <section class="hf-control-section"><h3>Settings</h3><button id="hf-export-json" class="hf-export-json-button" type="button">Download JSON</button><input id="hf-import-json-file" type="file" accept="application/json,.json" hidden><button id="hf-import-json" class="hf-export-json-button" type="button" style="margin-top:8px">Import JSON Settings</button></section>
@@ -342,12 +354,14 @@ function bindInputs() {
   $('oc-overview-path-overlay')?.addEventListener('change', (event) => { OC.overviewPathOverlay = event.target.checked; drawOverview(); });
   $('oc-vp-x')?.addEventListener('input', (event) => { OC.vanishX = Number(event.target.value); $('oc-vp-x-out').textContent = OC.vanishX.toFixed(1); applyCamera(); drawFrame(); });
   $('oc-vp-y')?.addEventListener('input', (event) => { OC.vanishY = Number(event.target.value); $('oc-vp-y-out').textContent = OC.vanishY.toFixed(2); applyCamera(); drawFrame(); });
+  $('oc-vp-angle')?.addEventListener('input', (event) => { OC.cameraAngle = Number(event.target.value); $('oc-vp-angle-out').textContent = OC.cameraAngle.toFixed(1); applyCamera(); drawFrame(); });
   $('hf-export-json')?.addEventListener('click', exportJsonSettings);
   $('hf-import-json')?.addEventListener('click', () => $('hf-import-json-file')?.click());
   $('hf-import-json-file')?.addEventListener('change', importJsonSettings);
-  window.addEventListener('keydown', handleKeyDown);
-  window.addEventListener('keyup', handleKeyUp);
+  document.addEventListener('keydown', handleKeyDown, true);
+  document.addEventListener('keyup', handleKeyUp, true);
   window.addEventListener('resize', resizeRenderer);
+  OC.stage?.addEventListener('pointerdown', () => OC.stage?.focus?.());
 }
 
 function initThree() {
@@ -356,6 +370,8 @@ function initThree() {
   OC.scene = new THREE.Scene();
   OC.camera = new THREE.PerspectiveCamera(55, 16 / 9, 0.1, 5000);
   OC.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  OC.stage.tabIndex = 0;
+  OC.renderer.domElement.tabIndex = 0;
   OC.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   OC.renderer.outputEncoding = THREE.sRGBEncoding;
   OC.stage.appendChild(OC.renderer.domElement);
@@ -382,6 +398,7 @@ function applyCamera() {
   const lookY = GROUND_Y + (OC.vanishY || 0) * 0.06;
   OC.camera.position.set(camX, 4.4, 10.8);
   OC.camera.lookAt(lookX, lookY, -92);
+  OC.camera.rotation.z += (OC.cameraAngle || 0) * 0.0035;
   OC.camera.updateProjectionMatrix();
 }
 
@@ -561,8 +578,14 @@ function applyVisualToMaterial(mat, cfg) {
   if (mat.color && mat.userData.baseColor) {
     const color = mat.userData.baseColor.clone();
     const brightness = cfg.brightness ?? 1;
+    const contrast = cfg.contrast ?? 1;
     const saturation = cfg.saturation ?? 1;
     color.multiplyScalar(brightness);
+    if (contrast !== 1) {
+      color.r = clamp((color.r - 0.5) * contrast + 0.5, 0, 1);
+      color.g = clamp((color.g - 0.5) * contrast + 0.5, 0, 1);
+      color.b = clamp((color.b - 0.5) * contrast + 0.5, 0, 1);
+    }
     if (saturation !== 1) {
       const hsl = {};
       color.getHSL(hsl);
@@ -640,10 +663,10 @@ function createGlobalSliders() {
   const host = $('hf-global-sliders');
   if (!host) return;
   host.innerHTML = '';
-  buildSliderRow(host, 'hf-global', 'brightness', 'Brightness', -50, 50, 1, factorToSigned(OC.screenBrightness), (v) => { OC.screenBrightness = signedToFactor(v); updateScreenFilters(); });
-  buildSliderRow(host, 'hf-global', 'contrast', 'Contrast', -50, 50, 1, factorToSigned(OC.screenContrast), (v) => { OC.screenContrast = signedToFactor(v); updateScreenFilters(); });
-  buildSliderRow(host, 'hf-global', 'saturation', 'Saturation', -50, 50, 1, factorToSigned(OC.screenSaturation), (v) => { OC.screenSaturation = signedToFactor(v); updateScreenFilters(); });
-  buildSliderRow(host, 'hf-global', 'tintStrength', 'Tint Amt', 0, 1, 0.02, OC.screenTintStrength, (v) => { OC.screenTintStrength = v; updateScreenFilters(); });
+  buildSliderRow(host, 'hf-global', 'brightness', 'Brightness', -50, 50, 1, globalBrightnessToSlider(OC.screenBrightness), (v) => { OC.screenBrightness = sliderToGlobalBrightness(v); updateScreenFilters(); });
+  buildSliderRow(host, 'hf-global', 'contrast', 'Contrast', -50, 50, 1, globalContrastToSlider(OC.screenContrast), (v) => { OC.screenContrast = sliderToGlobalContrast(v); updateScreenFilters(); });
+  buildSliderRow(host, 'hf-global', 'saturation', 'Saturation', -50, 100, 1, globalSaturationToSlider(OC.screenSaturation), (v) => { OC.screenSaturation = sliderToGlobalSaturation(v); updateScreenFilters(); });
+  buildSliderRow(host, 'hf-global', 'tintStrength', 'Tint Amt', 0, 50, 1, tintToSlider(OC.screenTintStrength), (v) => { OC.screenTintStrength = sliderToTint(v); updateScreenFilters(); });
   const tintRow = document.createElement('label');
   tintRow.className = 'field-block';
   tintRow.innerHTML = `<span>Screen Tint</span><input id="hf-global-tint" type="color" value="${OC.screenTint}">`;
@@ -668,19 +691,19 @@ function createLayerSliders() {
     return;
   }
   layer.scaleOffset = layer.scaleOffset ?? factorToSigned(layer.scale);
-  layer.brightnessOffset = layer.brightnessOffset ?? factorToSigned(layer.brightness);
-  layer.contrastOffset = layer.contrastOffset ?? factorToSigned(layer.contrast);
-  layer.saturationOffset = layer.saturationOffset ?? factorToSigned(layer.saturation);
+  layer.brightnessOffset = layer.brightnessOffset ?? visualFactorToSlider(layer.brightness);
+  layer.contrastOffset = layer.contrastOffset ?? visualFactorToSlider(layer.contrast);
+  layer.saturationOffset = layer.saturationOffset ?? visualFactorToSlider(layer.saturation);
 
   buildSliderRow(host, 'hf-layer', 'x', 'X', -50, 50, 0.5, layer.x || 0, (v) => { layer.x = v; applyLayer(layer); drawFrame(); drawOverview(); });
   buildSliderRow(host, 'hf-layer', 'z', 'Z', -50, 50, 0.5, layer.z || 0, (v) => { layer.z = v; applyLayer(layer); drawFrame(); drawOverview(); });
   buildSliderRow(host, 'hf-layer', 'y', 'Y', -50, 50, 0.5, layer.y || 0, (v) => { layer.y = v; applyLayer(layer); drawFrame(); });
   buildSliderRow(host, 'hf-layer', 'scaleOffset', 'Scale', -50, 50, 1, layer.scaleOffset, (v) => { layer.scaleOffset = v; layer.scale = signedToFactor(v); applyLayer(layer); drawFrame(); drawOverview(); });
   buildSliderRow(host, 'hf-layer', 'opacity', 'Opacity', 0, 1, 0.02, layer.opacity ?? 1, (v) => { layer.opacity = v; applyLayer(layer); drawFrame(); });
-  buildSliderRow(host, 'hf-layer', 'brightnessOffset', 'Bright', -50, 50, 1, layer.brightnessOffset, (v) => { layer.brightnessOffset = v; layer.brightness = signedToFactor(v); applyLayer(layer); drawFrame(); });
-  buildSliderRow(host, 'hf-layer', 'contrastOffset', 'Contrast', -50, 50, 1, layer.contrastOffset, (v) => { layer.contrastOffset = v; layer.contrast = signedToFactor(v); applyLayer(layer); drawFrame(); });
-  buildSliderRow(host, 'hf-layer', 'saturationOffset', 'Saturation', -50, 50, 1, layer.saturationOffset, (v) => { layer.saturationOffset = v; layer.saturation = signedToFactor(v); applyLayer(layer); drawFrame(); });
-  buildSliderRow(host, 'hf-layer', 'tintStrength', 'Tint Amt', 0, 1, 0.02, layer.tintStrength || 0, (v) => { layer.tintStrength = v; applyLayer(layer); drawFrame(); });
+  buildSliderRow(host, 'hf-layer', 'brightnessOffset', 'Bright', -50, 50, 1, layer.brightnessOffset, (v) => { layer.brightnessOffset = v; layer.brightness = sliderToVisualFactor(v); applyLayer(layer); drawFrame(); });
+  buildSliderRow(host, 'hf-layer', 'contrastOffset', 'Contrast', -50, 50, 1, layer.contrastOffset, (v) => { layer.contrastOffset = v; layer.contrast = sliderToVisualFactor(v); applyLayer(layer); drawFrame(); });
+  buildSliderRow(host, 'hf-layer', 'saturationOffset', 'Saturation', -50, 100, 1, layer.saturationOffset, (v) => { layer.saturationOffset = v; layer.saturation = sliderToVisualFactor(v); applyLayer(layer); drawFrame(); });
+  buildSliderRow(host, 'hf-layer', 'tintStrength', 'Tint Amt', 0, 50, 1, tintToSlider(layer.tintStrength), (v) => { layer.tintStrength = sliderToTint(v); applyLayer(layer); drawFrame(); });
   buildSliderRow(host, 'hf-layer', 'order', 'Order', -50, 50, 1, layer.order || 0, (v) => { layer.order = v; applyLayer(layer); drawFrame(); });
   const tintRow = document.createElement('label');
   tintRow.className = 'field-block';
@@ -721,10 +744,10 @@ function createGlbAssetSliders(host) {
   buildSliderRow(host, 'hf-glb', 'y', 'Y', -50, 50, 0.5, cfg.y || 0, (v) => { cfg.y = v; applyAllGlbAssetControls(); });
   buildSliderRow(host, 'hf-glb', 'scaleOffset', 'Scale', -50, 50, 1, cfg.scaleOffset || 0, (v) => { cfg.scaleOffset = v; cfg.scale = signedToFactor(v); applyAllGlbAssetControls(); });
   buildSliderRow(host, 'hf-glb', 'opacity', 'Opacity', 0, 1, 0.02, cfg.opacity ?? 1, (v) => { cfg.opacity = v; applyAllGlbAssetControls(); });
-  buildSliderRow(host, 'hf-glb', 'brightnessOffset', 'Bright', -50, 50, 1, cfg.brightnessOffset || 0, (v) => { cfg.brightnessOffset = v; cfg.brightness = signedToFactor(v); applyAllGlbAssetControls(); });
-  buildSliderRow(host, 'hf-glb', 'contrastOffset', 'Contrast', -50, 50, 1, cfg.contrastOffset || 0, (v) => { cfg.contrastOffset = v; cfg.contrast = signedToFactor(v); applyAllGlbAssetControls(); });
-  buildSliderRow(host, 'hf-glb', 'saturationOffset', 'Saturation', -50, 50, 1, cfg.saturationOffset || 0, (v) => { cfg.saturationOffset = v; cfg.saturation = signedToFactor(v); applyAllGlbAssetControls(); });
-  buildSliderRow(host, 'hf-glb', 'tintStrength', 'Tint Amt', 0, 1, 0.02, cfg.tintStrength || 0, (v) => { cfg.tintStrength = v; applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'brightnessOffset', 'Bright', -50, 50, 1, cfg.brightnessOffset || 0, (v) => { cfg.brightnessOffset = v; cfg.brightness = sliderToVisualFactor(v); applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'contrastOffset', 'Contrast', -50, 50, 1, cfg.contrastOffset || 0, (v) => { cfg.contrastOffset = v; cfg.contrast = sliderToVisualFactor(v); applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'saturationOffset', 'Saturation', -50, 100, 1, cfg.saturationOffset || 0, (v) => { cfg.saturationOffset = v; cfg.saturation = sliderToVisualFactor(v); applyAllGlbAssetControls(); });
+  buildSliderRow(host, 'hf-glb', 'tintStrength', 'Tint Amt', 0, 50, 1, tintToSlider(cfg.tintStrength), (v) => { cfg.tintStrength = sliderToTint(v); applyAllGlbAssetControls(); });
   buildSliderRow(host, 'hf-glb', 'order', 'Order', -50, 50, 1, cfg.order || 0, (v) => { cfg.order = v; applyAllGlbAssetControls(); });
   const tintRow = document.createElement('label');
   tintRow.className = 'field-block';
@@ -768,23 +791,30 @@ function toggleWhiteBackground() {
 }
 
 function updateScreenFilters() {
-  const filter = `brightness(${OC.screenBrightness || 1}) contrast(${OC.screenContrast || 1}) saturate(${OC.screenSaturation || 1})`;
-  const targets = [document.documentElement, OC.host, OC.stage].filter(Boolean);
+  const brightness = clamp(OC.screenBrightness || 1, 0.1, 3);
+  const contrast = clamp(OC.screenContrast || 1, 0.1, 3);
+  const saturation = clamp(OC.screenSaturation || 1, 0.1, 4);
+  const filter = `brightness(${brightness}) contrast(${contrast}) saturate(${saturation})`;
+
+  const targets = [document.documentElement, document.body, OC.host, OC.stage].filter(Boolean);
   targets.forEach((node) => {
-    node.style.setProperty('--oc-brightness', String(OC.screenBrightness || 1));
-    node.style.setProperty('--oc-contrast', String(OC.screenContrast || 1));
-    node.style.setProperty('--oc-saturation', String(OC.screenSaturation || 1));
+    node.style.setProperty('--oc-brightness', String(brightness));
+    node.style.setProperty('--oc-contrast', String(contrast));
+    node.style.setProperty('--oc-saturation', String(saturation));
     node.style.setProperty('--oc-tint', OC.screenTint || '#000000');
-    node.style.setProperty('--oc-tint-opacity', String(OC.screenTintStrength || 0));
+    node.style.setProperty('--oc-tint-opacity', String(clamp(OC.screenTintStrength || 0, 0, 1)));
   });
+
   const canvas = OC.renderer?.domElement;
   if (canvas) canvas.style.filter = filter;
+
   const tint = document.querySelector('.obstacle-tint-overlay');
   if (tint) {
     tint.style.setProperty('--oc-tint', OC.screenTint || '#000000');
-    tint.style.setProperty('--oc-tint-opacity', String(OC.screenTintStrength || 0));
-    tint.style.opacity = String(OC.screenTintStrength || 0);
+    tint.style.setProperty('--oc-tint-opacity', String(clamp(OC.screenTintStrength || 0, 0, 1)));
+    tint.style.opacity = String(clamp(OC.screenTintStrength || 0, 0, 1));
   }
+
   renderOnce();
 }
 
@@ -1255,6 +1285,8 @@ function refreshGlbSelectionBoxes() {
 }
 
 function startRun() {
+  document.activeElement?.blur?.();
+  OC.stage?.focus?.();
   if (!OC.requiredReady) {
     setResult('Cannot start: required obstacle-course assets are missing.', 'failure');
     return;
@@ -1676,6 +1708,7 @@ function exportJsonSettings() {
     pathVisualWidth: OC.pathVisualWidth,
     vanishX: OC.vanishX,
     vanishY: OC.vanishY,
+    cameraAngle: OC.cameraAngle,
     visual: {
       brightness: OC.screenBrightness,
       contrast: OC.screenContrast,
@@ -1707,6 +1740,7 @@ async function importJsonSettings(event) {
     if (data.pathVisualWidth) OC.pathVisualWidth = Number(data.pathVisualWidth);
     if (data.vanishX !== undefined) OC.vanishX = Number(data.vanishX);
     if (data.vanishY !== undefined) OC.vanishY = Number(data.vanishY);
+    if (data.cameraAngle !== undefined) OC.cameraAngle = Number(data.cameraAngle);
     if (data.visual) {
       OC.screenBrightness = data.visual.brightness ?? OC.screenBrightness;
       OC.screenContrast = data.visual.contrast ?? OC.screenContrast;
