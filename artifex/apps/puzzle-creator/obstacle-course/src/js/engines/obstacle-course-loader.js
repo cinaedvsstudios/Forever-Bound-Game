@@ -14,23 +14,30 @@ export function setLoading(count, total) {
 export function preloadImage(url) {
   return new Promise((resolve) => {
     const img = new Image();
+    img.crossOrigin = 'anonymous';
     img.onload = () => { OC.images.set(url, img); resolve(true); };
-    img.onerror = () => { console.warn('[ObstacleCourse] required image failed', url); resolve(false); };
+    img.onerror = () => { console.warn('[ObstacleCourse] image failed', url); resolve(false); };
     img.src = `${url}?v=${OC.cacheVersion}`;
   });
 }
 
 export async function loadPathAlphaMap(segment) {
-  const img = OC.images.get(segment.file);
-  if (!img) return false;
-  const canvas = document.createElement('canvas');
-  canvas.width = img.naturalWidth || img.width;
-  canvas.height = img.naturalHeight || img.height;
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  OC.alphaMaps.set(segment.key, { width: canvas.width, height: canvas.height, data: data.data });
-  return true;
+  try {
+    const img = OC.images.get(segment.file);
+    if (!img) return false;
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth || img.width;
+    canvas.height = img.naturalHeight || img.height;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx || !canvas.width || !canvas.height) return false;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    OC.alphaMaps.set(segment.key, { width: canvas.width, height: canvas.height, data: data.data });
+    return true;
+  } catch (error) {
+    console.warn('[ObstacleCourse] alpha map failed', segment.file, error);
+    return false;
+  }
 }
 
 export function pathAlphaAtSegment(segmentKey, u, v) {
@@ -63,10 +70,12 @@ export async function loadRequiredAssets({ onFirstReady } = {}) {
     if (!ok) OC.failures.push(asset.url);
   })));
   for (const seg of Object.values(ASSETS.pathSegments)) {
-    if (!(await loadPathAlphaMap(seg))) OC.failures.push(`${seg.file} alpha`);
+    const ok = await loadPathAlphaMap(seg);
+    if (!ok) console.warn('[ObstacleCourse] alpha fallback active for', seg.file);
   }
   OC.requiredReady = OC.failures.length === 0;
   if ($('obstacle-start')) $('obstacle-start').disabled = !OC.requiredReady;
+  if (!OC.requiredReady && $('oc-loading')) $('oc-loading').textContent = `Required asset failure: ${OC.failures.join(', ')}`;
   return { count, total };
 }
 
