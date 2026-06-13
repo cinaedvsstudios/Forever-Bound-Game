@@ -8,7 +8,7 @@ import { makeGlbOrFallback } from './obstacle-course-glb.js';
 import { playHitSound } from './obstacle-course-audio.js';
 
 function fallbackObstacle() {
-  return new THREE.Mesh(new THREE.DodecahedronGeometry(rand(0.6, 1.05), 0), new THREE.MeshStandardMaterial({ color: 0x7e5d44, roughness: 1 }));
+  return new THREE.Mesh(new THREE.DodecahedronGeometry(rand(0.36, 0.72), 0), new THREE.MeshStandardMaterial({ color: 0x7e5d44, roughness: 1 }));
 }
 
 export function addObstacles(count = 12) {
@@ -30,14 +30,14 @@ export function addObstacles(count = 12) {
     if (alpha !== null && alpha < OC.pathAlphaThreshold) continue;
     const asset = pick(assets) || null;
     const obj = asset ? makeGlbOrFallback(asset, fallbackObstacle) : fallbackObstacle();
-    obj.position.set(x, GROUND_Y + 0.5, -d);
+    obj.position.set(x, GROUND_Y + 0.42, -d);
     obj.rotation.y = rand(0, Math.PI * 2);
     obj.scale.multiplyScalar(asset?.scale || 1);
     obj.userData.kind = 'obstacle';
     obj.userData.hit = false;
     if (asset) {
       obj.userData.glbAssetUrl = asset.url;
-      obj.userData.baseScaleValue = asset.scale || 1;
+      obj.userData.baseScaleValue = obj.scale.x || 1;
       OC.glbInstances.push(obj);
     }
     obj.userData.basePosition = obj.position.clone();
