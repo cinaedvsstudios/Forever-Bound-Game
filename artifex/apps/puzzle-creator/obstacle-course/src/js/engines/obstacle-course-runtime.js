@@ -1,12 +1,12 @@
-// Obstacle Course V2.7.9 / Horse Forest Runner
+// Obstacle Course V2.7.11 / Horse Forest Runner
 // Consolidated runtime: no post-load patch stack.
 // The obstacle-course UI, generation, alpha-path logic, GLB controls, overview, HUD, and JSON settings live here.
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
 
-const VERSION = 'V2.7.9';
-const CACHE_VERSION = '2.7.9';
+const VERSION = 'V2.7.11';
+const CACHE_VERSION = '2.7.11';
 const ASSET_BASE = './assets/';
 const SHARED_UI_BASE = '../../../shared/ui/';
 const GROUND_Y = -1.62;
@@ -757,6 +757,12 @@ const opacityToSlider = (value) => Math.round((Number(value ?? 1) - 1) * 100);
 const tintToSlider = (value) => Math.round(clamp(Number(value || 0), 0, 1) * 100);
 const sliderToTint = (value) => clamp(Number(value || 0) / 100, 0, 1);
 
+function formatNumber(value) {
+  const n = Number(value || 0);
+  if (!Number.isFinite(n)) return '0';
+  return Math.abs(n % 1) < 0.001 ? String(Math.round(n)) : n.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+}
+
 export function openObstacleCourseWorkflow() {
   ensureMounted();
 }
@@ -851,8 +857,8 @@ function mountLayout() {
           <label class="field-block"><span>Selected layer</span><select id="hf-layer-select"><option value="path">Path</option></select></label>
           <div class="hf-button-row"><button id="hf-layer-visible" type="button">Hide/Show</button><button id="hf-layer-solo" type="button">Solo</button><button id="hf-layer-all" type="button">All</button></div>
           <div class="hf-button-row" style="margin-top:7px"><button id="hf-layer-above" type="button">Above</button><button id="hf-layer-below" type="button">Below</button><button id="hf-white-bg" type="button">BG White</button></div>
-          <div id="hf-layer-selected-label" class="hint-text" style="margin-top:8px">Layer controls load after the course generates.</div>
-          <div id="hf-layer-sliders"></div>
+          <div id="hf-layer-selected-label" class="hint-text" style="margin-top:8px">Layer controls appear when required assets finish loading.</div>
+          <div id="hf-layer-sliders"><p class="hint-text">Waiting for required assets: background, horse, ground, path images, arrows, and power bar.</p></div>
         </section>
         <section class="hf-layer-panel"><h3>Global Visual</h3>
           <div id="hf-global-sliders"></div>
@@ -907,6 +913,7 @@ function enhanceStaticRangeSteppers(scope = document) {
     const output = row.querySelector('output');
     if (!input || !output) return;
     row.dataset.stepperReady = '1';
+
     const wrap = document.createElement('span');
     wrap.className = 'oc-range-stepper';
     const down = document.createElement('button');
@@ -924,9 +931,11 @@ function enhanceStaticRangeSteppers(scope = document) {
     number.max = input.max;
     number.step = input.step || '1';
     number.value = output.textContent || input.value || '0';
-    output.replaceWith(number);
+    output.classList.add('oc-hidden-output');
+    output.setAttribute('aria-hidden', 'true');
+
     wrap.append(down, number, up);
-    input.parentElement.querySelector('span')?.appendChild(wrap);
+    output.insertAdjacentElement('afterend', wrap);
 
     const commit = (value) => {
       const min = Number(input.min || -100);
@@ -934,15 +943,27 @@ function enhanceStaticRangeSteppers(scope = document) {
       const v = clamp(Number(value || 0), min, max);
       input.value = v;
       number.value = formatNumber(v);
+      output.textContent = formatNumber(v);
       input.dispatchEvent(new Event('input', { bubbles: true }));
     };
-    input.addEventListener('input', () => { number.value = formatNumber(input.value); });
+
+    input.addEventListener('input', () => {
+      number.value = formatNumber(input.value);
+      output.textContent = formatNumber(input.value);
+    });
     number.addEventListener('change', () => commit(number.value));
-    down.addEventListener('click', (event) => { event.preventDefault(); event.stopPropagation(); commit(Number(input.value || 0) - Number(input.step || 1)); });
-    up.addEventListener('click', (event) => { event.preventDefault(); event.stopPropagation(); commit(Number(input.value || 0) + Number(input.step || 1)); });
+    down.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      commit(Number(input.value || 0) - Number(input.step || 1));
+    });
+    up.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      commit(Number(input.value || 0) + Number(input.step || 1));
+    });
   });
 }
-
 
 function bindInputs() {
   $('obstacle-start')?.addEventListener('click', startRun);
@@ -953,15 +974,15 @@ function bindInputs() {
   $('obstacle-distance')?.addEventListener('input', (event) => { OC.courseLength = Number(event.target.value); $('obstacle-distance-out').textContent = OC.courseLength; updateStats(); });
   $('obstacle-scenery-distance')?.addEventListener('input', (event) => { OC.sceneryDistance = Number(event.target.value); $('obstacle-scenery-distance-out').textContent = OC.sceneryDistance.toFixed(1); scheduleSceneryRegenerate(); });
   $('obstacle-regenerate')?.addEventListener('click', regenerateCourse);
-  $('hf-layer-select')?.addEventListener('change', (event) => { OC.selectedLayerId = event.target.value; createLayerSliders(); refreshGlbSelectionBoxes(); drawOverview(); });
+  $('hf-layer-select')?.addEventListener('change', (event) => { OC.selectedLayerId = event.target.value; createLayerSliders(); refreshGlbSelectionBoxes(); scheduleOverviewDraw(); });
   $('hf-layer-visible')?.addEventListener('click', toggleSelectedLayerVisible);
   $('hf-layer-solo')?.addEventListener('click', toggleSelectedLayerSolo);
-  $('hf-layer-all')?.addEventListener('click', () => { OC.soloLayerId = null; applyAllLayers(); drawOverview(); });
+  $('hf-layer-all')?.addEventListener('click', () => { OC.soloLayerId = null; applyAllLayers(); scheduleOverviewDraw(); });
   $('hf-layer-above')?.addEventListener('click', () => nudgeSelectedOrder(1));
   $('hf-layer-below')?.addEventListener('click', () => nudgeSelectedOrder(-1));
   $('hf-white-bg')?.addEventListener('click', toggleWhiteBackground);
   $('oc-ground-grid-toggle')?.addEventListener('change', (event) => { OC.gridEnabled = event.target.checked; if (OC.grid) OC.grid.visible = OC.gridEnabled; drawFrame(); });
-  $('oc-overview-path-overlay')?.addEventListener('change', (event) => { OC.overviewPathOverlay = event.target.checked; drawOverview(); });
+  $('oc-overview-path-overlay')?.addEventListener('change', (event) => { OC.overviewPathOverlay = event.target.checked; scheduleOverviewDraw(); });
   $('oc-vp-x')?.addEventListener('input', (event) => { OC.vanishX = Number(event.target.value); $('oc-vp-x-out').textContent = OC.vanishX.toFixed(1); applyCamera(); drawFrame(); });
   $('oc-vp-y')?.addEventListener('input', (event) => { OC.vanishY = Number(event.target.value); $('oc-vp-y-out').textContent = OC.vanishY.toFixed(2); applyCamera(); drawFrame(); });
   $('oc-vp-angle')?.addEventListener('input', (event) => { OC.cameraAngle = Number(event.target.value); $('oc-vp-angle-out').textContent = OC.cameraAngle.toFixed(1); applyCamera(); drawFrame(); });
@@ -1124,6 +1145,7 @@ async function preloadAssets() {
     if (title) title.textContent = 'Required assets missing';
     setResult(`Required asset failure: ${OC.requiredAssetFailures.join(', ')}`, 'failure');
     updateStats();
+    showLayerLoadFailure();
     return;
   }
 
@@ -1388,6 +1410,14 @@ function createGlobalSliders() {
   tintRow.querySelector('input').addEventListener('input', (event) => { OC.screenTint = event.target.value; updateScreenFilters(); });
 }
 
+function showLayerLoadFailure() {
+  const host = $('hf-layer-sliders');
+  if (!host) return;
+  host.innerHTML = `<p class="hint-text">Required assets failed to load. Open Asset Debug for exact missing paths.</p>`;
+  const label = $('hf-layer-selected-label');
+  if (label) label.textContent = 'Layer controls unavailable until required assets load.';
+}
+
 function createLayerSliders() {
   const host = $('hf-layer-sliders');
   if (!host) return;
@@ -1410,10 +1440,10 @@ function createLayerSliders() {
   layer.saturationOffset = layer.saturationOffset ?? visualFactorToSlider(layer.saturation);
   layer.opacityOffset = layer.opacityOffset ?? opacityToSlider(layer.opacity);
 
-  buildSliderRow(host, 'hf-layer', 'x', 'X', -100, 100, 1, layer.x || 0, (v) => { layer.x = v; applyLayer(layer); drawFrame(); drawOverview(); });
-  buildSliderRow(host, 'hf-layer', 'z', 'Z', -100, 100, 1, layer.z || 0, (v) => { layer.z = v; applyLayer(layer); drawFrame(); drawOverview(); });
+  buildSliderRow(host, 'hf-layer', 'x', 'X', -100, 100, 1, layer.x || 0, (v) => { layer.x = v; applyLayer(layer); drawFrame(); scheduleOverviewDraw(); });
+  buildSliderRow(host, 'hf-layer', 'z', 'Z', -100, 100, 1, layer.z || 0, (v) => { layer.z = v; applyLayer(layer); drawFrame(); scheduleOverviewDraw(); });
   buildSliderRow(host, 'hf-layer', 'y', 'Y', -100, 100, 1, layer.y || 0, (v) => { layer.y = v; applyLayer(layer); drawFrame(); });
-  buildSliderRow(host, 'hf-layer', 'scaleOffset', 'Scale', -100, 100, 1, layer.scaleOffset, (v) => { layer.scaleOffset = v; layer.scale = signedToFactor(v); applyLayer(layer); drawFrame(); drawOverview(); });
+  buildSliderRow(host, 'hf-layer', 'scaleOffset', 'Scale', -100, 100, 1, layer.scaleOffset, (v) => { layer.scaleOffset = v; layer.scale = signedToFactor(v); applyLayer(layer); drawFrame(); scheduleOverviewDraw(); });
   buildSliderRow(host, 'hf-layer', 'opacityOffset', 'Opacity', -100, 100, 1, layer.opacityOffset, (v) => { layer.opacityOffset = v; layer.opacity = sliderToOpacity(v); applyLayer(layer); drawFrame(); });
   buildSliderRow(host, 'hf-layer', 'brightnessOffset', 'Bright', -100, 100, 1, layer.brightnessOffset, (v) => { layer.brightnessOffset = v; layer.brightness = sliderToVisualFactor(v); applyLayer(layer); drawFrame(); });
   buildSliderRow(host, 'hf-layer', 'contrastOffset', 'Contrast', -100, 100, 1, layer.contrastOffset, (v) => { layer.contrastOffset = v; layer.contrast = sliderToVisualFactor(v); applyLayer(layer); drawFrame(); });
@@ -1450,7 +1480,7 @@ function createGlbAssetSliders(host) {
     OC.selectedGlbAssetUrl = event.target.value;
     refreshGlbSelectionBoxes();
     createLayerSliders();
-    drawOverview();
+    scheduleOverviewDraw();
   });
   const cfg = glbControl(OC.selectedGlbAssetUrl);
   if (!cfg) return;
@@ -1625,6 +1655,7 @@ function clearWorld() {
   while (OC.world.children.length) {
     const child = OC.world.children.pop();
     child.traverse?.((node) => {
+      if (node.userData?.fromGlbTemplate) return;
       node.geometry?.dispose?.();
       if (Array.isArray(node.material)) node.material.forEach((mat) => mat.dispose?.());
       else node.material?.dispose?.();
@@ -1885,6 +1916,21 @@ function pathStatus() {
   return 'off';
 }
 
+function cloneGlbInstance(template) {
+  const root = cloneGlbInstance(template);
+  root.traverse((node) => {
+    node.userData.fromGlbTemplate = true;
+    if (node.isMesh) {
+      if (node.geometry) node.geometry = node.geometry.clone();
+      if (Array.isArray(node.material)) node.material = node.material.map((mat) => mat.clone());
+      else if (node.material) node.material = node.material.clone();
+      node.castShadow = true;
+      node.receiveShadow = true;
+    }
+  });
+  return root;
+}
+
 function createGlbModel(type, targetHeight) {
   const assets = GLB_ASSETS.filter((asset) => asset.type === type && OC.glbTemplates.has(asset.url));
   if (!assets.length) return null;
@@ -2080,9 +2126,9 @@ function refreshGlbSelectionBoxes() {
 function startRun() {
   document.activeElement?.blur?.();
   OC.stage?.focus?.();
-  startRenderLoop();
   if (!OC.requiredReady) {
     setResult('Cannot start: required obstacle-course assets are missing.', 'failure');
+    updateStats();
     return;
   }
   OC.active = true;
@@ -2090,12 +2136,17 @@ function startRun() {
   OC.paused = false;
   OC.complete = false;
   OC.startAssistTime = 1.2;
+  startRenderLoop();
   ensureAudioReady();
   playRandomHorseVoice(true);
   updateStats();
 }
 
 function pauseRun() {
+  if (!OC.active && !OC.running && OC.distance <= 0) {
+    updateStats();
+    return;
+  }
   OC.running = !OC.running;
   OC.paused = !OC.running;
   if (!OC.running) stopMotionLoops();
@@ -2104,6 +2155,7 @@ function pauseRun() {
 }
 
 function resetRun(silent = false) {
+  OC.active = false;
   OC.running = false;
   OC.paused = false;
   OC.complete = false;
@@ -2431,6 +2483,8 @@ function worldToOverview(x, z) {
   const oy = height - 28 + z * 0.17;
   return { x: ox, y: oy };
 }
+
+function scheduleOverviewDraw() { drawOverview(); }
 
 function drawOverview() {
   if (OC.overviewRaf) return;
