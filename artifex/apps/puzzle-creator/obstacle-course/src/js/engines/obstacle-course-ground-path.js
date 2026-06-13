@@ -3,14 +3,16 @@ import { TEMPLATES, GLB_ASSETS } from './obstacle-course-assets.js';
 import { clamp, lerp, pick, rand } from './obstacle-course-utils.js';
 import { THREE, loadTexture } from './obstacle-course-scene.js';
 import { makeLayer, registerEntity } from './obstacle-course-layers.js';
-import { makeGlbOrFallback, settleObjectOnGround } from './obstacle-course-glb.js';
+import { createInstancedAssetGroup } from './obstacle-course-glb.js';
 
 const TILE_SEAM_OVERLAP = 0.18;
-const MAX_NEAR_TREE_PAIRS = 18;
-const MAX_FAR_TREE_PAIRS = 8;
-const MAX_ROCKS = 26;
-const MAX_EDGE_DETAIL_PAIRS = 22;
-const MAX_FAR_DETAIL_PAIRS = 10;
+const DENSITY_PER_1000 = {
+  nearTreePairs: 18,
+  farTreePairs: 8,
+  rocks: 18,
+  edgeDetailPairs: 24,
+  farDetailPairs: 10,
+};
 
 function mapTiles() { return OC.groundPathMap?.tiles || []; }
 function tileById(id) { return mapTiles().find((tile) => tile.id === id) || mapTiles()[0] || null; }
@@ -112,59 +114,74 @@ function fallbackTree() {
 }
 function fallbackRock() { const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rand(.64, 1.5), 0), new THREE.MeshStandardMaterial({ color: 0x7d776b })); rock.position.y = GROUND_Y + 0.76; return rock; }
 function fallbackDetail() { const detail = new THREE.Mesh(new THREE.ConeGeometry(rand(.36, .7), rand(.8, 1.5), 5), new THREE.MeshStandardMaterial({ color: 0x2e8b45 })); detail.position.y = GROUND_Y + 0.7; return detail; }
-function addMaybeGlbObject(layer, type, assetList, fallback, x, groundOffset, z, scale = 1) {
-  const asset = pick(assetList) || null;
-  const obj = asset ? makeGlbOrFallback(asset, fallback) : fallback();
-  obj.position.x = x;
-  obj.position.z = z;
-  obj.rotation.y = rand(0, Math.PI * 2);
-  obj.scale.multiplyScalar(scale * (asset?.scale || 1));
-  if (asset) settleObjectOnGround(obj, GROUND_Y + groundOffset);
-  else obj.position.y += groundOffset;
-  if (asset) { obj.userData.glbAssetUrl = asset.url; obj.userData.baseScaleValue = obj.scale.x || 1; OC.glbInstances.push(obj); }
-  obj.userData.basePosition = obj.position.clone();
-  layer.group.add(obj);
-  registerEntity(type, obj, { x, z });
-  return obj;
-}
-function scatterX(distance, side, fromHalf, toHalf) { const center = pathCenterAt(distance); const half = pathHalfWidthAt(distance); return center + side * (half + rand(fromHalf, toHalf)); }
 
-function makeDistances(maxPairs, start, end, jitter = 10) {
+function scatterX(distance, side, fromHalf, toHalf) { const center = pathCenterAt(distance); const half = pathHalfWidthAt(distance); return center + side * (half + rand(fromHalf, toHalf)); }
+function sectionCount() { return Math.max(1, OC.courseLength / 1000); }
+function makeDistances(count, start, end, jitter = 10) {
+  const safeCount = Math.max(1, Math.round(count));
   const span = Math.max(1, end - start);
-  const step = span / Math.max(1, maxPairs);
+  const step = span / safeCount;
   const result = [];
-  for (let i = 0; i < maxPairs; i += 1) result.push(start + i * step + rand(-jitter, jitter));
+  for (let i = 0; i < safeCount; i += 1) result.push(start + i * step + rand(-jitter, jitter));
   return result.filter((d) => d > 0 && d < end + 40);
+}
+function entityForInstance(type, x, z) { OC.entities.push({ type, x, z }); }
+function queuePlacement(queues, layer, type, assetList, fallbackFactory, x, groundOffset, z, scale = 1) {
+  const asset = assetList.length ? pick(assetList) : null;
+  if (!asset) {
+    const object = fallbackFactory();
+    object.position.x = x;
+    object.position.z = z;
+    object.rotation.y = rand(0, Math.PI * 2);
+    object.scale.multiplyScalar(scale);
+    layer.group.add(object);
+    registerEntity(type, object, { x, z });
+    return;
+  }
+  const key = `${asset.url}::${layer.id}`;
+  if (!queues.has(key)) queues.set(key, { layer, type, asset, placements: [] });
+  queues.get(key).placements.push({ x, y: GROUND_Y + groundOffset, z, rotationY: rand(0, Math.PI * 2), scale: scale * (asset.scale || 1) });
+  entityForInstance(type, x, z);
+}
+function flushPlacementQueues(queues) {
+  queues.forEach(({ layer, asset, placements }) => {
+    const group = createInstancedAssetGroup(asset, placements);
+    if (group) layer.group.add(group);
+  });
 }
 
 export function scatterScenery() {
   const template = TEMPLATES[OC.templateId] || TEMPLATES.horse_forest_easy;
-  const treeLayer = new THREE.Group(); const rockLayer = new THREE.Group(); const detailLayer = new THREE.Group();
-  makeLayer('trees', 'Trees', treeLayer, { order: 10 }); makeLayer('rocks', 'Rocks', rockLayer, { order: 11 }); makeLayer('details', 'Ferns / Bushes / Details', detailLayer, { order: 12 });
-  OC.world.add(treeLayer, rockLayer, detailLayer);
+  const treeLayer = makeLayer('trees', 'Trees', new THREE.Group(), { order: 10 });
+  const rockLayer = makeLayer('rocks', 'Rocks', new THREE.Group(), { order: 11 });
+  const detailLayer = makeLayer('details', 'Ferns / Bushes / Details', new THREE.Group(), { order: 12 });
+  OC.world.add(treeLayer.group, rockLayer.group, detailLayer.group);
   const nearTreeAssets = GLB_ASSETS.filter((asset) => asset.type === 'nearTree' && OC.glbTemplates.has(asset.url));
   const farTreeAssets = GLB_ASSETS.filter((asset) => ['nearTree', 'farTree'].includes(asset.type) && OC.glbTemplates.has(asset.url));
   const rockAssets = GLB_ASSETS.filter((asset) => asset.type === 'rock' && OC.glbTemplates.has(asset.url));
   const edgeDetailAssets = GLB_ASSETS.filter((asset) => asset.type === 'edgeDetail' && OC.glbTemplates.has(asset.url));
   const farDetailAssets = GLB_ASSETS.filter((asset) => ['edgeDetail', 'farDetail'].includes(asset.type) && OC.glbTemplates.has(asset.url));
-  const end = OC.courseLength + 160;
+  const sections = sectionCount();
+  const end = OC.courseLength + 80;
+  const queues = new Map();
 
-  makeDistances(MAX_NEAR_TREE_PAIRS, 28, end, 16).forEach((d) => {
-    [-1, 1].forEach((side) => addMaybeGlbObject({ group: treeLayer }, 'tree', nearTreeAssets, fallbackTree, scatterX(d, side, 4.0, 9.5), 0, -d + rand(-5, 5), rand(1.0, 1.3)));
+  makeDistances(DENSITY_PER_1000.nearTreePairs * sections * template.treeRate, 28, end, 18).forEach((d) => {
+    [-1, 1].forEach((side) => queuePlacement(queues, treeLayer, 'tree', nearTreeAssets, fallbackTree, scatterX(d, side, 4.0, 9.5), 0, -d + rand(-5, 5), rand(1.0, 1.3)));
   });
-  makeDistances(MAX_FAR_TREE_PAIRS, 60, end, 24).forEach((d) => {
-    [-1, 1].forEach((side) => addMaybeGlbObject({ group: treeLayer }, 'tree', farTreeAssets, fallbackTree, scatterX(d, side, 13, 25), 0, -d + rand(-9, 9), rand(1.0, 1.3)));
+  makeDistances(DENSITY_PER_1000.farTreePairs * sections * template.treeRate, 60, end, 26).forEach((d) => {
+    [-1, 1].forEach((side) => queuePlacement(queues, treeLayer, 'tree', farTreeAssets, fallbackTree, scatterX(d, side, 13, 25), 0, -d + rand(-9, 9), rand(1.0, 1.3)));
   });
-  makeDistances(Math.round(MAX_ROCKS * template.rockRate), 38, OC.courseLength + 80, 18).forEach((d) => {
+  makeDistances(DENSITY_PER_1000.rocks * sections * template.rockRate, 38, OC.courseLength + 40, 18).forEach((d) => {
     const side = Math.random() > .5 ? 1 : -1;
-    addMaybeGlbObject({ group: rockLayer }, 'rock', rockAssets, fallbackRock, scatterX(d, side, .8, 8), 0, -d + rand(-4, 4), rand(.7, 1.0));
+    queuePlacement(queues, rockLayer, 'rock', rockAssets, fallbackRock, scatterX(d, side, .8, 8), 0, -d + rand(-4, 4), rand(.7, 1.0));
   });
-  makeDistances(Math.round(MAX_EDGE_DETAIL_PAIRS * template.detailRate), 20, OC.courseLength + 80, 14).forEach((d) => {
-    [-1, 1].forEach((side) => addMaybeGlbObject({ group: detailLayer }, 'detail', edgeDetailAssets, fallbackDetail, scatterX(d, side, .2, 3.0), 0, -d + rand(-3, 3), rand(.75, 1.15)));
+  makeDistances(DENSITY_PER_1000.edgeDetailPairs * sections * template.detailRate, 20, OC.courseLength + 40, 14).forEach((d) => {
+    [-1, 1].forEach((side) => queuePlacement(queues, detailLayer, 'detail', edgeDetailAssets, fallbackDetail, scatterX(d, side, .2, 3.0), 0, -d + rand(-3, 3), rand(.75, 1.15)));
   });
-  makeDistances(MAX_FAR_DETAIL_PAIRS, 50, OC.courseLength + 100, 22).forEach((d) => {
-    [-1, 1].forEach((side) => addMaybeGlbObject({ group: detailLayer }, 'detail', farDetailAssets, fallbackDetail, scatterX(d, side, 5, 13), 0, -d + rand(-5, 5), rand(.65, 1.0)));
+  makeDistances(DENSITY_PER_1000.farDetailPairs * sections * template.detailRate, 50, OC.courseLength + 60, 22).forEach((d) => {
+    [-1, 1].forEach((side) => queuePlacement(queues, detailLayer, 'detail', farDetailAssets, fallbackDetail, scatterX(d, side, 5, 13), 0, -d + rand(-5, 5), rand(.65, 1.0)));
   });
+  flushPlacementQueues(queues);
 }
 
 export function rebuildGroundPathAndScenery() { clearWorld(); buildGroundAndPath(); scatterScenery(); }
