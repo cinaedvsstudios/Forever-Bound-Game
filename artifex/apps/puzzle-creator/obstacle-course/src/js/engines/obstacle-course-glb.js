@@ -18,14 +18,41 @@ export function cloneGlbTemplate(url) {
   root.traverse((node) => {
     if (node.isMesh) {
       if (node.geometry) node.geometry = node.geometry.clone();
-      if (Array.isArray(node.material)) node.material = node.material.map((mat) => mat.clone());
-      else if (node.material) node.material = node.material.clone();
+      if (Array.isArray(node.material)) node.material = node.material.map((mat) => cloneMaterial(mat));
+      else if (node.material) node.material = cloneMaterial(node.material);
+      node.castShadow = true;
+      node.receiveShadow = true;
     }
   });
   return root;
 }
 
-export function makeGlbOrFallback(asset, fallbackFactory) { return cloneGlbTemplate(asset.url) || fallbackFactory?.(); }
+function cloneMaterial(mat) {
+  const clone = mat.clone();
+  if (clone.color) clone.userData.baseColor = clone.color.clone();
+  return clone;
+}
+
+export function normalizeObjectToHeight(root, targetHeight = 1) {
+  if (!root || !Number.isFinite(Number(targetHeight)) || Number(targetHeight) <= 0) return 1;
+  root.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(root);
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  if (!Number.isFinite(size.y) || size.y <= 0.0001) return 1;
+  const factor = Number(targetHeight) / size.y;
+  root.scale.multiplyScalar(factor);
+  return factor;
+}
+
+export function makeGlbOrFallback(asset, fallbackFactory) {
+  const root = cloneGlbTemplate(asset.url);
+  if (root) {
+    root.userData.normalizedFactor = normalizeObjectToHeight(root, asset.targetHeight || 1);
+    return root;
+  }
+  return fallbackFactory?.();
+}
 
 export function createGlbAssetSliders(host) {
   const urls = Array.from(new Set(OC.glbInstances.map((obj) => obj.userData.glbAssetUrl).filter(Boolean)));
