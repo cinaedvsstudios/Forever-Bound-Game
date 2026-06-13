@@ -1,41 +1,98 @@
-import { OC, SECTION_WORLD_LENGTH, SECTION_WORLD_STEP, COURSE_WORLD_WIDTH, PATH_POSITIONS, GROUND_Y } from './obstacle-course-state.js';
-import { ASSETS, TEMPLATES, GLB_ASSETS } from './obstacle-course-assets.js';
+import { OC, SECTION_WORLD_LENGTH, SECTION_WORLD_STEP, COURSE_WORLD_WIDTH, GROUND_Y } from './obstacle-course-state.js';
+import { TEMPLATES, GLB_ASSETS } from './obstacle-course-assets.js';
 import { clamp, lerp, pick, rand } from './obstacle-course-utils.js';
 import { THREE, loadTexture } from './obstacle-course-scene.js';
-import { pathAlphaAtSegment } from './obstacle-course-loader.js';
 import { makeLayer, registerEntity } from './obstacle-course-layers.js';
 import { makeGlbOrFallback, settleObjectOnGround } from './obstacle-course-glb.js';
 
-export function generatePathSequence() {
-  if (Array.isArray(OC.customPathSequence) && OC.customPathSequence.length) {
-    const defs = Object.values(ASSETS.pathSegments);
-    OC.pathSequence = OC.customPathSequence.map((item, i) => {
-      const def = defs.find((seg) => seg.key === item.id || seg.key === item.key) || ASSETS.pathSegments.straight;
-      const distance = Number.isFinite(Number(item.distance)) ? Number(item.distance) : i * SECTION_WORLD_STEP;
-      return { ...def, distance, startX: PATH_POSITIONS[def.start] ?? 0, endX: PATH_POSITIONS[def.end] ?? 0 };
-    });
-    return;
+function mapTiles() {
+  return OC.groundPathMap?.tiles || [];
+}
+
+function tileById(id) {
+  return mapTiles().find((tile) => tile.id === id) || mapTiles()[0] || null;
+}
+
+function imageUrlForTile(tile) {
+  if (!tile) return '';
+  const asset = (OC.groundTileAssets || []).find((item) => item.tile?.id === tile.id || item.tile?.file === tile.file);
+  if (asset?.url) return asset.url;
+  const root = OC.groundPathMap?.imageRoot || './assets/ground/';
+  return /^https?:\/\//i.test(tile.file) ? tile.file : `${root}${tile.file}`;
+}
+
+function interpolatePathPoint(tile, localT) {
+  const points = tile?.path?.points || [];
+  if (!points.length) return { x: 0.5, halfWidth: 0.07 };
+  const t = clamp(localT, 0, 1);
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const a = points[i];
+    const b = points[i + 1];
+    if (t >= a.y && t <= b.y) {
+      const f = b.y === a.y ? 0 : (t - a.y) / (b.y - a.y);
+      return { x: lerp(a.x, b.x, f), halfWidth: lerp(a.halfWidth, b.halfWidth, f) };
+    }
   }
-  OC.pathSequence = [];
+  const p = t < points[0].y ? points[0] : points[points.length - 1];
+  return { x: p.x, halfWidth: p.halfWidth };
+}
+
+export function generatePathSequence() {
+  const ids = OC.groundPathMap?.sequence?.length ? OC.groundPathMap.sequence : mapTiles().map((tile) => tile.id);
+  const baseIds = ids.length ? ids : ['1'];
   const count = Math.ceil(OC.courseLength / SECTION_WORLD_STEP) + 4;
-  let lane = 'centre';
+  OC.pathSequence = [];
   for (let i = 0; i < count; i += 1) {
-    const choices = lane === 'centre' ? [ASSETS.pathSegments.straight, ASSETS.pathSegments.kink, ASSETS.pathSegments.left, ASSETS.pathSegments.right] : lane === 'left' ? [ASSETS.pathSegments.straight, ASSETS.pathSegments.leftToStraight] : [ASSETS.pathSegments.straight, ASSETS.pathSegments.rightToStraight];
-    let def = pick(choices);
-    if (lane !== 'centre' && def.start === 'centre') def = lane === 'left' ? ASSETS.pathSegments.leftToStraight : ASSETS.pathSegments.rightToStraight;
-    const startX = PATH_POSITIONS[def.start] ?? PATH_POSITIONS[lane] ?? 0;
-    const endX = PATH_POSITIONS[def.end] ?? startX;
-    OC.pathSequence.push({ ...def, distance: i * SECTION_WORLD_STEP, startX, endX });
-    lane = def.end;
+    const tile = tileById(baseIds[i % baseIds.length]);
+    if (!tile) continue;
+    const worldLength = Number(tile.worldLength || OC.groundPathMap?.defaultWorldLength || SECTION_WORLD_LENGTH);
+    const worldWidth = Number(tile.worldWidth || OC.groundPathMap?.defaultWorldWidth || COURSE_WORLD_WIDTH);
+    OC.pathSequence.push({ tile, key: tile.id, distance: i * SECTION_WORLD_STEP, worldLength, worldWidth, startX: 0, endX: 0 });
   }
 }
 
-export function pathSegmentAt(distance) { return OC.pathSequence[clamp(Math.floor(distance / SECTION_WORLD_STEP), 0, OC.pathSequence.length - 1)] || null; }
-export function pathCenterAt(distance) { const seg = pathSegmentAt(distance); if (!seg) return 0; return lerp(seg.startX, seg.endX, clamp((distance - seg.distance) / SECTION_WORLD_STEP, 0, 1)); }
-export function playerWorldX() { return pathCenterAt(OC.distance) + OC.player.x; }
-export function pathAlphaAtWorld(worldX, distance) { const seg = pathSegmentAt(distance); if (!seg) return null; const u = 0.5 + (worldX - pathCenterAt(distance)) / OC.pathVisualWidth; const v = clamp((distance - seg.distance) / SECTION_WORLD_STEP, 0, 1); if (u < 0 || u > 1) return 0; return pathAlphaAtSegment(seg.key, u, v); }
-export function nearestVisiblePathX(distance, worldX) { const center = pathCenterAt(distance); let bestX = center; let best = Infinity; for (let x = center - OC.pathVisualWidth * .7; x <= center + OC.pathVisualWidth * .7; x += .4) { const a = pathAlphaAtWorld(x, distance); if (a !== null && a >= OC.pathAlphaThreshold) { const d = Math.abs(x - worldX); if (d < best) { best = d; bestX = x; } } } return bestX; }
-export function pathStatus() { const worldX = playerWorldX(); const alpha = pathAlphaAtWorld(worldX, OC.distance); if (alpha === null) return Math.abs(OC.player.x) > OC.pathVisualWidth * .5 ? 'off' : 'on'; if (alpha >= OC.pathAlphaThreshold) return 'on'; OC.pathHintDirection = nearestVisiblePathX(OC.distance, worldX) < worldX ? 'left' : 'right'; return 'off'; }
+export function pathSegmentAt(distance) {
+  return OC.pathSequence[clamp(Math.floor(distance / SECTION_WORLD_STEP), 0, OC.pathSequence.length - 1)] || null;
+}
+
+export function pathCenterAt(distance) {
+  const seg = pathSegmentAt(distance);
+  if (!seg) return 0;
+  const t = clamp((distance - seg.distance) / (seg.worldLength || SECTION_WORLD_STEP), 0, 1);
+  const point = interpolatePathPoint(seg.tile, t);
+  return (point.x - 0.5) * (seg.worldWidth || COURSE_WORLD_WIDTH);
+}
+
+export function pathHalfWidthAt(distance) {
+  const seg = pathSegmentAt(distance);
+  if (!seg) return OC.pathVisualWidth * 0.5;
+  const t = clamp((distance - seg.distance) / (seg.worldLength || SECTION_WORLD_STEP), 0, 1);
+  const point = interpolatePathPoint(seg.tile, t);
+  return Math.max(2.6, Number(point.halfWidth || 0.07) * (seg.worldWidth || COURSE_WORLD_WIDTH));
+}
+
+export function playerWorldX() {
+  return pathCenterAt(OC.distance) + OC.player.x;
+}
+
+export function pathAlphaAtWorld(worldX, distance) {
+  return Math.abs(worldX - pathCenterAt(distance)) <= pathHalfWidthAt(distance) ? 1 : 0;
+}
+
+export function nearestVisiblePathX(distance, worldX) {
+  const center = pathCenterAt(distance);
+  const half = pathHalfWidthAt(distance);
+  return clamp(worldX, center - half, center + half);
+}
+
+export function pathStatus() {
+  const worldX = playerWorldX();
+  const center = pathCenterAt(OC.distance);
+  const half = pathHalfWidthAt(OC.distance);
+  if (Math.abs(worldX - center) <= half) return 'on';
+  OC.pathHintDirection = worldX > center ? 'left' : 'right';
+  return 'off';
+}
 
 export function clearWorld() {
   if (!OC.world) return;
@@ -50,23 +107,20 @@ export function buildGroundAndPath() {
   generatePathSequence();
   const groundLayer = new THREE.Group();
   const pathLayer = new THREE.Group();
-  makeLayer('ground', 'Ground', groundLayer, { order: 1 });
-  makeLayer('path', 'Path', pathLayer, { order: 2 });
+  makeLayer('ground', 'Ground / Path Tiles', groundLayer, { order: 1 });
+  makeLayer('path', 'Path Logic Guide', pathLayer, { order: 2, visible: false });
   OC.world.add(groundLayer, pathLayer);
-  const groundMat = new THREE.MeshStandardMaterial({ map: loadTexture(ASSETS.ground, { repeat: [1, 1], repeatX: false }), transparent: true, alphaTest: .02, roughness: 1, side: THREE.DoubleSide });
-  const groundGeo = new THREE.PlaneGeometry(COURSE_WORLD_WIDTH, SECTION_WORLD_LENGTH, 1, 1);
   OC.pathSequence.forEach((seg) => {
-    const z = -seg.distance - SECTION_WORLD_LENGTH / 2;
-    const ground = new THREE.Mesh(groundGeo.clone(), groundMat.clone());
+    const z = -seg.distance - (seg.worldLength || SECTION_WORLD_LENGTH) / 2;
+    const tileUrl = imageUrlForTile(seg.tile);
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(seg.worldWidth || COURSE_WORLD_WIDTH, seg.worldLength || SECTION_WORLD_LENGTH, 1, 1),
+      new THREE.MeshStandardMaterial({ map: loadTexture(tileUrl, { repeat: [1, 1], repeatX: false }), transparent: true, alphaTest: .02, roughness: 1, side: THREE.DoubleSide })
+    );
     ground.rotation.x = -Math.PI / 2;
     ground.position.set(0, GROUND_Y, z);
     groundLayer.add(ground);
     registerEntity('ground', ground, { x: 0, z, visibleOnOverview: false });
-    const path = new THREE.Mesh(new THREE.PlaneGeometry(OC.pathVisualWidth, SECTION_WORLD_LENGTH, 1, 1), new THREE.MeshStandardMaterial({ map: loadTexture(seg.file), transparent: true, alphaTest: .05, roughness: .95, side: THREE.DoubleSide, depthWrite: false }));
-    path.rotation.x = -Math.PI / 2;
-    path.position.set((seg.startX + seg.endX) / 2, GROUND_Y + .045, z);
-    pathLayer.add(path);
-    registerEntity('path', path, { x: path.position.x, z, segmentKey: seg.key });
   });
 }
 
@@ -102,6 +156,12 @@ function addMaybeGlbObject(layer, type, assetList, fallback, x, groundOffset, z,
   return obj;
 }
 
+function scatterX(distance, side, fromHalf, toHalf) {
+  const center = pathCenterAt(distance);
+  const half = pathHalfWidthAt(distance);
+  return center + side * (half + rand(fromHalf, toHalf));
+}
+
 export function scatterScenery() {
   const template = TEMPLATES[OC.templateId] || TEMPLATES.horse_forest_easy;
   const treeLayer = new THREE.Group(); const rockLayer = new THREE.Group(); const detailLayer = new THREE.Group();
@@ -113,31 +173,20 @@ export function scatterScenery() {
   const edgeDetailAssets = GLB_ASSETS.filter((asset) => asset.type === 'edgeDetail' && OC.glbTemplates.has(asset.url));
   const farDetailAssets = GLB_ASSETS.filter((asset) => ['edgeDetail', 'farDetail'].includes(asset.type) && OC.glbTemplates.has(asset.url));
 
-  for (let d = 24; d < OC.courseLength + 260; d += Math.max(13, 24 / template.treeRate)) {
-    const center = pathCenterAt(d);
+  for (let d = 24; d < OC.courseLength + 260; d += Math.max(17, 31 / template.treeRate)) {
     [-1, 1].forEach((side) => {
-      const nearX = center + side * (OC.pathVisualWidth * .5 + rand(2.2, 6.0));
-      addMaybeGlbObject({ group: treeLayer }, 'tree', nearTreeAssets, fallbackTree, nearX, 0, -d + rand(-4, 4), rand(.9, 1.2));
-      if (Math.random() > .35) {
-        const farX = center + side * (OC.pathVisualWidth * .5 + OC.sceneryDistance + rand(8, 18));
-        addMaybeGlbObject({ group: treeLayer }, 'tree', farTreeAssets, fallbackTree, farX, 0, -d + rand(-7, 7), rand(1.05, 1.45));
-      }
+      addMaybeGlbObject({ group: treeLayer }, 'tree', nearTreeAssets, fallbackTree, scatterX(d, side, 4.5, 10), 0, -d + rand(-4, 4), rand(.9, 1.2));
+      if (Math.random() > .58) addMaybeGlbObject({ group: treeLayer }, 'tree', farTreeAssets, fallbackTree, scatterX(d, side, 13, 25), 0, -d + rand(-7, 7), rand(1.0, 1.35));
     });
   }
   for (let d = 34; d < OC.courseLength + 120; d += 29 / template.rockRate) {
     const side = Math.random() > .5 ? 1 : -1;
-    const x = pathCenterAt(d) + side * (OC.pathVisualWidth * .5 + OC.sceneryDistance * .18 + rand(.4, 4));
-    addMaybeGlbObject({ group: rockLayer }, 'rock', rockAssets, fallbackRock, x, 0, -d + rand(-3, 3), rand(.75, 1.05));
+    addMaybeGlbObject({ group: rockLayer }, 'rock', rockAssets, fallbackRock, scatterX(d, side, .5, 7), 0, -d + rand(-3, 3), rand(.75, 1.05));
   }
   for (let d = 20; d < OC.courseLength + 100; d += 11 / template.detailRate) {
-    const center = pathCenterAt(d);
     [-1, 1].forEach((side) => {
-      const edgeX = center + side * (OC.pathVisualWidth * .5 + rand(.3, 2.4));
-      addMaybeGlbObject({ group: detailLayer }, 'detail', edgeDetailAssets, fallbackDetail, edgeX, 0, -d + rand(-2, 2), rand(.75, 1.2));
-      if (Math.random() > .45) {
-        const farX = center + side * (OC.pathVisualWidth * .5 + rand(4, 11));
-        addMaybeGlbObject({ group: detailLayer }, 'detail', farDetailAssets, fallbackDetail, farX, 0, -d + rand(-4, 4), rand(.65, 1.0));
-      }
+      addMaybeGlbObject({ group: detailLayer }, 'detail', edgeDetailAssets, fallbackDetail, scatterX(d, side, .2, 3.0), 0, -d + rand(-2, 2), rand(.75, 1.2));
+      if (Math.random() > .52) addMaybeGlbObject({ group: detailLayer }, 'detail', farDetailAssets, fallbackDetail, scatterX(d, side, 5, 13), 0, -d + rand(-4, 4), rand(.65, 1.0));
     });
   }
 }
