@@ -15,7 +15,7 @@ import { updateHud, showSpinner } from './obstacle-course-hud.js';
 import { updateHorseSprite } from './obstacle-course-horse.js';
 import { populateLayerSelect, createLayerSliders, bindLayerButtons, applyAllLayers } from './obstacle-course-layers.js';
 import { scheduleOverviewDraw, drawOverview } from './obstacle-course-overview.js';
-import { loadGlbAsset, createGlbAssetSliders } from './obstacle-course-glb.js';
+import { loadGlbAsset, createGlbAssetSliders, applyAllGlbAssetControls } from './obstacle-course-glb.js';
 
 export function openObstacleCourseWorkflow() { ensureMounted(); }
 
@@ -27,7 +27,6 @@ function ensureMounted() {
   applyDefaultSettings();
   ensureHeader();
   injectStyles();
-  injectPhaseOneTuningStyles();
   mountLayout();
   mountLeftPanel({ onRegenerate: rebuildCourse, onExport: exportJsonSettings, onImport: (e) => importJsonSettings(e, { rebuild: rebuildCourse }) });
   enhanceStaticRangeSteppers();
@@ -50,21 +49,6 @@ function ensureMounted() {
       import('./obstacle-course-asset-debug.js?v=3.0.0').catch(() => {});
     });
   });
-}
-
-function injectPhaseOneTuningStyles() {
-  if ($('oc-phase-one-tuning-styles')) return;
-  const style = document.createElement('style');
-  style.id = 'oc-phase-one-tuning-styles';
-  style.textContent = `
-    .obstacle-speed-badge{width:300px!important;right:20px!important;top:14px!important}
-    .oc-powerbar-wrap{width:276px!important;height:60px!important}
-    .oc-powerbar-empty,.oc-powerbar-full,.oc-powerbar-full-clip{width:276px!important;height:60px!important;background-size:276px auto!important}
-    .oc-powerbar-empty{background-position:0 -149px!important}
-    .oc-powerbar-full{background-position:0 -103px!important}
-    .oc-speed-label{font-size:.78rem!important}
-  `;
-  document.head.appendChild(style);
 }
 
 function bindUi() {
@@ -127,6 +111,7 @@ function rebuildCourse() {
   populateLayerSelect();
   refreshLayerPanel();
   applyAllLayers();
+  applyAllGlbAssetControls();
   updateWorldTransform(playerWorldX());
   updateHud();
   drawOverview();
