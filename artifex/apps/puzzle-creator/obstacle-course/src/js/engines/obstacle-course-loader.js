@@ -11,48 +11,73 @@ export function setLoading(count, total) {
   if ($('oc-loading-horse-count')) $('oc-loading-horse-count').textContent = message;
 }
 
-export function preloadImage(url) {
+function cacheBusted(url) {
+  return `${url}${url.includes('?') ? '&' : '?'}v=${OC.cacheVersion}`;
+}
+
+export function preloadImage(url, fallbackUrl = null) {
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
+    let triedFallback = false;
     img.onload = () => { OC.images.set(url, img); resolve(true); };
-    img.onerror = () => { console.warn('[ObstacleCourse] image failed', url); resolve(false); };
-    img.src = `${url}?v=${OC.cacheVersion}`;
+    img.onerror = () => {
+      if (fallbackUrl && !triedFallback) {
+        triedFallback = true;
+        img.src = cacheBusted(fallbackUrl);
+        return;
+      }
+      console.warn('[ObstacleCourse] image failed', url);
+      resolve(false);
+    };
+    img.src = cacheBusted(url);
   });
 }
 
-export async function loadPathAlphaMap(segment) {
+export async function preloadJson(url) {
   try {
-    const img = OC.images.get(segment.file);
-    if (!img) return false;
-    const canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth || img.width;
-    canvas.height = img.naturalHeight || img.height;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx || !canvas.width || !canvas.height) return false;
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    OC.alphaMaps.set(segment.key, { width: canvas.width, height: canvas.height, data: data.data });
+    const response = await fetch(cacheBusted(url));
+    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+    const data = await response.json();
+    OC.groundPathMap = data;
     return true;
   } catch (error) {
-    console.warn('[ObstacleCourse] alpha map failed', segment.file, error);
+    console.warn('[ObstacleCourse] ground path map failed', url, error);
     return false;
   }
 }
 
-export function pathAlphaAtSegment(segmentKey, u, v) {
-  const alpha = OC.alphaMaps.get(segmentKey);
-  if (!alpha) return null;
-  const x = clamp(Math.round(u * (alpha.width - 1)), 0, alpha.width - 1);
-  const y = clamp(Math.round(v * (alpha.height - 1)), 0, alpha.height - 1);
-  const idx = (y * alpha.width + x) * 4 + 3;
-  return alpha.data[idx] / 255;
+export function resolveGroundTileUrl(file) {
+  if (/^https?:\/\//i.test(file)) return file;
+  const root = OC.groundPathMap?.imageRoot || './assets/ground/';
+  return `${root}${file}`;
 }
+
+export function resolveGroundTileFallbackUrl(file) {
+  if (/^https?:\/\//i.test(file)) return null;
+  const root = OC.groundPathMap?.fallbackImageRoot || '';
+  return root ? `${root}${file}` : null;
+}
+
+export function groundTileAssetsFromMap() {
+  return (OC.groundPathMap?.tiles || []).map((tile) => ({
+    url: resolveGroundTileUrl(tile.file),
+    fallbackUrl: resolveGroundTileFallbackUrl(tile.file),
+    type: 'image',
+    required: true,
+    label: tile.label || tile.file,
+    tile
+  }));
+}
+
+export async function loadPathAlphaMap() { return false; }
+export function pathAlphaAtSegment() { return null; }
 
 export async function loadRequiredAssets({ onFirstReady } = {}) {
   const required = requiredAssetList();
   const first = [ASSETS.background, ASSETS.horse];
-  const total = required.length + optionalAssetList().length;
+  const optional = optionalAssetList();
+  let total = required.length + optional.length;
   let count = 0;
   OC.failures = [];
   setLoading(0, total);
@@ -63,15 +88,23 @@ export async function loadRequiredAssets({ onFirstReady } = {}) {
     if (!ok) OC.failures.push(url);
   }
   onFirstReady?.();
-  const rest = required.filter((asset) => !first.includes(asset.url));
-  await Promise.all(rest.map((asset) => preloadImage(asset.url).then((ok) => {
+  for (const asset of required.filter((item) => !first.includes(item.url))) {
+    let ok = true;
+    if (asset.type === 'json') ok = await preloadJson(asset.url);
+    else ok = await preloadImage(asset.url);
     count += 1;
     setLoading(count, total);
     if (!ok) OC.failures.push(asset.url);
-  })));
-  for (const seg of Object.values(ASSETS.pathSegments)) {
-    const ok = await loadPathAlphaMap(seg);
-    if (!ok) console.warn('[ObstacleCourse] alpha fallback active for', seg.file);
+  }
+  const groundTiles = groundTileAssetsFromMap();
+  OC.groundTileAssets = groundTiles;
+  total += groundTiles.length;
+  setLoading(count, total);
+  for (const asset of groundTiles) {
+    const ok = await preloadImage(asset.url, asset.fallbackUrl);
+    count += 1;
+    setLoading(count, total);
+    if (!ok) OC.failures.push(asset.url);
   }
   OC.requiredReady = OC.failures.length === 0;
   if ($('obstacle-start')) $('obstacle-start').disabled = !OC.requiredReady;
