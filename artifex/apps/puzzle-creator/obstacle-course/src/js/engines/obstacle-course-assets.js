@@ -15,11 +15,12 @@ export const ASSETS = {
     rightToStraight: { key: 'rightToStraight', id: 'righttostraight', label: 'Right to centre', file: `${ASSET_BASE}path-segments/righttostraight.webp`, start: 'right', end: 'centre' },
   },
   audio: {
+    forestAmbience: `${ASSET_BASE}audio/forest_ambience.mp3`,
+    bush: `${ASSET_BASE}audio/bush.mp3`,
     snort: `${ASSET_BASE}audio/horse_snort.wav`,
     neigh: `${ASSET_BASE}audio/horse_neigh.mp3`,
     gallopSlow: `${ASSET_BASE}audio/horse_gallop_slow.mp3`,
     gallopFull: `${ASSET_BASE}audio/horse_gallop_full.mp3`,
-    collect: `${ASSET_BASE}audio/horse_collect.mp3`,
     land: `${ASSET_BASE}audio/horse_land.mp3`,
   },
 };
