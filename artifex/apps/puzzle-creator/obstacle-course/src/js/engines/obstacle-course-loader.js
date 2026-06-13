@@ -79,6 +79,18 @@ export async function loadRequiredAssets({ onFirstReady } = {}) {
   return { count, total };
 }
 
+async function loadWithTimeout(task, ms = 2500) {
+  let timer = 0;
+  try {
+    return await Promise.race([
+      task,
+      new Promise((resolve) => { timer = window.setTimeout(() => resolve(false), ms); })
+    ]);
+  } finally {
+    if (timer) window.clearTimeout(timer);
+  }
+}
+
 export async function loadOptionalAssets({ loadGlbAsset } = {}) {
   const optional = optionalAssetList();
   let count = OC.loadingCount;
@@ -86,7 +98,7 @@ export async function loadOptionalAssets({ loadGlbAsset } = {}) {
   OC.optionalFailures = [];
   await Promise.all(optional.map(async (asset) => {
     let ok = true;
-    if (asset.type === 'glb' && loadGlbAsset) ok = await loadGlbAsset(asset.url);
+    if (asset.type === 'glb' && loadGlbAsset) ok = await loadWithTimeout(loadGlbAsset(asset.url), 3000);
     count += 1;
     setLoading(count, total);
     if (!ok) OC.optionalFailures.push(asset.url);
