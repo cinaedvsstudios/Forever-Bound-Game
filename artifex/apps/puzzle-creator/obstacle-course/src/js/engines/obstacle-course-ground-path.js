@@ -6,6 +6,11 @@ import { makeLayer, registerEntity } from './obstacle-course-layers.js';
 import { makeGlbOrFallback, settleObjectOnGround } from './obstacle-course-glb.js';
 
 const TILE_SEAM_OVERLAP = 0.18;
+const MAX_NEAR_TREE_PAIRS = 18;
+const MAX_FAR_TREE_PAIRS = 8;
+const MAX_ROCKS = 26;
+const MAX_EDGE_DETAIL_PAIRS = 22;
+const MAX_FAR_DETAIL_PAIRS = 10;
 
 function mapTiles() { return OC.groundPathMap?.tiles || []; }
 function tileById(id) { return mapTiles().find((tile) => tile.id === id) || mapTiles()[0] || null; }
@@ -124,6 +129,14 @@ function addMaybeGlbObject(layer, type, assetList, fallback, x, groundOffset, z,
 }
 function scatterX(distance, side, fromHalf, toHalf) { const center = pathCenterAt(distance); const half = pathHalfWidthAt(distance); return center + side * (half + rand(fromHalf, toHalf)); }
 
+function makeDistances(maxPairs, start, end, jitter = 10) {
+  const span = Math.max(1, end - start);
+  const step = span / Math.max(1, maxPairs);
+  const result = [];
+  for (let i = 0; i < maxPairs; i += 1) result.push(start + i * step + rand(-jitter, jitter));
+  return result.filter((d) => d > 0 && d < end + 40);
+}
+
 export function scatterScenery() {
   const template = TEMPLATES[OC.templateId] || TEMPLATES.horse_forest_easy;
   const treeLayer = new THREE.Group(); const rockLayer = new THREE.Group(); const detailLayer = new THREE.Group();
@@ -134,19 +147,24 @@ export function scatterScenery() {
   const rockAssets = GLB_ASSETS.filter((asset) => asset.type === 'rock' && OC.glbTemplates.has(asset.url));
   const edgeDetailAssets = GLB_ASSETS.filter((asset) => asset.type === 'edgeDetail' && OC.glbTemplates.has(asset.url));
   const farDetailAssets = GLB_ASSETS.filter((asset) => ['edgeDetail', 'farDetail'].includes(asset.type) && OC.glbTemplates.has(asset.url));
-  for (let d = 24; d < OC.courseLength + 260; d += Math.max(17, 31 / template.treeRate)) {
-    [-1, 1].forEach((side) => {
-      addMaybeGlbObject({ group: treeLayer }, 'tree', nearTreeAssets, fallbackTree, scatterX(d, side, 4.5, 10), 0, -d + rand(-4, 4), rand(.9, 1.2));
-      if (Math.random() > .58) addMaybeGlbObject({ group: treeLayer }, 'tree', farTreeAssets, fallbackTree, scatterX(d, side, 13, 25), 0, -d + rand(-7, 7), rand(1.0, 1.35));
-    });
-  }
-  for (let d = 34; d < OC.courseLength + 120; d += 29 / template.rockRate) { const side = Math.random() > .5 ? 1 : -1; addMaybeGlbObject({ group: rockLayer }, 'rock', rockAssets, fallbackRock, scatterX(d, side, .5, 7), 0, -d + rand(-3, 3), rand(.75, 1.05)); }
-  for (let d = 20; d < OC.courseLength + 100; d += 11 / template.detailRate) {
-    [-1, 1].forEach((side) => {
-      addMaybeGlbObject({ group: detailLayer }, 'detail', edgeDetailAssets, fallbackDetail, scatterX(d, side, .2, 3.0), 0, -d + rand(-2, 2), rand(.75, 1.2));
-      if (Math.random() > .52) addMaybeGlbObject({ group: detailLayer }, 'detail', farDetailAssets, fallbackDetail, scatterX(d, side, 5, 13), 0, -d + rand(-4, 4), rand(.65, 1.0));
-    });
-  }
+  const end = OC.courseLength + 160;
+
+  makeDistances(MAX_NEAR_TREE_PAIRS, 28, end, 16).forEach((d) => {
+    [-1, 1].forEach((side) => addMaybeGlbObject({ group: treeLayer }, 'tree', nearTreeAssets, fallbackTree, scatterX(d, side, 4.0, 9.5), 0, -d + rand(-5, 5), rand(1.0, 1.3)));
+  });
+  makeDistances(MAX_FAR_TREE_PAIRS, 60, end, 24).forEach((d) => {
+    [-1, 1].forEach((side) => addMaybeGlbObject({ group: treeLayer }, 'tree', farTreeAssets, fallbackTree, scatterX(d, side, 13, 25), 0, -d + rand(-9, 9), rand(1.0, 1.3)));
+  });
+  makeDistances(Math.round(MAX_ROCKS * template.rockRate), 38, OC.courseLength + 80, 18).forEach((d) => {
+    const side = Math.random() > .5 ? 1 : -1;
+    addMaybeGlbObject({ group: rockLayer }, 'rock', rockAssets, fallbackRock, scatterX(d, side, .8, 8), 0, -d + rand(-4, 4), rand(.7, 1.0));
+  });
+  makeDistances(Math.round(MAX_EDGE_DETAIL_PAIRS * template.detailRate), 20, OC.courseLength + 80, 14).forEach((d) => {
+    [-1, 1].forEach((side) => addMaybeGlbObject({ group: detailLayer }, 'detail', edgeDetailAssets, fallbackDetail, scatterX(d, side, .2, 3.0), 0, -d + rand(-3, 3), rand(.75, 1.15)));
+  });
+  makeDistances(MAX_FAR_DETAIL_PAIRS, 50, OC.courseLength + 100, 22).forEach((d) => {
+    [-1, 1].forEach((side) => addMaybeGlbObject({ group: detailLayer }, 'detail', farDetailAssets, fallbackDetail, scatterX(d, side, 5, 13), 0, -d + rand(-5, 5), rand(.65, 1.0)));
+  });
 }
 
 export function rebuildGroundPathAndScenery() { clearWorld(); buildGroundAndPath(); scatterScenery(); }
