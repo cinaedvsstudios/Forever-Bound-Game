@@ -37,8 +37,17 @@ function ensureMounted() {
     if (!OC.requiredReady) { showSpinner(true, 'Required assets missing'); setResult(`Required asset failure: ${OC.failures.join(', ')}`, 'failure'); updateHud(); return; }
     rebuildCourse();
     if ($('obstacle-start')) $('obstacle-start').disabled = false;
-    setResult('Required obstacle course assets ready. Optional 3D assets are still loading.', 'success');
-    loadOptionalAssets({ loadGlbAsset }).then(() => { showSpinner(false); populateLayerSelect(); refreshLayerPanel(); updateHud(); scheduleOverviewDraw(); setResult('Obstacle course ready.', 'success'); });
+    setResult('Required obstacle course assets ready. Optional 3D/audio assets are still loading.', 'success');
+    loadOptionalAssets({ loadGlbAsset }).then(() => {
+      showSpinner(false);
+      if (OC.glbTemplates.size) rebuildCourse();
+      populateLayerSelect();
+      refreshLayerPanel();
+      updateHud();
+      scheduleOverviewDraw();
+      setResult('Obstacle course ready.', 'success');
+      import('./obstacle-course-asset-debug.js?v=3.0.0').catch(() => {});
+    });
   });
 }
 
