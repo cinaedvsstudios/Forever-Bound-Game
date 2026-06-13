@@ -2,7 +2,22 @@ import { OC } from './obstacle-course-state.js';
 import { THREE } from './obstacle-course-scene.js';
 import { buildSliderRow } from './obstacle-course-ui.js';
 import { selectObjects } from './obstacle-course-scene.js';
-import { signedToFactor, factorToSigned, sliderToOpacity, opacityToSlider, sliderToVisualFactor, visualFactorToSlider, sliderToTint, tintToSlider } from './obstacle-course-utils.js';
+import { signedToFactor, factorToSigned, sliderToVisualFactor, visualFactorToSlider, clamp } from './obstacle-course-utils.js';
+import { getGlbDefault } from './obstacle-course-settings.js';
+
+function offsetFromBase(value, baseValue) {
+  return Math.round(Number(value || 0) - Number(baseValue || 0));
+}
+function visualOffsetFromBase(value, baseValue) {
+  const base = Number(baseValue || 1);
+  return visualFactorToSlider(Number(value || base) / base);
+}
+function opacityOffsetFromBase(value, baseValue) {
+  return Math.round((Number(value ?? baseValue ?? 1) - Number(baseValue ?? 1)) * 100);
+}
+function tintOffsetFromBase(value, baseValue) {
+  return Math.round((Number(value || 0) - Number(baseValue || 0)) * 100);
+}
 
 export function loadGlbAsset(url) {
   return new Promise((resolve) => {
@@ -81,29 +96,42 @@ export function createGlbAssetSliders(host) {
   host.appendChild(row);
   const select = row.querySelector('select');
   select.value = OC.selectedGlbAssetUrl;
-  select.addEventListener('change', (event) => { OC.selectedGlbAssetUrl = event.target.value; createGlbAssetSliders(host); refreshGlbSelection(); });
+  select.addEventListener('change', (event) => { OC.selectedGlbAssetUrl = event.target.value; host.innerHTML = ''; createGlbAssetSliders(host); refreshGlbSelection(); });
   const cfg = glbControl(OC.selectedGlbAssetUrl);
+  const base = getGlbDefault(OC.selectedGlbAssetUrl);
   const apply = () => { applyAllGlbAssetControls(); refreshGlbSelection(); };
-  buildSliderRow(host, 'hf-glb', 'x', 'X', -100, 100, 1, cfg.x || 0, (v) => { cfg.x = v; apply(); });
-  buildSliderRow(host, 'hf-glb', 'y', 'Y', -100, 100, 1, cfg.y || 0, (v) => { cfg.y = v; apply(); });
-  buildSliderRow(host, 'hf-glb', 'z', 'Z', -100, 100, 1, cfg.z || 0, (v) => { cfg.z = v; apply(); });
-  cfg.scaleOffset = cfg.scaleOffset ?? factorToSigned(cfg.scale);
-  buildSliderRow(host, 'hf-glb', 'scaleOffset', 'Scale', -100, 100, 1, cfg.scaleOffset, (v) => { cfg.scaleOffset = v; cfg.scale = signedToFactor(v); apply(); });
-  cfg.opacityOffset = cfg.opacityOffset ?? opacityToSlider(cfg.opacity);
-  buildSliderRow(host, 'hf-glb', 'opacityOffset', 'Opacity', -100, 100, 1, cfg.opacityOffset, (v) => { cfg.opacityOffset = v; cfg.opacity = sliderToOpacity(v); apply(); });
-  cfg.brightnessOffset = cfg.brightnessOffset ?? visualFactorToSlider(cfg.brightness);
-  buildSliderRow(host, 'hf-glb', 'brightnessOffset', 'Bright', -100, 100, 1, cfg.brightnessOffset, (v) => { cfg.brightnessOffset = v; cfg.brightness = sliderToVisualFactor(v); apply(); });
-  cfg.contrastOffset = cfg.contrastOffset ?? visualFactorToSlider(cfg.contrast);
-  buildSliderRow(host, 'hf-glb', 'contrastOffset', 'Contrast', -100, 100, 1, cfg.contrastOffset, (v) => { cfg.contrastOffset = v; cfg.contrast = sliderToVisualFactor(v); apply(); });
-  cfg.saturationOffset = cfg.saturationOffset ?? visualFactorToSlider(cfg.saturation);
-  buildSliderRow(host, 'hf-glb', 'saturationOffset', 'Saturation', -100, 100, 1, cfg.saturationOffset, (v) => { cfg.saturationOffset = v; cfg.saturation = sliderToVisualFactor(v); apply(); });
-  buildSliderRow(host, 'hf-glb', 'tintStrength', 'Tint Amt', -100, 100, 1, tintToSlider(cfg.tintStrength), (v) => { cfg.tintStrength = sliderToTint(v); apply(); });
-  buildSliderRow(host, 'hf-glb', 'order', 'Order', -100, 100, 1, cfg.order || 0, (v) => { cfg.order = v; apply(); });
+  buildSliderRow(host, 'hf-glb', 'x', 'X', -100, 100, 1, offsetFromBase(cfg.x, base.x), (v) => { cfg.x = Number(base.x || 0) + v; apply(); });
+  buildSliderRow(host, 'hf-glb', 'y', 'Y', -100, 100, 1, offsetFromBase(cfg.y, base.y), (v) => { cfg.y = Number(base.y || 0) + v; apply(); });
+  buildSliderRow(host, 'hf-glb', 'z', 'Z', -100, 100, 1, offsetFromBase(cfg.z, base.z), (v) => { cfg.z = Number(base.z || 0) + v; apply(); });
+  buildSliderRow(host, 'hf-glb', 'scaleOffset', 'Scale', -100, 100, 1, factorToSigned((cfg.scale || 1) / (base.scale || 1)), (v) => { cfg.scale = Number(base.scale || 1) * signedToFactor(v); apply(); });
+  buildSliderRow(host, 'hf-glb', 'opacityOffset', 'Opacity', -100, 100, 1, opacityOffsetFromBase(cfg.opacity, base.opacity), (v) => { cfg.opacity = clamp(Number(base.opacity ?? 1) + (v / 100), 0, 1); apply(); });
+  buildSliderRow(host, 'hf-glb', 'brightnessOffset', 'Bright', -100, 100, 1, visualOffsetFromBase(cfg.brightness, base.brightness), (v) => { cfg.brightness = Number(base.brightness || 1) * sliderToVisualFactor(v); apply(); });
+  buildSliderRow(host, 'hf-glb', 'contrastOffset', 'Contrast', -100, 100, 1, visualOffsetFromBase(cfg.contrast, base.contrast), (v) => { cfg.contrast = Number(base.contrast || 1) * sliderToVisualFactor(v); apply(); });
+  buildSliderRow(host, 'hf-glb', 'saturationOffset', 'Saturation', -100, 100, 1, visualOffsetFromBase(cfg.saturation, base.saturation), (v) => { cfg.saturation = Number(base.saturation || 1) * sliderToVisualFactor(v); apply(); });
+  buildSliderRow(host, 'hf-glb', 'tintStrength', 'Tint Amt', -100, 100, 1, tintOffsetFromBase(cfg.tintStrength, base.tintStrength), (v) => { cfg.tintStrength = clamp(Number(base.tintStrength || 0) + (v / 100), 0, 1); apply(); });
+  buildSliderRow(host, 'hf-glb', 'order', 'Order', -100, 100, 1, offsetFromBase(cfg.order, base.order), (v) => { cfg.order = Number(base.order || 0) + v; apply(); });
 }
 
 function glbControl(url) {
-  if (!OC.glbControls.has(url)) OC.glbControls.set(url, { x:0, y:0, z:0, scale:1, opacity:1, brightness:1, contrast:1, saturation:1, tint:'#ffffff', tintStrength:0, order:0 });
+  if (!OC.glbControls.has(url)) {
+    OC.glbControls.set(url, { ...getGlbDefault(url), ...(OC.pendingGlbControls?.[url] || {}) });
+  }
   return OC.glbControls.get(url);
+}
+
+function applyGlbMaterialVisual(obj, cfg) {
+  obj.traverse?.((node) => {
+    const materials = Array.isArray(node.material) ? node.material : node.material ? [node.material] : [];
+    materials.forEach((mat) => {
+      mat.transparent = (cfg.opacity ?? 1) < 0.995 || mat.transparent;
+      mat.opacity = cfg.opacity ?? 1;
+      if (mat.color) {
+        if (!mat.userData.baseColor) mat.userData.baseColor = mat.color.clone();
+        mat.color.copy(mat.userData.baseColor).multiplyScalar(cfg.brightness ?? 1);
+      }
+      mat.needsUpdate = true;
+    });
+  });
 }
 
 export function applyAllGlbAssetControls() {
@@ -113,6 +141,8 @@ export function applyAllGlbAssetControls() {
     const scale = (obj.userData.baseScaleValue || 1) * (cfg.scale || 1);
     obj.scale.setScalar(scale);
     obj.visible = (cfg.opacity ?? 1) > 0.01;
+    obj.renderOrder = cfg.order || 0;
+    applyGlbMaterialVisual(obj, cfg);
   });
 }
 
