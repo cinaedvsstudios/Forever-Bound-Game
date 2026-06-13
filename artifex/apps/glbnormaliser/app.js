@@ -25,8 +25,11 @@ const state = {
   yaw: -0.65,
   pitch: 0.42,
   zoom: 1,
-  dragging: false,
+  activeAxis: 'Z',
+  pivotPoint: null,
+  dragging: null,
   lastMouse: null,
+  lastStarScreen: null,
 };
 
 const el = id => document.getElementById(id);
@@ -211,6 +214,7 @@ function clearSelection() {
   state.selectedRows.clear();
   state.preview = null;
   state.analysis = null;
+  state.pivotPoint = null;
   fileTitle.textContent = 'Choose a .glb file';
   fileSub.textContent = 'Static props only. Save copy first, then overwrite once tested.';
   statsBox.className = 'stats empty';
@@ -241,6 +245,7 @@ async function selectFile(entry) {
     const analysis = analyseArrayBuffer(entry.name, entry.path, file.size, arrayBuffer, axisSelect.value);
     state.analysis = analysis;
     state.preview = analysis;
+    state.pivotPoint = analysis.bbox.bottomCenter.slice();
     renderStats(analysis);
     fitView();
     saveCopyBtn.disabled = false;
@@ -268,6 +273,7 @@ function renderStats(data) {
     ${row('Skins', data.counts.skins)}
     ${row('Bounds size', fmtVec(data.bbox.size))}
     ${row('Bottom centre', fmtVec(data.bbox.bottomCenter))}
+    ${row('Pivot star', fmtVec(state.pivotPoint || data.bbox.bottomCenter))}
     ${row('Normalised root', data.normalisedRoot?.found ? `yes, scale ${fmtVec(data.normalisedRoot.scale)}` : 'no')}
     ${warnings}
   `;
@@ -303,7 +309,7 @@ async function save(mode) {
     const entry = state.selectedEntry;
     const { arrayBuffer } = await readEntryBuffer(entry);
     const originalBytes = new Uint8Array(arrayBuffer.slice(0));
-    const result = normaliseArrayBuffer(arrayBuffer, { scale: getScale(), axis: axisSelect.value });
+    const result = normaliseArrayBuffer(arrayBuffer, { scale: getScale(), axis: axisSelect.value, pivotPoint: state.pivotPoint });
 
     if (mode === 'copy') {
       const outName = normalisedCopyName(entry.name);
@@ -744,7 +750,7 @@ function leftMultiplyNodeMatrix(node, leftMatrix) {
   setNodeMatrix(node, mat4Multiply(leftMatrix, current));
 }
 
-function ensureNormalisedRootAndApply(json, bin, { scale = 1, axis = 'Y' }) {
+function ensureNormalisedRootAndApply(json, bin, { scale = 1, axis = 'Y', pivotPoint = null }) {
   const { scene } = getScene(json);
   let root = detectNormalisedRoot(json, scene);
 
@@ -773,7 +779,8 @@ function ensureNormalisedRootAndApply(json, bin, { scale = 1, axis = 'Y' }) {
   root.node.scale = [1, 1, 1];
 
   const bottomCenter = computeStatsAndPreview(json, bin, { maxPreviewVertices: 1, axis }).bbox.bottomCenter;
-  const shift = [-bottomCenter[0], -bottomCenter[1], -bottomCenter[2]];
+  const pivot = Array.isArray(pivotPoint) ? pivotPoint.map(Number) : bottomCenter;
+  const shift = [-pivot[0], -pivot[1], -pivot[2]];
   const shiftMagnitude = Math.hypot(shift[0], shift[1], shift[2]);
   if (shiftMagnitude > 1e-9) {
     const t = mat4Translation(shift[0], shift[1], shift[2]);
@@ -791,9 +798,10 @@ function ensureNormalisedRootAndApply(json, bin, { scale = 1, axis = 'Y' }) {
     fbNormalised: true,
     fbNormalisedAt: new Date().toISOString(),
     fbBottomAxis: axis,
+    fbPivotPoint: roundPoint(pivot),
     fbRootScale: scale,
   });
-  return { shift: roundPoint(shift), scale, axis };
+  return { shift: roundPoint(shift), pivot: roundPoint(pivot), scale, axis };
 }
 
 function fitView() {
@@ -802,11 +810,19 @@ function fitView() {
 }
 
 function setView(name) {
-  if (name === 'front') { state.yaw = 0; state.pitch = 0; }
-  if (name === 'side') { state.yaw = Math.PI / 2; state.pitch = 0; }
-  if (name === 'top') { state.yaw = 0; state.pitch = Math.PI / 2; }
+  if (name === 'x') { state.activeAxis = 'X'; state.yaw = 0; state.pitch = 0; }
+  if (name === 'y') { state.activeAxis = 'Y'; state.yaw = 0; state.pitch = 0; }
+  if (name === 'z') { state.activeAxis = 'Z'; state.yaw = Math.PI / 2; state.pitch = 0; }
   if (name === 'iso') { state.yaw = -0.65; state.pitch = 0.42; }
+  updateViewButtons();
   drawPreview();
+}
+
+function updateViewButtons() {
+  for (const [id, axis] of [['frontViewBtn','Z'], ['sideViewBtn','X'], ['topViewBtn','Y']]) {
+    const button = el(id);
+    if (button) button.classList.toggle('active', state.activeAxis === axis);
+  }
 }
 
 function resizeCanvasToDisplay() {
@@ -833,22 +849,11 @@ function rotatePoint(p) {
   return [x, y, z];
 }
 
-function drawPreview() {
+function getProjection() {
   resizeCanvasToDisplay();
-  const w = canvas.width, h = canvas.height;
-  ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = '#09080d';
-  ctx.fillRect(0, 0, w, h);
-
   const preview = state.preview;
-  if (!preview || !preview.bbox) {
-    ctx.fillStyle = '#b8a98f';
-    ctx.font = `${Math.max(16, w / 60)}px Arial`;
-    ctx.textAlign = 'center';
-    ctx.fillText('Choose a folder, then select a GLB file from the left.', w / 2, h / 2);
-    return;
-  }
-
+  if (!preview || !preview.bbox) return null;
+  const w = canvas.width, h = canvas.height;
   const bbox = preview.bbox;
   const center = bbox.center;
   const size = bbox.size;
@@ -859,17 +864,41 @@ function drawPreview() {
     const r = rotatePoint(shifted);
     return [w / 2 + r[0] * scale, h / 2 - r[1] * scale, r[2]];
   };
+  return { w, h, bbox, maxDim, scale, project };
+}
 
+function drawPreview() {
+  resizeCanvasToDisplay();
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#09080d';
+  ctx.fillRect(0, 0, w, h);
+
+  const projection = getProjection();
+  if (!projection) {
+    ctx.fillStyle = '#b8a98f';
+    ctx.font = `${Math.max(16, w / 60)}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillText('Choose a folder, then select a GLB file from the left.', w / 2, h / 2);
+    state.lastStarScreen = null;
+    return;
+  }
+
+  const preview = state.preview;
+  const { bbox, maxDim, project } = projection;
   drawGrid(project, bbox);
   drawBox(project, bbox);
   drawAxes(project, maxDim);
+  drawAxisGuide(project, bbox, maxDim);
   drawPoints(project, preview.preview || []);
-  drawOrigin(project);
+  drawOriginCross(project);
+  drawPivotStar(project);
 
   ctx.fillStyle = '#b8a98f';
   ctx.font = `${Math.max(11, w / 120)}px Arial`;
   ctx.textAlign = 'left';
   ctx.fillText(`${preview.counts.vertices.toLocaleString()} vertices | showing ${preview.counts.previewVertices.toLocaleString()} sample points`, 14, 22);
+  ctx.fillText(`Pivot edit axis: ${state.activeAxis} | drag the star to move pivot on ${state.activeAxis} only`, 14, 42);
 }
 
 function drawPoints(project, points) {
@@ -898,16 +927,72 @@ function drawBox(project, bbox) {
   ctx.stroke();
 }
 
-function drawOrigin(project) {
+function drawOriginCross(project) {
   const p = project([0, 0, 0]);
+  const r = Math.max(5, canvas.width / 190);
   ctx.save();
-  ctx.fillStyle = '#60b372';
-  ctx.strokeStyle = '#061008';
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = 'rgba(116, 210, 138, .85)';
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(p[0], p[1], Math.max(6, canvas.width / 150), 0, Math.PI * 2);
-  ctx.fill();
+  ctx.moveTo(p[0] - r, p[1]);
+  ctx.lineTo(p[0] + r, p[1]);
+  ctx.moveTo(p[0], p[1] - r);
+  ctx.lineTo(p[0], p[1] + r);
   ctx.stroke();
+  ctx.restore();
+}
+
+function drawPivotStar(project) {
+  if (!state.pivotPoint) return;
+  const p = project(state.pivotPoint);
+  state.lastStarScreen = p;
+  const outer = Math.max(12, canvas.width / 95);
+  const inner = outer * 0.45;
+  ctx.save();
+  ctx.translate(p[0], p[1]);
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + i * Math.PI / 5;
+    const r = i % 2 === 0 ? outer : inner;
+    const x = Math.cos(a) * r;
+    const y = Math.sin(a) * r;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = '#ead389';
+  ctx.strokeStyle = '#2a183f';
+  ctx.lineWidth = Math.max(2, canvas.width / 420);
+  ctx.shadowColor = 'rgba(234,211,137,.55)';
+  ctx.shadowBlur = 10;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawAxisGuide(project, bbox, maxDim) {
+  if (!state.pivotPoint) return;
+  const idx = axisIndex(state.activeAxis);
+  const start = state.pivotPoint.slice();
+  const end = state.pivotPoint.slice();
+  const pad = maxDim * 0.25;
+  start[idx] = bbox.min[idx] - pad;
+  end[idx] = bbox.max[idx] + pad;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(234, 211, 137, .78)';
+  ctx.lineWidth = Math.max(2, canvas.width / 500);
+  ctx.setLineDash([10, 7]);
+  const a = project(start);
+  const b = project(end);
+  ctx.beginPath();
+  ctx.moveTo(a[0], a[1]);
+  ctx.lineTo(b[0], b[1]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#ead389';
+  ctx.font = `${Math.max(12, canvas.width / 100)}px Arial`;
+  ctx.fillText(`${state.activeAxis} pivot drag line`, b[0] + 8, b[1] + 6);
   ctx.restore();
 }
 
@@ -922,7 +1007,7 @@ function drawAxes(project, maxDim) {
     const a = project([0,0,0]);
     const b = project(axis.end);
     ctx.strokeStyle = axis.color;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = axis.label === state.activeAxis ? 4 : 2;
     ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
     ctx.fillStyle = axis.color;
     ctx.font = `${Math.max(12, canvas.width / 95)}px Arial`;
@@ -947,6 +1032,55 @@ function drawGrid(project, bbox) {
   ctx.restore();
 }
 
+function axisIndex(axis) {
+  return axis === 'X' ? 0 : axis === 'Y' ? 1 : 2;
+}
+
+function axisVector(axis) {
+  return axis === 'X' ? [1, 0, 0] : axis === 'Y' ? [0, 1, 0] : [0, 0, 1];
+}
+
+function pointerOnCanvas(ev) {
+  const rect = canvas.getBoundingClientRect();
+  const sx = canvas.width / rect.width;
+  const sy = canvas.height / rect.height;
+  return [(ev.clientX - rect.left) * sx, (ev.clientY - rect.top) * sy];
+}
+
+function dragPivot(ev) {
+  if (!state.pivotPoint) return;
+  const projection = getProjection();
+  if (!projection) return;
+  const next = pointerOnCanvas(ev);
+  const dx = next[0] - state.lastMouse[0];
+  const dy = next[1] - state.lastMouse[1];
+  state.lastMouse = next;
+
+  const axis = state.activeAxis;
+  const idx = axisIndex(axis);
+  const v = axisVector(axis);
+  const base = state.pivotPoint.slice();
+  const one = [base[0] + v[0], base[1] + v[1], base[2] + v[2]];
+  const p0 = projection.project(base);
+  const p1 = projection.project(one);
+  const ax = p1[0] - p0[0];
+  const ay = p1[1] - p0[1];
+  const denom = ax * ax + ay * ay;
+  if (denom < 1e-9) return;
+  const worldDelta = (dx * ax + dy * ay) / denom;
+  state.pivotPoint[idx] = roundPoint([state.pivotPoint[idx] + worldDelta])[0];
+  if (state.analysis) renderStats(state.analysis);
+  drawPreview();
+}
+
+function resetPivotToBottomCentre() {
+  if (!state.preview?.bbox?.bottomCenter) return;
+  state.pivotPoint = state.preview.bbox.bottomCenter.slice();
+  if (state.analysis) renderStats(state.analysis);
+  drawPreview();
+  log('Pivot star reset to current bottom centre.', 'ok');
+}
+
 chooseFolderBtn.addEventListener('click', chooseFolder);
 upBtn.addEventListener('click', goUp);
 axisSelect.addEventListener('change', async () => {
@@ -960,19 +1094,37 @@ batchCopyBtn.addEventListener('click', () => batch('copy'));
 batchOverwriteBtn.addEventListener('click', () => {
   if (confirm(`Overwrite ${state.selectedRows.size} selected GLB file(s)? Backups will be created if enabled.`)) batch('overwrite');
 });
-el('frontViewBtn').addEventListener('click', () => setView('front'));
-el('sideViewBtn').addEventListener('click', () => setView('side'));
-el('topViewBtn').addEventListener('click', () => setView('top'));
+el('frontViewBtn').addEventListener('click', () => setView('z'));
+el('sideViewBtn').addEventListener('click', () => setView('x'));
+el('topViewBtn').addEventListener('click', () => setView('y'));
 el('isoViewBtn').addEventListener('click', () => setView('iso'));
 el('fitViewBtn').addEventListener('click', fitView);
+el('resetPivotBtn').addEventListener('click', resetPivotToBottomCentre);
 
 canvas.addEventListener('mousedown', ev => {
-  state.dragging = true;
+  const pos = pointerOnCanvas(ev);
+  if (state.lastStarScreen) {
+    const d = Math.hypot(pos[0] - state.lastStarScreen[0], pos[1] - state.lastStarScreen[1]);
+    if (d <= Math.max(24, canvas.width / 55)) {
+      state.dragging = 'pivot';
+      state.lastMouse = pos;
+      canvas.classList.add('dragging-star');
+      return;
+    }
+  }
+  state.dragging = 'orbit';
   state.lastMouse = [ev.clientX, ev.clientY];
 });
-window.addEventListener('mouseup', () => { state.dragging = false; });
+window.addEventListener('mouseup', () => {
+  state.dragging = null;
+  canvas.classList.remove('dragging-star');
+});
 window.addEventListener('mousemove', ev => {
   if (!state.dragging || !state.lastMouse) return;
+  if (state.dragging === 'pivot') {
+    dragPivot(ev);
+    return;
+  }
   const dx = ev.clientX - state.lastMouse[0];
   const dy = ev.clientY - state.lastMouse[1];
   state.lastMouse = [ev.clientX, ev.clientY];
@@ -990,4 +1142,5 @@ canvas.addEventListener('wheel', ev => {
 window.addEventListener('resize', drawPreview);
 
 assertFolderPickerSupport();
+updateViewButtons();
 drawPreview();

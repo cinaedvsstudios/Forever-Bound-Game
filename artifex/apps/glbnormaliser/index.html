@@ -58,14 +58,15 @@
       <section class="workspace">
         <div class="preview-card">
           <div class="preview-toolbar">
-            <button id="frontViewBtn">Front</button>
-            <button id="sideViewBtn">Side</button>
-            <button id="topViewBtn">Top</button>
+            <button id="frontViewBtn">Z</button>
+            <button id="sideViewBtn">X</button>
+            <button id="topViewBtn">Y</button>
             <button id="isoViewBtn">Iso</button>
             <button id="fitViewBtn">Fit</button>
+            <button id="resetPivotBtn">Reset pivot</button>
           </div>
           <canvas id="previewCanvas" width="1100" height="720"></canvas>
-          <div class="preview-hint">Drag to rotate. Mouse wheel to zoom. Green dot = origin/pivot. Gold box = current bounds.</div>
+          <div class="preview-hint">Z / X / Y choose the pivot edit axis. Drag the gold star to move the pivot along that axis only. Mouse wheel zooms. Green cross = origin. Gold box = bounds.</div>
         </div>
 
         <div class="info-card">

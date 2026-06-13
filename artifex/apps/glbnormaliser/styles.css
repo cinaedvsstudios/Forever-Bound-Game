@@ -50,6 +50,7 @@ input, select { background: #0f0b15; color: var(--text); border: 1px solid var(-
 .preview-toolbar { display: flex; gap: 8px; padding: 10px; border-bottom: 1px solid var(--line); }
 .preview-toolbar button, .actions button { background: #21182c; color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; cursor: pointer; }
 .preview-toolbar button:hover, .actions button:hover { border-color: var(--gold); }
+.preview-toolbar button.active { border-color: var(--gold2); box-shadow: 0 0 0 2px rgba(234,211,137,.22) inset; color: var(--gold2); }
 .preview-toolbar button:disabled, .actions button:disabled { opacity: .45; cursor: default; border-color: var(--line); }
 canvas { display: block; width: 100%; height: calc(100vh - 190px); min-height: 420px; background: #09080d; }
 .preview-hint { padding: 10px 12px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); }
@@ -72,3 +73,6 @@ h3 { margin: 0; font-size: 15px; color: var(--gold2); }
   .top-controls { flex-direction: column; }
   canvas { height: 520px; }
 }
+
+canvas.dragging-star { cursor: grabbing; }
+canvas { cursor: crosshair; }

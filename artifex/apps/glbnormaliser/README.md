@@ -1,4 +1,4 @@
-# GLB Asset Normaliser - Folder Picker Version
+# GLB Asset Normaliser - Pivot Star Version
 
 This version is designed to work from the page itself, without typing a folder path into a BAT window.
 
@@ -10,14 +10,26 @@ This version is designed to work from the page itself, without typing a folder p
 4. The left panel lists folders and `.glb` files.
 5. Click a `.glb` to inspect it.
 6. Set the scale value.
-7. Use **Save copy** first.
-8. Once tested, use **Overwrite original** with **Backup before overwrite** switched on.
+7. Use the **Z**, **X**, or **Y** view buttons to choose which pivot axis you want to edit.
+8. Drag the gold star in the preview. It only moves along the active axis.
+9. Use **Save copy** first.
+10. Once tested, use **Overwrite original** with **Backup before overwrite** switched on.
+
+## Pivot controls
+
+The gold star is the pivot point that will become the GLB origin when saved.
+
+The star starts at the calculated bottom-centre point. The **Reset pivot** button sends it back to that bottom-centre point.
+
+The green cross marks the current origin. The gold box shows the current model bounds.
+
+The **Z**, **X**, and **Y** buttons are axis edit modes. The active axis is highlighted and a dashed gold guide line is drawn through the star. Dragging the star changes only that one coordinate.
 
 ## What it changes
 
 The tool adds or reuses a root node named `FB_NormalisedRoot`.
 
-It moves the original scene root nodes so the visible model's bottom-centre point becomes the origin/pivot, then applies a uniform scale to `FB_NormalisedRoot`.
+It moves the original scene root nodes so the chosen pivot-star point becomes the origin/pivot, then applies a uniform scale to `FB_NormalisedRoot`.
 
 This preserves the original mesh buffers, materials, textures, and embedded binary data. It is intended for static GLB props.
 
