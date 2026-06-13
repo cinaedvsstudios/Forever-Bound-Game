@@ -3,17 +3,9 @@ import { ASSET_BASE, SHARED_UI_BASE } from './obstacle-course-state.js';
 export const ASSETS = {
   background: `${ASSET_BASE}backgrounds/horseridebg.jpg`,
   horse: `${ASSET_BASE}foreground/horse.png`,
-  ground: `${ASSET_BASE}ground/forest_ground.webp`,
+  groundPathMap: `${ASSET_BASE}ground/ground-path-map.json`,
   powerbars: `${ASSET_BASE}ui/powerbars.png`,
   arrows: `${SHARED_UI_BASE}defaultarrows.webp`,
-  pathSegments: {
-    straight: { key: 'straight', id: 'pathstraight', label: 'Straight', file: `${ASSET_BASE}path-segments/pathstraight.webp`, start: 'centre', end: 'centre' },
-    kink: { key: 'kink', id: 'pathkink', label: 'Kink', file: `${ASSET_BASE}path-segments/pathkink.webp`, start: 'centre', end: 'centre' },
-    left: { key: 'left', id: 'pathleft', label: 'Move left', file: `${ASSET_BASE}path-segments/pathleft.webp`, start: 'centre', end: 'left' },
-    right: { key: 'right', id: 'pathright', label: 'Move right', file: `${ASSET_BASE}path-segments/pathright.webp`, start: 'centre', end: 'right' },
-    leftToStraight: { key: 'leftToStraight', id: 'pathlefttostraight', label: 'Left to centre', file: `${ASSET_BASE}path-segments/pathlefttostraight.webp`, start: 'left', end: 'centre' },
-    rightToStraight: { key: 'rightToStraight', id: 'righttostraight', label: 'Right to centre', file: `${ASSET_BASE}path-segments/righttostraight.webp`, start: 'right', end: 'centre' },
-  },
   audio: {
     forestAmbience: `${ASSET_BASE}audio/forest_ambience.mp3`,
     bush: `${ASSET_BASE}audio/bush.mp3`,
@@ -51,12 +43,12 @@ export function requiredAssetList() {
   return [
     { url: ASSETS.background, type: 'image', required: true, label: 'Background' },
     { url: ASSETS.horse, type: 'image', required: true, label: 'Horse foreground' },
-    { url: ASSETS.ground, type: 'image', required: true, label: 'Forest ground' },
+    { url: ASSETS.groundPathMap, type: 'json', required: true, label: 'Ground path map' },
     { url: ASSETS.powerbars, type: 'image', required: true, label: 'Power bars' },
-    { url: ASSETS.arrows, type: 'image', required: true, label: 'Off-path arrows' },
-    ...Object.values(ASSETS.pathSegments).map((seg) => ({ url: seg.file, type: 'image', required: true, label: seg.label })),
+    { url: ASSETS.arrows, type: 'image', required: true, label: 'Off-path arrows' }
   ];
 }
+
 export function optionalAssetList() {
   return [
     ...Object.entries(ASSETS.audio).map(([key, url]) => ({ url, type: 'audio', required: false, label: key })),
