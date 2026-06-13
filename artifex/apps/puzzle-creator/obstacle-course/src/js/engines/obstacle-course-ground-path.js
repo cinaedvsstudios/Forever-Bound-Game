@@ -4,7 +4,7 @@ import { clamp, lerp, pick, rand } from './obstacle-course-utils.js';
 import { THREE, loadTexture } from './obstacle-course-scene.js';
 import { pathAlphaAtSegment } from './obstacle-course-loader.js';
 import { makeLayer, registerEntity } from './obstacle-course-layers.js';
-import { makeGlbOrFallback } from './obstacle-course-glb.js';
+import { makeGlbOrFallback, settleObjectOnGround } from './obstacle-course-glb.js';
 
 export function generatePathSequence() {
   if (Array.isArray(OC.customPathSequence) && OC.customPathSequence.length) {
@@ -73,20 +73,24 @@ export function buildGroundAndPath() {
 function fallbackTree() {
   const tree = new THREE.Group();
   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.14, .22, 2.0, 6), new THREE.MeshStandardMaterial({ color: 0x5a321e }));
-  const crown = new THREE.Mesh(new THREE.ConeGeometry(rand(.8, 1.25), rand(2.4, 3.6), 7), new THREE.MeshStandardMaterial({ color: 0x1d5a34 }));
+  const crown = new THREE.Mesh(new THREE.ConeGeometry(rand(.9, 1.45), rand(2.7, 4.1), 7), new THREE.MeshStandardMaterial({ color: 0x1d5a34 }));
   trunk.position.y = GROUND_Y + 1.0;
-  crown.position.y = GROUND_Y + 2.95;
+  crown.position.y = GROUND_Y + 3.25;
   tree.add(trunk, crown);
   return tree;
 }
-function fallbackRock() { return new THREE.Mesh(new THREE.DodecahedronGeometry(rand(.32, .75), 0), new THREE.MeshStandardMaterial({ color: 0x7d776b })); }
-function fallbackDetail() { return new THREE.Mesh(new THREE.ConeGeometry(rand(.18, .35), rand(.4, .75), 5), new THREE.MeshStandardMaterial({ color: 0x2e8b45 })); }
-function addMaybeGlbObject(layer, type, assetList, fallback, x, y, z, scale = 1) {
+function fallbackRock() { const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rand(.32, .75), 0), new THREE.MeshStandardMaterial({ color: 0x7d776b })); rock.position.y = GROUND_Y + 0.38; return rock; }
+function fallbackDetail() { const detail = new THREE.Mesh(new THREE.ConeGeometry(rand(.18, .35), rand(.4, .75), 5), new THREE.MeshStandardMaterial({ color: 0x2e8b45 })); detail.position.y = GROUND_Y + 0.35; return detail; }
+
+function addMaybeGlbObject(layer, type, assetList, fallback, x, groundOffset, z, scale = 1) {
   const asset = pick(assetList) || null;
   const obj = asset ? makeGlbOrFallback(asset, fallback) : fallback();
-  obj.position.set(x, y, z);
+  obj.position.x = x;
+  obj.position.z = z;
   obj.rotation.y = rand(0, Math.PI * 2);
   obj.scale.multiplyScalar(scale * (asset?.scale || 1));
+  if (asset) settleObjectOnGround(obj, GROUND_Y + groundOffset);
+  else obj.position.y += groundOffset;
   if (asset) {
     obj.userData.glbAssetUrl = asset.url;
     obj.userData.baseScaleValue = obj.scale.x || 1;
@@ -103,25 +107,38 @@ export function scatterScenery() {
   const treeLayer = new THREE.Group(); const rockLayer = new THREE.Group(); const detailLayer = new THREE.Group();
   makeLayer('trees', 'Trees', treeLayer, { order: 10 }); makeLayer('rocks', 'Rocks', rockLayer, { order: 11 }); makeLayer('details', 'Ferns / Bushes / Details', detailLayer, { order: 12 });
   OC.world.add(treeLayer, rockLayer, detailLayer);
-  const treeAssets = GLB_ASSETS.filter((asset) => asset.type === 'tree' && OC.glbTemplates.has(asset.url));
+  const nearTreeAssets = GLB_ASSETS.filter((asset) => asset.type === 'nearTree' && OC.glbTemplates.has(asset.url));
+  const farTreeAssets = GLB_ASSETS.filter((asset) => ['nearTree', 'farTree'].includes(asset.type) && OC.glbTemplates.has(asset.url));
   const rockAssets = GLB_ASSETS.filter((asset) => asset.type === 'rock' && OC.glbTemplates.has(asset.url));
-  const detailAssets = GLB_ASSETS.filter((asset) => asset.type === 'detail' && OC.glbTemplates.has(asset.url));
-  for (let d = 24; d < OC.courseLength + 260; d += Math.max(11, 22 / template.treeRate)) {
+  const edgeDetailAssets = GLB_ASSETS.filter((asset) => asset.type === 'edgeDetail' && OC.glbTemplates.has(asset.url));
+  const farDetailAssets = GLB_ASSETS.filter((asset) => ['edgeDetail', 'farDetail'].includes(asset.type) && OC.glbTemplates.has(asset.url));
+
+  for (let d = 24; d < OC.courseLength + 260; d += Math.max(13, 24 / template.treeRate)) {
     const center = pathCenterAt(d);
     [-1, 1].forEach((side) => {
-      const x = center + side * (OC.pathVisualWidth * .5 + OC.sceneryDistance * .25 + rand(1, 4));
-      addMaybeGlbObject({ group: treeLayer }, 'tree', treeAssets, fallbackTree, x, 0, -d + rand(-5, 5), rand(.75, .95));
+      const nearX = center + side * (OC.pathVisualWidth * .5 + rand(2.2, 6.0));
+      addMaybeGlbObject({ group: treeLayer }, 'tree', nearTreeAssets, fallbackTree, nearX, 0, -d + rand(-4, 4), rand(.9, 1.2));
+      if (Math.random() > .35) {
+        const farX = center + side * (OC.pathVisualWidth * .5 + OC.sceneryDistance + rand(8, 18));
+        addMaybeGlbObject({ group: treeLayer }, 'tree', farTreeAssets, fallbackTree, farX, 0, -d + rand(-7, 7), rand(1.05, 1.45));
+      }
     });
   }
-  for (let d = 34; d < OC.courseLength + 120; d += 27 / template.rockRate) {
+  for (let d = 34; d < OC.courseLength + 120; d += 29 / template.rockRate) {
     const side = Math.random() > .5 ? 1 : -1;
     const x = pathCenterAt(d) + side * (OC.pathVisualWidth * .5 + OC.sceneryDistance * .18 + rand(.4, 4));
-    addMaybeGlbObject({ group: rockLayer }, 'rock', rockAssets, fallbackRock, x, GROUND_Y + .35, -d + rand(-3, 3), rand(.65, .95));
+    addMaybeGlbObject({ group: rockLayer }, 'rock', rockAssets, fallbackRock, x, 0, -d + rand(-3, 3), rand(.75, 1.05));
   }
-  for (let d = 20; d < OC.courseLength + 100; d += 14 / template.detailRate) {
-    const side = Math.random() > .5 ? 1 : -1;
-    const x = pathCenterAt(d) + side * (OC.pathVisualWidth * .5 + rand(.3, Math.max(1.5, OC.sceneryDistance * .2)));
-    addMaybeGlbObject({ group: detailLayer }, 'detail', detailAssets, fallbackDetail, x, GROUND_Y + .35, -d + rand(-2, 2), rand(.55, .9));
+  for (let d = 20; d < OC.courseLength + 100; d += 11 / template.detailRate) {
+    const center = pathCenterAt(d);
+    [-1, 1].forEach((side) => {
+      const edgeX = center + side * (OC.pathVisualWidth * .5 + rand(.3, 2.4));
+      addMaybeGlbObject({ group: detailLayer }, 'detail', edgeDetailAssets, fallbackDetail, edgeX, 0, -d + rand(-2, 2), rand(.75, 1.2));
+      if (Math.random() > .45) {
+        const farX = center + side * (OC.pathVisualWidth * .5 + rand(4, 11));
+        addMaybeGlbObject({ group: detailLayer }, 'detail', farDetailAssets, fallbackDetail, farX, 0, -d + rand(-4, 4), rand(.65, 1.0));
+      }
+    });
   }
 }
 
