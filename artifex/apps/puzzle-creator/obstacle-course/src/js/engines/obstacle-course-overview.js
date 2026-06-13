@@ -1,6 +1,6 @@
 import { OC } from './obstacle-course-state.js';
 import { $ } from './obstacle-course-utils.js';
-import { pathCenterAt, pathAlphaAtWorld } from './obstacle-course-ground-path.js';
+import { pathCenterAt, pathAlphaAtWorld, pathHalfWidthAt } from './obstacle-course-ground-path.js';
 
 export function scheduleOverviewDraw() {
   if (OC.overviewRaf) return;
@@ -27,7 +27,8 @@ export function drawOverview() {
     ctx.fillStyle = 'rgba(238,196,90,.25)';
     for (let d = 0; d < OC.courseLength; d += 18) {
       const center = pathCenterAt(d);
-      for (let x = center - OC.pathVisualWidth * .5; x <= center + OC.pathVisualWidth * .5; x += 2.2) {
+      const half = pathHalfWidthAt(d);
+      for (let x = center - half; x <= center + half; x += 1.4) {
         const alpha = pathAlphaAtWorld(x, d);
         if (alpha !== null && alpha >= OC.pathAlphaThreshold) {
           const p = worldToOverview(x, -d);
