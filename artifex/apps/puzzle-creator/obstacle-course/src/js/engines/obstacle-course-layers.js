@@ -4,26 +4,11 @@ import { signedToFactor, factorToSigned, sliderToVisualFactor, visualFactorToSli
 import { renderOnce, selectObjects, applyBackgroundPlate } from './obstacle-course-scene.js';
 import { getLayerDefault } from './obstacle-course-settings.js';
 
-function layerBase(id) {
-  return getLayerDefault(id);
-}
-
-function offsetFromBase(value, baseValue) {
-  return Math.round(Number(value || 0) - Number(baseValue || 0));
-}
-
-function visualOffsetFromBase(value, baseValue) {
-  const base = Number(baseValue || 1);
-  return visualFactorToSlider(Number(value || base) / base);
-}
-
-function opacityOffsetFromBase(value, baseValue) {
-  return Math.round((Number(value ?? baseValue ?? 1) - Number(baseValue ?? 1)) * 100);
-}
-
-function tintOffsetFromBase(value, baseValue) {
-  return Math.round((Number(value || 0) - Number(baseValue || 0)) * 100);
-}
+function layerBase(id) { return getLayerDefault(id); }
+function offsetFromBase(value, baseValue) { return Math.round(Number(value || 0) - Number(baseValue || 0)); }
+function visualOffsetFromBase(value, baseValue) { const base = Number(baseValue || 1); return visualFactorToSlider(Number(value || base) / base); }
+function opacityOffsetFromBase(value, baseValue) { return Math.round((Number(value ?? baseValue ?? 1) - Number(baseValue ?? 1)) * 100); }
+function tintOffsetFromBase(value, baseValue) { return Math.round((Number(value || 0) - Number(baseValue || 0)) * 100); }
 
 export function makeLayer(id, label, group, cfg = {}) {
   const base = layerBase(id);
@@ -55,14 +40,12 @@ function installMaterialVisualShader(mat) {
     updateShaderUniforms(mat, mat.userData.ocVisualConfig || {});
   };
 }
-
 function hexToRgb01(hex) {
   const value = String(hex || '#ffffff').replace('#', '');
   const num = Number.parseInt(value.length === 3 ? value.split('').map((c) => c + c).join('') : value, 16);
   if (!Number.isFinite(num)) return [1, 1, 1];
   return [((num >> 16) & 255) / 255, ((num >> 8) & 255) / 255, (num & 255) / 255];
 }
-
 function updateShaderUniforms(mat, cfg) {
   const shader = mat.userData.ocShader;
   if (!shader) return;
@@ -72,15 +55,11 @@ function updateShaderUniforms(mat, cfg) {
   shader.uniforms.ocTint.value = hexToRgb01(cfg.tint || '#ffffff');
   shader.uniforms.ocTintStrength.value = cfg.tintStrength ?? 0;
 }
-
 function applyMaterialVisual(mat, layer) {
   if (!mat) return;
   mat.transparent = (layer.opacity ?? 1) < 0.995 || mat.transparent;
   mat.opacity = layer.opacity ?? 1;
-  if (mat.color) {
-    if (!mat.userData.baseColor) mat.userData.baseColor = mat.color.clone();
-    mat.color.copy(mat.userData.baseColor);
-  }
+  if (mat.color) { if (!mat.userData.baseColor) mat.userData.baseColor = mat.color.clone(); mat.color.copy(mat.userData.baseColor); }
   const cfg = { brightness: layer.brightness ?? 1, contrast: layer.contrast ?? 1, saturation: layer.saturation ?? 1, tint: layer.tint || '#ffffff', tintStrength: layer.tintStrength || 0 };
   mat.userData.ocVisualConfig = cfg;
   installMaterialVisualShader(mat);
@@ -102,9 +81,7 @@ export function applyLayer(layer) {
   });
   renderOnce();
 }
-
 export function applyAllLayers() { OC.layers.forEach(applyLayer); }
-
 export function populateLayerSelect() {
   const select = document.getElementById('hf-layer-select');
   if (!select) return;
@@ -119,11 +96,7 @@ export function createLayerSliders({ refreshOverview, createGlbAssetSliders }) {
   const label = document.getElementById('hf-layer-selected-label');
   if (!host) return;
   host.innerHTML = '';
-  if (OC.selectedLayerId === 'glbAsset') {
-    if (label) label.textContent = 'Selected: GLB Asset';
-    createGlbAssetSliders?.(host);
-    return;
-  }
+  if (OC.selectedLayerId === 'glbAsset') { if (label) label.textContent = 'Selected: GLB Asset'; createGlbAssetSliders?.(host); return; }
   const layer = OC.layers.get(OC.selectedLayerId);
   if (!layer) { host.innerHTML = '<p class="hint-text">No layer selected.</p>'; return; }
   const base = layerBase(layer.id);
@@ -132,7 +105,13 @@ export function createLayerSliders({ refreshOverview, createGlbAssetSliders }) {
   buildSliderRow(host, 'hf-layer', 'x', 'X', -100, 100, 1, offsetFromBase(layer.x, base.x), (v) => { layer.x = Number(base.x || 0) + v; redraw(); });
   buildSliderRow(host, 'hf-layer', 'y', 'Y', -100, 100, 1, offsetFromBase(layer.y, base.y), (v) => { layer.y = Number(base.y || 0) + v; redraw(); });
   buildSliderRow(host, 'hf-layer', 'z', 'Z', -100, 100, 1, offsetFromBase(layer.z, base.z), (v) => { layer.z = Number(base.z || 0) + v; redraw(); });
-  buildSliderRow(host, 'hf-layer', 'scaleOffset', 'Scale', -100, 100, 1, factorToSigned((layer.scale || 1) / (base.scale || 1)), (v) => { layer.scale = Number(base.scale || 1) * signedToFactor(v); redraw(); });
+  if (!['ground', 'path'].includes(layer.id)) buildSliderRow(host, 'hf-layer', 'scaleOffset', 'Scale', -100, 100, 1, factorToSigned((layer.scale || 1) / (base.scale || 1)), (v) => { layer.scale = Number(base.scale || 1) * signedToFactor(v); redraw(); });
+  else {
+    const note = document.createElement('p');
+    note.className = 'hint-text';
+    note.textContent = 'Scale is fixed for this layer so the 2000px ground/path alignment is not broken.';
+    host.appendChild(note);
+  }
   buildSliderRow(host, 'hf-layer', 'opacityOffset', 'Opacity', -100, 100, 1, opacityOffsetFromBase(layer.opacity, base.opacity), (v) => { layer.opacity = clamp(Number(base.opacity ?? 1) + (v / 100), 0, 1); redraw(); });
   buildSliderRow(host, 'hf-layer', 'brightnessOffset', 'Bright', -100, 100, 1, visualOffsetFromBase(layer.brightness, base.brightness), (v) => { layer.brightness = Number(base.brightness || 1) * sliderToVisualFactor(v); redraw(); });
   buildSliderRow(host, 'hf-layer', 'contrastOffset', 'Contrast', -100, 100, 1, visualOffsetFromBase(layer.contrast, base.contrast), (v) => { layer.contrast = Number(base.contrast || 1) * sliderToVisualFactor(v); redraw(); });
