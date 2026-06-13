@@ -25,14 +25,14 @@ export const ASSETS = {
 };
 
 export const GLB_ASSETS = [
-  { url: `${ASSET_BASE}3d/tree.glb`, label: 'Tree', type: 'tree', scale: 6, optional: true },
-  { url: `${ASSET_BASE}3d/pine_tree.glb`, label: 'Pine Tree', type: 'tree', scale: 7, optional: true },
-  { url: `${ASSET_BASE}3d/rock_low-poly.glb`, label: 'Rock', type: 'rock', scale: 2.2, optional: true },
-  { url: `${ASSET_BASE}3d/fern.glb`, label: 'Fern', type: 'detail', scale: 1.3, optional: true },
-  { url: `${ASSET_BASE}3d/low_poly_fern.glb`, label: 'Low Poly Fern', type: 'detail', scale: 1.1, optional: true },
-  { url: `${ASSET_BASE}3d/tall_bush.glb`, label: 'Tall Bush', type: 'detail', scale: 1.8, optional: true },
-  { url: `${ASSET_BASE}3d/stylized_glowing_mushrooms.glb`, label: 'Glowing Mushrooms', type: 'collectible', scale: 1.4, value: 10, optional: true },
-  { url: `${ASSET_BASE}3d/moneysack.glb`, label: 'Money Sack', type: 'collectible', scale: 1.2, value: 25, optional: true },
+  { url: `${ASSET_BASE}3d/tree.glb`, label: 'Tree', type: 'tree', scale: 1, targetHeight: 4.8, optional: true },
+  { url: `${ASSET_BASE}3d/pine_tree.glb`, label: 'Pine Tree', type: 'tree', scale: 1, targetHeight: 5.4, optional: true },
+  { url: `${ASSET_BASE}3d/rock_low-poly.glb`, label: 'Rock', type: 'rock', scale: 1, targetHeight: 1.0, optional: true },
+  { url: `${ASSET_BASE}3d/fern.glb`, label: 'Fern', type: 'detail', scale: 1, targetHeight: 0.85, optional: true },
+  { url: `${ASSET_BASE}3d/low_poly_fern.glb`, label: 'Low Poly Fern', type: 'detail', scale: 1, targetHeight: 0.75, optional: true },
+  { url: `${ASSET_BASE}3d/tall_bush.glb`, label: 'Tall Bush', type: 'detail', scale: 1, targetHeight: 1.35, optional: true },
+  { url: `${ASSET_BASE}3d/stylized_glowing_mushrooms.glb`, label: 'Glowing Mushrooms', type: 'collectible', scale: 1, targetHeight: 0.75, value: 10, optional: true },
+  { url: `${ASSET_BASE}3d/moneysack.glb`, label: 'Money Sack', type: 'collectible', scale: 1, targetHeight: 0.75, value: 25, optional: true },
 ];
 
 export const TEMPLATES = {
