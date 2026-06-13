@@ -4,11 +4,11 @@ export const CACHE_VERSION = '3.0.0';
 export const ASSET_BASE = './assets/';
 export const SHARED_UI_BASE = '../../../shared/ui/';
 export const GROUND_Y = -1.62;
-export const SECTION_PIXEL_HEIGHT = 2000;
+export const SECTION_PIXEL_HEIGHT = 4000;
 export const SECTION_WORLD_LENGTH = 80;
 export const SECTION_WORLD_STEP = 80;
 export const COURSE_WORLD_WIDTH = 64;
-export const PATH_WORLD_WIDTH = 15.5;
+export const PATH_WORLD_WIDTH = 9.2;
 export const PATH_ALPHA_THRESHOLD = 0.18;
 export const PATH_POSITIONS = { left: -6.3, centre: 0, center: 0, right: 6.3 };
 export const BASE_SPEED = 34;
@@ -44,6 +44,8 @@ export const OC = {
   images: new Map(),
   textures: new Map(),
   alphaMaps: new Map(),
+  groundPathMap: null,
+  groundTileAssets: [],
   glbTemplates: new Map(),
   glbInstances: [],
   layers: new Map(),
@@ -87,7 +89,7 @@ export const OC = {
   offPathTime: 0,
   pathHintDirection: 'right',
   player: { x: 0, y: 0, vy: 0, grounded: true, jumpHoldTime: 0, maxJumpHoldTime: 0.18, duck: false },
-  selectedLayerId: 'path',
+  selectedLayerId: 'ground',
   selectedGlbAssetUrl: '',
   glbControls: new Map(),
 };
