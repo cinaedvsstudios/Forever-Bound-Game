@@ -16,6 +16,7 @@ import { updateHorseSprite } from './obstacle-course-horse.js';
 import { populateLayerSelect, createLayerSliders, bindLayerButtons, applyAllLayers } from './obstacle-course-layers.js';
 import { scheduleOverviewDraw, drawOverview } from './obstacle-course-overview.js';
 import { loadGlbAsset, createGlbAssetSliders, applyAllGlbAssetControls } from './obstacle-course-glb.js';
+import { installButtonFeedback } from './obstacle-course-button-feedback.js';
 
 export function openObstacleCourseWorkflow() { ensureMounted(); }
 
@@ -27,6 +28,7 @@ function ensureMounted() {
   applyDefaultSettings();
   ensureHeader();
   injectStyles();
+  installButtonFeedback();
   mountLayout();
   mountLeftPanel({ onRegenerate: rebuildCourse, onExport: exportJsonSettings, onImport: (e) => importJsonSettings(e, { rebuild: rebuildCourse }) });
   enhanceStaticRangeSteppers();
