@@ -7,7 +7,24 @@ import { signedToFactor, factorToSigned, sliderToOpacity, opacityToSlider, slide
 export function loadGlbAsset(url) {
   return new Promise((resolve) => {
     if (!OC.gltfLoader) return resolve(false);
-    OC.gltfLoader.load(`${url}?v=${OC.cacheVersion}`, (gltf) => { OC.glbTemplates.set(url, gltf); resolve(true); }, undefined, () => resolve(false));
+    let settled = false;
+    const done = (ok) => {
+      if (settled) return;
+      settled = true;
+      resolve(ok);
+    };
+    const timeout = window.setTimeout(() => {
+      console.warn('[ObstacleCourse] optional GLB timed out', url);
+      done(false);
+    }, 4500);
+    OC.gltfLoader.load(`${url}?v=${OC.cacheVersion}`, (gltf) => {
+      window.clearTimeout(timeout);
+      OC.glbTemplates.set(url, gltf);
+      done(true);
+    }, undefined, () => {
+      window.clearTimeout(timeout);
+      done(false);
+    });
   });
 }
 
