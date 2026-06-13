@@ -21,8 +21,13 @@ function applyMaterialVisual(mat, layer) {
   mat.transparent = (layer.opacity ?? 1) < 0.995 || mat.transparent;
   mat.opacity = layer.opacity ?? 1;
   if (mat.color) {
-    mat.color.set(layer.tint || '#ffffff');
-    mat.color.multiplyScalar(layer.brightness ?? 1);
+    if (!mat.userData.baseColor) mat.userData.baseColor = mat.color.clone();
+    const base = mat.userData.baseColor.clone();
+    const tint = new base.constructor(layer.tint || '#ffffff');
+    const strength = Math.max(0, Math.min(1, layer.tintStrength || 0));
+    base.lerp(tint, strength);
+    base.multiplyScalar(layer.brightness ?? 1);
+    mat.color.copy(base);
   }
   mat.needsUpdate = true;
 }
