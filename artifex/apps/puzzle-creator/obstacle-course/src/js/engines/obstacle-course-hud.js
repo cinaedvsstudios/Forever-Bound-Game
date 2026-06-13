@@ -9,7 +9,7 @@ export function updateHud() {
   const badge = $('obstacle-speed-badge');
   if (badge && !badge.dataset.ready) {
     badge.dataset.ready = '1';
-    badge.innerHTML = `<div class="oc-powerbar-wrap"><div class="oc-powerbar-emoji">H</div><div class="oc-powerbar-empty"></div><div class="oc-powerbar-full-clip"><div class="oc-powerbar-full"></div></div></div><div class="oc-speed-label"><span id="oc-speed-state"></span><b id="oc-speed-value"></b></div><div id="oc-offpath-label" class="oc-offpath-label"></div>`;
+    badge.innerHTML = `<div class="oc-powerbar-wrap"><div class="oc-powerbar-empty"></div><div class="oc-powerbar-full-clip"><div class="oc-powerbar-full"></div></div></div><div class="oc-speed-label"><span id="oc-speed-state"></span><b id="oc-speed-value"></b></div><div id="oc-offpath-label" class="oc-offpath-label"></div>`;
   }
   const clip = document.querySelector('.oc-powerbar-full-clip');
   if (clip) clip.style.width = `${clamp(speed / max, 0, 1) * 100}%`;
