@@ -1,6 +1,6 @@
 import { OC } from './obstacle-course-state.js';
 import { buildSliderRow } from './obstacle-course-ui.js';
-import { signedToFactor, factorToSigned, sliderToVisualFactor, visualFactorToSlider, sliderToTint, tintToSlider, sliderToOpacity, opacityToSlider, clamp } from './obstacle-course-utils.js';
+import { signedToFactor, factorToSigned, sliderToVisualFactor, visualFactorToSlider, clamp } from './obstacle-course-utils.js';
 import { renderOnce, selectObjects, applyBackgroundPlate } from './obstacle-course-scene.js';
 import { getLayerDefault } from './obstacle-course-settings.js';
 
@@ -28,26 +28,7 @@ function tintOffsetFromBase(value, baseValue) {
 export function makeLayer(id, label, group, cfg = {}) {
   const base = layerBase(id);
   const pending = OC.pendingLayerSettings?.[id] || {};
-  const layer = {
-    id,
-    label,
-    group,
-    visible: true,
-    opacity: 1,
-    x: 0,
-    y: 0,
-    z: 0,
-    scale: 1,
-    order: 0,
-    brightness: 1,
-    contrast: 1,
-    saturation: 1,
-    tint: '#ffffff',
-    tintStrength: 0,
-    ...base,
-    ...cfg,
-    ...pending
-  };
+  const layer = { id, label, group, visible: true, opacity: 1, x: 0, y: 0, z: 0, scale: 1, order: 0, brightness: 1, contrast: 1, saturation: 1, tint: '#ffffff', tintStrength: 0, ...base, ...cfg, ...pending };
   OC.layers.set(id, layer);
   return layer;
 }
@@ -116,7 +97,7 @@ export function applyLayer(layer) {
   layer.group.traverse((node) => {
     if (node.material) {
       if (Array.isArray(node.material)) node.material.forEach((mat) => applyMaterialVisual(mat, layer));
-      else applyMaterialVisual(node.material);
+      else applyMaterialVisual(node.material, layer);
     }
   });
   renderOnce();
