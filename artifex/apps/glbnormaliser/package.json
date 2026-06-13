@@ -1,0 +1,19 @@
+{
+  "name": "glb-asset-normaliser",
+  "version": "0.1.0",
+  "description": "Local GLB folder browser, static asset scale setter and bottom-centre pivot normaliser.",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "glb",
+    "gltf",
+    "static-assets",
+    "normaliser",
+    "forever-bound"
+  ],
+  "author": "Forever Bound tool build",
+  "license": "UNLICENSED"
+}

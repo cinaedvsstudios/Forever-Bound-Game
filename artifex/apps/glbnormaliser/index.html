@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GLB Asset Normaliser - Folder Picker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="sigil">⬢</div>
+        <div>
+          <h1>GLB Asset Normaliser</h1>
+          <p id="rootPath">No folder selected yet.</p>
+        </div>
+      </div>
+
+      <button id="chooseFolderBtn" class="choose-btn">Choose GLB Folder</button>
+      <p class="support-note" id="supportNote">Uses your browser's folder picker. Chrome or Edge recommended.</p>
+
+      <div class="folder-bar">
+        <button id="upBtn" class="small-btn" disabled>↑ Up</button>
+        <span id="currentFolder">/</span>
+      </div>
+
+      <div class="file-list" id="fileList">
+        <div class="empty-list">Click “Choose GLB Folder” to load a local folder from your HDD.</div>
+      </div>
+    </aside>
+
+    <main class="main-panel">
+      <section class="top-controls">
+        <div>
+          <h2 id="fileTitle">Choose a .glb file</h2>
+          <p id="fileSub">Static props only. Save copy first, then overwrite once tested.</p>
+        </div>
+        <div class="control-grid">
+          <label>
+            Scale
+            <input id="scaleInput" type="number" step="0.001" min="0.000001" value="1" />
+          </label>
+          <label>
+            Bottom axis
+            <select id="axisSelect">
+              <option value="Y">Y-up</option>
+              <option value="Z">Z-up</option>
+              <option value="X">X-up</option>
+            </select>
+          </label>
+          <label class="check-row">
+            <input id="backupCheck" type="checkbox" checked /> Backup before overwrite
+          </label>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <div class="preview-card">
+          <div class="preview-toolbar">
+            <button id="frontViewBtn">Front</button>
+            <button id="sideViewBtn">Side</button>
+            <button id="topViewBtn">Top</button>
+            <button id="isoViewBtn">Iso</button>
+            <button id="fitViewBtn">Fit</button>
+          </div>
+          <canvas id="previewCanvas" width="1100" height="720"></canvas>
+          <div class="preview-hint">Drag to rotate. Mouse wheel to zoom. Green dot = origin/pivot. Gold box = current bounds.</div>
+        </div>
+
+        <div class="info-card">
+          <h3>Asset info</h3>
+          <div id="statsBox" class="stats empty">No file selected.</div>
+
+          <h3>Actions</h3>
+          <div class="actions">
+            <button id="saveCopyBtn" disabled>Save copy</button>
+            <button id="overwriteBtn" disabled class="danger">Overwrite original</button>
+            <button id="batchCopyBtn" disabled>Batch save copies</button>
+            <button id="batchOverwriteBtn" disabled class="danger">Batch overwrite selected</button>
+          </div>
+
+          <h3>Log</h3>
+          <div id="logBox" class="log"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
