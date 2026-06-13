@@ -39,10 +39,12 @@ export function initScene(updateFrame) {
 export function loadTexture(url, options = {}) {
   const key = `${url}|${JSON.stringify(options)}`;
   if (OC.textures.has(key)) return OC.textures.get(key);
-  const texture = OC.textureLoader.load(`${url}?v=${OC.cacheVersion}`);
+  const preloadedImage = OC.images.get(url);
+  const texture = preloadedImage ? new THREE.Texture(preloadedImage) : OC.textureLoader.load(`${url}?v=${OC.cacheVersion}`);
   texture.encoding = THREE.sRGBEncoding;
   texture.minFilter = THREE.LinearFilter;
   texture.magFilter = THREE.LinearFilter;
+  if (preloadedImage) texture.needsUpdate = true;
   if (options.repeat) {
     texture.wrapS = options.repeatX === false ? THREE.ClampToEdgeWrapping : THREE.RepeatWrapping;
     texture.wrapT = options.repeatY === false ? THREE.ClampToEdgeWrapping : THREE.RepeatWrapping;
@@ -113,21 +115,18 @@ export function startRenderLoop() {
 function animateFrame() {
   if (!OC.renderLoopRunning) return;
   const dt = Math.min(0.033, OC.clock?.getDelta?.() || 0.016);
-  OC.updateFrame?.(dt);
+  if (OC.active) OC.updateFrame?.(dt);
   renderOnce();
   OC.animationFrame = requestAnimationFrame(animateFrame);
 }
 
-export function clearSelectionBoxes() {
+export function selectObjects(objects = []) {
   OC.selectionBoxes.forEach((box) => OC.scene?.remove(box));
   OC.selectionBoxes = [];
-}
-
-export function selectObjects(objects) {
-  clearSelectionBoxes();
-  objects.filter(Boolean).forEach((obj) => {
-    const box = new THREE.BoxHelper(obj, 0xeec45a);
-    OC.scene.add(box);
-    OC.selectionBoxes.push(box);
+  objects.filter(Boolean).slice(0, 20).forEach((obj) => {
+    const helper = new THREE.BoxHelper(obj, 0xeec45a);
+    OC.scene.add(helper);
+    OC.selectionBoxes.push(helper);
   });
+  renderOnce();
 }
