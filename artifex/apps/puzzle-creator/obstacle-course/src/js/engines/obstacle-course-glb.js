@@ -6,6 +6,9 @@ import { selectObjects } from './obstacle-course-scene.js';
 import { signedToFactor, factorToSigned, sliderToVisualFactor, visualFactorToSlider, clamp } from './obstacle-course-utils.js';
 import { getGlbDefault } from './obstacle-course-settings.js';
 
+const instancedPartCache = new Map();
+const dummy = new THREE.Object3D();
+
 function offsetFromBase(value, baseValue) { return Math.round(Number(value || 0) - Number(baseValue || 0)); }
 function visualOffsetFromBase(value, baseValue) { const base = Number(baseValue || 1); return visualFactorToSlider(Number(value || base) / base); }
 function opacityOffsetFromBase(value, baseValue) { return Math.round((Number(value ?? baseValue ?? 1) - Number(baseValue ?? 1)) * 100); }
@@ -27,6 +30,7 @@ export function loadGlbAsset(url) {
     OC.gltfLoader.load(`${url}?v=${OC.cacheVersion}`, (gltf) => {
       window.clearTimeout(timeout);
       OC.glbTemplates.set(url, gltf);
+      instancedPartCache.delete(url);
       done(true);
     }, undefined, () => {
       window.clearTimeout(timeout);
@@ -84,6 +88,73 @@ export function makeGlbOrFallback(asset, fallbackFactory) {
     return root;
   }
   return fallbackFactory?.();
+}
+
+function getInstancedParts(asset) {
+  if (!asset?.url || !OC.glbTemplates.has(asset.url)) return [];
+  if (instancedPartCache.has(asset.url)) return instancedPartCache.get(asset.url);
+  const root = cloneGlbTemplate(asset.url);
+  if (!root) return [];
+  normalizeObjectToHeight(root, asset.targetHeight || 1);
+  root.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(root);
+  const groundShift = Number.isFinite(box.min.y) ? -box.min.y : 0;
+  const parts = [];
+  root.traverse((node) => {
+    if (!node.isMesh || !node.geometry || !node.material) return;
+    const materials = Array.isArray(node.material) ? node.material : [node.material];
+    const geometry = node.geometry.clone();
+    geometry.applyMatrix4(node.matrixWorld);
+    geometry.translate(0, groundShift, 0);
+    materials.forEach((mat) => parts.push({ geometry: geometry.clone(), material: cloneMaterial(mat) }));
+  });
+  instancedPartCache.set(asset.url, parts);
+  return parts;
+}
+
+export function createInstancedAssetGroup(asset, placements = []) {
+  const parts = getInstancedParts(asset);
+  if (!parts.length || !placements.length) return null;
+  const group = new THREE.Group();
+  group.userData.glbAssetUrl = asset.url;
+  group.userData.basePosition = new THREE.Vector3(0, 0, 0);
+  group.userData.baseScaleValue = 1;
+  group.userData.isInstancedAssetGroup = true;
+  group.userData.placements = placements.map((placement) => ({
+    x: Number(placement.x || 0),
+    y: Number(placement.y ?? GROUND_Y),
+    z: Number(placement.z || 0),
+    rotationY: Number(placement.rotationY || 0),
+    scale: Number(placement.scale || 1)
+  }));
+  parts.forEach((part) => {
+    const mesh = new THREE.InstancedMesh(part.geometry, cloneMaterial(part.material), group.userData.placements.length);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    mesh.userData.glbAssetUrl = asset.url;
+    mesh.userData.placements = group.userData.placements;
+    group.add(mesh);
+  });
+  updateInstancedGroupMatrices(group, 1);
+  OC.glbInstances.push(group);
+  return group;
+}
+
+function updateInstancedGroupMatrices(group, scaleMultiplier = 1) {
+  if (!group?.userData?.isInstancedAssetGroup) return;
+  const placements = group.userData.placements || [];
+  group.children.forEach((mesh) => {
+    if (!mesh.isInstancedMesh) return;
+    placements.forEach((placement, index) => {
+      dummy.position.set(placement.x, placement.y, placement.z);
+      dummy.rotation.set(0, placement.rotationY, 0);
+      const s = Math.max(0.001, placement.scale * scaleMultiplier);
+      dummy.scale.setScalar(s);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(index, dummy.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+  });
 }
 
 export function createGlbAssetSliders(host) {
@@ -157,6 +228,15 @@ function applyGlbMaterialVisual(obj, cfg) {
 export function applyAllGlbAssetControls() {
   OC.glbInstances.forEach((obj) => {
     const cfg = glbControl(obj.userData.glbAssetUrl);
+    if (obj.userData.isInstancedAssetGroup) {
+      obj.position.copy(obj.userData.basePosition).add(new THREE.Vector3(cfg.x || 0, cfg.y || 0, cfg.z || 0));
+      obj.scale.setScalar(1);
+      obj.visible = (cfg.opacity ?? 1) > 0.01;
+      obj.renderOrder = cfg.order || 0;
+      updateInstancedGroupMatrices(obj, cfg.scale || 1);
+      applyGlbMaterialVisual(obj, cfg);
+      return;
+    }
     obj.position.copy(obj.userData.basePosition).add(new THREE.Vector3(cfg.x || 0, cfg.y || 0, cfg.z || 0));
     const scale = (obj.userData.baseScaleValue || 1) * (cfg.scale || 1);
     obj.scale.setScalar(scale);
