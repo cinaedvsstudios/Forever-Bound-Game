@@ -8,6 +8,7 @@ import { checkCollectibles } from './obstacle-course-collectibles.js';
 import { checkObstacles } from './obstacle-course-obstacles.js';
 import { makeResult } from './obstacle-course-scoring.js';
 import { setResult } from './obstacle-course-ui.js';
+import { ensureAudio, updateAudio, playJumpSound, playLandSound } from './obstacle-course-audio.js';
 
 export function startRun() {
   document.activeElement?.blur?.();
@@ -17,6 +18,7 @@ export function startRun() {
     updateHud();
     return;
   }
+  ensureAudio();
   OC.active = true;
   OC.running = true;
   OC.paused = false;
@@ -76,6 +78,7 @@ export function updateMovement(dt) {
     OC.player.vy = 8.5;
     OC.player.jumpHoldTime = 0;
     OC.jumps += 1;
+    playJumpSound();
   }
   if (!OC.player.grounded) {
     const holdBoost = OC.keys.has('jump') && OC.player.jumpHoldTime < OC.player.maxJumpHoldTime ? 3.3 : 0;
@@ -83,9 +86,11 @@ export function updateMovement(dt) {
     OC.player.vy += (-18 + holdBoost) * dt;
     OC.player.y += OC.player.vy * dt;
     if (OC.player.y <= 0) {
+      const wasAirborne = !OC.player.grounded;
       OC.player.y = 0;
       OC.player.vy = 0;
       OC.player.grounded = true;
+      if (wasAirborne) playLandSound();
     }
   }
   OC.backgroundJumpShift = clamp((OC.player.y || 0) * 3.5, 0, 18);
@@ -109,4 +114,5 @@ export function updateMovement(dt) {
   updateHorseSprite();
   updateOffPathWarning();
   updateHud();
+  updateAudio(dt);
 }
