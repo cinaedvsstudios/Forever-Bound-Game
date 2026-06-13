@@ -100,12 +100,15 @@ function createGlobalSliders() {
 }
 
 function updateGlobalVisuals() {
-  const filter = `brightness(${OC.screenBrightness}) contrast(${OC.screenContrast}) saturate(${OC.screenSaturation})`;
-  const canvas = OC.renderer?.domElement;
-  if (canvas) canvas.style.filter = filter;
+  if (OC.stage) {
+    OC.stage.style.setProperty('--oc-screen-brightness', String(OC.screenBrightness || 1));
+    OC.stage.style.setProperty('--oc-screen-contrast', String(OC.screenContrast || 1));
+    OC.stage.style.setProperty('--oc-screen-saturation', String(OC.screenSaturation || 1));
+  }
   const horse = $('obstacle-horse');
-  if (horse) horse.style.filter = `drop-shadow(0 7px 9px rgba(0,0,0,.72)) ${filter}`;
-  if (OC.stage) OC.stage.style.filter = filter;
+  if (horse) horse.style.filter = 'drop-shadow(0 7px 9px rgba(0,0,0,.72))';
+  const canvas = OC.renderer?.domElement;
+  if (canvas) canvas.style.filter = '';
   const tint = document.querySelector('.obstacle-tint-overlay');
   if (tint) {
     tint.style.setProperty('--oc-tint', OC.screenTint || '#000000');
