@@ -1,0 +1,42 @@
+{
+  "version": "V3.0.0",
+  "description": "Single source of truth for combined ground/path tile images used by the obstacle-course runtime. Each tile image already contains the forest ground and the visible path. Runtime code reads this file instead of hard-wiring tile image names.",
+  "imageRoot": "./assets/ground/",
+  "fallbackImageRoot": "https://raw.githack.com/cinaedvsstudios/Forever-Bound-Game/main/artifex/apps/puzzle-creator/obstacle-course/assets/ground/",
+  "tilePixelWidth": 4000,
+  "tilePixelHeight": 4000,
+  "defaultWorldWidth": 64,
+  "defaultWorldLength": 80,
+  "tiles": [
+    {
+      "id": "1",
+      "file": "1.webp",
+      "label": "Central forest path 01",
+      "pixelWidth": 4000,
+      "pixelHeight": 4000,
+      "worldWidth": 64,
+      "worldLength": 80,
+      "path": {
+        "format": "normalised-centreline",
+        "points": [
+          { "y": 0.00, "x": 0.535, "halfWidth": 0.060 },
+          { "y": 0.10, "x": 0.530, "halfWidth": 0.062 },
+          { "y": 0.20, "x": 0.523, "halfWidth": 0.064 },
+          { "y": 0.32, "x": 0.515, "halfWidth": 0.066 },
+          { "y": 0.44, "x": 0.505, "halfWidth": 0.068 },
+          { "y": 0.56, "x": 0.497, "halfWidth": 0.070 },
+          { "y": 0.68, "x": 0.492, "halfWidth": 0.072 },
+          { "y": 0.80, "x": 0.488, "halfWidth": 0.074 },
+          { "y": 0.90, "x": 0.486, "halfWidth": 0.076 },
+          { "y": 1.00, "x": 0.485, "halfWidth": 0.078 }
+        ]
+      },
+      "scatterBands": {
+        "pathEdge": { "fromHalfWidth": 0.00, "toHalfWidth": 0.16, "types": ["edgeDetail", "rock", "collectible", "obstacle"] },
+        "nearTrees": { "fromHalfWidth": 0.18, "toHalfWidth": 0.36, "types": ["nearTree", "edgeDetail", "rock"] },
+        "farForest": { "fromHalfWidth": 0.38, "toHalfWidth": 0.50, "types": ["farTree", "farDetail", "rock"] }
+      }
+    }
+  ],
+  "sequence": ["1"]
+}
