@@ -8,7 +8,7 @@ import { makeGlbOrFallback } from './obstacle-course-glb.js';
 import { playCollectSound } from './obstacle-course-audio.js';
 
 function fallbackCollectible() {
-  return new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 12), new THREE.MeshStandardMaterial({ color: 0x5be5ff, emissive: 0x102a33, roughness: 0.4 }));
+  return new THREE.Mesh(new THREE.SphereGeometry(0.34, 16, 12), new THREE.MeshStandardMaterial({ color: 0x5be5ff, emissive: 0x102a33, roughness: 0.4 }));
 }
 
 export function addCollectibles(count = 8) {
@@ -30,7 +30,7 @@ export function addCollectibles(count = 8) {
     if (alpha !== null && alpha < OC.pathAlphaThreshold) continue;
     const asset = pick(assets) || null;
     const obj = asset ? makeGlbOrFallback(asset, fallbackCollectible) : fallbackCollectible();
-    obj.position.set(x, GROUND_Y + 0.85, -d);
+    obj.position.set(x, GROUND_Y + 0.72, -d);
     obj.rotation.y = rand(0, Math.PI * 2);
     obj.scale.multiplyScalar(asset?.scale || 1);
     obj.userData.kind = 'collectible';
@@ -38,7 +38,7 @@ export function addCollectibles(count = 8) {
     obj.userData.collected = false;
     if (asset) {
       obj.userData.glbAssetUrl = asset.url;
-      obj.userData.baseScaleValue = asset.scale || 1;
+      obj.userData.baseScaleValue = obj.scale.x || 1;
       OC.glbInstances.push(obj);
     }
     obj.userData.basePosition = obj.position.clone();
