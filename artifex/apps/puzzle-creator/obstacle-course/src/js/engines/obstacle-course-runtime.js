@@ -17,6 +17,7 @@ import { populateLayerSelect, createLayerSliders, bindLayerButtons, applyAllLaye
 import { scheduleOverviewDraw, drawOverview } from './obstacle-course-overview.js';
 import { loadGlbAsset, createGlbAssetSliders, applyAllGlbAssetControls } from './obstacle-course-glb.js';
 import { installButtonFeedback } from './obstacle-course-button-feedback.js';
+import { installOverviewLayout } from './obstacle-course-overview-layout.js';
 
 export function openObstacleCourseWorkflow() { ensureMounted(); }
 
@@ -29,6 +30,7 @@ function ensureMounted() {
   ensureHeader();
   injectStyles();
   installButtonFeedback();
+  installOverviewLayout();
   mountLayout();
   mountLeftPanel({ onRegenerate: rebuildCourse, onExport: exportJsonSettings, onImport: (e) => importJsonSettings(e, { rebuild: rebuildCourse }) });
   enhanceStaticRangeSteppers();
