@@ -1,12 +1,12 @@
-// Obstacle Course V2.7.11 / Horse Forest Runner
+// Obstacle Course V2.7.12 / Horse Forest Runner
 // Consolidated runtime: no post-load patch stack.
 // The obstacle-course UI, generation, alpha-path logic, GLB controls, overview, HUD, and JSON settings live here.
 
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
 
-const VERSION = 'V2.7.11';
-const CACHE_VERSION = '2.7.11';
+const VERSION = 'V2.7.12';
+const CACHE_VERSION = '2.7.12';
 const ASSET_BASE = './assets/';
 const SHARED_UI_BASE = '../../../shared/ui/';
 const GROUND_Y = -1.62;
@@ -1017,6 +1017,7 @@ function initThree() {
   OC.grid.visible = false;
   OC.scene.add(OC.grid);
   OC.clock = new THREE.Clock();
+  updateWorldTransform();
   applyCamera();
   resizeRenderer();
   applyBackgroundPlate();
@@ -1675,6 +1676,7 @@ function regenerateCourse() {
   resetRun(true);
   buildMaterials();
   buildWorld();
+  updateWorldTransform();
   const template = TEMPLATES[OC.templateId] || TEMPLATES.horse_forest_easy;
   addObstacles(Math.round((7 + OC.difficulty * 4) * template.obstacleRate));
   addCollectibles(5 + OC.difficulty * 2);
@@ -1786,6 +1788,13 @@ function pathCenterAt(distance) {
 function playerWorldX() {
   return pathCenterAt(OC.distance) + OC.player.x;
 }
+
+function updateWorldTransform() {
+  if (!OC.world) return;
+  OC.world.position.x = -playerWorldX();
+  OC.world.position.z = OC.distance;
+}
+
 
 function ensurePathAlphaMaps() {
   return Promise.all(Object.values(ASSETS.pathSegments).map(loadPathAlphaMap));
@@ -1917,7 +1926,7 @@ function pathStatus() {
 }
 
 function cloneGlbInstance(template) {
-  const root = cloneGlbInstance(template);
+  const root = template.scene.clone(true);
   root.traverse((node) => {
     node.userData.fromGlbTemplate = true;
     if (node.isMesh) {
@@ -2177,6 +2186,7 @@ function resetRun(silent = false) {
       obj.userData.collected = false;
     }
   });
+  updateWorldTransform();
   stopMotionLoops();
   if (!silent) setResult('Run reset.', 'success');
   updateStats();
@@ -2253,6 +2263,7 @@ function updateRun(dt) {
   }
 
   updateBackgroundJumpShift();
+  updateWorldTransform();
 
   const status = pathStatus();
   if (status === 'off') OC.offPathTime += dt;
@@ -2275,6 +2286,7 @@ function updateRun(dt) {
   if (OC.running && !OC.paused) {
     OC.distance += OC.currentSpeed * dt;
   }
+  updateWorldTransform();
   if (OC.distance >= OC.courseLength) completeRun();
 
   checkInteractions();
