@@ -1,7 +1,7 @@
 import { OC } from './obstacle-course-state.js';
 import { buildSliderRow } from './obstacle-course-ui.js';
 import { signedToFactor, factorToSigned, sliderToVisualFactor, visualFactorToSlider, sliderToTint, tintToSlider, sliderToOpacity, opacityToSlider } from './obstacle-course-utils.js';
-import { renderOnce, selectObjects } from './obstacle-course-scene.js';
+import { renderOnce, selectObjects, applyBackgroundPlate } from './obstacle-course-scene.js';
 
 export function makeLayer(id, label, group, cfg = {}) {
   const layer = { id, label, group, visible: true, opacity: 1, x: 0, y: 0, z: 0, scale: 1, order: 0, brightness: 1, contrast: 1, saturation: 1, tint: '#ffffff', tintStrength: 0, ...cfg };
@@ -97,4 +97,5 @@ export function bindLayerButtons({ refreshOverview, createLayerSliders }) {
   document.getElementById('hf-layer-all')?.addEventListener('click', () => { OC.layers.forEach((l) => { l.visible = true; applyLayer(l); }); refreshOverview?.(); });
   document.getElementById('hf-layer-above')?.addEventListener('click', () => { const l = OC.layers.get(OC.selectedLayerId); if (l) { l.order = (l.order || 0) + 1; applyLayer(l); refreshOverview?.(); } });
   document.getElementById('hf-layer-below')?.addEventListener('click', () => { const l = OC.layers.get(OC.selectedLayerId); if (l) { l.order = (l.order || 0) - 1; applyLayer(l); refreshOverview?.(); } });
+  document.getElementById('hf-white-bg')?.addEventListener('click', () => { OC.whiteBackground = !OC.whiteBackground; applyBackgroundPlate(); renderOnce(); });
 }
