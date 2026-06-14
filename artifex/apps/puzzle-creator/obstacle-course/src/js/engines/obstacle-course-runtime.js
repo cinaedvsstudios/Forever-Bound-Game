@@ -1,4 +1,4 @@
-// Obstacle Course V3.0.3 / Modular Horse Forest Runner
+// Obstacle Course V3.0.4 / Modular Horse Forest Runner
 import { OC } from './obstacle-course-state.js';
 import { $, visualFactorToSlider, sliderToGlobalBrightness, sliderToGlobalContrast, sliderToGlobalSaturation, sliderToTint, tintToSlider } from './obstacle-course-utils.js';
 import { ensureHeader, injectStyles, mountLayout, mountLeftPanel, enhanceStaticRangeSteppers, buildSliderRow, setResult } from './obstacle-course-ui.js';
@@ -41,7 +41,12 @@ function ensureMounted() {
   bindKeyboard();
   initScene(updateFrame);
   loadRequiredAssets({ onFirstReady: () => { applyBackgroundPlate(); showSpinner(true); updateHorseSprite(); renderOnce(); } }).then(() => {
-    if (!OC.requiredReady) { showSpinner(true, 'Required assets missing'); setResult(`Required asset failure: ${OC.failures.join(', ')}`, 'failure'); updateHud(); return; }
+    if (!OC.requiredReady) {
+      showSpinner(true, 'Required assets missing');
+      setResult(`Required asset failure: ${OC.failures.join(', ')}`, 'failure');
+      updateHud();
+      return;
+    }
     rebuildCourse();
     populateLayerSelect();
     refreshLayerPanel();
@@ -49,18 +54,20 @@ function ensureMounted() {
     scheduleOverviewDraw();
     showSpinner(false);
     setInteractionLocked(false);
-    setResult('Required obstacle course assets loaded. Test controls are ready. Optional 3D/audio assets will continue loading in the background.', 'success');
+    setResult('Required obstacle course assets loaded. Test controls are ready. Optional 3D/audio assets are loading in the background.', 'success');
+    import('./obstacle-course-asset-debug.js?v=3.0.4').catch(() => {});
     loadOptionalAssets({ loadGlbAsset }).then(() => {
       rebuildCourse();
       populateLayerSelect();
       refreshLayerPanel();
       updateHud();
       scheduleOverviewDraw();
+      const loadedGlbs = OC.glbTemplates?.size || 0;
       const optionalMessage = OC.optionalFailures?.length
-        ? `Optional assets finished with ${OC.optionalFailures.length} missing/late asset(s). Required test controls remain ready.`
-        : 'All obstacle course assets loaded. Test controls are ready.';
+        ? `Optional assets finished with ${OC.optionalFailures.length} missing/late asset(s). ${loadedGlbs} GLB model(s) loaded and used.`
+        : `All obstacle course assets loaded. ${loadedGlbs} GLB model(s) loaded and used.`;
       setResult(optionalMessage, OC.optionalFailures?.length ? 'failure' : 'success');
-      import('./obstacle-course-asset-debug.js?v=3.0.3').catch(() => {});
+      import('./obstacle-course-asset-debug.js?v=3.0.4').catch(() => {});
     }).catch((error) => {
       console.warn('[ObstacleCourse] optional assets did not finish', error);
       setResult('Optional 3D/audio assets did not finish, but required test controls remain ready.', 'failure');
@@ -82,7 +89,7 @@ function bindUi() {
   $('obstacle-template')?.addEventListener('change', (e) => { OC.templateId = e.target.value; rebuildCourse(); });
   $('obstacle-difficulty')?.addEventListener('input', (e) => { OC.difficulty = Number(e.target.value); $('obstacle-difficulty-out').textContent = OC.difficulty; });
   $('obstacle-distance')?.addEventListener('input', (e) => { OC.courseLength = Number(e.target.value); $('obstacle-distance-out').textContent = OC.courseLength; updateHud(); });
-  $('obstacle-scenery-distance')?.addEventListener('input', (e) => { OC.sceneryDistance = Number(e.target.value); rebuildCourse(); });
+  $('obstacle-scenery-distance')?.addEventListener('input', (e) => { OC.sceneryDistance = Number(e.target.value); $('obstacle-scenery-distance-out').textContent = OC.sceneryDistance; rebuildCourse(); });
   $('oc-ground-grid-toggle')?.addEventListener('change', (e) => { if (OC.grid) OC.grid.visible = e.target.checked; renderOnce(); });
   $('oc-overview-path-overlay')?.addEventListener('change', (e) => { OC.overviewPathOverlay = e.target.checked; scheduleOverviewDraw(); });
   $('oc-vp-x')?.addEventListener('input', (e) => { OC.vanishX = Number(e.target.value); $('oc-vp-x-out').textContent = OC.vanishX; applyCamera(); });
