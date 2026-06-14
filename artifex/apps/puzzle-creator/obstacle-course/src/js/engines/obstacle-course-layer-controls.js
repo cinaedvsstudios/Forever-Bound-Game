@@ -41,12 +41,12 @@ export function createLayerSliders({ refreshOverview, createGlbAssetSliders }) {
   buildSliderRow(host, 'hf-layer', 'x', 'X', -100, 100, 1, offsetFromBase(layer.x, base.x), (v) => { layer.x = Number(base.x || 0) + v; redraw(); });
   buildSliderRow(host, 'hf-layer', 'y', 'Y', -100, 100, 1, offsetFromBase(layer.y, base.y), (v) => { layer.y = Number(base.y || 0) + v; redraw(); });
   buildSliderRow(host, 'hf-layer', 'z', 'Z', -100, 100, 1, offsetFromBase(layer.z, base.z), (v) => { layer.z = Number(base.z || 0) + v; redraw(); });
-  if (!['ground', 'path'].includes(layer.id)) {
+  if (layer.id !== 'path') {
     buildSliderRow(host, 'hf-layer', 'scaleOffset', 'Scale', -100, 100, 1, factorToSigned((layer.scale || 1) / (base.scale || 1)), (v) => { layer.scale = Number(base.scale || 1) * signedToFactor(v); redraw(); });
   } else {
     const note = document.createElement('p');
     note.className = 'hint-text';
-    note.textContent = 'Scale is fixed for this layer so the 2000px ground/path alignment is not broken.';
+    note.textContent = 'Scale is fixed for the hidden path guide so the path logic stays aligned.';
     host.appendChild(note);
   }
   buildSliderRow(host, 'hf-layer', 'opacityOffset', 'Opacity', -100, 100, 1, opacityOffsetFromBase(layer.opacity, base.opacity), (v) => { layer.opacity = clamp(Number(base.opacity ?? 1) + (v / 100), 0, 1); redraw(); });
