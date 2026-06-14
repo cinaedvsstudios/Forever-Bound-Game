@@ -1,5 +1,5 @@
-const BOOT_VERSION = 'V3.0.16';
-const BOOT_CACHE_VERSION = '3.0.16';
+const BOOT_VERSION = 'V3.0.20';
+const BOOT_CACHE_VERSION = '3.0.20';
 
 const panel = document.querySelector('.right-panel') || document.body;
 const card = document.createElement('article');
@@ -15,8 +15,8 @@ panel.innerHTML = '';
 panel.appendChild(card);
 
 function showProblem(problem) {
-  heading.textContent = 'Obstacle course module error';
-  detail.textContent = problem && problem.message ? problem.message : String(problem || 'Unknown import error');
+  heading.textContent = 'Obstacle course module problem';
+  detail.textContent = problem && problem.message ? problem.message : String(problem || 'Unknown import problem');
 }
 
 import(`./engines/obstacle-course-runtime.js?v=${BOOT_CACHE_VERSION}`)
