@@ -713,16 +713,14 @@ export class ShimmerDistortionEngine {
   drawWormhole(ctx, g, t) {
     const jobs = [];
     const add = (layer, draw) => jobs.push({ layer, draw });
-    const armLayer = vlayer(this.values.armLayer, 'over-clouds');
     add('behind-effect', () => this.drawOverlayLayer(ctx, g, t, 'behind-effect'));
     add('base-effect', () => this.drawWormholeDarkField(ctx, g, t));
-    if (armLayer === 'base-effect') add('base-effect', () => this.drawWormholeArms(ctx, g, t));
+    add('base-effect', () => this.drawWormholeArms(ctx, g, t));
     add('base-effect', () => this.drawOrbitClouds(ctx, g, t, 'wormhole'));
     add('inside-aperture', () => this.drawOverlayLayer(ctx, g, t, 'inside-aperture'));
     add('aperture', () => this.drawWormholePullCore(ctx, g, t));
     add(vlayer(this.values.apertureLayer, 'aperture'), () => this.drawAperture(ctx, g, t));
     add('over-clouds', () => this.drawOverlayLayer(ctx, g, t, 'over-clouds'));
-    if (armLayer !== 'base-effect') add(armLayer, () => this.drawWormholeArms(ctx, g, t));
     add('over-particles', () => this.drawWormholeParticles(ctx, g, t));
     add('over-particles', () => this.drawWormholeEmission(ctx, g, t));
     add('front', () => this.drawOverlayLayer(ctx, g, t, 'front'));
@@ -780,7 +778,7 @@ export class ShimmerDistortionEngine {
       const group = i % bandGroups;
       const startAngle = (group / bandGroups) * TAU + hash1(seed) * 0.46 + t * speed * dir * scale(0.34, 0.82, hash1(seed + 1));
       const colour = colourFor(i);
-      const alpha = Math.min(0.52, opacity * scale(0.26, 0.58, hash1(seed + 2)) * scale(0.82, 1.26, amount));
+      const alpha = Math.min(0.34, opacity * scale(0.18, 0.42, hash1(seed + 2)) * scale(0.70, 1.18, amount));
       ctx.strokeStyle = rgba(colour, alpha);
       ctx.lineWidth = Math.max(2, baseThickness * scale(2.0, 5.7, hash1(seed + 3)) * scale(0.72, 1.18, thicknessValue));
       ctx.shadowColor = colour;
@@ -809,16 +807,16 @@ export class ShimmerDistortionEngine {
     // 2. Main spiral bands. These are intentionally stronger than the mist so the sliders do not feel dead.
     const bandCount = Math.max(bandGroups, Math.round(scale(2, 18, amount)));
     ctx.save();
-    ctx.globalCompositeOperation = 'screen';
+    ctx.globalCompositeOperation = 'source-over';
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.filter = `blur(${scale(0.05, 2.1, 1 - definition) + softness * 0.06}px)`;
+    ctx.filter = `blur(${scale(0.05, 2.4, 1 - definition) + softness * 0.08}px)`;
     for (let i = 0; i < bandCount; i += 1) {
       const seed = 500 + i * 27.173;
       const group = i % bandGroups;
       const startAngle = (group / bandGroups) * TAU + hash1(seed) * 0.35 + t * speed * dir;
       const colour = colourFor(i + 1);
-      const alpha = Math.min(0.78, opacity * scale(0.48, 0.92, definition) * scale(0.82, 1.20, hash1(seed + 2)));
+      const alpha = Math.min(0.62, opacity * scale(0.38, 0.78, definition) * scale(0.72, 1.12, hash1(seed + 2)));
       ctx.strokeStyle = rgba(colour, alpha);
       ctx.lineWidth = Math.max(1.1, baseThickness * scale(0.62, 1.75, definition));
       ctx.shadowColor = colour;

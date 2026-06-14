@@ -5,6 +5,133 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Artifex Shimmer / Portal Distortion Engine Preview</title>
   <link rel="stylesheet" href="./styles.css?v=1.28" />
+
+  <style>
+    .asset-file-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 54px;
+      gap: 8px;
+      align-items: stretch;
+      margin-top: 6px;
+    }
+    .asset-file-row input[type="file"] {
+      min-width: 0;
+    }
+    .asset-preview-button {
+      min-height: 38px;
+      border: 1px solid rgba(42, 240, 255, 0.62);
+      border-radius: 9px;
+      background: radial-gradient(circle at 50% 45%, rgba(42, 240, 255, 0.18), rgba(4, 8, 12, 0.96));
+      color: #36f6ff;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      padding: 0;
+      box-shadow: inset 0 0 18px rgba(42, 240, 255, 0.08);
+    }
+    .asset-preview-button img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+    .asset-preview-button span {
+      font-size: 0.55rem;
+      line-height: 1.05;
+      opacity: 0.78;
+      text-align: center;
+      padding: 3px;
+    }
+    .asset-modal[hidden] {
+      display: none;
+    }
+    .asset-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .asset-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.74);
+      backdrop-filter: blur(3px);
+    }
+    .asset-modal-panel {
+      position: relative;
+      width: min(920px, calc(100vw - 44px));
+      max-height: min(760px, calc(100vh - 44px));
+      overflow: hidden;
+      border: 1px solid rgba(42, 240, 255, 0.52);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(43, 24, 16, 0.98), rgba(9, 7, 7, 0.98));
+      box-shadow: 0 22px 80px rgba(0, 0, 0, 0.62), inset 0 0 32px rgba(42, 240, 255, 0.05);
+      color: var(--cream, #f6e8c9);
+    }
+    .asset-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(42, 240, 255, 0.18);
+    }
+    .asset-modal-header h2 {
+      margin: 0;
+      color: #36f6ff;
+      font-size: 0.95rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .asset-modal-header button {
+      border: 1px solid rgba(246, 232, 201, 0.28);
+      border-radius: 10px;
+      background: rgba(78, 39, 22, 0.88);
+      color: var(--cream, #f6e8c9);
+      cursor: pointer;
+      font-weight: 800;
+      padding: 8px 12px;
+    }
+    .asset-modal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 12px;
+      padding: 16px;
+      max-height: calc(min(760px, 100vh - 44px) - 62px);
+      overflow: auto;
+    }
+    .asset-choice {
+      border: 1px solid rgba(42, 240, 255, 0.26);
+      border-radius: 13px;
+      background: rgba(0, 0, 0, 0.42);
+      color: var(--cream, #f6e8c9);
+      cursor: pointer;
+      display: grid;
+      gap: 8px;
+      padding: 9px;
+      text-align: center;
+    }
+    .asset-choice:hover, .asset-choice:focus-visible {
+      border-color: rgba(42, 240, 255, 0.86);
+      box-shadow: 0 0 0 2px rgba(42, 240, 255, 0.16);
+      outline: none;
+    }
+    .asset-choice img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: contain;
+      border-radius: 9px;
+      background: #000;
+    }
+    .asset-choice span {
+      font-size: 0.66rem;
+      word-break: break-word;
+    }
+  </style>
 </head>
 <body>
   <main class="fx-shell" data-app>
@@ -15,7 +142,7 @@
           <p class="kicker">Artifex FX Engine Prototype</p>
           <h1>Shimmer / Portal Distortion Engine</h1>
         </div>
-        <span class="version">V1.29 Arm Layer Fix</span>
+        <span class="version">V1.30 Asset Picker</span>
       </div>
       <div class="header-actions">
         <button type="button" data-action="play">▶️ Play</button>
@@ -51,7 +178,7 @@
 
           <div class="canvas-wrap">
             <canvas width="960" height="540" data-canvas></canvas>
-            <div class="canvas-hint">Canvas preview — V1.29 preserves the best overlay/aperture look and restores visible wormhole arm layer control above or below overlays.</div>
+            <div class="canvas-hint">Canvas preview — V1.28 preserves the best wormhole overlay look and adds aperture, overlay blend modes, overlay 2 and alpha vignette controls.</div>
           </div>
         </div>
 
@@ -247,14 +374,6 @@
             <label>Arm rotation speed <input type="range" min="0" max="100" step="1" data-field="armSpeed" /></label>
           </div>
           <label>Arm curl / turns <input type="range" min="0" max="100" step="1" data-field="armCurl" /></label>
-          <label>Arm layer position
-            <select data-field="armLayer">
-              <option value="base-effect">Under overlays / base effect</option>
-              <option value="over-clouds">Above overlay clouds / rim</option>
-              <option value="over-particles">Above particles</option>
-              <option value="front">Front / topmost</option>
-            </select>
-          </label>
         </section>
 
         <section class="control-card">
@@ -345,7 +464,10 @@
           <h3>PNG overlay 1</h3>
           <label class="toggle wide"><input type="checkbox" data-field="overlayEnabled" /> Enable overlay 1</label>
           <label>PNG overlay 1 image
-            <input type="file" accept="image/png,image/jpeg,image/webp" data-overlay-file />
+            <div class="asset-file-row">
+              <input type="file" accept="image/png,image/jpeg,image/webp" data-overlay-file />
+              <button type="button" class="asset-preview-button" data-asset-open="overlay" data-asset-preview="overlay" aria-label="Open default asset chooser for overlay 1"><span>Choose asset</span></button>
+            </div>
           </label>
           <p class="texture-status" data-overlay-status>No overlay loaded.</p>
           <label>Blend mode
@@ -402,7 +524,10 @@
           <h3>PNG overlay 2</h3>
           <label class="toggle wide"><input type="checkbox" data-field="overlay2Enabled" /> Enable overlay 2</label>
           <label>PNG overlay 2 image
-            <input type="file" accept="image/png,image/jpeg,image/webp" data-overlay2-file />
+            <div class="asset-file-row">
+              <input type="file" accept="image/png,image/jpeg,image/webp" data-overlay2-file />
+              <button type="button" class="asset-preview-button" data-asset-open="overlay2" data-asset-preview="overlay2" aria-label="Open default asset chooser for overlay 2"><span>Choose asset</span></button>
+            </div>
           </label>
           <p class="texture-status" data-overlay2-status>No overlay 2 loaded.</p>
           <label>Blend mode
@@ -477,6 +602,17 @@
     </footer>
   </main>
 
-  <script type="module" src="./src/main.js?v=1.29"></script>
+  <div class="asset-modal" data-asset-modal hidden>
+    <div class="asset-modal-backdrop" data-asset-modal-close></div>
+    <section class="asset-modal-panel" role="dialog" aria-modal="true" aria-labelledby="asset-modal-title">
+      <div class="asset-modal-header">
+        <h2 id="asset-modal-title" data-asset-modal-title>Choose default asset</h2>
+        <button type="button" data-asset-modal-close>Close</button>
+      </div>
+      <div class="asset-modal-grid" data-asset-modal-grid></div>
+    </section>
+  </div>
+
+  <script type="module" src="./src/main.js?v=1.30"></script>
 </body>
 </html>
