@@ -100,12 +100,14 @@ Overview map only. It owns drawing and scheduling the overview.
 Settings import/export only.
 
 ### obstacle-course-asset-debug.js
-Debug visibility only. It may report version, active settings, asset status, ground tiles, GLB status, object/entity counts, and UI presence. It must not silently fix runtime state.
+Debug visibility only. It reports version, cache, required/optional asset status, ground tiles, path sequence count, GLB loaded/used counts, scene object counts, entity counts, and UI presence. It must not silently fix runtime state.
 
 ## Current refactor status
 
 Phase 1 is complete: scenery, GLB controls, and layer controls have been split into owned files.
 
-Phase 2 is in progress: `obstacle-course-runtime.js` is being reduced to orchestration only, with runtime control binding moved into `obstacle-course-controls.js`.
+Phase 2 is complete: `obstacle-course-runtime.js` is reduced to orchestration flow, with runtime control binding moved into `obstacle-course-controls.js`.
+
+Phase 3 is complete: `obstacle-course-asset-debug.js` now has verification output for loaded version/cache, required/optional assets, ground tiles, GLB usage, entity counts, and UI element presence.
 
 This is architecture cleanup only. It should not intentionally change visuals or gameplay.
