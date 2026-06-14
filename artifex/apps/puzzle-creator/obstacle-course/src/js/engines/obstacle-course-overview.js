@@ -1,6 +1,6 @@
 import { OC } from './obstacle-course-state.js';
 import { $ } from './obstacle-course-utils.js';
-import { pathCenterAt, pathAlphaAtWorld, pathHalfWidthAt } from './obstacle-course-ground-path.js';
+import { pathCenterAt, pathHalfWidthAt } from './obstacle-course-ground-path.js';
 
 export function scheduleOverviewDraw() {
   if (OC.overviewRaf) return;
@@ -14,6 +14,41 @@ export function worldToOverview(x, z) {
   return { x: width / 2 + x * 5.1, y: height - 28 + z * 0.17 };
 }
 
+function drawPathLane(ctx) {
+  if (!OC.overviewPathOverlay) return;
+  ctx.fillStyle = 'rgba(238,196,90,.18)';
+  for (let d = 0; d < OC.courseLength; d += 8) {
+    const center = pathCenterAt(d);
+    const half = pathHalfWidthAt(d);
+    const left = worldToOverview(center - half, -d);
+    const right = worldToOverview(center + half, -d);
+    const width = Math.max(2, right.x - left.x);
+    ctx.fillRect(left.x, left.y - 1, width, 2);
+  }
+
+  ctx.strokeStyle = 'rgba(238,196,90,.55)';
+  ctx.lineWidth = 1.5;
+  [-1, 1].forEach((side) => {
+    ctx.beginPath();
+    for (let d = 0; d < OC.courseLength; d += 20) {
+      const p = worldToOverview(pathCenterAt(d) + side * pathHalfWidthAt(d), -d);
+      if (d === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+  });
+
+  ctx.strokeStyle = '#d09a55';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  for (let d = 0; d < OC.courseLength; d += 20) {
+    const p = worldToOverview(pathCenterAt(d), -d);
+    if (d === 0) ctx.moveTo(p.x, p.y);
+    else ctx.lineTo(p.x, p.y);
+  }
+  ctx.stroke();
+}
+
 export function drawOverview() {
   const c = $('hf-overview');
   if (!c) return;
@@ -23,29 +58,7 @@ export function drawOverview() {
   ctx.clearRect(0, 0, c.width, c.height);
   ctx.fillStyle = '#101914';
   ctx.fillRect(0, 0, c.width, c.height);
-  if (OC.overviewPathOverlay) {
-    ctx.fillStyle = 'rgba(238,196,90,.25)';
-    for (let d = 0; d < OC.courseLength; d += 18) {
-      const center = pathCenterAt(d);
-      const half = pathHalfWidthAt(d);
-      for (let x = center - half; x <= center + half; x += 1.4) {
-        const alpha = pathAlphaAtWorld(x, d);
-        if (alpha !== null && alpha >= OC.pathAlphaThreshold) {
-          const p = worldToOverview(x, -d);
-          ctx.fillRect(p.x - 1.2, p.y - 1.2, 2.4, 2.4);
-        }
-      }
-    }
-  }
-  ctx.strokeStyle = '#d09a55';
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  for (let d = 0; d < OC.courseLength; d += 20) {
-    const p = worldToOverview(pathCenterAt(d), -d);
-    if (d === 0) ctx.moveTo(p.x, p.y);
-    else ctx.lineTo(p.x, p.y);
-  }
-  ctx.stroke();
+  drawPathLane(ctx);
   OC.entities.forEach((e) => {
     if (e.visibleOnOverview === false) return;
     const p = worldToOverview(e.x ?? e.object?.position?.x ?? 0, e.z ?? e.object?.position?.z ?? 0);
