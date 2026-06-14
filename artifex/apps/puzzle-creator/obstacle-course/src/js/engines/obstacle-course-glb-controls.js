@@ -6,7 +6,11 @@ import { signedToFactor, factorToSigned, sliderToVisualFactor, visualFactorToSli
 import { getGlbDefault } from './obstacle-course-settings.js';
 import { applyAllGlbAssetControls } from './obstacle-course-glb.js';
 
+const POSITION_SLIDER_STEP = 0.1;
+
 function offsetFromBase(value, baseValue) { return Math.round(Number(value || 0) - Number(baseValue || 0)); }
+function positionSliderFromBase(value, baseValue) { return Math.round((Number(value || 0) - Number(baseValue || 0)) / POSITION_SLIDER_STEP); }
+function positionValueFromSlider(value, baseValue) { return Number(baseValue || 0) + (Number(value || 0) * POSITION_SLIDER_STEP); }
 function visualOffsetFromBase(value, baseValue) { const base = Number(baseValue || 1); return visualFactorToSlider(Number(value || base) / base); }
 function opacityOffsetFromBase(value, baseValue) { return Math.round((Number(value ?? baseValue ?? 1) - Number(baseValue ?? 1)) * 100); }
 function tintOffsetFromBase(value, baseValue) { return Math.round((Number(value || 0) - Number(baseValue || 0)) * 100); }
@@ -39,9 +43,9 @@ export function createGlbAssetSliders(host) {
   const cfg = glbControl(OC.selectedGlbAssetUrl);
   const base = getGlbDefault(OC.selectedGlbAssetUrl);
   const apply = () => { applyAllGlbAssetControls(); refreshGlbSelection(); };
-  buildSliderRow(host, 'hf-glb', 'x', 'X', -100, 100, 1, offsetFromBase(cfg.x, base.x), (v) => { cfg.x = Number(base.x || 0) + v; apply(); });
-  buildSliderRow(host, 'hf-glb', 'y', 'Y', -100, 100, 1, offsetFromBase(cfg.y, base.y), (v) => { cfg.y = Number(base.y || 0) + v; apply(); });
-  buildSliderRow(host, 'hf-glb', 'z', 'Z', -100, 100, 1, offsetFromBase(cfg.z, base.z), (v) => { cfg.z = Number(base.z || 0) + v; apply(); });
+  buildSliderRow(host, 'hf-glb', 'x', 'X', -100, 100, 1, positionSliderFromBase(cfg.x, base.x), (v) => { cfg.x = positionValueFromSlider(v, base.x); apply(); });
+  buildSliderRow(host, 'hf-glb', 'y', 'Y', -100, 100, 1, positionSliderFromBase(cfg.y, base.y), (v) => { cfg.y = positionValueFromSlider(v, base.y); apply(); });
+  buildSliderRow(host, 'hf-glb', 'z', 'Z', -100, 100, 1, positionSliderFromBase(cfg.z, base.z), (v) => { cfg.z = positionValueFromSlider(v, base.z); apply(); });
   buildSliderRow(host, 'hf-glb', 'scaleOffset', 'Scale', -100, 100, 1, factorToSigned((cfg.scale || 1) / (base.scale || 1)), (v) => { cfg.scale = Number(base.scale || 1) * signedToFactor(v); apply(); });
   buildSliderRow(host, 'hf-glb', 'opacityOffset', 'Opacity', -100, 100, 1, opacityOffsetFromBase(cfg.opacity, base.opacity), (v) => { cfg.opacity = clamp(Number(base.opacity ?? 1) + (v / 100), 0, 1); apply(); });
   buildSliderRow(host, 'hf-glb', 'brightnessOffset', 'Bright', -100, 100, 1, visualOffsetFromBase(cfg.brightness, base.brightness), (v) => { cfg.brightness = Number(base.brightness || 1) * sliderToVisualFactor(v); apply(); });
