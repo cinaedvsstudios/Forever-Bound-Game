@@ -1,6 +1,6 @@
-// Obstacle Course V3.0.3 state and constants
-export const VERSION = 'V3.0.3';
-export const CACHE_VERSION = '3.0.3';
+// Obstacle Course V3.0.4 state and constants
+export const VERSION = 'V3.0.4';
+export const CACHE_VERSION = '3.0.4';
 export const ASSET_BASE = './assets/';
 export const SHARED_UI_BASE = '../../../shared/ui/';
 export const GROUND_Y = -1.62;
@@ -41,6 +41,7 @@ export const OC = {
   loadingTotal: 0,
   failures: [],
   optionalFailures: [],
+  optionalAssetStatus: new Map(),
   images: new Map(),
   textures: new Map(),
   alphaMaps: new Map(),
