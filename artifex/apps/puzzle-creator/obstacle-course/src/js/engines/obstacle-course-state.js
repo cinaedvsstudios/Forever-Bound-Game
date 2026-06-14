@@ -1,6 +1,6 @@
-// Obstacle Course V3.0.12 state and constants
-export const VERSION = 'V3.0.12';
-export const CACHE_VERSION = '3.0.12';
+// Obstacle Course V3.0.13 state and constants
+export const VERSION = 'V3.0.13';
+export const CACHE_VERSION = '3.0.13';
 export const ASSET_BASE = './assets/';
 export const SHARED_UI_BASE = '../../../shared/ui/';
 export const GROUND_Y = -1.62;
