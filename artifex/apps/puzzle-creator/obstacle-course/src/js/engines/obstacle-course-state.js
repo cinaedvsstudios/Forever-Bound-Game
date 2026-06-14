@@ -1,6 +1,6 @@
-// Obstacle Course V3.0.10 state and constants
-export const VERSION = 'V3.0.10';
-export const CACHE_VERSION = '3.0.10';
+// Obstacle Course V3.0.11 state and constants
+export const VERSION = 'V3.0.11';
+export const CACHE_VERSION = '3.0.11';
 export const ASSET_BASE = './assets/';
 export const SHARED_UI_BASE = '../../../shared/ui/';
 export const GROUND_Y = -1.62;
@@ -76,6 +76,7 @@ export const OC = {
   pathAlphaThreshold: PATH_ALPHA_THRESHOLD,
   overviewPathOverlay: true,
   overviewRaf: 0,
+  overviewHitPoints: [],
   active: false,
   running: false,
   paused: false,
