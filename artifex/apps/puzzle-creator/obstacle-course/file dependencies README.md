@@ -12,7 +12,7 @@ Do not refactor this module directly on `main`. `main` should only receive a tes
 
 ## Version rule
 
-Every code change must bump the obstacle-course app version/cache before testing or merging. The current branch version is `V3.0.6` with cache `3.0.6`.
+Every code change must bump the obstacle-course app version/cache before testing or merging. The current branch version is `V3.0.7` with cache `3.0.7`.
 
 The version must stay aligned in:
 
@@ -68,7 +68,7 @@ Three.js scene lifecycle only. It owns renderer, scene, camera, lights, render l
 Ground/path only. It owns path sequence resolution, path centre/width math, path status, clearing world layers for rebuild, and building visible ground/path tile meshes. It must not scatter trees, decorative rocks, ferns, obstacles, or collectibles.
 
 ### obstacle-course-scenery.js
-Environmental scenery only. It owns tree, decorative rock, fern/detail scatter, fallback scenery geometry, seeded placement, scenery distance from path, tree screen-edge falloff, and tree asset banding rules. Oak trees are the farthest tree band; pine trees are the closer-to-centre tree band. It must not own path source generation, movement, collision, or asset loading.
+Environmental scenery only. It owns tree, decorative rock, fern/detail scatter, fallback scenery geometry, seeded placement, scenery distance from path, tree screen-edge falloff, and tree asset banding rules. Most trees should sit on or just beside the two path-edge lines to frame the rideable lane; sparse outer trees can sit beyond them only as background depth. Decorative rocks outside the path should not be generated. It must not own path source generation, movement, collision, or asset loading.
 
 ### obstacle-course-glb.js
 GLB mechanics only. It owns loading, cloning, normalising, grounding, instancing, and applying GLB material visuals. It must not own GLB picker UI, layer UI, or scenery placement decisions.
@@ -125,6 +125,6 @@ Phase 3 is complete: `obstacle-course-asset-debug.js` now has verification outpu
 
 The shader crash fix is now a permanent code-path correction: layer visuals no longer use shader injection or cleanup fallbacks.
 
-V3.0.6 adjusts the scenery/ground relationship: ground tiles no longer render as a transparent overlay above trees, tree layer render order is applied to child meshes, tree roots are lifted slightly so they are planted rather than buried, pine trees are used nearer the centre, and oak trees are reserved for the farthest outer tree band.
+V3.0.7 adjusts scenery placement: most trees sit on or just outside the path-edge lines, only sparse outer trees are left for background depth, and decorative off-path rocks are removed.
 
 This is architecture cleanup plus targeted visual correction only. It should not intentionally change gameplay rules.
