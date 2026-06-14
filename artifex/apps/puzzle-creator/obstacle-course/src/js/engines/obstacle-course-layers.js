@@ -19,51 +19,48 @@ export function registerEntity(type, object, meta = {}) {
   return entity;
 }
 
-function installMaterialVisualShader(mat) {
-  if (!mat || mat.userData.ocVisualShaderInstalled) return;
-  mat.userData.ocVisualShaderInstalled = true;
-  mat.onBeforeCompile = (shader) => {
-    shader.uniforms.ocBrightness = { value: 1 };
-    shader.uniforms.ocContrast = { value: 1 };
-    shader.uniforms.ocSaturation = { value: 1 };
-    shader.uniforms.ocTint = { value: [1, 1, 1] };
-    shader.uniforms.ocTintStrength = { value: 0 };
-    shader.fragmentShader = shader.fragmentShader.replace('void main() {', 'uniform float ocBrightness;\nuniform float ocContrast;\nuniform float ocSaturation;\nuniform vec3 ocTint;\nuniform float ocTintStrength;\nvoid main() {');
-    shader.fragmentShader = shader.fragmentShader.replace('#include <dithering_fragment>', 'vec3 ocColor = gl_FragColor.rgb;\nfloat ocLuma = dot(ocColor, vec3(0.299, 0.587, 0.114));\nocColor = mix(vec3(ocLuma), ocColor, ocSaturation);\nocColor = (ocColor - 0.5) * ocContrast + 0.5;\nocColor *= ocBrightness;\nocColor = mix(ocColor, ocTint, ocTintStrength);\ngl_FragColor.rgb = clamp(ocColor, 0.0, 1.0);\n#include <dithering_fragment>');
-    mat.userData.ocShader = shader;
-    updateShaderUniforms(mat, mat.userData.ocVisualConfig || {});
-  };
+function clearUnsafeMaterialShader(mat) {
+  if (!mat) return;
+  if (mat.userData?.ocVisualShaderInstalled || mat.userData?.ocShader) {
+    mat.onBeforeCompile = () => {};
+    delete mat.userData.ocVisualShaderInstalled;
+    delete mat.userData.ocShader;
+    delete mat.userData.ocVisualConfig;
+    mat.needsUpdate = true;
+  }
 }
 
-function hexToRgb01(hex) {
+function hexToRgb(hex) {
   const value = String(hex || '#ffffff').replace('#', '');
-  const num = Number.parseInt(value.length === 3 ? value.split('').map((c) => c + c).join('') : value, 16);
-  if (!Number.isFinite(num)) return [1, 1, 1];
-  return [((num >> 16) & 255) / 255, ((num >> 8) & 255) / 255, (num & 255) / 255];
-}
-
-function updateShaderUniforms(mat, cfg) {
-  const shader = mat.userData.ocShader;
-  if (!shader) return;
-  shader.uniforms.ocBrightness.value = cfg.brightness ?? 1;
-  shader.uniforms.ocContrast.value = cfg.contrast ?? 1;
-  shader.uniforms.ocSaturation.value = cfg.saturation ?? 1;
-  shader.uniforms.ocTint.value = hexToRgb01(cfg.tint || '#ffffff');
-  shader.uniforms.ocTintStrength.value = cfg.tintStrength ?? 0;
+  const expanded = value.length === 3 ? value.split('').map((c) => c + c).join('') : value;
+  const num = Number.parseInt(expanded, 16);
+  if (!Number.isFinite(num)) return null;
+  return {
+    r: ((num >> 16) & 255) / 255,
+    g: ((num >> 8) & 255) / 255,
+    b: (num & 255) / 255,
+  };
 }
 
 function applyMaterialVisual(mat, layer) {
   if (!mat) return;
-  mat.transparent = (layer.opacity ?? 1) < 0.995 || mat.transparent;
-  mat.opacity = layer.opacity ?? 1;
+  clearUnsafeMaterialShader(mat);
+  const opacity = layer.opacity ?? 1;
+  mat.transparent = opacity < 0.995 || mat.transparent;
+  mat.opacity = opacity;
   if (mat.color) {
     if (!mat.userData.baseColor) mat.userData.baseColor = mat.color.clone();
     mat.color.copy(mat.userData.baseColor);
+    const tint = hexToRgb(layer.tint || '#ffffff');
+    const tintStrength = Math.max(0, Math.min(1, Number(layer.tintStrength || 0)));
+    const brightness = Number(layer.brightness || 1);
+    if (tint && tintStrength > 0) {
+      mat.color.r = mat.color.r * (1 - tintStrength) + tint.r * tintStrength;
+      mat.color.g = mat.color.g * (1 - tintStrength) + tint.g * tintStrength;
+      mat.color.b = mat.color.b * (1 - tintStrength) + tint.b * tintStrength;
+    }
+    mat.color.multiplyScalar(brightness);
   }
-  const cfg = { brightness: layer.brightness ?? 1, contrast: layer.contrast ?? 1, saturation: layer.saturation ?? 1, tint: layer.tint || '#ffffff', tintStrength: layer.tintStrength || 0 };
-  mat.userData.ocVisualConfig = cfg;
-  installMaterialVisualShader(mat);
-  updateShaderUniforms(mat, cfg);
   mat.needsUpdate = true;
 }
 
