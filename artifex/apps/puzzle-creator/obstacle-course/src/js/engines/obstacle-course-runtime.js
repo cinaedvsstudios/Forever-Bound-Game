@@ -46,12 +46,13 @@ function ensureMounted() {
     setResult('Required obstacle course assets ready. Optional 3D/audio assets are still loading.', 'success');
     loadOptionalAssets({ loadGlbAsset }).then(() => {
       showSpinner(false);
-      if (OC.glbTemplates.size) rebuildCourse();
+      const safeToSwapScene = !OC.active && !OC.running && OC.distance <= 0.01;
+      if (OC.glbTemplates.size && safeToSwapScene) rebuildCourse();
       populateLayerSelect();
       refreshLayerPanel();
       updateHud();
       scheduleOverviewDraw();
-      setResult('Obstacle course ready.', 'success');
+      setResult(safeToSwapScene ? 'Obstacle course ready.' : 'Optional assets loaded. Current run was not reset; press Regenerate to rebuild with newly loaded assets.', 'success');
       import('./obstacle-course-asset-debug.js?v=3.0.1').catch(() => {});
     });
   });
@@ -64,7 +65,7 @@ function bindUi() {
   $('obstacle-template')?.addEventListener('change', (e) => { OC.templateId = e.target.value; rebuildCourse(); });
   $('obstacle-difficulty')?.addEventListener('input', (e) => { OC.difficulty = Number(e.target.value); $('obstacle-difficulty-out').textContent = OC.difficulty; });
   $('obstacle-distance')?.addEventListener('input', (e) => { OC.courseLength = Number(e.target.value); $('obstacle-distance-out').textContent = OC.courseLength; updateHud(); });
-  $('obstacle-scenery-distance')?.addEventListener('input', (e) => { OC.sceneryDistance = Number(e.target.value); $('obstacle-scenery-distance-out').textContent = OC.sceneryDistance; rebuildCourse(); });
+  $('obstacle-scenery-distance')?.addEventListener('input', (e) => { OC.sceneryDistance = Number(e.target.value); rebuildCourse(); });
   $('oc-ground-grid-toggle')?.addEventListener('change', (e) => { if (OC.grid) OC.grid.visible = e.target.checked; renderOnce(); });
   $('oc-overview-path-overlay')?.addEventListener('change', (e) => { OC.overviewPathOverlay = e.target.checked; scheduleOverviewDraw(); });
   $('oc-vp-x')?.addEventListener('input', (e) => { OC.vanishX = Number(e.target.value); $('oc-vp-x-out').textContent = OC.vanishX; applyCamera(); });
