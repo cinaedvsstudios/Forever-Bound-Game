@@ -1,4 +1,4 @@
-// Obstacle Course V3.0.7 / Modular Horse Forest Runner
+// Obstacle Course V3.0.8 / Modular Horse Forest Runner
 import { OC } from './obstacle-course-state.js';
 import { ensureHeader, injectStyles, mountLayout, mountLeftPanel, enhanceStaticRangeSteppers, setResult } from './obstacle-course-ui.js';
 import { applyDefaultSettings } from './obstacle-course-settings.js';
@@ -58,7 +58,7 @@ function ensureMounted() {
     showSpinner(false);
     setInteractionLocked(false);
     setResult('Required obstacle course assets loaded. Test controls are ready. Optional 3D/audio assets are loading in the background.', 'success');
-    import('./obstacle-course-asset-debug.js?v=3.0.7').catch(() => {});
+    import('./obstacle-course-asset-debug.js?v=3.0.8').catch(() => {});
     loadOptionalAssets({ loadGlbAsset }).then(() => {
       rebuildCourse();
       populateLayerSelect();
@@ -70,7 +70,7 @@ function ensureMounted() {
         ? `Optional assets finished with ${OC.optionalFailures.length} missing/late asset(s). ${loadedGlbs} GLB model(s) loaded and used.`
         : `All obstacle course assets loaded. ${loadedGlbs} GLB model(s) loaded and used.`;
       setResult(optionalMessage, OC.optionalFailures?.length ? 'failure' : 'success');
-      import('./obstacle-course-asset-debug.js?v=3.0.7').catch(() => {});
+      import('./obstacle-course-asset-debug.js?v=3.0.8').catch(() => {});
     }).catch((error) => {
       console.warn('[ObstacleCourse] optional assets did not finish', error);
       setResult('Optional 3D/audio assets did not finish, but required test controls remain ready.', 'failure');
