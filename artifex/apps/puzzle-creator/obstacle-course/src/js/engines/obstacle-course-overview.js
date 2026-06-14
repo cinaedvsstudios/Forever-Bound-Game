@@ -39,7 +39,8 @@ function labelForEntity(entity) {
   const name = filenameFromUrl(url);
   const x = Number(entity?.x ?? entity?.object?.position?.x ?? 0).toFixed(1);
   const z = Number(entity?.z ?? entity?.object?.position?.z ?? 0).toFixed(1);
-  return `${entity?.type || 'entity'}\n${name}\nx ${x} · z ${z}`;
+  const selectHint = url ? '\nclick: select GLB controls' : '';
+  return `${entity?.type || 'entity'}\n${name}\nx ${x} · z ${z}${selectHint}`;
 }
 
 function ensureTooltip() {
@@ -60,21 +61,46 @@ function canvasPointFromEvent(canvas, event) {
   return { x: (event.clientX - rect.left) * scaleX, y: (event.clientY - rect.top) * scaleY };
 }
 
+function nearestHitFromEvent(canvas, event) {
+  const point = canvasPointFromEvent(canvas, event);
+  let best = null;
+  let bestDist = HOVER_RADIUS;
+  (OC.overviewHitPoints || []).forEach((hit) => {
+    const dist = Math.hypot(hit.x - point.x, hit.y - point.y);
+    if (dist <= bestDist) {
+      best = hit;
+      bestDist = dist;
+    }
+  });
+  return best;
+}
+
+function selectOverviewHit(hit) {
+  const entity = hit?.entity;
+  const assetUrl = entity?.assetUrl || entity?.object?.userData?.assetUrl || '';
+  if (!assetUrl) return;
+  OC.selectedLayerId = 'glbAsset';
+  OC.selectedGlbAssetUrl = assetUrl;
+  const layerSelect = document.getElementById('hf-layer-select');
+  if (layerSelect) {
+    layerSelect.value = 'glbAsset';
+    layerSelect.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  window.setTimeout(() => {
+    const glbSelect = document.getElementById('hf-glb-asset-select');
+    if (glbSelect && Array.from(glbSelect.options).some((option) => option.value === assetUrl)) {
+      glbSelect.value = assetUrl;
+      glbSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }, 0);
+}
+
 function bindOverviewHover(canvas) {
   if (canvas.dataset.ocOverviewHoverBound === 'true') return;
   canvas.dataset.ocOverviewHoverBound = 'true';
   const tooltip = ensureTooltip();
   canvas.addEventListener('mousemove', (event) => {
-    const point = canvasPointFromEvent(canvas, event);
-    let best = null;
-    let bestDist = HOVER_RADIUS;
-    (OC.overviewHitPoints || []).forEach((hit) => {
-      const dist = Math.hypot(hit.x - point.x, hit.y - point.y);
-      if (dist <= bestDist) {
-        best = hit;
-        bestDist = dist;
-      }
-    });
+    const best = nearestHitFromEvent(canvas, event);
     if (!best) {
       tooltip.style.display = 'none';
       canvas.style.cursor = 'default';
@@ -84,7 +110,11 @@ function bindOverviewHover(canvas) {
     tooltip.style.left = `${event.clientX + 14}px`;
     tooltip.style.top = `${event.clientY + 14}px`;
     tooltip.style.display = 'block';
-    canvas.style.cursor = 'help';
+    canvas.style.cursor = best.entity?.assetUrl ? 'pointer' : 'help';
+  });
+  canvas.addEventListener('click', (event) => {
+    const best = nearestHitFromEvent(canvas, event);
+    selectOverviewHit(best);
   });
   canvas.addEventListener('mouseleave', () => {
     tooltip.style.display = 'none';
