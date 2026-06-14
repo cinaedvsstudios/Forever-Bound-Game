@@ -1,4 +1,4 @@
-// Obstacle Course V3.0.0 / Modular Horse Forest Runner
+// Obstacle Course V3.0.1 / Modular Horse Forest Runner
 import { OC } from './obstacle-course-state.js';
 import { $, visualFactorToSlider, sliderToGlobalBrightness, sliderToGlobalContrast, sliderToGlobalSaturation, sliderToTint, tintToSlider } from './obstacle-course-utils.js';
 import { ensureHeader, injectStyles, mountLayout, mountLeftPanel, enhanceStaticRangeSteppers, buildSliderRow, setResult } from './obstacle-course-ui.js';
@@ -18,6 +18,7 @@ import { scheduleOverviewDraw, drawOverview } from './obstacle-course-overview.j
 import { loadGlbAsset, createGlbAssetSliders, applyAllGlbAssetControls } from './obstacle-course-glb.js';
 import { installButtonFeedback } from './obstacle-course-button-feedback.js';
 import { installOverviewLayout } from './obstacle-course-overview-layout.js';
+import { installHorseAspectFix } from './obstacle-course-horse-aspect.js';
 
 export function openObstacleCourseWorkflow() { ensureMounted(); }
 
@@ -31,6 +32,7 @@ function ensureMounted() {
   injectStyles();
   installButtonFeedback();
   installOverviewLayout();
+  installHorseAspectFix();
   mountLayout();
   mountLeftPanel({ onRegenerate: rebuildCourse, onExport: exportJsonSettings, onImport: (e) => importJsonSettings(e, { rebuild: rebuildCourse }) });
   enhanceStaticRangeSteppers();
@@ -50,7 +52,7 @@ function ensureMounted() {
       updateHud();
       scheduleOverviewDraw();
       setResult('Obstacle course ready.', 'success');
-      import('./obstacle-course-asset-debug.js?v=3.0.0').catch(() => {});
+      import('./obstacle-course-asset-debug.js?v=3.0.1').catch(() => {});
     });
   });
 }
