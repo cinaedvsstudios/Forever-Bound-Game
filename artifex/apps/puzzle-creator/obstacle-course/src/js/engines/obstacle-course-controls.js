@@ -2,9 +2,9 @@ import { OC } from './obstacle-course-state.js';
 import { $, visualFactorToSlider, sliderToGlobalBrightness, sliderToGlobalContrast, sliderToGlobalSaturation, sliderToTint, tintToSlider } from './obstacle-course-utils.js';
 import { buildSliderRow } from './obstacle-course-ui.js';
 import { renderOnce, applyCamera, applyBackgroundPlate } from './obstacle-course-scene.js';
-import { scheduleOverviewDraw } from './obstacle-course-overview.js?v=3.0.15';
+import { scheduleOverviewDraw } from './obstacle-course-overview.js?v=3.0.16';
 import { updateHud } from './obstacle-course-hud.js';
-import { startRun, pauseRun, resetRun } from './obstacle-course-movement.js?v=3.0.15';
+import { startRun, pauseRun, resetRun } from './obstacle-course-movement.js?v=3.0.16';
 import { bindLayerButtons } from './obstacle-course-layer-controls.js';
 
 export function setInteractionLocked(locked) {
