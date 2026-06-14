@@ -2,7 +2,7 @@ import { OC } from './obstacle-course-state.js';
 
 export const DEFAULT_SETTINGS = {
   "engine": "obstacle-course",
-  "version": "V3.0.12",
+  "version": "V3.0.13",
   "templateId": "horse_forest_easy",
   "difficulty": 3,
   "courseLength": 1500,
