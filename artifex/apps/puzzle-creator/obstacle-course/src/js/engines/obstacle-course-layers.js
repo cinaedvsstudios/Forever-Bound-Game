@@ -59,6 +59,7 @@ export function applyLayer(layer) {
   layer.group.scale.setScalar(layer.scale || 1);
   layer.group.renderOrder = layer.order || 0;
   layer.group.traverse((node) => {
+    node.renderOrder = layer.order || 0;
     if (node.material) {
       if (Array.isArray(node.material)) node.material.forEach((mat) => applyMaterialVisual(mat, layer));
       else applyMaterialVisual(node.material, layer);
