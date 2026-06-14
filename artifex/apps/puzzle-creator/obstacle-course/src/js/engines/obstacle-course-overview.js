@@ -2,60 +2,77 @@ import { OC } from './obstacle-course-state.js';
 import { $ } from './obstacle-course-utils.js';
 import { pathCenterAt, pathHalfWidthAt } from './obstacle-course-ground-path.js';
 
-const OVERVIEW_X_ZOOM = 36.0;
-const OVERVIEW_Z_ZOOM = 1.08;
-const OVERVIEW_HEIGHT = 560;
-const OVERVIEW_FORWARD_RANGE = 480;
-const OVERVIEW_BACK_BUFFER = 30;
-const HOVER_RADIUS = 12;
+const XZ = 36.0;
+const ZZ = 1.08;
+const H = 560;
+const FWD = 480;
+const BACK = 30;
+const HIT = 12;
+const TREE_LIMIT = 2.2;
 
 export function scheduleOverviewDraw() {
   if (OC.overviewRaf) return;
   OC.overviewRaf = requestAnimationFrame(() => { OC.overviewRaf = 0; drawOverview(); });
 }
 
-function overviewDistanceRange() {
-  const start = Math.max(0, OC.distance - OVERVIEW_BACK_BUFFER);
-  const end = Math.min(OC.courseLength, OC.distance + OVERVIEW_FORWARD_RANGE);
-  return { start, end };
+function range() {
+  return { start: Math.max(0, OC.distance - BACK), end: Math.min(OC.courseLength, OC.distance + FWD) };
 }
 
-function prepareCanvas(canvas) {
+function prep(canvas) {
   const rect = canvas.getBoundingClientRect();
-  const cssWidth = Math.max(360, Math.round(rect.width || canvas.clientWidth || 760));
-  const cssHeight = OVERVIEW_HEIGHT;
-  if (canvas.width !== cssWidth || canvas.height !== cssHeight) {
-    canvas.width = cssWidth;
-    canvas.height = cssHeight;
+  const width = Math.max(360, Math.round(rect.width || canvas.clientWidth || 760));
+  if (canvas.width !== width || canvas.height !== H) {
+    canvas.width = width;
+    canvas.height = H;
   }
-  canvas.style.height = `${cssHeight}px`;
-  return { width: canvas.width, height: canvas.height };
+  canvas.style.height = `${H}px`;
+  return { width, height: H };
 }
 
 export function worldToOverview(x, z) {
-  const c = $('hf-overview');
-  const width = c?.width || 760;
-  const height = c?.height || OVERVIEW_HEIGHT;
-  const worldDistance = -Number(z || 0);
-  const relativeDistance = worldDistance - Number(OC.distance || 0);
-  return { x: width / 2 + Number(x || 0) * OVERVIEW_X_ZOOM, y: height - 56 - relativeDistance * OVERVIEW_Z_ZOOM };
+  const canvas = $('hf-overview');
+  const width = canvas?.width || 760;
+  const height = canvas?.height || H;
+  const distance = -Number(z || 0);
+  return { x: width / 2 + Number(x || 0) * XZ, y: height - 56 - (distance - Number(OC.distance || 0)) * ZZ };
 }
 
-function filenameFromUrl(url = '') {
-  const clean = String(url || '').split('?')[0].split('#')[0];
-  return clean.split('/').pop() || 'no asset url';
+function fileName(url = '') {
+  return String(url || '').split('?')[0].split('#')[0].split('/').pop() || 'no asset url';
 }
 
-function labelForEntity(entity) {
-  const url = entity?.assetUrl || entity?.object?.userData?.assetUrl || '';
-  const name = filenameFromUrl(url);
-  const x = Number(entity?.x ?? entity?.object?.position?.x ?? 0).toFixed(1);
-  const z = Number(entity?.z ?? entity?.object?.position?.z ?? 0).toFixed(1);
-  const selectHint = url ? '\nclick: select GLB controls' : '';
-  return `${entity?.type || 'entity'}\n${name}\nx ${x} · z ${z}${selectHint}`;
+function layerId(entity) {
+  if (entity?.layerId) return entity.layerId;
+  if (entity?.type === 'tree') return 'trees';
+  if (entity?.type === 'detail') return 'details';
+  if (entity?.type === 'collectible') return 'collectibles';
+  if (entity?.type === 'obstacle') return 'obstacles';
+  if (entity?.type === 'rock') return 'rocks';
+  return '';
 }
 
-function ensureTooltip() {
+function entityWorld(entity) {
+  const layer = OC.layers.get(layerId(entity));
+  const assetUrl = entity?.assetUrl || entity?.object?.userData?.assetUrl || '';
+  const cfg = assetUrl ? OC.glbControls.get(assetUrl) : null;
+  const localX = Number(entity?.localX ?? entity?.object?.position?.x ?? entity?.x ?? 0);
+  const localZ = Number(entity?.localZ ?? entity?.object?.position?.z ?? entity?.z ?? 0);
+  if (!layer) return { x: localX + Number(cfg?.x || 0), z: localZ + Number(cfg?.z || 0) };
+  const scale = Math.max(0.0001, Number(layer.scale || 1));
+  return {
+    x: Number(layer.x || 0) + (localX + Number(cfg?.x || 0)) * scale,
+    z: Number(layer.z || 0) + (localZ + Number(cfg?.z || 0)) * scale,
+  };
+}
+
+function label(entity) {
+  const assetUrl = entity?.assetUrl || entity?.object?.userData?.assetUrl || '';
+  const pos = entityWorld(entity);
+  return `${entity?.type || 'entity'}\n${fileName(assetUrl)}\nx ${pos.x.toFixed(1)} · z ${pos.z.toFixed(1)}${assetUrl ? '\nclick: select GLB controls' : ''}`;
+}
+
+function tooltip() {
   let tip = document.getElementById('hf-overview-tooltip');
   if (!tip) {
     tip = document.createElement('div');
@@ -66,30 +83,20 @@ function ensureTooltip() {
   return tip;
 }
 
-function canvasPointFromEvent(canvas, event) {
+function hitFor(canvas, event) {
   const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / Math.max(1, rect.width);
-  const scaleY = canvas.height / Math.max(1, rect.height);
-  return { x: (event.clientX - rect.left) * scaleX, y: (event.clientY - rect.top) * scaleY };
-}
-
-function nearestHitFromEvent(canvas, event) {
-  const point = canvasPointFromEvent(canvas, event);
+  const point = { x: (event.clientX - rect.left) * canvas.width / Math.max(1, rect.width), y: (event.clientY - rect.top) * canvas.height / Math.max(1, rect.height) };
   let best = null;
-  let bestDist = HOVER_RADIUS;
+  let bestDist = HIT;
   (OC.overviewHitPoints || []).forEach((hit) => {
     const dist = Math.hypot(hit.x - point.x, hit.y - point.y);
-    if (dist <= bestDist) {
-      best = hit;
-      bestDist = dist;
-    }
+    if (dist <= bestDist) { best = hit; bestDist = dist; }
   });
   return best;
 }
 
-function selectOverviewHit(hit) {
-  const entity = hit?.entity;
-  const assetUrl = entity?.assetUrl || entity?.object?.userData?.assetUrl || '';
+function selectHit(hit) {
+  const assetUrl = hit?.entity?.assetUrl || hit?.entity?.object?.userData?.assetUrl || '';
   if (!assetUrl) return;
   OC.selectedLayerId = 'glbAsset';
   OC.selectedGlbAssetUrl = assetUrl;
@@ -100,110 +107,98 @@ function selectOverviewHit(hit) {
   }
   window.setTimeout(() => {
     const glbSelect = document.getElementById('hf-glb-asset-select');
-    if (glbSelect && Array.from(glbSelect.options).some((option) => option.value === assetUrl)) {
+    if (glbSelect) {
       glbSelect.value = assetUrl;
       glbSelect.dispatchEvent(new Event('change', { bubbles: true }));
     }
   }, 0);
 }
 
-function bindOverviewHover(canvas) {
+function bind(canvas) {
   if (canvas.dataset.ocOverviewHoverBound === 'true') return;
   canvas.dataset.ocOverviewHoverBound = 'true';
-  const tooltip = ensureTooltip();
+  const tip = tooltip();
   canvas.addEventListener('mousemove', (event) => {
-    const best = nearestHitFromEvent(canvas, event);
-    if (!best) {
-      tooltip.style.display = 'none';
-      canvas.style.cursor = 'default';
-      return;
-    }
-    tooltip.textContent = best.label;
-    tooltip.style.left = `${event.clientX + 14}px`;
-    tooltip.style.top = `${event.clientY + 14}px`;
-    tooltip.style.display = 'block';
-    canvas.style.cursor = best.entity?.assetUrl ? 'pointer' : 'help';
+    const hit = hitFor(canvas, event);
+    if (!hit) { tip.style.display = 'none'; canvas.style.cursor = 'default'; return; }
+    tip.textContent = hit.label;
+    tip.style.left = `${event.clientX + 14}px`;
+    tip.style.top = `${event.clientY + 14}px`;
+    tip.style.display = 'block';
+    canvas.style.cursor = hit.entity?.assetUrl ? 'pointer' : 'help';
   });
-  canvas.addEventListener('click', (event) => {
-    const best = nearestHitFromEvent(canvas, event);
-    selectOverviewHit(best);
-  });
-  canvas.addEventListener('mouseleave', () => {
-    tooltip.style.display = 'none';
-    canvas.style.cursor = 'default';
-  });
+  canvas.addEventListener('click', (event) => selectHit(hitFor(canvas, event)));
+  canvas.addEventListener('mouseleave', () => { tip.style.display = 'none'; canvas.style.cursor = 'default'; });
 }
 
-function drawPathLane(ctx, width) {
+function drawLine(ctx, start, end, side, offset, color, width) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.beginPath();
+  for (let d = start; d < end; d += 12) {
+    const point = worldToOverview(pathCenterAt(d) + side * (pathHalfWidthAt(d) + offset), -d);
+    if (d === start) ctx.moveTo(point.x, point.y);
+    else ctx.lineTo(point.x, point.y);
+  }
+  ctx.stroke();
+}
+
+function drawPath(ctx, canvasWidth) {
   if (!OC.overviewPathOverlay) return;
-  const { start, end } = overviewDistanceRange();
+  const { start, end } = range();
   ctx.fillStyle = 'rgba(238,196,90,.24)';
   for (let d = start; d < end; d += 4) {
-    const center = pathCenterAt(d);
-    const half = pathHalfWidthAt(d);
-    const left = worldToOverview(center - half, -d);
-    const right = worldToOverview(center + half, -d);
-    const laneWidth = Math.max(3, right.x - left.x);
-    ctx.fillRect(left.x, left.y - 2, laneWidth, 4);
+    const left = worldToOverview(pathCenterAt(d) - pathHalfWidthAt(d), -d);
+    const right = worldToOverview(pathCenterAt(d) + pathHalfWidthAt(d), -d);
+    ctx.fillRect(left.x, left.y - 2, Math.max(3, right.x - left.x), 4);
   }
-
-  ctx.strokeStyle = 'rgba(238,196,90,.72)';
-  ctx.lineWidth = 2;
-  [-1, 1].forEach((side) => {
-    ctx.beginPath();
-    for (let d = start; d < end; d += 12) {
-      const p = worldToOverview(pathCenterAt(d) + side * pathHalfWidthAt(d), -d);
-      if (d === start) ctx.moveTo(p.x, p.y);
-      else ctx.lineTo(p.x, p.y);
-    }
-    ctx.stroke();
-  });
-
+  [-1, 1].forEach((side) => drawLine(ctx, start, end, side, 0, 'rgba(238,196,90,.72)', 2));
+  [-1, 1].forEach((side) => drawLine(ctx, start, end, side, TREE_LIMIT, 'rgba(132,58,210,.88)', 3));
   ctx.strokeStyle = '#d09a55';
   ctx.lineWidth = 4;
   ctx.beginPath();
   for (let d = start; d < end; d += 12) {
-    const p = worldToOverview(pathCenterAt(d), -d);
-    if (d === start) ctx.moveTo(p.x, p.y);
-    else ctx.lineTo(p.x, p.y);
+    const point = worldToOverview(pathCenterAt(d), -d);
+    if (d === start) ctx.moveTo(point.x, point.y);
+    else ctx.lineTo(point.x, point.y);
   }
   ctx.stroke();
-
   ctx.fillStyle = 'rgba(244,234,212,.72)';
   ctx.font = '11px monospace';
-  ctx.fillText(`zoomed ride window: ${Math.round(start)}-${Math.round(end)}`, 12, 18);
-  ctx.fillText('hover dot = asset · click dot = select GLB controls', 12, 34);
+  ctx.fillText(`window: ${Math.round(start)}-${Math.round(end)}`, 12, 18);
+  ctx.fillText('purple = tree limit · hover dot = asset', 12, 34);
   ctx.strokeStyle = 'rgba(244,234,212,.25)';
   ctx.beginPath();
-  ctx.moveTo(width / 2, 42);
-  ctx.lineTo(width / 2, ctx.canvas.height - 26);
+  ctx.moveTo(canvasWidth / 2, 42);
+  ctx.lineTo(canvasWidth / 2, ctx.canvas.height - 26);
   ctx.stroke();
 }
 
 export function drawOverview() {
-  const c = $('hf-overview');
-  if (!c) return;
-  bindOverviewHover(c);
-  const { width, height } = prepareCanvas(c);
-  const ctx = c.getContext('2d');
+  const canvas = $('hf-overview');
+  if (!canvas) return;
+  bind(canvas);
+  const { width, height } = prep(canvas);
+  const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = '#101914';
   ctx.fillRect(0, 0, width, height);
-  drawPathLane(ctx, width);
+  drawPath(ctx, width);
   OC.overviewHitPoints = [];
-  OC.entities.forEach((e) => {
-    if (e.visibleOnOverview === false) return;
-    const p = worldToOverview(e.x ?? e.object?.position?.x ?? 0, e.z ?? e.object?.position?.z ?? 0);
-    if (p.y < -28 || p.y > height + 28 || p.x < -38 || p.x > width + 38) return;
-    const radius = e.type === 'tree' ? 5.2 : e.type === 'collectible' ? 4.8 : 4.2;
-    ctx.fillStyle = e.type === 'collectible' ? '#5be5ff' : e.type === 'obstacle' ? '#ff7055' : e.type === 'tree' ? '#35b568' : e.type === 'rock' ? '#9a9388' : '#66bb6a';
+  OC.entities.forEach((entity) => {
+    if (entity.visibleOnOverview === false) return;
+    const pos = entityWorld(entity);
+    const point = worldToOverview(pos.x, pos.z);
+    if (point.y < -28 || point.y > height + 28 || point.x < -38 || point.x > width + 38) return;
+    const radius = entity.type === 'tree' ? 5.2 : entity.type === 'collectible' ? 4.8 : 4.2;
+    ctx.fillStyle = entity.type === 'collectible' ? '#5be5ff' : entity.type === 'obstacle' ? '#ff7055' : entity.type === 'tree' ? '#35b568' : entity.type === 'rock' ? '#9a9388' : '#66bb6a';
     ctx.beginPath();
-    ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+    ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
     ctx.fill();
     ctx.lineWidth = 1;
     ctx.strokeStyle = 'rgba(0,0,0,.45)';
     ctx.stroke();
-    OC.overviewHitPoints.push({ x: p.x, y: p.y, radius, label: labelForEntity(e), entity: e });
+    OC.overviewHitPoints.push({ x: point.x, y: point.y, radius, label: label(entity), entity });
   });
   const player = worldToOverview(pathCenterAt(OC.distance) + OC.player.x, -OC.distance);
   ctx.fillStyle = '#f4ead4';
