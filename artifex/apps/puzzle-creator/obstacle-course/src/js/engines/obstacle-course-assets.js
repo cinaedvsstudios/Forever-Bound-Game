@@ -20,6 +20,8 @@ export const ASSETS = {
 export const GLB_ASSETS = [
   { url: `${ASSET_BASE}3d/hill_top_tree.glb`, label: 'Hill Top Tree', type: 'nearTree', scale: 1, targetHeight: 11.6, optional: true },
   { url: `${ASSET_BASE}3d/pine_tree.glb`, label: 'Pine Tree', type: 'nearTree', scale: 1, targetHeight: 13.0, optional: true },
+  { url: `${ASSET_BASE}3d/pine_tree_-_ps1_low_poly.glb`, label: 'Pine Tree PS1 Low Poly', type: 'nearTree', scale: 1, targetHeight: 11.8, optional: true },
+  { url: `${ASSET_BASE}3d/tree_low-poly.glb`, label: 'Tree Low Poly', type: 'nearTree', scale: 1, targetHeight: 12.0, optional: true },
   { url: `${ASSET_BASE}3d/oak_trees.glb`, label: 'Oak Trees', type: 'nearTree', scale: 1, targetHeight: 12.4, optional: true },
   { url: `${ASSET_BASE}3d/tree.glb`, label: 'Tree', type: 'farTree', scale: 1, targetHeight: 15.0, optional: true },
   { url: `${ASSET_BASE}3d/low_poly_fern.glb`, label: 'Low Poly Fern', type: 'edgeDetail', scale: 1, targetHeight: 1.7, optional: true },
