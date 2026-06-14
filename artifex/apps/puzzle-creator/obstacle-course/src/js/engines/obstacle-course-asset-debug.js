@@ -154,7 +154,7 @@ function addActions(panel) {
 
 function summaryRows() {
   return [
-    ['version', VERSION, VERSION === 'V3.0.10' ? 'good' : 'bad'],
+    ['version', VERSION, VERSION === 'V3.0.11' ? 'good' : 'bad'],
     ['debug version', 'V4.3.0', 'good'],
     ['cache', OC.cacheVersion || 'missing', OC.cacheVersion ? 'good' : 'bad'],
     ['required ready', OC.requiredReady, OC.requiredReady ? 'good' : 'bad'],
