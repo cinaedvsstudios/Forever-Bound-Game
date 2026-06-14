@@ -1,4 +1,4 @@
-// Obstacle Course Asset Debug V4.2.0
+// Obstacle Course Asset Debug V4.3.0
 import { requiredAssetList, optionalAssetList, GLB_ASSETS } from './obstacle-course-assets.js';
 import { OC, VERSION } from './obstacle-course-state.js';
 
@@ -49,7 +49,7 @@ function makePanel() {
   if (!panel) {
     panel = document.createElement('section');
     panel.id = 'horse-asset-debug-panel';
-    panel.style.cssText = 'position:fixed;right:18px;top:110px;z-index:9999;width:min(900px,94vw);max-height:76vh;overflow:auto;background:#070b10;color:#f4ead4;border:1px solid #eec45a;border-radius:12px;padding:14px;font:12px/1.35 monospace;box-shadow:0 20px 60px rgba(0,0,0,.5)';
+    panel.style.cssText = 'position:fixed;right:18px;top:110px;z-index:9999;width:min(940px,94vw);max-height:76vh;overflow:auto;background:#070b10;color:#f4ead4;border:1px solid #eec45a;border-radius:12px;padding:14px;font:12px/1.35 monospace;box-shadow:0 20px 60px rgba(0,0,0,.5)';
     document.body.appendChild(panel);
   }
   panel.textContent = '';
@@ -107,17 +107,55 @@ function addTable(panel, columns, rows) {
   panel.appendChild(table);
 }
 
-function openPanel() {
-  const panel = makePanel();
-  const close = document.createElement('button');
-  close.textContent = 'Close';
-  close.style.float = 'right';
-  close.onclick = () => panel.remove();
-  panel.appendChild(close);
+function addActions(panel) {
+  const actions = document.createElement('div');
+  actions.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 12px';
 
-  addTitle(panel, `Obstacle Course Asset Debug ${VERSION}`);
-  addGrid(panel, [
+  const run = document.createElement('button');
+  run.type = 'button';
+  run.textContent = 'Run Debug Report';
+
+  const copy = document.createElement('button');
+  copy.type = 'button';
+  copy.textContent = 'Copy Report';
+
+  const status = document.createElement('span');
+  status.style.color = '#9ee6a4';
+
+  const output = document.createElement('textarea');
+  output.id = 'horse-asset-debug-report';
+  output.readOnly = true;
+  output.style.cssText = 'display:none;width:100%;min-height:220px;margin:8px 0 14px;background:#030609;color:#f4ead4;border:1px solid rgba(238,196,90,.35);border-radius:8px;padding:10px;font:12px/1.35 monospace;white-space:pre;box-sizing:border-box';
+
+  const refresh = () => {
+    output.value = buildDebugReport();
+    output.style.display = 'block';
+    status.textContent = 'Report generated.';
+  };
+
+  run.addEventListener('click', refresh);
+  copy.addEventListener('click', async () => {
+    if (!output.value) refresh();
+    const text = output.value;
+    try {
+      await navigator.clipboard.writeText(text);
+      status.textContent = 'Copied to clipboard.';
+    } catch (error) {
+      output.focus();
+      output.select();
+      document.execCommand('copy');
+      status.textContent = 'Copied using fallback.';
+    }
+  });
+
+  actions.append(run, copy, status);
+  panel.append(actions, output);
+}
+
+function summaryRows() {
+  return [
     ['version', VERSION, VERSION === 'V3.0.4' ? 'good' : 'bad'],
+    ['debug version', 'V4.3.0', 'good'],
     ['cache', OC.cacheVersion || 'missing', OC.cacheVersion ? 'good' : 'bad'],
     ['required ready', OC.requiredReady, OC.requiredReady ? 'good' : 'bad'],
     ['optional done', OC.loadingDone, OC.loadingDone ? 'good' : ''],
@@ -131,18 +169,73 @@ function openPanel() {
     ['details', countEntities('detail')],
     ['obstacles', countEntities('obstacle')],
     ['collectibles', countEntities('collectible')],
+  ];
+}
+
+function assetRows() {
+  const groundTileRows = (OC.groundTileAssets || []).map((asset) => ['required', 'ground-tile', statusFor(asset), asset.url]);
+  const rows = [...requiredAssetList(), ...optionalAssetList()].map((asset) => [asset.required ? 'required' : 'optional', asset.type, statusFor(asset), asset.url]);
+  return [...rows, ...groundTileRows];
+}
+
+function glbRows() {
+  return GLB_ASSETS.map((asset) => [
+    asset.type,
+    OC.glbTemplates?.has(asset.url) ? 'loaded' : statusFor({ ...asset, type: 'glb' }),
+    countModelUse(asset.url),
+    asset.url,
   ]);
+}
+
+function uiRows() {
+  return DEBUG_IDS.map((id) => [id, document.getElementById(id) ? 'present' : 'missing']);
+}
+
+function buildDebugReport() {
+  const lines = [];
+  lines.push('FOREVER BOUND OBSTACLE COURSE DEBUG REPORT');
+  lines.push(`Generated: ${new Date().toISOString()}`);
+  lines.push(`URL: ${window.location.href}`);
+  lines.push(`User agent: ${navigator.userAgent}`);
+  lines.push('');
+  lines.push('[SUMMARY]');
+  summaryRows().forEach(([label, value]) => lines.push(`${label}: ${value}`));
+  lines.push('');
+  lines.push('[REQUIRED / OPTIONAL ASSETS]');
+  assetRows().forEach(([group, type, status, url]) => lines.push(`${status}\t${group}\t${type}\t${url}`));
+  lines.push('');
+  lines.push('[GLB REGISTRY AND USAGE]');
+  glbRows().forEach(([type, loaded, used, url]) => lines.push(`${loaded}\tused=${used}\t${type}\t${url}`));
+  lines.push('');
+  lines.push('[UI ELEMENTS]');
+  uiRows().forEach(([id, status]) => lines.push(`${status}\t${id}`));
+  lines.push('');
+  lines.push('[FAILURES]');
+  lines.push(`required failures: ${(OC.failures || []).join(', ') || 'none'}`);
+  lines.push(`optional failures: ${(OC.optionalFailures || []).join(', ') || 'none'}`);
+  return lines.join('\n');
+}
+
+function openPanel() {
+  const panel = makePanel();
+  const close = document.createElement('button');
+  close.textContent = 'Close';
+  close.style.float = 'right';
+  close.onclick = () => panel.remove();
+  panel.appendChild(close);
+
+  addTitle(panel, `Obstacle Course Asset Debug ${VERSION}`);
+  addActions(panel);
+  addGrid(panel, summaryRows());
 
   addTitle(panel, 'Required and optional assets');
-  const groundTileRows = (OC.groundTileAssets || []).map((asset) => ['required', 'ground-tile', statusFor(asset), asset.url]);
-  const assetRows = [...requiredAssetList(), ...optionalAssetList()].map((asset) => [asset.required ? 'required' : 'optional', asset.type, statusFor(asset), asset.url]);
-  addTable(panel, ['group', 'type', 'status', 'url'], [...assetRows, ...groundTileRows]);
+  addTable(panel, ['group', 'type', 'status', 'url'], assetRows());
 
   addTitle(panel, 'GLB registry and scene usage');
-  addTable(panel, ['type', 'loaded', 'used', 'url'], GLB_ASSETS.map((asset) => [asset.type, OC.glbTemplates?.has(asset.url) ? 'loaded' : statusFor({ ...asset, type: 'glb' }), countModelUse(asset.url), asset.url]));
+  addTable(panel, ['type', 'loaded', 'used', 'url'], glbRows());
 
   addTitle(panel, 'UI elements');
-  addTable(panel, ['element', 'status'], DEBUG_IDS.map((id) => [id, document.getElementById(id) ? 'present' : 'missing']));
+  addTable(panel, ['element', 'status'], uiRows());
 }
 
 new MutationObserver(ensureButton).observe(document.documentElement, { childList: true, subtree: true });
