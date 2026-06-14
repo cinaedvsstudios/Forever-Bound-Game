@@ -1,5 +1,5 @@
-const BOOT_VERSION = 'V3.0.11';
-const BOOT_CACHE_VERSION = '3.0.11';
+const BOOT_VERSION = 'V3.0.12';
+const BOOT_CACHE_VERSION = '3.0.12';
 
 const panel = document.querySelector('.right-panel') || document.body;
 const card = document.createElement('article');
