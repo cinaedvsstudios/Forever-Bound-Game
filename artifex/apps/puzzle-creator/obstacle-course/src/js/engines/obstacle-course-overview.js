@@ -2,6 +2,8 @@ import { OC } from './obstacle-course-state.js';
 import { $ } from './obstacle-course-utils.js';
 import { pathCenterAt, pathHalfWidthAt } from './obstacle-course-ground-path.js';
 
+const OVERVIEW_X_ZOOM = 8.2;
+
 export function scheduleOverviewDraw() {
   if (OC.overviewRaf) return;
   OC.overviewRaf = requestAnimationFrame(() => { OC.overviewRaf = 0; drawOverview(); });
@@ -11,7 +13,7 @@ export function worldToOverview(x, z) {
   const c = $('hf-overview');
   const width = c?.width || 280;
   const height = c?.height || 500;
-  return { x: width / 2 + x * 5.1, y: height - 28 + z * 0.17 };
+  return { x: width / 2 + x * OVERVIEW_X_ZOOM, y: height - 28 + z * 0.17 };
 }
 
 function drawPathLane(ctx) {
