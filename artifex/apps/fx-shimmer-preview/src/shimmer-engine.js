@@ -259,17 +259,33 @@ export class ShimmerDistortionEngine {
   }
 
 
-  drawBaseTextureLayer(ctx, g, t) {
+  drawArmTextureLayer(ctx, g, t) {
     const v = this.values;
-    if (!v.baseTextureEnabled || !this.textureImage) return;
-    const alpha = clamp01((v.baseTextureOpacity ?? 70) / 100);
-    if (alpha <= 0.001) return;
+    if (!v.baseTextureEnabled || !this.textureImage) return false;
 
-    const scaleValue = scale(0.20, 2.35, (v.baseTextureScale ?? 115) / 240);
-    const pulseSpeed = scale(0, 2.2, (v.baseTexturePulseSpeed ?? 0) / 100);
-    const pulse = pulseSpeed > 0 ? 1 + Math.sin(t * pulseSpeed) * 0.045 : 1;
-    const rotation = t * scale(-0.9, 0.9, ((v.baseTextureRotationSpeed ?? 0) + 100) / 200);
-    const maxRadius = Math.max(g.rx, g.ry) * scaleValue * pulse;
+    const textureAlpha = clamp01((v.baseTextureOpacity ?? 76) / 100);
+    const armOpacity = clamp01((v.armOpacity ?? 70) / 100);
+    const armAmount = clamp01((v.armAmount ?? 70) / 100);
+    const alpha = textureAlpha * scale(0.18, 1.0, armAmount) * scale(0.18, 1.0, armOpacity);
+    if (alpha <= 0.001) return false;
+
+    const radiusControl = clamp01((v.armRadius ?? 70) / 100);
+    const thicknessControl = clamp01((v.armThickness ?? 60) / 100);
+    const textureScale = scale(0.24, 2.35, (v.baseTextureScale ?? 150) / 240);
+    const radiusScale = scale(0.52, 1.46, radiusControl);
+    const thicknessScale = scale(0.72, 1.18, thicknessControl);
+    const pulseSpeed = scale(0, 2.4, (v.baseTexturePulseSpeed ?? 0) / 100);
+    const pulseStrength = scale(0, 0.08, (v.armPulseStrength ?? 0) / 100);
+    const pulse = pulseSpeed > 0 || pulseStrength > 0
+      ? 1 + Math.sin(t * Math.max(pulseSpeed, scale(0.5, 2.8, (v.armSpeed ?? 30) / 100))) * (0.04 + pulseStrength)
+      : 1;
+
+    const dir = (v.swirl ?? 80) >= 0 ? 1 : -1;
+    const textureRotation = t * scale(-1.2, 1.2, ((v.baseTextureRotationSpeed ?? 0) + 100) / 200);
+    const armRotation = t * scale(0, 1.15, Math.pow((v.armSpeed ?? 30) / 100, 1.45)) * dir;
+    const rotation = textureRotation + armRotation;
+
+    const maxRadius = Math.max(g.rx, g.ry) * textureScale * radiusScale * thicknessScale * pulse;
     const image = this.textureImage;
     const aspect = image.width / Math.max(1, image.height);
     let drawWidth = maxRadius * 2;
@@ -277,13 +293,22 @@ export class ShimmerDistortionEngine {
     if (aspect >= 1) drawHeight = drawWidth / aspect;
     else drawWidth = drawHeight * aspect;
 
+    const softness = scale(0, 5.5, (v.armSoftness ?? 30) / 100);
+    const definition = clamp01((v.armDefinition ?? 55) / 100);
+    const blendMode = this.normalizeBlendMode(v.baseTextureBlendMode || 'screen');
+
     ctx.save();
-    ctx.globalCompositeOperation = this.normalizeBlendMode(v.baseTextureBlendMode || 'screen');
+    ctx.beginPath();
+    ctx.ellipse(g.cx, g.cy, g.rx * 1.42, g.ry * 1.24, 0, 0, TAU);
+    ctx.clip();
+    ctx.globalCompositeOperation = blendMode;
     ctx.globalAlpha = alpha;
+    ctx.filter = `blur(${softness * (1 - definition * 0.72)}px)`;
     ctx.translate(g.cx, g.cy);
     ctx.rotate(rotation);
     ctx.drawImage(image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
     ctx.restore();
+    return true;
   }
 
   drawOverlaySlot(ctx, g, t, layer, config) {
@@ -744,7 +769,6 @@ export class ShimmerDistortionEngine {
     const add = (layer, draw) => jobs.push({ layer, draw });
     add('behind-effect', () => this.drawOverlayLayer(ctx, g, t, 'behind-effect'));
     add('base-effect', () => this.drawWormholeDarkField(ctx, g, t));
-    add('base-effect', () => this.drawBaseTextureLayer(ctx, g, t));
     add('base-effect', () => this.drawWormholeArms(ctx, g, t));
     add('base-effect', () => this.drawOrbitClouds(ctx, g, t, 'wormhole'));
     add('inside-aperture', () => this.drawOverlayLayer(ctx, g, t, 'inside-aperture'));
@@ -776,6 +800,7 @@ export class ShimmerDistortionEngine {
 
   drawWormholeArms(ctx, g, t) {
     const v = this.values;
+    if (this.drawArmTextureLayer(ctx, g, t)) return;
     const amount = clamp01((v.armAmount ?? 0) / 100);
     const opacity = clamp01((v.armOpacity ?? 0) / 100);
     const thicknessValue = clamp01((v.armThickness ?? 0) / 100);

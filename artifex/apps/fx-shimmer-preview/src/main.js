@@ -1,5 +1,5 @@
-import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.34';
-import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.34';
+import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.35';
+import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.35';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -84,6 +84,7 @@ const DEFAULT_OVERLAY_ASSETS = [
   'vortex5.png',
   'vortex6.png'
 ];
+const DEFAULT_WORMHOLE_ARM_TEXTURE = 'default1.jpg';
 let assetModalTarget = 'overlay';
 
 function safeAssetPath(filename) {
@@ -103,9 +104,9 @@ function setAssetPreview(slot, src = '', name = '') {
     button.title = name ? `Current asset: ${name}` : 'Current default asset';
   } else {
     const span = document.createElement('span');
-    span.textContent = 'Choose asset';
+    span.textContent = slot === 'base' ? 'Choose arm' : 'Choose asset';
     button.append(span);
-    button.title = 'Choose default asset';
+    button.title = slot === 'base' ? 'Choose default arm texture' : 'Choose default asset';
   }
 }
 
@@ -119,7 +120,7 @@ function openAssetModal(slot = 'overlay') {
   if (!assetModal || !assetModalGrid) return;
   assetModalTarget = slot === 'base' ? 'base' : (slot === 'overlay2' ? 'overlay2' : 'overlay');
   if (assetModalTitle) {
-    assetModalTitle.textContent = assetModalTarget === 'base' ? 'Choose base JPG texture' : (assetModalTarget === 'overlay2' ? 'Choose overlay 2 default asset' : 'Choose overlay 1 default asset');
+    assetModalTitle.textContent = assetModalTarget === 'base' ? 'Choose wormhole arm texture' : (assetModalTarget === 'overlay2' ? 'Choose overlay 2 default asset' : 'Choose overlay 1 default asset');
   }
   const assetList = assetModalTarget === 'base' ? DEFAULT_BASE_ASSETS : DEFAULT_OVERLAY_ASSETS;
   assetModalGrid.replaceChildren(...assetList.map((filename) => {
@@ -152,9 +153,8 @@ function selectDefaultAsset(slot, filename) {
       state.textureDataUrl = '';
       state.textureAssetPath = assetPath;
       state.texturePreviewSrc = assetPath;
-      state.values.sourceMode = 'texture';
       state.values.baseTextureEnabled = true;
-      setStatus(`Loaded base texture default asset ${filename}.`);
+      setStatus(`Loaded arm texture default asset ${filename}.`);
     } else if (slot === 'overlay2') {
       engine.setOverlay2Image(image);
       state.overlay2Name = filename;
@@ -179,6 +179,14 @@ function selectDefaultAsset(slot, filename) {
   image.src = assetPath;
 }
 
+
+function loadDefaultArmTextureIfNeeded() {
+  if ((state.values.type || '') !== 'wormhole') return;
+  if (!state.values.baseTextureEnabled) return;
+  if (state.textureName) return;
+  selectDefaultAsset('base', DEFAULT_WORMHOLE_ARM_TEXTURE);
+}
+
 function currentPreset() {
   return SHIMMER_PRESETS.find((preset) => preset.id === state.selectedPresetId) || SHIMMER_PRESETS[0];
 }
@@ -195,7 +203,7 @@ function normalizeFieldValue(input) {
 
 function updateTextureStatus() {
   if (!textureStatus) return;
-  textureStatus.textContent = state.textureName ? `Loaded base texture: ${state.textureName}` : 'No base texture loaded.';
+  textureStatus.textContent = state.textureName ? `Loaded arm texture: ${state.textureName}` : 'No arm texture loaded.';
 }
 
 const OVERLAY_LAYER_LABELS = {
@@ -304,6 +312,7 @@ function renderPresets() {
       state.startedAt = performance.now();
       state.pausedAt = 0;
       state.playing = true;
+      loadDefaultArmTextureIfNeeded();
       renderPresets();
       syncControls();
       setStatus(`Loaded ${preset.name}.`);
@@ -321,7 +330,7 @@ function fxAssetJson() {
     scope: 'project',
     projectId: 'forever-bound',
     engine: 'artifex-shimmer-distortion-preview',
-    engineVersion: '1.3.4-preview',
+    engineVersion: '1.3.5-preview',
     tags: preset.tags,
     assets: {
       ...(state.textureName ? { texture: { kind: 'externalImageReference', editorFileName: state.textureName, sourcePath: state.textureAssetPath || '' } } : {}),
@@ -353,7 +362,7 @@ function fxAssetJson() {
       'Portal Inner Wisps are intentionally separate from Portal Line Outline and wormhole Arms.',
       'V1.28 adds aperture controls, overlay alpha vignette, expanded blend modes and a second overlay slot.',
       'V1.30 adds default asset preview buttons and modal selection from fx-shimmer-preview/assets/.',
-      'V1.34 adds default base JPG selection, base blend controls and orbit cloud gamma brightness.',
+      'V1.35 treats the default JPGs as wormhole arm textures, with arm texture blend controls and orbit cloud gamma brightness.',
       'Exports runtime-facing archetype shape, not final production schema.'
     ]
   };
@@ -416,10 +425,9 @@ if (textureFile) {
       state.textureDataUrl = dataUrl;
       state.textureAssetPath = '';
       state.texturePreviewSrc = dataUrl;
-      state.values.sourceMode = 'texture';
       state.values.baseTextureEnabled = true;
       syncControls();
-      setStatus(`Loaded texture ${file.name}.`);
+      setStatus(`Loaded arm texture ${file.name}.`);
     });
   });
 }
@@ -565,6 +573,7 @@ function tick(now) {
 }
 
 renderPresets();
+loadDefaultArmTextureIfNeeded();
 syncControls();
-setStatus('Loaded shimmer engine prototype V1.34.');
+setStatus('Loaded shimmer engine prototype V1.35.');
 requestAnimationFrame(tick);

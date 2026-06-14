@@ -142,7 +142,7 @@
           <p class="kicker">Artifex FX Engine Prototype</p>
           <h1>Shimmer / Portal Distortion Engine</h1>
         </div>
-        <span class="version">V1.34 Base Texture</span>
+        <span class="version">V1.35 Arm Texture</span>
       </div>
       <div class="header-actions">
         <button type="button" data-action="play">▶️ Play</button>
@@ -178,7 +178,7 @@
 
           <div class="canvas-wrap">
             <canvas width="960" height="540" data-canvas></canvas>
-            <div class="canvas-hint">Canvas preview — V1.34 uses selectable default base JPGs, overlay blend modes, overlay 2, aperture controls and cloud gamma brightness.</div>
+            <div class="canvas-hint">Canvas preview — V1.35 uses selectable default JPGs as wormhole arm textures, plus overlay blend modes, overlay 2, aperture controls and cloud gamma brightness.</div>
           </div>
         </div>
 
@@ -349,15 +349,19 @@
             <label>Middle / core underlay <input type="color" data-field="middleColor" /></label>
             <label>Backdrop tint reminder: middle colour stays active even with texture mode.</label>
           </div>
-          <label class="toggle wide"><input type="checkbox" data-field="baseTextureEnabled" /> Use image as wormhole base</label>
-          <label>Base JPG / PNG texture
+        </section>
+
+        <section class="control-card">
+          <h3>Arms / nebula bands</h3>
+          <label class="toggle wide"><input type="checkbox" data-field="baseTextureEnabled" /> Use JPG as wormhole arm texture</label>
+          <label>Arm texture JPG
             <div class="asset-file-row">
               <input type="file" accept="image/png,image/jpeg,image/webp" data-texture-file />
-              <button type="button" class="asset-preview-button" data-asset-open="base" data-asset-preview="base" aria-label="Open default asset chooser for base texture"><span>Choose base</span></button>
+              <button type="button" class="asset-preview-button" data-asset-open="base" data-asset-preview="base" aria-label="Open default asset chooser for wormhole arm texture"><span>Choose arm</span></button>
             </div>
           </label>
-          <p class="texture-status" data-texture-status>No base texture loaded.</p>
-          <label>Base blend mode
+          <p class="texture-status" data-texture-status>No arm texture loaded.</p>
+          <label>Arm texture blend mode
             <select data-field="baseTextureBlendMode">
               <option value="source-over">Normal</option>
               <option value="multiply">Multiply</option>
@@ -379,17 +383,13 @@
             </select>
           </label>
           <div class="two">
-            <label>Base opacity <input type="range" min="0" max="100" step="1" data-field="baseTextureOpacity" /></label>
-            <label>Base scale <input type="range" min="10" max="240" step="1" data-field="baseTextureScale" /></label>
+            <label>Arm texture opacity <input type="range" min="0" max="100" step="1" data-field="baseTextureOpacity" /></label>
+            <label>Arm texture scale <input type="range" min="10" max="240" step="1" data-field="baseTextureScale" /></label>
           </div>
           <div class="two">
-            <label>Base rotation speed <input type="range" min="-100" max="100" step="1" data-field="baseTextureRotationSpeed" /></label>
-            <label>Base pulse speed <input type="range" min="0" max="100" step="1" data-field="baseTexturePulseSpeed" /></label>
+            <label>Arm texture rotation <input type="range" min="-100" max="100" step="1" data-field="baseTextureRotationSpeed" /></label>
+            <label>Arm texture pulse <input type="range" min="0" max="100" step="1" data-field="baseTexturePulseSpeed" /></label>
           </div>
-        </section>
-
-        <section class="control-card">
-          <h3>Arms / nebula bands</h3>
           <div class="two">
             <label>Arm amount <input type="range" min="0" max="100" step="1" data-field="armAmount" /></label>
             <label>Arm opacity <input type="range" min="0" max="100" step="1" data-field="armOpacity" /></label>
@@ -649,6 +649,6 @@
     </section>
   </div>
 
-  <script type="module" src="./src/main.js?v=1.34"></script>
+  <script type="module" src="./src/main.js?v=1.35"></script>
 </body>
 </html>
