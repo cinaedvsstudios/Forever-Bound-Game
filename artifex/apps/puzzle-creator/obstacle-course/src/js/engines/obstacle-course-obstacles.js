@@ -7,6 +7,8 @@ import { makeLayer, registerEntity } from './obstacle-course-layers.js';
 import { makeGlbOrFallback } from './obstacle-course-glb.js';
 import { playHitSound } from './obstacle-course-audio.js';
 
+const ROCK_OBSTACLE_SCALE_MULTIPLIER = 1.5;
+
 function fallbackObstacle() {
   return new THREE.Mesh(new THREE.DodecahedronGeometry(rand(0.36, 0.72), 0), new THREE.MeshStandardMaterial({ color: 0x7e5d44, roughness: 1 }));
 }
@@ -32,7 +34,7 @@ export function addObstacles(count = 12) {
     const obj = asset ? makeGlbOrFallback(asset, fallbackObstacle) : fallbackObstacle();
     obj.position.set(x, GROUND_Y + 0.42, -d);
     obj.rotation.y = rand(0, Math.PI * 2);
-    obj.scale.multiplyScalar(asset?.scale || 1);
+    obj.scale.multiplyScalar((asset?.scale || 1) * ROCK_OBSTACLE_SCALE_MULTIPLIER);
     obj.userData.kind = 'obstacle';
     obj.userData.hit = false;
     if (asset) {
@@ -43,7 +45,7 @@ export function addObstacles(count = 12) {
     obj.userData.basePosition = obj.position.clone();
     layer.group.add(obj);
     OC.objects.push(obj);
-    registerEntity('obstacle', obj, { x, z: -d });
+    registerEntity('obstacle', obj, { x, z: -d, assetUrl: asset?.url || '' });
     placed += 1;
   }
 }
