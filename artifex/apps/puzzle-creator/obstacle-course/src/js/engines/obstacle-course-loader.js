@@ -1,14 +1,13 @@
 import { OC } from './obstacle-course-state.js';
 import { ASSETS, requiredAssetList, optionalAssetList } from './obstacle-course-assets.js';
-import { $, clamp } from './obstacle-course-utils.js';
 
 export function setLoading(count, total) {
   OC.loadingCount = count;
   OC.loadingTotal = total;
   const message = `Assets ${count} / ${total}`;
-  if ($('oc-loading')) $('oc-loading').textContent = `Loading ${message}`;
-  if ($('oc-top-load')) $('oc-top-load').textContent = message;
-  if ($('oc-loading-horse-count')) $('oc-loading-horse-count').textContent = message;
+  if (document.getElementById('oc-loading')) document.getElementById('oc-loading').textContent = `Loading ${message}`;
+  if (document.getElementById('oc-top-load')) document.getElementById('oc-top-load').textContent = message;
+  if (document.getElementById('oc-loading-horse-count')) document.getElementById('oc-loading-horse-count').textContent = message;
 }
 
 function cacheBusted(url) {
@@ -20,7 +19,10 @@ export function preloadImage(url, fallbackUrl = null) {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     let triedFallback = false;
-    img.onload = () => { OC.images.set(url, img); resolve(true); };
+    img.onload = () => {
+      OC.images.set(url, img);
+      resolve(true);
+    };
     img.onerror = () => {
       if (fallbackUrl && !triedFallback) {
         triedFallback = true;
@@ -66,7 +68,7 @@ export function groundTileAssetsFromMap() {
     type: 'image',
     required: true,
     label: tile.label || tile.file,
-    tile
+    tile,
   }));
 }
 
@@ -81,13 +83,16 @@ export async function loadRequiredAssets({ onFirstReady } = {}) {
   let count = 0;
   OC.failures = [];
   setLoading(0, total);
+
   for (const url of first) {
     const ok = await preloadImage(url);
     count += 1;
     setLoading(count, total);
     if (!ok) OC.failures.push(url);
   }
+
   onFirstReady?.();
+
   for (const asset of required.filter((item) => !first.includes(item.url))) {
     let ok = true;
     if (asset.type === 'json') ok = await preloadJson(asset.url);
@@ -96,32 +101,26 @@ export async function loadRequiredAssets({ onFirstReady } = {}) {
     setLoading(count, total);
     if (!ok) OC.failures.push(asset.url);
   }
+
   const groundTiles = groundTileAssetsFromMap();
   OC.groundTileAssets = groundTiles;
   total += groundTiles.length;
   setLoading(count, total);
+
   for (const asset of groundTiles) {
     const ok = await preloadImage(asset.url, asset.fallbackUrl);
     count += 1;
     setLoading(count, total);
     if (!ok) OC.failures.push(asset.url);
   }
-  OC.requiredReady = OC.failures.length === 0;
-  if ($('obstacle-start')) $('obstacle-start').disabled = !OC.requiredReady;
-  if (!OC.requiredReady && $('oc-loading')) $('oc-loading').textContent = `Required asset failure: ${OC.failures.join(', ')}`;
-  return { count, total };
-}
 
-async function loadWithTimeout(task, ms = 2500) {
-  let timer = 0;
-  try {
-    return await Promise.race([
-      task,
-      new Promise((resolve) => { timer = window.setTimeout(() => resolve(false), ms); })
-    ]);
-  } finally {
-    if (timer) window.clearTimeout(timer);
+  OC.requiredReady = OC.failures.length === 0;
+  const start = document.getElementById('obstacle-start');
+  if (start) start.disabled = !OC.requiredReady;
+  if (!OC.requiredReady && document.getElementById('oc-loading')) {
+    document.getElementById('oc-loading').textContent = `Required asset failure: ${OC.failures.join(', ')}`;
   }
+  return { count, total };
 }
 
 export async function loadOptionalAssets({ loadGlbAsset } = {}) {
@@ -129,15 +128,25 @@ export async function loadOptionalAssets({ loadGlbAsset } = {}) {
   let count = OC.loadingCount;
   const total = OC.loadingTotal || (requiredAssetList().length + optional.length);
   OC.optionalFailures = [];
-  await Promise.all(optional.map(async (asset) => {
+  OC.optionalAssetStatus = new Map();
+
+  for (const asset of optional) {
     let ok = true;
-    if (asset.type === 'glb' && loadGlbAsset) ok = await loadWithTimeout(loadGlbAsset(asset.url), 3000);
+    if (asset.type === 'glb' && loadGlbAsset) {
+      ok = await loadGlbAsset(asset.url);
+    }
+    if (asset.type === 'audio') {
+      ok = true;
+    }
     count += 1;
     setLoading(count, total);
+    OC.optionalAssetStatus.set(asset.url, { ...asset, status: ok ? 'loaded' : 'failed' });
     if (!ok) OC.optionalFailures.push(asset.url);
-  }));
+  }
+
   OC.loadingDone = true;
-  if ($('oc-loading')) $('oc-loading').textContent = `Loading assets ${count} / ${total} complete`;
-  if ($('oc-top-load')) $('oc-top-load').textContent = `Assets ${count} / ${total} loaded`;
-  if ($('oc-loading-horse')) $('oc-loading-horse').hidden = true;
+  if (document.getElementById('oc-loading')) document.getElementById('oc-loading').textContent = `Loading assets ${count} / ${total} complete`;
+  if (document.getElementById('oc-top-load')) document.getElementById('oc-top-load').textContent = `Assets ${count} / ${total} loaded`;
+  if (document.getElementById('oc-loading-horse')) document.getElementById('oc-loading-horse').hidden = true;
+  return { count, total, failures: OC.optionalFailures };
 }
