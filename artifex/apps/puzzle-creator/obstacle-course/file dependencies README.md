@@ -12,7 +12,7 @@ Do not refactor this module directly on `main`. `main` should only receive a tes
 
 ## Version rule
 
-Every code change must bump the obstacle-course app version/cache before testing or merging. The current branch version is `V3.0.13` with cache `3.0.13`.
+Every code change must bump the obstacle-course app version/cache before testing or merging. The current branch version is `V3.0.14` with cache `3.0.14`.
 
 The version must stay aligned in:
 
@@ -125,6 +125,6 @@ Phase 3 is complete: `obstacle-course-asset-debug.js` now has verification outpu
 
 The shader crash fix is now a permanent code-path correction: layer visuals no longer use shader injection or cleanup fallbacks.
 
-V3.0.13 fixes the V3.0.12 module-load syntax error in `obstacle-course-scenery.js`. The issue was an extra closing parenthesis in outer-tree placement after `outerTreeScale(rng)`.
+V3.0.14 adds explicit cache-busted imports for recently changed modules from `obstacle-course-runtime.js`, especially `obstacle-course-scenery.js` and `obstacle-course-overview.js`, so RawGithack/browser module cache cannot keep serving the old syntax-error module.
 
 This is architecture cleanup plus targeted visual correction only. It should not intentionally change gameplay rules.
