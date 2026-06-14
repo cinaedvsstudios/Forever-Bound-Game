@@ -12,7 +12,7 @@ Do not refactor this module directly on `main`. `main` should only receive a tes
 
 ## Version rule
 
-Every code change must bump the obstacle-course app version/cache before testing or merging. The current branch version is `V3.0.10` with cache `3.0.10`.
+Every code change must bump the obstacle-course app version/cache before testing or merging. The current branch version is `V3.0.11` with cache `3.0.11`.
 
 The version must stay aligned in:
 
@@ -107,7 +107,7 @@ Collectibles only. It owns collectible placement and collection checks.
 Audio only. It owns audio unlock, loops, clips, and jump/land/hit/collect sounds.
 
 ### obstacle-course-overview.js
-Overview map only. It owns drawing and scheduling the overview. The brown/orange centre line is the path centre; the translucent gold band is the rideable path width.
+Overview map only. It owns drawing, scheduling, viewport-relative overview transforms, and overview hover tooltips. The brown/orange centre line is the path centre; the translucent gold band is the rideable path width. Hovering dots should identify the entity type, GLB filename, and x/z position.
 
 ### obstacle-course-export-import.js
 Settings import/export only.
@@ -125,6 +125,6 @@ Phase 3 is complete: `obstacle-course-asset-debug.js` now has verification outpu
 
 The shader crash fix is now a permanent code-path correction: layer visuals no longer use shader injection or cleanup fallbacks.
 
-V3.0.10 scale-caps path-edge trees: trees close to the ride lane are pushed just outside the path line and get much smaller placement scales, with additional reduction for trees close to the camera. Outer trees can still be larger, but remain sparse.
+V3.0.11 changes the overview into a viewport-relative diagnostic map: it is more horizontally zoomed, keeps the player near the bottom, only draws the current forward travel slice, and adds hover tooltips so tree/detail dots reveal their GLB filename and position.
 
 This is architecture cleanup plus targeted visual correction only. It should not intentionally change gameplay rules.
