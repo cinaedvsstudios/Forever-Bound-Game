@@ -12,7 +12,7 @@ Do not refactor this module directly on `main`. `main` should only receive a tes
 
 ## Version rule
 
-Every code change must bump the obstacle-course app version/cache before testing or merging. The current branch version is `V3.0.8` with cache `3.0.8`.
+Every code change must bump the obstacle-course app version/cache before testing or merging. The current branch version is `V3.0.9` with cache `3.0.9`.
 
 The version must stay aligned in:
 
@@ -125,6 +125,6 @@ Phase 3 is complete: `obstacle-course-asset-debug.js` now has verification outpu
 
 The shader crash fix is now a permanent code-path correction: layer visuals no longer use shader injection or cleanup fallbacks.
 
-V3.0.8 adjusts scenery placement: most trees sit on or just beside the path-edge lines, only sparse outer trees are left for background depth, and decorative off-path rocks are removed.
+V3.0.9 adjusts visual testing controls and scenery readability: the ground layer scale control is restored, the default ground layer is slightly enlarged, the overview map is horizontally zoomed toward the rideable path, and the extra tree GLBs `pine_tree_-_ps1_low_poly.glb` and `tree_low-poly.glb` are registered for the path-edge tree band.
 
 This is architecture cleanup plus targeted visual correction only. It should not intentionally change gameplay rules.
