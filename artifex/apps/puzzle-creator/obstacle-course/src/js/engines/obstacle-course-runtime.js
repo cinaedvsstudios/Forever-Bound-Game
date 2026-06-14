@@ -1,4 +1,4 @@
-// Obstacle Course V3.0.2 / Modular Horse Forest Runner
+// Obstacle Course V3.0.3 / Modular Horse Forest Runner
 import { OC } from './obstacle-course-state.js';
 import { $, visualFactorToSlider, sliderToGlobalBrightness, sliderToGlobalContrast, sliderToGlobalSaturation, sliderToTint, tintToSlider } from './obstacle-course-utils.js';
 import { ensureHeader, injectStyles, mountLayout, mountLeftPanel, enhanceStaticRangeSteppers, buildSliderRow, setResult } from './obstacle-course-ui.js';
@@ -43,17 +43,27 @@ function ensureMounted() {
   loadRequiredAssets({ onFirstReady: () => { applyBackgroundPlate(); showSpinner(true); updateHorseSprite(); renderOnce(); } }).then(() => {
     if (!OC.requiredReady) { showSpinner(true, 'Required assets missing'); setResult(`Required asset failure: ${OC.failures.join(', ')}`, 'failure'); updateHud(); return; }
     rebuildCourse();
-    setResult('Required obstacle course assets ready. Waiting for optional 3D/audio assets before enabling controls.', 'success');
+    populateLayerSelect();
+    refreshLayerPanel();
+    updateHud();
+    scheduleOverviewDraw();
+    showSpinner(false);
+    setInteractionLocked(false);
+    setResult('Required obstacle course assets loaded. Test controls are ready. Optional 3D/audio assets will continue loading in the background.', 'success');
     loadOptionalAssets({ loadGlbAsset }).then(() => {
-      showSpinner(false);
       rebuildCourse();
       populateLayerSelect();
       refreshLayerPanel();
       updateHud();
       scheduleOverviewDraw();
-      setInteractionLocked(false);
-      setResult('All obstacle course assets loaded. Test controls are ready.', 'success');
-      import('./obstacle-course-asset-debug.js?v=3.0.2').catch(() => {});
+      const optionalMessage = OC.optionalFailures?.length
+        ? `Optional assets finished with ${OC.optionalFailures.length} missing/late asset(s). Required test controls remain ready.`
+        : 'All obstacle course assets loaded. Test controls are ready.';
+      setResult(optionalMessage, OC.optionalFailures?.length ? 'failure' : 'success');
+      import('./obstacle-course-asset-debug.js?v=3.0.3').catch(() => {});
+    }).catch((error) => {
+      console.warn('[ObstacleCourse] optional assets did not finish', error);
+      setResult('Optional 3D/audio assets did not finish, but required test controls remain ready.', 'failure');
     });
   });
 }
