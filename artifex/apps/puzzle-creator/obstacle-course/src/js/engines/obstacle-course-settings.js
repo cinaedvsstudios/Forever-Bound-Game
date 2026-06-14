@@ -2,7 +2,7 @@ import { OC } from './obstacle-course-state.js';
 
 export const DEFAULT_SETTINGS = {
   "engine": "obstacle-course",
-  "version": "V3.0.5",
+  "version": "V3.0.6",
   "templateId": "horse_forest_easy",
   "difficulty": 3,
   "courseLength": 1500,
@@ -46,9 +46,9 @@ export const DEFAULT_SETTINGS = {
   "layers": {
     "ground": { "visible": true, "opacity": 0.86, "x": 0, "y": 0, "z": 0, "scale": 1, "order": 1, "brightness": 0.69, "contrast": 1.18, "saturation": 0.91, "tint": "#ffffff", "tintStrength": 0 },
     "path": { "visible": true, "opacity": 1, "x": 0, "y": 0, "z": 0, "scale": 1, "order": 2, "brightness": 1, "contrast": 1, "saturation": 1, "tint": "#ffffff", "tintStrength": 0 },
-    "trees": { "visible": true, "opacity": 1, "x": 0, "y": -10, "z": 0, "scale": 4, "order": 10, "brightness": 0.62, "contrast": 1, "saturation": 0.78, "tint": "#ffffff", "tintStrength": 0 },
-    "rocks": { "visible": true, "opacity": 1, "x": 0, "y": 0, "z": 0, "scale": 5.055, "order": 11, "brightness": 1, "contrast": 1, "saturation": 1, "tint": "#ffffff", "tintStrength": 0 },
-    "details": { "visible": true, "opacity": 1, "x": 0, "y": 0, "z": 100, "scale": 0.7435, "order": 12, "brightness": 0.56, "contrast": 1, "saturation": 1, "tint": "#ffffff", "tintStrength": 0 },
+    "trees": { "visible": true, "opacity": 1, "x": 0, "y": -10, "z": 0, "scale": 4, "order": 20, "brightness": 0.62, "contrast": 1, "saturation": 0.78, "tint": "#ffffff", "tintStrength": 0 },
+    "rocks": { "visible": true, "opacity": 1, "x": 0, "y": 0, "z": 0, "scale": 5.055, "order": 30, "brightness": 1, "contrast": 1, "saturation": 1, "tint": "#ffffff", "tintStrength": 0 },
+    "details": { "visible": true, "opacity": 1, "x": 0, "y": 0, "z": 100, "scale": 0.7435, "order": 25, "brightness": 0.56, "contrast": 1, "saturation": 1, "tint": "#ffffff", "tintStrength": 0 },
     "obstacles": { "visible": true, "opacity": 1, "x": 0, "y": 0, "z": 0, "scale": 1, "order": 16, "brightness": 1, "contrast": 1, "saturation": 1, "tint": "#ffffff", "tintStrength": 0 },
     "collectibles": { "visible": true, "opacity": 1, "x": 0, "y": 0, "z": 0, "scale": 1, "order": 15, "brightness": 1, "contrast": 1, "saturation": 1, "tint": "#ffffff", "tintStrength": 0 }
   },
