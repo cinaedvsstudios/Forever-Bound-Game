@@ -258,6 +258,34 @@ export class ShimmerDistortionEngine {
     });
   }
 
+
+  drawBaseTextureLayer(ctx, g, t) {
+    const v = this.values;
+    if (!v.baseTextureEnabled || !this.textureImage) return;
+    const alpha = clamp01((v.baseTextureOpacity ?? 70) / 100);
+    if (alpha <= 0.001) return;
+
+    const scaleValue = scale(0.20, 2.35, (v.baseTextureScale ?? 115) / 240);
+    const pulseSpeed = scale(0, 2.2, (v.baseTexturePulseSpeed ?? 0) / 100);
+    const pulse = pulseSpeed > 0 ? 1 + Math.sin(t * pulseSpeed) * 0.045 : 1;
+    const rotation = t * scale(-0.9, 0.9, ((v.baseTextureRotationSpeed ?? 0) + 100) / 200);
+    const maxRadius = Math.max(g.rx, g.ry) * scaleValue * pulse;
+    const image = this.textureImage;
+    const aspect = image.width / Math.max(1, image.height);
+    let drawWidth = maxRadius * 2;
+    let drawHeight = maxRadius * 2;
+    if (aspect >= 1) drawHeight = drawWidth / aspect;
+    else drawWidth = drawHeight * aspect;
+
+    ctx.save();
+    ctx.globalCompositeOperation = this.normalizeBlendMode(v.baseTextureBlendMode || 'screen');
+    ctx.globalAlpha = alpha;
+    ctx.translate(g.cx, g.cy);
+    ctx.rotate(rotation);
+    ctx.drawImage(image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+    ctx.restore();
+  }
+
   drawOverlaySlot(ctx, g, t, layer, config) {
     if (!config.enabled || !config.image || (config.layer || 'over-clouds') !== layer) return;
     const alpha = clamp01(Number(config.opacity ?? 60) / 100);
@@ -673,9 +701,10 @@ export class ShimmerDistortionEngine {
 
   drawOrbitClouds(ctx, g, t, mode) {
     const v = this.values;
-    const maxCount = mode === 'wormhole' ? 62 : 54;
+    const maxCount = mode === 'wormhole' ? 46 : 54;
     const amount = Math.round(scale(0, maxCount, (v.orbitCloudAmount ?? 0) / 100));
-    const opacity = scale(0, mode === 'wormhole' ? 0.42 : 0.42, (v.orbitCloudOpacity ?? 0) / 100);
+    const gammaBoost = scale(1, 3.0, (v.orbitCloudGamma ?? 0) / 100);
+    const opacity = scale(0, mode === 'wormhole' ? 0.28 : 0.42, (v.orbitCloudOpacity ?? 0) / 100) * gammaBoost;
     if (amount <= 0 || opacity <= 0.001) return;
     const sizeValue = (v.orbitCloudSize ?? 60) / 100;
     const radiusValue = (v.orbitCloudRadius ?? 72) / 100;
@@ -697,7 +726,7 @@ export class ShimmerDistortionEngine {
       const major = thickness * scale(1.0, 4.4, hash1(seed + 4)) * pulse;
       const minor = major * scale(0.30, 0.62, hash1(seed + 5));
       const colour = i % 4 === 0 ? v.accentColor : (i % 2 === 0 ? v.coreColor : v.rimColor);
-      const alpha = Math.min(mode === 'wormhole' ? 0.36 : 0.34, opacity * scale(0.34, mode === 'wormhole' ? 1.32 : 1.1, hash1(seed + 6)));
+      const alpha = Math.min(mode === 'wormhole' ? 0.62 : 0.48, opacity * scale(0.34, 1.1, hash1(seed + 6)));
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(orbit + Math.PI / 2 + (hash1(seed + 7) - 0.5) * 0.9);
@@ -715,7 +744,7 @@ export class ShimmerDistortionEngine {
     const add = (layer, draw) => jobs.push({ layer, draw });
     add('behind-effect', () => this.drawOverlayLayer(ctx, g, t, 'behind-effect'));
     add('base-effect', () => this.drawWormholeDarkField(ctx, g, t));
-    add('base-effect', () => this.drawWormholeCloudBody(ctx, g, t));
+    add('base-effect', () => this.drawBaseTextureLayer(ctx, g, t));
     add('base-effect', () => this.drawWormholeArms(ctx, g, t));
     add('base-effect', () => this.drawOrbitClouds(ctx, g, t, 'wormhole'));
     add('inside-aperture', () => this.drawOverlayLayer(ctx, g, t, 'inside-aperture'));
@@ -731,76 +760,17 @@ export class ShimmerDistortionEngine {
   drawWormholeDarkField(ctx, g, t) {
     const v = this.values;
     const glowLevel = clamp01((v.glow ?? 12) / 100);
-    const cloudPresence = clamp01(((v.orbitCloudAmount ?? 0) / 100) * ((v.orbitCloudOpacity ?? 0) / 100));
     ctx.save();
     const field = ctx.createRadialGradient(g.cx, g.cy, g.base * 0.04, g.cx, g.cy, Math.max(g.rx, g.ry) * 1.45);
-    field.addColorStop(0.00, rgba('#000000', 0.88));
-    field.addColorStop(0.18, rgba(v.middleColor || '#07102b', 0.12 + cloudPresence * 0.05));
-    field.addColorStop(0.48, rgba(v.coreColor, 0.002 + glowLevel * 0.010 + cloudPresence * 0.018));
-    field.addColorStop(0.76, rgba(v.rimColor, 0.002 + glowLevel * 0.008 + cloudPresence * 0.014));
+    field.addColorStop(0.00, rgba('#000000', 0.84));
+    field.addColorStop(0.18, rgba(v.middleColor || '#07102b', 0.18));
+    field.addColorStop(0.48, rgba(v.coreColor, 0.004 + glowLevel * 0.020));
+    field.addColorStop(0.76, rgba(v.rimColor, 0.003 + glowLevel * 0.014));
     field.addColorStop(1.00, rgba(v.backdropColor || '#020611', 0));
     ctx.fillStyle = field;
     ctx.beginPath();
     ctx.ellipse(g.cx, g.cy, g.rx * 1.24, g.ry * 1.04, 0, 0, TAU);
     ctx.fill();
-    ctx.restore();
-  }
-
-  drawWormholeCloudBody(ctx, g, t) {
-    const v = this.values;
-    const amount = clamp01((v.orbitCloudAmount ?? 0) / 100);
-    const opacity = clamp01((v.orbitCloudOpacity ?? 0) / 100);
-    if (amount <= 0.001 || opacity <= 0.001) return;
-
-    const dir = (v.swirl ?? 80) >= 0 ? 1 : -1;
-    const speed = Math.pow((v.orbitCloudSpeed ?? 32) / 100, 2) * 0.52;
-    const sizeControl = clamp01((v.orbitCloudSize ?? 42) / 100);
-    const radiusControl = clamp01((v.orbitCloudRadius ?? 62) / 100);
-    const stagger = scale(0.05, 1.40, clamp01((v.orbitCloudStagger ?? 42) / 100));
-    const softness = scale(3, 16, clamp01((v.armSoftness ?? v.blur ?? 28) / 100));
-    const cloudiness = clamp01((v.cloudiness ?? 46) / 100);
-    const pulse = 1 + Math.sin(t * scale(0.65, 3.40, (v.orbitCloudSpeed ?? 28) / 100)) * scale(0, 0.55, (v.orbitCloudPulseStrength ?? 0) / 100);
-    const count = Math.round(scale(0, 64, amount));
-    const bodyAlpha = scale(0.00, 0.34, opacity) * scale(0.70, 1.18, cloudiness);
-    const radiusScale = scale(0.38, 1.22, radiusControl);
-
-    ctx.save();
-    ctx.globalCompositeOperation = 'screen';
-    ctx.filter = `blur(${softness}px)`;
-
-    const broad = ctx.createRadialGradient(g.cx, g.cy, g.base * 0.08, g.cx, g.cy, Math.max(g.rx, g.ry) * scale(0.78, 1.34, radiusControl));
-    broad.addColorStop(0.00, rgba(v.coreColor, bodyAlpha * 0.07));
-    broad.addColorStop(0.36, rgba(v.rimColor, bodyAlpha * 0.12));
-    broad.addColorStop(0.68, rgba(v.coreColor, bodyAlpha * 0.10));
-    broad.addColorStop(1.00, rgba(v.rimColor, 0));
-    ctx.fillStyle = broad;
-    ctx.beginPath();
-    ctx.ellipse(g.cx, g.cy, g.rx * 1.02 * radiusScale, g.ry * 0.92 * radiusScale, 0, 0, TAU);
-    ctx.fill();
-
-    for (let i = 0; i < count; i += 1) {
-      const seed = i * 18.381;
-      const q = i / Math.max(1, count);
-      const baseAngle = q * TAU + t * speed * dir * scale(0.45, 1.2, hash1(seed + 2));
-      const spiral = dir * scale(0.25, 1.25, Math.abs(v.swirl ?? 80) / 100) * TAU * scale(0.0, 1.0, hash1(seed + 9));
-      const angle = baseAngle + spiral;
-      const localRadius = scale(0.18, 1.05, hash1(seed + 3)) * radiusScale * scale(Math.max(0.04, 1 - stagger * 0.55), 1 + stagger * 0.82, hash1(seed + 4));
-      const wobble = (fbm(Math.cos(angle) * 1.7 + seed * 0.05, Math.sin(angle) * 1.7 + t * 0.05, 3) - 0.5) * g.base * scale(0.005, 0.050, cloudiness);
-      const x = g.cx + Math.cos(angle) * (g.rx * localRadius + wobble);
-      const y = g.cy + Math.sin(angle) * (g.ry * localRadius * 0.88 + wobble * 0.75);
-      const major = g.base * scale(0.025, 0.190, sizeControl) * scale(0.70, 2.70, hash1(seed + 5)) * pulse;
-      const minor = major * scale(0.24, 0.58, hash1(seed + 6));
-      const colour = i % 4 === 0 ? v.accentColor : (i % 2 === 0 ? v.coreColor : v.rimColor);
-      const alpha = Math.min(0.42, bodyAlpha * scale(0.26, 1.15, hash1(seed + 7)));
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(angle + Math.PI / 2 + (hash1(seed + 8) - 0.5) * 0.9);
-      ctx.fillStyle = rgba(colour, alpha);
-      ctx.beginPath();
-      ctx.ellipse(0, 0, major, minor, 0, 0, TAU);
-      ctx.fill();
-      ctx.restore();
-    }
     ctx.restore();
   }
 
@@ -811,92 +781,49 @@ export class ShimmerDistortionEngine {
     const thicknessValue = clamp01((v.armThickness ?? 0) / 100);
     if (amount <= 0.001 || opacity <= 0.001 || thicknessValue <= 0.001) return;
 
-    // V1.33: render wormhole arms using the same readable cloud/lobe style as Orbit Clouds,
-    // but driven by the Arms / Nebula Bands sliders. This is intentionally obvious and bright,
-    // because the previous line-stroke arm passes were technically drawing but unreadable.
     const dir = (v.swirl ?? 80) >= 0 ? 1 : -1;
-    const speedControl = clamp01((v.armSpeed ?? 32) / 100);
-    const curlControl = clamp01((v.armCurl ?? 70) / 100);
-    const radiusControl = clamp01((v.armRadius ?? 70) / 100);
-    const softnessControl = clamp01((v.armSoftness ?? 28) / 100);
+    const speedControl = clamp01((v.armSpeed ?? 30) / 100);
+    const speed = scale(0.08, 1.05, Math.pow(speedControl, 1.7));
+    const turns = scale(0.70, 5.80, clamp01((v.armCurl ?? 70) / 100));
+    const radiusScale = scale(0.22, 1.95, clamp01((v.armRadius ?? 70) / 100));
+    const softness = scale(0.2, 11.0, clamp01((v.armSoftness ?? 30) / 100));
     const definition = clamp01((v.armDefinition ?? 70) / 100);
     const pulseStrength = clamp01((v.armPulseStrength ?? 0) / 100);
+    const pulse = 1 + Math.sin(t * scale(0.70, 4.10, speedControl)) * scale(0, 0.62, pulseStrength);
+    const noiseStrength = scale(0.001, 0.055, clamp01((v.noise ?? 20) / 100));
+    const bandGroups = Math.max(2, Math.round(scale(2, 9, amount)));
+    const colourFor = (i) => (i % 3 === 0 ? v.coreColor : (i % 3 === 1 ? v.rimColor : v.accentColor));
+    const outerBase = Math.max(g.rx, g.ry);
+    const baseThickness = Math.max(1.0, g.base * scale(0.014, 0.135, thicknessValue) * pulse);
 
-    const count = Math.round(scale(0, 96, amount));
-    const armFamilies = Math.max(2, Math.round(scale(2, 7, amount)));
-    const opacityBoost = scale(0, 0.48, opacity);
-    const baseThickness = g.base * scale(0.018, 0.125, thicknessValue);
-    const softness = scale(3, 15, softnessControl);
-    const speed = Math.pow(speedControl, 2) * 0.70;
-    const turns = scale(0.45, 3.85, curlControl);
-    const radiusScale = scale(0.28, 1.36, radiusControl);
-    const pulse = 1 + Math.sin(t * scale(0.7, 3.3, speedControl)) * scale(0, 0.80, pulseStrength);
-    const colors = [v.coreColor || '#28dfff', v.rimColor || '#255bff', v.accentColor || '#9d5cff'];
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.ellipse(g.cx, g.cy, g.rx * 1.42, g.ry * 1.20, 0, 0, TAU);
-    ctx.clip();
-
-    // Broad nebula lobes: deliberately mirrors orbit-cloud brightness and opacity handling.
-    ctx.save();
-    ctx.globalCompositeOperation = 'screen';
-    ctx.filter = `blur(${softness}px)`;
-    for (let i = 0; i < count; i += 1) {
-      const seed = i * 15.913;
-      const armIndex = i % armFamilies;
-      const q = i / Math.max(1, count);
-      const p = hash1(seed + 1);
-      const baseAngle = (armIndex / armFamilies) * TAU + q * 0.38 + hash1(seed) * 0.72;
-      const radial = scale(0.12, 1.04, p) * radiusScale;
-      const spiral = dir * radial * TAU * turns;
-      const orbit = baseAngle + spiral + t * speed * dir * scale(0.55, 1.35, hash1(seed + 2));
-      const wobble = Math.sin(t * speed * 2.4 + seed) * g.base * scale(0.015, 0.080, curlControl);
-      const x = g.cx + Math.cos(orbit) * (g.rx * radial + wobble);
-      const y = g.cy + Math.sin(orbit) * (g.ry * radial * 0.88 + wobble * 0.68);
-      const major = baseThickness * scale(1.4, 6.0, hash1(seed + 4)) * pulse;
-      const minor = major * scale(0.30, 0.62, hash1(seed + 5));
-      const colour = colors[(i + armIndex) % colors.length];
-      const alpha = Math.min(0.46, opacityBoost * scale(0.45, 1.35, hash1(seed + 6)));
-
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(orbit + Math.PI / 2 + (hash1(seed + 7) - 0.5) * 0.9);
-      ctx.fillStyle = rgba(colour, alpha);
-      ctx.beginPath();
-      ctx.ellipse(0, 0, major, minor, 0, 0, TAU);
-      ctx.fill();
-      ctx.restore();
-    }
-    ctx.restore();
-
-    // Main visible spiral strokes: these make curl, radius and definition read instantly.
+    // 1. Broad readable arm wash. This makes Arm Amount, Opacity, Thickness and Radius obvious immediately.
+    const washCount = Math.max(bandGroups, Math.round(scale(2, 22, amount)));
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.filter = `blur(${scale(0.0, 2.8, 1 - definition) + softness * 0.08}px)`;
-    const strokeCount = Math.max(armFamilies, Math.round(scale(2, 14, amount)));
-    for (let i = 0; i < strokeCount; i += 1) {
-      const seed = 300 + i * 27.173;
-      const group = i % armFamilies;
-      const startAngle = (group / armFamilies) * TAU + hash1(seed) * 0.60 + t * speed * dir;
-      const colour = colors[(i + 1) % colors.length];
-      ctx.strokeStyle = rgba(colour, Math.min(0.62, opacityBoost * scale(0.85, 1.45, definition)));
-      ctx.lineWidth = Math.max(1.2, baseThickness * scale(0.45, 1.55, definition));
+    ctx.filter = `blur(${softness + scale(1.2, 6.8, 1 - definition)}px)`;
+    for (let i = 0; i < washCount; i += 1) {
+      const seed = i * 31.419;
+      const group = i % bandGroups;
+      const startAngle = (group / bandGroups) * TAU + hash1(seed) * 0.46 + t * speed * dir * scale(0.34, 0.82, hash1(seed + 1));
+      const colour = colourFor(i);
+      const alpha = Math.min(0.34, opacity * scale(0.18, 0.42, hash1(seed + 2)) * scale(0.70, 1.18, amount));
+      ctx.strokeStyle = rgba(colour, alpha);
+      ctx.lineWidth = Math.max(2, baseThickness * scale(2.0, 5.7, hash1(seed + 3)) * scale(0.72, 1.18, thicknessValue));
       ctx.shadowColor = colour;
-      ctx.shadowBlur = baseThickness * scale(0.9, 3.8, opacity);
+      ctx.shadowBlur = baseThickness * scale(2.5, 6.0, opacity);
       ctx.beginPath();
-      const steps = 88;
+      const steps = 82;
       for (let s = 0; s <= steps; s += 1) {
         const p = s / steps;
-        const radial = Math.pow(1 - p, 0.82) * radiusScale;
+        const radial = scale(1.08, 0.10, p) * radiusScale;
         const angle = startAngle + dir * p * TAU * turns;
-        const broken = fbm(Math.cos(angle) * 1.8 + seed * 0.07 + p * 0.7, Math.sin(angle) * 1.8 - seed * 0.03 + t * 0.04, 3);
-        const jitter = (broken - 0.5) * g.base * scale(0.000, 0.045, clamp01((v.noise ?? 20) / 100));
-        const fadeIn = smoothstep(0.00, 0.12, p);
+        const broken = fbm(Math.cos(angle) * 1.65 + seed * 0.04 + p, Math.sin(angle) * 1.65 - seed * 0.02 + t * 0.035, 3);
+        const jitter = (broken - 0.5) * outerBase * noiseStrength;
+        const fadeIn = smoothstep(0.00, 0.10, p);
         const fadeOut = 1 - smoothstep(0.84, 1.00, p);
-        ctx.globalAlpha = fadeIn * fadeOut * scale(0.72, 1.0, broken);
+        ctx.globalAlpha = fadeIn * fadeOut;
         const x = g.cx + Math.cos(angle) * (g.rx * radial + jitter);
         const y = g.cy + Math.sin(angle) * (g.ry * radial * 0.88 + jitter * 0.70);
         if (s === 0) ctx.moveTo(x, y);
@@ -907,7 +834,79 @@ export class ShimmerDistortionEngine {
     }
     ctx.restore();
 
+    // 2. Main spiral bands. These are intentionally stronger than the mist so the sliders do not feel dead.
+    const bandCount = Math.max(bandGroups, Math.round(scale(2, 18, amount)));
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.filter = `blur(${scale(0.05, 2.4, 1 - definition) + softness * 0.08}px)`;
+    for (let i = 0; i < bandCount; i += 1) {
+      const seed = 500 + i * 27.173;
+      const group = i % bandGroups;
+      const startAngle = (group / bandGroups) * TAU + hash1(seed) * 0.35 + t * speed * dir;
+      const colour = colourFor(i + 1);
+      const alpha = Math.min(0.62, opacity * scale(0.38, 0.78, definition) * scale(0.72, 1.12, hash1(seed + 2)));
+      ctx.strokeStyle = rgba(colour, alpha);
+      ctx.lineWidth = Math.max(1.1, baseThickness * scale(0.62, 1.75, definition));
+      ctx.shadowColor = colour;
+      ctx.shadowBlur = baseThickness * scale(0.55, 2.7, opacity);
+      ctx.beginPath();
+      const steps = 90;
+      for (let s = 0; s <= steps; s += 1) {
+        const p = s / steps;
+        const radial = Math.pow(1 - p, 0.72) * radiusScale;
+        const angle = startAngle + dir * p * TAU * turns;
+        const broken = fbm(Math.cos(angle) * 1.9 + seed * 0.05 + p * 0.8, Math.sin(angle) * 1.9 - seed * 0.025 + t * 0.03, 3);
+        const jitter = (broken - 0.5) * outerBase * noiseStrength * scale(0.35, 1.2, 1 - definition);
+        const fadeIn = smoothstep(0.00, 0.13, p);
+        const fadeOut = 1 - smoothstep(0.80, 1.00, p);
+        ctx.globalAlpha = fadeIn * fadeOut * scale(0.72, 1.00, broken);
+        const x = g.cx + Math.cos(angle) * (g.rx * radial + jitter);
+        const y = g.cy + Math.sin(angle) * (g.ry * radial * 0.88 + jitter * 0.70);
+        if (s === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
     ctx.restore();
+
+    // 3. Thin definition streaks. Definition slider now has a visible, literal result.
+    if (definition > 0.02) {
+      const streakCount = Math.max(2, Math.round(scale(2, 14, amount)));
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      for (let i = 0; i < streakCount; i += 1) {
+        const seed = 900 + i * 19.91;
+        const startAngle = (i / streakCount) * TAU + hash1(seed) * 0.30 + t * speed * dir * 1.15;
+        const colour = i % 2 === 0 ? v.coreColor : v.accentColor;
+        const alpha = Math.min(0.78, opacity * definition * scale(0.26, 0.62, hash1(seed + 1)));
+        ctx.strokeStyle = rgba(colour, alpha);
+        ctx.lineWidth = Math.max(0.75, baseThickness * scale(0.12, 0.34, definition));
+        ctx.shadowColor = colour;
+        ctx.shadowBlur = baseThickness * scale(0.18, 1.25, definition);
+        ctx.beginPath();
+        const steps = 80;
+        for (let s = 0; s <= steps; s += 1) {
+          const p = s / steps;
+          const radial = Math.pow(1 - p, 0.76) * radiusScale;
+          const angle = startAngle + dir * p * TAU * turns;
+          const fadeIn = smoothstep(0.02, 0.16, p);
+          const fadeOut = 1 - smoothstep(0.78, 1.00, p);
+          ctx.globalAlpha = fadeIn * fadeOut;
+          const x = g.cx + Math.cos(angle) * g.rx * radial;
+          const y = g.cy + Math.sin(angle) * g.ry * radial * 0.88;
+          if (s === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      ctx.restore();
+    }
   }
 
   drawWormholePullCore(ctx, g, t) {

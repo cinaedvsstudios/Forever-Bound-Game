@@ -1,5 +1,5 @@
-import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.33';
-import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.33';
+import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.34';
+import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.34';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -14,6 +14,8 @@ const state = {
   playing: true,
   textureName: '',
   textureDataUrl: '',
+  textureAssetPath: '',
+  texturePreviewSrc: '',
   overlayName: '',
   overlayDataUrl: '',
   overlayAssetPath: '',
@@ -40,6 +42,7 @@ const outlineFile = $('[data-outline-file]');
 const outlineStatus = $('[data-outline-status]');
 const overlayLayerLabel = $('[data-overlay-layer-label]');
 const overlay2LayerLabel = $('[data-overlay2-layer-label]');
+const basePreviewButton = $('[data-asset-preview="base"]');
 const overlayPreviewButton = $('[data-asset-preview="overlay"]');
 const overlay2PreviewButton = $('[data-asset-preview="overlay2"]');
 const assetModal = $('[data-asset-modal]');
@@ -52,6 +55,11 @@ function clone(value) {
 }
 
 const DEFAULT_ASSET_ROOT = './assets/';
+const DEFAULT_BASE_ASSETS = [
+  'default1.jpg',
+  'default2.jpg',
+  'default3.jpg'
+];
 const DEFAULT_OVERLAY_ASSETS = [
   'aperture.png',
   'ball.png',
@@ -84,7 +92,7 @@ function safeAssetPath(filename) {
 }
 
 function setAssetPreview(slot, src = '', name = '') {
-  const button = slot === 'overlay2' ? overlay2PreviewButton : overlayPreviewButton;
+  const button = slot === 'base' ? basePreviewButton : (slot === 'overlay2' ? overlay2PreviewButton : overlayPreviewButton);
   if (!button) return;
   button.replaceChildren();
   if (src) {
@@ -102,15 +110,19 @@ function setAssetPreview(slot, src = '', name = '') {
 }
 
 function updateAssetPreviews() {
+  setAssetPreview('base', state.texturePreviewSrc, state.textureName);
   setAssetPreview('overlay', state.overlayPreviewSrc, state.overlayName);
   setAssetPreview('overlay2', state.overlay2PreviewSrc, state.overlay2Name);
 }
 
 function openAssetModal(slot = 'overlay') {
   if (!assetModal || !assetModalGrid) return;
-  assetModalTarget = slot === 'overlay2' ? 'overlay2' : 'overlay';
-  if (assetModalTitle) assetModalTitle.textContent = assetModalTarget === 'overlay2' ? 'Choose overlay 2 default asset' : 'Choose overlay 1 default asset';
-  assetModalGrid.replaceChildren(...DEFAULT_OVERLAY_ASSETS.map((filename) => {
+  assetModalTarget = slot === 'base' ? 'base' : (slot === 'overlay2' ? 'overlay2' : 'overlay');
+  if (assetModalTitle) {
+    assetModalTitle.textContent = assetModalTarget === 'base' ? 'Choose base JPG texture' : (assetModalTarget === 'overlay2' ? 'Choose overlay 2 default asset' : 'Choose overlay 1 default asset');
+  }
+  const assetList = assetModalTarget === 'base' ? DEFAULT_BASE_ASSETS : DEFAULT_OVERLAY_ASSETS;
+  assetModalGrid.replaceChildren(...assetList.map((filename) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'asset-choice';
@@ -134,7 +146,16 @@ function selectDefaultAsset(slot, filename) {
   const assetPath = safeAssetPath(filename);
   const image = new Image();
   image.onload = () => {
-    if (slot === 'overlay2') {
+    if (slot === 'base') {
+      engine.setTextureImage(image);
+      state.textureName = filename;
+      state.textureDataUrl = '';
+      state.textureAssetPath = assetPath;
+      state.texturePreviewSrc = assetPath;
+      state.values.sourceMode = 'texture';
+      state.values.baseTextureEnabled = true;
+      setStatus(`Loaded base texture default asset ${filename}.`);
+    } else if (slot === 'overlay2') {
       engine.setOverlay2Image(image);
       state.overlay2Name = filename;
       state.overlay2DataUrl = '';
@@ -174,7 +195,7 @@ function normalizeFieldValue(input) {
 
 function updateTextureStatus() {
   if (!textureStatus) return;
-  textureStatus.textContent = state.textureName ? `Loaded texture: ${state.textureName}` : 'No texture loaded.';
+  textureStatus.textContent = state.textureName ? `Loaded base texture: ${state.textureName}` : 'No base texture loaded.';
 }
 
 const OVERLAY_LAYER_LABELS = {
@@ -300,10 +321,10 @@ function fxAssetJson() {
     scope: 'project',
     projectId: 'forever-bound',
     engine: 'artifex-shimmer-distortion-preview',
-    engineVersion: '1.3.0-preview',
+    engineVersion: '1.3.4-preview',
     tags: preset.tags,
     assets: {
-      ...(state.textureName ? { texture: { kind: 'externalImageReference', editorFileName: state.textureName } } : {}),
+      ...(state.textureName ? { texture: { kind: 'externalImageReference', editorFileName: state.textureName, sourcePath: state.textureAssetPath || '' } } : {}),
       ...(state.overlayName ? { overlay: { kind: 'externalPngOverlayReference', editorFileName: state.overlayName, sourcePath: state.overlayAssetPath || '' } } : {}),
       ...(state.overlay2Name ? { overlay2: { kind: 'externalPngOverlayReference', editorFileName: state.overlay2Name, sourcePath: state.overlay2AssetPath || '' } } : {}),
       ...(state.outlineName ? { outlineColorImage: { kind: 'externalLineColorTextureReference', editorFileName: state.outlineName } } : {})
@@ -331,7 +352,8 @@ function fxAssetJson() {
       'Prototype canvas renderer. Future integration should route this through the FX Editor engine registry.',
       'Portal Inner Wisps are intentionally separate from Portal Line Outline and wormhole Arms.',
       'V1.28 adds aperture controls, overlay alpha vignette, expanded blend modes and a second overlay slot.',
-      'V1.33 keeps the V1.30 asset picker and makes wormhole arms use the same visible cloud/lobe brightness style as Orbit Clouds.',
+      'V1.30 adds default asset preview buttons and modal selection from fx-shimmer-preview/assets/.',
+      'V1.34 adds default base JPG selection, base blend controls and orbit cloud gamma brightness.',
       'Exports runtime-facing archetype shape, not final production schema.'
     ]
   };
@@ -342,12 +364,12 @@ function editorProjectJson() {
   return {
     schema: 'artifex.fxEditorProject.v1',
     editor: 'fx-shimmer-preview',
-    editorVersion: '1.3.0-preview',
+    editorVersion: '1.3.4-preview',
     selectedPresetId: state.selectedPresetId,
     name: preset.name,
     description: preset.description,
     values: clone(state.values),
-    texture: state.textureName ? { name: state.textureName, dataUrl: state.textureDataUrl } : null,
+    texture: state.textureName ? { name: state.textureName, dataUrl: state.textureDataUrl, assetPath: state.textureAssetPath || '' } : null,
     overlay: state.overlayName ? { name: state.overlayName, dataUrl: state.overlayDataUrl, assetPath: state.overlayAssetPath || '' } : null,
     overlay2: state.overlay2Name ? { name: state.overlay2Name, dataUrl: state.overlay2DataUrl, assetPath: state.overlay2AssetPath || '' } : null,
     outlineColorImage: state.outlineName ? { name: state.outlineName, dataUrl: state.outlineDataUrl } : null,
@@ -392,7 +414,10 @@ if (textureFile) {
       engine.setTextureImage(image);
       state.textureName = file.name;
       state.textureDataUrl = dataUrl;
+      state.textureAssetPath = '';
+      state.texturePreviewSrc = dataUrl;
       state.values.sourceMode = 'texture';
+      state.values.baseTextureEnabled = true;
       syncControls();
       setStatus(`Loaded texture ${file.name}.`);
     });
@@ -541,5 +566,5 @@ function tick(now) {
 
 renderPresets();
 syncControls();
-setStatus('Loaded shimmer engine prototype V1.33.');
+setStatus('Loaded shimmer engine prototype V1.34.');
 requestAnimationFrame(tick);
