@@ -18,11 +18,6 @@ export function startRun() {
     updateHud();
     return;
   }
-  if (!OC.loadingDone) {
-    setResult('Cannot start yet: waiting for all obstacle-course assets to finish loading.', 'failure');
-    updateHud();
-    return;
-  }
   ensureAudio();
   OC.active = true;
   OC.running = true;
