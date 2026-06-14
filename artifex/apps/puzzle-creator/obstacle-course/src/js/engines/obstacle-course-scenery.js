@@ -6,6 +6,7 @@ import { makeLayer, registerEntity } from './obstacle-course-layers.js';
 import { createInstancedAssetGroup } from './obstacle-course-glb.js';
 import { pathCenterAt, pathHalfWidthAt } from './obstacle-course-ground-path.js';
 
+const TREE_ROOT_LIFT = 0.22;
 const DENSITY_PER_1000 = {
   nearTreePairs: 18,
   farTreePairs: 8,
@@ -37,6 +38,10 @@ function seededRandom(seedText) {
 
 function randFrom(rng, min, max) { return min + rng() * (max - min); }
 function pickFrom(rng, items) { return items[Math.floor(rng() * items.length)]; }
+function loadedAssets(type) { return GLB_ASSETS.filter((asset) => asset.type === type && OC.glbTemplates.has(asset.url)); }
+function loadedTreeAssets() { return GLB_ASSETS.filter((asset) => ['nearTree', 'farTree'].includes(asset.type) && OC.glbTemplates.has(asset.url)); }
+function assetsNamed(assets, token) { return assets.filter((asset) => asset.url.includes(token)); }
+function preferredAssets(primary, fallback) { return primary.length ? primary : fallback; }
 
 function fallbackTree(rng = Math.random) {
   const tree = new THREE.Group();
@@ -114,24 +119,27 @@ function flushPlacementQueues(queues) {
 export function scatterScenery() {
   const template = TEMPLATES[OC.templateId] || TEMPLATES.horse_forest_easy;
   const rng = seededRandom(`${OC.templateId}|${OC.difficulty}|${OC.courseLength}|${OC.pathSequence.map((p) => p.key).join(',') || '1'}|${OC.glbTemplates.size}`);
-  const treeLayer = makeLayer('trees', 'Trees', new THREE.Group(), { order: 10 });
-  const rockLayer = makeLayer('rocks', 'Rocks', new THREE.Group(), { order: 11 });
-  const detailLayer = makeLayer('details', 'Ferns / Bushes / Details', new THREE.Group(), { order: 12 });
+  const treeLayer = makeLayer('trees', 'Trees', new THREE.Group(), { order: 20 });
+  const rockLayer = makeLayer('rocks', 'Rocks', new THREE.Group(), { order: 30 });
+  const detailLayer = makeLayer('details', 'Ferns / Bushes / Details', new THREE.Group(), { order: 25 });
   OC.world.add(treeLayer.group, rockLayer.group, detailLayer.group);
-  const nearTreeAssets = GLB_ASSETS.filter((asset) => asset.type === 'nearTree' && OC.glbTemplates.has(asset.url));
-  const farTreeAssets = GLB_ASSETS.filter((asset) => ['nearTree', 'farTree'].includes(asset.type) && OC.glbTemplates.has(asset.url));
-  const rockAssets = GLB_ASSETS.filter((asset) => asset.type === 'rock' && OC.glbTemplates.has(asset.url));
-  const edgeDetailAssets = GLB_ASSETS.filter((asset) => asset.type === 'edgeDetail' && OC.glbTemplates.has(asset.url));
+
+  const allTrees = loadedTreeAssets();
+  const nearTreeAssets = loadedAssets('nearTree');
+  const pineTreeAssets = preferredAssets(assetsNamed(allTrees, 'pine_tree'), nearTreeAssets);
+  const oakTreeAssets = preferredAssets(assetsNamed(allTrees, 'oak_trees'), allTrees);
+  const rockAssets = loadedAssets('rock');
+  const edgeDetailAssets = loadedAssets('edgeDetail');
   const farDetailAssets = GLB_ASSETS.filter((asset) => ['edgeDetail', 'farDetail'].includes(asset.type) && OC.glbTemplates.has(asset.url));
   const sections = sectionCount();
   const end = OC.courseLength + 80;
   const queues = new Map();
 
   makeDistances(rng, DENSITY_PER_1000.nearTreePairs * sections * template.treeRate, 28, end, 18).forEach((d) => {
-    [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, 'tree', nearTreeAssets, fallbackTree, scatterX(rng, d, side, 4.0, 9.5), 0, -d + randFrom(rng, -5, 5), randFrom(rng, 1.0, 1.3)));
+    [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, 'tree', pineTreeAssets, fallbackTree, scatterX(rng, d, side, 4.0, 9.5), TREE_ROOT_LIFT, -d + randFrom(rng, -5, 5), randFrom(rng, 1.0, 1.3)));
   });
   makeDistances(rng, DENSITY_PER_1000.farTreePairs * sections * template.treeRate, 60, end, 26).forEach((d) => {
-    [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, 'tree', farTreeAssets, fallbackTree, scatterX(rng, d, side, 13, 25), 0, -d + randFrom(rng, -9, 9), randFrom(rng, 1.0, 1.3)));
+    [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, 'tree', oakTreeAssets, fallbackTree, scatterX(rng, d, side, 15, 28), TREE_ROOT_LIFT, -d + randFrom(rng, -9, 9), randFrom(rng, 1.0, 1.3)));
   });
   makeDistances(rng, DENSITY_PER_1000.rocks * sections * template.rockRate, 38, OC.courseLength + 40, 18).forEach((d) => {
     const side = rng() > 0.5 ? 1 : -1;
