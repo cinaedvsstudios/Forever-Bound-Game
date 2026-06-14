@@ -129,7 +129,7 @@ export function buildGroundAndPath() {
       new THREE.PlaneGeometry(seg.worldWidth || COURSE_WORLD_WIDTH, length, 1, 1),
       new THREE.MeshStandardMaterial({
         map: loadTexture(tileUrl, { repeat: [1, 1], repeatX: false }),
-        transparent: true,
+        transparent: false,
         alphaTest: 0.02,
         roughness: 1,
         side: THREE.DoubleSide,
