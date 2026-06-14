@@ -1,5 +1,5 @@
-import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.26';
-import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.26';
+import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.28';
+import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.28';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -16,6 +16,8 @@ const state = {
   textureDataUrl: '',
   overlayName: '',
   overlayDataUrl: '',
+  overlay2Name: '',
+  overlay2DataUrl: '',
   outlineName: '',
   outlineDataUrl: ''
 };
@@ -28,9 +30,12 @@ const textureFile = $('[data-texture-file]');
 const textureStatus = $('[data-texture-status]');
 const overlayFile = $('[data-overlay-file]');
 const overlayStatus = $('[data-overlay-status]');
+const overlay2File = $('[data-overlay2-file]');
+const overlay2Status = $('[data-overlay2-status]');
 const outlineFile = $('[data-outline-file]');
 const outlineStatus = $('[data-outline-status]');
 const overlayLayerLabel = $('[data-overlay-layer-label]');
+const overlay2LayerLabel = $('[data-overlay2-layer-label]');
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -64,9 +69,11 @@ const OVERLAY_LAYER_LABELS = {
 const OVERLAY_LAYER_ORDER = Object.keys(OVERLAY_LAYER_LABELS);
 
 function updateOverlayStatus() {
-  if (overlayStatus) overlayStatus.textContent = state.overlayName ? `Loaded overlay: ${state.overlayName}` : 'No overlay loaded.';
+  if (overlayStatus) overlayStatus.textContent = state.overlayName ? `Loaded overlay 1: ${state.overlayName}` : 'No overlay 1 loaded.';
+  if (overlay2Status) overlay2Status.textContent = state.overlay2Name ? `Loaded overlay 2: ${state.overlay2Name}` : 'No overlay 2 loaded.';
   if (outlineStatus) outlineStatus.textContent = state.outlineName ? `Loaded line image: ${state.outlineName}` : 'No line image loaded.';
   if (overlayLayerLabel) overlayLayerLabel.textContent = OVERLAY_LAYER_LABELS[state.values.overlayLayer] || 'Over clouds / rim';
+  if (overlay2LayerLabel) overlay2LayerLabel.textContent = OVERLAY_LAYER_LABELS[state.values.overlay2Layer] || 'Inside aperture / core';
 }
 
 function updateControlCardVisibility() {
@@ -81,7 +88,9 @@ function updateControlCardVisibility() {
       'Colour / texture',
       'Orbit clouds',
       'Particles',
-      'PNG overlay layer',
+      'Aperture control',
+      'PNG overlay 1',
+      'PNG overlay 2',
       'Placement / playback'
     ]),
     wormhole: new Set([
@@ -93,7 +102,9 @@ function updateControlCardVisibility() {
       'Orbit clouds',
       'Particles',
       'Emission',
-      'PNG overlay layer',
+      'Aperture control',
+      'PNG overlay 1',
+      'PNG overlay 2',
       'Placement / playback'
     ]),
     heat: new Set([
@@ -171,11 +182,12 @@ function fxAssetJson() {
     scope: 'project',
     projectId: 'forever-bound',
     engine: 'artifex-shimmer-distortion-preview',
-    engineVersion: '1.2.6-preview',
+    engineVersion: '1.2.8-preview',
     tags: preset.tags,
     assets: {
       ...(state.textureName ? { texture: { kind: 'externalImageReference', editorFileName: state.textureName } } : {}),
       ...(state.overlayName ? { overlay: { kind: 'externalPngOverlayReference', editorFileName: state.overlayName } } : {}),
+      ...(state.overlay2Name ? { overlay2: { kind: 'externalPngOverlayReference', editorFileName: state.overlay2Name } } : {}),
       ...(state.outlineName ? { outlineColorImage: { kind: 'externalLineColorTextureReference', editorFileName: state.outlineName } } : {})
     },
     composition: {
@@ -200,6 +212,7 @@ function fxAssetJson() {
     compatibilityNotes: [
       'Prototype canvas renderer. Future integration should route this through the FX Editor engine registry.',
       'Portal Inner Wisps are intentionally separate from Portal Line Outline and wormhole Arms.',
+      'V1.28 adds aperture controls, overlay alpha vignette, expanded blend modes and a second overlay slot.',
       'Exports runtime-facing archetype shape, not final production schema.'
     ]
   };
@@ -210,13 +223,14 @@ function editorProjectJson() {
   return {
     schema: 'artifex.fxEditorProject.v1',
     editor: 'fx-shimmer-preview',
-    editorVersion: '1.2.6-preview',
+    editorVersion: '1.2.8-preview',
     selectedPresetId: state.selectedPresetId,
     name: preset.name,
     description: preset.description,
     values: clone(state.values),
     texture: state.textureName ? { name: state.textureName, dataUrl: state.textureDataUrl } : null,
     overlay: state.overlayName ? { name: state.overlayName, dataUrl: state.overlayDataUrl } : null,
+    overlay2: state.overlay2Name ? { name: state.overlay2Name, dataUrl: state.overlay2DataUrl } : null,
     outlineColorImage: state.outlineName ? { name: state.outlineName, dataUrl: state.outlineDataUrl } : null,
     view: {
       showGrid: Boolean(state.values.showGrid),
@@ -279,6 +293,19 @@ if (overlayFile) {
   });
 }
 
+if (overlay2File) {
+  overlay2File.addEventListener('change', () => {
+    loadImageFile(overlay2File, (file, image, dataUrl) => {
+      engine.setOverlay2Image(image);
+      state.overlay2Name = file.name;
+      state.overlay2DataUrl = dataUrl;
+      state.values.overlay2Enabled = true;
+      syncControls();
+      setStatus(`Loaded overlay 2 ${file.name}.`);
+    });
+  });
+}
+
 if (outlineFile) {
   outlineFile.addEventListener('change', () => {
     loadImageFile(outlineFile, (file, image, dataUrl) => {
@@ -292,20 +319,25 @@ if (outlineFile) {
   });
 }
 
-function moveOverlayLayer(delta) {
-  const current = state.values.overlayLayer || 'over-clouds';
+function moveOverlayLayer(field, delta, label = 'Overlay') {
+  const current = state.values[field] || (field === 'overlay2Layer' ? 'inside-aperture' : 'over-clouds');
   const index = OVERLAY_LAYER_ORDER.indexOf(current);
-  const safeIndex = index === -1 ? OVERLAY_LAYER_ORDER.indexOf('over-clouds') : index;
+  const fallback = field === 'overlay2Layer' ? OVERLAY_LAYER_ORDER.indexOf('inside-aperture') : OVERLAY_LAYER_ORDER.indexOf('over-clouds');
+  const safeIndex = index === -1 ? fallback : index;
   const next = Math.max(0, Math.min(OVERLAY_LAYER_ORDER.length - 1, safeIndex + delta));
-  state.values.overlayLayer = OVERLAY_LAYER_ORDER[next];
+  state.values[field] = OVERLAY_LAYER_ORDER[next];
   syncControls();
-  setStatus(`Overlay layer: ${OVERLAY_LAYER_LABELS[state.values.overlayLayer]}.`);
+  setStatus(`${label} layer: ${OVERLAY_LAYER_LABELS[state.values[field]]}.`);
 }
 
 const overlayBack = $('[data-action="overlay-back"]');
 const overlayForward = $('[data-action="overlay-forward"]');
-if (overlayBack) overlayBack.onclick = () => moveOverlayLayer(-1);
-if (overlayForward) overlayForward.onclick = () => moveOverlayLayer(1);
+const overlay2Back = $('[data-action="overlay2-back"]');
+const overlay2Forward = $('[data-action="overlay2-forward"]');
+if (overlayBack) overlayBack.onclick = () => moveOverlayLayer('overlayLayer', -1, 'Overlay 1');
+if (overlayForward) overlayForward.onclick = () => moveOverlayLayer('overlayLayer', 1, 'Overlay 1');
+if (overlay2Back) overlay2Back.onclick = () => moveOverlayLayer('overlay2Layer', -1, 'Overlay 2');
+if (overlay2Forward) overlay2Forward.onclick = () => moveOverlayLayer('overlay2Layer', 1, 'Overlay 2');
 
 controls.forEach((input) => {
   input.addEventListener('input', () => {
@@ -377,5 +409,5 @@ function tick(now) {
 
 renderPresets();
 syncControls();
-setStatus('Loaded shimmer engine prototype V1.26.');
+setStatus('Loaded shimmer engine prototype V1.28.');
 requestAnimationFrame(tick);

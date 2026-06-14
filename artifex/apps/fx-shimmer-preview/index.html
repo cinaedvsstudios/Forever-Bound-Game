@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Artifex Shimmer / Portal Distortion Engine Preview</title>
-  <link rel="stylesheet" href="./styles.css?v=1.26" />
+  <link rel="stylesheet" href="./styles.css?v=1.28" />
 </head>
 <body>
   <main class="fx-shell" data-app>
@@ -15,7 +15,7 @@
           <p class="kicker">Artifex FX Engine Prototype</p>
           <h1>Shimmer / Portal Distortion Engine</h1>
         </div>
-        <span class="version">V1.26 Prototype Fix</span>
+        <span class="version">V1.28 Overlay Aperture Fix</span>
       </div>
       <div class="header-actions">
         <button type="button" data-action="play">▶️ Play</button>
@@ -51,7 +51,7 @@
 
           <div class="canvas-wrap">
             <canvas width="960" height="540" data-canvas></canvas>
-            <div class="canvas-hint">Canvas preview — Portal Inner Wisps are separate; wormhole arm controls now drive the visible nebula bands directly.</div>
+            <div class="canvas-hint">Canvas preview — V1.28 preserves the best wormhole overlay look and adds aperture, overlay blend modes, overlay 2 and alpha vignette controls.</div>
           </div>
         </div>
 
@@ -219,10 +219,10 @@
             <label>Backdrop <input type="color" data-field="backdropColor" /></label>
           </div>
           <div class="two color-pair">
-            <label>Middle / underlay <input type="color" data-field="middleColor" /></label>
+            <label>Middle / core underlay <input type="color" data-field="middleColor" /></label>
             <label>Backdrop tint reminder: middle colour stays active even with texture mode.</label>
           </div>
-          <label>JPEG / PNG texture for portal middle
+          <label>JPEG / PNG texture for middle / core
             <input type="file" accept="image/png,image/jpeg,image/webp" data-texture-file />
           </label>
           <p class="texture-status" data-texture-status>No texture loaded.</p>
@@ -301,20 +301,65 @@
         </section>
 
         <section class="control-card">
-          <h3>PNG overlay layer</h3>
-          <label class="toggle wide"><input type="checkbox" data-field="overlayEnabled" /> Enable overlay</label>
-          <label>PNG overlay image
+          <h3>Aperture control</h3>
+          <label class="toggle wide"><input type="checkbox" data-field="apertureEnabled" /> Enable aperture</label>
+          <div class="two">
+            <label>Aperture width <input type="range" min="0" max="100" step="1" data-field="apertureWidth" /></label>
+            <label>Aperture height <input type="range" min="0" max="100" step="1" data-field="apertureHeight" /></label>
+          </div>
+          <div class="two">
+            <label>Rotation ° <input type="range" min="-180" max="180" step="1" data-field="apertureRotation" /></label>
+            <label>Edge softness <input type="range" min="0" max="100" step="1" data-field="apertureSoftness" /></label>
+          </div>
+          <div class="two">
+            <label>Offset X <input type="range" min="-100" max="100" step="1" data-field="apertureOffsetX" /></label>
+            <label>Offset Y <input type="range" min="-100" max="100" step="1" data-field="apertureOffsetY" /></label>
+          </div>
+          <div class="two">
+            <label>Aperture opacity <input type="range" min="0" max="100" step="1" data-field="apertureOpacity" /></label>
+            <label>Rim glow <input type="range" min="0" max="100" step="1" data-field="apertureRimGlow" /></label>
+          </div>
+          <div class="two">
+            <label>Rim glow size <input type="range" min="0" max="100" step="1" data-field="apertureRimGlowSize" /></label>
+            <label>Rim glow opacity <input type="range" min="0" max="100" step="1" data-field="apertureRimGlowOpacity" /></label>
+          </div>
+          <label>Layer position
+            <select data-field="apertureLayer" aria-label="Aperture layer">
+              <option value="inside-aperture">Below core overlays</option>
+              <option value="aperture">Above core overlays</option>
+              <option value="over-clouds">Over clouds / rim</option>
+              <option value="front">Front</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="control-card">
+          <h3>PNG overlay 1</h3>
+          <label class="toggle wide"><input type="checkbox" data-field="overlayEnabled" /> Enable overlay 1</label>
+          <label>PNG overlay 1 image
             <input type="file" accept="image/png,image/jpeg,image/webp" data-overlay-file />
           </label>
           <p class="texture-status" data-overlay-status>No overlay loaded.</p>
           <label>Blend mode
             <select data-field="overlayBlendMode">
               <option value="source-over">Normal</option>
-              <option value="lighter">Add / lighter</option>
-              <option value="screen">Screen</option>
-              <option value="overlay">Overlay</option>
-              <option value="soft-light">Soft light</option>
               <option value="multiply">Multiply</option>
+              <option value="screen">Screen</option>
+              <option value="lighter">Lighter</option>
+              <option value="overlay">Overlay</option>
+              <option value="darken">Darken</option>
+              <option value="lighten">Lighten</option>
+              <option value="color-dodge">Color-dodge</option>
+              <option value="color-burn">Color-burn</option>
+              <option value="hard-light">Hard-light</option>
+              <option value="soft-light">Soft-light</option>
+              <option value="difference">Difference</option>
+              <option value="exclusion">Exclusion</option>
+              <option value="hue">Hue</option>
+              <option value="saturation">Saturation</option>
+              <option value="color">Color</option>
+              <option value="luminosity">Luminosity</option>
+              <option value="alpha-erase">Alpha / Erase</option>
             </select>
           </label>
           <div class="two">
@@ -325,13 +370,75 @@
             <label>Rotation speed <input type="range" min="-100" max="100" step="1" data-field="overlayRotationSpeed" /></label>
             <label>Pulse speed <input type="range" min="0" max="100" step="1" data-field="overlayPulseSpeed" /></label>
           </div>
+          <div class="two">
+            <label>Vignette opacity <input type="range" min="0" max="100" step="1" data-field="overlayVignetteOpacity" /></label>
+            <label>Vignette radius <input type="range" min="0" max="100" step="1" data-field="overlayVignetteRadius" /></label>
+          </div>
+          <label>Vignette softness <input type="range" min="0" max="100" step="1" data-field="overlayVignetteSoftness" /></label>
           <div class="layer-row">
             <button type="button" data-action="overlay-back">− Layer</button>
             <output data-overlay-layer-label>Over clouds / rim</output>
             <button type="button" data-action="overlay-forward">Layer +</button>
           </div>
           <label>Layer position
-            <select data-field="overlayLayer" aria-label="Overlay layer">
+            <select data-field="overlayLayer" aria-label="Overlay 1 layer">
+              <option value="behind-effect">Behind effect</option>
+              <option value="inside-aperture">Inside aperture / core</option>
+              <option value="over-clouds">Over clouds / rim</option>
+              <option value="front">Front overlay</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="control-card">
+          <h3>PNG overlay 2</h3>
+          <label class="toggle wide"><input type="checkbox" data-field="overlay2Enabled" /> Enable overlay 2</label>
+          <label>PNG overlay 2 image
+            <input type="file" accept="image/png,image/jpeg,image/webp" data-overlay2-file />
+          </label>
+          <p class="texture-status" data-overlay2-status>No overlay 2 loaded.</p>
+          <label>Blend mode
+            <select data-field="overlay2BlendMode">
+              <option value="source-over">Normal</option>
+              <option value="multiply">Multiply</option>
+              <option value="screen">Screen</option>
+              <option value="lighter">Lighter</option>
+              <option value="overlay">Overlay</option>
+              <option value="darken">Darken</option>
+              <option value="lighten">Lighten</option>
+              <option value="color-dodge">Color-dodge</option>
+              <option value="color-burn">Color-burn</option>
+              <option value="hard-light">Hard-light</option>
+              <option value="soft-light">Soft-light</option>
+              <option value="difference">Difference</option>
+              <option value="exclusion">Exclusion</option>
+              <option value="hue">Hue</option>
+              <option value="saturation">Saturation</option>
+              <option value="color">Color</option>
+              <option value="luminosity">Luminosity</option>
+              <option value="alpha-erase">Alpha / Erase</option>
+            </select>
+          </label>
+          <div class="two">
+            <label>Overlay opacity <input type="range" min="0" max="100" step="1" data-field="overlay2Opacity" /></label>
+            <label>Overlay scale <input type="range" min="10" max="220" step="1" data-field="overlay2Scale" /></label>
+          </div>
+          <div class="two">
+            <label>Rotation speed <input type="range" min="-100" max="100" step="1" data-field="overlay2RotationSpeed" /></label>
+            <label>Pulse speed <input type="range" min="0" max="100" step="1" data-field="overlay2PulseSpeed" /></label>
+          </div>
+          <div class="two">
+            <label>Vignette opacity <input type="range" min="0" max="100" step="1" data-field="overlay2VignetteOpacity" /></label>
+            <label>Vignette radius <input type="range" min="0" max="100" step="1" data-field="overlay2VignetteRadius" /></label>
+          </div>
+          <label>Vignette softness <input type="range" min="0" max="100" step="1" data-field="overlay2VignetteSoftness" /></label>
+          <div class="layer-row">
+            <button type="button" data-action="overlay2-back">− Layer</button>
+            <output data-overlay2-layer-label>Inside aperture / core</output>
+            <button type="button" data-action="overlay2-forward">Layer +</button>
+          </div>
+          <label>Layer position
+            <select data-field="overlay2Layer" aria-label="Overlay 2 layer">
               <option value="behind-effect">Behind effect</option>
               <option value="inside-aperture">Inside aperture / core</option>
               <option value="over-clouds">Over clouds / rim</option>
@@ -362,6 +469,6 @@
     </footer>
   </main>
 
-  <script type="module" src="./src/main.js?v=1.26"></script>
+  <script type="module" src="./src/main.js?v=1.28"></script>
 </body>
 </html>

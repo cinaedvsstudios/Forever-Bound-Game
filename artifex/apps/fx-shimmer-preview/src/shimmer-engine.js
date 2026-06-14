@@ -72,6 +72,7 @@ export class ShimmerDistortionEngine {
     this.grid = this.gridCanvas.getContext('2d');
     this.textureImage = null;
     this.overlayImage = null;
+    this.overlay2Image = null;
     this.outlineImage = null;
     this.values = {};
     this.gridKey = '';
@@ -80,6 +81,7 @@ export class ShimmerDistortionEngine {
   setValues(values) { this.values = { ...values }; }
   setTextureImage(image = null) { this.textureImage = image; }
   setOverlayImage(image = null) { this.overlayImage = image; }
+  setOverlay2Image(image = null) { this.overlay2Image = image; }
   setOutlineImage(image = null) { this.outlineImage = image; }
 
   resize() {
@@ -228,34 +230,158 @@ export class ShimmerDistortionEngine {
   }
 
   drawOverlayLayer(ctx, g, t, layer) {
-    const v = this.values;
-    if (!v.overlayEnabled || !this.overlayImage || (v.overlayLayer || 'over-clouds') !== layer) return;
-    const alpha = clamp01((v.overlayOpacity ?? 60) / 100);
+    this.drawOverlaySlot(ctx, g, t, layer, {
+      image: this.overlayImage,
+      enabled: this.values.overlayEnabled,
+      layer: this.values.overlayLayer || 'over-clouds',
+      blendMode: this.values.overlayBlendMode || 'screen',
+      opacity: this.values.overlayOpacity ?? 60,
+      scale: this.values.overlayScale ?? 100,
+      rotationSpeed: this.values.overlayRotationSpeed ?? 0,
+      pulseSpeed: this.values.overlayPulseSpeed ?? 12,
+      vignetteOpacity: this.values.overlayVignetteOpacity ?? 0,
+      vignetteRadius: this.values.overlayVignetteRadius ?? 72,
+      vignetteSoftness: this.values.overlayVignetteSoftness ?? 48
+    });
+    this.drawOverlaySlot(ctx, g, t, layer, {
+      image: this.overlay2Image,
+      enabled: this.values.overlay2Enabled,
+      layer: this.values.overlay2Layer || 'inside-aperture',
+      blendMode: this.values.overlay2BlendMode || 'screen',
+      opacity: this.values.overlay2Opacity ?? 55,
+      scale: this.values.overlay2Scale ?? 100,
+      rotationSpeed: this.values.overlay2RotationSpeed ?? 0,
+      pulseSpeed: this.values.overlay2PulseSpeed ?? 12,
+      vignetteOpacity: this.values.overlay2VignetteOpacity ?? 0,
+      vignetteRadius: this.values.overlay2VignetteRadius ?? 62,
+      vignetteSoftness: this.values.overlay2VignetteSoftness ?? 50
+    });
+  }
+
+  drawOverlaySlot(ctx, g, t, layer, config) {
+    if (!config.enabled || !config.image || (config.layer || 'over-clouds') !== layer) return;
+    const alpha = clamp01(Number(config.opacity ?? 60) / 100);
     if (alpha <= 0.001) return;
-    const scaleValue = scale(0.16, 2.2, (v.overlayScale ?? 100) / 220);
-    const pulseSpeed = scale(0, 3.0, (v.overlayPulseSpeed ?? 12) / 100);
+
+    const layerCanvas = document.createElement('canvas');
+    layerCanvas.width = g.w;
+    layerCanvas.height = g.h;
+    const layerCtx = layerCanvas.getContext('2d');
+    if (!layerCtx) return;
+
+    const scaleValue = scale(0.16, 2.2, Number(config.scale ?? 100) / 220);
+    const pulseSpeed = scale(0, 3.0, Number(config.pulseSpeed ?? 12) / 100);
     const pulse = pulseSpeed > 0 ? 1 + Math.sin(t * pulseSpeed) * 0.055 : 1;
-    const rotation = t * scale(-1.2, 1.2, ((v.overlayRotationSpeed ?? 0) + 100) / 200);
+    const rotation = t * scale(-1.2, 1.2, (Number(config.rotationSpeed ?? 0) + 100) / 200);
     const maxRadius = Math.max(g.rx, g.ry) * scaleValue * pulse;
     const width = maxRadius * 2;
     const height = maxRadius * 2;
-    const image = this.overlayImage;
+    const image = config.image;
     const aspect = image.width / Math.max(1, image.height);
     let drawWidth = width;
     let drawHeight = height;
     if (aspect >= 1) drawHeight = drawWidth / aspect;
     else drawWidth = drawHeight * aspect;
-    ctx.save();
+
+    layerCtx.save();
     if (layer === 'inside-aperture') {
-      ctx.beginPath();
-      ctx.ellipse(g.cx, g.cy, g.rx * 0.72, g.ry * 0.72, 0, 0, TAU);
-      ctx.clip();
+      layerCtx.beginPath();
+      layerCtx.ellipse(g.cx, g.cy, g.rx * 0.72, g.ry * 0.72, 0, 0, TAU);
+      layerCtx.clip();
     }
-    ctx.globalAlpha = alpha;
-    ctx.globalCompositeOperation = v.overlayBlendMode || 'source-over';
-    ctx.translate(g.cx, g.cy);
+    layerCtx.globalAlpha = alpha;
+    layerCtx.translate(g.cx, g.cy);
+    layerCtx.rotate(rotation);
+    layerCtx.drawImage(image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+    layerCtx.restore();
+
+    this.applyOverlayVignette(layerCtx, g, maxRadius, config);
+
+    const blend = this.normalizeBlendMode(config.blendMode);
+    ctx.save();
+    ctx.globalCompositeOperation = blend === 'alpha-erase' ? 'destination-out' : blend;
+    ctx.drawImage(layerCanvas, 0, 0);
+    ctx.restore();
+  }
+
+  normalizeBlendMode(mode) {
+    const valid = new Set([
+      'source-over', 'multiply', 'screen', 'lighter', 'overlay', 'darken', 'lighten',
+      'color-dodge', 'color-burn', 'hard-light', 'soft-light', 'difference', 'exclusion',
+      'hue', 'saturation', 'color', 'luminosity', 'alpha-erase'
+    ]);
+    return valid.has(mode) ? mode : 'source-over';
+  }
+
+  applyOverlayVignette(layerCtx, g, maxRadius, config) {
+    const vignette = clamp01(Number(config.vignetteOpacity ?? 0) / 100);
+    if (vignette <= 0.001) return;
+    const radiusControl = clamp01(Number(config.vignetteRadius ?? 70) / 100);
+    const softnessControl = clamp01(Number(config.vignetteSoftness ?? 50) / 100);
+    const radius = Math.max(8, maxRadius * scale(0.18, 1.42, radiusControl));
+    const softness = scale(0.04, 0.82, softnessControl);
+    const inner = Math.max(0, radius * (1 - softness));
+    const outsideAlpha = 1 - vignette;
+    const mask = layerCtx.createRadialGradient(g.cx, g.cy, inner, g.cx, g.cy, radius);
+    mask.addColorStop(0, 'rgba(255,255,255,1)');
+    mask.addColorStop(0.82, `rgba(255,255,255,${Math.max(outsideAlpha, 0.08)})`);
+    mask.addColorStop(1, `rgba(255,255,255,${outsideAlpha})`);
+    layerCtx.save();
+    layerCtx.globalCompositeOperation = 'destination-in';
+    layerCtx.fillStyle = mask;
+    layerCtx.fillRect(0, 0, g.w, g.h);
+    layerCtx.restore();
+  }
+
+  drawAperture(ctx, g, t) {
+    const v = this.values;
+    if (v.apertureEnabled === false) return;
+    const alpha = clamp01((v.apertureOpacity ?? 96) / 100);
+    if (alpha <= 0.001) return;
+
+    const width = Math.max(1, g.rx * scale(0.015, 0.32, (v.apertureWidth ?? 24) / 100));
+    const height = Math.max(1, g.ry * scale(0.015, 0.32, (v.apertureHeight ?? 18) / 100));
+    const rotation = (Number(v.apertureRotation ?? 0) * Math.PI) / 180;
+    const offsetX = g.rx * scale(-0.48, 0.48, ((v.apertureOffsetX ?? 0) + 100) / 200);
+    const offsetY = g.ry * scale(-0.48, 0.48, ((v.apertureOffsetY ?? 0) + 100) / 200);
+    const cx = g.cx + offsetX;
+    const cy = g.cy + offsetY;
+    const softness = clamp01((v.apertureSoftness ?? 46) / 100);
+    const rimGlow = clamp01((v.apertureRimGlow ?? 22) / 100);
+    const rimGlowSize = clamp01((v.apertureRimGlowSize ?? 44) / 100);
+    const rimGlowOpacity = clamp01((v.apertureRimGlowOpacity ?? 28) / 100);
+
+    if (rimGlow > 0.001 && rimGlowOpacity > 0.001) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.translate(cx, cy);
+      ctx.rotate(rotation);
+      const glowWidth = Math.max(1, width * scale(1.05, 3.6, rimGlowSize));
+      const glowHeight = Math.max(1, height * scale(1.05, 3.6, rimGlowSize));
+      const grad = ctx.createRadialGradient(0, 0, Math.min(width, height) * 0.45, 0, 0, Math.max(glowWidth, glowHeight));
+      grad.addColorStop(0.0, rgba(v.coreColor, rimGlow * rimGlowOpacity * 0.26));
+      grad.addColorStop(0.45, rgba(v.rimColor, rimGlow * rimGlowOpacity * 0.12));
+      grad.addColorStop(1.0, rgba(v.rimColor, 0));
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, glowWidth, glowHeight, 0, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.translate(cx, cy);
     ctx.rotate(rotation);
-    ctx.drawImage(image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+    const edgeStart = scale(0.48, 0.86, 1 - softness);
+    const hole = ctx.createRadialGradient(0, 0, 0, 0, 0, Math.max(width, height));
+    hole.addColorStop(0.0, rgba('#000000', alpha));
+    hole.addColorStop(edgeStart, rgba('#01030a', alpha * 0.94));
+    hole.addColorStop(1.0, rgba('#000000', 0));
+    ctx.fillStyle = hole;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, width, height, 0, 0, TAU);
+    ctx.fill();
     ctx.restore();
   }
 
@@ -263,10 +389,11 @@ export class ShimmerDistortionEngine {
     const jobs = [];
     const add = (layer, draw) => jobs.push({ layer, draw });
     add('behind-effect', () => this.drawOverlayLayer(ctx, g, t, 'behind-effect'));
-    add('inside-aperture', () => this.drawPortalBackdropDistortion(ctx, g, t));
-    add('inside-aperture', () => this.drawPortalOuterGlow(ctx, g));
-    add('inside-aperture', () => this.drawPortalMiddle(ctx, g, t));
+    add('base-effect', () => this.drawPortalBackdropDistortion(ctx, g, t));
+    add('base-effect', () => this.drawPortalOuterGlow(ctx, g));
+    add('base-effect', () => this.drawPortalMiddle(ctx, g, t));
     add('inside-aperture', () => this.drawOverlayLayer(ctx, g, t, 'inside-aperture'));
+    add(vlayer(this.values.apertureLayer, 'aperture'), () => this.drawAperture(ctx, g, t));
     add(vlayer(this.values.wispLayer, 'over-clouds'), () => this.drawPortalInnerWisps(ctx, g, t));
     add('over-clouds', () => this.drawPortalCloudRim(ctx, g, t));
     add('over-clouds', () => this.drawOrbitClouds(ctx, g, t, 'portal'));
@@ -278,7 +405,7 @@ export class ShimmerDistortionEngine {
   }
 
   runLayerJobs(jobs) {
-    const order = ['behind-effect', 'inside-aperture', 'behind-rim', 'over-clouds', 'over-particles', 'front'];
+    const order = ['behind-effect', 'base-effect', 'inside-aperture', 'behind-rim', 'aperture', 'over-clouds', 'over-particles', 'front'];
     const rank = new Map(order.map((name, index) => [name, index]));
     jobs.sort((a, b) => (rank.get(a.layer) ?? 3) - (rank.get(b.layer) ?? 3));
     jobs.forEach((job) => job.draw());
@@ -584,16 +711,20 @@ export class ShimmerDistortionEngine {
   }
 
   drawWormhole(ctx, g, t) {
-    this.drawOverlayLayer(ctx, g, t, 'behind-effect');
-    this.drawWormholeDarkField(ctx, g, t);
-    this.drawWormholeArms(ctx, g, t);
-    this.drawOrbitClouds(ctx, g, t, 'wormhole');
-    this.drawOverlayLayer(ctx, g, t, 'inside-aperture');
-    this.drawWormholePullCore(ctx, g, t);
-    this.drawOverlayLayer(ctx, g, t, 'over-clouds');
-    this.drawWormholeParticles(ctx, g, t);
-    this.drawWormholeEmission(ctx, g, t);
-    this.drawOverlayLayer(ctx, g, t, 'front');
+    const jobs = [];
+    const add = (layer, draw) => jobs.push({ layer, draw });
+    add('behind-effect', () => this.drawOverlayLayer(ctx, g, t, 'behind-effect'));
+    add('base-effect', () => this.drawWormholeDarkField(ctx, g, t));
+    add('base-effect', () => this.drawWormholeArms(ctx, g, t));
+    add('base-effect', () => this.drawOrbitClouds(ctx, g, t, 'wormhole'));
+    add('inside-aperture', () => this.drawOverlayLayer(ctx, g, t, 'inside-aperture'));
+    add('aperture', () => this.drawWormholePullCore(ctx, g, t));
+    add(vlayer(this.values.apertureLayer, 'aperture'), () => this.drawAperture(ctx, g, t));
+    add('over-clouds', () => this.drawOverlayLayer(ctx, g, t, 'over-clouds'));
+    add('over-particles', () => this.drawWormholeParticles(ctx, g, t));
+    add('over-particles', () => this.drawWormholeEmission(ctx, g, t));
+    add('front', () => this.drawOverlayLayer(ctx, g, t, 'front'));
+    this.runLayerJobs(jobs);
   }
 
   drawWormholeDarkField(ctx, g, t) {
@@ -622,75 +753,47 @@ export class ShimmerDistortionEngine {
 
     const dir = (v.swirl ?? 80) >= 0 ? 1 : -1;
     const speedControl = clamp01((v.armSpeed ?? 30) / 100);
-    const speed = Math.pow(speedControl, 2) * 0.62;
-    const turns = scale(0.55, 5.25, clamp01((v.armCurl ?? 62) / 100));
-    const radiusScale = scale(0.18, 1.72, clamp01((v.armRadius ?? 60) / 100));
-    const softness = scale(1.0, 12.0, clamp01((v.armSoftness ?? 34) / 100));
-    const definition = clamp01((v.armDefinition ?? 50) / 100);
-    const pulse = 1 + Math.sin(t * scale(0.65, 3.6, speedControl)) * scale(0, 0.55, clamp01((v.armPulseStrength ?? 0) / 100));
-    const noiseStrength = scale(0.002, 0.048, clamp01((v.noise ?? 20) / 100));
-    const baseThickness = g.base * scale(0.012, 0.118, thicknessValue) * pulse;
+    const speed = scale(0.08, 1.05, Math.pow(speedControl, 1.7));
+    const turns = scale(0.70, 5.80, clamp01((v.armCurl ?? 70) / 100));
+    const radiusScale = scale(0.22, 1.95, clamp01((v.armRadius ?? 70) / 100));
+    const softness = scale(0.2, 11.0, clamp01((v.armSoftness ?? 30) / 100));
+    const definition = clamp01((v.armDefinition ?? 70) / 100);
+    const pulseStrength = clamp01((v.armPulseStrength ?? 0) / 100);
+    const pulse = 1 + Math.sin(t * scale(0.70, 4.10, speedControl)) * scale(0, 0.62, pulseStrength);
+    const noiseStrength = scale(0.001, 0.055, clamp01((v.noise ?? 20) / 100));
+    const bandGroups = Math.max(2, Math.round(scale(2, 9, amount)));
     const colourFor = (i) => (i % 3 === 0 ? v.coreColor : (i % 3 === 1 ? v.rimColor : v.accentColor));
+    const outerBase = Math.max(g.rx, g.ry);
+    const baseThickness = Math.max(1.0, g.base * scale(0.014, 0.135, thicknessValue) * pulse);
 
-    // Soft body: this is deliberately driven by the arm controls, so Amount/Opacity/Thickness are visibly testable.
-    const lobeCount = Math.round(scale(0, 54, amount));
-    if (lobeCount > 0) {
-      ctx.save();
-      ctx.globalCompositeOperation = 'screen';
-      ctx.filter = `blur(${softness + scale(2, 9, 1 - definition)}px)`;
-      for (let i = 0; i < lobeCount; i += 1) {
-        const seed = i * 18.713;
-        const armIndex = i % Math.max(2, Math.round(scale(2, 8, amount)));
-        const baseAngle = (armIndex / Math.max(2, Math.round(scale(2, 8, amount)))) * TAU;
-        const local = hash1(seed + 1.2);
-        const radial = scale(0.20, 1.05, local) * radiusScale;
-        const angle = baseAngle + dir * radial * TAU * turns * 0.35 + t * speed * dir * scale(0.35, 1.05, hash1(seed + 2.4));
-        const x = g.cx + Math.cos(angle) * g.rx * radial;
-        const y = g.cy + Math.sin(angle) * g.ry * radial * 0.88;
-        const major = baseThickness * scale(2.2, 7.5, hash1(seed + 3.6));
-        const minor = major * scale(0.28, 0.52, hash1(seed + 4.8));
-        const alpha = Math.min(0.26, opacity * scale(0.10, 0.38, hash1(seed + 5.9)) * scale(0.55, 1.15, amount));
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(angle + Math.PI / 2 + (hash1(seed + 6.2) - 0.5) * 0.8);
-        ctx.fillStyle = rgba(colourFor(i), alpha);
-        ctx.beginPath();
-        ctx.ellipse(0, 0, major, minor, 0, 0, TAU);
-        ctx.fill();
-        ctx.restore();
-      }
-      ctx.restore();
-    }
-
-    // Defined spiral bands: these make curl/radius/speed/definition visibly change the shape of the wormhole.
-    const bandCount = Math.max(0, Math.round(scale(0, 18, amount)));
-    if (!bandCount) return;
+    // 1. Broad readable arm wash. This makes Arm Amount, Opacity, Thickness and Radius obvious immediately.
+    const washCount = Math.max(bandGroups, Math.round(scale(2, 22, amount)));
     ctx.save();
-    ctx.globalCompositeOperation = 'screen';
+    ctx.globalCompositeOperation = 'lighter';
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    for (let i = 0; i < bandCount; i += 1) {
-      const seed = i * 24.317;
-      const startAngle = (i / bandCount) * TAU + hash1(seed) * 0.45 + t * speed * dir;
+    ctx.filter = `blur(${softness + scale(1.2, 6.8, 1 - definition)}px)`;
+    for (let i = 0; i < washCount; i += 1) {
+      const seed = i * 31.419;
+      const group = i % bandGroups;
+      const startAngle = (group / bandGroups) * TAU + hash1(seed) * 0.46 + t * speed * dir * scale(0.34, 0.82, hash1(seed + 1));
       const colour = colourFor(i);
-      const lineAlpha = Math.min(0.42, opacity * scale(0.18, 0.62, definition) * scale(0.65, 1.0, hash1(seed + 1.1)));
-      ctx.save();
-      ctx.filter = `blur(${scale(0.15, 2.8, 1 - definition)}px)`;
-      ctx.strokeStyle = rgba(colour, lineAlpha);
-      ctx.lineWidth = Math.max(0.9, baseThickness * scale(0.45, 1.35, definition));
+      const alpha = Math.min(0.34, opacity * scale(0.18, 0.42, hash1(seed + 2)) * scale(0.70, 1.18, amount));
+      ctx.strokeStyle = rgba(colour, alpha);
+      ctx.lineWidth = Math.max(2, baseThickness * scale(2.0, 5.7, hash1(seed + 3)) * scale(0.72, 1.18, thicknessValue));
       ctx.shadowColor = colour;
-      ctx.shadowBlur = baseThickness * scale(1.0, 3.8, opacity);
+      ctx.shadowBlur = baseThickness * scale(2.5, 6.0, opacity);
       ctx.beginPath();
-      const steps = 58;
+      const steps = 82;
       for (let s = 0; s <= steps; s += 1) {
         const p = s / steps;
-        const radial = Math.pow(1 - p, 0.72) * radiusScale;
+        const radial = scale(1.08, 0.10, p) * radiusScale;
         const angle = startAngle + dir * p * TAU * turns;
-        const broken = fbm(Math.cos(angle) * 1.8 + seed * 0.07 + p * 0.8, Math.sin(angle) * 1.8 - seed * 0.03 + t * 0.025, 3);
-        const jitter = (broken - 0.5) * g.base * noiseStrength;
-        const fadeIn = smoothstep(0.00, 0.16, p);
-        const fadeOut = 1 - smoothstep(0.78, 1.00, p);
-        ctx.globalAlpha = fadeIn * fadeOut * scale(0.55, 1.0, broken);
+        const broken = fbm(Math.cos(angle) * 1.65 + seed * 0.04 + p, Math.sin(angle) * 1.65 - seed * 0.02 + t * 0.035, 3);
+        const jitter = (broken - 0.5) * outerBase * noiseStrength;
+        const fadeIn = smoothstep(0.00, 0.10, p);
+        const fadeOut = 1 - smoothstep(0.84, 1.00, p);
+        ctx.globalAlpha = fadeIn * fadeOut;
         const x = g.cx + Math.cos(angle) * (g.rx * radial + jitter);
         const y = g.cy + Math.sin(angle) * (g.ry * radial * 0.88 + jitter * 0.70);
         if (s === 0) ctx.moveTo(x, y);
@@ -698,9 +801,82 @@ export class ShimmerDistortionEngine {
       }
       ctx.stroke();
       ctx.globalAlpha = 1;
-      ctx.restore();
     }
     ctx.restore();
+
+    // 2. Main spiral bands. These are intentionally stronger than the mist so the sliders do not feel dead.
+    const bandCount = Math.max(bandGroups, Math.round(scale(2, 18, amount)));
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.filter = `blur(${scale(0.05, 2.4, 1 - definition) + softness * 0.08}px)`;
+    for (let i = 0; i < bandCount; i += 1) {
+      const seed = 500 + i * 27.173;
+      const group = i % bandGroups;
+      const startAngle = (group / bandGroups) * TAU + hash1(seed) * 0.35 + t * speed * dir;
+      const colour = colourFor(i + 1);
+      const alpha = Math.min(0.62, opacity * scale(0.38, 0.78, definition) * scale(0.72, 1.12, hash1(seed + 2)));
+      ctx.strokeStyle = rgba(colour, alpha);
+      ctx.lineWidth = Math.max(1.1, baseThickness * scale(0.62, 1.75, definition));
+      ctx.shadowColor = colour;
+      ctx.shadowBlur = baseThickness * scale(0.55, 2.7, opacity);
+      ctx.beginPath();
+      const steps = 90;
+      for (let s = 0; s <= steps; s += 1) {
+        const p = s / steps;
+        const radial = Math.pow(1 - p, 0.72) * radiusScale;
+        const angle = startAngle + dir * p * TAU * turns;
+        const broken = fbm(Math.cos(angle) * 1.9 + seed * 0.05 + p * 0.8, Math.sin(angle) * 1.9 - seed * 0.025 + t * 0.03, 3);
+        const jitter = (broken - 0.5) * outerBase * noiseStrength * scale(0.35, 1.2, 1 - definition);
+        const fadeIn = smoothstep(0.00, 0.13, p);
+        const fadeOut = 1 - smoothstep(0.80, 1.00, p);
+        ctx.globalAlpha = fadeIn * fadeOut * scale(0.72, 1.00, broken);
+        const x = g.cx + Math.cos(angle) * (g.rx * radial + jitter);
+        const y = g.cy + Math.sin(angle) * (g.ry * radial * 0.88 + jitter * 0.70);
+        if (s === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+
+    // 3. Thin definition streaks. Definition slider now has a visible, literal result.
+    if (definition > 0.02) {
+      const streakCount = Math.max(2, Math.round(scale(2, 14, amount)));
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      for (let i = 0; i < streakCount; i += 1) {
+        const seed = 900 + i * 19.91;
+        const startAngle = (i / streakCount) * TAU + hash1(seed) * 0.30 + t * speed * dir * 1.15;
+        const colour = i % 2 === 0 ? v.coreColor : v.accentColor;
+        const alpha = Math.min(0.78, opacity * definition * scale(0.26, 0.62, hash1(seed + 1)));
+        ctx.strokeStyle = rgba(colour, alpha);
+        ctx.lineWidth = Math.max(0.75, baseThickness * scale(0.12, 0.34, definition));
+        ctx.shadowColor = colour;
+        ctx.shadowBlur = baseThickness * scale(0.18, 1.25, definition);
+        ctx.beginPath();
+        const steps = 80;
+        for (let s = 0; s <= steps; s += 1) {
+          const p = s / steps;
+          const radial = Math.pow(1 - p, 0.76) * radiusScale;
+          const angle = startAngle + dir * p * TAU * turns;
+          const fadeIn = smoothstep(0.02, 0.16, p);
+          const fadeOut = 1 - smoothstep(0.78, 1.00, p);
+          ctx.globalAlpha = fadeIn * fadeOut;
+          const x = g.cx + Math.cos(angle) * g.rx * radial;
+          const y = g.cy + Math.sin(angle) * g.ry * radial * 0.88;
+          if (s === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      ctx.restore();
+    }
   }
 
   drawWormholePullCore(ctx, g, t) {
@@ -716,15 +892,6 @@ export class ShimmerDistortionEngine {
     ctx.fillStyle = glow;
     ctx.beginPath();
     ctx.ellipse(g.cx, g.cy, g.rx * 0.18, g.ry * 0.14, 0, 0, TAU);
-    ctx.fill();
-    ctx.globalCompositeOperation = 'source-over';
-    const hole = ctx.createRadialGradient(g.cx, g.cy, 0, g.cx, g.cy, g.base * 0.14);
-    hole.addColorStop(0.00, rgba('#000000', 0.98));
-    hole.addColorStop(0.45, rgba('#020510', 0.92));
-    hole.addColorStop(1.00, rgba('#000000', 0));
-    ctx.fillStyle = hole;
-    ctx.beginPath();
-    ctx.ellipse(g.cx, g.cy, g.rx * 0.075, g.ry * 0.058, 0, 0, TAU);
     ctx.fill();
     ctx.restore();
   }
