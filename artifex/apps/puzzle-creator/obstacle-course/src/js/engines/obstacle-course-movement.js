@@ -23,7 +23,7 @@ export function startRun() {
   OC.running = true;
   OC.paused = false;
   OC.complete = false;
-  OC.targetSpeed = OC.speed;
+  OC.targetSpeed = 0;
   startRenderLoop();
   updateHud();
 }
@@ -98,9 +98,9 @@ export function updateMovement(dt) {
   applyBackgroundPlate();
   const status = pathStatus();
   OC.offPathTime = status === 'off' ? OC.offPathTime + dt : 0;
-  let desired = OC.running && !OC.paused ? OC.speed : 0;
-  if (OC.keys.has('back')) desired = BACK_SPEED;
-  if (OC.keys.has('forward')) desired = OC.speed;
+  let desired = 0;
+  if (OC.running && !OC.paused && OC.keys.has('forward')) desired = OC.speed;
+  if (OC.running && !OC.paused && OC.keys.has('back')) desired = BACK_SPEED;
   if (status === 'off' && desired > SLOW_TROT_SPEED) desired = SLOW_TROT_SPEED;
   if (status === 'edge' && desired > OC.speed * 0.65) desired = OC.speed * 0.65;
   OC.targetSpeed = desired;
