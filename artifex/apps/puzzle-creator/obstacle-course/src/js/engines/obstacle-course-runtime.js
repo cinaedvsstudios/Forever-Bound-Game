@@ -1,4 +1,4 @@
-// Obstacle Course V3.0.1 / Modular Horse Forest Runner
+// Obstacle Course V3.0.2 / Modular Horse Forest Runner
 import { OC } from './obstacle-course-state.js';
 import { $, visualFactorToSlider, sliderToGlobalBrightness, sliderToGlobalContrast, sliderToGlobalSaturation, sliderToTint, tintToSlider } from './obstacle-course-utils.js';
 import { ensureHeader, injectStyles, mountLayout, mountLeftPanel, enhanceStaticRangeSteppers, buildSliderRow, setResult } from './obstacle-course-ui.js';
@@ -35,6 +35,7 @@ function ensureMounted() {
   installHorseAspectFix();
   mountLayout();
   mountLeftPanel({ onRegenerate: rebuildCourse, onExport: exportJsonSettings, onImport: (e) => importJsonSettings(e, { rebuild: rebuildCourse }) });
+  setInteractionLocked(true);
   enhanceStaticRangeSteppers();
   bindUi();
   bindKeyboard();
@@ -42,19 +43,25 @@ function ensureMounted() {
   loadRequiredAssets({ onFirstReady: () => { applyBackgroundPlate(); showSpinner(true); updateHorseSprite(); renderOnce(); } }).then(() => {
     if (!OC.requiredReady) { showSpinner(true, 'Required assets missing'); setResult(`Required asset failure: ${OC.failures.join(', ')}`, 'failure'); updateHud(); return; }
     rebuildCourse();
-    if ($('obstacle-start')) $('obstacle-start').disabled = false;
-    setResult('Required obstacle course assets ready. Optional 3D/audio assets are still loading.', 'success');
+    setResult('Required obstacle course assets ready. Waiting for optional 3D/audio assets before enabling controls.', 'success');
     loadOptionalAssets({ loadGlbAsset }).then(() => {
       showSpinner(false);
-      const safeToSwapScene = !OC.active && !OC.running && OC.distance <= 0.01;
-      if (OC.glbTemplates.size && safeToSwapScene) rebuildCourse();
+      rebuildCourse();
       populateLayerSelect();
       refreshLayerPanel();
       updateHud();
       scheduleOverviewDraw();
-      setResult(safeToSwapScene ? 'Obstacle course ready.' : 'Optional assets loaded. Current run was not reset; press Regenerate to rebuild with newly loaded assets.', 'success');
-      import('./obstacle-course-asset-debug.js?v=3.0.1').catch(() => {});
+      setInteractionLocked(false);
+      setResult('All obstacle course assets loaded. Test controls are ready.', 'success');
+      import('./obstacle-course-asset-debug.js?v=3.0.2').catch(() => {});
     });
+  });
+}
+
+function setInteractionLocked(locked) {
+  ['obstacle-start', 'obstacle-pause', 'obstacle-reset-run', 'obstacle-regenerate'].forEach((id) => {
+    const node = $(id);
+    if (node) node.disabled = locked;
   });
 }
 
