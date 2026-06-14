@@ -19,17 +19,6 @@ export function registerEntity(type, object, meta = {}) {
   return entity;
 }
 
-function clearUnsafeMaterialShader(mat) {
-  if (!mat) return;
-  if (mat.userData?.ocVisualShaderInstalled || mat.userData?.ocShader) {
-    mat.onBeforeCompile = () => {};
-    delete mat.userData.ocVisualShaderInstalled;
-    delete mat.userData.ocShader;
-    delete mat.userData.ocVisualConfig;
-    mat.needsUpdate = true;
-  }
-}
-
 function hexToRgb(hex) {
   const value = String(hex || '#ffffff').replace('#', '');
   const expanded = value.length === 3 ? value.split('').map((c) => c + c).join('') : value;
@@ -44,7 +33,6 @@ function hexToRgb(hex) {
 
 function applyMaterialVisual(mat, layer) {
   if (!mat) return;
-  clearUnsafeMaterialShader(mat);
   const opacity = layer.opacity ?? 1;
   mat.transparent = opacity < 0.995 || mat.transparent;
   mat.opacity = opacity;
