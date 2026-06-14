@@ -12,7 +12,7 @@ Do not refactor this module directly on `main`. `main` should only receive a tes
 
 ## Version rule
 
-Every code change must bump the obstacle-course app version/cache before testing or merging. The current branch version is `V3.0.14` with cache `3.0.14`.
+Every code change must bump the obstacle-course app version/cache before testing or merging. The current branch version is `V3.0.15` with cache `3.0.15`.
 
 The version must stay aligned in:
 
@@ -95,7 +95,7 @@ Runtime display only. It owns distance, score, status, loading display, speed ba
 Input mapping only. It owns mapping keyboard/touch input into `OC.keys`.
 
 ### obstacle-course-movement.js
-Movement and run lifecycle only. It owns Start, Pause, Reset, movement update, steering, jumping, speed, completion, and calling collision/audio hooks.
+Movement and run lifecycle only. It owns Start, Pause, Reset, movement update, steering, jumping, speed, completion, and calling collision/audio hooks. Start Test begins automatic forward movement; keyboard input steers, jumps, and can reverse.
 
 ### obstacle-course-obstacles.js
 Gameplay obstacles only. It owns obstacle placement and obstacle collision. It must not own decorative background rocks.
@@ -125,6 +125,6 @@ Phase 3 is complete: `obstacle-course-asset-debug.js` now has verification outpu
 
 The shader crash fix is now a permanent code-path correction: layer visuals no longer use shader injection or cleanup fallbacks.
 
-V3.0.14 adds explicit cache-busted imports for recently changed modules from `obstacle-course-runtime.js`, especially `obstacle-course-scenery.js` and `obstacle-course-overview.js`, so RawGithack/browser module cache cannot keep serving the old syntax-error module.
+V3.0.15 fixes the Start Test behavior: pressing Start now begins forward movement automatically instead of requiring a held forward key. The movement and controls modules are cache-busted from runtime so the updated handlers are used.
 
-This is architecture cleanup plus targeted visual correction only. It should not intentionally change gameplay rules.
+This is architecture cleanup plus targeted gameplay correction only. It should not intentionally change unrelated gameplay rules.
