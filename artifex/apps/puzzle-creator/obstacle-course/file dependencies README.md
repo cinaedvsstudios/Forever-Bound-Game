@@ -12,7 +12,7 @@ Do not refactor this module directly on `main`. `main` should only receive a tes
 
 ## Version rule
 
-Every code change must bump the obstacle-course app version/cache before testing or merging. The current branch version is `V3.0.5` with cache `3.0.5`.
+Every code change must bump the obstacle-course app version/cache before testing or merging. The current branch version is `V3.0.6` with cache `3.0.6`.
 
 The version must stay aligned in:
 
@@ -68,7 +68,7 @@ Three.js scene lifecycle only. It owns renderer, scene, camera, lights, render l
 Ground/path only. It owns path sequence resolution, path centre/width math, path status, clearing world layers for rebuild, and building visible ground/path tile meshes. It must not scatter trees, decorative rocks, ferns, obstacles, or collectibles.
 
 ### obstacle-course-scenery.js
-Environmental scenery only. It owns tree, decorative rock, fern/detail scatter, fallback scenery geometry, seeded placement, scenery distance from path, and tree screen-edge falloff. It must not own path source generation, movement, collision, or asset loading.
+Environmental scenery only. It owns tree, decorative rock, fern/detail scatter, fallback scenery geometry, seeded placement, scenery distance from path, tree screen-edge falloff, and tree asset banding rules. Oak trees are the farthest tree band; pine trees are the closer-to-centre tree band. It must not own path source generation, movement, collision, or asset loading.
 
 ### obstacle-course-glb.js
 GLB mechanics only. It owns loading, cloning, normalising, grounding, instancing, and applying GLB material visuals. It must not own GLB picker UI, layer UI, or scenery placement decisions.
@@ -77,7 +77,7 @@ GLB mechanics only. It owns loading, cloning, normalising, grounding, instancing
 GLB UI controls only. It owns GLB picker UI, GLB asset selector, GLB sliders, and GLB selection refresh. It must not load GLBs, normalise GLBs, or place scenery.
 
 ### obstacle-course-layers.js
-Layer mechanics only. It owns `makeLayer`, `registerEntity`, layer transform/visibility application, and layer material visual application. It must not own layer dropdowns, sliders, or buttons.
+Layer mechanics only. It owns `makeLayer`, `registerEntity`, layer transform/visibility application, child render ordering, and layer material visual application. It must not own layer dropdowns, sliders, or buttons.
 
 ### obstacle-course-layer-controls.js
 Layer UI controls only. It owns layer select, layer sliders, visible/solo/all/above/below buttons, and layer-control refresh. It must not implement layer material rendering.
@@ -107,7 +107,7 @@ Collectibles only. It owns collectible placement and collection checks.
 Audio only. It owns audio unlock, loops, clips, and jump/land/hit/collect sounds.
 
 ### obstacle-course-overview.js
-Overview map only. It owns drawing and scheduling the overview.
+Overview map only. It owns drawing and scheduling the overview. The brown/orange centre line is the path centre; the translucent gold band is the rideable path width.
 
 ### obstacle-course-export-import.js
 Settings import/export only.
@@ -125,4 +125,6 @@ Phase 3 is complete: `obstacle-course-asset-debug.js` now has verification outpu
 
 The shader crash fix is now a permanent code-path correction: layer visuals no longer use shader injection or cleanup fallbacks.
 
-This is architecture cleanup only. It should not intentionally change visuals or gameplay.
+V3.0.6 adjusts the scenery/ground relationship: ground tiles no longer render as a transparent overlay above trees, tree layer render order is applied to child meshes, tree roots are lifted slightly so they are planted rather than buried, pine trees are used nearer the centre, and oak trees are reserved for the farthest outer tree band.
+
+This is architecture cleanup plus targeted visual correction only. It should not intentionally change gameplay rules.
