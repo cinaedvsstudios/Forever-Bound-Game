@@ -12,7 +12,7 @@ Do not refactor this module directly on `main`. `main` should only receive a tes
 
 ## Version rule
 
-Every code change must bump the obstacle-course app version/cache before testing or merging. The current branch version is `V3.0.12` with cache `3.0.12`.
+Every code change must bump the obstacle-course app version/cache before testing or merging. The current branch version is `V3.0.13` with cache `3.0.13`.
 
 The version must stay aligned in:
 
@@ -125,6 +125,6 @@ Phase 3 is complete: `obstacle-course-asset-debug.js` now has verification outpu
 
 The shader crash fix is now a permanent code-path correction: layer visuals no longer use shader injection or cleanup fallbacks.
 
-V3.0.12 extends overview diagnostics: hover still shows the GLB filename and position, and clicking a GLB-backed overview dot now switches the right panel to GLB Asset controls and selects that exact asset for Y/scale troubleshooting.
+V3.0.13 fixes the V3.0.12 module-load syntax error in `obstacle-course-scenery.js`. The issue was an extra closing parenthesis in outer-tree placement after `outerTreeScale(rng)`.
 
 This is architecture cleanup plus targeted visual correction only. It should not intentionally change gameplay rules.
