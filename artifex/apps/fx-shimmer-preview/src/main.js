@@ -1,5 +1,5 @@
-import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.32';
-import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.32';
+import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.33';
+import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.33';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -331,7 +331,7 @@ function fxAssetJson() {
       'Prototype canvas renderer. Future integration should route this through the FX Editor engine registry.',
       'Portal Inner Wisps are intentionally separate from Portal Line Outline and wormhole Arms.',
       'V1.28 adds aperture controls, overlay alpha vignette, expanded blend modes and a second overlay slot.',
-      'V1.32 keeps the V1.30 asset picker and makes wormhole clouds/arms visibly respond without overlays.',
+      'V1.33 keeps the V1.30 asset picker and makes wormhole arms use the same visible cloud/lobe brightness style as Orbit Clouds.',
       'Exports runtime-facing archetype shape, not final production schema.'
     ]
   };
@@ -541,5 +541,5 @@ function tick(now) {
 
 renderPresets();
 syncControls();
-setStatus('Loaded shimmer engine prototype V1.32.');
+setStatus('Loaded shimmer engine prototype V1.33.');
 requestAnimationFrame(tick);

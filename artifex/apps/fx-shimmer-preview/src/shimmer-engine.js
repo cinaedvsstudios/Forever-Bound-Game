@@ -811,103 +811,101 @@ export class ShimmerDistortionEngine {
     const thicknessValue = clamp01((v.armThickness ?? 0) / 100);
     if (amount <= 0.001 || opacity <= 0.001 || thicknessValue <= 0.001) return;
 
+    // V1.33: render wormhole arms using the same readable cloud/lobe style as Orbit Clouds,
+    // but driven by the Arms / Nebula Bands sliders. This is intentionally obvious and bright,
+    // because the previous line-stroke arm passes were technically drawing but unreadable.
     const dir = (v.swirl ?? 80) >= 0 ? 1 : -1;
     const speedControl = clamp01((v.armSpeed ?? 32) / 100);
-    const speed = scale(0.08, 1.45, Math.pow(speedControl, 1.35));
-    const turns = scale(0.55, 5.85, clamp01((v.armCurl ?? 70) / 100));
-    const radiusScale = scale(0.34, 1.72, clamp01((v.armRadius ?? 70) / 100));
-    const softness = scale(0.0, 12.0, clamp01((v.armSoftness ?? 28) / 100));
+    const curlControl = clamp01((v.armCurl ?? 70) / 100);
+    const radiusControl = clamp01((v.armRadius ?? 70) / 100);
+    const softnessControl = clamp01((v.armSoftness ?? 28) / 100);
     const definition = clamp01((v.armDefinition ?? 70) / 100);
     const pulseStrength = clamp01((v.armPulseStrength ?? 0) / 100);
-    const pulse = 1 + Math.sin(t * scale(0.7, 4.8, speedControl)) * scale(0, 0.70, pulseStrength);
-    const noiseStrength = scale(0.000, 0.055, clamp01((v.noise ?? 20) / 100));
-    const armGroups = Math.max(1, Math.round(scale(1, 8, amount)));
-    const armCount = Math.max(armGroups, Math.round(scale(2, 22, amount)));
-    const outerBase = Math.max(g.rx, g.ry);
-    const baseWidth = Math.max(1.3, g.base * scale(0.010, 0.155, thicknessValue) * pulse);
-    const colors = [v.coreColor || '#28dfff', v.rimColor || '#255bff', v.accentColor || '#9d5cff'];
 
-    const buildArmPath = (ctx2, seed, group, stretch = 1, steps = 96) => {
-      const startAngle = (group / Math.max(1, armGroups)) * TAU + hash1(seed) * 0.46 + t * speed * dir * scale(0.45, 1.18, hash1(seed + 1));
-      ctx2.beginPath();
-      for (let s = 0; s <= steps; s += 1) {
-        const p = s / steps;
-        const radial = scale(1.08, 0.06, Math.pow(p, 0.83)) * radiusScale * stretch;
-        const angle = startAngle + dir * p * TAU * turns;
-        const broken = fbm(Math.cos(angle) * 1.7 + seed * 0.041 + p * 0.7, Math.sin(angle) * 1.7 - seed * 0.027 + t * 0.04, 3);
-        const jitter = (broken - 0.5) * outerBase * noiseStrength;
-        const x = g.cx + Math.cos(angle) * (g.rx * radial + jitter);
-        const y = g.cy + Math.sin(angle) * (g.ry * radial * 0.88 + jitter * 0.70);
-        if (s === 0) ctx2.moveTo(x, y);
-        else ctx2.lineTo(x, y);
-      }
-    };
+    const count = Math.round(scale(0, 96, amount));
+    const armFamilies = Math.max(2, Math.round(scale(2, 7, amount)));
+    const opacityBoost = scale(0, 0.48, opacity);
+    const baseThickness = g.base * scale(0.018, 0.125, thicknessValue);
+    const softness = scale(3, 15, softnessControl);
+    const speed = Math.pow(speedControl, 2) * 0.70;
+    const turns = scale(0.45, 3.85, curlControl);
+    const radiusScale = scale(0.28, 1.36, radiusControl);
+    const pulse = 1 + Math.sin(t * scale(0.7, 3.3, speedControl)) * scale(0, 0.80, pulseStrength);
+    const colors = [v.coreColor || '#28dfff', v.rimColor || '#255bff', v.accentColor || '#9d5cff'];
 
     ctx.save();
     ctx.beginPath();
-    ctx.ellipse(g.cx, g.cy, g.rx * 1.62, g.ry * 1.38, 0, 0, TAU);
+    ctx.ellipse(g.cx, g.cy, g.rx * 1.42, g.ry * 1.20, 0, 0, TAU);
     ctx.clip();
 
-    // 1. Broad visible wash. This makes the Amount / Opacity / Thickness sliders read immediately.
+    // Broad nebula lobes: deliberately mirrors orbit-cloud brightness and opacity handling.
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    ctx.filter = `blur(${softness}px)`;
+    for (let i = 0; i < count; i += 1) {
+      const seed = i * 15.913;
+      const armIndex = i % armFamilies;
+      const q = i / Math.max(1, count);
+      const p = hash1(seed + 1);
+      const baseAngle = (armIndex / armFamilies) * TAU + q * 0.38 + hash1(seed) * 0.72;
+      const radial = scale(0.12, 1.04, p) * radiusScale;
+      const spiral = dir * radial * TAU * turns;
+      const orbit = baseAngle + spiral + t * speed * dir * scale(0.55, 1.35, hash1(seed + 2));
+      const wobble = Math.sin(t * speed * 2.4 + seed) * g.base * scale(0.015, 0.080, curlControl);
+      const x = g.cx + Math.cos(orbit) * (g.rx * radial + wobble);
+      const y = g.cy + Math.sin(orbit) * (g.ry * radial * 0.88 + wobble * 0.68);
+      const major = baseThickness * scale(1.4, 6.0, hash1(seed + 4)) * pulse;
+      const minor = major * scale(0.30, 0.62, hash1(seed + 5));
+      const colour = colors[(i + armIndex) % colors.length];
+      const alpha = Math.min(0.46, opacityBoost * scale(0.45, 1.35, hash1(seed + 6)));
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(orbit + Math.PI / 2 + (hash1(seed + 7) - 0.5) * 0.9);
+      ctx.fillStyle = rgba(colour, alpha);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, major, minor, 0, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+
+    // Main visible spiral strokes: these make curl, radius and definition read instantly.
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.filter = `blur(${softness + scale(2.0, 7.0, 1 - definition)}px)`;
-    for (let i = 0; i < armCount; i += 1) {
-      const seed = 100 + i * 31.419;
-      const color = colors[i % colors.length];
-      const alpha = Math.min(0.58, opacity * scale(0.30, 0.72, hash1(seed + 2)) * scale(0.75, 1.18, amount));
-      ctx.strokeStyle = rgba(color, alpha);
-      ctx.lineWidth = Math.max(3.0, baseWidth * scale(2.7, 6.3, hash1(seed + 3)));
-      ctx.shadowColor = color;
-      ctx.shadowBlur = baseWidth * scale(2.8, 7.5, opacity);
-      buildArmPath(ctx, seed, i % armGroups, scale(0.86, 1.12, hash1(seed + 4)), 90);
-      ctx.stroke();
-    }
-    ctx.restore();
-
-    // 2. Main spiral bands. Source-over is intentional so the bands remain visible on a dark field.
-    ctx.save();
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.filter = `blur(${scale(0.0, 2.2, 1 - definition) + softness * 0.05}px)`;
-    const mainCount = Math.max(armGroups, Math.round(scale(2, 16, amount)));
-    for (let i = 0; i < mainCount; i += 1) {
-      const seed = 500 + i * 27.173;
-      const color = colors[(i + 1) % colors.length];
-      const alpha = Math.min(0.82, opacity * scale(0.50, 0.92, definition) * scale(0.72, 1.12, hash1(seed + 2)));
-      ctx.strokeStyle = rgba(color, alpha);
-      ctx.lineWidth = Math.max(1.3, baseWidth * scale(0.72, 1.95, definition));
-      ctx.shadowColor = color;
-      ctx.shadowBlur = baseWidth * scale(0.65, 2.8, opacity);
-      buildArmPath(ctx, seed, i % armGroups, scale(0.90, 1.08, hash1(seed + 4)), 104);
-      ctx.stroke();
-    }
-    ctx.restore();
-
-    // 3. Bright definition streaks. Definition now changes sharpness and contrast, not whether the layer exists.
-    if (definition > 0.001) {
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.filter = `blur(${scale(0.0, 0.9, 1 - definition)}px)`;
-      const streakCount = Math.max(2, Math.round(scale(2, 14, amount)));
-      for (let i = 0; i < streakCount; i += 1) {
-        const seed = 900 + i * 19.91;
-        const color = i % 2 === 0 ? colors[0] : colors[2];
-        const alpha = Math.min(0.92, opacity * definition * scale(0.30, 0.68, hash1(seed + 1)));
-        ctx.strokeStyle = rgba(color, alpha);
-        ctx.lineWidth = Math.max(0.8, baseWidth * scale(0.14, 0.42, definition));
-        ctx.shadowColor = color;
-        ctx.shadowBlur = baseWidth * scale(0.18, 1.45, definition);
-        buildArmPath(ctx, seed, i % Math.max(1, streakCount), scale(0.72, 1.02, hash1(seed + 3)), 96);
-        ctx.stroke();
+    ctx.filter = `blur(${scale(0.0, 2.8, 1 - definition) + softness * 0.08}px)`;
+    const strokeCount = Math.max(armFamilies, Math.round(scale(2, 14, amount)));
+    for (let i = 0; i < strokeCount; i += 1) {
+      const seed = 300 + i * 27.173;
+      const group = i % armFamilies;
+      const startAngle = (group / armFamilies) * TAU + hash1(seed) * 0.60 + t * speed * dir;
+      const colour = colors[(i + 1) % colors.length];
+      ctx.strokeStyle = rgba(colour, Math.min(0.62, opacityBoost * scale(0.85, 1.45, definition)));
+      ctx.lineWidth = Math.max(1.2, baseThickness * scale(0.45, 1.55, definition));
+      ctx.shadowColor = colour;
+      ctx.shadowBlur = baseThickness * scale(0.9, 3.8, opacity);
+      ctx.beginPath();
+      const steps = 88;
+      for (let s = 0; s <= steps; s += 1) {
+        const p = s / steps;
+        const radial = Math.pow(1 - p, 0.82) * radiusScale;
+        const angle = startAngle + dir * p * TAU * turns;
+        const broken = fbm(Math.cos(angle) * 1.8 + seed * 0.07 + p * 0.7, Math.sin(angle) * 1.8 - seed * 0.03 + t * 0.04, 3);
+        const jitter = (broken - 0.5) * g.base * scale(0.000, 0.045, clamp01((v.noise ?? 20) / 100));
+        const fadeIn = smoothstep(0.00, 0.12, p);
+        const fadeOut = 1 - smoothstep(0.84, 1.00, p);
+        ctx.globalAlpha = fadeIn * fadeOut * scale(0.72, 1.0, broken);
+        const x = g.cx + Math.cos(angle) * (g.rx * radial + jitter);
+        const y = g.cy + Math.sin(angle) * (g.ry * radial * 0.88 + jitter * 0.70);
+        if (s === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
       }
-      ctx.restore();
+      ctx.stroke();
+      ctx.globalAlpha = 1;
     }
+    ctx.restore();
 
     ctx.restore();
   }
