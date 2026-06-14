@@ -17,15 +17,16 @@ The intended load order is:
 1. `index.html` loads `src/js/main.js`.
 2. `src/js/main.js` imports `obstacle-course-runtime.js` with the matching cache version.
 3. `obstacle-course-runtime.js` applies defaults from `obstacle-course-settings.js`.
-4. Runtime mounts UI using `obstacle-course-ui.js`.
-5. Runtime initialises Three.js using `obstacle-course-scene.js`.
-6. Runtime loads required assets using `obstacle-course-loader.js`.
-7. Runtime builds ground/path using `obstacle-course-ground-path.js`.
-8. Runtime scatters environmental scenery using `obstacle-course-scenery.js`.
-9. Runtime adds gameplay obstacles and collectibles using `obstacle-course-obstacles.js` and `obstacle-course-collectibles.js`.
-10. Runtime unlocks controls.
-11. Runtime loads optional GLB/audio assets.
-12. Runtime rebuilds scenery once with loaded GLBs.
+4. Runtime mounts static UI using `obstacle-course-ui.js`.
+5. Runtime binds controls using `obstacle-course-controls.js`.
+6. Runtime initialises Three.js using `obstacle-course-scene.js`.
+7. Runtime loads required assets using `obstacle-course-loader.js`.
+8. Runtime builds ground/path using `obstacle-course-ground-path.js`.
+9. Runtime scatters environmental scenery using `obstacle-course-scenery.js`.
+10. Runtime adds gameplay obstacles and collectibles using `obstacle-course-obstacles.js` and `obstacle-course-collectibles.js`.
+11. Runtime unlocks controls.
+12. Runtime loads optional GLB/audio assets.
+13. Runtime rebuilds scenery once with loaded GLBs.
 
 ## File ownership
 
@@ -60,13 +61,16 @@ Environmental scenery only. It owns tree, decorative rock, fern/detail scatter, 
 GLB mechanics only. It owns loading, cloning, normalising, grounding, instancing, and applying GLB material visuals. It must not own GLB picker UI, layer UI, or scenery placement decisions.
 
 ### obstacle-course-glb-controls.js
-Future split target. It should own GLB picker UI, GLB asset selector, GLB sliders, and GLB selection refresh.
+GLB UI controls only. It owns GLB picker UI, GLB asset selector, GLB sliders, and GLB selection refresh. It must not load GLBs, normalise GLBs, or place scenery.
 
 ### obstacle-course-layers.js
-Layer mechanics only. It owns `makeLayer`, `registerEntity`, layer transform/visibility application, and layer material visual application. It must not own layer slider UI after refactor.
+Layer mechanics only. It owns `makeLayer`, `registerEntity`, layer transform/visibility application, and layer material visual application. It must not own layer dropdowns, sliders, or buttons.
 
 ### obstacle-course-layer-controls.js
-Future split target. It should own layer select, layer sliders, visible/solo/all/above/below buttons, and layer-control refresh.
+Layer UI controls only. It owns layer select, layer sliders, visible/solo/all/above/below buttons, and layer-control refresh. It must not implement layer material rendering.
+
+### obstacle-course-controls.js
+Runtime control binding only. It owns Start/Pause/Reset button binding, template/difficulty/distance/scenery sliders, view helper toggles, vanishing-point sliders, and global visual sliders. It must not build the scene, load assets, generate paths, scatter scenery, or run movement physics.
 
 ### obstacle-course-ui.js
 Static layout and generic UI helpers only. It owns header injection, style injection, layout mounting, left panel mounting, generic slider rows, and result text. It must not make gameplay decisions.
@@ -98,8 +102,10 @@ Settings import/export only.
 ### obstacle-course-asset-debug.js
 Debug visibility only. It may report version, active settings, asset status, ground tiles, GLB status, object/entity counts, and UI presence. It must not silently fix runtime state.
 
-## Current first refactor move
+## Current refactor status
 
-The first active move is to split environmental scenery out of `obstacle-course-ground-path.js` and into `obstacle-course-scenery.js`.
+Phase 1 is complete: scenery, GLB controls, and layer controls have been split into owned files.
 
-This is an architecture-only move. It should not intentionally change visuals or gameplay.
+Phase 2 is in progress: `obstacle-course-runtime.js` is being reduced to orchestration only, with runtime control binding moved into `obstacle-course-controls.js`.
+
+This is architecture cleanup only. It should not intentionally change visuals or gameplay.
