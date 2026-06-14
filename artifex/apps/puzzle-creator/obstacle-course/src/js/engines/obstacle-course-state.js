@@ -1,6 +1,6 @@
-// Obstacle Course V3.0.2 state and constants
-export const VERSION = 'V3.0.2';
-export const CACHE_VERSION = '3.0.2';
+// Obstacle Course V3.0.3 state and constants
+export const VERSION = 'V3.0.3';
+export const CACHE_VERSION = '3.0.3';
 export const ASSET_BASE = './assets/';
 export const SHARED_UI_BASE = '../../../shared/ui/';
 export const GROUND_Y = -1.62;
@@ -60,7 +60,7 @@ export const OC = {
   pathVisualWidth: PATH_WORLD_WIDTH,
   sceneryDistance: 8,
   vanishX: 0,
-  vanishY: 0,
+  vanishY: 49,
   cameraAngle: 0,
   backgroundZoom: 1.1,
   backgroundJumpShift: 0,
