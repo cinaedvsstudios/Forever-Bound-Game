@@ -69,7 +69,7 @@ function scatterX(rng, distance, side, fromHalf, toHalf) {
 function pathEdgeX(rng, distance, side) {
   const center = pathCenterAt(distance);
   const half = pathHalfWidthAt(distance);
-  return center + side * (half + randFrom(rng, -0.25, 0.9));
+  return center + side * (half + randFrom(rng, 0.25, 1.4));
 }
 function sectionCount() { return Math.max(1, OC.courseLength / 1000); }
 function makeDistances(rng, count, start, end, jitter = 10) {
@@ -86,6 +86,15 @@ function screenEdgeScaleForX(x, minScale = 0.68) {
   const t = clamp(Math.abs(Number(x || 0)) / half, 0, 1);
   const smooth = t * t * (3 - 2 * t);
   return lerp(1, minScale, smooth);
+}
+
+function pathEdgeTreeScale(rng, distance) {
+  const closeDistanceScale = clamp((Number(distance || 0) - 70) / 280, 0.58, 1);
+  return randFrom(rng, 0.22, 0.34) * closeDistanceScale;
+}
+
+function outerTreeScale(rng) {
+  return randFrom(rng, 0.32, 0.48);
 }
 
 function entityForInstance(type, x, z, assetUrl = '') { OC.entities.push({ type, x, z, assetUrl }); }
@@ -137,10 +146,10 @@ export function scatterScenery() {
   const queues = new Map();
 
   makeDistances(rng, DENSITY_PER_1000.pathEdgeTreePairs * sections * template.treeRate, 28, end, 12).forEach((d) => {
-    [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, 'tree', pathEdgeTreeAssets, fallbackTree, pathEdgeX(rng, d, side), TREE_ROOT_LIFT, -d + randFrom(rng, -4, 4), randFrom(rng, 1.0, 1.25)));
+    [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, 'tree', pathEdgeTreeAssets, fallbackTree, pathEdgeX(rng, d, side), TREE_ROOT_LIFT, -d + randFrom(rng, -4, 4), pathEdgeTreeScale(rng, d)));
   });
   makeDistances(rng, DENSITY_PER_1000.outerTreePairs * sections * template.treeRate, 60, end, 28).forEach((d) => {
-    [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, 'tree', oakTreeAssets, fallbackTree, scatterX(rng, d, side, 4.0, 9.5), TREE_ROOT_LIFT, -d + randFrom(rng, -9, 9), randFrom(rng, 0.95, 1.2)));
+    [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, 'tree', oakTreeAssets, fallbackTree, scatterX(rng, d, side, 4.0, 9.5), TREE_ROOT_LIFT, -d + randFrom(rng, -9, 9), outerTreeScale(rng))));
   });
   makeDistances(rng, DENSITY_PER_1000.edgeDetailPairs * sections * template.detailRate, 20, OC.courseLength + 40, 14).forEach((d) => {
     [-1, 1].forEach((side) => queuePlacement(rng, queues, detailLayer, 'detail', edgeDetailAssets, fallbackDetail, scatterX(rng, d, side, 0.2, 3.0), 0, -d + randFrom(rng, -3, 3), randFrom(rng, 0.75, 1.15)));
