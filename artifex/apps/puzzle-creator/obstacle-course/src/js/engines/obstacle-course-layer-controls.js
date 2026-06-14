@@ -5,8 +5,12 @@ import { renderOnce, selectObjects, applyBackgroundPlate } from './obstacle-cour
 import { getLayerDefault } from './obstacle-course-settings.js';
 import { applyLayer } from './obstacle-course-layers.js';
 
+const POSITION_SLIDER_STEP = 0.1;
+
 function layerBase(id) { return getLayerDefault(id); }
 function offsetFromBase(value, baseValue) { return Math.round(Number(value || 0) - Number(baseValue || 0)); }
+function positionSliderFromBase(value, baseValue) { return Math.round((Number(value || 0) - Number(baseValue || 0)) / POSITION_SLIDER_STEP); }
+function positionValueFromSlider(value, baseValue) { return Number(baseValue || 0) + (Number(value || 0) * POSITION_SLIDER_STEP); }
 function visualOffsetFromBase(value, baseValue) { const base = Number(baseValue || 1); return visualFactorToSlider(Number(value || base) / base); }
 function opacityOffsetFromBase(value, baseValue) { return Math.round((Number(value ?? baseValue ?? 1) - Number(baseValue ?? 1)) * 100); }
 function tintOffsetFromBase(value, baseValue) { return Math.round((Number(value || 0) - Number(baseValue || 0)) * 100); }
@@ -38,9 +42,9 @@ export function createLayerSliders({ refreshOverview, createGlbAssetSliders }) {
   const base = layerBase(layer.id);
   if (label) label.textContent = `Selected: ${layer.label}`;
   const redraw = () => { applyLayer(layer); refreshOverview?.(); };
-  buildSliderRow(host, 'hf-layer', 'x', 'X', -100, 100, 1, offsetFromBase(layer.x, base.x), (v) => { layer.x = Number(base.x || 0) + v; redraw(); });
-  buildSliderRow(host, 'hf-layer', 'y', 'Y', -100, 100, 1, offsetFromBase(layer.y, base.y), (v) => { layer.y = Number(base.y || 0) + v; redraw(); });
-  buildSliderRow(host, 'hf-layer', 'z', 'Z', -100, 100, 1, offsetFromBase(layer.z, base.z), (v) => { layer.z = Number(base.z || 0) + v; redraw(); });
+  buildSliderRow(host, 'hf-layer', 'x', 'X', -100, 100, 1, positionSliderFromBase(layer.x, base.x), (v) => { layer.x = positionValueFromSlider(v, base.x); redraw(); });
+  buildSliderRow(host, 'hf-layer', 'y', 'Y', -100, 100, 1, positionSliderFromBase(layer.y, base.y), (v) => { layer.y = positionValueFromSlider(v, base.y); redraw(); });
+  buildSliderRow(host, 'hf-layer', 'z', 'Z', -100, 100, 1, positionSliderFromBase(layer.z, base.z), (v) => { layer.z = positionValueFromSlider(v, base.z); redraw(); });
   if (layer.id !== 'path') {
     buildSliderRow(host, 'hf-layer', 'scaleOffset', 'Scale', -100, 100, 1, factorToSigned((layer.scale || 1) / (base.scale || 1)), (v) => { layer.scale = Number(base.scale || 1) * signedToFactor(v); redraw(); });
   } else {
