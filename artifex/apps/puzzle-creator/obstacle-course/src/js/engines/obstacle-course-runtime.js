@@ -7,7 +7,8 @@ import { exportJsonSettings, importJsonSettings } from './obstacle-course-export
 import { initScene, renderOnce, applyCamera, applyBackgroundPlate, updateWorldTransform } from './obstacle-course-scene.js';
 import { loadRequiredAssets, loadOptionalAssets } from './obstacle-course-loader.js';
 import { bindKeyboard } from './obstacle-course-input.js';
-import { rebuildGroundPathAndScenery, playerWorldX } from './obstacle-course-ground-path.js';
+import { buildGroundAndPath, clearWorld, playerWorldX } from './obstacle-course-ground-path.js';
+import { scatterScenery } from './obstacle-course-scenery.js';
 import { addCollectibles } from './obstacle-course-collectibles.js';
 import { addObstacles } from './obstacle-course-obstacles.js';
 import { updateMovement, startRun, pauseRun, resetRun } from './obstacle-course-movement.js';
@@ -136,7 +137,9 @@ function updateGlobalVisuals() {
 function rebuildCourse() {
   if (!OC.world || !OC.requiredReady) return;
   resetRun(true);
-  rebuildGroundPathAndScenery();
+  clearWorld();
+  buildGroundAndPath();
+  scatterScenery();
   addObstacles(Math.max(4, Math.round(7 + OC.difficulty * 4)));
   addCollectibles(Math.max(3, 5 + OC.difficulty * 2));
   populateLayerSelect();
