@@ -6,6 +6,7 @@ import { selectObjects } from './obstacle-course-scene.js';
 import { signedToFactor, factorToSigned, sliderToVisualFactor, visualFactorToSlider, clamp } from './obstacle-course-utils.js';
 import { getGlbDefault } from './obstacle-course-settings.js';
 
+const GLB_LOAD_TIMEOUT_MS = 10000;
 const instancedPartCache = new Map();
 const dummy = new THREE.Object3D();
 
@@ -17,24 +18,27 @@ function tintOffsetFromBase(value, baseValue) { return Math.round((Number(value 
 export function loadGlbAsset(url) {
   return new Promise((resolve) => {
     if (!OC.gltfLoader) return resolve(false);
+    if (OC.glbTemplates.has(url)) return resolve(true);
     let settled = false;
-    const done = (ok) => {
+    const done = (ok, reason = '') => {
       if (settled) return;
       settled = true;
+      OC.optionalAssetStatus?.set?.(url, { url, type: 'glb', status: ok ? 'loaded' : 'failed', reason });
       resolve(ok);
     };
     const timeout = window.setTimeout(() => {
       console.warn('[ObstacleCourse] optional GLB timed out', url);
-      done(false);
-    }, 4500);
+      done(false, 'timeout');
+    }, GLB_LOAD_TIMEOUT_MS);
     OC.gltfLoader.load(`${url}?v=${OC.cacheVersion}`, (gltf) => {
       window.clearTimeout(timeout);
       OC.glbTemplates.set(url, gltf);
       instancedPartCache.delete(url);
       done(true);
-    }, undefined, () => {
+    }, undefined, (error) => {
       window.clearTimeout(timeout);
-      done(false);
+      console.warn('[ObstacleCourse] optional GLB failed', url, error);
+      done(false, 'load-error');
     });
   });
 }
@@ -125,7 +129,7 @@ export function createInstancedAssetGroup(asset, placements = []) {
     y: Number(placement.y ?? GROUND_Y),
     z: Number(placement.z || 0),
     rotationY: Number(placement.rotationY || 0),
-    scale: Number(placement.scale || 1)
+    scale: Number(placement.scale || 1),
   }));
   parts.forEach((part) => {
     const mesh = new THREE.InstancedMesh(part.geometry, cloneMaterial(part.material), group.userData.placements.length);
