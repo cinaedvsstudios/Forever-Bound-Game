@@ -10,6 +10,19 @@ Architecture cleanup happens on:
 
 Do not refactor this module directly on `main`. `main` should only receive a tested version after the branch is verified.
 
+## Version rule
+
+Every code change must bump the obstacle-course app version/cache before testing or merging. The current branch version is `V3.0.5` with cache `3.0.5`.
+
+The version must stay aligned in:
+
+- `index.html` title, version badge, and `src/js/main.js?v=...` script URL
+- `src/js/main.js` boot version and boot cache version
+- `obstacle-course-state.js` `VERSION` and `CACHE_VERSION`
+- `obstacle-course-settings.js` default settings version
+- runtime cache-busted dynamic imports such as asset debug
+- debug checks that mark the expected version as good/bad
+
 ## Runtime flow
 
 The intended load order is:
@@ -109,5 +122,7 @@ Phase 1 is complete: scenery, GLB controls, and layer controls have been split i
 Phase 2 is complete: `obstacle-course-runtime.js` is reduced to orchestration flow, with runtime control binding moved into `obstacle-course-controls.js`.
 
 Phase 3 is complete: `obstacle-course-asset-debug.js` now has verification output for loaded version/cache, required/optional assets, ground tiles, GLB usage, entity counts, and UI element presence.
+
+The shader crash fix is now a permanent code-path correction: layer visuals no longer use shader injection or cleanup fallbacks.
 
 This is architecture cleanup only. It should not intentionally change visuals or gameplay.
