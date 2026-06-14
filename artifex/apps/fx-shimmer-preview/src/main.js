@@ -212,7 +212,7 @@ function fxAssetJson() {
     compatibilityNotes: [
       'Prototype canvas renderer. Future integration should route this through the FX Editor engine registry.',
       'Portal Inner Wisps are intentionally separate from Portal Line Outline and wormhole Arms.',
-      'V1.28 adds aperture controls, overlay alpha vignette, expanded blend modes and a second overlay slot.',
+      'V1.29 preserves the overlay/aperture pass and restores arm visibility with an arm layer-position control.',
       'Exports runtime-facing archetype shape, not final production schema.'
     ]
   };
@@ -409,5 +409,5 @@ function tick(now) {
 
 renderPresets();
 syncControls();
-setStatus('Loaded shimmer engine prototype V1.28.');
+setStatus('Loaded shimmer engine prototype V1.29.');
 requestAnimationFrame(tick);

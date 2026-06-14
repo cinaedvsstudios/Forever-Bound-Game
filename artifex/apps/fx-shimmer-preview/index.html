@@ -15,7 +15,7 @@
           <p class="kicker">Artifex FX Engine Prototype</p>
           <h1>Shimmer / Portal Distortion Engine</h1>
         </div>
-        <span class="version">V1.28 Overlay Aperture Fix</span>
+        <span class="version">V1.29 Arm Layer Fix</span>
       </div>
       <div class="header-actions">
         <button type="button" data-action="play">▶️ Play</button>
@@ -51,7 +51,7 @@
 
           <div class="canvas-wrap">
             <canvas width="960" height="540" data-canvas></canvas>
-            <div class="canvas-hint">Canvas preview — V1.28 preserves the best wormhole overlay look and adds aperture, overlay blend modes, overlay 2 and alpha vignette controls.</div>
+            <div class="canvas-hint">Canvas preview — V1.29 preserves the best overlay/aperture look and restores visible wormhole arm layer control above or below overlays.</div>
           </div>
         </div>
 
@@ -247,6 +247,14 @@
             <label>Arm rotation speed <input type="range" min="0" max="100" step="1" data-field="armSpeed" /></label>
           </div>
           <label>Arm curl / turns <input type="range" min="0" max="100" step="1" data-field="armCurl" /></label>
+          <label>Arm layer position
+            <select data-field="armLayer">
+              <option value="base-effect">Under overlays / base effect</option>
+              <option value="over-clouds">Above overlay clouds / rim</option>
+              <option value="over-particles">Above particles</option>
+              <option value="front">Front / topmost</option>
+            </select>
+          </label>
         </section>
 
         <section class="control-card">
@@ -469,6 +477,6 @@
     </footer>
   </main>
 
-  <script type="module" src="./src/main.js?v=1.28"></script>
+  <script type="module" src="./src/main.js?v=1.29"></script>
 </body>
 </html>
