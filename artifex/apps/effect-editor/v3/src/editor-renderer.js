@@ -93,7 +93,7 @@ export function takeSnapshot() {
 }
 
 function tick(now) {
-  renderTime = now;
+  if (!editorState.isPaused) renderTime = now;
 
   if (editorState.emergencyLiteMode && editorState.isPaused) {
     editorState.renderStats.fps = 0;
