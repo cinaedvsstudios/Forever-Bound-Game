@@ -276,6 +276,7 @@ export class ShimmerDistortionEngine {
     const radiusScale = scale(0.36, 1.78, radius);
     const thicknessScale = scale(0.28, 2.12, thickness);
     const softness = scale(0, 8.0, (v.armSoftness ?? 28) / 100);
+    const extraArmBlur = scale(0, 28, (v.armExtraBlur ?? 0) / 100);
     const definition = clamp01((v.armDefinition ?? 72) / 100);
     const pulseStrength = clamp01((v.armPulseStrength ?? 0) / 100);
     const pulseSpeed = scale(0, 2.4, (v.baseTexturePulseSpeed ?? 0) / 100);
@@ -319,7 +320,7 @@ export class ShimmerDistortionEngine {
     const blendMode = this.normalizeBlendMode(v.baseTextureBlendMode || 'screen');
     const contrast = 0.85 + definition * 1.75;
     const brightness = 0.86 + definition * 0.50 + armAmount * 0.18;
-    const blur = Math.max(0, softness * (1 - definition * 0.82));
+    const blur = Math.max(0, softness * (1 - definition * 0.82) + extraArmBlur);
     const alpha = Math.min(1, textureAlpha * scale(0.18, 1.0, armAmount) * scale(0.12, 1.0, armOpacity));
 
     ctx.save();
@@ -774,7 +775,7 @@ export class ShimmerDistortionEngine {
     const thickness = g.base * scale(0.010, 0.080, sizeValue);
     ctx.save();
     ctx.globalCompositeOperation = 'screen';
-    ctx.filter = `blur(${scale(4, 13, (v.armSoftness ?? v.blur ?? 40) / 100)}px)`;
+    ctx.filter = `blur(${scale(4, 13, (v.armSoftness ?? v.blur ?? 40) / 100) + scale(0, 32, (v.orbitCloudExtraBlur ?? 0) / 100)}px)`;
     for (let i = 0; i < amount; i += 1) {
       const seed = i * 15.913;
       const orbit = TAU * (i / amount) + hash1(seed) * 0.65 + t * speed * dir * scale(0.45, 1.35, hash1(seed + 2));
@@ -845,7 +846,7 @@ export class ShimmerDistortionEngine {
     const speed = scale(0.08, 1.05, Math.pow(speedControl, 1.7));
     const turns = scale(0.70, 5.80, clamp01((v.armCurl ?? 70) / 100));
     const radiusScale = scale(0.22, 1.95, clamp01((v.armRadius ?? 70) / 100));
-    const softness = scale(0.2, 11.0, clamp01((v.armSoftness ?? 30) / 100));
+    const softness = scale(0.2, 11.0, clamp01((v.armSoftness ?? 30) / 100)) + scale(0, 28, (v.armExtraBlur ?? 0) / 100);
     const definition = clamp01((v.armDefinition ?? 70) / 100);
     const pulseStrength = clamp01((v.armPulseStrength ?? 0) / 100);
     const pulse = 1 + Math.sin(t * scale(0.70, 4.10, speedControl)) * scale(0, 0.62, pulseStrength);

@@ -51,6 +51,8 @@ const COMMON = {
   outlineColorMode: 'solid',
   outlineLayer: 'front',
   wispLayer: 'over-clouds',
+  armExtraBlur: 0,
+  orbitCloudExtraBlur: 0,
   emissionAmount: 0,
   emissionOpacity: 0,
   emissionSpeed: 30,

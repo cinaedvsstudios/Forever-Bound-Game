@@ -1,5 +1,5 @@
-import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.39';
-import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.39';
+import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.40';
+import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.40';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
