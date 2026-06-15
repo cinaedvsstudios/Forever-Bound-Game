@@ -186,11 +186,18 @@ function drawSmokeOriginMarker(ctx, x, y, width, scale) {
 }
 
 function drawPrototypeShimmer(ctx, layer, scale, t, stageWidth, stageHeight) {
-  const type = layer.type || modeToType(layer.prototypeMode);
+  const type = resolveShimmerRenderType(layer);
   if (type === 'wormhole') return drawBasicWormhole(ctx, layer, scale, t, stageWidth, stageHeight);
   if (type === 'heat') return drawBasicHeatShimmer(ctx, layer, scale, t, stageWidth, stageHeight);
   if (type === 'transition') return drawBasicTransitionTear(ctx, layer, scale, t, stageWidth, stageHeight);
   return drawBasicPortalRing(ctx, layer, scale, t, stageWidth, stageHeight);
+}
+
+function resolveShimmerRenderType(layer) {
+  const modeType = modeToType(layer.prototypeMode);
+  if (modeType !== 'ring' && (!layer.type || layer.type === 'ring')) return modeType;
+  if (['ring', 'wormhole', 'heat', 'transition'].includes(layer.type)) return layer.type;
+  return modeType;
 }
 
 function drawBasicPortalRing(ctx, layer, scale, t, stageWidth, stageHeight) {
@@ -234,32 +241,37 @@ function drawBasicWormhole(ctx, layer, scale, t, stageWidth, stageHeight) {
   const accent = layer.accentColor || '#9d5cff';
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
-  const coreRadius = g.radius * 0.26;
-  const grad = ctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, coreRadius * 3.3);
-  grad.addColorStop(0, withAlpha('#ffffff', 0.34));
-  grad.addColorStop(0.25, withAlpha(core, 0.28));
+  softBlob(ctx, g.x, g.y, g.radius * 1.35, rim, 0.12);
+  softBlob(ctx, g.x, g.y, g.radius * 0.72, core, 0.18);
+  drawRingStroke(ctx, g, rim, 0.5, Math.max(1, 2.2 * scale), 18 * scale, t, { outlinePulseSpeed: 18, outlinePulseStrength: 8 });
+  const coreRadius = g.radius * 0.3;
+  const grad = ctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, coreRadius * 3.6);
+  grad.addColorStop(0, withAlpha('#ffffff', 0.42));
+  grad.addColorStop(0.22, withAlpha(core, 0.42));
+  grad.addColorStop(0.62, withAlpha(rim, 0.18));
   grad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = grad;
   ctx.beginPath();
   ctx.arc(g.x, g.y, coreRadius * (1 + Math.sin(t * 2.2) * 0.08), 0, TAU);
   ctx.fill();
-  const arms = Math.round(clamp(finite(layer.armAmount, 64), 0, 90));
-  const opacity = percent100(layer.armOpacity, 68);
+  const arms = Math.round(clamp(finite(layer.armAmount, 64), 18, 96));
+  const opacity = Math.max(0.42, percent100(layer.armOpacity, 68));
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  ctx.filter = `blur(${Math.max(0, finite(layer.armExtraBlur, 0) * 0.25 * scale)}px)`;
+  ctx.filter = `blur(${Math.max(0.4, finite(layer.armExtraBlur, 0) * 0.25 * scale)}px)`;
   for (let i = 0; i < arms; i += 1) {
     const h = hash(i + 101);
     const start = h * TAU + t * finite(layer.armSpeed, 34) * 0.025;
-    const curl = finite(layer.armCurl, 72) / 100 * 5.2;
-    const length = g.radius * (0.35 + finite(layer.armRadius, 72) / 100 * 1.05) * (0.45 + h * 0.75);
-    ctx.strokeStyle = withAlpha(h > 0.48 ? rim : accent, opacity * (0.08 + h * 0.16));
-    ctx.shadowColor = h > 0.48 ? rim : accent;
-    ctx.shadowBlur = finite(layer.glow, 12) * 0.32 * scale;
-    ctx.lineWidth = Math.max(0.8, finite(layer.armThickness, 58) * 0.085 * scale * (0.4 + h));
+    const curl = finite(layer.armCurl, 72) / 100 * 5.4;
+    const length = g.radius * (0.42 + finite(layer.armRadius, 72) / 100 * 1.12) * (0.45 + h * 0.75);
+    const color = h > 0.56 ? rim : h > 0.24 ? accent : core;
+    ctx.strokeStyle = withAlpha(color, opacity * (0.12 + h * 0.24));
+    ctx.shadowColor = color;
+    ctx.shadowBlur = Math.max(8, finite(layer.glow, 12) * 0.42 * scale);
+    ctx.lineWidth = Math.max(1.4, finite(layer.armThickness, 58) * 0.12 * scale * (0.42 + h));
     ctx.beginPath();
-    for (let s = 0; s <= 26; s += 1) {
-      const u = s / 26;
+    for (let s = 0; s <= 30; s += 1) {
+      const u = s / 30;
       const a = start + u * curl + Math.sin(t + u * 4 + h) * 0.18;
       const r = length * u;
       const x = g.x + Math.cos(a) * r * g.scaleX;
@@ -310,33 +322,68 @@ function drawBasicTransitionTear(ctx, layer, scale, t, stageWidth, stageHeight) 
   const core = layer.coreColor || '#d7f7ff';
   const rim = layer.rimColor || '#8e4dff';
   const accent = layer.accentColor || '#ff2538';
-  const strength = clamp(finite(layer.strength, 76), 0, 100) / 100;
+  const strength = Math.max(0.72, clamp(finite(layer.strength, 76), 0, 100) / 100);
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
-  ctx.filter = `blur(${Math.max(1, finite(layer.blur, 18) * 0.08 * scale)}px)`;
+  ctx.filter = `blur(${Math.max(0.6, finite(layer.blur, 18) * 0.06 * scale)}px)`;
+  softBlob(ctx, g.x, g.y, g.radius * 0.72, accent, 0.16);
+  softBlob(ctx, g.x, g.y, g.radius * 0.34, core, 0.34);
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  const height = g.radius * 1.8 * g.scaleY;
-  const slices = 9;
+  const height = g.radius * 2.1 * g.scaleY;
+  const slices = 13;
   for (let i = 0; i < slices; i += 1) {
     const h = hash(i + 300);
     const side = i - slices / 2;
-    ctx.strokeStyle = withAlpha(i % 2 ? rim : accent, 0.14 + strength * 0.28);
-    ctx.shadowBlur = 16 * scale;
-    ctx.shadowColor = i % 2 ? rim : accent;
-    ctx.lineWidth = Math.max(1, (2 + h * 6) * scale);
+    const color = i % 3 === 0 ? core : i % 2 ? rim : accent;
+    ctx.strokeStyle = withAlpha(color, 0.24 + strength * 0.32);
+    ctx.shadowBlur = 22 * scale;
+    ctx.shadowColor = color;
+    ctx.lineWidth = Math.max(1.2, (2.4 + h * 7) * scale);
     ctx.beginPath();
-    for (let s = 0; s <= 18; s += 1) {
-      const u = s / 18;
+    for (let s = 0; s <= 22; s += 1) {
+      const u = s / 22;
       const y = g.y - height / 2 + u * height;
-      const x = g.x + side * 10 * scale + Math.sin(u * TAU * (1.2 + h) + t * 8 + i) * g.radius * (0.08 + strength * 0.24);
+      const x = g.x + side * 8 * scale + Math.sin(u * TAU * (1.2 + h) + t * 8 + i) * g.radius * (0.1 + strength * 0.3);
       if (s === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     }
     ctx.stroke();
   }
-  softBlob(ctx, g.x, g.y, g.radius * 0.34, core, 0.16 + strength * 0.12);
+  ctx.filter = 'none';
+  drawTearCrack(ctx, g, core, rim, accent, t, scale);
   drawShimmerParticles(ctx, layer, g, t, core, 'transition');
+  ctx.restore();
+}
+
+function drawTearCrack(ctx, g, core, rim, accent, t, scale) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  ctx.lineCap = 'round';
+  ctx.shadowBlur = 30 * scale;
+  ctx.shadowColor = core;
+  ctx.strokeStyle = withAlpha(core, 0.86);
+  ctx.lineWidth = Math.max(1.5, 3.2 * scale);
+  ctx.beginPath();
+  for (let s = 0; s <= 28; s += 1) {
+    const u = s / 28;
+    const y = g.y - g.radius * 1.05 + u * g.radius * 2.1;
+    const x = g.x + Math.sin(u * TAU * 1.65 + t * 5) * g.radius * 0.13 + Math.sin(u * TAU * 4.2) * g.radius * 0.05;
+    if (s === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.shadowColor = accent;
+  ctx.strokeStyle = withAlpha(accent, 0.42);
+  ctx.lineWidth = Math.max(0.8, 1.6 * scale);
+  ctx.beginPath();
+  ctx.moveTo(g.x - g.radius * 0.32, g.y - g.radius * 0.58);
+  ctx.lineTo(g.x + g.radius * 0.22, g.y - g.radius * 0.24);
+  ctx.moveTo(g.x + g.radius * 0.28, g.y + g.radius * 0.18);
+  ctx.lineTo(g.x - g.radius * 0.24, g.y + g.radius * 0.56);
+  ctx.stroke();
+  ctx.shadowColor = rim;
+  drawRingStroke(ctx, g, rim, 0.34, Math.max(0.8, 1.1 * scale), 16 * scale, t, { outlinePulseSpeed: 36, outlinePulseStrength: 22 });
   ctx.restore();
 }
 
@@ -369,8 +416,8 @@ function drawPortalWisps(ctx, layer, g, t, colorA, colorB) {
 }
 
 function drawShimmerParticles(ctx, layer, g, t, color, mode) {
-  const amount = Math.round(clamp(finite(layer.particleAmount, mode === 'transition' ? 26 : 36), 0, 90));
-  const opacity = percent100(layer.particleOpacity, mode === 'wormhole' ? 18 : 48);
+  const amount = Math.round(clamp(finite(layer.particleAmount, mode === 'transition' ? 34 : 36), 0, 90));
+  const opacity = Math.max(mode === 'transition' ? 0.38 : 0.14, percent100(layer.particleOpacity, mode === 'wormhole' ? 28 : 48));
   if (amount <= 0 || opacity <= 0) return;
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
