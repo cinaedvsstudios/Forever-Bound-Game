@@ -8,12 +8,10 @@ export const ASSETS = {
   arrows: `${SHARED_UI_BASE}defaultarrows.webp`,
   shadows: {
     tree: [
-      `${ASSET_BASE}shadow/shadow4.jpg`,
-      `${ASSET_BASE}shadow/shadow4.jpg`,
-      `${ASSET_BASE}shadow/shadow4.jpg`,
-      `${ASSET_BASE}shadow/shadow1.jpg`,
-      `${ASSET_BASE}shadow/shadow2.jpg`,
-      `${ASSET_BASE}shadow/shadow3.jpg`,
+      `${ASSET_BASE}shadow/shad1.jpg`,
+      `${ASSET_BASE}shadow/shad2.jpg`,
+      `${ASSET_BASE}shadow/shad3.jpg`,
+      `${ASSET_BASE}shadow/shad4.jpg`,
     ],
   },
   audio: {
