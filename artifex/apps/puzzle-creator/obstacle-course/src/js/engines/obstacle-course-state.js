@@ -1,6 +1,6 @@
-// Obstacle Course V3.0.4 state and constants
-export const VERSION = 'V3.0.4';
-export const CACHE_VERSION = '3.0.4';
+// Obstacle Course V3.0.23 state and constants
+export const VERSION = 'V3.0.23';
+export const CACHE_VERSION = '3.0.23';
 export const ASSET_BASE = './assets/';
 export const SHARED_UI_BASE = '../../../shared/ui/';
 export const GROUND_Y = -1.62;
@@ -76,6 +76,7 @@ export const OC = {
   pathAlphaThreshold: PATH_ALPHA_THRESHOLD,
   overviewPathOverlay: true,
   overviewRaf: 0,
+  overviewHitPoints: [],
   active: false,
   running: false,
   paused: false,
@@ -92,5 +93,5 @@ export const OC = {
   player: { x: 0, y: 0, vy: 0, grounded: true, jumpHoldTime: 0, maxJumpHoldTime: 0.18, duck: false },
   selectedLayerId: 'ground',
   selectedGlbAssetUrl: '',
-  glbControls: new Map(),
+  glbControls: new Map()
 };
