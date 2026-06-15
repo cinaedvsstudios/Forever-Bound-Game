@@ -23,12 +23,14 @@ import { initBottomPanel, renderLayerList, syncBottomPanelStatus } from './edito
 import { syncEffectControls } from './editor-effect-controls.js';
 import { initEditorPersistence, loadCompositionLocal } from './editor-persistence.js';
 
+const ZERO_SPAWN_ENGINES = new Set(['portal-ring', 'wormhole-tunnel', 'prototype-smoke', 'prototype-shimmer']);
 const ENGINES = [
   ['particles', 'Standard Particle Engine'], ['lightning', 'Lightning / Beam Engine'],
   ['electric-arc', 'Electric Arc Engine'], ['ribbon', 'Trail / Ribbon Engine'],
   ['ring', 'Ring / Shockwave Engine'], ['projectile', 'Projectile / Trail Engine'],
   ['gas', 'Gas Engine'], ['shockwave', 'Shockwave Pulse Engine'],
   ['portal-ring', 'Orb Engine'], ['wormhole-tunnel', 'Swirl Engine'],
+  ['prototype-smoke', 'Prototype Smoke Placeholder'], ['prototype-shimmer', 'Prototype Shimmer Placeholder'],
   ['refraction', 'Refraction / Shimmer Engine'], ['heatdistortion', 'Grid Effect Engine'],
   ['lensflare', 'Crosshairs Engine'], ['true-lensflare', 'Crosshairs Engine'], ['text', 'Text Effect Engine']
 ];
@@ -167,7 +169,7 @@ function ensureStarterLayer() { if (!editorState.composition.layers.length) addP
 function addPreset(id) {
   const preset = cloneBasePreset('base', id);
   if (!preset?.config) return;
-  const config = { ...preset.config, spawnRate: ['portal-ring', 'wormhole-tunnel'].includes(preset.config.engine) ? 0 : Math.min(Number(preset.config.spawnRate) || 4, 4) };
+  const config = { ...preset.config, spawnRate: ZERO_SPAWN_ENGINES.has(preset.config.engine) ? 0 : Math.min(Number(preset.config.spawnRate) || 4, 4) };
   if (id === 'standard-particle') {
     config.gravity = 100;
     config.gravityBoost = false;
