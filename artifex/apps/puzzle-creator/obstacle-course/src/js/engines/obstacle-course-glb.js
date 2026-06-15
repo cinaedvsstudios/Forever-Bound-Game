@@ -119,6 +119,7 @@ export function createInstancedAssetGroup(asset, placements = []) {
     x: Number(placement.x || 0),
     y: Number(placement.y ?? GROUND_Y),
     z: Number(placement.z || 0),
+    side: placement.side === 'left' ? 'left' : 'right',
     rotationY: Number(placement.rotationY || 0),
     scale: Number(placement.scale || 1),
   }));
@@ -130,18 +131,30 @@ export function createInstancedAssetGroup(asset, placements = []) {
     mesh.userData.placements = group.userData.placements;
     group.add(mesh);
   });
-  updateInstancedGroupMatrices(group, 1);
+  updateInstancedGroupMatrices(group, { scale: 1 });
   OC.glbInstances.push(group);
   return group;
 }
 
-function updateInstancedGroupMatrices(group, scaleMultiplier = 1) {
+function sideOffset(cfg, side) {
+  const prefix = side === 'left' ? 'left' : 'right';
+  return {
+    x: Number(cfg[`${prefix}X`] || 0),
+    y: Number(cfg[`${prefix}Y`] || 0),
+    z: Number(cfg[`${prefix}Z`] || 0),
+  };
+}
+
+function updateInstancedGroupMatrices(group, cfg = {}) {
   if (!group?.userData?.isInstancedAssetGroup) return;
   const placements = group.userData.placements || [];
+  const scaleMultiplier = Number(cfg.scale || 1);
   group.children.forEach((mesh) => {
     if (!mesh.isInstancedMesh) return;
     placements.forEach((placement, index) => {
-      dummy.position.set(placement.x, placement.y, placement.z);
+      const side = placement.side || (placement.x < 0 ? 'left' : 'right');
+      const offset = sideOffset(cfg, side);
+      dummy.position.set(placement.x + offset.x, placement.y + offset.y, placement.z + offset.z);
       dummy.rotation.set(0, placement.rotationY, 0);
       const s = Math.max(0.001, placement.scale * scaleMultiplier);
       dummy.scale.setScalar(s);
@@ -172,6 +185,11 @@ function applyGlbMaterialVisual(obj, cfg) {
   });
 }
 
+function sideForObject(obj) {
+  const x = Number(obj?.userData?.basePosition?.x ?? obj?.position?.x ?? 0);
+  return x < 0 ? 'left' : 'right';
+}
+
 export function applyAllGlbAssetControls() {
   OC.glbInstances.forEach((obj) => {
     const cfg = glbControl(obj.userData.glbAssetUrl);
@@ -180,11 +198,13 @@ export function applyAllGlbAssetControls() {
       obj.scale.setScalar(1);
       obj.visible = (cfg.opacity ?? 1) > 0.01;
       obj.renderOrder = cfg.order || 0;
-      updateInstancedGroupMatrices(obj, cfg.scale || 1);
+      updateInstancedGroupMatrices(obj, cfg);
       applyGlbMaterialVisual(obj, cfg);
       return;
     }
-    obj.position.copy(obj.userData.basePosition).add(new THREE.Vector3(cfg.x || 0, cfg.y || 0, cfg.z || 0));
+    const side = sideForObject(obj);
+    const offset = sideOffset(cfg, side);
+    obj.position.copy(obj.userData.basePosition).add(new THREE.Vector3((cfg.x || 0) + offset.x, (cfg.y || 0) + offset.y, (cfg.z || 0) + offset.z));
     const scale = (obj.userData.baseScaleValue || 1) * (cfg.scale || 1);
     obj.scale.setScalar(scale);
     obj.visible = (cfg.opacity ?? 1) > 0.01;
