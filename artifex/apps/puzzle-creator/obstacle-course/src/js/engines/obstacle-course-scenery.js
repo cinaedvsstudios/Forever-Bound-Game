@@ -10,12 +10,12 @@ const TREE_ROOT_LIFT = 0.22;
 const TREE_OUTER_LIMIT_FROM_PATH_EDGE = 2.2;
 const DETAIL_OUTER_LIMIT_FROM_PATH_EDGE = 2.35;
 const SHADOW_Y_OFFSET = 0.045;
-const SHADOW_BASE_OPACITY = 0.34;
+const SHADOW_BASE_OPACITY = 0.2;
 const DENSITY_PER_1000 = {
   pathEdgeTreePairs: 42,
   pathInsideTreePairs: 54,
   limitedOuterTreePairs: 18,
-  tallPathBushPairs: 30,
+  tallPathBushPairs: 84,
   edgeDetailPairs: 24,
   farDetailPairs: 10,
 };
@@ -79,7 +79,7 @@ function pathInsideEdgeX(rng, distance, side) {
 function pathEdgeBushX(rng, distance, side) {
   const center = pathCenterAt(distance);
   const half = pathHalfWidthAt(distance);
-  return center + side * (half + randFrom(rng, 0.05, 0.55));
+  return center + side * (half + randFrom(rng, 0.0, 0.25));
 }
 function limitedOutsideX(rng, distance, side, minFromEdge = 1.05, maxFromEdge = TREE_OUTER_LIMIT_FROM_PATH_EDGE) {
   const center = pathCenterAt(distance);
@@ -139,6 +139,21 @@ function treeShadowTexture(rng) {
   return url ? loadTexture(url, { repeat: [1, 1], repeatX: false, repeatY: false }) : null;
 }
 
+function makeShadowMaterial(texture) {
+  return new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true,
+    opacity: SHADOW_BASE_OPACITY,
+    depthWrite: false,
+    depthTest: true,
+    side: THREE.DoubleSide,
+    blending: THREE.MultiplyBlending,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2,
+  });
+}
+
 function addTreeShadow(rng, shadowLayer, x, z, scale) {
   if (!shadowLayer?.group) return;
   const texture = treeShadowTexture(rng);
@@ -147,16 +162,7 @@ function addTreeShadow(rng, shadowLayer, x, z, scale) {
   const shadowWidth = shadowLength * randFrom(rng, 0.52, 0.72);
   const geometry = new THREE.PlaneGeometry(shadowLength, shadowWidth, 1, 1);
   geometry.translate(-shadowLength * 0.42, 0, 0);
-  const material = new THREE.MeshBasicMaterial({
-    map: texture,
-    transparent: true,
-    opacity: SHADOW_BASE_OPACITY,
-    depthWrite: false,
-    depthTest: true,
-    blending: THREE.MultiplyBlending,
-    side: THREE.DoubleSide,
-  });
-  const shadow = new THREE.Mesh(geometry, material);
+  const shadow = new THREE.Mesh(geometry, makeShadowMaterial(texture));
   shadow.position.set(x, GROUND_Y + SHADOW_Y_OFFSET, z + randFrom(rng, -0.2, 0.2));
   shadow.rotation.set(-Math.PI / 2, 0, Math.PI / 2 + randFrom(rng, -0.16, 0.16));
   shadow.renderOrder = 6;
@@ -225,7 +231,7 @@ export function scatterScenery() {
     [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, shadowLayer, 'tree', oakTreeAssets, fallbackTree, limitedOutsideX(rng, d, side), TREE_ROOT_LIFT, -d + randFrom(rng, -7, 7), limitedOuterTreeScale(rng, d)));
   });
   makeDistances(rng, DENSITY_PER_1000.tallPathBushPairs * sections * template.detailRate, 35, OC.courseLength + 60, 10).forEach((d) => {
-    [-1, 1].forEach((side) => queuePlacement(rng, queues, detailLayer, null, 'detail', tallBushAssets, fallbackDetail, pathEdgeBushX(rng, d, side), 0, -d + randFrom(rng, -4, 4), randFrom(rng, 1.65, 2.35)));
+    [-1, 1].forEach((side) => queuePlacement(rng, queues, detailLayer, null, 'detail', tallBushAssets, fallbackDetail, pathEdgeBushX(rng, d, side), 0, -d + randFrom(rng, -4, 4), randFrom(rng, 4.22, 6.02)));
   });
   makeDistances(rng, DENSITY_PER_1000.edgeDetailPairs * sections * template.detailRate, 20, OC.courseLength + 40, 14).forEach((d) => {
     [-1, 1].forEach((side) => queuePlacement(rng, queues, detailLayer, null, 'detail', edgeDetailAssets, fallbackDetail, limitedDetailX(rng, d, side, 0.15, 1.6), 0, -d + randFrom(rng, -3, 3), randFrom(rng, 0.75, 1.15)));
