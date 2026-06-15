@@ -1,5 +1,5 @@
 import { OC, COURSE_WORLD_WIDTH, GROUND_Y } from './obstacle-course-state.js';
-import { ASSETS, TEMPLATES, GLB_ASSETS } from './obstacle-course-assets.js';
+import { ASSETS, TEMPLATES, GLB_ASSETS } from './obstacle-course-assets.js?v=3.0.28';
 import { clamp, lerp } from './obstacle-course-utils.js';
 import { THREE, loadTexture } from './obstacle-course-scene.js';
 import { makeLayer, registerEntity } from './obstacle-course-layers.js';
@@ -56,15 +56,14 @@ function localPlacementForLayer(layer, x, y, z) { const scale = layerScale(layer
 function entityForInstance(type, layer, x, z, localX, localZ, assetUrl = '') { OC.entities.push({ type, layerId: layer.id, x, z, localX, localZ, assetUrl }); }
 
 function makeShadowMaterial(texture, opacity) {
-  const material = new THREE.ShaderMaterial({
-    uniforms: { shadowMap: { value: texture }, shadowOpacity: { value: opacity ?? 1 } },
-    vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-    fragmentShader: `uniform sampler2D shadowMap; uniform float shadowOpacity; varying vec2 vUv; void main(){ vec4 tex = texture2D(shadowMap, vUv); float dark = 1.0 - max(max(tex.r, tex.g), tex.b); float cutout = smoothstep(0.055, 0.36, dark) * tex.a * shadowOpacity; gl_FragColor = vec4(0.0, 0.0, 0.0, cutout); }`,
+  const material = new THREE.MeshBasicMaterial({
+    map: texture,
     transparent: true,
+    opacity: opacity ?? 1,
     depthWrite: false,
     depthTest: true,
     side: THREE.DoubleSide,
-    blending: THREE.NormalBlending,
+    blending: THREE.MultiplyBlending,
     polygonOffset: true,
     polygonOffsetFactor: -4,
     polygonOffsetUnits: -4,
