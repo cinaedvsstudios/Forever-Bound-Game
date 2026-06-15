@@ -4,6 +4,7 @@ import { THREE, loadTexture } from './obstacle-course-scene.js';
 import { makeLayer, registerEntity } from './obstacle-course-layers.js';
 
 const TILE_SEAM_OVERLAP = 0.18;
+const GROUND_BUMP_SCALE = 0.055;
 
 function mapTiles() { return OC.groundPathMap?.tiles || []; }
 function tileById(id) { return mapTiles().find((tile) => String(tile.id) === String(id)) || null; }
@@ -130,10 +131,13 @@ export function buildGroundAndPath() {
     const length = (seg.worldLength || SECTION_WORLD_LENGTH) + TILE_SEAM_OVERLAP;
     const z = -seg.distance - (seg.worldLength || SECTION_WORLD_LENGTH) / 2 - TILE_SEAM_OVERLAP / 2;
     const tileUrl = imageUrlForTile(seg.tile);
+    const tileTexture = loadTexture(tileUrl, { repeat: [1, 1], repeatX: false });
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(seg.worldWidth || COURSE_WORLD_WIDTH, length, 1, 1),
       new THREE.MeshStandardMaterial({
-        map: loadTexture(tileUrl, { repeat: [1, 1], repeatX: false }),
+        map: tileTexture,
+        bumpMap: tileTexture,
+        bumpScale: GROUND_BUMP_SCALE,
         transparent: false,
         alphaTest: 0.02,
         roughness: 1,
