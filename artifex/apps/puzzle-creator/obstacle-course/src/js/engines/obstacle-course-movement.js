@@ -8,7 +8,7 @@ import { checkCollectibles } from './obstacle-course-collectibles.js';
 import { checkObstacles } from './obstacle-course-obstacles.js';
 import { makeResult } from './obstacle-course-scoring.js';
 import { setResult } from './obstacle-course-ui.js';
-import { scheduleOverviewDraw } from './obstacle-course-overview.js?v=3.0.28';
+import { scheduleOverviewDraw } from './obstacle-course-overview.js?v=3.0.31';
 import { ensureAudio, updateAudio, playJumpSound, playLandSound } from './obstacle-course-audio.js';
 
 export function startRun() {
@@ -81,15 +81,15 @@ export function updateMovement(dt) {
   OC.player.x = clamp(OC.player.x, -OC.pathVisualWidth * 0.55, OC.pathVisualWidth * 0.55);
   if (OC.player.grounded && OC.keys.has('jump')) {
     OC.player.grounded = false;
-    OC.player.vy = 8.5;
+    OC.player.vy = 13.5;
     OC.player.jumpHoldTime = 0;
     OC.jumps += 1;
     playJumpSound();
   }
   if (!OC.player.grounded) {
-    const holdBoost = OC.keys.has('jump') && OC.player.jumpHoldTime < OC.player.maxJumpHoldTime ? 3.3 : 0;
+    const holdBoost = OC.keys.has('jump') && OC.player.jumpHoldTime < OC.player.maxJumpHoldTime ? 4.2 : 0;
     OC.player.jumpHoldTime += dt;
-    OC.player.vy += (-18 + holdBoost) * dt;
+    OC.player.vy += (-38 + holdBoost) * dt;
     OC.player.y += OC.player.vy * dt;
     if (OC.player.y <= 0) {
       const wasAirborne = !OC.player.grounded;
