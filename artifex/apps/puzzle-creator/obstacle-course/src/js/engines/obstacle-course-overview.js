@@ -73,6 +73,14 @@ function glbControlFor(assetUrl = '') {
   return assetUrl && OC.glbControls?.get ? OC.glbControls.get(assetUrl) : null;
 }
 
+function sideOffset(cfg, side) {
+  const prefix = side === 'left' ? 'left' : 'right';
+  return {
+    x: Number(cfg?.[`${prefix}X`] || 0),
+    z: Number(cfg?.[`${prefix}Z`] || 0),
+  };
+}
+
 function labelForPoint(point) {
   return `${point.type || 'entity'}\n${fileName(point.assetUrl)}\nx ${point.x.toFixed(1)} · z ${point.z.toFixed(1)}\ncourse-map position${point.assetUrl ? '\nclick: select GLB controls' : ''}`;
 }
@@ -219,9 +227,11 @@ function mapPointForEntity(entity) {
   const layerScale = layerScaleForPoint({ ...entity, type });
   const baseX = Number(entity.x ?? entity.object?.userData?.basePosition?.x ?? entity.object?.position?.x ?? 0);
   const baseZ = Number(entity.z ?? entity.object?.userData?.basePosition?.z ?? entity.object?.position?.z ?? 0);
+  const side = baseX < 0 ? 'left' : 'right';
+  const offset = sideOffset(cfg, side);
   return {
-    x: baseX + Number(cfg?.x || 0) * layerScale,
-    z: baseZ + Number(cfg?.z || 0) * layerScale,
+    x: baseX + (Number(cfg?.x || 0) + offset.x) * layerScale,
+    z: baseZ + (Number(cfg?.z || 0) + offset.z) * layerScale,
     type,
     assetUrl,
     source: entity.object || null,
