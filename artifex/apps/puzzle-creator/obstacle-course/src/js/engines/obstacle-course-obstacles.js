@@ -1,4 +1,4 @@
-import { OC, GROUND_Y } from './obstacle-course-state.js';
+import { OC, GROUND_Y, START_DISTANCE } from './obstacle-course-state.js';
 import { GLB_ASSETS } from './obstacle-course-assets.js';
 import { THREE } from './obstacle-course-scene.js';
 import { rand, pick } from './obstacle-course-utils.js';
@@ -13,6 +13,13 @@ function fallbackObstacle() {
   return new THREE.Mesh(new THREE.DodecahedronGeometry(rand(0.36, 0.72), 0), new THREE.MeshStandardMaterial({ color: 0x7e5d44, roughness: 1 }));
 }
 
+function routeDistance(index, count) {
+  const start = START_DISTANCE + 80;
+  const end = Math.max(start + 80, OC.courseLength - 55);
+  const step = (end - start) / Math.max(1, count);
+  return start + index * step + rand(-14, 14);
+}
+
 export function addObstacles(count = 12) {
   let layer = OC.layers.get('obstacles');
   if (!layer) {
@@ -21,13 +28,14 @@ export function addObstacles(count = 12) {
     layer = makeLayer('obstacles', 'Obstacles', group, { order: 16 });
   }
   const assets = GLB_ASSETS.filter((asset) => asset.type === 'rock' && OC.glbTemplates.has(asset.url));
+  const wanted = Math.max(count, 14);
   let placed = 0;
   let attempts = 0;
-  while (placed < count && attempts < count * 60) {
+  while (placed < wanted && attempts < wanted * 60) {
     attempts += 1;
-    const d = rand(80, OC.courseLength - 30);
+    const d = routeDistance(placed, wanted);
     const center = pathCenterAt(d);
-    const x = center + rand(-OC.pathVisualWidth * 0.32, OC.pathVisualWidth * 0.32);
+    const x = center + rand(-OC.pathVisualWidth * 0.24, OC.pathVisualWidth * 0.24);
     const alpha = pathAlphaAtWorld(x, d);
     if (alpha !== null && alpha < OC.pathAlphaThreshold) continue;
     const asset = pick(assets) || null;
