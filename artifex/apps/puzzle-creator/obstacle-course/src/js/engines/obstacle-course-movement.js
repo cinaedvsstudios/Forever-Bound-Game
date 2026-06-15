@@ -8,7 +8,7 @@ import { checkCollectibles } from './obstacle-course-collectibles.js';
 import { checkObstacles } from './obstacle-course-obstacles.js';
 import { makeResult } from './obstacle-course-scoring.js';
 import { setResult } from './obstacle-course-ui.js';
-import { scheduleOverviewDraw } from './obstacle-course-overview.js?v=3.0.31';
+import { scheduleOverviewDraw } from './obstacle-course-overview.js?v=3.02';
 import { ensureAudio, updateAudio, playJumpSound, playLandSound } from './obstacle-course-audio.js';
 
 export function startRun() {
@@ -77,7 +77,7 @@ export function completeRun() {
 export function updateMovement(dt) {
   if (!OC.active) return;
   const steer = (OC.keys.has('right') ? 1 : 0) - (OC.keys.has('left') ? 1 : 0);
-  if (steer) OC.player.x += steer * 11.5 * dt;
+  if (steer) OC.player.x += steer * 7.2 * dt;
   OC.player.x = clamp(OC.player.x, -OC.pathVisualWidth * 0.55, OC.pathVisualWidth * 0.55);
   if (OC.player.grounded && OC.keys.has('jump')) {
     OC.player.grounded = false;
