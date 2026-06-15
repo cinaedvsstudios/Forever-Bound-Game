@@ -173,6 +173,54 @@ function glbControl(url) {
   return OC.glbControls.get(url);
 }
 
+function clamp01(value) { return Math.min(1, Math.max(0, Number(value || 0))); }
+
+function colorFromHex(value) {
+  const color = new THREE.Color(value || '#ffffff');
+  return color;
+}
+
+function installVisualShader(mat) {
+  if (mat.userData.ocVisualShaderReady) return;
+  mat.userData.ocVisualShaderReady = true;
+  const previous = mat.onBeforeCompile;
+  mat.onBeforeCompile = (shader) => {
+    previous?.(shader);
+    shader.uniforms.ocBrightness = { value: 1 };
+    shader.uniforms.ocContrast = { value: 1 };
+    shader.uniforms.ocSaturation = { value: 1 };
+    shader.uniforms.ocTint = { value: new THREE.Color('#ffffff') };
+    shader.uniforms.ocTintStrength = { value: 0 };
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <dithering_fragment>',
+      `vec3 ocColor = gl_FragColor.rgb;
+      float ocLuma = dot(ocColor, vec3(0.2126, 0.7152, 0.0722));
+      ocColor = mix(vec3(ocLuma), ocColor, ocSaturation);
+      ocColor = (ocColor - 0.5) * ocContrast + 0.5;
+      ocColor *= ocBrightness;
+      ocColor = mix(ocColor, ocTint, ocTintStrength);
+      gl_FragColor.rgb = clamp(ocColor, 0.0, 1.0);
+      #include <dithering_fragment>`
+    );
+    mat.userData.ocVisualUniforms = shader.uniforms;
+  };
+  mat.customProgramCacheKey = () => 'oc-glb-visual-v1';
+  mat.needsUpdate = true;
+}
+
+function updateMaterialUniforms(mat, cfg) {
+  const uniforms = mat.userData.ocVisualUniforms;
+  if (!uniforms) {
+    mat.needsUpdate = true;
+    return;
+  }
+  uniforms.ocBrightness.value = Number(cfg.brightness ?? 1);
+  uniforms.ocContrast.value = Number(cfg.contrast ?? 1);
+  uniforms.ocSaturation.value = Number(cfg.saturation ?? 1);
+  uniforms.ocTint.value.copy(colorFromHex(cfg.tint || '#ffffff'));
+  uniforms.ocTintStrength.value = clamp01(cfg.tintStrength ?? 0);
+}
+
 function applyGlbMaterialVisual(obj, cfg) {
   obj.traverse?.((node) => {
     const materials = Array.isArray(node.material) ? node.material : node.material ? [node.material] : [];
@@ -181,8 +229,10 @@ function applyGlbMaterialVisual(obj, cfg) {
       mat.opacity = cfg.opacity ?? 1;
       if (mat.color) {
         if (!mat.userData.baseColor) mat.userData.baseColor = mat.color.clone();
-        mat.color.copy(mat.userData.baseColor).multiplyScalar(cfg.brightness ?? 1);
+        mat.color.copy(mat.userData.baseColor);
       }
+      installVisualShader(mat);
+      updateMaterialUniforms(mat, cfg);
       mat.needsUpdate = true;
     });
   });
