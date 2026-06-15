@@ -10,6 +10,12 @@ export function installHorseAspectFix() {
       bottom: -96px !important;
       background-size: 700% 100% !important;
     }
+    .obstacle-horse-shadow {
+      width: 340px !important;
+      height: 210px !important;
+      margin-left: -170px !important;
+      bottom: -66px !important;
+    }
   `;
   document.head.appendChild(style);
 }
