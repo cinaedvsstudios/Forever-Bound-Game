@@ -266,47 +266,90 @@ export class ShimmerDistortionEngine {
     const textureAlpha = clamp01((v.baseTextureOpacity ?? 76) / 100);
     const armOpacity = clamp01((v.armOpacity ?? 70) / 100);
     const armAmount = clamp01((v.armAmount ?? 70) / 100);
-    const alpha = textureAlpha * scale(0.18, 1.0, armAmount) * scale(0.18, 1.0, armOpacity);
-    if (alpha <= 0.001) return false;
+    const thickness = clamp01((v.armThickness ?? 58) / 100);
+    const radius = clamp01((v.armRadius ?? 72) / 100);
+    if (textureAlpha <= 0.001 || armOpacity <= 0.001 || armAmount <= 0.001) return false;
 
-    const radiusControl = clamp01((v.armRadius ?? 70) / 100);
-    const thicknessControl = clamp01((v.armThickness ?? 60) / 100);
-    const textureScale = scale(0.24, 2.35, (v.baseTextureScale ?? 150) / 240);
-    const radiusScale = scale(0.52, 1.46, radiusControl);
-    const thicknessScale = scale(0.72, 1.18, thicknessControl);
+    const uniformScale = scale(0.24, 2.35, (v.baseTextureScale ?? 150) / 240);
+    const scaleXControl = clamp(Number(v.baseTextureScaleX ?? 100), 10, 260) / 100;
+    const scaleYControl = clamp(Number(v.baseTextureScaleY ?? 100), 10, 260) / 100;
+    const radiusScale = scale(0.36, 1.78, radius);
+    const thicknessScale = scale(0.28, 2.12, thickness);
+    const softness = scale(0, 8.0, (v.armSoftness ?? 28) / 100);
+    const definition = clamp01((v.armDefinition ?? 72) / 100);
+    const pulseStrength = clamp01((v.armPulseStrength ?? 0) / 100);
     const pulseSpeed = scale(0, 2.4, (v.baseTexturePulseSpeed ?? 0) / 100);
-    const pulseStrength = scale(0, 0.08, (v.armPulseStrength ?? 0) / 100);
-    const pulse = pulseSpeed > 0 || pulseStrength > 0
-      ? 1 + Math.sin(t * Math.max(pulseSpeed, scale(0.5, 2.8, (v.armSpeed ?? 30) / 100))) * (0.04 + pulseStrength)
-      : 1;
-
+    const armSpeed = clamp01((v.armSpeed ?? 34) / 100);
+    const curl = clamp01((v.armCurl ?? 72) / 100);
     const dir = (v.swirl ?? 80) >= 0 ? 1 : -1;
-    const textureRotation = t * scale(-1.2, 1.2, ((v.baseTextureRotationSpeed ?? 0) + 100) / 200);
-    const armRotation = t * scale(0, 1.15, Math.pow((v.armSpeed ?? 30) / 100, 1.45)) * dir;
-    const rotation = textureRotation + armRotation;
 
-    const maxRadius = Math.max(g.rx, g.ry) * textureScale * radiusScale * thicknessScale * pulse;
+    const pulse = 1 + Math.sin(t * Math.max(pulseSpeed, scale(0.25, 2.8, armSpeed))) * scale(0, 0.18, pulseStrength);
+    const textureRotation = t * scale(-1.2, 1.2, ((v.baseTextureRotationSpeed ?? 0) + 100) / 200);
+    const armRotation = t * scale(0, 1.35, Math.pow(armSpeed, 1.35)) * dir;
+    const baseRotation = textureRotation + armRotation;
+
+    // Arm curl cannot physically bend a flat JPG in canvas, so it now changes the visible
+    // spread of repeated spiral turns. This makes the slider visibly useful without clipping.
+    const curlSpread = scale(0, Math.PI * 1.35, curl) * dir;
+    const copyCount = Math.max(1, Math.round(scale(1, 8, armAmount)));
+
     const image = this.textureImage;
     const aspect = image.width / Math.max(1, image.height);
-    let drawWidth = maxRadius * 2;
-    let drawHeight = maxRadius * 2;
-    if (aspect >= 1) drawHeight = drawWidth / aspect;
-    else drawWidth = drawHeight * aspect;
+    const maxRadius = Math.max(g.rx, g.ry) * uniformScale * radiusScale * pulse;
 
-    const softness = scale(0, 5.5, (v.armSoftness ?? 30) / 100);
-    const definition = clamp01((v.armDefinition ?? 55) / 100);
+    // Start from the source image aspect, then apply X/Y controls directly.
+    // This intentionally does not clip to an ellipse: the JPG's own black background is allowed through.
+    let baseWidth;
+    let baseHeight;
+    if (aspect >= 1) {
+      baseWidth = maxRadius * 2;
+      baseHeight = baseWidth / aspect;
+    } else {
+      baseHeight = maxRadius * 2;
+      baseWidth = baseHeight * aspect;
+    }
+    const drawWidth = baseWidth * scaleXControl;
+    const drawHeight = baseHeight * scaleYControl * thicknessScale;
+
     const blendMode = this.normalizeBlendMode(v.baseTextureBlendMode || 'screen');
+    const contrast = 0.85 + definition * 1.75;
+    const brightness = 0.86 + definition * 0.50 + armAmount * 0.18;
+    const blur = Math.max(0, softness * (1 - definition * 0.82));
+    const alpha = Math.min(1, textureAlpha * scale(0.18, 1.0, armAmount) * scale(0.12, 1.0, armOpacity));
 
     ctx.save();
-    ctx.beginPath();
-    ctx.ellipse(g.cx, g.cy, g.rx * 1.42, g.ry * 1.24, 0, 0, TAU);
-    ctx.clip();
+
+    // Main JPG arm texture pass. No ellipse clip mask is applied.
     ctx.globalCompositeOperation = blendMode;
-    ctx.globalAlpha = alpha;
-    ctx.filter = `blur(${softness * (1 - definition * 0.72)}px)`;
-    ctx.translate(g.cx, g.cy);
-    ctx.rotate(rotation);
-    ctx.drawImage(image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+    ctx.filter = `blur(${blur}px) brightness(${brightness}) contrast(${contrast})`;
+    for (let i = 0; i < copyCount; i += 1) {
+      const mid = (copyCount - 1) / 2;
+      const offset = copyCount === 1 ? 0 : (i - mid) / Math.max(1, mid);
+      const amountScale = scale(0.00, 0.16, armAmount);
+      const curlScale = 1 + Math.abs(offset) * scale(0.00, 0.22, curl);
+      const localScale = Math.max(0.05, 1 + offset * amountScale) * curlScale;
+      const localAlpha = alpha * (copyCount === 1 ? 1 : scale(0.34, 0.78, 1 - Math.abs(offset) * 0.42));
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, localAlpha);
+      ctx.translate(g.cx, g.cy);
+      ctx.rotate(baseRotation + offset * curlSpread);
+      ctx.drawImage(image, -drawWidth * localScale / 2, -drawHeight * localScale / 2, drawWidth * localScale, drawHeight * localScale);
+      ctx.restore();
+    }
+
+    // Definition pass: a brighter copy so Arm Definition still has an obvious effect.
+    if (definition > 0.02) {
+      ctx.globalCompositeOperation = blendMode === 'source-over' ? 'screen' : blendMode;
+      ctx.filter = `blur(${scale(0, 1.6, 1 - definition)}px) brightness(${1.02 + definition * 0.76}) contrast(${1.15 + definition * 1.75})`;
+      ctx.save();
+      ctx.globalAlpha = Math.min(0.58, alpha * definition * scale(0.25, 0.78, armAmount));
+      ctx.translate(g.cx, g.cy);
+      ctx.rotate(baseRotation + curlSpread * 0.28);
+      const innerScale = scale(0.78, 1.08, definition);
+      ctx.drawImage(image, -drawWidth * innerScale / 2, -drawHeight * innerScale / 2, drawWidth * innerScale, drawHeight * innerScale);
+      ctx.restore();
+    }
+
     ctx.restore();
     return true;
   }

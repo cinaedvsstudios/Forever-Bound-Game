@@ -1,5 +1,5 @@
-import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.35';
-import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.35';
+import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.37';
+import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.37';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -58,7 +58,15 @@ const DEFAULT_ASSET_ROOT = './assets/';
 const DEFAULT_BASE_ASSETS = [
   'default1.jpg',
   'default2.jpg',
-  'default3.jpg'
+  'default3.jpg',
+  'default4.jpg',
+  'default5.jpg',
+  'default6.jpg',
+  'default7.jpg',
+  'default8.jpg',
+  'default9.jpg',
+  'default10.jpg',
+  'default11.jpg'
 ];
 const DEFAULT_OVERLAY_ASSETS = [
   'aperture.png',
@@ -330,7 +338,7 @@ function fxAssetJson() {
     scope: 'project',
     projectId: 'forever-bound',
     engine: 'artifex-shimmer-distortion-preview',
-    engineVersion: '1.3.5-preview',
+    engineVersion: '1.3.6-preview',
     tags: preset.tags,
     assets: {
       ...(state.textureName ? { texture: { kind: 'externalImageReference', editorFileName: state.textureName, sourcePath: state.textureAssetPath || '' } } : {}),
@@ -362,7 +370,7 @@ function fxAssetJson() {
       'Portal Inner Wisps are intentionally separate from Portal Line Outline and wormhole Arms.',
       'V1.28 adds aperture controls, overlay alpha vignette, expanded blend modes and a second overlay slot.',
       'V1.30 adds default asset preview buttons and modal selection from fx-shimmer-preview/assets/.',
-      'V1.35 treats the default JPGs as wormhole arm textures, with arm texture blend controls and orbit cloud gamma brightness.',
+      'V1.37 removes the arm texture clip mask, adds default1-default11 JPG choices, and makes Arm curl / turns drive visible rotated texture turns.',
       'Exports runtime-facing archetype shape, not final production schema.'
     ]
   };
@@ -575,5 +583,5 @@ function tick(now) {
 renderPresets();
 loadDefaultArmTextureIfNeeded();
 syncControls();
-setStatus('Loaded shimmer engine prototype V1.35.');
+setStatus('Loaded shimmer engine prototype V1.37.');
 requestAnimationFrame(tick);

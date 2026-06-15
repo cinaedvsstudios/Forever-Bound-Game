@@ -142,7 +142,7 @@
           <p class="kicker">Artifex FX Engine Prototype</p>
           <h1>Shimmer / Portal Distortion Engine</h1>
         </div>
-        <span class="version">V1.35 Arm Texture</span>
+        <span class="version">V1.37 Arm Texture Fix</span>
       </div>
       <div class="header-actions">
         <button type="button" data-action="play">▶️ Play</button>
@@ -178,7 +178,7 @@
 
           <div class="canvas-wrap">
             <canvas width="960" height="540" data-canvas></canvas>
-            <div class="canvas-hint">Canvas preview — V1.35 uses selectable default JPGs as wormhole arm textures, plus overlay blend modes, overlay 2, aperture controls and cloud gamma brightness.</div>
+            <div class="canvas-hint">Canvas preview — V1.37 removes the arm texture clip mask, adds default1-default11 JPG choices, and makes Arm curl / turns spread visible rotated texture copies.</div>
           </div>
         </div>
 
@@ -384,7 +384,11 @@
           </label>
           <div class="two">
             <label>Arm texture opacity <input type="range" min="0" max="100" step="1" data-field="baseTextureOpacity" /></label>
-            <label>Arm texture scale <input type="range" min="10" max="240" step="1" data-field="baseTextureScale" /></label>
+            <label>Arm texture overall scale <input type="range" min="10" max="240" step="1" data-field="baseTextureScale" /></label>
+          </div>
+          <div class="two">
+            <label>Texture X scale <input type="range" min="10" max="260" step="1" data-field="baseTextureScaleX" /></label>
+            <label>Texture Y scale <input type="range" min="10" max="260" step="1" data-field="baseTextureScaleY" /></label>
           </div>
           <div class="two">
             <label>Arm texture rotation <input type="range" min="-100" max="100" step="1" data-field="baseTextureRotationSpeed" /></label>
@@ -649,6 +653,6 @@
     </section>
   </div>
 
-  <script type="module" src="./src/main.js?v=1.35"></script>
+  <script type="module" src="./src/main.js?v=1.37"></script>
 </body>
 </html>
