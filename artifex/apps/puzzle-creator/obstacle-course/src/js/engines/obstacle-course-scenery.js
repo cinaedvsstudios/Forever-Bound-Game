@@ -10,7 +10,7 @@ const TREE_ROOT_LIFT = 0.22;
 const TREE_OUTER_LIMIT_FROM_PATH_EDGE = 2.2;
 const DETAIL_OUTER_LIMIT_FROM_PATH_EDGE = 2.35;
 const SHADOW_Y_OFFSET = 0.055;
-const SHADOW_OPACITY = 0.5;
+const SHADOW_OPACITY = 1;
 const DENSITY_PER_1000 = { pathEdgeTreePairs: 50, limitedOuterTreePairs: 18, tallPathBushPairs: 84, edgeDetailPairs: 24, farDetailPairs: 10 };
 
 function hashString(value) { let hash = 2166136261; String(value || 'obstacle-course').split('').forEach((ch) => { hash ^= ch.charCodeAt(0); hash = Math.imul(hash, 16777619); }); return hash >>> 0; }
@@ -56,7 +56,7 @@ function localPlacementForLayer(layer, x, y, z) { const scale = layerScale(layer
 function entityForInstance(type, layer, x, z, localX, localZ, assetUrl = '') { OC.entities.push({ type, layerId: layer.id, x, z, localX, localZ, assetUrl }); }
 
 function makeShadowMaterial(texture, opacity) {
-  const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity, depthWrite: false, depthTest: true, side: THREE.DoubleSide, blending: THREE.MultiplyBlending, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+  const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: opacity ?? 1, depthWrite: false, depthTest: true, side: THREE.DoubleSide, blending: THREE.MultiplyBlending, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
   material.userData.ocSkipLayerVisual = true;
   return material;
 }
