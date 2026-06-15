@@ -6,6 +6,10 @@ import { clamp } from './obstacle-course-utils.js';
 
 export { THREE, GLTFLoader };
 
+function effectiveVanishY() {
+  return Number(OC.vanishY || 0) + 100;
+}
+
 export function initScene(updateFrame) {
   OC.textureLoader = new THREE.TextureLoader();
   OC.gltfLoader = new GLTFLoader();
@@ -66,9 +70,10 @@ export function resizeRenderer() {
 
 export function applyCamera() {
   if (!OC.camera) return;
+  const vpY = effectiveVanishY();
   const camX = (OC.vanishX || 0) * 0.035;
   const lookX = (OC.vanishX || 0) * 0.07;
-  const lookY = GROUND_Y + (OC.vanishY || 0) * 0.05;
+  const lookY = GROUND_Y + vpY * 0.05;
   OC.camera.position.set(camX, 4.4, 10.8);
   OC.camera.lookAt(lookX, lookY, -92);
   OC.camera.rotation.z += (OC.cameraAngle || 0) * 0.0035;
@@ -83,8 +88,9 @@ export function applyBackgroundPlate() {
     OC.stage.style.backgroundColor = '#fff';
     return;
   }
+  const vpY = effectiveVanishY();
   const x = 50 + (OC.vanishX || 0) * 0.18;
-  const y = 50 + (OC.vanishY || 0) * 0.18 + (OC.backgroundJumpShift || 0);
+  const y = 50 + vpY * 0.18 + (OC.backgroundJumpShift || 0);
   const zoom = Math.max(100, Math.round((OC.backgroundZoom || 1.1) * 100));
   OC.stage.style.backgroundColor = '#05080d';
   OC.stage.style.setProperty('--oc-bg-image', `url("${ASSETS.background}?v=${OC.cacheVersion}")`);
