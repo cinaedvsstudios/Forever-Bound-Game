@@ -171,7 +171,7 @@ function drawPath(ctx, canvasWidth) {
   ctx.fillStyle = 'rgba(244,234,212,.72)';
   ctx.font = '11px monospace';
   ctx.fillText(`window: ${Math.round(start)}-${Math.round(end)}`, 12, 18);
-  ctx.fillText('purple = tree limit · dots = generated course map', 12, 34);
+  ctx.fillText('purple = tree limit · halos = object footprint · dots = centre', 12, 34);
   ctx.strokeStyle = 'rgba(244,234,212,.25)';
   ctx.beginPath();
   ctx.moveTo(canvasWidth / 2, 42);
@@ -191,6 +191,23 @@ function pointRadius(type) {
   if (type === 'tree') return 5.2;
   if (type === 'collectible') return 4.8;
   return 4.2;
+}
+
+function footprintRadius(point) {
+  const name = fileName(point.assetUrl).toLowerCase();
+  if (name.includes('tall_bush')) return 34;
+  if (name.includes('bush') || point.type === 'detail') return 18;
+  if (point.type === 'tree') return 22;
+  if (point.type === 'obstacle') return 10;
+  if (point.type === 'collectible') return 8;
+  return 0;
+}
+
+function footprintColor(type) {
+  if (type === 'collectible') return 'rgba(91,229,255,.16)';
+  if (type === 'obstacle') return 'rgba(255,112,85,.16)';
+  if (type === 'tree') return 'rgba(53,181,104,.16)';
+  return 'rgba(102,187,106,.18)';
 }
 
 function mapPointForEntity(entity) {
@@ -228,7 +245,14 @@ export function drawOverview() {
   OC.overviewHitPoints = [];
   generatedCourseMapPoints().forEach((scenePoint) => {
     const point = worldToOverview(scenePoint.x, scenePoint.z);
-    if (point.y < -28 || point.y > height + 28 || point.x < -38 || point.x > width + 38) return;
+    if (point.y < -44 || point.y > height + 44 || point.x < -64 || point.x > width + 64) return;
+    const footprint = footprintRadius(scenePoint);
+    if (footprint > 0) {
+      ctx.fillStyle = footprintColor(scenePoint.type);
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, footprint, 0, Math.PI * 2);
+      ctx.fill();
+    }
     const radius = pointRadius(scenePoint.type);
     ctx.fillStyle = pointColor(scenePoint.type);
     ctx.beginPath();
@@ -237,7 +261,7 @@ export function drawOverview() {
     ctx.lineWidth = 1;
     ctx.strokeStyle = 'rgba(0,0,0,.45)';
     ctx.stroke();
-    OC.overviewHitPoints.push({ x: point.x, y: point.y, radius, label: labelForPoint(scenePoint), point: scenePoint });
+    OC.overviewHitPoints.push({ x: point.x, y: point.y, radius: Math.max(radius, footprint), label: labelForPoint(scenePoint), point: scenePoint });
   });
   const player = worldToOverview(pathCenterAt(OC.distance) + OC.player.x, -OC.distance);
   ctx.fillStyle = '#f4ead4';
