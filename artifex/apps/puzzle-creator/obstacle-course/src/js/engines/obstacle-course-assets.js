@@ -3,6 +3,12 @@ import { ASSET_BASE, SHARED_UI_BASE } from './obstacle-course-state.js';
 export const ASSETS = {
   background: `${ASSET_BASE}backgrounds/horseridebg.jpg`,
   horse: `${ASSET_BASE}foreground/horse.png`,
+  horseShadows: [
+    `${ASSET_BASE}foreground/shad1.jpg`,
+    `${ASSET_BASE}foreground/shad2.jpg`,
+    `${ASSET_BASE}foreground/shad3.jpg`,
+    `${ASSET_BASE}foreground/shad4.jpg`,
+  ],
   groundPathMap: `${ASSET_BASE}ground/ground-path-map.json`,
   powerbars: `${ASSET_BASE}ui/powerbars.png`,
   arrows: `${SHARED_UI_BASE}defaultarrows.webp`,
@@ -45,6 +51,7 @@ export function requiredAssetList() {
   return [
     { url: ASSETS.background, type: 'image', required: true, label: 'Background' },
     { url: ASSETS.horse, type: 'image', required: true, label: 'Horse foreground' },
+    ...ASSETS.horseShadows.map((url, index) => ({ url, type: 'image', required: true, label: `Horse shadow ${index + 1}` })),
     { url: ASSETS.groundPathMap, type: 'json', required: true, label: 'Ground path map' },
     { url: ASSETS.powerbars, type: 'image', required: true, label: 'Power bars' },
     { url: ASSETS.arrows, type: 'image', required: true, label: 'Off-path arrows' }
