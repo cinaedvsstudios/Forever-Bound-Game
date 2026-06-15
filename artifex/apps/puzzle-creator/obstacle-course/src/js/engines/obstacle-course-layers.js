@@ -56,7 +56,7 @@ function updateShaderUniforms(mat, cfg) {
   shader.uniforms.ocTintStrength.value = cfg.tintStrength ?? 0;
 }
 function applyMaterialVisual(mat, layer) {
-  if (!mat) return;
+  if (!mat || mat.userData.ocSkipLayerVisual) return;
   mat.transparent = (layer.opacity ?? 1) < 0.995 || mat.transparent;
   mat.opacity = layer.opacity ?? 1;
   if (mat.color) { if (!mat.userData.baseColor) mat.userData.baseColor = mat.color.clone(); mat.color.copy(mat.userData.baseColor); }
@@ -73,12 +73,14 @@ export function applyLayer(layer) {
   layer.group.position.set(layer.x || 0, layer.y || 0, layer.z || 0);
   layer.group.scale.setScalar(layer.scale || 1);
   layer.group.renderOrder = layer.order || 0;
-  layer.group.traverse((node) => {
-    if (node.material) {
-      if (Array.isArray(node.material)) node.material.forEach((mat) => applyMaterialVisual(mat, layer));
-      else applyMaterialVisual(node.material, layer);
-    }
-  });
+  if (layer.id !== 'treeShadows') {
+    layer.group.traverse((node) => {
+      if (node.material) {
+        if (Array.isArray(node.material)) node.material.forEach((mat) => applyMaterialVisual(mat, layer));
+        else applyMaterialVisual(node.material, layer);
+      }
+    });
+  }
   renderOnce();
 }
 export function applyAllLayers() { OC.layers.forEach(applyLayer); }
