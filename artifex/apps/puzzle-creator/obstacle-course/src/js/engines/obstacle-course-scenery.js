@@ -15,6 +15,7 @@ const DENSITY_PER_1000 = {
   pathEdgeTreePairs: 42,
   pathInsideTreePairs: 54,
   limitedOuterTreePairs: 18,
+  tallPathBushPairs: 30,
   edgeDetailPairs: 24,
   farDetailPairs: 10,
 };
@@ -74,6 +75,11 @@ function pathInsideEdgeX(rng, distance, side) {
   const center = pathCenterAt(distance);
   const half = pathHalfWidthAt(distance);
   return center + side * Math.max(0.35, half - randFrom(rng, 0.25, 1.25));
+}
+function pathEdgeBushX(rng, distance, side) {
+  const center = pathCenterAt(distance);
+  const half = pathHalfWidthAt(distance);
+  return center + side * (half + randFrom(rng, 0.05, 0.55));
 }
 function limitedOutsideX(rng, distance, side, minFromEdge = 1.05, maxFromEdge = TREE_OUTER_LIMIT_FROM_PATH_EDGE) {
   const center = pathCenterAt(distance);
@@ -204,6 +210,7 @@ export function scatterScenery() {
   const oakTreeAssets = preferredAssets(assetsNamed(allTrees, 'oak_trees'), pathEdgeTreeAssets);
   const edgeDetailAssets = loadedAssets('edgeDetail');
   const farDetailAssets = GLB_ASSETS.filter((asset) => ['edgeDetail', 'farDetail'].includes(asset.type) && OC.glbTemplates.has(asset.url));
+  const tallBushAssets = preferredAssets(assetsNamed(farDetailAssets, 'tall_bush'), farDetailAssets);
   const sections = sectionCount();
   const end = OC.courseLength + 80;
   const queues = new Map();
@@ -216,6 +223,9 @@ export function scatterScenery() {
   });
   makeDistances(rng, DENSITY_PER_1000.limitedOuterTreePairs * sections * template.treeRate, 60, end, 20).forEach((d) => {
     [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, shadowLayer, 'tree', oakTreeAssets, fallbackTree, limitedOutsideX(rng, d, side), TREE_ROOT_LIFT, -d + randFrom(rng, -7, 7), limitedOuterTreeScale(rng, d)));
+  });
+  makeDistances(rng, DENSITY_PER_1000.tallPathBushPairs * sections * template.detailRate, 35, OC.courseLength + 60, 10).forEach((d) => {
+    [-1, 1].forEach((side) => queuePlacement(rng, queues, detailLayer, null, 'detail', tallBushAssets, fallbackDetail, pathEdgeBushX(rng, d, side), 0, -d + randFrom(rng, -4, 4), randFrom(rng, 1.65, 2.35)));
   });
   makeDistances(rng, DENSITY_PER_1000.edgeDetailPairs * sections * template.detailRate, 20, OC.courseLength + 40, 14).forEach((d) => {
     [-1, 1].forEach((side) => queuePlacement(rng, queues, detailLayer, null, 'detail', edgeDetailAssets, fallbackDetail, limitedDetailX(rng, d, side, 0.15, 1.6), 0, -d + randFrom(rng, -3, 3), randFrom(rng, 0.75, 1.15)));
