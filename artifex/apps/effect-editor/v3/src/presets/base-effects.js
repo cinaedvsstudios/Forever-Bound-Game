@@ -251,7 +251,7 @@ export const PRESETS_REGISTRY = {
       id: 'optic-glint',
       label: 'Crosshairs',
       engine: 'lensflare',
-      description: 'Single optical crosshair/glint. Use True Lens Flare for a multi-part flare.',
+      description: 'Single optical crosshair/glint. Use Crosshairs for a multi-part flare.',
       config: {
         name: 'Crosshairs',
         engine: 'lensflare',
@@ -275,11 +275,11 @@ export const PRESETS_REGISTRY = {
     },
     {
       id: 'true-lens-flare',
-      label: 'True Lens Flare',
+      label: 'Crosshairs',
       engine: 'true-lensflare',
-      description: 'A single-layer lens flare renderer with halo, streak, ghost orbs, and hot core.',
+      description: 'A single-layer crosshair renderer with halo, streak, ghost orbs, and hot core.',
       config: {
-        name: 'True Lens Flare',
+        name: 'Crosshairs',
         engine: 'true-lensflare',
         colorA: '#fff8d6',
         colorB: '#7be7ff',
