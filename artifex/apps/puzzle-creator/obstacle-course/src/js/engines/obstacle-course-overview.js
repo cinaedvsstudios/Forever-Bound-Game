@@ -1,7 +1,6 @@
 import { OC } from './obstacle-course-state.js';
 import { GLB_ASSETS } from './obstacle-course-assets.js';
 import { $ } from './obstacle-course-utils.js';
-import { THREE } from './obstacle-course-scene.js';
 import { pathCenterAt, pathHalfWidthAt } from './obstacle-course-ground-path.js';
 
 const XZ = 36.0;
@@ -11,9 +10,6 @@ const FWD = 480;
 const BACK = 30;
 const HIT = 12;
 const TREE_LIMIT = 2.2;
-const tempMatrix = new THREE.Matrix4();
-const tempWorldMatrix = new THREE.Matrix4();
-const tempPosition = new THREE.Vector3();
 
 export function scheduleOverviewDraw() {
   if (OC.overviewRaf) return;
@@ -47,16 +43,38 @@ function fileName(url = '') {
   return String(url || '').split('?')[0].split('#')[0].split('/').pop() || 'no asset url';
 }
 
+function assetForUrl(url = '') {
+  return GLB_ASSETS.find((item) => item.url === url) || null;
+}
+
 function typeFromAsset(url = '') {
-  const asset = GLB_ASSETS.find((item) => item.url === url);
+  const asset = assetForUrl(url);
   if (!asset) return 'entity';
   if (['nearTree', 'farTree'].includes(asset.type)) return 'tree';
   if (['edgeDetail', 'farDetail'].includes(asset.type)) return 'detail';
   return asset.type || 'entity';
 }
 
+function layerIdForPoint(point = {}) {
+  if (point.layerId) return point.layerId;
+  if (point.type === 'tree') return 'trees';
+  if (point.type === 'detail') return 'details';
+  if (point.type === 'collectible') return 'collectibles';
+  if (point.type === 'obstacle' || point.type === 'rock') return 'obstacles';
+  return '';
+}
+
+function layerScaleForPoint(point = {}) {
+  const layer = OC.layers.get(layerIdForPoint(point));
+  return Math.max(0.0001, Number(layer?.scale || 1));
+}
+
+function glbControlFor(assetUrl = '') {
+  return assetUrl && OC.glbControls?.get ? OC.glbControls.get(assetUrl) : null;
+}
+
 function labelForPoint(point) {
-  return `${point.type || 'entity'}\n${fileName(point.assetUrl)}\nx ${point.x.toFixed(1)} · z ${point.z.toFixed(1)}\nactual scene position${point.assetUrl ? '\nclick: select GLB controls' : ''}`;
+  return `${point.type || 'entity'}\n${fileName(point.assetUrl)}\nx ${point.x.toFixed(1)} · z ${point.z.toFixed(1)}\ncourse-map position${point.assetUrl ? '\nclick: select GLB controls' : ''}`;
 }
 
 function tooltip() {
@@ -153,7 +171,7 @@ function drawPath(ctx, canvasWidth) {
   ctx.fillStyle = 'rgba(244,234,212,.72)';
   ctx.font = '11px monospace';
   ctx.fillText(`window: ${Math.round(start)}-${Math.round(end)}`, 12, 18);
-  ctx.fillText('purple = tree limit · dots = actual scene positions', 12, 34);
+  ctx.fillText('purple = tree limit · dots = generated course map', 12, 34);
   ctx.strokeStyle = 'rgba(244,234,212,.25)';
   ctx.beginPath();
   ctx.moveTo(canvasWidth / 2, 42);
@@ -175,50 +193,26 @@ function pointRadius(type) {
   return 4.2;
 }
 
-function addObjectPoint(points, object, fallbackType = 'entity') {
-  if (!object || object.visible === false) return;
-  object.updateMatrixWorld(true);
-  tempPosition.setFromMatrixPosition(object.matrixWorld);
-  const assetUrl = object.userData?.glbAssetUrl || object.userData?.assetUrl || '';
-  const type = object.userData?.ocType || object.userData?.kind || typeFromAsset(assetUrl) || fallbackType;
-  points.push({ x: tempPosition.x, z: tempPosition.z, type, assetUrl, source: object });
+function mapPointForEntity(entity) {
+  if (!entity || entity.visibleOnOverview === false) return null;
+  const assetUrl = entity.assetUrl || entity.object?.userData?.glbAssetUrl || entity.object?.userData?.assetUrl || '';
+  const cfg = glbControlFor(assetUrl);
+  if (cfg && (cfg.opacity ?? 1) <= 0.01) return null;
+  const type = entity.type || typeFromAsset(assetUrl);
+  const layerScale = layerScaleForPoint({ ...entity, type });
+  const baseX = Number(entity.x ?? entity.object?.userData?.basePosition?.x ?? entity.object?.position?.x ?? 0);
+  const baseZ = Number(entity.z ?? entity.object?.userData?.basePosition?.z ?? entity.object?.position?.z ?? 0);
+  return {
+    x: baseX + Number(cfg?.x || 0) * layerScale,
+    z: baseZ + Number(cfg?.z || 0) * layerScale,
+    type,
+    assetUrl,
+    source: entity.object || null,
+  };
 }
 
-function addInstancedGroupPoints(points, group) {
-  if (!group?.userData?.isInstancedAssetGroup || group.visible === false) return false;
-  const assetUrl = group.userData.glbAssetUrl || '';
-  const type = typeFromAsset(assetUrl);
-  group.updateMatrixWorld(true);
-  const mesh = group.children.find((child) => child.isInstancedMesh);
-  if (!mesh) return false;
-  mesh.updateMatrixWorld(true);
-  const count = Math.min(mesh.count || 0, group.userData.placements?.length || mesh.count || 0);
-  for (let index = 0; index < count; index += 1) {
-    mesh.getMatrixAt(index, tempMatrix);
-    tempWorldMatrix.multiplyMatrices(mesh.matrixWorld, tempMatrix);
-    tempPosition.setFromMatrixPosition(tempWorldMatrix);
-    points.push({ x: tempPosition.x, z: tempPosition.z, type, assetUrl, source: group });
-  }
-  return true;
-}
-
-function actualScenePoints() {
-  const points = [];
-  const seen = new Set();
-  OC.world?.updateMatrixWorld(true);
-  (OC.glbInstances || []).forEach((object) => {
-    if (addInstancedGroupPoints(points, object)) {
-      seen.add(object);
-      return;
-    }
-    addObjectPoint(points, object, typeFromAsset(object?.userData?.glbAssetUrl));
-    seen.add(object);
-  });
-  (OC.entities || []).forEach((entity) => {
-    if (entity.visibleOnOverview === false || !entity.object || seen.has(entity.object)) return;
-    addObjectPoint(points, entity.object, entity.type);
-  });
-  return points;
+function generatedCourseMapPoints() {
+  return (OC.entities || []).map(mapPointForEntity).filter(Boolean);
 }
 
 export function drawOverview() {
@@ -232,7 +226,7 @@ export function drawOverview() {
   ctx.fillRect(0, 0, width, height);
   drawPath(ctx, width);
   OC.overviewHitPoints = [];
-  actualScenePoints().forEach((scenePoint) => {
+  generatedCourseMapPoints().forEach((scenePoint) => {
     const point = worldToOverview(scenePoint.x, scenePoint.z);
     if (point.y < -28 || point.y > height + 28 || point.x < -38 || point.x > width + 38) return;
     const radius = pointRadius(scenePoint.type);
