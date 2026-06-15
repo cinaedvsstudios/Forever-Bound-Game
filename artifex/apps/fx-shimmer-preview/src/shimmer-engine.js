@@ -338,19 +338,8 @@ export class ShimmerDistortionEngine {
       ctx.restore();
     }
 
-    // Definition pass: a brighter copy so Arm Definition still has an obvious effect.
-    if (definition > 0.02) {
-      ctx.globalCompositeOperation = blendMode === 'source-over' ? 'screen' : blendMode;
-      ctx.filter = `blur(${scale(0, 1.6, 1 - definition)}px) brightness(${1.02 + definition * 0.76}) contrast(${1.15 + definition * 1.75})`;
-      ctx.save();
-      ctx.globalAlpha = Math.min(0.58, alpha * definition * scale(0.25, 0.78, armAmount));
-      ctx.translate(g.cx, g.cy);
-      const definitionTurn = curl <= 0.5 ? (curl / 0.5) * TAU * 0.18 * dir : ((curl - 0.5) / 0.5) * TAU * 0.18 * dir;
-      ctx.rotate(baseRotation + definitionTurn);
-      const innerScale = scale(0.78, 1.08, definition);
-      ctx.drawImage(image, -drawWidth * innerScale / 2, -drawHeight * innerScale / 2, drawWidth * innerScale, drawHeight * innerScale);
-      ctx.restore();
-    }
+    // Arm Definition now changes the filter on the single/curl texture copies only.
+    // Do not draw an extra scaled definition copy here: at low curl that looked like a second arm image.
 
     ctx.restore();
     return true;
