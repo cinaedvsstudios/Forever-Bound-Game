@@ -1,27 +1,27 @@
-// Obstacle Course V3.0.22 / Modular Horse Forest Runner
-import { OC } from './obstacle-course-state.js?v=3.0.22';
-import { ensureHeader, injectStyles, mountLayout, mountLeftPanel, enhanceStaticRangeSteppers, setResult } from './obstacle-course-ui.js?v=3.0.22';
-import { applyDefaultSettings } from './obstacle-course-settings.js?v=3.0.22';
-import { exportJsonSettings, importJsonSettings } from './obstacle-course-export-import.js?v=3.0.22';
-import { initScene, renderOnce, applyBackgroundPlate, updateWorldTransform } from './obstacle-course-scene.js?v=3.0.22';
-import { loadRequiredAssets, loadOptionalAssets } from './obstacle-course-loader.js?v=3.0.22';
-import { bindKeyboard } from './obstacle-course-input.js?v=3.0.22';
-import { buildGroundAndPath, clearWorld, playerWorldX } from './obstacle-course-ground-path.js?v=3.0.22';
-import { scatterScenery } from './obstacle-course-scenery.js?v=3.0.22';
-import { addCollectibles } from './obstacle-course-collectibles.js?v=3.0.22';
-import { addObstacles } from './obstacle-course-obstacles.js?v=3.0.22';
-import { updateMovement, resetRun } from './obstacle-course-movement.js?v=3.0.22';
-import { updateHud, showSpinner } from './obstacle-course-hud.js?v=3.0.22';
-import { updateHorseSprite } from './obstacle-course-horse.js?v=3.0.22';
-import { applyAllLayers } from './obstacle-course-layers.js?v=3.0.22';
-import { populateLayerSelect, createLayerSliders } from './obstacle-course-layer-controls.js?v=3.0.22';
-import { scheduleOverviewDraw, drawOverview } from './obstacle-course-overview.js?v=3.0.22';
-import { loadGlbAsset, applyAllGlbAssetControls } from './obstacle-course-glb.js?v=3.0.22';
-import { createGlbAssetSliders } from './obstacle-course-glb-controls.js?v=3.0.22';
-import { bindObstacleCourseControls, setInteractionLocked } from './obstacle-course-controls.js?v=3.0.22';
-import { installButtonFeedback } from './obstacle-course-button-feedback.js?v=3.0.22';
-import { installOverviewLayout } from './obstacle-course-overview-layout.js?v=3.0.22';
-import { installHorseAspectFix } from './obstacle-course-horse-aspect.js?v=3.0.22';
+// Obstacle Course V3.0.23 / Modular Horse Forest Runner
+import { OC } from './obstacle-course-state.js';
+import { ensureHeader, injectStyles, mountLayout, mountLeftPanel, enhanceStaticRangeSteppers, setResult } from './obstacle-course-ui.js?v=3.0.23';
+import { applyDefaultSettings } from './obstacle-course-settings.js?v=3.0.23';
+import { exportJsonSettings, importJsonSettings } from './obstacle-course-export-import.js?v=3.0.23';
+import { initScene, renderOnce, applyBackgroundPlate, updateWorldTransform } from './obstacle-course-scene.js?v=3.0.23';
+import { loadRequiredAssets, loadOptionalAssets } from './obstacle-course-loader.js?v=3.0.23';
+import { bindKeyboard } from './obstacle-course-input.js?v=3.0.23';
+import { buildGroundAndPath, clearWorld, playerWorldX } from './obstacle-course-ground-path.js?v=3.0.23';
+import { scatterScenery } from './obstacle-course-scenery.js?v=3.0.23';
+import { addCollectibles } from './obstacle-course-collectibles.js?v=3.0.23';
+import { addObstacles } from './obstacle-course-obstacles.js?v=3.0.23';
+import { updateMovement, resetRun } from './obstacle-course-movement.js?v=3.0.23';
+import { updateHud, showSpinner } from './obstacle-course-hud.js?v=3.0.23';
+import { updateHorseSprite } from './obstacle-course-horse.js?v=3.0.23';
+import { applyAllLayers } from './obstacle-course-layers.js?v=3.0.23';
+import { populateLayerSelect, createLayerSliders } from './obstacle-course-layer-controls.js?v=3.0.23';
+import { scheduleOverviewDraw, drawOverview } from './obstacle-course-overview.js?v=3.0.23';
+import { loadGlbAsset, applyAllGlbAssetControls } from './obstacle-course-glb.js?v=3.0.23';
+import { createGlbAssetSliders } from './obstacle-course-glb-controls.js?v=3.0.23';
+import { bindObstacleCourseControls, setInteractionLocked } from './obstacle-course-controls.js?v=3.0.23';
+import { installButtonFeedback } from './obstacle-course-button-feedback.js?v=3.0.23';
+import { installOverviewLayout } from './obstacle-course-overview-layout.js?v=3.0.23';
+import { installHorseAspectFix } from './obstacle-course-horse-aspect.js?v=3.0.23';
 
 export function openObstacleCourseWorkflow() { ensureMounted(); }
 
@@ -58,7 +58,7 @@ function ensureMounted() {
     showSpinner(false);
     setInteractionLocked(false);
     setResult('Required obstacle course assets loaded. Test controls are ready. Optional 3D/audio assets are loading in the background.', 'success');
-    import('./obstacle-course-asset-debug.js?v=3.0.22').catch(() => {});
+    import('./obstacle-course-asset-debug.js?v=3.0.23').catch(() => {});
     loadOptionalAssets({ loadGlbAsset }).then(() => {
       rebuildCourse();
       populateLayerSelect();
@@ -70,7 +70,7 @@ function ensureMounted() {
         ? `Optional assets finished with ${OC.optionalFailures.length} missing/late asset(s). ${loadedGlbs} GLB model(s) loaded and used.`
         : `All obstacle course assets loaded. ${loadedGlbs} GLB model(s) loaded and used.`;
       setResult(optionalMessage, OC.optionalFailures?.length ? 'failure' : 'success');
-      import('./obstacle-course-asset-debug.js?v=3.0.22').catch(() => {});
+      import('./obstacle-course-asset-debug.js?v=3.0.23').catch(() => {});
     }).catch((error) => {
       console.warn('[ObstacleCourse] optional assets did not finish', error);
       setResult('Optional 3D/audio assets did not finish, but required test controls remain ready.', 'failure');
