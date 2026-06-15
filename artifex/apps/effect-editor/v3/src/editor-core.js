@@ -84,10 +84,12 @@ function populateEngineSelect() {
 function populateBaseMenu() {
   const list = document.getElementById('base-layer-list');
   if (!list) return;
-  list.replaceChildren(...listBasePresets().map((preset) => {
+  const presets = [...listBasePresets()].sort((a, b) => String(a.label || a.id || '').localeCompare(String(b.label || b.id || ''), undefined, { sensitivity: 'base' }));
+  list.replaceChildren(...presets.map((preset) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.title = preset.description || '';
+    if (isPrototypePreset(preset)) button.classList.add('index2-prototype-insert-item');
     button.append(document.createTextNode(preset.label || preset.id));
     const detail = document.createElement('span');
     detail.textContent = preset.description || preset.engine || '';
@@ -214,6 +216,7 @@ function syncStatusText() {
   if (zoom) zoom.textContent = zoomText;
   if (status) status.textContent = `FPS ${editorState.renderStats.fps} Particles ${editorState.renderStats.particles}/${editorState.renderStats.particleCap} Mode ${editorState.renderStats.performanceMode} Grid ${editorState.showGrid ? 'On' : 'Off'} Guides ${editorState.showHelpers ? 'On' : 'Off'}`;
 }
+function isPrototypePreset(preset) { return Boolean(preset && (preset.engine === 'prototype-smoke' || preset.engine === 'prototype-shimmer' || preset.config?.prototypeFolder)); }
 function togglePaused() {
   setPaused(!editorState.isPaused);
   editorState.emergencyLiteMode = editorState.isPaused;
