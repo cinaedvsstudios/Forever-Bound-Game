@@ -6,40 +6,40 @@ const glbDefault = (overrides = {}) => ({ x: 0, y: 0, z: 0, ...sideDefaults, sca
 
 export const DEFAULT_SETTINGS = {
   engine: 'obstacle-course',
-  version: 'V3.04',
+  version: 'V3.05',
   templateId: 'horse_forest_easy',
   difficulty: 3,
   courseLength: 2400,
   sceneryDistance: 8,
   vanishX: 0,
-  vanishY: 49,
+  vanishY: 100,
   cameraAngle: 0,
   backgroundZoom: 1.1,
   visual: { brightness: 1, contrast: 1, saturation: 1, tint: '#000000', tintStrength: 0 },
   pathSegments: Array.from({ length: 34 }, (_, index) => ({ id: '1', distance: index * 80 })),
   layers: {
-    ground: { visible: true, opacity: 1, x: 0, y: 4, z: 0, scale: 1, order: 1, brightness: 0.58, contrast: 1.18, saturation: 0.84, tint: '#ffffff', tintStrength: 0 },
+    ground: { visible: true, opacity: 1, x: 0, y: 4.1, z: 0, scale: 0.24950000000000006, order: 1, brightness: 0.58, contrast: 1.18, saturation: 0.84, tint: '#ffffff', tintStrength: 0 },
     path: { visible: false, opacity: 1, x: 0, y: 0, z: 0, scale: 1, order: 2, brightness: 1, contrast: 1, saturation: 1, tint: '#ffffff', tintStrength: 0 },
-    treeShadows: { visible: true, opacity: 1, x: 0, y: 0, z: 0, scale: 1, order: 6, brightness: 1, contrast: 1, saturation: 1, tint: '#ffffff', tintStrength: 0 },
-    trees: { visible: true, opacity: 1, x: 0, y: 4.3, z: 0, scale: 4, order: 20, brightness: 0.62, contrast: 1, saturation: 0.78, tint: '#ffffff', tintStrength: 0 },
+    treeShadows: { visible: true, opacity: 0.5, x: 0.8, y: 0, z: 0, scale: 1, order: 6, brightness: 1, contrast: 1, saturation: 1, tint: '#ffffff', tintStrength: 0 },
+    trees: { visible: true, opacity: 1, x: 0, y: 3.3, z: 0, scale: 4, order: 20, brightness: 0.62, contrast: 1, saturation: 0.78, tint: '#ffffff', tintStrength: 0 },
     details: { visible: true, opacity: 1, x: 0, y: 3.5, z: 100, scale: 0.7435, order: 25, brightness: 0.56, contrast: 1, saturation: 1, tint: '#ffffff', tintStrength: 0 },
-    obstacles: { visible: true, opacity: 1, x: 0, y: 3.9, z: 0, scale: 1, order: 16, brightness: 1, contrast: 1, saturation: 1, tint: '#ffffff', tintStrength: 0 },
+    obstacles: { visible: true, opacity: 1, x: 0, y: 2.8, z: 0, scale: 1, order: 16, brightness: 1, contrast: 1, saturation: 1, tint: '#ffffff', tintStrength: 0 },
     collectibles: { visible: true, opacity: 1, x: 0, y: 0, z: 0, scale: 1, order: 15, brightness: 1, contrast: 1, saturation: 1, tint: '#ffffff', tintStrength: 0 },
   },
   glbControls: {
-    './assets/3d/pine_tree.glb': glbDefault({ y: 1.2, scale: 4, brightness: 0.96, scaleOffset: 100, opacityOffset: 9, brightnessOffset: -4, contrastOffset: 0, saturationOffset: 0 }),
+    './assets/3d/tree_low-poly.glb': glbDefault({ y: 1, scale: 4, brightness: 0.96 }),
+    './assets/3d/pine_tree.glb': glbDefault({ y: 1, scale: 4, brightness: 0.96, scaleOffset: 100, opacityOffset: 9, brightnessOffset: -4, contrastOffset: 0, saturationOffset: 0 }),
     './assets/3d/oak_trees.glb': glbDefault({ y: 1.1, scale: 2.176, brightness: 0.96 }),
-    './assets/3d/tree_low-poly.glb': glbDefault({ y: 1.1, scale: 4, brightness: 0.96 }),
-    './assets/3d/pine_tree_-_ps1_low_poly.glb': glbDefault({ y: 1.1, scale: 4, brightness: 0.96 }),
-    './assets/3d/tall_bush.glb': glbDefault(),
+    './assets/3d/pine_tree_-_ps1_low_poly.glb': glbDefault({ y: 0.8, leftX: -1.7000000000000002, scale: 4, brightness: 0.96 }),
+    './assets/3d/tall_bush.glb': glbDefault({ y: -3.8000000000000003, leftX: -10, rightX: 10, scale: 1.72 }),
     './assets/3d/bush.glb': glbDefault(),
     './assets/3d/geranium.glb': glbDefault(),
     './assets/3d/fern2.glb': glbDefault({ y: 1.4 }),
     './assets/3d/low_poly_fern.glb': glbDefault(),
     './assets/3d/fern.glb': glbDefault(),
     './assets/3d/rock_low-poly.glb': glbDefault(),
-    './assets/3d/moneysack.glb': glbDefault({ y: 4.5 }),
     './assets/3d/stylized_glowing_mushrooms.glb': glbDefault({ y: 4.5 }),
+    './assets/3d/moneysack.glb': glbDefault({ y: 4.5 }),
   },
 };
 
@@ -48,14 +48,7 @@ function clone(value) {
 }
 
 function normalizeCriticalLayerSettings(layerSettings = {}) {
-  if (layerSettings.ground) layerSettings.ground.scale = 1;
-  if (layerSettings.treeShadows) {
-    layerSettings.treeShadows.x = 0;
-    layerSettings.treeShadows.y = 0;
-    layerSettings.treeShadows.z = 0;
-    layerSettings.treeShadows.scale = 1;
-    layerSettings.treeShadows.opacity = 1;
-  }
+  if (layerSettings.treeShadows) layerSettings.treeShadows.opacity = 0.5;
   return layerSettings;
 }
 
