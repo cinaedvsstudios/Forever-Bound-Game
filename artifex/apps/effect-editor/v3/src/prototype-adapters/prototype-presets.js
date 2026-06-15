@@ -29,10 +29,10 @@ const PROTOTYPE_PRESETS = [
   },
   {
     id: 'prototype-smoke-emission',
-    label: 'Emission Point / Chimney Fire',
+    label: 'Chimney Smoke',
     engine: 'prototype-smoke',
     description: 'Placeholder linked to the existing Smoke Engine prototype: Emission Point / Chimney Fire mode.',
-    config: prototypeLayerConfig('Emission Point / Chimney Fire', 'smoke-engine', 'emission')
+    config: prototypeLayerConfig('Chimney Smoke', 'smoke-engine', 'emission')
   },
   {
     id: 'prototype-shimmer-portal-ring',
