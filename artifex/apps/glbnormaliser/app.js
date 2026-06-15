@@ -225,7 +225,12 @@ function pathForName(name) {
   return `${base === '/' ? '' : base}/${name}`;
 }
 
-async function loadCurrentFolder() {
+async function loadCurrentFolder(options = {}) {
+  const preserveScroll = Boolean(options.preserveScroll);
+  const preserveChecks = Boolean(options.preserveChecks);
+  const previousScrollTop = preserveScroll ? fileList.scrollTop : 0;
+  const previousCheckedPaths = preserveChecks ? new Set(state.selectedRows.keys()) : new Set();
+
   if (!state.currentHandle) {
     fileList.innerHTML = '<div class="empty-list">Click “Choose GLB Folder” to load a local folder from your HDD.</div>';
     currentFolder.textContent = '/';
@@ -272,6 +277,7 @@ async function loadCurrentFolder() {
   for (const entry of entries) {
     const row = document.createElement('div');
     row.className = 'file-row';
+    row.dataset.path = entry.path;
     if (state.selectedEntry && entry.path === state.selectedEntry.path) row.classList.add('active');
 
     if (entry.type === 'dir') {
@@ -284,6 +290,10 @@ async function loadCurrentFolder() {
     } else {
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
+      if (previousCheckedPaths.has(entry.path)) {
+        checkbox.checked = true;
+        state.selectedRows.set(entry.path, entry);
+      }
       checkbox.addEventListener('click', (ev) => {
         ev.stopPropagation();
         if (checkbox.checked) state.selectedRows.set(entry.path, entry);
@@ -298,6 +308,20 @@ async function loadCurrentFolder() {
     }
     fileList.appendChild(row);
   }
+
+  updateBatchButtons();
+  if (preserveScroll) {
+    requestAnimationFrame(() => {
+      fileList.scrollTop = previousScrollTop;
+    });
+  }
+}
+
+function updateActiveFileRow() {
+  const selectedPath = state.selectedEntry?.path || '';
+  fileList.querySelectorAll('.file-row[data-path]').forEach(row => {
+    row.classList.toggle('active', row.dataset.path === selectedPath);
+  });
 }
 
 async function goUp() {
@@ -333,6 +357,7 @@ async function readEntryBuffer(entry) {
 async function selectFile(entry, options = {}) {
   try {
     state.selectedEntry = entry;
+    updateActiveFileRow();
     fileTitle.textContent = entry.name;
     fileSub.textContent = entry.path;
     statsBox.className = 'stats empty';
@@ -352,7 +377,6 @@ async function selectFile(entry, options = {}) {
     saveCopyBtn.disabled = false;
     overwriteBtn.disabled = false;
     if (!options.quiet) log(`Opened ${entry.path}`, 'ok');
-    await loadCurrentFolder();
   } catch (err) {
     log(err.message || String(err), 'bad');
     statsBox.className = 'stats empty';
@@ -368,193 +392,548 @@ function renderStats(data) {
   const normalisedText = data.normalisedRoot?.found ? 'yes, scale ' + fmtVec(data.normalisedRoot.scale) : 'no';
   statsBox.className = 'stats';
   statsBox.innerHTML = `
-    ${row('File size', fmtBytes(data.bytes))}
-    ${row('Vertices', data.counts.vertices.toLocaleString())}
-    ${row('Preview mode', previewModeText)}
-    ${row('Meshes', data.counts.meshes)}
-    ${row('Mesh nodes', data.counts.meshNodes)}
-    ${row('Materials', data.counts.materials)}
-    ${row('Images', data.counts.images)}
-    ${row('Textured primitives', data.counts.texturedPrimitives || 0)}
-    ${row('Animations', data.counts.animations)}
-    ${row('Skins', data.counts.skins)}
-    ${row('Bounds size', fmtVec(data.bbox.size))}
-    ${row('World size', formatSizeLine(data, true))}
-    ${row('Scale plan', currentScalePlanLabel(data))}
-    ${row('After save size', formatAfterSaveLine(data))}
-    ${row('Bottom centre', fmtVec(data.bbox.bottomCenter))}
-    ${row('Pivot star', fmtVec(state.pivotPoint || data.bbox.bottomCenter))}
-    ${row('Normalised root', normalisedText)}
     ${warnings}
+    <div class="stat-row"><span>File size</span><span>${fmtBytes(data.bytes)}</span></div>
+    <div class="stat-row"><span>Vertices</span><span>${data.counts.vertices.toLocaleString()}</span></div>
+    <div class="stat-row"><span>Meshes</span><span>${data.counts.meshes.toLocaleString()}</span></div>
+    <div class="stat-row"><span>Mesh nodes</span><span>${data.counts.meshNodes.toLocaleString()}</span></div>
+    <div class="stat-row"><span>Materials</span><span>${data.counts.materials.toLocaleString()}</span></div>
+    <div class="stat-row"><span>Images</span><span>${data.counts.images.toLocaleString()}</span></div>
+    <div class="stat-row"><span>Animations</span><span>${data.counts.animations.toLocaleString()}</span></div>
+    <div class="stat-row"><span>Skins</span><span>${data.counts.skins.toLocaleString()}</span></div>
+    <div class="stat-row"><span>Current size X/Y/Z</span><span>${fmtVec(data.bbox.size)} m</span></div>
+    <div class="stat-row"><span>Height by ${axisSelect.value}</span><span>${sizeForMode(data, 'height').toFixed(4)} m</span></div>
+    <div class="stat-row"><span>Longest side</span><span>${sizeForMode(data, 'longest').toFixed(4)} m</span></div>
+    <div class="stat-row"><span>Pivot star</span><span>${fmtVec(state.pivotPoint)}</span></div>
+    <div class="stat-row"><span>Bottom centre</span><span>${fmtVec(data.bbox.bottomCenter)}</span></div>
+    <div class="stat-row"><span>Normalised root</span><span>${normalisedText}</span></div>
+    <div class="stat-row"><span>Preview mode</span><span>${previewModeText}</span></div>
   `;
   updateScaleReadout();
 }
 
-function row(label, value) {
-  return `<div class="stat-row"><span>${escapeHtml(label)}</span><span>${escapeHtml(value)}</span></div>`;
-}
-
-function getPreviewQuality() {
-  const q = Number(qualitySlider?.value || state.previewQuality || 35);
-  return Math.max(1, Math.min(100, Number.isFinite(q) ? q : 35));
-}
-
-function qualityToMaxVertices(q) {
-  if (q >= 100) return 120000;
-  return Math.round(500 + Math.pow(q / 100, 2.15) * 80000);
-}
-
-function qualityToMaxTriangles(q) {
-  if (q >= 100) return 90000;
-  return Math.round(5000 + Math.pow(q / 100, 2) * 50000);
-}
-
 function getPreviewOptions() {
-  const q = getPreviewQuality();
-  return {
-    axis: axisSelect.value,
-    maxPreviewVertices: qualityToMaxVertices(q),
-    includeTriangles: q >= 100,
-    maxPreviewTriangles: qualityToMaxTriangles(q),
-    quality: q,
-  };
+  const quality = clamp(Number(qualitySlider.value) || 35, 1, 100);
+  state.previewQuality = quality;
+  if (quality >= 100) {
+    return { renderMode: 'solid', maxPreviewTriangles: 65000, maxPreviewVertices: 50000, axis: axisSelect.value };
+  }
+  if (quality >= 85) {
+    return { renderMode: 'solid', maxPreviewTriangles: 30000, maxPreviewVertices: 30000, axis: axisSelect.value };
+  }
+  const maxPreviewVertices = Math.round(400 + Math.pow(quality / 100, 2.15) * 70000);
+  return { renderMode: 'points', maxPreviewVertices, axis: axisSelect.value };
 }
 
 function updateQualityLabel() {
-  const q = getPreviewQuality();
-  state.previewQuality = q;
-  const mode = q >= 100 ? 'solid mesh render' : 'point cloud';
-  const detail = q >= 100 ? `up to ${qualityToMaxTriangles(q).toLocaleString()} triangles` : `up to ${qualityToMaxVertices(q).toLocaleString()} points`;
-  qualityLabel.textContent = `${q} · ${mode} · ${detail}`;
+  const quality = clamp(Number(qualitySlider.value) || 35, 1, 100);
+  if (quality >= 100) qualityLabel.textContent = `${quality} · normal solid render`;
+  else if (quality >= 85) qualityLabel.textContent = `${quality} · solid preview`;
+  else qualityLabel.textContent = `${quality} · point cloud`;
 }
 
-async function refreshSelectedForQuality() {
+function refreshSelectedForQuality() {
   updateQualityLabel();
-  if (!state.selectedEntry) {
-    drawPreview();
-    return;
-  }
+  if (!state.selectedEntry) return;
   clearTimeout(state.qualityDebounce);
   state.qualityDebounce = setTimeout(async () => {
-    try {
-      await selectFile(state.selectedEntry, { preservePivot: true, preserveView: true, quiet: true });
-    } catch (err) {
-      log(err.message || String(err), 'bad');
-    }
-  }, 180);
-}
-
-function axisDimensionMap(axis) {
-  if (axis === 'Z') return { height: 2, width: 0, depth: 1, labels: ['X width', 'Y depth', 'Z height'] };
-  if (axis === 'X') return { height: 0, width: 1, depth: 2, labels: ['X height', 'Y width', 'Z depth'] };
-  return { height: 1, width: 0, depth: 2, labels: ['X width', 'Y height', 'Z depth'] };
-}
-
-function uniformRootScale(data) {
-  const scale = data?.normalisedRoot?.found ? data.normalisedRoot.scale : null;
-  if (!Array.isArray(scale) || scale.length < 3) return 1;
-  const values = scale.map(Number).filter(Number.isFinite);
-  if (values.length < 3) return 1;
-  if (Math.abs(values[0] - values[1]) > 1e-8 || Math.abs(values[0] - values[2]) > 1e-8) return 1;
-  return values[0] > 0 ? values[0] : 1;
+    await selectFile(state.selectedEntry, { preservePivot: true, preserveView: true, quiet: true });
+  }, 120);
 }
 
 function selectedTargetMode() {
-  return targetModeSelect?.value || 'height';
+  return targetModeSelect.value || 'height';
 }
 
 function selectedTargetSize() {
-  const value = Number(targetSizeInput?.value);
-  if (!Number.isFinite(value) || value <= 0) throw new Error('Target size must be a positive number.');
-  return value;
+  const v = Number(targetSizeInput.value);
+  return Number.isFinite(v) && v > 0 ? v : 1;
 }
 
-function dimensionForMode(data, mode) {
-  const size = data?.bbox?.size || [0, 0, 0];
-  const map = axisDimensionMap(axisSelect.value);
-  if (mode === 'width') return size[map.width];
-  if (mode === 'depth') return size[map.depth];
-  if (mode === 'longest') return Math.max(size[0], size[1], size[2]);
-  return size[map.height];
+function currentSizeByAxis(data) {
+  if (!data?.bbox?.size) return 1;
+  const idx = axisIndex(axisSelect.value);
+  return Math.abs(data.bbox.size[idx]) || 1;
 }
 
-function scalePlanForData(data) {
-  const mode = selectedTargetMode();
-  const existingRoot = uniformRootScale(data);
-  if (mode === 'manual') {
-    const rootScale = Number(scaleInput.value);
-    if (!Number.isFinite(rootScale) || rootScale <= 0) throw new Error('Root scale must be a positive number.');
-    return { mode, existingRoot, rootScale, relativeScale: rootScale / existingRoot, target: null, currentDim: null };
+function sizeForMode(data, mode = selectedTargetMode()) {
+  if (!data?.bbox?.size) return 1;
+  const size = data.bbox.size.map(v => Math.abs(v));
+  if (mode === 'height') return currentSizeByAxis(data);
+  if (mode === 'width') return size[0] || 1;
+  if (mode === 'depth') {
+    const up = axisSelect.value;
+    if (up === 'Y') return size[2] || 1;
+    if (up === 'Z') return size[1] || 1;
+    return size[2] || 1;
   }
+  if (mode === 'longest') return Math.max(size[0] || 0, size[1] || 0, size[2] || 0) || 1;
+  return 1;
+}
 
-  const target = selectedTargetSize();
-  const currentDim = dimensionForMode(data, mode);
-  if (!Number.isFinite(currentDim) || currentDim <= 0) throw new Error('Could not calculate this asset dimension.');
-  const rootScale = existingRoot * (target / currentDim);
-  return { mode, existingRoot, rootScale, relativeScale: rootScale / existingRoot, target, currentDim };
+function calculatedScaleForData(data) {
+  const mode = selectedTargetMode();
+  if (mode === 'manual') {
+    const manual = Number(scaleInput.value);
+    return Number.isFinite(manual) && manual > 0 ? manual : 1;
+  }
+  const current = sizeForMode(data, mode);
+  return selectedTargetSize() / current;
 }
 
 function getScaleForData(data) {
-  const plan = scalePlanForData(data);
-  return plan.rootScale;
-}
-
-function currentScalePlanLabel(data) {
-  if (!data?.bbox) return '—';
-  try {
-    const plan = scalePlanForData(data);
-    if (plan.mode === 'manual') return `write root scale ${formatNumber(plan.rootScale)} (${formatNumber(plan.relativeScale)}× current)`;
-    return `${plan.mode} ${formatNumber(plan.currentDim)}m → ${formatNumber(plan.target)}m; root scale ${formatNumber(plan.rootScale)}`;
-  } catch (err) {
-    return err.message || String(err);
-  }
-}
-
-function formatNumber(value, digits = 4) {
-  if (!Number.isFinite(value)) return '—';
-  const fixed = Number(value).toFixed(digits);
-  return fixed.replace(/\.?0+$/, '');
-}
-
-function formatSizeLine(data, includeLabels = false) {
-  if (!data?.bbox?.size) return '—';
-  const labels = axisDimensionMap(axisSelect.value).labels;
-  return data.bbox.size.map((v, i) => includeLabels ? `${labels[i]} ${formatNumber(v)}m` : `${formatNumber(v)}m`).join(' / ');
-}
-
-function formatAfterSaveLine(data) {
-  if (!data?.bbox?.size) return '—';
-  try {
-    const plan = scalePlanForData(data);
-    const after = data.bbox.size.map(v => v * plan.relativeScale);
-    const labels = axisDimensionMap(axisSelect.value).labels;
-    return after.map((v, i) => `${labels[i]} ${formatNumber(v)}m`).join(' / ');
-  } catch (err) {
-    return err.message || String(err);
-  }
+  const scale = calculatedScaleForData(data);
+  return Number.isFinite(scale) && scale > 0 ? scale : 1;
 }
 
 function updateScaleReadout() {
-  if (!scaleReadout) return;
-  const data = state.analysis;
-  const manual = selectedTargetMode() === 'manual';
-  if (targetSizeInput) targetSizeInput.disabled = manual;
-  if (scaleInput) scaleInput.readOnly = !manual;
-  if (!data?.bbox) {
-    scaleReadout.textContent = manual
-      ? 'Manual mode: type the root scale to write.'
-      : 'Current size appears after a GLB is selected. Default app unit: 1 metre.';
+  if (!state.analysis) {
+    scaleReadout.textContent = 'Current size appears after a GLB is selected.';
     return;
   }
+  const mode = selectedTargetMode();
+  const current = sizeForMode(state.analysis, mode);
+  const target = mode === 'manual' ? current : selectedTargetSize();
+  const scale = getScaleForData(state.analysis);
+  if (mode !== 'manual') scaleInput.value = String(round(scale, 6));
+  const after = state.analysis.bbox.size.map(v => Math.abs(v * scale));
+  const basisText = mode === 'height' ? `height by ${axisSelect.value}` : mode;
+  scaleReadout.innerHTML = `Current ${basisText}: <strong>${current.toFixed(4)} m</strong> · Target: <strong>${target.toFixed(4)} m</strong> · Scale to write: <strong>${round(scale, 6)}</strong> · After save X/Y/Z: <strong>${after.map(v => v.toFixed(4)).join(' / ')} m</strong>`;
+}
 
-  try {
-    const plan = scalePlanForData(data);
-    if (!manual && scaleInput) scaleInput.value = formatNumber(plan.rootScale, 6);
-    const modeText = manual ? 'manual root scale' : `${plan.mode} target`;
-    scaleReadout.innerHTML = `<strong>Current:</strong> ${escapeHtml(formatSizeLine(data, true))} &nbsp; | &nbsp; <strong>${escapeHtml(modeText)}:</strong> ${escapeHtml(currentScalePlanLabel(data))} &nbsp; | &nbsp; <strong>After save:</strong> ${escapeHtml(formatAfterSaveLine(data))}`;
-  } catch (err) {
-    scaleReadout.textContent = err.message || String(err);
+function round(n, dp = 4) {
+  const f = Math.pow(10, dp);
+  return Math.round((Number(n) + Number.EPSILON) * f) / f;
+}
+
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v));
+}
+
+function readJsonChunk(dataView, offset, length) {
+  const bytes = new Uint8Array(dataView.buffer, dataView.byteOffset + offset, length);
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+
+function parseGLB(arrayBuffer) {
+  const dv = new DataView(arrayBuffer);
+  if (dv.byteLength < 20) throw new Error('File is too small to be a GLB.');
+  const magic = dv.getUint32(0, true);
+  const version = dv.getUint32(4, true);
+  const length = dv.getUint32(8, true);
+  if (magic !== 0x46546c67) throw new Error('Not a GLB file.');
+  if (version !== 2) throw new Error(`Unsupported GLB version ${version}; expected 2.`);
+  if (length !== dv.byteLength) throw new Error('GLB length header does not match file size.');
+
+  let offset = 12;
+  let json = null;
+  let bin = null;
+  const chunks = [];
+  while (offset + 8 <= dv.byteLength) {
+    const chunkLength = dv.getUint32(offset, true);
+    const chunkType = dv.getUint32(offset + 4, true);
+    offset += 8;
+    if (offset + chunkLength > dv.byteLength) throw new Error('GLB chunk extends beyond file length.');
+    chunks.push({ type: chunkType, offset, length: chunkLength });
+    if (chunkType === 0x4e4f534a) json = readJsonChunk(dv, offset, chunkLength);
+    if (chunkType === 0x004e4942) bin = new Uint8Array(arrayBuffer, offset, chunkLength);
+    offset += chunkLength;
   }
+  if (!json) throw new Error('GLB has no JSON chunk.');
+  return { json, bin, chunks };
+}
+
+function getBinChunk(parsed) {
+  return parsed.bin;
+}
+
+function accessorComponentCount(type) {
+  return ({ SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4, MAT2: 4, MAT3: 9, MAT4: 16 }[type] || 1);
+}
+
+function componentSize(componentType) {
+  return ({ 5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4 }[componentType] || 0);
+}
+
+function componentRead(dv, byteOffset, componentType) {
+  switch (componentType) {
+    case 5120: return dv.getInt8(byteOffset);
+    case 5121: return dv.getUint8(byteOffset);
+    case 5122: return dv.getInt16(byteOffset, true);
+    case 5123: return dv.getUint16(byteOffset, true);
+    case 5125: return dv.getUint32(byteOffset, true);
+    case 5126: return dv.getFloat32(byteOffset, true);
+    default: throw new Error(`Unsupported component type ${componentType}`);
+  }
+}
+
+function componentWrite(dv, byteOffset, componentType, value) {
+  switch (componentType) {
+    case 5120: dv.setInt8(byteOffset, value); break;
+    case 5121: dv.setUint8(byteOffset, value); break;
+    case 5122: dv.setInt16(byteOffset, value, true); break;
+    case 5123: dv.setUint16(byteOffset, value, true); break;
+    case 5125: dv.setUint32(byteOffset, value, true); break;
+    case 5126: dv.setFloat32(byteOffset, value, true); break;
+    default: throw new Error(`Unsupported component type ${componentType}`);
+  }
+}
+
+function getAccessorLayout(json, bin, accessorIndex) {
+  const accessor = json.accessors?.[accessorIndex];
+  if (!accessor) throw new Error(`Missing accessor ${accessorIndex}.`);
+  if (accessor.sparse) throw new Error('Sparse accessors are not supported by this tool yet.');
+  const view = json.bufferViews?.[accessor.bufferView];
+  if (!view) throw new Error(`Missing bufferView ${accessor.bufferView}.`);
+  if (view.buffer !== 0 && view.buffer !== undefined) throw new Error('Only single-buffer GLBs are supported.');
+  const count = accessor.count || 0;
+  const comps = accessorComponentCount(accessor.type);
+  const cSize = componentSize(accessor.componentType);
+  const packedStride = comps * cSize;
+  const stride = view.byteStride || packedStride;
+  const base = (view.byteOffset || 0) + (accessor.byteOffset || 0);
+  if (base + (count - 1) * stride + packedStride > bin.byteLength) throw new Error('Accessor data extends beyond BIN chunk.');
+  return { accessor, view, count, comps, cSize, stride, packedStride, base };
+}
+
+function readVec3At(dv, layout, index) {
+  const offset = layout.base + index * layout.stride;
+  return [
+    componentRead(dv, offset, layout.accessor.componentType),
+    componentRead(dv, offset + layout.cSize, layout.accessor.componentType),
+    componentRead(dv, offset + layout.cSize * 2, layout.accessor.componentType),
+  ];
+}
+
+function writeVec3At(dv, layout, index, v) {
+  const offset = layout.base + index * layout.stride;
+  componentWrite(dv, offset, layout.accessor.componentType, v[0]);
+  componentWrite(dv, offset + layout.cSize, layout.accessor.componentType, v[1]);
+  componentWrite(dv, offset + layout.cSize * 2, layout.accessor.componentType, v[2]);
+}
+
+function readIndexAt(dv, layout, index) {
+  const offset = layout.base + index * layout.stride;
+  return componentRead(dv, offset, layout.accessor.componentType);
+}
+
+function transformPoint(m, p) {
+  const x = p[0], y = p[1], z = p[2];
+  return [
+    m[0] * x + m[4] * y + m[8] * z + m[12],
+    m[1] * x + m[5] * y + m[9] * z + m[13],
+    m[2] * x + m[6] * y + m[10] * z + m[14],
+  ];
+}
+
+function identityMat4() {
+  return [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1];
+}
+
+function multiplyMat4(a, b) {
+  const out = new Array(16).fill(0);
+  for (let col = 0; col < 4; col++) {
+    for (let row = 0; row < 4; row++) {
+      for (let k = 0; k < 4; k++) out[col * 4 + row] += a[k * 4 + row] * b[col * 4 + k];
+    }
+  }
+  return out;
+}
+
+function translationMat4(t) {
+  const m = identityMat4();
+  m[12] = t[0];
+  m[13] = t[1];
+  m[14] = t[2];
+  return m;
+}
+
+function scaleMat4(s) {
+  const m = identityMat4();
+  m[0] = s[0];
+  m[5] = s[1];
+  m[10] = s[2];
+  return m;
+}
+
+function quaternionMat4(q) {
+  const x = q[0], y = q[1], z = q[2], w = q[3];
+  const x2 = x + x, y2 = y + y, z2 = z + z;
+  const xx = x * x2, xy = x * y2, xz = x * z2;
+  const yy = y * y2, yz = y * z2, zz = z * z2;
+  const wx = w * x2, wy = w * y2, wz = w * z2;
+  return [
+    1 - (yy + zz), xy + wz, xz - wy, 0,
+    xy - wz, 1 - (xx + zz), yz + wx, 0,
+    xz + wy, yz - wx, 1 - (xx + yy), 0,
+    0, 0, 0, 1,
+  ];
+}
+
+function nodeLocalMatrix(node) {
+  if (node.matrix) return node.matrix.slice();
+  const t = node.translation || [0, 0, 0];
+  const r = node.rotation || [0, 0, 0, 1];
+  const s = node.scale || [1, 1, 1];
+  return multiplyMat4(multiplyMat4(translationMat4(t), quaternionMat4(r)), scaleMat4(s));
+}
+
+function collectNodeWorlds(json) {
+  const nodes = json.nodes || [];
+  const parents = new Set();
+  nodes.forEach(n => (n.children || []).forEach(c => parents.add(c)));
+  const roots = [];
+  nodes.forEach((_, i) => { if (!parents.has(i)) roots.push(i); });
+  const worlds = Array(nodes.length).fill(null);
+  function visit(idx, parent) {
+    const local = nodeLocalMatrix(nodes[idx] || {});
+    const world = multiplyMat4(parent, local);
+    worlds[idx] = world;
+    for (const child of nodes[idx]?.children || []) visit(child, world);
+  }
+  roots.forEach(r => visit(r, identityMat4()));
+  return worlds;
+}
+
+function computeStatsAndPreview(json, bin, options = {}) {
+  const counts = {
+    vertices: 0,
+    meshes: (json.meshes || []).length,
+    meshNodes: 0,
+    materials: (json.materials || []).length,
+    images: (json.images || []).length,
+    animations: (json.animations || []).length,
+    skins: (json.skins || []).length,
+    skippedPrimitives: 0,
+    previewVertices: 0,
+    totalTriangles: 0,
+    previewTriangles: 0,
+  };
+  const bbox = { min: [Infinity, Infinity, Infinity], max: [-Infinity, -Infinity, -Infinity] };
+  const points = [];
+  const triangles = [];
+  const maxPreviewVertices = Math.max(1, options.maxPreviewVertices || 12000);
+  const maxPreviewTriangles = Math.max(1, options.maxPreviewTriangles || 20000);
+  const worlds = collectNodeWorlds(json);
+  const dv = new DataView(bin.buffer, bin.byteOffset, bin.byteLength);
+
+  const meshToNodes = new Map();
+  (json.nodes || []).forEach((node, idx) => {
+    if (node.mesh !== undefined) {
+      if (!meshToNodes.has(node.mesh)) meshToNodes.set(node.mesh, []);
+      meshToNodes.get(node.mesh).push(idx);
+      counts.meshNodes++;
+    }
+  });
+
+  for (const [meshIndex, nodeIndices] of meshToNodes.entries()) {
+    const mesh = json.meshes?.[meshIndex];
+    if (!mesh) continue;
+    for (const nodeIndex of nodeIndices) {
+      const world = worlds[nodeIndex] || identityMat4();
+      for (const primitive of mesh.primitives || []) {
+        const posIndex = primitive.attributes?.POSITION;
+        if (posIndex === undefined) { counts.skippedPrimitives++; continue; }
+        let layout;
+        try {
+          layout = getAccessorLayout(json, bin, posIndex);
+          if (layout.accessor.type !== 'VEC3' || layout.accessor.componentType !== 5126) throw new Error('POSITION must be float VEC3.');
+        } catch {
+          counts.skippedPrimitives++;
+          continue;
+        }
+        counts.vertices += layout.count;
+        const sampleStep = Math.max(1, Math.ceil(layout.count / Math.max(1, maxPreviewVertices - points.length)));
+        for (let i = 0; i < layout.count; i++) {
+          const wp = transformPoint(world, readVec3At(dv, layout, i));
+          for (let k = 0; k < 3; k++) {
+            if (wp[k] < bbox.min[k]) bbox.min[k] = wp[k];
+            if (wp[k] > bbox.max[k]) bbox.max[k] = wp[k];
+          }
+          if (points.length < maxPreviewVertices && i % sampleStep === 0) points.push(wp);
+        }
+
+        if (options.renderMode === 'solid' && triangles.length < maxPreviewTriangles) {
+          const mode = primitive.mode === undefined ? 4 : primitive.mode;
+          if (mode === 4) {
+            const positionCache = new Map();
+            const getPos = (i) => {
+              if (!positionCache.has(i)) positionCache.set(i, transformPoint(world, readVec3At(dv, layout, i)));
+              return positionCache.get(i);
+            };
+            if (primitive.indices !== undefined) {
+              try {
+                const indexLayout = getAccessorLayout(json, bin, primitive.indices);
+                counts.totalTriangles += Math.floor(indexLayout.count / 3);
+                const triStep = Math.max(1, Math.ceil(Math.floor(indexLayout.count / 3) / Math.max(1, maxPreviewTriangles - triangles.length)));
+                for (let i = 0, tri = 0; i + 2 < indexLayout.count && triangles.length < maxPreviewTriangles; i += 3, tri++) {
+                  if (tri % triStep !== 0) continue;
+                  triangles.push([getPos(readIndexAt(dv, indexLayout, i)), getPos(readIndexAt(dv, indexLayout, i + 1)), getPos(readIndexAt(dv, indexLayout, i + 2))]);
+                }
+              } catch {
+                counts.skippedPrimitives++;
+              }
+            } else {
+              counts.totalTriangles += Math.floor(layout.count / 3);
+              const triStep = Math.max(1, Math.ceil(Math.floor(layout.count / 3) / Math.max(1, maxPreviewTriangles - triangles.length)));
+              for (let i = 0, tri = 0; i + 2 < layout.count && triangles.length < maxPreviewTriangles; i += 3, tri++) {
+                if (tri % triStep !== 0) continue;
+                triangles.push([getPos(i), getPos(i + 1), getPos(i + 2)]);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (!Number.isFinite(bbox.min[0])) throw new Error('No readable POSITION vertices found.');
+  bbox.size = [bbox.max[0] - bbox.min[0], bbox.max[1] - bbox.min[1], bbox.max[2] - bbox.min[2]];
+  const axis = options.axis || axisSelect.value || 'Y';
+  bbox.bottomCenter = computeBottomCenterFromBounds(bbox, axis);
+  counts.previewVertices = points.length;
+  counts.previewTriangles = triangles.length;
+  return { counts, bbox, points, triangles, renderMode: options.renderMode || 'points' };
+}
+
+function detectNormalisedRoot(json) {
+  const nodes = json.nodes || [];
+  const idx = nodes.findIndex(n => n.name === 'FB_NormalisedRoot');
+  if (idx < 0) return { found: false, index: -1, scale: [1, 1, 1] };
+  return { found: true, index: idx, scale: nodes[idx].scale || [1, 1, 1] };
+}
+
+function uniformRootScale(data) {
+  const scale = data?.normalisedRoot?.scale;
+  if (!Array.isArray(scale) || !scale.length) return 1;
+  return Number(scale[0]) || 1;
+}
+
+function analyseArrayBuffer(fileName, filePath, bytes, arrayBuffer, previewOptions = {}) {
+  const parsed = parseGLB(arrayBuffer);
+  const bin = getBinChunk(parsed);
+  if (!bin) throw new Error('GLB has no embedded BIN chunk.');
+  const stats = computeStatsAndPreview(parsed.json, bin, previewOptions);
+  const warnings = [];
+  if (stats.counts.animations > 0) warnings.push('Animations detected. This tool is intended for static assets.');
+  if (stats.counts.skins > 0) warnings.push('Skins detected. This tool is intended for non-skinned static assets.');
+  if (stats.counts.skippedPrimitives > 0) warnings.push(`${stats.counts.skippedPrimitives} primitive(s) could not be inspected.`);
+  return { fileName, filePath, bytes, ...stats, warnings, normalisedRoot: detectNormalisedRoot(parsed.json) };
+}
+
+function axisIndex(axis) {
+  return ({ X: 0, Y: 1, Z: 2 }[axis] ?? 1);
+}
+
+function axisVector(axis) {
+  return axis === 'X' ? [1, 0, 0] : axis === 'Z' ? [0, 0, 1] : [0, 1, 0];
+}
+
+function computeBottomCenterFromBounds(bbox, axis = 'Y') {
+  const centre = [
+    (bbox.min[0] + bbox.max[0]) / 2,
+    (bbox.min[1] + bbox.max[1]) / 2,
+    (bbox.min[2] + bbox.max[2]) / 2,
+  ];
+  const idx = axisIndex(axis);
+  centre[idx] = bbox.min[idx];
+  return centre;
+}
+
+function normaliseArrayBuffer(arrayBuffer, options) {
+  const parsed = parseGLB(arrayBuffer);
+  const json = structuredClone(parsed.json);
+  const bin = new Uint8Array(parsed.bin);
+  const stats = computeStatsAndPreview(json, bin, { axis: options.axis || 'Y' });
+  const pivot = Array.isArray(options.pivotPoint) ? options.pivotPoint.slice() : stats.bbox.bottomCenter;
+  const shift = pivot.map(v => -v);
+  const scale = Number(options.scale) || 1;
+
+  json.nodes = json.nodes || [];
+  json.scenes = json.scenes || [{ nodes: [] }];
+  json.scene = json.scene ?? 0;
+  const scene = json.scenes[json.scene];
+  scene.nodes = scene.nodes || [];
+
+  const existingRootIndex = json.nodes.findIndex(n => n.name === 'FB_NormalisedRoot');
+  if (existingRootIndex >= 0) {
+    const root = json.nodes[existingRootIndex];
+    root.scale = [scale, scale, scale];
+    for (const childIdx of root.children || []) {
+      const child = json.nodes[childIdx];
+      if (!child) continue;
+      child.translation = addVec3(child.translation || [0, 0, 0], shift);
+    }
+  } else {
+    const oldRoots = [...scene.nodes];
+    const movedRoots = oldRoots.map(idx => {
+      const node = json.nodes[idx];
+      if (node) node.translation = addVec3(node.translation || [0, 0, 0], shift);
+      return idx;
+    });
+    const rootNode = { name: 'FB_NormalisedRoot', scale: [scale, scale, scale], children: movedRoots };
+    const rootIndex = json.nodes.push(rootNode) - 1;
+    scene.nodes = [rootIndex];
+  }
+
+  json.asset = json.asset || { version: '2.0' };
+  json.asset.generator = 'Forever Bound GLB Asset Normaliser';
+
+  const bytes = buildGLB(json, bin);
+  return { bytes, result: { shift, scale, pivot } };
+}
+
+function addVec3(a, b) {
+  return [round((a[0] || 0) + b[0], 8), round((a[1] || 0) + b[1], 8), round((a[2] || 0) + b[2], 8)];
+}
+
+function padTo4BytesUint8(bytes, padByte) {
+  const extra = (4 - (bytes.length % 4)) % 4;
+  if (!extra) return bytes;
+  const out = new Uint8Array(bytes.length + extra);
+  out.set(bytes);
+  out.fill(padByte, bytes.length);
+  return out;
+}
+
+function buildGLB(json, bin) {
+  const jsonText = JSON.stringify(json);
+  const jsonBytes = padTo4BytesUint8(new TextEncoder().encode(jsonText), 0x20);
+  const binBytes = padTo4BytesUint8(bin, 0x00);
+  const totalLength = 12 + 8 + jsonBytes.length + 8 + binBytes.length;
+  const out = new ArrayBuffer(totalLength);
+  const dv = new DataView(out);
+  let offset = 0;
+  dv.setUint32(offset, 0x46546c67, true); offset += 4;
+  dv.setUint32(offset, 2, true); offset += 4;
+  dv.setUint32(offset, totalLength, true); offset += 4;
+  dv.setUint32(offset, jsonBytes.length, true); offset += 4;
+  dv.setUint32(offset, 0x4e4f534a, true); offset += 4;
+  new Uint8Array(out, offset, jsonBytes.length).set(jsonBytes); offset += jsonBytes.length;
+  dv.setUint32(offset, binBytes.length, true); offset += 4;
+  dv.setUint32(offset, 0x004e4942, true); offset += 4;
+  new Uint8Array(out, offset, binBytes.length).set(binBytes);
+  return new Uint8Array(out);
+}
+
+function timestampForFile() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+}
+
+function backupName(name) {
+  return name.replace(/\.glb$/i, `.bak-${timestampForFile()}.glb`);
+}
+
+function normalisedCopyName(name) {
+  return name.replace(/\.glb$/i, '.normalised.glb');
+}
+
+async function writeFileHandle(fileHandle, bytes) {
+  const writable = await fileHandle.createWritable();
+  await writable.write(new Blob([bytes], { type: 'model/gltf-binary' }));
+  await writable.close();
 }
 
 function pivotForSave(data, pivotPoint) {
@@ -562,20 +941,6 @@ function pivotForSave(data, pivotPoint) {
   const existingRoot = uniformRootScale(data);
   if (!data?.normalisedRoot?.found || Math.abs(existingRoot - 1) < 1e-12) return pivotPoint.slice();
   return pivotPoint.map(v => v / existingRoot);
-}
-
-function normalisedCopyName(name) {
-  return name.replace(/\.glb$/i, '.normalised.glb');
-}
-
-function backupName(name) {
-  return name.replace(/\.glb$/i, `.bak-${timestampForFile()}.glb`);
-}
-
-async function writeFileHandle(fileHandle, bytes) {
-  const writable = await fileHandle.createWritable();
-  await writable.write(new Blob([bytes], { type: 'model/gltf-binary' }));
-  await writable.close();
 }
 
 async function save(mode) {
@@ -605,10 +970,12 @@ async function save(mode) {
     }
 
     log(`Shift applied: ${fmtVec(result.result.shift)} | scale ${result.result.scale}`, 'ok');
-    await loadCurrentFolder();
+    await loadCurrentFolder({ preserveScroll: true, preserveChecks: true });
     if (mode === 'overwrite') {
       const refreshed = state.entries.find(e => e.type === 'file' && e.name === entry.name);
-      if (refreshed) await selectFile(refreshed);
+      if (refreshed) await selectFile(refreshed, { preserveView: true, quiet: true });
+    } else {
+      updateActiveFileRow();
     }
   } catch (err) {
     log(err.message || String(err), 'bad');
@@ -646,7 +1013,8 @@ async function batch(mode) {
         log(`Batch FAILED: ${entry.name} → ${err.message || String(err)}`, 'bad');
       }
     }
-    await loadCurrentFolder();
+    await loadCurrentFolder({ preserveScroll: true, preserveChecks: true });
+    updateActiveFileRow();
   } catch (err) {
     log(err.message || String(err), 'bad');
   }
@@ -658,497 +1026,69 @@ function updateBatchButtons() {
   batchOverwriteBtn.disabled = !enabled;
 }
 
-function timestampForFile() {
-  const d = new Date();
-  const pad = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-}
-
-function analyseArrayBuffer(fileName, filePath, bytes, arrayBuffer, previewOptions = {}) {
-  const parsed = parseGLB(arrayBuffer);
-  const bin = getBinChunk(parsed);
-  if (!bin) throw new Error('GLB has no embedded BIN chunk.');
-  const stats = computeStatsAndPreview(parsed.json, bin, previewOptions);
-  const warnings = [];
-  if (stats.counts.animations > 0) warnings.push('Animations detected. This tool is intended for static assets.');
-  if (stats.counts.skins > 0) warnings.push('Skins detected. This tool is intended for non-skinned static assets.');
-  if (stats.counts.skippedPrimitives > 0) warnings.push(`${stats.counts.skippedPrimitives} primitive(s) could not be inspected.`);
-  return { file: fileName, path: filePath, bytes, ...stats, warnings };
-}
-
-function normaliseArrayBuffer(arrayBuffer, options) {
-  const parsed = parseGLB(arrayBuffer);
-  const bin = getBinChunk(parsed);
-  if (!bin) throw new Error('GLB has no embedded BIN chunk.');
-  const warnings = [];
-  if (parsed.json.animations?.length) warnings.push('Animations detected. This file was still processed, but static assets are safer.');
-  if (parsed.json.skins?.length) warnings.push('Skins detected. This file was still processed, but static assets are safer.');
-  const result = ensureNormalisedRootAndApply(parsed.json, bin, options);
-  const bytes = writeGLB(parsed.json, parsed.chunks);
-  return { bytes, result, warnings };
-}
-
-function parseGLB(arrayBuffer) {
-  const bytes = arrayBuffer instanceof Uint8Array ? arrayBuffer : new Uint8Array(arrayBuffer);
-  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  if (bytes.byteLength < 20) throw new Error('File is too small to be a GLB.');
-  const magic = view.getUint32(0, true);
-  const version = view.getUint32(4, true);
-  const totalLength = view.getUint32(8, true);
-  if (magic !== 0x46546c67) throw new Error('Not a GLB file. Magic header does not match glTF.');
-  if (version !== 2) throw new Error(`Unsupported GLB version ${version}. This tool expects GLB 2.0.`);
-  if (totalLength > bytes.byteLength) throw new Error('GLB declares a longer length than the file contains.');
-
-  const chunks = [];
-  let json = null;
-  let offset = 12;
-  while (offset + 8 <= totalLength) {
-    const chunkLength = view.getUint32(offset, true);
-    const chunkType = view.getUint32(offset + 4, true);
-    const chunkStart = offset + 8;
-    const chunkEnd = chunkStart + chunkLength;
-    if (chunkEnd > bytes.byteLength) throw new Error('GLB chunk extends beyond file length.');
-    const data = bytes.slice(chunkStart, chunkEnd);
-    chunks.push({ type: chunkType, data });
-    if (chunkType === 0x4e4f534a) {
-      const text = new TextDecoder('utf-8').decode(data).replace(/[\u0000\u0020\t\r\n]+$/g, '');
-      json = JSON.parse(text);
-    }
-    offset = chunkEnd;
-  }
-  if (!json) throw new Error('GLB does not contain a JSON chunk.');
-  return { json, chunks };
-}
-
-function pad4(bytes, padByte = 0x20) {
-  const mod = bytes.length % 4;
-  if (mod === 0) return bytes;
-  const out = new Uint8Array(bytes.length + (4 - mod));
-  out.set(bytes, 0);
-  out.fill(padByte, bytes.length);
-  return out;
-}
-
-function writeGLB(json, originalChunks) {
-  const jsonBytes = pad4(new TextEncoder().encode(JSON.stringify(json)), 0x20);
-  const chunks = [{ type: 0x4e4f534a, data: jsonBytes }];
-  for (const chunk of originalChunks) {
-    if (chunk.type === 0x4e4f534a) continue;
-    chunks.push({ type: chunk.type, data: pad4(chunk.data, 0x00) });
-  }
-  const totalLength = 12 + chunks.reduce((sum, chunk) => sum + 8 + chunk.data.length, 0);
-  const out = new Uint8Array(totalLength);
-  const view = new DataView(out.buffer);
-  view.setUint32(0, 0x46546c67, true);
-  view.setUint32(4, 2, true);
-  view.setUint32(8, totalLength, true);
-  let offset = 12;
-  for (const chunk of chunks) {
-    view.setUint32(offset, chunk.data.length, true);
-    view.setUint32(offset + 4, chunk.type, true);
-    out.set(chunk.data, offset + 8);
-    offset += 8 + chunk.data.length;
-  }
-  return out;
-}
-
-function getBinChunk(parsed) {
-  const bin = parsed.chunks.find(c => c.type === 0x004e4942);
-  return bin ? bin.data : null;
-}
-
-function componentSize(componentType) {
-  switch (componentType) {
-    case 5120:
-    case 5121:
-      return 1;
-    case 5122:
-    case 5123:
-      return 2;
-    case 5125:
-    case 5126:
-      return 4;
-    default:
-      throw new Error(`Unsupported accessor component type ${componentType}.`);
+function resizeCanvasToDisplaySize() {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const width = Math.max(600, Math.floor(rect.width * dpr));
+  const height = Math.max(360, Math.floor(rect.height * dpr));
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
   }
 }
 
-function numComponents(type) {
-  switch (type) {
-    case 'SCALAR': return 1;
-    case 'VEC2': return 2;
-    case 'VEC3': return 3;
-    case 'VEC4': return 4;
-    case 'MAT2': return 4;
-    case 'MAT3': return 9;
-    case 'MAT4': return 16;
-    default: throw new Error(`Unsupported accessor type ${type}.`);
+function setView(view) {
+  if (view === 'z') {
+    state.activeAxis = 'Z';
+    state.yaw = 0;
+    state.pitch = 0;
+  } else if (view === 'x') {
+    state.activeAxis = 'X';
+    state.yaw = Math.PI / 2;
+    state.pitch = 0;
+  } else if (view === 'y') {
+    state.activeAxis = 'Y';
+    state.yaw = 0;
+    state.pitch = Math.PI / 2;
+  } else if (view === 'iso') {
+    state.yaw = -0.65;
+    state.pitch = 0.42;
   }
+  updateViewButtons();
+  fitView();
 }
 
-function readComponent(view, offset, componentType) {
-  switch (componentType) {
-    case 5120: return view.getInt8(offset);
-    case 5121: return view.getUint8(offset);
-    case 5122: return view.getInt16(offset, true);
-    case 5123: return view.getUint16(offset, true);
-    case 5125: return view.getUint32(offset, true);
-    case 5126: return view.getFloat32(offset, true);
-    default: throw new Error(`Unsupported component type ${componentType}.`);
+function updateViewButtons() {
+  el('frontViewBtn').classList.toggle('active', state.activeAxis === 'Z');
+  el('sideViewBtn').classList.toggle('active', state.activeAxis === 'X');
+  el('topViewBtn').classList.toggle('active', state.activeAxis === 'Y');
+}
+
+function getRotatedProjection() {
+  const cy = Math.cos(state.yaw), sy = Math.sin(state.yaw);
+  const cp = Math.cos(state.pitch), sp = Math.sin(state.pitch);
+  const cx = canvas.width / 2;
+  const cyv = canvas.height / 2;
+  const bounds = state.preview?.bbox;
+  const size = bounds ? Math.max(...bounds.size.map(Math.abs), 0.0001) : 2;
+  const scale = Math.min(canvas.width, canvas.height) * 0.62 * state.zoom / size;
+  const center = bounds ? [(bounds.min[0] + bounds.max[0]) / 2, (bounds.min[1] + bounds.max[1]) / 2, (bounds.min[2] + bounds.max[2]) / 2] : [0, 0, 0];
+
+  function rotate(p) {
+    const x = p[0] - center[0];
+    const y = p[1] - center[1];
+    const z = p[2] - center[2];
+    const x1 = cy * x - sy * z;
+    const z1 = sy * x + cy * z;
+    const y2 = cp * y - sp * z1;
+    const z2 = sp * y + cp * z1;
+    return [x1, y2, z2];
   }
-}
-
-function getAccessorReader(json, bin, accessorIndex) {
-  const accessor = json.accessors?.[accessorIndex];
-  if (!accessor) throw new Error(`Missing accessor ${accessorIndex}.`);
-  const viewDef = json.bufferViews?.[accessor.bufferView];
-  if (!viewDef) throw new Error(`Accessor ${accessorIndex} has no bufferView.`);
-  if (viewDef.buffer && viewDef.buffer !== 0) throw new Error('This tool currently expects embedded GLB binary buffer 0.');
-  const compSize = componentSize(accessor.componentType);
-  const comps = numComponents(accessor.type);
-  const stride = viewDef.byteStride || (compSize * comps);
-  const baseOffset = (viewDef.byteOffset || 0) + (accessor.byteOffset || 0);
-  const dataView = new DataView(bin.buffer, bin.byteOffset, bin.byteLength);
-
-  return {
-    accessor,
-    viewDef,
-    count: accessor.count || 0,
-    comps,
-    read(index) {
-      const p = baseOffset + index * stride;
-      const out = [];
-      for (let c = 0; c < comps; c++) {
-        out.push(readComponent(dataView, p + c * compSize, accessor.componentType));
-      }
-      return out;
-    },
-  };
-}
-
-function mat4Identity() {
-  return [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
-}
-
-function mat4Translation(x, y, z) {
-  return [1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,z,1];
-}
-
-function mat4Scale(x, y, z) {
-  return [x,0,0,0, 0,y,0,0, 0,0,z,0, 0,0,0,1];
-}
-
-function mat4FromQuat(q) {
-  const [x, y, z, w] = q;
-  const x2 = x + x, y2 = y + y, z2 = z + z;
-  const xx = x * x2, xy = x * y2, xz = x * z2;
-  const yy = y * y2, yz = y * z2, zz = z * z2;
-  const wx = w * x2, wy = w * y2, wz = w * z2;
-  return [
-    1 - (yy + zz), xy + wz, xz - wy, 0,
-    xy - wz, 1 - (xx + zz), yz + wx, 0,
-    xz + wy, yz - wx, 1 - (xx + yy), 0,
-    0, 0, 0, 1,
-  ];
-}
-
-function mat4Multiply(a, b) {
-  const out = new Array(16).fill(0);
-  for (let col = 0; col < 4; col++) {
-    for (let row = 0; row < 4; row++) {
-      out[col * 4 + row] =
-        a[0 * 4 + row] * b[col * 4 + 0] +
-        a[1 * 4 + row] * b[col * 4 + 1] +
-        a[2 * 4 + row] * b[col * 4 + 2] +
-        a[3 * 4 + row] * b[col * 4 + 3];
-    }
+  function project(p) {
+    const r = rotate(p);
+    return [cx + r[0] * scale, cyv - r[1] * scale, r[2]];
   }
-  return out;
-}
-
-function nodeLocalMatrix(node, overrideScale) {
-  if (Array.isArray(node.matrix) && node.matrix.length === 16) return node.matrix.slice();
-  const t = node.translation || [0, 0, 0];
-  const r = node.rotation || [0, 0, 0, 1];
-  const s = overrideScale || node.scale || [1, 1, 1];
-  return mat4Multiply(mat4Multiply(mat4Translation(t[0], t[1], t[2]), mat4FromQuat(r)), mat4Scale(s[0], s[1], s[2]));
-}
-
-function transformPoint(m, p) {
-  const x = p[0], y = p[1], z = p[2];
-  return [
-    m[0] * x + m[4] * y + m[8] * z + m[12],
-    m[1] * x + m[5] * y + m[9] * z + m[13],
-    m[2] * x + m[6] * y + m[10] * z + m[14],
-  ];
-}
-
-function detectNormalisedRoot(json, scene) {
-  const nodes = scene?.nodes || [];
-  if (nodes.length !== 1) return null;
-  const idx = nodes[0];
-  const node = json.nodes?.[idx];
-  if (!node || node.name !== 'FB_NormalisedRoot') return null;
-  return { index: idx, node };
-}
-
-function getScene(json) {
-  const sceneIndex = Number.isInteger(json.scene) ? json.scene : 0;
-  const scene = json.scenes?.[sceneIndex];
-  if (!scene) throw new Error('GLB has no readable scene.');
-  if (!Array.isArray(scene.nodes) || scene.nodes.length === 0) throw new Error('Scene has no root nodes.');
-  return { sceneIndex, scene };
-}
-
-function getIndexReader(json, bin, accessorIndex) {
-  if (!Number.isInteger(accessorIndex)) return null;
-  const reader = getAccessorReader(json, bin, accessorIndex);
-  if (reader.comps !== 1) throw new Error('Index accessor is not SCALAR.');
-  return {
-    count: reader.count,
-    read(index) { return reader.read(index)[0]; },
-  };
-}
-
-function primitiveBaseColor(json, primitive) {
-  const material = Number.isInteger(primitive.material) ? json.materials?.[primitive.material] : null;
-  const pbr = material?.pbrMetallicRoughness || {};
-  const factor = Array.isArray(pbr.baseColorFactor) ? pbr.baseColorFactor : [0.78, 0.72, 0.62, 1];
-  return {
-    r: Math.max(0, Math.min(255, Math.round((factor[0] ?? 0.78) * 255))),
-    g: Math.max(0, Math.min(255, Math.round((factor[1] ?? 0.72) * 255))),
-    b: Math.max(0, Math.min(255, Math.round((factor[2] ?? 0.62) * 255))),
-    a: Math.max(0.08, Math.min(1, factor[3] ?? 1)),
-    hasTexture: Number.isInteger(pbr.baseColorTexture?.index),
-    alphaMode: material?.alphaMode || 'OPAQUE',
-  };
-}
-
-function computeStatsAndPreview(json, bin, options = {}) {
-  const maxPreviewVertices = options.maxPreviewVertices || 9000;
-  const includeTriangles = !!options.includeTriangles;
-  const maxPreviewTriangles = options.maxPreviewTriangles || 60000;
-  const quality = options.quality || 35;
-  const axis = options.axis || 'Y';
-  const { scene } = getScene(json);
-  const normalisedRoot = detectNormalisedRoot(json, scene);
-  const preview = [];
-  const triangles = [];
-  const bbox = { min: [Infinity, Infinity, Infinity], max: [-Infinity, -Infinity, -Infinity] };
-  let vertexTotal = 0;
-  let totalTriangleCount = 0;
-  let vertexCount = 0;
-  let primitiveCount = 0;
-  let meshNodeCount = 0;
-  let skippedPrimitives = 0;
-  let texturedPrimitiveCount = 0;
-  let sampleEvery = 1;
-  let triangleEvery = 1;
-  let triangleSerial = 0;
-
-  function inspectNode(nodeIndex) {
-    const node = json.nodes?.[nodeIndex];
-    if (!node) return;
-    if (Number.isInteger(node.mesh)) {
-      const mesh = json.meshes?.[node.mesh];
-      for (const primitive of mesh?.primitives || []) {
-        const posIdx = primitive.attributes?.POSITION;
-        if (Number.isInteger(posIdx)) {
-          const accessor = json.accessors?.[posIdx];
-          if (accessor?.count) {
-            vertexTotal += accessor.count;
-            const mode = primitive.mode ?? 4;
-            if (mode === 4) {
-              if (Number.isInteger(primitive.indices)) {
-                const idxAccessor = json.accessors?.[primitive.indices];
-                totalTriangleCount += Math.floor((idxAccessor?.count || 0) / 3);
-              } else {
-                totalTriangleCount += Math.floor(accessor.count / 3);
-              }
-            }
-          }
-        }
-        const color = primitiveBaseColor(json, primitive);
-        if (color.hasTexture) texturedPrimitiveCount++;
-      }
-    }
-    for (const child of node.children || []) inspectNode(child);
-  }
-
-  for (const n of scene.nodes || []) inspectNode(n);
-  sampleEvery = Math.max(1, Math.ceil(vertexTotal / maxPreviewVertices));
-  triangleEvery = Math.max(1, Math.ceil(totalTriangleCount / maxPreviewTriangles));
-
-  function visit(nodeIndex, parentMatrix) {
-    const node = json.nodes?.[nodeIndex];
-    if (!node) return;
-    const local = nodeLocalMatrix(node);
-    const world = mat4Multiply(parentMatrix, local);
-
-    if (Number.isInteger(node.mesh)) {
-      meshNodeCount++;
-      const mesh = json.meshes?.[node.mesh];
-      for (const primitive of mesh?.primitives || []) {
-        primitiveCount++;
-        const posIdx = primitive.attributes?.POSITION;
-        if (!Number.isInteger(posIdx)) {
-          skippedPrimitives++;
-          continue;
-        }
-        try {
-          const reader = getAccessorReader(json, bin, posIdx);
-          for (let i = 0; i < reader.count; i++) {
-            const localPosition = reader.read(i);
-            if (localPosition.length < 3) continue;
-            const p = transformPoint(world, localPosition);
-            bbox.min[0] = Math.min(bbox.min[0], p[0]);
-            bbox.min[1] = Math.min(bbox.min[1], p[1]);
-            bbox.min[2] = Math.min(bbox.min[2], p[2]);
-            bbox.max[0] = Math.max(bbox.max[0], p[0]);
-            bbox.max[1] = Math.max(bbox.max[1], p[1]);
-            bbox.max[2] = Math.max(bbox.max[2], p[2]);
-            if (vertexCount % sampleEvery === 0) preview.push(roundPoint(p));
-            vertexCount++;
-          }
-
-          if (includeTriangles && (primitive.mode ?? 4) === 4) {
-            const idxReader = getIndexReader(json, bin, primitive.indices);
-            const color = primitiveBaseColor(json, primitive);
-            const makeTri = (i0, i1, i2) => {
-              triangleSerial++;
-              if ((triangleSerial - 1) % triangleEvery !== 0) return;
-              const a = transformPoint(world, reader.read(i0));
-              const b = transformPoint(world, reader.read(i1));
-              const c = transformPoint(world, reader.read(i2));
-              triangles.push({ a: roundPoint(a), b: roundPoint(b), c: roundPoint(c), color });
-            };
-            if (idxReader) {
-              for (let i = 0; i + 2 < idxReader.count; i += 3) {
-                makeTri(idxReader.read(i), idxReader.read(i + 1), idxReader.read(i + 2));
-              }
-            } else {
-              for (let i = 0; i + 2 < reader.count; i += 3) makeTri(i, i + 1, i + 2);
-            }
-          }
-        } catch {
-          skippedPrimitives++;
-        }
-      }
-    }
-    for (const child of node.children || []) visit(child, world);
-  }
-
-  for (const n of scene.nodes || []) visit(n, mat4Identity());
-  if (!Number.isFinite(bbox.min[0])) throw new Error('No readable POSITION geometry found in this GLB.');
-
-  const size = [bbox.max[0] - bbox.min[0], bbox.max[1] - bbox.min[1], bbox.max[2] - bbox.min[2]];
-  const center = [(bbox.min[0] + bbox.max[0]) / 2, (bbox.min[1] + bbox.max[1]) / 2, (bbox.min[2] + bbox.max[2]) / 2];
-  const bottomCenter = bottomCenterForAxis(bbox, axis);
-
-  return {
-    bbox: { min: roundPoint(bbox.min), max: roundPoint(bbox.max), size: roundPoint(size), center: roundPoint(center), bottomCenter: roundPoint(bottomCenter) },
-    preview,
-    triangles,
-    renderMode: includeTriangles ? 'solid' : 'points',
-    renderQuality: quality,
-    counts: {
-      vertices: vertexCount,
-      previewVertices: preview.length,
-      totalTriangles: totalTriangleCount,
-      previewTriangles: triangles.length,
-      meshes: json.meshes?.length || 0,
-      meshNodes: meshNodeCount,
-      primitives: primitiveCount,
-      skippedPrimitives,
-      texturedPrimitives: texturedPrimitiveCount,
-      nodes: json.nodes?.length || 0,
-      materials: json.materials?.length || 0,
-      images: json.images?.length || 0,
-      animations: json.animations?.length || 0,
-      skins: json.skins?.length || 0,
-    },
-    normalisedRoot: normalisedRoot ? {
-      found: true,
-      scale: normalisedRoot.node.scale || [1, 1, 1],
-      children: normalisedRoot.node.children || [],
-    } : { found: false },
-  };
-}
-
-function bottomCenterForAxis(bbox, axis) {
-  if (axis === 'Z') return [(bbox.min[0] + bbox.max[0]) / 2, (bbox.min[1] + bbox.max[1]) / 2, bbox.min[2]];
-  if (axis === 'X') return [bbox.min[0], (bbox.min[1] + bbox.max[1]) / 2, (bbox.min[2] + bbox.max[2]) / 2];
-  return [(bbox.min[0] + bbox.max[0]) / 2, bbox.min[1], (bbox.min[2] + bbox.max[2]) / 2];
-}
-
-function roundPoint(p) {
-  return p.map(v => Math.abs(v) < 1e-10 ? 0 : Number(v.toFixed(6)));
-}
-
-function setNodeMatrix(node, matrix) {
-  node.matrix = matrix.map(v => Math.abs(v) < 1e-12 ? 0 : Number(v.toFixed(12)));
-  delete node.translation;
-  delete node.rotation;
-  delete node.scale;
-}
-
-function leftMultiplyNodeMatrix(node, leftMatrix) {
-  const current = nodeLocalMatrix(node);
-  setNodeMatrix(node, mat4Multiply(leftMatrix, current));
-}
-
-function ensureNormalisedRootAndApply(json, bin, { scale = 1, axis = 'Y', pivotPoint = null }) {
-  const { scene } = getScene(json);
-  let root = detectNormalisedRoot(json, scene);
-
-  if (!root) {
-    const originalRoots = (scene.nodes || []).slice();
-    const rootNode = {
-      name: 'FB_NormalisedRoot',
-      children: originalRoots,
-      translation: [0, 0, 0],
-      scale: [1, 1, 1],
-      extras: {
-        fbTool: 'GLB Asset Normaliser',
-        note: 'Root origin is used as bottom-centre pivot. Child nodes hold the pivot offset.',
-      },
-    };
-    json.nodes = json.nodes || [];
-    const rootIndex = json.nodes.length;
-    json.nodes.push(rootNode);
-    scene.nodes = [rootIndex];
-    root = { index: rootIndex, node: rootNode };
-  }
-
-  delete root.node.matrix;
-  root.node.translation = [0, 0, 0];
-  root.node.rotation = [0, 0, 0, 1];
-  root.node.scale = [1, 1, 1];
-
-  const bottomCenter = computeStatsAndPreview(json, bin, { maxPreviewVertices: 1, axis }).bbox.bottomCenter;
-  const pivot = Array.isArray(pivotPoint) ? pivotPoint.map(Number) : bottomCenter;
-  const shift = [-pivot[0], -pivot[1], -pivot[2]];
-  const shiftMagnitude = Math.hypot(shift[0], shift[1], shift[2]);
-  if (shiftMagnitude > 1e-9) {
-    const t = mat4Translation(shift[0], shift[1], shift[2]);
-    for (const childIndex of root.node.children || []) {
-      const child = json.nodes?.[childIndex];
-      if (child) leftMultiplyNodeMatrix(child, t);
-    }
-  }
-
-  delete root.node.matrix;
-  root.node.translation = [0, 0, 0];
-  root.node.rotation = [0, 0, 0, 1];
-  root.node.scale = [scale, scale, scale];
-  root.node.extras = Object.assign({}, root.node.extras || {}, {
-    fbNormalised: true,
-    fbNormalisedAt: new Date().toISOString(),
-    fbBottomAxis: axis,
-    fbPivotPoint: roundPoint(pivot),
-    fbRootScale: scale,
-  });
-  return { shift: roundPoint(shift), pivot: roundPoint(pivot), scale, axis };
+  return { project, rotate, scale, center };
 }
 
 function fitView() {
@@ -1156,317 +1096,208 @@ function fitView() {
   drawPreview();
 }
 
-function setView(name) {
-  if (name === 'x') { state.activeAxis = 'X'; state.yaw = 0; state.pitch = 0; }
-  if (name === 'y') { state.activeAxis = 'Y'; state.yaw = 0; state.pitch = 0; }
-  if (name === 'z') { state.activeAxis = 'Z'; state.yaw = Math.PI / 2; state.pitch = 0; }
-  if (name === 'iso') { state.yaw = -0.65; state.pitch = 0.42; }
-  updateViewButtons();
-  drawPreview();
-}
-
-function updateViewButtons() {
-  for (const [id, axis] of [['frontViewBtn','Z'], ['sideViewBtn','X'], ['topViewBtn','Y']]) {
-    const button = el(id);
-    if (button) button.classList.toggle('active', state.activeAxis === axis);
-  }
-}
-
-function resizeCanvasToDisplay() {
-  const rect = canvas.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
-  const w = Math.max(300, Math.floor(rect.width * dpr));
-  const h = Math.max(220, Math.floor(rect.height * dpr));
-  if (canvas.width !== w || canvas.height !== h) {
-    canvas.width = w;
-    canvas.height = h;
-  }
-}
-
-function rotatePoint(p) {
-  const cy = Math.cos(state.yaw), sy = Math.sin(state.yaw);
-  const cp = Math.cos(state.pitch), sp = Math.sin(state.pitch);
-  let x = p[0], y = p[1], z = p[2];
-  const x1 = x * cy - z * sy;
-  const z1 = x * sy + z * cy;
-  x = x1; z = z1;
-  const y2 = y * cp - z * sp;
-  const z2 = y * sp + z * cp;
-  y = y2; z = z2;
-  return [x, y, z];
-}
-
-function getProjection() {
-  resizeCanvasToDisplay();
-  const preview = state.preview;
-  if (!preview || !preview.bbox) return null;
-  const w = canvas.width, h = canvas.height;
-  const bbox = preview.bbox;
-  const center = bbox.center;
-  const size = bbox.size;
-  const maxDim = Math.max(size[0], size[1], size[2], 0.0001);
-  const scale = Math.min(w, h) * 0.58 / maxDim * state.zoom;
-  const project = (p) => {
-    const shifted = [p[0] - center[0], p[1] - center[1], p[2] - center[2]];
-    const r = rotatePoint(shifted);
-    return [w / 2 + r[0] * scale, h / 2 - r[1] * scale, r[2]];
-  };
-  return { w, h, bbox, maxDim, scale, project };
-}
-
 function drawPreview() {
-  resizeCanvasToDisplay();
-  const w = canvas.width, h = canvas.height;
-  ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = '#09080d';
-  ctx.fillRect(0, 0, w, h);
+  resizeCanvasToDisplaySize();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#07060a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  state.lastStarScreen = null;
 
-  const projection = getProjection();
-  if (!projection) {
+  if (!state.preview) {
     ctx.fillStyle = '#b8a98f';
-    ctx.font = `${Math.max(16, w / 60)}px Arial`;
-    ctx.textAlign = 'center';
-    ctx.fillText('Choose a folder, then select a GLB file from the left.', w / 2, h / 2);
-    state.lastStarScreen = null;
+    ctx.font = '18px Arial';
+    ctx.fillText('Choose a GLB file to preview geometry.', 28, 42);
     return;
   }
 
-  const preview = state.preview;
-  const { bbox, maxDim, project } = projection;
-  drawGrid(project, bbox);
-  if (preview.renderMode === 'solid' && preview.triangles?.length) {
-    drawSolidTriangles(project, preview.triangles);
-  } else {
-    drawPoints(project, preview.preview || []);
+  const projection = getRotatedProjection();
+  drawAxes(projection);
+  drawBounds(projection, state.preview.bbox);
+
+  if (state.preview.renderMode === 'solid' && state.preview.triangles?.length) drawSolidTriangles(projection);
+  else drawPoints(projection);
+
+  drawPivotAxis(projection);
+  drawOrigin(projection);
+  drawPivotStar(projection);
+
+  ctx.fillStyle = '#ead389';
+  ctx.font = '12px Arial';
+  const label = state.preview.renderMode === 'solid'
+    ? `${state.preview.counts.vertices.toLocaleString()} vertices | solid preview ${state.preview.counts.previewTriangles.toLocaleString()} triangles`
+    : `${state.preview.counts.vertices.toLocaleString()} vertices | showing ${state.preview.counts.previewVertices.toLocaleString()} sample points`;
+  ctx.fillText(label, 14, 24);
+}
+
+function drawPoints(projection) {
+  ctx.fillStyle = '#d7ccb8';
+  for (const p of state.preview.points) {
+    const [x, y] = projection.project(p);
+    ctx.fillRect(x, y, 1.5, 1.5);
   }
-  drawBox(project, bbox);
-  drawAxes(project, maxDim);
-  drawAxisGuide(project, bbox, maxDim);
-  drawOriginCross(project);
-  drawPivotStar(project);
-
-  ctx.fillStyle = '#b8a98f';
-  ctx.font = `${Math.max(11, w / 120)}px Arial`;
-  ctx.textAlign = 'left';
-  const renderText = preview.renderMode === 'solid'
-    ? `${preview.counts.vertices.toLocaleString()} vertices | solid mesh preview ${preview.counts.previewTriangles.toLocaleString()} / ${preview.counts.totalTriangles.toLocaleString()} triangles`
-    : `${preview.counts.vertices.toLocaleString()} vertices | showing ${preview.counts.previewVertices.toLocaleString()} sample points`;
-  ctx.fillText(renderText, 14, 22);
-  ctx.fillText(`Pivot edit axis: ${state.activeAxis} | drag the star to move pivot on ${state.activeAxis} only`, 14, 42);
 }
 
-function drawPoints(project, points) {
-  ctx.save();
-  ctx.globalAlpha = 0.75;
-  ctx.fillStyle = '#e7ddca';
-  const projected = points.map(p => project(p)).sort((a, b) => a[2] - b[2]);
-  const dot = Math.max(1, Math.min(2.4, canvas.width / 700));
-  for (const p of projected) ctx.fillRect(p[0], p[1], dot, dot);
-  ctx.restore();
-}
-
-function vecSub(a, b) {
-  return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-}
-
-function vecCross(a, b) {
-  return [
-    a[1] * b[2] - a[2] * b[1],
-    a[2] * b[0] - a[0] * b[2],
-    a[0] * b[1] - a[1] * b[0],
-  ];
-}
-
-function vecDot(a, b) {
-  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-}
-
-function vecNorm(v) {
-  const len = Math.hypot(v[0], v[1], v[2]) || 1;
-  return [v[0] / len, v[1] / len, v[2] / len];
-}
-
-function solidColorString(color, shade) {
-  const r = Math.max(0, Math.min(255, Math.round(color.r * shade)));
-  const g = Math.max(0, Math.min(255, Math.round(color.g * shade)));
-  const b = Math.max(0, Math.min(255, Math.round(color.b * shade)));
-  const a = Math.max(0.18, Math.min(1, color.a ?? 1));
-  return `rgba(${r},${g},${b},${a})`;
-}
-
-function drawSolidTriangles(project, triangles) {
-  const light = vecNorm([-0.25, 0.55, 0.80]);
-  const projected = [];
-  for (const tri of triangles) {
-    const pa = project(tri.a);
-    const pb = project(tri.b);
-    const pc = project(tri.c);
-    const area = Math.abs((pb[0] - pa[0]) * (pc[1] - pa[1]) - (pc[0] - pa[0]) * (pb[1] - pa[1]));
-    if (area < 0.08) continue;
-
-    const ab = rotatePoint(vecSub(tri.b, tri.a));
-    const ac = rotatePoint(vecSub(tri.c, tri.a));
-    const n = vecNorm(vecCross(ab, ac));
-    const lit = Math.abs(vecDot(n, light));
-    const shade = 0.30 + lit * 0.82;
-    projected.push({ pa, pb, pc, depth: (pa[2] + pb[2] + pc[2]) / 3, color: solidColorString(tri.color, shade) });
-  }
-
-  projected.sort((a, b) => a.depth - b.depth);
-  ctx.save();
-  ctx.lineWidth = 0.6;
-  for (const tri of projected) {
+function drawSolidTriangles(projection) {
+  const tris = state.preview.triangles.map(tri => {
+    const pts = tri.map(p => projection.project(p));
+    const depth = (pts[0][2] + pts[1][2] + pts[2][2]) / 3;
+    return { pts, depth };
+  }).sort((a, b) => a.depth - b.depth);
+  ctx.lineWidth = 0.45;
+  for (const tri of tris) {
+    const brightness = clamp(0.46 + tri.depth * 0.02, 0.28, 0.78);
+    const v = Math.round(225 * brightness);
+    ctx.fillStyle = `rgb(${v},${Math.round(v * 0.92)},${Math.round(v * 0.72)})`;
+    ctx.strokeStyle = 'rgba(10,8,14,.16)';
     ctx.beginPath();
-    ctx.moveTo(tri.pa[0], tri.pa[1]);
-    ctx.lineTo(tri.pb[0], tri.pb[1]);
-    ctx.lineTo(tri.pc[0], tri.pc[1]);
+    ctx.moveTo(tri.pts[0][0], tri.pts[0][1]);
+    ctx.lineTo(tri.pts[1][0], tri.pts[1][1]);
+    ctx.lineTo(tri.pts[2][0], tri.pts[2][1]);
     ctx.closePath();
-    ctx.fillStyle = tri.color;
     ctx.fill();
+    ctx.stroke();
   }
-  ctx.restore();
 }
 
-function drawBox(project, bbox) {
-  const [minX, minY, minZ] = bbox.min;
-  const [maxX, maxY, maxZ] = bbox.max;
-  const c = [[minX,minY,minZ], [maxX,minY,minZ], [maxX,maxY,minZ], [minX,maxY,minZ], [minX,minY,maxZ], [maxX,minY,maxZ], [maxX,maxY,maxZ], [minX,maxY,maxZ]];
+function drawBounds(projection, bbox) {
+  const [min, max] = [bbox.min, bbox.max];
+  const c = [
+    [min[0], min[1], min[2]], [max[0], min[1], min[2]], [max[0], max[1], min[2]], [min[0], max[1], min[2]],
+    [min[0], min[1], max[2]], [max[0], min[1], max[2]], [max[0], max[1], max[2]], [min[0], max[1], max[2]],
+  ].map(p => projection.project(p));
   const edges = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
-  ctx.strokeStyle = '#c8a455';
-  ctx.lineWidth = Math.max(1, canvas.width / 800);
-  ctx.beginPath();
+  ctx.strokeStyle = 'rgba(234,211,137,.65)';
+  ctx.lineWidth = 1.4;
   for (const [a,b] of edges) {
-    const p1 = project(c[a]);
-    const p2 = project(c[b]);
-    ctx.moveTo(p1[0], p1[1]); ctx.lineTo(p2[0], p2[1]);
+    ctx.beginPath();
+    ctx.moveTo(c[a][0], c[a][1]);
+    ctx.lineTo(c[b][0], c[b][1]);
+    ctx.stroke();
   }
-  ctx.stroke();
 }
 
-function drawOriginCross(project) {
-  const p = project([0, 0, 0]);
-  const r = Math.max(5, canvas.width / 190);
-  ctx.save();
-  ctx.strokeStyle = 'rgba(116, 210, 138, .85)';
-  ctx.lineWidth = 2;
+function drawAxes(projection) {
+  const len = state.preview ? Math.max(...state.preview.bbox.size.map(Math.abs)) * 0.58 : 1;
+  const axes = [
+    { name: 'X', color: '#ff7b7b', v: [len, 0, 0] },
+    { name: 'Y', color: '#67e08e', v: [0, len, 0] },
+    { name: 'Z', color: '#6da4ff', v: [0, 0, len] },
+  ];
+  const origin = projection.project([0,0,0]);
+  ctx.lineWidth = 1.5;
+  for (const axis of axes) {
+    const end = projection.project(axis.v);
+    ctx.strokeStyle = axis.color;
+    ctx.beginPath();
+    ctx.moveTo(origin[0], origin[1]);
+    ctx.lineTo(end[0], end[1]);
+    ctx.stroke();
+    ctx.fillStyle = axis.color;
+    ctx.font = '12px Arial';
+    ctx.fillText(axis.name, end[0] + 4, end[1] + 4);
+  }
+}
+
+function drawOrigin(projection) {
+  const [x,y] = projection.project([0,0,0]);
+  ctx.fillStyle = '#35d07f';
   ctx.beginPath();
-  ctx.moveTo(p[0] - r, p[1]);
-  ctx.lineTo(p[0] + r, p[1]);
-  ctx.moveTo(p[0], p[1] - r);
-  ctx.lineTo(p[0], p[1] + r);
+  ctx.arc(x, y, 5, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawPivotAxis(projection) {
+  if (!state.pivotPoint || !state.preview) return;
+  const axis = axisVector(state.activeAxis);
+  const len = Math.max(...state.preview.bbox.size.map(Math.abs)) * 1.1;
+  const a = [state.pivotPoint[0] - axis[0] * len, state.pivotPoint[1] - axis[1] * len, state.pivotPoint[2] - axis[2] * len];
+  const b = [state.pivotPoint[0] + axis[0] * len, state.pivotPoint[1] + axis[1] * len, state.pivotPoint[2] + axis[2] * len];
+  const pa = projection.project(a);
+  const pb = projection.project(b);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(234,211,137,.75)';
+  ctx.setLineDash([7, 7]);
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(pa[0], pa[1]);
+  ctx.lineTo(pb[0], pb[1]);
   ctx.stroke();
   ctx.restore();
 }
 
-function drawPivotStar(project) {
+function drawPivotStar(projection) {
   if (!state.pivotPoint) return;
-  const p = project(state.pivotPoint);
-  state.lastStarScreen = p;
-  const outer = Math.max(12, canvas.width / 95);
-  const inner = outer * 0.45;
+  const [x,y] = projection.project(state.pivotPoint);
+  state.lastStarScreen = [x, y];
+  const spikes = 5;
+  const outer = 14;
+  const inner = 6;
   ctx.save();
-  ctx.translate(p[0], p[1]);
+  ctx.translate(x, y);
+  ctx.rotate(-Math.PI / 2);
   ctx.beginPath();
-  for (let i = 0; i < 10; i++) {
-    const a = -Math.PI / 2 + i * Math.PI / 5;
+  for (let i = 0; i < spikes * 2; i++) {
     const r = i % 2 === 0 ? outer : inner;
-    const x = Math.cos(a) * r;
-    const y = Math.sin(a) * r;
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
+    const a = i * Math.PI / spikes;
+    const px = Math.cos(a) * r;
+    const py = Math.sin(a) * r;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
   }
   ctx.closePath();
-  ctx.fillStyle = '#ead389';
-  ctx.strokeStyle = '#2a183f';
-  ctx.lineWidth = Math.max(2, canvas.width / 420);
-  ctx.shadowColor = 'rgba(234,211,137,.55)';
-  ctx.shadowBlur = 10;
+  ctx.fillStyle = '#ffe38c';
+  ctx.strokeStyle = '#4b3210';
+  ctx.lineWidth = 2;
   ctx.fill();
-  ctx.shadowBlur = 0;
   ctx.stroke();
   ctx.restore();
-}
-
-function drawAxisGuide(project, bbox, maxDim) {
-  if (!state.pivotPoint) return;
-  const idx = axisIndex(state.activeAxis);
-  const start = state.pivotPoint.slice();
-  const end = state.pivotPoint.slice();
-  const pad = maxDim * 0.25;
-  start[idx] = bbox.min[idx] - pad;
-  end[idx] = bbox.max[idx] + pad;
-  ctx.save();
-  ctx.strokeStyle = 'rgba(234, 211, 137, .78)';
-  ctx.lineWidth = Math.max(2, canvas.width / 500);
-  ctx.setLineDash([10, 7]);
-  const a = project(start);
-  const b = project(end);
-  ctx.beginPath();
-  ctx.moveTo(a[0], a[1]);
-  ctx.lineTo(b[0], b[1]);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.fillStyle = '#ead389';
-  ctx.font = `${Math.max(12, canvas.width / 100)}px Arial`;
-  ctx.fillText(`${state.activeAxis} pivot drag line`, b[0] + 8, b[1] + 6);
-  ctx.restore();
-}
-
-function drawAxes(project, maxDim) {
-  const len = maxDim * 0.42;
-  const axes = [
-    { end: [len, 0, 0], label: 'X', color: '#ff7070' },
-    { end: [0, len, 0], label: 'Y', color: '#70ff8a' },
-    { end: [0, 0, len], label: 'Z', color: '#70a0ff' },
-  ];
-  for (const axis of axes) {
-    const a = project([0,0,0]);
-    const b = project(axis.end);
-    ctx.strokeStyle = axis.color;
-    ctx.lineWidth = axis.label === state.activeAxis ? 4 : 2;
-    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
-    ctx.fillStyle = axis.color;
-    ctx.font = `${Math.max(12, canvas.width / 95)}px Arial`;
-    ctx.fillText(axis.label, b[0] + 6, b[1] + 6);
-  }
-}
-
-function drawGrid(project, bbox) {
-  const size = Math.max(...bbox.size, 1);
-  const step = size / 8;
-  ctx.save();
-  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-  ctx.lineWidth = 1;
-  for (let i = -8; i <= 8; i++) {
-    const a = project([i * step, 0, -8 * step]);
-    const b = project([i * step, 0, 8 * step]);
-    const c = project([-8 * step, 0, i * step]);
-    const d = project([8 * step, 0, i * step]);
-    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(c[0], c[1]); ctx.lineTo(d[0], d[1]); ctx.stroke();
-  }
-  ctx.restore();
-}
-
-function axisIndex(axis) {
-  return axis === 'X' ? 0 : axis === 'Y' ? 1 : 2;
-}
-
-function axisVector(axis) {
-  return axis === 'X' ? [1, 0, 0] : axis === 'Y' ? [0, 1, 0] : [0, 0, 1];
 }
 
 function pointerOnCanvas(ev) {
   const rect = canvas.getBoundingClientRect();
-  const sx = canvas.width / rect.width;
-  const sy = canvas.height / rect.height;
-  return [(ev.clientX - rect.left) * sx, (ev.clientY - rect.top) * sy];
+  const dprX = canvas.width / rect.width;
+  const dprY = canvas.height / rect.height;
+  return [(ev.clientX - rect.left) * dprX, (ev.clientY - rect.top) * dprY];
+}
+
+function distance2(a, b) {
+  const dx = a[0] - b[0];
+  const dy = a[1] - b[1];
+  return dx * dx + dy * dy;
+}
+
+canvas.addEventListener('pointerdown', ev => {
+  if (!state.lastStarScreen || !state.pivotPoint) return;
+  const p = pointerOnCanvas(ev);
+  if (distance2(p, state.lastStarScreen) > 28 * 28) return;
+  state.dragging = 'star';
+  state.lastMouse = p;
+  canvas.classList.add('dragging-star');
+  canvas.setPointerCapture(ev.pointerId);
+});
+
+canvas.addEventListener('pointermove', ev => {
+  if (state.dragging === 'star') dragPivot(ev);
+});
+
+canvas.addEventListener('pointerup', ev => {
+  state.dragging = null;
+  canvas.classList.remove('dragging-star');
+  try { canvas.releasePointerCapture(ev.pointerId); } catch {}
+});
+
+canvas.addEventListener('wheel', ev => {
+  ev.preventDefault();
+  state.zoom = clamp(state.zoom * (ev.deltaY < 0 ? 1.12 : 0.9), 0.15, 10);
+  drawPreview();
+}, { passive: false });
+
+function roundPoint(v) {
+  return v.map(n => round(n, 5));
 }
 
 function dragPivot(ev) {
-  if (!state.pivotPoint) return;
-  const projection = getProjection();
-  if (!projection) return;
+  const projection = getRotatedProjection();
   const next = pointerOnCanvas(ev);
   const dx = next[0] - state.lastMouse[0];
   const dy = next[1] - state.lastMouse[1];
@@ -1534,61 +1365,21 @@ el('topViewBtn').addEventListener('click', () => setView('y'));
 el('isoViewBtn').addEventListener('click', () => setView('iso'));
 el('fitViewBtn').addEventListener('click', fitView);
 el('resetPivotBtn').addEventListener('click', resetPivotToBottomCentre);
-
-canvas.addEventListener('mousedown', ev => {
-  const pos = pointerOnCanvas(ev);
-  if (state.lastStarScreen) {
-    const d = Math.hypot(pos[0] - state.lastStarScreen[0], pos[1] - state.lastStarScreen[1]);
-    if (d <= Math.max(24, canvas.width / 55)) {
-      state.dragging = 'pivot';
-      state.lastMouse = pos;
-      canvas.classList.add('dragging-star');
-      return;
-    }
-  }
-  state.dragging = 'orbit';
-  state.lastMouse = [ev.clientX, ev.clientY];
-});
-window.addEventListener('mouseup', () => {
-  state.dragging = null;
-  canvas.classList.remove('dragging-star');
-});
-window.addEventListener('mousemove', ev => {
-  if (!state.dragging || !state.lastMouse) return;
-  if (state.dragging === 'pivot') {
-    dragPivot(ev);
-    return;
-  }
-  const dx = ev.clientX - state.lastMouse[0];
-  const dy = ev.clientY - state.lastMouse[1];
-  state.lastMouse = [ev.clientX, ev.clientY];
-  state.yaw += dx * 0.008;
-  state.pitch += dy * 0.008;
-  state.pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, state.pitch));
-  drawPreview();
-});
-canvas.addEventListener('wheel', ev => {
-  ev.preventDefault();
-  state.zoom *= ev.deltaY > 0 ? 0.9 : 1.1;
-  state.zoom = Math.max(0.05, Math.min(40, state.zoom));
-  drawPreview();
-}, { passive: false });
 window.addEventListener('resize', drawPreview);
 
-
-function initialiseScaleControls() {
+function loadSavedScaleUi() {
   const savedMode = localStorage.getItem(TARGET_MODE_KEY);
   const savedTarget = localStorage.getItem(TARGET_SIZE_KEY);
-  const savedManualScale = localStorage.getItem(MANUAL_SCALE_KEY);
-  if (savedMode && targetModeSelect && [...targetModeSelect.options].some(o => o.value === savedMode)) targetModeSelect.value = savedMode;
-  if (savedTarget && targetSizeInput && Number(savedTarget) > 0) targetSizeInput.value = savedTarget;
-  if (savedManualScale && scaleInput && Number(savedManualScale) > 0) scaleInput.value = savedManualScale;
-  updateScaleReadout();
+  const savedManual = localStorage.getItem(MANUAL_SCALE_KEY);
+  if (savedMode) targetModeSelect.value = savedMode;
+  if (savedTarget) targetSizeInput.value = savedTarget;
+  if (savedManual) scaleInput.value = savedManual;
 }
 
 assertFolderPickerSupport();
-initialiseScaleControls();
+loadSavedScaleUi();
 updateQualityLabel();
 updateViewButtons();
+updateScaleReadout();
 drawPreview();
 initialiseRememberedFolder();
