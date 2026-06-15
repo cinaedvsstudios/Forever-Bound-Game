@@ -6,13 +6,13 @@ const glbDefault = (overrides = {}) => ({ x: 0, y: 0, z: 0, ...sideDefaults, sca
 
 export const DEFAULT_SETTINGS = {
   engine: 'obstacle-course',
-  version: 'V3.0.24',
+  version: 'V3.0.25',
   templateId: 'horse_forest_easy',
   difficulty: 3,
   courseLength: 2400,
   sceneryDistance: 8,
   vanishX: 0,
-  vanishY: 100,
+  vanishY: 0,
   cameraAngle: 0,
   backgroundZoom: 1.1,
   visual: { brightness: 1, contrast: 1, saturation: 1, tint: '#000000', tintStrength: 0 },
