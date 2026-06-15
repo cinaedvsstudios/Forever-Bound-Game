@@ -169,11 +169,11 @@ export const PRESETS_REGISTRY = {
     },
     {
       id: 'soft-smoke',
-      label: 'Soft Smoke / Gas Base',
+      label: 'Gas',
       engine: 'gas',
-      description: 'Low contrast smoke grains with slow upward drift.',
+      description: 'Low contrast gas grains with slow upward drift.',
       config: {
-        name: 'Soft Smoke / Gas Base',
+        name: 'Gas',
         engine: 'gas',
         colorA: '#d4d0c8',
         colorB: '#5d5854',
@@ -221,11 +221,11 @@ export const PRESETS_REGISTRY = {
     },
     {
       id: 'heat-distortion',
-      label: 'Heat Distortion / Underlay Warp',
+      label: 'Grid Effect',
       engine: 'heatdistortion',
-      description: 'Heat haze overlay designed to warp an image/video underlay or background below it.',
+      description: 'Grid-style distortion overlay designed to warp an image/video underlay or background below it.',
       config: {
-        name: 'Heat Distortion / Underlay Warp',
+        name: 'Grid Effect',
         engine: 'heatdistortion',
         colorA: '#fff0b6',
         colorB: '#6dd6ff',
@@ -249,11 +249,11 @@ export const PRESETS_REGISTRY = {
     },
     {
       id: 'optic-glint',
-      label: 'Optic Glint',
+      label: 'Crosshairs',
       engine: 'lensflare',
-      description: 'Single optical sparkle/glint. Use True Lens Flare for a multi-part flare.',
+      description: 'Single optical crosshair/glint. Use True Lens Flare for a multi-part flare.',
       config: {
-        name: 'Optic Glint',
+        name: 'Crosshairs',
         engine: 'lensflare',
         colorA: '#fff6c8',
         colorB: '#6de5ff',
