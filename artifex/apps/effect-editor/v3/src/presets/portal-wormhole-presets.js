@@ -1,4 +1,5 @@
 import { cloneBasePreset as cloneBasePresetCore, listBasePresets as listBasePresetsCore } from './base-effects.js';
+import { clonePrototypePreset, listPrototypePresets } from '../prototype-adapters/prototype-presets.js';
 
 const STRUCTURED_PRESETS = [
   {
@@ -41,9 +42,11 @@ const STRUCTURED_PRESETS = [
 export function cloneBasePreset(category, id) {
   const structured = STRUCTURED_PRESETS.find((item) => item.id === id);
   if (structured) return JSON.parse(JSON.stringify(structured));
+  const prototype = clonePrototypePreset(id);
+  if (prototype) return prototype;
   return cloneBasePresetCore(category, id);
 }
 
 export function listBasePresets() {
-  return [...listBasePresetsCore(), ...STRUCTURED_PRESETS];
+  return [...listBasePresetsCore(), ...STRUCTURED_PRESETS, ...listPrototypePresets()];
 }
