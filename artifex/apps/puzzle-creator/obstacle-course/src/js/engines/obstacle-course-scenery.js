@@ -10,7 +10,7 @@ const TREE_ROOT_LIFT = 0.22;
 const TREE_OUTER_LIMIT_FROM_PATH_EDGE = 2.2;
 const DETAIL_OUTER_LIMIT_FROM_PATH_EDGE = 2.35;
 const SHADOW_Y_OFFSET = 0.045;
-const SHADOW_BASE_OPACITY = 0.2;
+const SHADOW_BASE_OPACITY = 1;
 const DENSITY_PER_1000 = {
   pathEdgeTreePairs: 42,
   pathInsideTreePairs: 54,
@@ -79,7 +79,7 @@ function pathInsideEdgeX(rng, distance, side) {
 function pathEdgeBushX(rng, distance, side) {
   const center = pathCenterAt(distance);
   const half = pathHalfWidthAt(distance);
-  return center + side * (half + randFrom(rng, 0.0, 0.25));
+  return center + side * Math.max(0.1, half - randFrom(rng, 0.08, 0.22));
 }
 function limitedOutsideX(rng, distance, side, minFromEdge = 1.05, maxFromEdge = TREE_OUTER_LIMIT_FROM_PATH_EDGE) {
   const center = pathCenterAt(distance);
@@ -142,8 +142,7 @@ function treeShadowTexture(rng) {
 function makeShadowMaterial(texture) {
   return new THREE.MeshBasicMaterial({
     map: texture,
-    transparent: true,
-    opacity: SHADOW_BASE_OPACITY,
+    transparent: false,
     depthWrite: false,
     depthTest: true,
     side: THREE.DoubleSide,
@@ -216,7 +215,7 @@ export function scatterScenery() {
   const oakTreeAssets = preferredAssets(assetsNamed(allTrees, 'oak_trees'), pathEdgeTreeAssets);
   const edgeDetailAssets = loadedAssets('edgeDetail');
   const farDetailAssets = GLB_ASSETS.filter((asset) => ['edgeDetail', 'farDetail'].includes(asset.type) && OC.glbTemplates.has(asset.url));
-  const tallBushAssets = preferredAssets(assetsNamed(farDetailAssets, 'tall_bush'), farDetailAssets);
+  const tallBushAssets = assetsNamed(farDetailAssets, 'tall_bush');
   const sections = sectionCount();
   const end = OC.courseLength + 80;
   const queues = new Map();
@@ -230,9 +229,11 @@ export function scatterScenery() {
   makeDistances(rng, DENSITY_PER_1000.limitedOuterTreePairs * sections * template.treeRate, 60, end, 20).forEach((d) => {
     [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, shadowLayer, 'tree', oakTreeAssets, fallbackTree, limitedOutsideX(rng, d, side), TREE_ROOT_LIFT, -d + randFrom(rng, -7, 7), limitedOuterTreeScale(rng, d)));
   });
-  makeDistances(rng, DENSITY_PER_1000.tallPathBushPairs * sections * template.detailRate, 35, OC.courseLength + 60, 10).forEach((d) => {
-    [-1, 1].forEach((side) => queuePlacement(rng, queues, detailLayer, null, 'detail', tallBushAssets, fallbackDetail, pathEdgeBushX(rng, d, side), 0, -d + randFrom(rng, -4, 4), randFrom(rng, 4.22, 6.02)));
-  });
+  if (tallBushAssets.length) {
+    makeDistances(rng, DENSITY_PER_1000.tallPathBushPairs * sections * template.detailRate, 35, OC.courseLength + 60, 10).forEach((d) => {
+      [-1, 1].forEach((side) => queuePlacement(rng, queues, detailLayer, null, 'detail', tallBushAssets, fallbackDetail, pathEdgeBushX(rng, d, side), 0, -d + randFrom(rng, -4, 4), randFrom(rng, 4.22, 6.02)));
+    });
+  }
   makeDistances(rng, DENSITY_PER_1000.edgeDetailPairs * sections * template.detailRate, 20, OC.courseLength + 40, 14).forEach((d) => {
     [-1, 1].forEach((side) => queuePlacement(rng, queues, detailLayer, null, 'detail', edgeDetailAssets, fallbackDetail, limitedDetailX(rng, d, side, 0.15, 1.6), 0, -d + randFrom(rng, -3, 3), randFrom(rng, 0.75, 1.15)));
   });
