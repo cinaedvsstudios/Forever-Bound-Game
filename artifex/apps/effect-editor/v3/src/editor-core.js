@@ -84,19 +84,50 @@ function populateEngineSelect() {
 function populateBaseMenu() {
   const list = document.getElementById('base-layer-list');
   if (!list) return;
+  const preview = ensureInsertPreviewBox(list);
   const presets = [...listBasePresets()].sort((a, b) => String(a.label || a.id || '').localeCompare(String(b.label || b.id || ''), undefined, { sensitivity: 'base' }));
   list.replaceChildren(...presets.map((preset) => {
     const button = document.createElement('button');
+    const label = preset.label || preset.id;
+    const detail = preset.description || preset.engine || '';
     button.type = 'button';
-    button.title = preset.description || '';
+    button.title = detail ? `${label}\n${detail}` : label;
     if (isPrototypePreset(preset)) button.classList.add('index2-prototype-insert-item');
-    button.append(document.createTextNode(preset.label || preset.id));
-    const detail = document.createElement('span');
-    detail.textContent = preset.description || preset.engine || '';
-    button.append(detail);
+    button.append(document.createTextNode(label));
+    button.addEventListener('mouseenter', () => updateInsertPreview(preview, preset));
+    button.addEventListener('focus', () => updateInsertPreview(preview, preset));
+    button.addEventListener('mouseleave', () => resetInsertPreview(preview));
+    button.addEventListener('blur', () => resetInsertPreview(preview));
     button.addEventListener('click', () => { addPreset(preset.id); closeMenus(); });
     return button;
   }));
+  resetInsertPreview(preview);
+}
+
+function ensureInsertPreviewBox(list) {
+  const section = list.closest('.insert-section') || list.parentElement;
+  let preview = document.getElementById('insert-effect-preview');
+  if (!preview) {
+    preview = document.createElement('div');
+    preview.id = 'insert-effect-preview';
+    preview.className = 'insert-effect-preview';
+    preview.setAttribute('aria-label', 'Effect preview placeholder');
+    preview.title = 'Effect preview image placeholder.';
+    section?.insertBefore(preview, list);
+  }
+  return preview;
+}
+function updateInsertPreview(preview, preset) {
+  if (!preview) return;
+  preview.dataset.effectLabel = preset?.label || preset?.id || '';
+  preview.dataset.prototype = isPrototypePreset(preset) ? 'true' : 'false';
+  preview.title = preset?.description ? `${preset.label || preset.id}\n${preset.description}` : preset?.label || 'Effect preview image placeholder.';
+}
+function resetInsertPreview(preview) {
+  if (!preview) return;
+  preview.dataset.effectLabel = '';
+  preview.dataset.prototype = 'false';
+  preview.title = 'Effect preview image placeholder.';
 }
 
 function setupMenus() {
