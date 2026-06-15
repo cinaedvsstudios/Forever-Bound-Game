@@ -9,11 +9,11 @@ import { pathCenterAt, pathHalfWidthAt } from './obstacle-course-ground-path.js'
 const TREE_ROOT_LIFT = 0.22;
 const TREE_OUTER_LIMIT_FROM_PATH_EDGE = 2.2;
 const DETAIL_OUTER_LIMIT_FROM_PATH_EDGE = 2.35;
-const SHADOW_Y_OFFSET = 0.045;
+const SHADOW_Y_OFFSET = 0.055;
 const SHADOW_BASE_OPACITY = 1;
 const DENSITY_PER_1000 = {
-  pathEdgeTreePairs: 42,
-  pathInsideTreePairs: 54,
+  pathEdgeTreePairs: 50,
+  pathInsideTreePairs: 0,
   limitedOuterTreePairs: 18,
   tallPathBushPairs: 84,
   edgeDetailPairs: 24,
@@ -69,12 +69,7 @@ function sectionCount() { return Math.max(1, OC.courseLength / 1000); }
 function pathEdgeX(rng, distance, side) {
   const center = pathCenterAt(distance);
   const half = pathHalfWidthAt(distance);
-  return center + side * (half + randFrom(rng, 0.05, 0.95));
-}
-function pathInsideEdgeX(rng, distance, side) {
-  const center = pathCenterAt(distance);
-  const half = pathHalfWidthAt(distance);
-  return center + side * Math.max(0.35, half - randFrom(rng, 0.25, 1.25));
+  return center + side * (half + randFrom(rng, 0.65, 1.65));
 }
 function pathEdgeBushX(rng, distance, side) {
   const center = pathCenterAt(distance);
@@ -92,7 +87,8 @@ function limitedDetailX(rng, distance, side, minFromEdge = 0.2, maxFromEdge = DE
   return center + side * (half + randFrom(rng, minFromEdge, maxFromEdge));
 }
 function makeDistances(rng, count, start, end, jitter = 10) {
-  const safeCount = Math.max(1, Math.round(count));
+  const safeCount = Math.max(0, Math.round(count));
+  if (!safeCount) return [];
   const span = Math.max(1, end - start);
   const step = span / safeCount;
   const result = [];
@@ -110,10 +106,6 @@ function screenEdgeScaleForX(x, minScale = 0.68) {
 function pathEdgeTreeScale(rng, distance) {
   const closeDistanceScale = clamp((Number(distance || 0) - 70) / 280, 0.58, 1);
   return randFrom(rng, 0.22, 0.34) * closeDistanceScale;
-}
-function pathInsideTreeScale(rng, distance) {
-  const closeDistanceScale = clamp((Number(distance || 0) - 70) / 280, 0.58, 1);
-  return randFrom(rng, 0.18, 0.30) * closeDistanceScale;
 }
 function limitedOuterTreeScale(rng, distance) {
   const closeDistanceScale = clamp((Number(distance || 0) - 70) / 280, 0.58, 1);
@@ -140,7 +132,7 @@ function treeShadowTexture(rng) {
 }
 
 function makeShadowMaterial(texture) {
-  return new THREE.MeshBasicMaterial({
+  const material = new THREE.MeshBasicMaterial({
     map: texture,
     transparent: false,
     depthWrite: false,
@@ -148,9 +140,11 @@ function makeShadowMaterial(texture) {
     side: THREE.DoubleSide,
     blending: THREE.MultiplyBlending,
     polygonOffset: true,
-    polygonOffsetFactor: -2,
-    polygonOffsetUnits: -2,
+    polygonOffsetFactor: -4,
+    polygonOffsetUnits: -4,
   });
+  material.userData.ocSkipLayerVisual = true;
+  return material;
 }
 
 function addTreeShadow(rng, shadowLayer, x, z, scale) {
@@ -203,7 +197,10 @@ export function scatterScenery() {
   const shadowLayer = makeLayer('treeShadows', 'Tree Shadows', new THREE.Group(), { order: 6, opacity: SHADOW_BASE_OPACITY, brightness: 1, contrast: 1, saturation: 1 });
   const treeLayer = makeLayer('trees', 'Trees', new THREE.Group(), { order: 20 });
   const detailLayer = makeLayer('details', 'Ferns / Bushes / Details', new THREE.Group(), { order: 25 });
-  OC.world.add(shadowLayer.group, treeLayer.group, detailLayer.group);
+  const groundLayer = OC.layers.get('ground');
+  if (groundLayer?.group) groundLayer.group.add(shadowLayer.group);
+  else OC.world.add(shadowLayer.group);
+  OC.world.add(treeLayer.group, detailLayer.group);
 
   const allTrees = loadedTreeAssets();
   const nearTreeAssets = loadedAssets('nearTree');
@@ -220,9 +217,6 @@ export function scatterScenery() {
   const end = OC.courseLength + 80;
   const queues = new Map();
 
-  makeDistances(rng, DENSITY_PER_1000.pathInsideTreePairs * sections * template.treeRate, 28, end, 10).forEach((d) => {
-    [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, shadowLayer, 'tree', pathEdgeTreeAssets, fallbackTree, pathInsideEdgeX(rng, d, side), TREE_ROOT_LIFT, -d + randFrom(rng, -4, 4), pathInsideTreeScale(rng, d)));
-  });
   makeDistances(rng, DENSITY_PER_1000.pathEdgeTreePairs * sections * template.treeRate, 28, end, 12).forEach((d) => {
     [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, shadowLayer, 'tree', pathEdgeTreeAssets, fallbackTree, pathEdgeX(rng, d, side), TREE_ROOT_LIFT, -d + randFrom(rng, -4, 4), pathEdgeTreeScale(rng, d)));
   });
