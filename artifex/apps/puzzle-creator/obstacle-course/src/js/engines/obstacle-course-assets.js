@@ -6,6 +6,16 @@ export const ASSETS = {
   groundPathMap: `${ASSET_BASE}ground/ground-path-map.json`,
   powerbars: `${ASSET_BASE}ui/powerbars.png`,
   arrows: `${SHARED_UI_BASE}defaultarrows.webp`,
+  shadows: {
+    tree: [
+      `${ASSET_BASE}shadow/shadow4.jpg`,
+      `${ASSET_BASE}shadow/shadow4.jpg`,
+      `${ASSET_BASE}shadow/shadow4.jpg`,
+      `${ASSET_BASE}shadow/shadow1.jpg`,
+      `${ASSET_BASE}shadow/shadow2.jpg`,
+      `${ASSET_BASE}shadow/shadow3.jpg`,
+    ],
+  },
   audio: {
     forestAmbience: `${ASSET_BASE}audio/forest_ambience.mp3`,
     bush: `${ASSET_BASE}audio/bush.mp3`,
