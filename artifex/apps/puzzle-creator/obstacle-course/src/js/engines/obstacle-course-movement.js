@@ -8,6 +8,7 @@ import { checkCollectibles } from './obstacle-course-collectibles.js';
 import { checkObstacles } from './obstacle-course-obstacles.js';
 import { makeResult } from './obstacle-course-scoring.js';
 import { setResult } from './obstacle-course-ui.js';
+import { scheduleOverviewDraw } from './obstacle-course-overview.js?v=3.0.26';
 import { ensureAudio, updateAudio, playJumpSound, playLandSound } from './obstacle-course-audio.js';
 
 export function startRun() {
@@ -26,6 +27,7 @@ export function startRun() {
   OC.targetSpeed = 0;
   startRenderLoop();
   updateHud();
+  scheduleOverviewDraw();
 }
 
 export function pauseRun() {
@@ -33,6 +35,7 @@ export function pauseRun() {
   OC.running = !OC.running;
   OC.paused = !OC.running;
   updateHud();
+  scheduleOverviewDraw();
 }
 
 export function resetRun(silent = false) {
@@ -55,6 +58,7 @@ export function resetRun(silent = false) {
   });
   updateWorldTransform(playerWorldX());
   updateHud();
+  scheduleOverviewDraw();
   if (!silent) setResult('Run reset.', 'success');
 }
 
@@ -65,6 +69,7 @@ export function completeRun() {
   OC.currentSpeed = 0;
   OC.targetSpeed = 0;
   updateHud();
+  scheduleOverviewDraw();
   setResult(`Complete. Score ${OC.score}, collectibles ${OC.collected}, hits ${OC.hits}.`, 'success');
   OC.lastResult = makeResult();
 }
@@ -116,4 +121,5 @@ export function updateMovement(dt) {
   updateOffPathWarning();
   updateHud();
   updateAudio(dt);
+  scheduleOverviewDraw();
 }
