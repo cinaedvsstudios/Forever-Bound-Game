@@ -1,4 +1,4 @@
-import { OC, ACCEL, DECEL, BACK_SPEED, SLOW_TROT_SPEED } from './obstacle-course-state.js';
+import { OC, ACCEL, DECEL, BACK_SPEED, SLOW_TROT_SPEED, START_DISTANCE } from './obstacle-course-state.js';
 import { clamp } from './obstacle-course-utils.js';
 import { pathStatus, playerWorldX } from './obstacle-course-ground-path.js';
 import { updateWorldTransform, applyBackgroundPlate, startRenderLoop } from './obstacle-course-scene.js';
@@ -8,7 +8,7 @@ import { checkCollectibles } from './obstacle-course-collectibles.js';
 import { checkObstacles } from './obstacle-course-obstacles.js';
 import { makeResult } from './obstacle-course-scoring.js';
 import { setResult } from './obstacle-course-ui.js';
-import { scheduleOverviewDraw } from './obstacle-course-overview.js?v=3.0.26';
+import { scheduleOverviewDraw } from './obstacle-course-overview.js?v=3.0.28';
 import { ensureAudio, updateAudio, playJumpSound, playLandSound } from './obstacle-course-audio.js';
 
 export function startRun() {
@@ -31,7 +31,7 @@ export function startRun() {
 }
 
 export function pauseRun() {
-  if (!OC.active && !OC.running && OC.distance <= 0) return;
+  if (!OC.active && !OC.running && OC.distance <= START_DISTANCE) return;
   OC.running = !OC.running;
   OC.paused = !OC.running;
   updateHud();
@@ -45,7 +45,7 @@ export function resetRun(silent = false) {
   OC.complete = false;
   OC.currentSpeed = 0;
   OC.targetSpeed = 0;
-  OC.distance = 0;
+  OC.distance = START_DISTANCE;
   OC.score = 0;
   OC.hits = 0;
   OC.jumps = 0;

@@ -1,9 +1,10 @@
-// Obstacle Course V3.0.26 state and constants
-export const VERSION = 'V3.0.26';
-export const CACHE_VERSION = '3.0.26';
+// Obstacle Course V3.0.28 state and constants
+export const VERSION = 'V3.0.28';
+export const CACHE_VERSION = '3.0.28';
 export const ASSET_BASE = './assets/';
 export const SHARED_UI_BASE = '../../../shared/ui/';
 export const GROUND_Y = -1.62;
+export const START_DISTANCE = 30;
 export const SECTION_PIXEL_HEIGHT = 4000;
 export const SECTION_WORLD_LENGTH = 80;
 export const SECTION_WORLD_STEP = 80;
@@ -83,7 +84,7 @@ export const OC = {
   complete: false,
   currentSpeed: 0,
   targetSpeed: 0,
-  distance: 0,
+  distance: START_DISTANCE,
   score: 0,
   hits: 0,
   jumps: 0,
