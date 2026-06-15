@@ -1,6 +1,8 @@
 import { OC } from './obstacle-course-state.js';
 import { ASSETS, requiredAssetList, optionalAssetList } from './obstacle-course-assets.js';
 
+const OPTIONAL_LOAD_CONCURRENCY = 4;
+
 export function setLoading(count, total) {
   OC.loadingCount = count;
   OC.loadingTotal = total;
@@ -107,12 +109,15 @@ export async function loadRequiredAssets({ onFirstReady } = {}) {
   total += groundTiles.length;
   setLoading(count, total);
 
-  for (const asset of groundTiles) {
+  const groundResults = await Promise.all(groundTiles.map(async (asset) => {
     const ok = await preloadImage(asset.url, asset.fallbackUrl);
+    return { asset, ok };
+  }));
+  groundResults.forEach(({ asset, ok }) => {
     count += 1;
     setLoading(count, total);
     if (!ok) OC.failures.push(asset.url);
-  }
+  });
 
   OC.requiredReady = OC.failures.length === 0;
   const start = document.getElementById('obstacle-start');
@@ -123,6 +128,13 @@ export async function loadRequiredAssets({ onFirstReady } = {}) {
   return { count, total };
 }
 
+async function runOptionalJob(asset, loadGlbAsset) {
+  let ok = true;
+  if (asset.type === 'glb' && loadGlbAsset) ok = await loadGlbAsset(asset.url);
+  if (asset.type === 'audio') ok = true;
+  return { asset, ok };
+}
+
 export async function loadOptionalAssets({ loadGlbAsset } = {}) {
   const optional = optionalAssetList();
   let count = OC.loadingCount;
@@ -130,20 +142,20 @@ export async function loadOptionalAssets({ loadGlbAsset } = {}) {
   OC.optionalFailures = [];
   OC.optionalAssetStatus = new Map();
 
-  for (const asset of optional) {
-    let ok = true;
-    if (asset.type === 'glb' && loadGlbAsset) {
-      ok = await loadGlbAsset(asset.url);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(OPTIONAL_LOAD_CONCURRENCY, optional.length) }, async () => {
+    while (cursor < optional.length) {
+      const asset = optional[cursor];
+      cursor += 1;
+      const { ok } = await runOptionalJob(asset, loadGlbAsset);
+      count += 1;
+      setLoading(count, total);
+      OC.optionalAssetStatus.set(asset.url, { ...asset, status: ok ? 'loaded' : 'failed' });
+      if (!ok) OC.optionalFailures.push(asset.url);
     }
-    if (asset.type === 'audio') {
-      ok = true;
-    }
-    count += 1;
-    setLoading(count, total);
-    OC.optionalAssetStatus.set(asset.url, { ...asset, status: ok ? 'loaded' : 'failed' });
-    if (!ok) OC.optionalFailures.push(asset.url);
-  }
+  });
 
+  await Promise.all(workers);
   OC.loadingDone = true;
   if (document.getElementById('oc-loading')) document.getElementById('oc-loading').textContent = `Loading assets ${count} / ${total} complete`;
   if (document.getElementById('oc-top-load')) document.getElementById('oc-top-load').textContent = `Assets ${count} / ${total} loaded`;
