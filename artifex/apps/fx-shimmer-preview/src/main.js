@@ -1,5 +1,5 @@
-import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.37';
-import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.37';
+import { SHIMMER_PRESETS, clonePreset } from './presets.js?v=1.38';
+import { ShimmerDistortionEngine } from './shimmer-engine.js?v=1.38';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -583,5 +583,5 @@ function tick(now) {
 renderPresets();
 loadDefaultArmTextureIfNeeded();
 syncControls();
-setStatus('Loaded shimmer engine prototype V1.37.');
+setStatus('Loaded shimmer engine prototype V1.38.');
 requestAnimationFrame(tick);

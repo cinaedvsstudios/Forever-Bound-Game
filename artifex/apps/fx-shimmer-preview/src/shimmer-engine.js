@@ -288,10 +288,15 @@ export class ShimmerDistortionEngine {
     const armRotation = t * scale(0, 1.35, Math.pow(armSpeed, 1.35)) * dir;
     const baseRotation = textureRotation + armRotation;
 
-    // Arm curl cannot physically bend a flat JPG in canvas, so it now changes the visible
-    // spread of repeated spiral turns. This makes the slider visibly useful without clipping.
-    const curlSpread = scale(0, Math.PI * 1.35, curl) * dir;
-    const copyCount = Math.max(1, Math.round(scale(1, 8, armAmount)));
+    // Arm curl / turns is now deliberately literal for JPG arm textures:
+    // 0-50% = one copy rotating through one full 360-degree turn.
+    // 50-100% = first copy stays fixed while a second copy rotates through one full turn.
+    const curlItems = curl <= 0.5
+      ? [{ rotationOffset: (curl / 0.5) * TAU * dir, alphaMul: 1, scaleMul: 1 }]
+      : [
+          { rotationOffset: 0, alphaMul: 1, scaleMul: 1 },
+          { rotationOffset: ((curl - 0.5) / 0.5) * TAU * dir, alphaMul: 0.88, scaleMul: 1 }
+        ];
 
     const image = this.textureImage;
     const aspect = image.width / Math.max(1, image.height);
@@ -322,17 +327,13 @@ export class ShimmerDistortionEngine {
     // Main JPG arm texture pass. No ellipse clip mask is applied.
     ctx.globalCompositeOperation = blendMode;
     ctx.filter = `blur(${blur}px) brightness(${brightness}) contrast(${contrast})`;
-    for (let i = 0; i < copyCount; i += 1) {
-      const mid = (copyCount - 1) / 2;
-      const offset = copyCount === 1 ? 0 : (i - mid) / Math.max(1, mid);
-      const amountScale = scale(0.00, 0.16, armAmount);
-      const curlScale = 1 + Math.abs(offset) * scale(0.00, 0.22, curl);
-      const localScale = Math.max(0.05, 1 + offset * amountScale) * curlScale;
-      const localAlpha = alpha * (copyCount === 1 ? 1 : scale(0.34, 0.78, 1 - Math.abs(offset) * 0.42));
+    for (const item of curlItems) {
+      const localScale = Math.max(0.05, item.scaleMul);
+      const localAlpha = alpha * item.alphaMul;
       ctx.save();
       ctx.globalAlpha = Math.min(1, localAlpha);
       ctx.translate(g.cx, g.cy);
-      ctx.rotate(baseRotation + offset * curlSpread);
+      ctx.rotate(baseRotation + item.rotationOffset);
       ctx.drawImage(image, -drawWidth * localScale / 2, -drawHeight * localScale / 2, drawWidth * localScale, drawHeight * localScale);
       ctx.restore();
     }
@@ -344,7 +345,8 @@ export class ShimmerDistortionEngine {
       ctx.save();
       ctx.globalAlpha = Math.min(0.58, alpha * definition * scale(0.25, 0.78, armAmount));
       ctx.translate(g.cx, g.cy);
-      ctx.rotate(baseRotation + curlSpread * 0.28);
+      const definitionTurn = curl <= 0.5 ? (curl / 0.5) * TAU * 0.18 * dir : ((curl - 0.5) / 0.5) * TAU * 0.18 * dir;
+      ctx.rotate(baseRotation + definitionTurn);
       const innerScale = scale(0.78, 1.08, definition);
       ctx.drawImage(image, -drawWidth * innerScale / 2, -drawHeight * innerScale / 2, drawWidth * innerScale, drawHeight * innerScale);
       ctx.restore();
