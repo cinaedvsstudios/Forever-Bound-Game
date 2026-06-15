@@ -27,10 +27,10 @@ const ENGINES = [
   ['particles', 'Standard Particle Engine'], ['lightning', 'Lightning / Beam Engine'],
   ['electric-arc', 'Electric Arc Engine'], ['ribbon', 'Trail / Ribbon Engine'],
   ['ring', 'Ring / Shockwave Engine'], ['projectile', 'Projectile / Trail Engine'],
-  ['gas', 'Gas / Smoke / Dust Engine'], ['shockwave', 'Shockwave Pulse Engine'],
-  ['portal-ring', 'Portal Ring / Aperture Engine'], ['wormhole-tunnel', 'Wormhole Tunnel Engine'],
-  ['refraction', 'Refraction / Shimmer Engine'], ['heatdistortion', 'Heat Distortion Engine'],
-  ['lensflare', 'Lens Flare Engine'], ['true-lensflare', 'True Lens Flare Engine'], ['text', 'Text Effect Engine']
+  ['gas', 'Gas Engine'], ['shockwave', 'Shockwave Pulse Engine'],
+  ['portal-ring', 'Orb Engine'], ['wormhole-tunnel', 'Swirl Engine'],
+  ['refraction', 'Refraction / Shimmer Engine'], ['heatdistortion', 'Grid Effect Engine'],
+  ['lensflare', 'Crosshairs Engine'], ['true-lensflare', 'Crosshairs Engine'], ['text', 'Text Effect Engine']
 ];
 const INPUT_BINDINGS = [
   ['layer-name-input', 'name', false], ['engine-select', 'engine', false],
