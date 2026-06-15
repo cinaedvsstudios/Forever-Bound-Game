@@ -1,7 +1,7 @@
 import { OC, COURSE_WORLD_WIDTH, GROUND_Y } from './obstacle-course-state.js';
-import { TEMPLATES, GLB_ASSETS } from './obstacle-course-assets.js';
+import { ASSETS, TEMPLATES, GLB_ASSETS } from './obstacle-course-assets.js';
 import { clamp, lerp } from './obstacle-course-utils.js';
-import { THREE } from './obstacle-course-scene.js';
+import { THREE, loadTexture } from './obstacle-course-scene.js';
 import { makeLayer, registerEntity } from './obstacle-course-layers.js';
 import { createInstancedAssetGroup } from './obstacle-course-glb.js';
 import { pathCenterAt, pathHalfWidthAt } from './obstacle-course-ground-path.js';
@@ -9,6 +9,8 @@ import { pathCenterAt, pathHalfWidthAt } from './obstacle-course-ground-path.js'
 const TREE_ROOT_LIFT = 0.22;
 const TREE_OUTER_LIMIT_FROM_PATH_EDGE = 2.2;
 const DETAIL_OUTER_LIMIT_FROM_PATH_EDGE = 2.35;
+const SHADOW_Y_OFFSET = 0.045;
+const SHADOW_BASE_OPACITY = 0.34;
 const DENSITY_PER_1000 = {
   pathEdgeTreePairs: 42,
   pathInsideTreePairs: 54,
@@ -124,10 +126,43 @@ function localPlacementForLayer(layer, x, y, z) {
 function entityForInstance(type, layer, x, z, localX, localZ, assetUrl = '') {
   OC.entities.push({ type, layerId: layer.id, x, z, localX, localZ, assetUrl });
 }
-function queuePlacement(rng, queues, layer, type, assetList, fallbackFactory, x, groundOffset, z, scale = 1) {
+
+function treeShadowTexture(rng) {
+  const options = ASSETS.shadows?.tree || [];
+  const url = options.length ? pickFrom(rng, options) : '';
+  return url ? loadTexture(url, { repeat: [1, 1], repeatX: false, repeatY: false }) : null;
+}
+
+function addTreeShadow(rng, shadowLayer, x, z, scale) {
+  if (!shadowLayer?.group) return;
+  const texture = treeShadowTexture(rng);
+  if (!texture) return;
+  const shadowLength = clamp(28 * Number(scale || 1), 4.8, 12.5) * randFrom(rng, 0.88, 1.18);
+  const shadowWidth = shadowLength * randFrom(rng, 0.52, 0.72);
+  const geometry = new THREE.PlaneGeometry(shadowLength, shadowWidth, 1, 1);
+  geometry.translate(-shadowLength * 0.42, 0, 0);
+  const material = new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true,
+    opacity: SHADOW_BASE_OPACITY,
+    depthWrite: false,
+    depthTest: true,
+    blending: THREE.MultiplyBlending,
+    side: THREE.DoubleSide,
+  });
+  const shadow = new THREE.Mesh(geometry, material);
+  shadow.position.set(x, GROUND_Y + SHADOW_Y_OFFSET, z + randFrom(rng, -0.2, 0.2));
+  shadow.rotation.set(-Math.PI / 2, 0, Math.PI / 2 + randFrom(rng, -0.16, 0.16));
+  shadow.renderOrder = 6;
+  shadowLayer.group.add(shadow);
+  registerEntity('shadow', shadow, { x, z, visibleOnOverview: false });
+}
+
+function queuePlacement(rng, queues, layer, shadowLayer, type, assetList, fallbackFactory, x, groundOffset, z, scale = 1) {
   const asset = assetList.length ? pickFrom(rng, assetList) : null;
   const adjustedScale = type === 'tree' ? scale * screenEdgeScaleForX(x) : scale;
   const local = localPlacementForLayer(layer, x, GROUND_Y + groundOffset, z);
+  if (type === 'tree') addTreeShadow(rng, shadowLayer, x, z, adjustedScale);
   if (!asset) {
     const object = fallbackFactory(rng);
     object.position.x = local.x;
@@ -154,9 +189,10 @@ function flushPlacementQueues(queues) {
 export function scatterScenery() {
   const template = TEMPLATES[OC.templateId] || TEMPLATES.horse_forest_easy;
   const rng = seededRandom(`${OC.templateId}|${OC.difficulty}|${OC.courseLength}|${OC.pathSequence.map((p) => p.key).join(',') || '1'}|${OC.glbTemplates.size}`);
+  const shadowLayer = makeLayer('treeShadows', 'Tree Shadows', new THREE.Group(), { order: 6, opacity: SHADOW_BASE_OPACITY, brightness: 1, contrast: 1, saturation: 1 });
   const treeLayer = makeLayer('trees', 'Trees', new THREE.Group(), { order: 20 });
   const detailLayer = makeLayer('details', 'Ferns / Bushes / Details', new THREE.Group(), { order: 25 });
-  OC.world.add(treeLayer.group, detailLayer.group);
+  OC.world.add(shadowLayer.group, treeLayer.group, detailLayer.group);
 
   const allTrees = loadedTreeAssets();
   const nearTreeAssets = loadedAssets('nearTree');
@@ -173,19 +209,19 @@ export function scatterScenery() {
   const queues = new Map();
 
   makeDistances(rng, DENSITY_PER_1000.pathInsideTreePairs * sections * template.treeRate, 28, end, 10).forEach((d) => {
-    [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, 'tree', pathEdgeTreeAssets, fallbackTree, pathInsideEdgeX(rng, d, side), TREE_ROOT_LIFT, -d + randFrom(rng, -4, 4), pathInsideTreeScale(rng, d)));
+    [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, shadowLayer, 'tree', pathEdgeTreeAssets, fallbackTree, pathInsideEdgeX(rng, d, side), TREE_ROOT_LIFT, -d + randFrom(rng, -4, 4), pathInsideTreeScale(rng, d)));
   });
   makeDistances(rng, DENSITY_PER_1000.pathEdgeTreePairs * sections * template.treeRate, 28, end, 12).forEach((d) => {
-    [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, 'tree', pathEdgeTreeAssets, fallbackTree, pathEdgeX(rng, d, side), TREE_ROOT_LIFT, -d + randFrom(rng, -4, 4), pathEdgeTreeScale(rng, d)));
+    [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, shadowLayer, 'tree', pathEdgeTreeAssets, fallbackTree, pathEdgeX(rng, d, side), TREE_ROOT_LIFT, -d + randFrom(rng, -4, 4), pathEdgeTreeScale(rng, d)));
   });
   makeDistances(rng, DENSITY_PER_1000.limitedOuterTreePairs * sections * template.treeRate, 60, end, 20).forEach((d) => {
-    [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, 'tree', oakTreeAssets, fallbackTree, limitedOutsideX(rng, d, side), TREE_ROOT_LIFT, -d + randFrom(rng, -7, 7), limitedOuterTreeScale(rng, d)));
+    [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, shadowLayer, 'tree', oakTreeAssets, fallbackTree, limitedOutsideX(rng, d, side), TREE_ROOT_LIFT, -d + randFrom(rng, -7, 7), limitedOuterTreeScale(rng, d)));
   });
   makeDistances(rng, DENSITY_PER_1000.edgeDetailPairs * sections * template.detailRate, 20, OC.courseLength + 40, 14).forEach((d) => {
-    [-1, 1].forEach((side) => queuePlacement(rng, queues, detailLayer, 'detail', edgeDetailAssets, fallbackDetail, limitedDetailX(rng, d, side, 0.15, 1.6), 0, -d + randFrom(rng, -3, 3), randFrom(rng, 0.75, 1.15)));
+    [-1, 1].forEach((side) => queuePlacement(rng, queues, detailLayer, null, 'detail', edgeDetailAssets, fallbackDetail, limitedDetailX(rng, d, side, 0.15, 1.6), 0, -d + randFrom(rng, -3, 3), randFrom(rng, 0.75, 1.15)));
   });
   makeDistances(rng, DENSITY_PER_1000.farDetailPairs * sections * template.detailRate, 50, OC.courseLength + 60, 22).forEach((d) => {
-    [-1, 1].forEach((side) => queuePlacement(rng, queues, detailLayer, 'detail', farDetailAssets, fallbackDetail, limitedDetailX(rng, d, side, 1.6, DETAIL_OUTER_LIMIT_FROM_PATH_EDGE), 0, -d + randFrom(rng, -5, 5), randFrom(rng, 0.65, 1.0)));
+    [-1, 1].forEach((side) => queuePlacement(rng, queues, detailLayer, null, 'detail', farDetailAssets, fallbackDetail, limitedDetailX(rng, d, side, 1.6, DETAIL_OUTER_LIMIT_FROM_PATH_EDGE), 0, -d + randFrom(rng, -5, 5), randFrom(rng, 0.65, 1.0)));
   });
   flushPlacementQueues(queues);
 }
