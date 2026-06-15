@@ -144,6 +144,40 @@ output {
   font-size: 12px;
 }
 
+.index2-effect-control-group {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 12px;
+  row-gap: 10px;
+  align-items: start;
+}
+
+.index2-effect-control-group > h4,
+.index2-effect-control-group > .index2-control-note,
+.index2-effect-control-group > .index2-control-empty,
+.index2-effect-control-group > .index2-effect-control:has(select),
+.index2-effect-control-group > .index2-effect-control:has(textarea),
+.index2-effect-control-group > .index2-effect-control:has(input[type='file']),
+.index2-effect-control-group > .index2-effect-control:has(input[type='text']),
+.index2-effect-control-group > .index2-effect-control:has(input[type='checkbox']),
+.index2-effect-control-group > div.index2-effect-control {
+  grid-column: 1 / -1;
+}
+
+.index2-effect-control-group > .index2-effect-control {
+  min-width: 0;
+  margin: 0;
+}
+
+.index2-effect-control-group > .index2-effect-control input[type='range'],
+.index2-effect-control-group > .index2-effect-control input[type='color'] {
+  min-width: 0;
+}
+
+.index2-effect-control-group > .index2-effect-control > span {
+  min-height: 28px;
+}
+
 .button-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
