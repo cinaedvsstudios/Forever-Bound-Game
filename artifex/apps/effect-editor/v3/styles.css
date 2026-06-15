@@ -222,7 +222,7 @@ select:focus-visible {
 #menu-insert {
   right: 0;
   left: auto;
-  width: min(330px, calc(100vw - 24px));
+  width: min(430px, calc(100vw - 24px));
 }
 
 .menu-panel.right {
@@ -231,7 +231,7 @@ select:focus-visible {
 }
 
 .menu-panel.wide {
-  width: min(330px, calc(100vw - 24px));
+  width: min(430px, calc(100vw - 24px));
 }
 
 .menu-panel.open {
@@ -271,15 +271,40 @@ select:focus-visible {
   letter-spacing: 0.16em;
 }
 
+.insert-effect-preview {
+  width: 112px;
+  height: 112px;
+  margin: 0 auto 12px;
+  border: 1px solid rgba(226, 204, 167, 0.34);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255, 240, 206, 0.035), rgba(0, 174, 234, 0.035)), rgba(5, 4, 5, 0.74);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.82), 0 8px 18px rgba(0, 0, 0, 0.42);
+}
+
+.insert-effect-preview[data-prototype="true"] {
+  border-color: rgba(39, 215, 255, 0.62);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.82), 0 0 18px rgba(39, 215, 255, 0.2), 0 8px 18px rgba(0, 0, 0, 0.42);
+}
+
+.insert-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.insert-list button {
+  min-height: 42px;
+  margin-bottom: 0;
+  padding: 8px 9px;
+  text-align: center;
+  line-height: 1.15;
+}
+
 .insert-list button.index2-prototype-insert-item {
   color: var(--module-accent-strong);
   border-color: rgba(39, 215, 255, 0.62);
   background: linear-gradient(180deg, rgba(0, 64, 86, 0.64) 0%, rgba(16, 22, 26, 0.96) 100%);
   box-shadow: 0 0 0 1px rgba(39, 215, 255, 0.13), 0 4px 12px rgba(0, 0, 0, 0.68);
-}
-
-.insert-list button.index2-prototype-insert-item span {
-  color: #9deeff;
 }
 
 .insert-list button.index2-prototype-insert-item:hover {
