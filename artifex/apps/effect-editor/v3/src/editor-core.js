@@ -96,8 +96,6 @@ function populateBaseMenu() {
     button.title = detail ? `${label}\n${detail}` : label;
     if (isPrototypePreset(preset)) button.classList.add('index2-prototype-insert-item');
     button.append(document.createTextNode(label));
-    button.addEventListener('mouseenter', () => previewInsertPreset(preview, preset));
-    button.addEventListener('focus', () => previewInsertPreset(preview, preset));
     button.addEventListener('click', () => selectInsertPreset(preview, preset));
     return button;
   });
@@ -140,10 +138,6 @@ function ensureInsertPreviewPanel(list) {
     section?.insertBefore(panel, list);
   }
   return panel;
-}
-function previewInsertPreset(panel, preset) {
-  if (!panel || !preset) return;
-  updateInsertPreviewPanel(panel, preset, false);
 }
 function selectInsertPreset(panel, preset) {
   if (!panel || !preset) return;
