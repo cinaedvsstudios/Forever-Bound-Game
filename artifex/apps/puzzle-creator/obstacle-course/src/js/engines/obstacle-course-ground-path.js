@@ -120,6 +120,12 @@ export function clearWorld() {
   OC.glbInstances = [];
 }
 
+function groundScaleZ() {
+  const pending = OC.pendingLayerSettings?.ground;
+  const scale = Number(pending?.scale || 1);
+  return Number.isFinite(scale) && scale > 0.0001 ? scale : 1;
+}
+
 export function buildGroundAndPath() {
   generatePathSequence();
   const groundLayer = new THREE.Group();
@@ -127,13 +133,14 @@ export function buildGroundAndPath() {
   makeLayer('ground', 'Ground / Path Tiles', groundLayer, { order: 1 });
   makeLayer('path', 'Path Logic Guide (hidden)', pathLayer, { order: 2, visible: false });
   OC.world.add(groundLayer, pathLayer);
+  const zScale = groundScaleZ();
   OC.pathSequence.forEach((seg) => {
     const length = (seg.worldLength || SECTION_WORLD_LENGTH) + TILE_SEAM_OVERLAP;
     const z = -seg.distance - (seg.worldLength || SECTION_WORLD_LENGTH) / 2 - TILE_SEAM_OVERLAP / 2;
     const tileUrl = imageUrlForTile(seg.tile);
     const tileTexture = loadTexture(tileUrl, { repeat: [1, 1], repeatX: false });
     const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(seg.worldWidth || COURSE_WORLD_WIDTH, length, 1, 1),
+      new THREE.PlaneGeometry(seg.worldWidth || COURSE_WORLD_WIDTH, length / zScale, 1, 1),
       new THREE.MeshStandardMaterial({
         map: tileTexture,
         bumpMap: tileTexture,
@@ -146,7 +153,7 @@ export function buildGroundAndPath() {
       })
     );
     ground.rotation.x = -Math.PI / 2;
-    ground.position.set(0, GROUND_Y, z);
+    ground.position.set(0, GROUND_Y, z / zScale);
     groundLayer.add(ground);
     registerEntity('ground', ground, { x: 0, z, visibleOnOverview: false, tile: seg.tile?.id });
   });

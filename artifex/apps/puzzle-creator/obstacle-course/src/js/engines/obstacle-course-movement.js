@@ -8,7 +8,7 @@ import { checkCollectibles } from './obstacle-course-collectibles.js';
 import { checkObstacles } from './obstacle-course-obstacles.js';
 import { makeResult } from './obstacle-course-scoring.js';
 import { setResult } from './obstacle-course-ui.js';
-import { scheduleOverviewDraw } from './obstacle-course-overview.js?v=3.02';
+import { scheduleOverviewDraw } from './obstacle-course-overview.js?v=3.03';
 import { ensureAudio, updateAudio, playJumpSound, playLandSound } from './obstacle-course-audio.js';
 
 export function startRun() {
@@ -51,12 +51,14 @@ export function resetRun(silent = false) {
   OC.jumps = 0;
   OC.collected = 0;
   OC.offPathTime = 0;
-  Object.assign(OC.player, { x: 0, y: 0, vy: 0, grounded: true, jumpHoldTime: 0, duck: false });
+  Object.assign(OC.player, { x: 0, y: 0, vy: 0, grounded: true, jumpHoldTime: 0, jumpWasDown: false, duck: false });
+  OC.backgroundJumpShift = 0;
   OC.objects.forEach((obj) => {
     if (obj.userData.kind === 'collectible') { obj.visible = true; obj.userData.collected = false; }
     if (obj.userData.kind === 'obstacle') obj.userData.hit = false;
   });
   updateWorldTransform(playerWorldX());
+  applyBackgroundPlate();
   updateHud();
   scheduleOverviewDraw();
   if (!silent) setResult('Run reset.', 'success');
@@ -79,28 +81,34 @@ export function updateMovement(dt) {
   const steer = (OC.keys.has('right') ? 1 : 0) - (OC.keys.has('left') ? 1 : 0);
   if (steer) OC.player.x += steer * 7.2 * dt;
   OC.player.x = clamp(OC.player.x, -OC.pathVisualWidth * 0.55, OC.pathVisualWidth * 0.55);
-  if (OC.player.grounded && OC.keys.has('jump')) {
+
+  const jumpDown = OC.keys.has('jump');
+  if (OC.player.grounded && jumpDown && !OC.player.jumpWasDown) {
     OC.player.grounded = false;
-    OC.player.vy = 13.5;
+    OC.player.vy = 10.5;
     OC.player.jumpHoldTime = 0;
     OC.jumps += 1;
     playJumpSound();
   }
+  OC.player.jumpWasDown = jumpDown;
+
   if (!OC.player.grounded) {
-    const holdBoost = OC.keys.has('jump') && OC.player.jumpHoldTime < OC.player.maxJumpHoldTime ? 4.2 : 0;
-    OC.player.jumpHoldTime += dt;
-    OC.player.vy += (-38 + holdBoost) * dt;
+    const canExtendJump = jumpDown && OC.player.vy > 0 && OC.player.jumpHoldTime < OC.player.maxJumpHoldTime;
+    const holdLift = canExtendJump ? 38 : 0;
+    if (canExtendJump) OC.player.jumpHoldTime += dt;
+    OC.player.vy += (-44 + holdLift) * dt;
     OC.player.y += OC.player.vy * dt;
     if (OC.player.y <= 0) {
       const wasAirborne = !OC.player.grounded;
       OC.player.y = 0;
       OC.player.vy = 0;
       OC.player.grounded = true;
+      OC.player.jumpHoldTime = 0;
       if (wasAirborne) playLandSound();
     }
   }
-  OC.backgroundJumpShift = clamp((OC.player.y || 0) * 3.5, 0, 18);
-  applyBackgroundPlate();
+
+  OC.backgroundJumpShift = 0;
   const status = pathStatus();
   OC.offPathTime = status === 'off' ? OC.offPathTime + dt : 0;
   let desired = 0;

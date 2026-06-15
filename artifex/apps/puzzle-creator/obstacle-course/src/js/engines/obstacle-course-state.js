@@ -1,6 +1,6 @@
-// Obstacle Course V3.02 state and constants
-export const VERSION = 'V3.02';
-export const CACHE_VERSION = '3.02';
+// Obstacle Course V3.05 state and constants
+export const VERSION = 'V3.05';
+export const CACHE_VERSION = '3.05';
 export const ASSET_BASE = './assets/';
 export const SHARED_UI_BASE = '../../../shared/ui/';
 export const GROUND_Y = -1.62;
@@ -12,11 +12,11 @@ export const COURSE_WORLD_WIDTH = 64;
 export const PATH_WORLD_WIDTH = 9.2;
 export const PATH_ALPHA_THRESHOLD = 0.18;
 export const PATH_POSITIONS = { left: -6.3, centre: 0, center: 0, right: 6.3 };
-export const BASE_SPEED = 34;
-export const BACK_SPEED = -7;
-export const SLOW_TROT_SPEED = 8;
-export const ACCEL = 24;
-export const DECEL = 26;
+export const BASE_SPEED = 18;
+export const BACK_SPEED = -6;
+export const SLOW_TROT_SPEED = 7;
+export const ACCEL = 13;
+export const DECEL = 22;
 
 export const OC = {
   mounted: false,
@@ -91,7 +91,7 @@ export const OC = {
   collected: 0,
   offPathTime: 0,
   pathHintDirection: 'right',
-  player: { x: 0, y: 0, vy: 0, grounded: true, jumpHoldTime: 0, maxJumpHoldTime: 0.1, duck: false },
+  player: { x: 0, y: 0, vy: 0, grounded: true, jumpHoldTime: 0, maxJumpHoldTime: 0.36, jumpWasDown: false, duck: false },
   selectedLayerId: 'ground',
   selectedGlbAssetUrl: '',
   glbControls: new Map()

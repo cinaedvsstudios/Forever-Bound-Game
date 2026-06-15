@@ -95,8 +95,11 @@ export function applyBackgroundPlate() {
 
 export function updateWorldTransform(playerWorldX) {
   if (!OC.world) return;
+  const jumpOffset = Number(OC.player?.y || 0);
   OC.world.position.x = -playerWorldX;
+  OC.world.position.y = -jumpOffset;
   OC.world.position.z = OC.distance;
+  if (OC.grid) OC.grid.position.y = GROUND_Y + 0.08 - jumpOffset;
 }
 
 export function renderOnce() {
