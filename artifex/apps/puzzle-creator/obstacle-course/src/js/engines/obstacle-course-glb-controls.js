@@ -20,6 +20,22 @@ function glbControl(url) {
   return OC.glbControls.get(url);
 }
 
+function addGroupTitle(host, text) {
+  const title = document.createElement('p');
+  title.className = 'hint-text';
+  title.style.margin = '12px 0 6px';
+  title.style.fontWeight = '900';
+  title.textContent = text;
+  host.appendChild(title);
+}
+
+function addPositionRows(host, prefix, label, cfg, base, apply) {
+  addGroupTitle(host, label);
+  buildSliderRow(host, `hf-glb-${prefix}`, 'x', `${label} X`, -100, 100, 1, positionSliderFromBase(cfg[`${prefix}X`], base[`${prefix}X`]), (v) => { cfg[`${prefix}X`] = positionValueFromSlider(v, base[`${prefix}X`]); apply(); });
+  buildSliderRow(host, `hf-glb-${prefix}`, 'y', `${label} Y`, -100, 100, 1, positionSliderFromBase(cfg[`${prefix}Y`], base[`${prefix}Y`]), (v) => { cfg[`${prefix}Y`] = positionValueFromSlider(v, base[`${prefix}Y`]); apply(); });
+  buildSliderRow(host, `hf-glb-${prefix}`, 'z', `${label} Z`, -100, 100, 1, positionSliderFromBase(cfg[`${prefix}Z`], base[`${prefix}Z`]), (v) => { cfg[`${prefix}Z`] = positionValueFromSlider(v, base[`${prefix}Z`]); apply(); });
+}
+
 export function createGlbAssetSliders(host) {
   const urls = Array.from(new Set(OC.glbInstances.map((obj) => obj.userData.glbAssetUrl).filter(Boolean)));
   if (!urls.length) {
@@ -43,9 +59,14 @@ export function createGlbAssetSliders(host) {
   const cfg = glbControl(OC.selectedGlbAssetUrl);
   const base = getGlbDefault(OC.selectedGlbAssetUrl);
   const apply = () => { applyAllGlbAssetControls(); refreshGlbSelection(); };
-  buildSliderRow(host, 'hf-glb', 'x', 'X', -100, 100, 1, positionSliderFromBase(cfg.x, base.x), (v) => { cfg.x = positionValueFromSlider(v, base.x); apply(); });
-  buildSliderRow(host, 'hf-glb', 'y', 'Y', -100, 100, 1, positionSliderFromBase(cfg.y, base.y), (v) => { cfg.y = positionValueFromSlider(v, base.y); apply(); });
-  buildSliderRow(host, 'hf-glb', 'z', 'Z', -100, 100, 1, positionSliderFromBase(cfg.z, base.z), (v) => { cfg.z = positionValueFromSlider(v, base.z); apply(); });
+
+  addGroupTitle(host, 'All copies');
+  buildSliderRow(host, 'hf-glb-all', 'x', 'All X', -100, 100, 1, positionSliderFromBase(cfg.x, base.x), (v) => { cfg.x = positionValueFromSlider(v, base.x); apply(); });
+  buildSliderRow(host, 'hf-glb-all', 'y', 'All Y', -100, 100, 1, positionSliderFromBase(cfg.y, base.y), (v) => { cfg.y = positionValueFromSlider(v, base.y); apply(); });
+  buildSliderRow(host, 'hf-glb-all', 'z', 'All Z', -100, 100, 1, positionSliderFromBase(cfg.z, base.z), (v) => { cfg.z = positionValueFromSlider(v, base.z); apply(); });
+  addPositionRows(host, 'left', 'Left side', cfg, base, apply);
+  addPositionRows(host, 'right', 'Right side', cfg, base, apply);
+
   buildSliderRow(host, 'hf-glb', 'scaleOffset', 'Scale', -100, 100, 1, factorToSigned((cfg.scale || 1) / (base.scale || 1)), (v) => { cfg.scale = Number(base.scale || 1) * signedToFactor(v); apply(); });
   buildSliderRow(host, 'hf-glb', 'opacityOffset', 'Opacity', -100, 100, 1, opacityOffsetFromBase(cfg.opacity, base.opacity), (v) => { cfg.opacity = clamp(Number(base.opacity ?? 1) + (v / 100), 0, 1); apply(); });
   buildSliderRow(host, 'hf-glb', 'brightnessOffset', 'Bright', -100, 100, 1, visualOffsetFromBase(cfg.brightness, base.brightness), (v) => { cfg.brightness = Number(base.brightness || 1) * sliderToVisualFactor(v); apply(); });
