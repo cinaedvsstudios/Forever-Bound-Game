@@ -10,12 +10,19 @@ function mapTiles() { return OC.groundPathMap?.tiles || []; }
 function tileById(id) { return mapTiles().find((tile) => String(tile.id) === String(id)) || null; }
 function fallbackTile() { return tileById('1') || mapTiles()[0] || null; }
 
+function cacheBusted(url) {
+  if (!url) return '';
+  const version = OC.cacheVersion || Date.now();
+  return `${url}${url.includes('?') ? '&' : '?'}v=${version}`;
+}
+
 function imageUrlForTile(tile) {
   if (!tile) return '';
   const asset = (OC.groundTileAssets || []).find((item) => item.tile?.id === tile.id || item.tile?.file === tile.file);
-  if (asset?.url) return asset.url;
+  if (asset?.url) return cacheBusted(asset.url);
   const root = OC.groundPathMap?.imageRoot || './assets/ground/';
-  return /^https?:\/\//i.test(tile.file) ? tile.file : `${root}${tile.file}`;
+  const url = /^https?:\/\//i.test(tile.file) ? tile.file : `${root}${tile.file}`;
+  return cacheBusted(url);
 }
 
 function worldWidthForTile(tile, worldLength) {
