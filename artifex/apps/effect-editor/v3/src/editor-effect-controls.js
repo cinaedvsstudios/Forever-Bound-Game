@@ -1,7 +1,9 @@
 import { getActiveLayer, updateActiveLayer } from './editor-state.js';
 import { isPrototypeLayer } from './prototype-adapters/prototype-presets.js';
+import { cloneSmokeDefaults, getSmokeControlGroups } from './prototype-adapters/smoke-controls.js';
+import { cloneShimmerDefaults, getShimmerControlGroups, SHIMMER_PRESET_DEFAULTS } from './prototype-adapters/shimmer-controls.js';
 
-const PROTOTYPE_VISIBLE_CARD_IDS = new Set(['index2-card-search', 'index2-card-assets']);
+const PROTOTYPE_VISIBLE_CARD_IDS = new Set(['index2-card-search', 'index2-card-assets', 'effect-specific-controls-card']);
 const LAYER_POSITION_OPTIONS = [
   ['back', 'Behind aperture'], ['aperture', 'Inside aperture'], ['rim-back', 'Behind cloudy rim'],
   ['rim-front', 'Above cloudy rim'], ['particles-front', 'Above particles'], ['front', 'Topmost']
@@ -69,9 +71,16 @@ export function syncEffectControls() {
   if (!body) return;
   const layer = getActiveLayer();
   syncPrototypePanelVisibility(layer);
-  const key = layer ? `${layer.id}|${isPrototypeLayer(layer) ? 'prototype' : isTextLayer(layer) ? 'text' : layer.engine}|${layer.textRevealMode || ''}|${layer.prototypeMode || ''}` : 'none';
+  if (isPrototypeLayer(layer) && ensurePrototypeDefaults(layer)) return;
+  const key = getRenderKey(layer);
   if (key !== renderedKey) { renderedKey = key; renderControls(body, layer); }
-  if (!isPrototypeLayer(layer)) syncValues(body, layer);
+  syncValues(body, layer);
+}
+
+function getRenderKey(layer) {
+  if (!layer) return 'none';
+  const engineKey = isPrototypeLayer(layer) ? `${layer.engine}|${layer.prototypeMode || ''}|${layer.mode || ''}|${layer.type || ''}` : isTextLayer(layer) ? `text|${layer.textRevealMode || ''}` : layer.engine;
+  return `${layer.id}|${engineKey}`;
 }
 
 function syncPrototypePanelVisibility(layer) {
@@ -86,37 +95,80 @@ function syncPrototypePanelVisibility(layer) {
 function renderControls(body, layer) {
   body.replaceChildren();
   if (!layer) return body.append(paragraph('Select a layer to see engine controls.'));
-  if (isPrototypeLayer(layer)) return body.append(paragraph('Prototype placeholder layer selected. Controls will be connected in the next phase.'));
   const groups = getControlGroups(layer);
   if (!groups.length) return body.append(paragraph('This engine has no extra controls yet.'));
   groups.forEach((group) => body.append(group.title ? buildGroup(group, layer) : fragment(group.controls.map((control) => buildControl(control, layer)))));
 }
 function getControlGroups(layer) {
+  if (isPrototypeLayer(layer)) return getPrototypeControlGroups(layer);
   if (isTextLayer(layer)) return [{ controls: TEXT_CONTROLS.filter((control) => !control.revealModes || control.revealModes.includes(layer.textRevealMode || 'all')) }];
   if (STRUCTURED_ENGINE_CONTROLS[layer.engine]) return STRUCTURED_ENGINE_CONTROLS[layer.engine];
   const controls = (ENGINE_CONTROLS[layer.engine] || []).map(([property, label, min, max, step]) => ({ property, label, type: 'range', min, max, step }));
   return controls.length ? [{ controls }] : [];
+}
+function getPrototypeControlGroups(layer) {
+  if (layer.engine === 'prototype-smoke' || layer.prototypeFolder === 'smoke-engine') {
+    const mode = layer.mode || layer.prototypeMode || 'rising';
+    return getSmokeControlGroups(mode);
+  }
+  const type = layer.type || getShimmerTypeForLayer(layer);
+  return getShimmerControlGroups(type);
+}
+function ensurePrototypeDefaults(layer) {
+  const defaults = getPrototypeDefaults(layer);
+  const patch = {};
+  Object.entries(defaults).forEach(([key, value]) => {
+    if (layer[key] === undefined) patch[key] = value;
+  });
+  if (layer.prototypeControlsAttached !== true) patch.prototypeControlsAttached = true;
+  if (Object.keys(patch).length) {
+    updateActiveLayer(patch);
+    return true;
+  }
+  return false;
+}
+function getPrototypeDefaults(layer) {
+  if (layer.engine === 'prototype-smoke' || layer.prototypeFolder === 'smoke-engine') {
+    return cloneSmokeDefaults({ mode: layer.mode || layer.prototypeMode || 'rising' });
+  }
+  const presetId = getShimmerPresetIdForLayer(layer);
+  return cloneShimmerDefaults(presetId);
+}
+function getShimmerPresetIdForLayer(layer) {
+  const mode = layer.prototypeMode || 'portal-ring';
+  if (SHIMMER_PRESET_DEFAULTS[mode]) return mode;
+  if (mode === 'portal-threshold') return 'portal-ring';
+  return 'portal-ring';
+}
+function getShimmerTypeForLayer(layer) {
+  const presetId = getShimmerPresetIdForLayer(layer);
+  return SHIMMER_PRESET_DEFAULTS[presetId]?.type || 'ring';
 }
 function buildGroup(group, layer) {
   const section = document.createElement('section');
   section.className = 'index2-effect-control-group';
   const h = document.createElement('h4');
   h.textContent = group.title;
-  section.append(h, ...group.controls.map((control) => buildControl(control, layer)));
+  section.append(h);
+  if (group.note) section.append(note(group.note));
+  section.append(...group.controls.map((control) => buildControl(control, layer)));
   return section;
 }
 function buildControl(control, layer) {
+  if (control.type === 'action') return buildActionControl(control);
+  const property = getControlProperty(control);
   const label = document.createElement('label');
   label.className = 'index2-effect-control';
   const heading = document.createElement('span');
   const name = document.createElement('b');
   name.textContent = control.label;
   heading.append(name);
+  if (control.tooltip) label.title = control.tooltip;
   let input;
   if (control.type === 'textarea') {
     input = document.createElement('textarea');
     input.rows = control.rows || 3;
-    input.value = layer[control.property] || '';
+    input.value = layer[property] || '';
     if (control.action === 'uppercase') {
       const action = document.createElement('button');
       action.type = 'button';
@@ -134,50 +186,91 @@ function buildControl(control, layer) {
       option.textContent = text;
       input.append(option);
     });
-    input.value = String(layer[control.property] ?? control.options[0]?.[0] ?? '');
+    input.value = String(layer[property] ?? control.options[0]?.[0] ?? '');
   } else if (control.type === 'checkbox') {
     input = document.createElement('input');
     input.type = 'checkbox';
-    input.checked = Boolean(layer[control.property]);
+    input.checked = Boolean(layer[property]);
   } else if (control.type === 'color') {
     input = document.createElement('input');
     input.type = 'color';
-    input.value = normalizeColor(layer[control.property] || '#4ff7ff');
+    input.value = normalizeColor(layer[property] || '#4ff7ff');
+  } else if (control.type === 'text') {
+    input = document.createElement('input');
+    input.type = 'text';
+    input.value = String(layer[property] ?? '');
+    if (control.maxLength) input.maxLength = control.maxLength;
+    if (control.transform === 'hex') {
+      input.autocomplete = 'off';
+      input.spellcheck = false;
+    }
+  } else if (control.type === 'file') {
+    input = document.createElement('input');
+    input.type = 'file';
+    if (control.accept) input.accept = control.accept;
+    const fileNote = document.createElement('small');
+    fileNote.className = 'index2-control-note';
+    fileNote.textContent = layer[property] ? `Selected: ${layer[property]}` : 'File picker placeholder; renderer/asset loading will be connected later.';
+    label.append(heading, input, fileNote);
+    input.dataset.effectProperty = property;
+    input.addEventListener('change', () => updateFromInput(input));
+    return label;
   } else {
     input = document.createElement('input');
     input.type = 'range';
     input.min = String(control.min);
     input.max = String(control.max);
     input.step = String(control.step);
-    input.value = String(layer[control.property] ?? 0);
+    input.value = String(layer[property] ?? 0);
     const output = document.createElement('output');
-    output.dataset.outputProperty = control.property;
-    output.textContent = formatValue(layer[control.property]);
+    output.dataset.outputProperty = property;
+    output.dataset.outputUnit = control.unit || '';
+    output.textContent = formatDisplayValue(layer[property], control.unit);
     heading.append(output);
   }
-  input.dataset.effectProperty = control.property;
+  input.dataset.effectProperty = property;
   input.addEventListener('input', () => updateFromInput(input));
   input.addEventListener('change', () => updateFromInput(input));
   label.append(heading, input);
   return label;
 }
+function buildActionControl(control) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'index2-effect-control';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = control.label;
+  button.title = 'Placeholder action; renderer behaviour will be connected later.';
+  button.addEventListener('click', () => updateActiveLayer({ prototypeLastAction: control.action, prototypeLastActionAt: Date.now() }));
+  wrapper.append(button);
+  return wrapper;
+}
+function getControlProperty(control) { return control.property || control.field; }
 function fragment(nodes) { const frag = document.createDocumentFragment(); nodes.forEach((node) => frag.append(node)); return frag; }
 function convertTextToUppercase(input) { const upper = String(input.value || '').toUpperCase(); input.value = upper; updateActiveLayer({ [input.dataset.effectProperty]: upper }); }
-function updateFromInput(input) { let value = input.value; if (input.type === 'range' || input.type === 'number') value = Number(input.value); if (input.type === 'checkbox') value = input.checked; updateActiveLayer({ [input.dataset.effectProperty]: value }); }
+function updateFromInput(input) {
+  let value = input.value;
+  if (input.type === 'range' || input.type === 'number') value = Number(input.value);
+  if (input.type === 'checkbox') value = input.checked;
+  if (input.type === 'file') value = input.files?.[0]?.name || '';
+  updateActiveLayer({ [input.dataset.effectProperty]: value });
+}
 function syncValues(body, layer) {
   if (!layer) return;
   body.querySelectorAll('[data-effect-property]').forEach((input) => {
     const value = layer[input.dataset.effectProperty];
-    if (document.activeElement !== input) {
+    if (document.activeElement !== input && input.type !== 'file') {
       if (input.type === 'checkbox') input.checked = Boolean(value);
       else if (input.type === 'color') input.value = normalizeColor(value);
       else input.value = String(value ?? '');
     }
     const output = body.querySelector(`[data-output-property="${input.dataset.effectProperty}"]`);
-    if (output) output.textContent = formatValue(value);
+    if (output) output.textContent = formatDisplayValue(value, output.dataset.outputUnit || '');
   });
 }
 function isTextLayer(layer) { return Boolean(layer && (layer.engine === 'text' || (layer.appearanceMode === 'shape' && layer.particleShape === 'text'))); }
 function paragraph(text) { const p = document.createElement('p'); p.className = 'index2-control-empty'; p.textContent = text; return p; }
-function formatValue(value) { const number = Number(value); if (!Number.isFinite(number)) return '0'; return Number.isInteger(number) ? String(number) : String(Number(number.toFixed(2))); }
+function note(text) { const p = document.createElement('p'); p.className = 'index2-control-note'; p.textContent = text; return p; }
+function formatDisplayValue(value, unit = '') { const formatted = formatValue(value); return unit ? `${formatted}${unit}` : formatted; }
+function formatValue(value) { const number = Number(value); if (!Number.isFinite(number)) return value === undefined || value === null || value === '' ? '0' : String(value); return Number.isInteger(number) ? String(number) : String(Number(number.toFixed(2))); }
 function normalizeColor(value) { const string = String(value || '').trim(); if (/^#[0-9a-f]{6}$/iu.test(string)) return string; if (/^#[0-9a-f]{3}$/iu.test(string)) return `#${string.slice(1).split('').map((char) => char + char).join('')}`; return '#4ff7ff'; }
