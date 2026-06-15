@@ -3,11 +3,11 @@ import { cloneBasePreset as cloneBasePresetCore, listBasePresets as listBasePres
 const STRUCTURED_PRESETS = [
   {
     id: 'portal-ring-aperture',
-    label: 'Portal Ring / Aperture',
+    label: 'Orb',
     engine: 'portal-ring',
-    description: 'Layered portal ring with separate aperture, cloudy rim, inner wisps, outline, orbit clouds and particles.',
+    description: 'Layered orb with separate aperture, cloudy rim, inner wisps, outline, orbit clouds and particles.',
     config: {
-      name: 'Portal Ring / Aperture', engine: 'portal-ring', colorA: '#55f7ff', colorB: '#b45cff', alphaStart: 0.4, alphaEnd: 0,
+      name: 'Orb', engine: 'portal-ring', colorA: '#55f7ff', colorB: '#b45cff', alphaStart: 0.4, alphaEnd: 0,
       sizeStart: 18, sizeEnd: 8, glow: 16, spawnRate: 0, speedMin: 0, speedMax: 0, angle: 0, spread: 360, gravity: 0, lifetime: 120,
       emitterX: 640, emitterY: 360, effectScale: 62,
       apertureOpacity: 26, apertureRadius: 78, apertureColor: '#07132d',
@@ -22,11 +22,11 @@ const STRUCTURED_PRESETS = [
   },
   {
     id: 'wormhole-tunnel-safe',
-    label: 'Wormhole Tunnel',
+    label: 'Swirl',
     engine: 'wormhole-tunnel',
-    description: 'Performance-safe wormhole with separate core, arms, orbit clouds, particles and inward/outward emission.',
+    description: 'Performance-safe swirl with separate core, arms, orbit clouds, particles and inward/outward emission.',
     config: {
-      name: 'Wormhole Tunnel', engine: 'wormhole-tunnel', colorA: '#45efff', colorB: '#7d55ff', alphaStart: 0.35, alphaEnd: 0,
+      name: 'Swirl', engine: 'wormhole-tunnel', colorA: '#45efff', colorB: '#7d55ff', alphaStart: 0.35, alphaEnd: 0,
       sizeStart: 12, sizeEnd: 3, glow: 14, spawnRate: 0, speedMin: 0, speedMax: 0, angle: 0, spread: 360, gravity: 0, lifetime: 120,
       emitterX: 640, emitterY: 360, effectScale: 58,
       coreOpacity: 38, coreRadius: 24, corePulseStrength: 8,
