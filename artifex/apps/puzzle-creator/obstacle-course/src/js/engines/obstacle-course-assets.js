@@ -51,7 +51,6 @@ export function requiredAssetList() {
   return [
     { url: ASSETS.background, type: 'image', required: true, label: 'Background' },
     { url: ASSETS.horse, type: 'image', required: true, label: 'Horse foreground' },
-    ...ASSETS.horseShadows.map((url, index) => ({ url, type: 'image', required: true, label: `Horse shadow ${index + 1}` })),
     { url: ASSETS.groundPathMap, type: 'json', required: true, label: 'Ground path map' },
     { url: ASSETS.powerbars, type: 'image', required: true, label: 'Power bars' },
     { url: ASSETS.arrows, type: 'image', required: true, label: 'Off-path arrows' }
