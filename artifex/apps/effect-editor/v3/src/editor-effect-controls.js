@@ -1,5 +1,7 @@
 import { getActiveLayer, updateActiveLayer } from './editor-state.js';
+import { isPrototypeLayer } from './prototype-adapters/prototype-presets.js';
 
+const PROTOTYPE_VISIBLE_CARD_IDS = new Set(['index2-card-search', 'index2-card-assets']);
 const LAYER_POSITION_OPTIONS = [
   ['back', 'Behind aperture'], ['aperture', 'Inside aperture'], ['rim-back', 'Behind cloudy rim'],
   ['rim-front', 'Above cloudy rim'], ['particles-front', 'Above particles'], ['front', 'Topmost']
@@ -66,14 +68,25 @@ export function syncEffectControls() {
   const body = document.getElementById('effect-specific-controls-body');
   if (!body) return;
   const layer = getActiveLayer();
-  const key = layer ? `${layer.id}|${isTextLayer(layer) ? 'text' : layer.engine}|${layer.textRevealMode || ''}` : 'none';
+  syncPrototypePanelVisibility(layer);
+  const key = layer ? `${layer.id}|${isPrototypeLayer(layer) ? 'prototype' : isTextLayer(layer) ? 'text' : layer.engine}|${layer.textRevealMode || ''}|${layer.prototypeMode || ''}` : 'none';
   if (key !== renderedKey) { renderedKey = key; renderControls(body, layer); }
-  syncValues(body, layer);
+  if (!isPrototypeLayer(layer)) syncValues(body, layer);
+}
+
+function syncPrototypePanelVisibility(layer) {
+  const prototypeSelected = isPrototypeLayer(layer);
+  const leftPanel = document.getElementById('left-panel');
+  if (!leftPanel) return;
+  leftPanel.querySelectorAll('.card').forEach((card) => {
+    card.hidden = prototypeSelected && !PROTOTYPE_VISIBLE_CARD_IDS.has(card.id);
+  });
 }
 
 function renderControls(body, layer) {
   body.replaceChildren();
   if (!layer) return body.append(paragraph('Select a layer to see engine controls.'));
+  if (isPrototypeLayer(layer)) return body.append(paragraph('Prototype placeholder layer selected. Controls will be connected in the next phase.'));
   const groups = getControlGroups(layer);
   if (!groups.length) return body.append(paragraph('This engine has no extra controls yet.'));
   groups.forEach((group) => body.append(group.title ? buildGroup(group, layer) : fragment(group.controls.map((control) => buildControl(control, layer)))));
