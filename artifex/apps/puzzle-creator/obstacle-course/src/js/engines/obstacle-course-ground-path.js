@@ -17,6 +17,13 @@ function imageUrlForTile(tile) {
   return /^https?:\/\//i.test(tile.file) ? tile.file : `${root}${tile.file}`;
 }
 
+function preservedWorldWidthForTile(tile, worldLength) {
+  const pixelWidth = Number(tile?.pixelWidth || OC.groundPathMap?.tilePixelWidth || 0);
+  const pixelHeight = Number(tile?.pixelHeight || OC.groundPathMap?.tilePixelHeight || 0);
+  if (pixelWidth > 0 && pixelHeight > 0) return worldLength * (pixelWidth / pixelHeight);
+  return Number(tile?.worldWidth || OC.groundPathMap?.defaultWorldWidth || COURSE_WORLD_WIDTH);
+}
+
 function interpolatePathPoint(tile, localT) {
   const points = tile?.path?.points || [];
   if (!points.length) return { x: 0.5, halfWidth: 0.07 };
@@ -60,7 +67,7 @@ export function generatePathSequence() {
     const tile = tileById(legacyPathIdToTileId(rawId)) || fallbackTile();
     if (!tile) continue;
     const worldLength = Number(tile.worldLength || OC.groundPathMap?.defaultWorldLength || SECTION_WORLD_LENGTH);
-    const worldWidth = Number(tile.worldWidth || OC.groundPathMap?.defaultWorldWidth || COURSE_WORLD_WIDTH);
+    const worldWidth = preservedWorldWidthForTile(tile, worldLength);
     const distance = Number(typeof raw === 'object' && raw.distance !== undefined ? raw.distance : i * SECTION_WORLD_STEP);
     OC.pathSequence.push({ tile, key: tile.id, distance, worldLength, worldWidth, startX: 0, endX: 0 });
   }
@@ -123,10 +130,11 @@ export function buildGroundAndPath() {
   OC.world.add(groundLayer, pathLayer);
   OC.pathSequence.forEach((seg) => {
     const length = (seg.worldLength || SECTION_WORLD_LENGTH) + TILE_SEAM_OVERLAP;
+    const width = seg.worldWidth || COURSE_WORLD_WIDTH;
     const z = -seg.distance - (seg.worldLength || SECTION_WORLD_LENGTH) / 2 - TILE_SEAM_OVERLAP / 2;
     const tileUrl = imageUrlForTile(seg.tile);
     const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(seg.worldWidth || COURSE_WORLD_WIDTH, length, 1, 1),
+      new THREE.PlaneGeometry(width, length, 1, 1),
       new THREE.MeshStandardMaterial({
         map: loadTexture(tileUrl, { repeat: [1, 1], repeatX: false }),
         transparent: false,
