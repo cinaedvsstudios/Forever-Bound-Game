@@ -41,6 +41,7 @@ const INPUT_BINDINGS = [
 ];
 let toast = () => {};
 let version = 'INDEX2-WORK';
+let selectedInsertPresetId = '';
 
 export function initEditorCore({ versionLabel, showToast } = {}) {
   version = versionLabel || version;
@@ -84,50 +85,93 @@ function populateEngineSelect() {
 function populateBaseMenu() {
   const list = document.getElementById('base-layer-list');
   if (!list) return;
-  const preview = ensureInsertPreviewBox(list);
+  const preview = ensureInsertPreviewPanel(list);
   const presets = [...listBasePresets()].sort((a, b) => String(a.label || a.id || '').localeCompare(String(b.label || b.id || ''), undefined, { sensitivity: 'base' }));
-  list.replaceChildren(...presets.map((preset) => {
+  const buttons = presets.map((preset) => {
     const button = document.createElement('button');
     const label = preset.label || preset.id;
     const detail = preset.description || preset.engine || '';
     button.type = 'button';
+    button.dataset.insertPresetId = preset.id;
     button.title = detail ? `${label}\n${detail}` : label;
     if (isPrototypePreset(preset)) button.classList.add('index2-prototype-insert-item');
     button.append(document.createTextNode(label));
-    button.addEventListener('mouseenter', () => updateInsertPreview(preview, preset));
-    button.addEventListener('focus', () => updateInsertPreview(preview, preset));
-    button.addEventListener('mouseleave', () => resetInsertPreview(preview));
-    button.addEventListener('blur', () => resetInsertPreview(preview));
-    button.addEventListener('click', () => { addPreset(preset.id); closeMenus(); });
+    button.addEventListener('mouseenter', () => previewInsertPreset(preview, preset));
+    button.addEventListener('focus', () => previewInsertPreset(preview, preset));
+    button.addEventListener('click', () => selectInsertPreset(preview, preset));
     return button;
-  }));
-  resetInsertPreview(preview);
+  });
+  list.replaceChildren(...buttons);
+  selectInsertPreset(preview, presets[0]);
 }
 
-function ensureInsertPreviewBox(list) {
+function ensureInsertPreviewPanel(list) {
   const section = list.closest('.insert-section') || list.parentElement;
-  let preview = document.getElementById('insert-effect-preview');
-  if (!preview) {
-    preview = document.createElement('div');
-    preview.id = 'insert-effect-preview';
-    preview.className = 'insert-effect-preview';
-    preview.setAttribute('aria-label', 'Effect preview placeholder');
-    preview.title = 'Effect preview image placeholder.';
-    section?.insertBefore(preview, list);
+  let panel = document.getElementById('insert-effect-preview-panel');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'insert-effect-preview-panel';
+    panel.className = 'insert-effect-preview-panel';
+
+    const image = document.createElement('div');
+    image.id = 'insert-effect-preview-image';
+    image.className = 'insert-effect-preview-image';
+    image.setAttribute('aria-label', 'Effect preview placeholder');
+
+    const copy = document.createElement('div');
+    copy.className = 'insert-effect-preview-copy';
+
+    const title = document.createElement('h4');
+    title.id = 'insert-effect-preview-title';
+    title.textContent = 'Select effect';
+
+    const description = document.createElement('p');
+    description.id = 'insert-effect-preview-description';
+    description.textContent = 'Choose an effect below to preview it here.';
+
+    const add = document.createElement('button');
+    add.id = 'insert-effect-add-button';
+    add.type = 'button';
+    add.textContent = 'Add';
+    add.addEventListener('click', () => addSelectedInsertPreset());
+
+    copy.append(title, description, add);
+    panel.append(image, copy);
+    section?.insertBefore(panel, list);
   }
-  return preview;
+  return panel;
 }
-function updateInsertPreview(preview, preset) {
-  if (!preview) return;
-  preview.dataset.effectLabel = preset?.label || preset?.id || '';
-  preview.dataset.prototype = isPrototypePreset(preset) ? 'true' : 'false';
-  preview.title = preset?.description ? `${preset.label || preset.id}\n${preset.description}` : preset?.label || 'Effect preview image placeholder.';
+function previewInsertPreset(panel, preset) {
+  if (!panel || !preset) return;
+  updateInsertPreviewPanel(panel, preset, false);
 }
-function resetInsertPreview(preview) {
-  if (!preview) return;
-  preview.dataset.effectLabel = '';
-  preview.dataset.prototype = 'false';
-  preview.title = 'Effect preview image placeholder.';
+function selectInsertPreset(panel, preset) {
+  if (!panel || !preset) return;
+  selectedInsertPresetId = preset.id;
+  updateInsertPreviewPanel(panel, preset, true);
+  document.querySelectorAll('#base-layer-list [data-insert-preset-id]').forEach((button) => {
+    button.classList.toggle('index2-insert-selected', button.dataset.insertPresetId === preset.id);
+  });
+}
+function updateInsertPreviewPanel(panel, preset, selected) {
+  const image = panel.querySelector('#insert-effect-preview-image');
+  const title = panel.querySelector('#insert-effect-preview-title');
+  const description = panel.querySelector('#insert-effect-preview-description');
+  const add = panel.querySelector('#insert-effect-add-button');
+  const label = preset.label || preset.id;
+  const detail = preset.description || 'No description yet.';
+  panel.dataset.prototype = isPrototypePreset(preset) ? 'true' : 'false';
+  panel.dataset.selected = selected ? 'true' : 'false';
+  panel.title = `${label}\n${detail}`;
+  if (image) image.title = `${label}\n${detail}`;
+  if (title) title.textContent = label;
+  if (description) description.textContent = detail;
+  if (add) add.disabled = !selectedInsertPresetId;
+}
+function addSelectedInsertPreset() {
+  if (!selectedInsertPresetId) return;
+  addPreset(selectedInsertPresetId);
+  closeMenus();
 }
 
 function setupMenus() {
