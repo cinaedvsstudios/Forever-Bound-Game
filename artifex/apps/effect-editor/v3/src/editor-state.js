@@ -279,8 +279,23 @@ export function duplicateActiveLayer() {
   editorState.activeLayerIndex += 1;
   touch();
 }
-export function centerActiveEmitter() { updateActiveLayer({ emitterX: getDesignWidth() / 2, emitterY: getDesignHeight() / 2 }); }
-export function moveActiveEmitter(x, y) { if (!getActiveLayer()?.locked) updateActiveLayer({ emitterX: clamp(Number(x), 0, getDesignWidth()), emitterY: clamp(Number(y), 0, getDesignHeight()) }); }
+export function centerActiveEmitter() { moveActiveEmitter(getDesignWidth() / 2, getDesignHeight() / 2); }
+export function moveActiveEmitter(x, y) {
+  const layer = getActiveLayer();
+  if (!layer || layer.locked) return;
+  const nextX = clamp(Number(x), 0, getDesignWidth());
+  const nextY = clamp(Number(y), 0, getDesignHeight());
+  const patch = { emitterX: nextX, emitterY: nextY };
+  if (layer.engine === 'prototype-shimmer' || layer.prototypeFolder === 'fx-shimmer') {
+    patch.positionX = (nextX / getDesignWidth()) * 100;
+    patch.positionY = (nextY / getDesignHeight()) * 100;
+  }
+  if (layer.engine === 'prototype-smoke' && (layer.mode || layer.prototypeMode) === 'emission') {
+    patch.sourceX = (nextX / getDesignWidth()) * 100;
+    patch.sourceY = (nextY / getDesignHeight()) * 100;
+  }
+  updateActiveLayer(patch);
+}
 export function setPaused(value) { editorState.isPaused = Boolean(value); notifyChange(); }
 export function setWorkspaceMode(mode) { editorState.workspaceMode = ['dark', 'white', 'underlay'].includes(mode) ? mode : 'dark'; if (editorState.workspaceMode === 'underlay') editorState.referenceMedia.visible = Boolean(editorState.referenceMedia?.dataUrl); notifyChange(); }
 export function setReferenceMedia(patch) { editorState.referenceMedia = { ...createEmptyReferenceMedia(), ...(editorState.referenceMedia || {}), ...patch }; notifyChange(); }
