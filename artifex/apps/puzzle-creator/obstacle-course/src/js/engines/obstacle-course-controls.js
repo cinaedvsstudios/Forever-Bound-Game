@@ -7,6 +7,24 @@ import { updateHud } from './obstacle-course-hud.js';
 import { startRun, pauseRun, resetRun } from './obstacle-course-movement.js?v=3.0.19';
 import { bindLayerButtons } from './obstacle-course-layer-controls.js';
 
+function resetVanishingPointYControl() {
+  const input = $('oc-vp-y');
+  const out = $('oc-vp-y-out');
+  if (!input) return;
+  input.min = '0';
+  input.max = '200';
+  input.step = '1';
+  input.value = String(OC.vanishY);
+  if (out) out.textContent = OC.vanishY;
+  const number = input.closest('.range-row')?.querySelector('.oc-range-value');
+  if (number) {
+    number.min = '0';
+    number.max = '200';
+    number.step = '1';
+    number.value = String(OC.vanishY);
+  }
+}
+
 export function setInteractionLocked(locked) {
   ['obstacle-start', 'obstacle-pause', 'obstacle-reset-run', 'obstacle-regenerate'].forEach((id) => {
     const node = $(id);
@@ -15,6 +33,7 @@ export function setInteractionLocked(locked) {
 }
 
 export function bindObstacleCourseControls({ rebuildCourse, refreshLayerPanel }) {
+  resetVanishingPointYControl();
   $('obstacle-start')?.addEventListener('click', startRun);
   $('obstacle-pause')?.addEventListener('click', pauseRun);
   $('obstacle-reset-run')?.addEventListener('click', () => resetRun(false));
