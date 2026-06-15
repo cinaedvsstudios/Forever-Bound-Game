@@ -5,7 +5,7 @@ import { initEditorDynamicsControls } from './editor-dynamics-controls.js';
 import { initEditorQuickEditControls } from './editor-quick-edit-controls.js';
 import { initEditorWorkspaceUI } from './editor-workspace-ui.js';
 
-const VERSION_LABEL = 'INDEX2-PANEL-RESTORE-0.2.10';
+const VERSION_LABEL = 'INDEX2-INSERT-CLICK-0.2.11';
 
 window.addEventListener('DOMContentLoaded', () => {
   initEditorCore({ versionLabel: VERSION_LABEL, showToast });
