@@ -115,14 +115,17 @@ export function createInstancedAssetGroup(asset, placements = []) {
   group.userData.basePosition = new THREE.Vector3(0, 0, 0);
   group.userData.baseScaleValue = 1;
   group.userData.isInstancedAssetGroup = true;
-  group.userData.placements = placements.map((placement) => ({
-    x: Number(placement.x || 0),
-    y: Number(placement.y ?? GROUND_Y),
-    z: Number(placement.z || 0),
-    side: placement.side === 'left' ? 'left' : 'right',
-    rotationY: Number(placement.rotationY || 0),
-    scale: Number(placement.scale || 1),
-  }));
+  group.userData.placements = placements.map((placement) => {
+    const x = Number(placement.x || 0);
+    return {
+      x,
+      y: Number(placement.y ?? GROUND_Y),
+      z: Number(placement.z || 0),
+      side: placement.side || (x < 0 ? 'left' : 'right'),
+      rotationY: Number(placement.rotationY || 0),
+      scale: Number(placement.scale || 1),
+    };
+  });
   parts.forEach((part) => {
     const mesh = new THREE.InstancedMesh(part.geometry, cloneMaterial(part.material), group.userData.placements.length);
     mesh.castShadow = true;
