@@ -157,26 +157,12 @@ function glbControl(url) {
   return OC.glbControls.get(url);
 }
 
-function hardenCutoutMaterial(mat, opacity) {
-  const hasCutoutMap = Boolean(mat.map || mat.alphaMap);
-  if (opacity >= 0.995 && hasCutoutMap) {
-    mat.alphaTest = Math.max(Number(mat.alphaTest || 0), 0.28);
-    mat.transparent = false;
-    mat.depthWrite = true;
-    mat.depthTest = true;
-  } else {
-    mat.transparent = opacity < 0.995 || mat.transparent;
-    mat.depthWrite = opacity >= 0.995 ? true : mat.depthWrite;
-  }
-}
-
 function applyGlbMaterialVisual(obj, cfg) {
   obj.traverse?.((node) => {
     const materials = Array.isArray(node.material) ? node.material : node.material ? [node.material] : [];
     materials.forEach((mat) => {
-      const opacity = cfg.opacity ?? 1;
-      mat.opacity = opacity;
-      hardenCutoutMaterial(mat, opacity);
+      mat.transparent = (cfg.opacity ?? 1) < 0.995 || mat.transparent;
+      mat.opacity = cfg.opacity ?? 1;
       if (mat.color) {
         if (!mat.userData.baseColor) mat.userData.baseColor = mat.color.clone();
         mat.color.copy(mat.userData.baseColor).multiplyScalar(cfg.brightness ?? 1);
