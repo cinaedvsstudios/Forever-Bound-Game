@@ -4,6 +4,7 @@ export const ASSETS = {
   background: `${ASSET_BASE}backgrounds/horseridebg.jpg`,
   horse: `${ASSET_BASE}foreground/horse.png`,
   groundPathMap: `${ASSET_BASE}ground/ground-path-map.json`,
+  groundDisplacement: `${ASSET_BASE}ground/1bump.jpg`,
   powerbars: `${ASSET_BASE}ui/powerbars.png`,
   arrows: `${SHARED_UI_BASE}defaultarrows.webp`,
   shadows: {
@@ -54,6 +55,7 @@ export function requiredAssetList() {
     { url: ASSETS.background, type: 'image', required: true, label: 'Background' },
     { url: ASSETS.horse, type: 'image', required: true, label: 'Horse foreground' },
     { url: ASSETS.groundPathMap, type: 'json', required: true, label: 'Ground path map' },
+    { url: ASSETS.groundDisplacement, type: 'image', required: true, label: 'Ground displacement map' },
     { url: ASSETS.powerbars, type: 'image', required: true, label: 'Power bars' },
     { url: ASSETS.arrows, type: 'image', required: true, label: 'Off-path arrows' }
   ];
