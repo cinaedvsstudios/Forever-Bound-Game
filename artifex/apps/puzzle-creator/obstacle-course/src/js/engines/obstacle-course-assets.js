@@ -18,6 +18,8 @@ export const ASSETS = {
   audio: {
     forestAmbience: `${ASSET_BASE}audio/forest_ambience.mp3`,
     bush: `${ASSET_BASE}audio/bush.mp3`,
+    collect: `${ASSET_BASE}audio/collect.mp3`,
+    money: `${ASSET_BASE}audio/money.mp3`,
     snort: `${ASSET_BASE}audio/horse_snort.wav`,
     neigh: `${ASSET_BASE}audio/horse_neigh.mp3`,
     gallopSlow: `${ASSET_BASE}audio/horse_gallop_slow.mp3`,
