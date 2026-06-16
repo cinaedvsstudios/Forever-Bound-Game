@@ -1,5 +1,5 @@
 import { OC } from './obstacle-course-state.js';
-import { ASSETS, requiredAssetList, optionalAssetList } from './obstacle-course-assets.js?v=3.0.43';
+import { ASSETS, requiredAssetList, optionalAssetList } from './obstacle-course-assets.js?v=3.0.45';
 
 const OPTIONAL_LOAD_CONCURRENCY = 4;
 
