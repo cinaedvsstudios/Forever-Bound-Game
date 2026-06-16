@@ -41,8 +41,8 @@ export function cloneGlbTemplate(url) {
   root.traverse((node) => {
     if (node.isMesh) {
       if (node.geometry) node.geometry = node.geometry.clone();
-      if (Array.isArray(node.material)) node.material = node.material.map((mat) => cloneMaterial(mat));
-      else if (node.material) node.material = cloneMaterial(node.material);
+      if (Array.isArray(node.material)) node.material = node.material.map((mat) => cloneMaterial(mat, node));
+      else if (node.material) node.material = cloneMaterial(node.material, node);
       node.castShadow = true;
       node.receiveShadow = true;
     }
@@ -50,10 +50,29 @@ export function cloneGlbTemplate(url) {
   return root;
 }
 
-function cloneMaterial(mat) {
+function cloneMaterial(mat, node = null) {
   const clone = mat.clone();
   if (clone.color) clone.userData.baseColor = clone.color.clone();
+  applyFoliageCutoutRules(clone, node);
   return clone;
+}
+
+function isLikelyFoliageMaterial(mat, node = null) {
+  const materialName = String(mat?.name || '').toLowerCase();
+  const nodeName = String(node?.name || '').toLowerCase();
+  const foliageHint = /leaf|leaves|foliage|branch|branches|pine|spruce|bush|fern|needle|canopy|crown/.test(materialName) || /leaf|leaves|foliage|branch|branches|pine|spruce|bush|fern|needle|canopy|crown/.test(nodeName);
+  return Boolean(foliageHint || mat?.alphaMap || (mat?.map && mat?.transparent === true && !/glass|water/.test(materialName)));
+}
+
+function applyFoliageCutoutRules(mat, node = null) {
+  if (!isLikelyFoliageMaterial(mat, node)) return;
+  mat.alphaTest = Math.max(Number(mat.alphaTest || 0), 0.34);
+  mat.transparent = false;
+  mat.opacity = 1;
+  mat.depthWrite = true;
+  mat.depthTest = true;
+  mat.side = THREE.DoubleSide;
+  mat.needsUpdate = true;
 }
 
 export function normalizeObjectToHeight(root, targetHeight = 1) {
@@ -101,7 +120,7 @@ function getInstancedParts(asset) {
     const geometry = node.geometry.clone();
     geometry.applyMatrix4(node.matrixWorld);
     geometry.translate(0, groundShift, 0);
-    materials.forEach((mat) => parts.push({ geometry: geometry.clone(), material: cloneMaterial(mat) }));
+    materials.forEach((mat) => parts.push({ geometry: geometry.clone(), material: cloneMaterial(mat, node) }));
   });
   instancedPartCache.set(asset.url, parts);
   return parts;
@@ -141,11 +160,7 @@ export function createInstancedAssetGroup(asset, placements = []) {
 
 function sideOffset(cfg, side) {
   const prefix = side === 'left' ? 'left' : 'right';
-  return {
-    x: Number(cfg[`${prefix}X`] || 0),
-    y: Number(cfg[`${prefix}Y`] || 0),
-    z: Number(cfg[`${prefix}Z`] || 0),
-  };
+  return { x: Number(cfg[`${prefix}X`] || 0), y: Number(cfg[`${prefix}Y`] || 0), z: Number(cfg[`${prefix}Z`] || 0) };
 }
 
 function updateInstancedGroupMatrices(group, cfg = {}) {
@@ -193,8 +208,9 @@ function applyGlbMaterialVisual(obj, cfg) {
   obj.traverse?.((node) => {
     const materials = Array.isArray(node.material) ? node.material : node.material ? [node.material] : [];
     materials.forEach((mat) => {
-      mat.transparent = (cfg.opacity ?? 1) < 0.995 || mat.transparent;
-      mat.opacity = cfg.opacity ?? 1;
+      const isCutout = Boolean(mat.alphaTest && mat.alphaTest > 0);
+      mat.transparent = isCutout ? false : ((cfg.opacity ?? 1) < 0.995 || mat.transparent);
+      mat.opacity = isCutout ? 1 : (cfg.opacity ?? 1);
       if (mat.color) {
         if (!mat.userData.baseColor) mat.userData.baseColor = mat.color.clone();
         mat.color.copy(transformedColor(mat.userData.baseColor, cfg));
