@@ -1,10 +1,10 @@
 import { OC } from './obstacle-course-state.js';
-import { GLB_ASSETS } from './obstacle-course-assets.js?v=3.0.43';
+import { GLB_ASSETS } from './obstacle-course-assets.js?v=3.0.45';
 import { buildSliderRow } from './obstacle-course-ui.js';
-import { selectObjects } from './obstacle-course-scene.js';
+import { selectObjects } from './obstacle-course-scene.js?v=3.0.45';
 import { signedToFactor, factorToSigned, sliderToVisualFactor, visualFactorToSlider, clamp } from './obstacle-course-utils.js';
-import { getGlbDefault } from './obstacle-course-settings.js';
-import { applyAllGlbAssetControls } from './obstacle-course-glb.js';
+import { getGlbDefault } from './obstacle-course-settings.js?v=3.0.45';
+import { applyAllGlbAssetControls } from './obstacle-course-glb.js?v=3.0.45';
 
 const POSITION_SLIDER_STEP = 0.1;
 
