@@ -95,6 +95,74 @@ function hardenGlbMaterial(mat, cutout = false) {
   mat.needsUpdate = true;
 }
 
+function clamp01(value) { return Math.min(1, Math.max(0, Number(value || 0))); }
+
+function safeColor(hex) {
+  try { return new THREE.Color(hex || '#ffffff'); }
+  catch { return new THREE.Color('#ffffff'); }
+}
+
+function getVisualUniforms(mat) {
+  if (!mat.userData.ocVisualUniforms) {
+    mat.userData.ocVisualUniforms = {
+      brightness: { value: 1 },
+      contrast: { value: 1 },
+      saturation: { value: 1 },
+      tint: { value: new THREE.Color('#ffffff') },
+      tintStrength: { value: 0 },
+    };
+  }
+  return mat.userData.ocVisualUniforms;
+}
+
+function installRgbVisualShader(mat) {
+  if (!mat || mat.userData.ocRgbVisualShaderInstalled) return;
+  const previousOnBeforeCompile = mat.onBeforeCompile;
+  mat.onBeforeCompile = (shader, renderer) => {
+    if (typeof previousOnBeforeCompile === 'function') previousOnBeforeCompile.call(mat, shader, renderer);
+    const uniforms = getVisualUniforms(mat);
+    shader.uniforms.ocVisualBrightness = uniforms.brightness;
+    shader.uniforms.ocVisualContrast = uniforms.contrast;
+    shader.uniforms.ocVisualSaturation = uniforms.saturation;
+    shader.uniforms.ocVisualTint = uniforms.tint;
+    shader.uniforms.ocVisualTintStrength = uniforms.tintStrength;
+    const header = `
+uniform float ocVisualBrightness;
+uniform float ocVisualContrast;
+uniform float ocVisualSaturation;
+uniform vec3 ocVisualTint;
+uniform float ocVisualTintStrength;
+vec3 ocApplyRgbVisual(vec3 color) {
+  float luma = dot(color, vec3(0.299, 0.587, 0.114));
+  vec3 adjusted = mix(vec3(luma), color, ocVisualSaturation);
+  adjusted = ((adjusted - vec3(0.5)) * ocVisualContrast) + vec3(0.5);
+  adjusted *= ocVisualBrightness;
+  adjusted = mix(adjusted, ocVisualTint, ocVisualTintStrength);
+  return clamp(adjusted, 0.0, 1.0);
+}
+`;
+    if (!shader.fragmentShader.includes('ocApplyRgbVisual')) shader.fragmentShader = shader.fragmentShader.replace('void main() {', `${header}\nvoid main() {`);
+    if (shader.fragmentShader.includes('#include <dithering_fragment>')) {
+      shader.fragmentShader = shader.fragmentShader.replace('#include <dithering_fragment>', 'gl_FragColor.rgb = ocApplyRgbVisual(gl_FragColor.rgb);\n#include <dithering_fragment>');
+    } else {
+      shader.fragmentShader = shader.fragmentShader.replace(/}\s*$/, '  gl_FragColor.rgb = ocApplyRgbVisual(gl_FragColor.rgb);\n}');
+    }
+  };
+  mat.customProgramCacheKey = () => 'oc-rgb-visual-v3';
+  mat.userData.ocRgbVisualShaderInstalled = true;
+  mat.needsUpdate = true;
+}
+
+function setRgbVisualUniforms(mat, cfg) {
+  installRgbVisualShader(mat);
+  const uniforms = getVisualUniforms(mat);
+  uniforms.brightness.value = Number(cfg.brightness ?? 1);
+  uniforms.contrast.value = Number(cfg.contrast ?? 1);
+  uniforms.saturation.value = Number(cfg.saturation ?? 1);
+  uniforms.tint.value.copy(safeColor(cfg.tint || '#ffffff'));
+  uniforms.tintStrength.value = clamp01(cfg.tintStrength || 0);
+}
+
 export function normalizeObjectToHeight(root, targetHeight = 1) {
   if (!root || !Number.isFinite(Number(targetHeight)) || Number(targetHeight) <= 0) return 1;
   root.updateMatrixWorld(true);
@@ -202,22 +270,6 @@ function glbControl(url) {
   return OC.glbControls.get(url);
 }
 
-function clamp01(value) { return Math.min(1, Math.max(0, Number(value || 0))); }
-
-function transformedColor(baseColor, cfg) {
-  const color = baseColor.clone();
-  const hsl = { h: 0, s: 0, l: 0 };
-  color.getHSL(hsl);
-  const brightness = Number(cfg.brightness ?? 1);
-  const contrast = Number(cfg.contrast ?? 1);
-  const saturation = Number(cfg.saturation ?? 1);
-  hsl.s = clamp01(hsl.s * saturation);
-  hsl.l = clamp01(((hsl.l - 0.5) * contrast + 0.5) * brightness);
-  color.setHSL(hsl.h, hsl.s, hsl.l);
-  if ((cfg.tintStrength ?? 0) > 0) color.lerp(new THREE.Color(cfg.tint || '#ffffff'), clamp01(cfg.tintStrength));
-  return color;
-}
-
 function applyGlbMaterialVisual(obj, cfg) {
   obj.traverse?.((node) => {
     const assetUrl = node?.userData?.glbAssetUrl || obj?.userData?.glbAssetUrl || '';
@@ -227,8 +279,9 @@ function applyGlbMaterialVisual(obj, cfg) {
       hardenGlbMaterial(mat, cutout);
       if (mat.color) {
         if (!mat.userData.baseColor) mat.userData.baseColor = mat.color.clone();
-        mat.color.copy(transformedColor(mat.userData.baseColor, cfg));
+        mat.color.copy(mat.userData.baseColor);
       }
+      setRgbVisualUniforms(mat, cfg);
       mat.needsUpdate = true;
     });
   });
