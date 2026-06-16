@@ -1,5 +1,5 @@
 import { OC } from './obstacle-course-state.js';
-import { ASSETS } from './obstacle-course-assets.js';
+import { ASSETS } from './obstacle-course-assets.js?v=3.0.40';
 
 const clips = new Map();
 let ctx = null;
@@ -121,5 +121,13 @@ export function updateAudio(dt) {
 
 export function playJumpSound() { ensureAudio(); playClip('snort', 0.3); blip({ freq: 260, duration: 0.07, gain: 0.05, type: 'triangle' }); }
 export function playLandSound() { ensureAudio(); playClip('land', 0.65); blip({ freq: 90, duration: 0.08, gain: 0.07, type: 'sawtooth' }); }
-export function playCollectSound() { ensureAudio(); pickupChime(); playClip('neigh', 0.16); }
+export function playCollectSound(kind = 'collect') {
+  ensureAudio();
+  const isMoney = kind === 'money';
+  const played = isMoney ? playClip('money', 0.78) : playClip('collect', 0.72);
+  if (!played) {
+    const fallback = isMoney ? playClip('collect', 0.72) : false;
+    if (!fallback) pickupChime();
+  }
+}
 export function playHitSound() { ensureAudio(); playClip('bush', 0.55); blip({ freq: 70, duration: 0.13, gain: 0.08, type: 'square' }); }
