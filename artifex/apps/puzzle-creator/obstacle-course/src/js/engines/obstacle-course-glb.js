@@ -3,7 +3,7 @@ import { THREE } from './obstacle-course-scene.js';
 import { getGlbDefault } from './obstacle-course-settings.js';
 
 const GLB_LOAD_TIMEOUT_MS = 10000;
-const PLANT_ALPHA_TEST = 0.52;
+const PLANT_ALPHA_TEST = 0.46;
 const instancedPartCache = new Map();
 const dummy = new THREE.Object3D();
 
@@ -43,6 +43,7 @@ export function cloneGlbTemplate(url) {
     else if (node.material) node.material = cloneMaterial(node.material, node, url);
     node.castShadow = true;
     node.receiveShadow = true;
+    node.frustumCulled = false;
   });
   return root;
 }
@@ -51,33 +52,46 @@ function cloneMaterial(mat, node = null, assetUrl = '') {
   const clone = mat.clone();
   clone.userData.ocGlbAssetUrl = assetUrl || mat.userData?.ocGlbAssetUrl || '';
   if (clone.color) clone.userData.baseColor = clone.color.clone();
-  applyPlantCutout(clone, node, clone.userData.ocGlbAssetUrl);
+  hardenGlbMaterial(clone, isCutoutMaterial(clone, node, clone.userData.ocGlbAssetUrl));
   return clone;
 }
 
 function isPlantAssetUrl(assetUrl = '') {
   const value = String(assetUrl).toLowerCase();
-  return ['tree', 'pine', 'oak', 'fern', 'bush', 'geranium', 'leaf'].some((word) => value.includes(word));
+  return ['tree', 'pine', 'oak', 'fern', 'bush', 'geranium', 'leaf', 'grass', 'spruce'].some((word) => value.includes(word));
 }
 
-function isPlantMaterial(mat, node = null, assetUrl = '') {
+function materialHasAlphaIntent(mat) {
+  return Boolean(mat?.alphaMap || mat?.transparent || Number(mat?.opacity ?? 1) < 0.995 || Number(mat?.alphaTest || 0) > 0);
+}
+
+function isCutoutMaterial(mat, node = null, assetUrl = '') {
   const materialName = String(mat?.name || '').toLowerCase();
   const nodeName = String(node?.name || '').toLowerCase();
-  const nameHit = ['leaf', 'leaves', 'plant', 'branch', 'needle', 'canopy', 'crown', 'fern', 'bush'].some((word) => materialName.includes(word) || nodeName.includes(word));
-  const hasAlphaBehaviour = Boolean(mat?.alphaMap || mat?.transparent || Number(mat?.opacity ?? 1) < 0.995 || Number(mat?.alphaTest || 0) > 0);
+  const nameHit = ['leaf', 'leaves', 'plant', 'branch', 'needle', 'canopy', 'crown', 'fern', 'bush', 'grass', 'foliage'].some((word) => materialName.includes(word) || nodeName.includes(word));
   const plantTexture = isPlantAssetUrl(assetUrl) && Boolean(mat?.map);
-  return Boolean(nameHit || hasAlphaBehaviour || plantTexture);
+  return Boolean(nameHit || plantTexture || materialHasAlphaIntent(mat));
 }
 
-function applyPlantCutout(mat, node = null, assetUrl = '') {
-  if (!isPlantMaterial(mat, node, assetUrl)) return;
-  mat.alphaTest = Math.max(Number(mat.alphaTest || 0), PLANT_ALPHA_TEST);
+function hardenGlbMaterial(mat, cutout = false) {
+  if (!mat) return;
+  mat.userData.ocSkipLayerVisual = true;
+  mat.userData.ocGlbSolidMaterial = true;
   mat.transparent = false;
   mat.opacity = 1;
   mat.depthWrite = true;
   mat.depthTest = true;
-  mat.side = THREE.DoubleSide;
   mat.blending = THREE.NormalBlending;
+  mat.premultipliedAlpha = false;
+  if ('alphaToCoverage' in mat) mat.alphaToCoverage = true;
+  if (cutout) {
+    mat.alphaTest = Math.max(Number(mat.alphaTest || 0), PLANT_ALPHA_TEST);
+    mat.side = THREE.DoubleSide;
+  } else {
+    mat.alphaTest = 0;
+  }
+  if (mat.map) mat.map.needsUpdate = true;
+  if (mat.alphaMap) mat.alphaMap.needsUpdate = true;
   mat.needsUpdate = true;
 }
 
@@ -148,6 +162,7 @@ export function createInstancedAssetGroup(asset, placements = []) {
     const mesh = new THREE.InstancedMesh(part.geometry, cloneMaterial(part.material, null, asset.url), group.userData.placements.length);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
+    mesh.frustumCulled = false;
     mesh.userData.glbAssetUrl = asset.url;
     mesh.userData.placements = group.userData.placements;
     group.add(mesh);
@@ -203,32 +218,13 @@ function transformedColor(baseColor, cfg) {
   return color;
 }
 
-function forceOpaqueMaterial(mat) {
-  mat.transparent = false;
-  mat.opacity = 1;
-  mat.depthWrite = true;
-  mat.depthTest = true;
-  mat.blending = THREE.NormalBlending;
-}
-
 function applyGlbMaterialVisual(obj, cfg) {
-  const opacity = Number(cfg.opacity ?? 1);
-  const atMaxOpacity = opacity >= 0.995;
   obj.traverse?.((node) => {
     const assetUrl = node?.userData?.glbAssetUrl || obj?.userData?.glbAssetUrl || '';
     const materials = Array.isArray(node.material) ? node.material : node.material ? [node.material] : [];
     materials.forEach((mat) => {
-      const isCutout = Boolean(mat.alphaTest && mat.alphaTest > 0) || isPlantMaterial(mat, node, assetUrl);
-      if (isCutout) applyPlantCutout(mat, node, assetUrl);
-      if (isCutout || atMaxOpacity) {
-        forceOpaqueMaterial(mat);
-        if (isCutout) mat.alphaTest = Math.max(Number(mat.alphaTest || 0), PLANT_ALPHA_TEST);
-      } else {
-        mat.transparent = true;
-        mat.opacity = clamp01(opacity);
-        mat.depthWrite = false;
-        mat.depthTest = true;
-      }
+      const cutout = isCutoutMaterial(mat, node, assetUrl);
+      hardenGlbMaterial(mat, cutout);
       if (mat.color) {
         if (!mat.userData.baseColor) mat.userData.baseColor = mat.color.clone();
         mat.color.copy(transformedColor(mat.userData.baseColor, cfg));
