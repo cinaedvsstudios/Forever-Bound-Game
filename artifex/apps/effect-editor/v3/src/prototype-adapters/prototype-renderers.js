@@ -25,160 +25,286 @@ function drawPrototypeSmoke(ctx, layer, scale, t, stageWidth, stageHeight) {
   return drawRisingSmoke(ctx, layer, scale, t, stageWidth, stageHeight);
 }
 
+function smokeTint(layer) {
+  return layer.colour || layer.colourHex || layer.colorA || '#dce2e7';
+}
+
 function drawRisingSmoke(ctx, layer, scale, t, stageWidth, stageHeight) {
   const x = finite(layer.emitterX, stageWidth * 0.5) * scale;
   const y = finite(layer.emitterY, stageHeight * 0.72) * scale;
   const density = unitValue(layer.density, 0.86);
-  drawSmokeBody(ctx, layer, x, y, scale, t, { width: (170 + density * 140) * scale, height: (220 + density * 210) * scale, rise: true, countBias: 1 });
-  drawSmokeWisps(ctx, layer, x, y, scale, t, { width: (140 + density * 130) * scale, height: (230 + density * 180) * scale, countBias: 1 });
+  const plumeWidth = (70 + density * 125) * scale;
+  const plumeHeight = (260 + density * 240) * scale;
+  drawVerticalSmokeColumn(ctx, layer, x, y, scale, t, {
+    width: plumeWidth,
+    height: plumeHeight,
+    amountBias: 1.05,
+    alphaBias: 0.86,
+    baseGlow: true,
+    bodyName: 'rising-body'
+  });
+  drawRibbonWisps(ctx, layer, x, y, scale, t, {
+    width: plumeWidth * 0.86,
+    height: plumeHeight * 0.95,
+    countBias: 0.72,
+    thin: false,
+    vertical: true,
+    opacityBias: 0.8,
+    name: 'rising-wisp'
+  });
 }
 
 function drawWispySmoke(ctx, layer, scale, t, stageWidth, stageHeight) {
   const x = finite(layer.emitterX, stageWidth * 0.5) * scale;
   const y = finite(layer.emitterY, stageHeight * 0.7) * scale;
-  drawSmokeBody(ctx, layer, x, y, scale, t, { width: 180 * scale, height: 280 * scale, rise: true, countBias: 0.38, alphaBias: 0.48 });
-  drawSmokeWisps(ctx, layer, x, y, scale, t, { width: 220 * scale, height: 360 * scale, countBias: 1.4, thin: true });
+  const density = unitValue(layer.density, 0.86);
+  const width = (45 + density * 95) * scale;
+  const height = (330 + density * 220) * scale;
+  drawRibbonWisps(ctx, layer, x, y, scale, t, {
+    width,
+    height,
+    countBias: 1.55,
+    thin: true,
+    vertical: true,
+    opacityBias: 1.25,
+    name: 'incense-main'
+  });
+  drawThreadMist(ctx, layer, x, y, scale, t, {
+    width: width * 0.55,
+    height: height * 0.92,
+    amount: Math.round(4 + density * 8),
+    alphaBias: 0.18,
+    puffScale: 0.38,
+    name: 'incense-haze'
+  });
 }
 
 function drawEmissionSmoke(ctx, layer, scale, t, stageWidth, stageHeight) {
   const x = percentPoint(layer.sourceX, 50, stageWidth) * scale;
   const y = percentPoint(layer.sourceY, 76, stageHeight) * scale;
-  const width = finite(layer.sourceWidth, 34) * scale;
+  const sourceWidth = finite(layer.sourceWidth, 34) * scale;
   const height = finite(layer.height, 400) * scale;
   const density = unitValue(layer.density, 0.86);
-  drawSmokeBody(ctx, layer, x, y, scale, t, { width: Math.max(width * (3 + density * 3), 130 * scale), height, rise: true, countBias: 1.15 });
-  drawSmokeWisps(ctx, layer, x, y, scale, t, { width: Math.max(width * (2.6 + density * 2.3), 110 * scale), height, countBias: 1.05 });
-  if (layer.showMarker) drawSmokeOriginMarker(ctx, x, y, width, scale);
+  const width = Math.max(sourceWidth * (1.35 + density * 1.25), 42 * scale);
+  drawVerticalSmokeColumn(ctx, layer, x, y, scale, t, {
+    width,
+    height,
+    amountBias: 0.96,
+    alphaBias: 0.92,
+    baseGlow: false,
+    chimney: true,
+    bodyName: 'chimney-body'
+  });
+  drawRibbonWisps(ctx, layer, x, y, scale, t, {
+    width: width * 0.72,
+    height: height * 0.95,
+    countBias: 0.58,
+    thin: true,
+    vertical: true,
+    opacityBias: 0.72,
+    name: 'chimney-wisp'
+  });
+  drawChimneySource(ctx, layer, x, y, sourceWidth, scale);
+  if (layer.showMarker) drawSmokeOriginMarker(ctx, x, y, sourceWidth, scale);
 }
 
 function drawFullScreenSmoke(ctx, layer, scale, t, stageWidth, stageHeight) {
-  const tint = layer.colour || layer.colourHex || layer.colorA || '#dce2e7';
-  const opacity = unitValue(layer.mistOpacity, 0.36) * 0.46;
+  const tint = smokeTint(layer);
+  const opacity = unitValue(layer.mistOpacity, 0.36) * 0.34;
   const density = unitValue(layer.density, 0.86);
-  const amount = Math.round(16 + density * 78);
-  const puff = clamp(finite(layer.puffSize, 1.73), 0.25, 2.4) * (74 + density * 55) * scale;
-  const speed = smokeSpeed(layer, 0.035);
+  const definition = unitValue(layer.definition, 0.82);
   const turbulence = unitValue(layer.turbulence, 0.54);
+  const speed = smokeSpeed(layer, 0.026);
+  const width = stageWidth * scale;
+  const height = stageHeight * scale;
+  const amount = Math.round(12 + density * 42);
+  const puff = clamp(finite(layer.puffSize, 1.73), 0.25, 2.4) * (96 + density * 90) * scale;
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
-  ctx.filter = `blur(${Math.max(8, puff * (0.06 + (1 - unitValue(layer.definition, 0.82)) * 0.1))}px)`;
+  ctx.filter = `blur(${Math.max(12, puff * (0.09 + (1 - definition) * 0.08))}px)`;
   for (let i = 0; i < amount; i += 1) {
     const h = hash(i * 2.13);
-    const phase = (t * speed * (0.85 + h * 0.9) + h) % 1;
-    const x = ((hash(i + 10) * stageWidth + Math.sin(t * 0.17 + i) * 90 * turbulence) % stageWidth) * scale;
-    const y = ((phase * stageHeight * 1.35) - stageHeight * 0.18 + hash(i + 20) * 80) * scale;
-    softBlob(ctx, x, y, puff * (0.45 + h * 1.4), tint, opacity * (0.18 + h * 0.36));
+    const phase = (t * speed * (0.7 + h) + h) % 1;
+    const x = ((hash(i + 10) * stageWidth + Math.sin(t * 0.16 + i) * 120 * turbulence) % stageWidth) * scale;
+    const y = ((phase * stageHeight * 1.45) - stageHeight * 0.24 + hash(i + 20) * stageHeight * 0.2) * scale;
+    softBlob(ctx, x, y, puff * (0.65 + h * 1.35), tint, opacity * (0.12 + h * 0.24));
   }
+  ctx.filter = 'none';
+  drawHorizontalAtmosphereWisps(ctx, layer, scale, t, width, height);
   ctx.restore();
 }
 
 function drawSmokeVignette(ctx, layer, scale, t, stageWidth, stageHeight) {
-  const tint = layer.colour || layer.colourHex || layer.colorA || '#dce2e7';
-  const opacity = unitValue(layer.mistOpacity, 0.36) * 0.72;
+  const tint = smokeTint(layer);
+  const opacity = unitValue(layer.mistOpacity, 0.36) * 0.58;
   const edge = unitValue(layer.edge, 0.64);
   const clear = clamp(finite(layer.clear, 0.54), 0.18, 0.9);
   const bias = clamp(finite(layer.bias, 0), -1, 1);
+  const density = unitValue(layer.density, 0.86);
   const width = stageWidth * scale;
   const height = stageHeight * scale;
-  const density = unitValue(layer.density, 0.86);
-  const amount = Math.round(28 + edge * 78 + density * 28);
-  const puff = (45 + edge * 145 + density * 24) * scale;
-  const speed = smokeSpeed(layer, 0.22);
+  const amount = Math.round(32 + edge * 76 + density * 24);
+  const puff = (56 + edge * 150 + density * 18) * scale;
+  const speed = smokeSpeed(layer, 0.2);
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
-  ctx.filter = `blur(${Math.max(10, puff * 0.1)}px)`;
+  ctx.filter = `blur(${Math.max(10, puff * 0.09)}px)`;
   for (let i = 0; i < amount; i += 1) {
     const side = i % 4;
     const h = hash(i + 31);
-    const wobble = Math.sin(t * speed + i * 1.9) * 34 * scale;
+    const wobble = Math.sin(t * speed + i * 1.9) * 32 * scale;
     let x = hash(i + 4) * width;
     let y = hash(i + 8) * height;
-    if (side === 0) y = -puff * 0.25 + wobble + bias * 90 * scale;
-    if (side === 1) x = width + puff * 0.12 + wobble;
-    if (side === 2) y = height + puff * 0.12 + wobble + bias * 90 * scale;
-    if (side === 3) x = -puff * 0.12 + wobble;
-    softBlob(ctx, x, y, puff * (0.55 + h * 1.2), tint, opacity * (0.12 + h * 0.34));
+    if (side === 0) y = -puff * (0.35 + h * 0.35) + wobble + bias * 95 * scale;
+    if (side === 1) x = width + puff * (0.1 + h * 0.25) + wobble;
+    if (side === 2) y = height + puff * (0.1 + h * 0.25) + wobble + bias * 95 * scale;
+    if (side === 3) x = -puff * (0.1 + h * 0.25) + wobble;
+    softBlob(ctx, x, y, puff * (0.6 + h * 1.18), tint, opacity * (0.1 + h * 0.32));
   }
-  ctx.globalCompositeOperation = 'destination-out';
-  const center = ctx.createRadialGradient(width / 2, height * (0.5 + bias * 0.16), 0, width / 2, height * (0.5 + bias * 0.16), Math.min(width, height) * clear * 0.55);
-  center.addColorStop(0, 'rgba(0,0,0,0.8)');
-  center.addColorStop(0.68, 'rgba(0,0,0,0.32)');
-  center.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = center;
+  ctx.filter = 'none';
+  const holeRadius = Math.min(width, height) * clear * 0.42;
+  const veil = ctx.createRadialGradient(width / 2, height * (0.5 + bias * 0.16), holeRadius * 0.25, width / 2, height * (0.5 + bias * 0.16), Math.min(width, height) * 0.76);
+  veil.addColorStop(0, 'rgba(0,0,0,0)');
+  veil.addColorStop(Math.min(0.82, clear), withAlpha(tint, opacity * 0.06));
+  veil.addColorStop(1, withAlpha(tint, opacity * 0.24));
+  ctx.fillStyle = veil;
   ctx.fillRect(0, 0, width, height);
   ctx.restore();
 }
 
-function drawSmokeBody(ctx, layer, x, y, scale, t, options = {}) {
-  const tint = layer.colour || layer.colourHex || layer.colorA || '#dce2e7';
+function drawVerticalSmokeColumn(ctx, layer, x, y, scale, t, options = {}) {
+  const tint = smokeTint(layer);
   const opacity = unitValue(layer.mistOpacity, 0.36) * finite(options.alphaBias, 1);
   const density = unitValue(layer.density, 0.86);
   const definition = unitValue(layer.definition, 0.82);
-  const amount = Math.round((6 + density * 38) * finite(options.countBias, 1));
-  const puff = clamp(finite(layer.puffSize, 1.73), 0.25, 2.4) * (34 + density * 24) * scale;
-  const width = finite(options.width, 240 * scale);
-  const height = finite(options.height, 300 * scale);
+  const amount = Math.round((7 + density * 36) * finite(options.amountBias, 1));
+  const puff = clamp(finite(layer.puffSize, 1.73), 0.25, 2.4) * (28 + density * 23) * scale;
+  const width = finite(options.width, 140 * scale);
+  const height = finite(options.height, 340 * scale);
   const gravityAngle = finite(layer.gravityAngle, -90) * Math.PI / 180;
   const gravity = clamp(finite(layer.gravity, 0.31), -1.5, 1.5);
-  const drift = finite(layer.drift, 0.13) * 65 * scale;
+  const drift = finite(layer.drift, 0.13) * 54 * scale;
   const turbulence = unitValue(layer.turbulence, 0.54);
-  const speed = smokeSpeed(layer, 0.052);
+  const speed = smokeSpeed(layer, options.chimney ? 0.062 : 0.052);
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
-  ctx.filter = `blur(${Math.max(3, puff * (0.06 + (1 - definition) * 0.16))}px)`;
+  ctx.filter = `blur(${Math.max(2.2, puff * (0.05 + (1 - definition) * 0.13))}px)`;
+  if (options.baseGlow) softBlob(ctx, x, y + 8 * scale, width * 0.8, tint, opacity * 0.16);
   for (let i = 0; i < amount; i += 1) {
-    const h = hash(i + 1.51);
-    const life = (t * speed * (0.75 + h * 0.8) + h) % 1;
+    const h = hash(`${options.bodyName || 'body'}-${i}`);
+    const life = (t * speed * (0.75 + h * 0.75) + h) % 1;
     const rise = life * height;
-    const angleX = Math.cos(gravityAngle) * rise * gravity;
+    const widening = options.chimney ? (0.22 + life * 0.58) : (0.32 + life * 0.86);
+    const angleX = Math.cos(gravityAngle) * rise * Math.max(0.15, Math.abs(gravity));
     const angleY = Math.sin(gravityAngle) * rise * Math.max(0.18, Math.abs(gravity));
-    const wave = Math.sin(t * (0.45 + h) + i * 2.1) * width * turbulence * 0.34;
-    const px = x + angleX + (h - 0.5) * width + wave + drift * life;
-    const py = y + angleY - (options.rise === false ? 0 : rise * 0.05);
-    const alpha = opacity * (0.1 + h * 0.24) * Math.sin(life * Math.PI);
-    softBlob(ctx, px, py, puff * (0.55 + h * 1.45) * (0.75 + life * 0.55), tint, alpha);
+    const wave = Math.sin(t * (0.55 + h) + i * 2.1) * width * turbulence * (options.chimney ? 0.12 : 0.25);
+    const px = x + angleX + (h - 0.5) * width * widening + wave + drift * life;
+    const py = y + angleY;
+    const alpha = opacity * (0.1 + h * 0.2) * Math.sin(life * Math.PI);
+    softBlob(ctx, px, py, puff * (0.45 + h * 1.22) * (0.62 + life * (options.chimney ? 0.7 : 1.05)), tint, alpha);
   }
   ctx.restore();
 }
 
-function drawSmokeWisps(ctx, layer, x, y, scale, t, options = {}) {
+function drawThreadMist(ctx, layer, x, y, scale, t, options = {}) {
+  const tint = smokeTint(layer);
+  const opacity = unitValue(layer.mistOpacity, 0.36) * finite(options.alphaBias, 0.18);
+  const amount = Math.max(1, Math.round(finite(options.amount, 8)));
+  const puff = clamp(finite(layer.puffSize, 1.73), 0.25, 2.4) * 22 * scale * finite(options.puffScale, 0.38);
+  const width = finite(options.width, 70 * scale);
+  const height = finite(options.height, 330 * scale);
+  const speed = smokeSpeed(layer, 0.048);
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  ctx.filter = `blur(${Math.max(2.5, puff * 0.4)}px)`;
+  for (let i = 0; i < amount; i += 1) {
+    const h = hash(`${options.name || 'mist'}-${i}`);
+    const life = (t * speed * (0.7 + h) + h) % 1;
+    const px = x + (h - 0.5) * width + Math.sin(t * 0.9 + i) * width * 0.12;
+    const py = y - life * height;
+    softBlob(ctx, px, py, puff * (0.6 + h), tint, opacity * Math.sin(life * Math.PI));
+  }
+  ctx.restore();
+}
+
+function drawRibbonWisps(ctx, layer, x, y, scale, t, options = {}) {
   const count = Math.round(clamp(finite(layer.wispCount, 13), 0, 50) * finite(options.countBias, 1));
   if (count <= 0) return;
-  const tint = layer.colour || layer.colourHex || layer.colorA || '#dce2e7';
-  const opacity = clamp(finite(layer.wispBrightness, 0.09), 0, 1.5);
+  const tint = smokeTint(layer);
+  const opacity = clamp(finite(layer.wispBrightness, 0.09), 0, 1.5) * finite(options.opacityBias, 1);
   const length = clamp(finite(layer.wispLength, 0.95), 0.15, 1.2);
   const widthFactor = clamp(finite(layer.wispWidth, 0.42), 0.05, 1.2);
   const curl = unitValue(layer.curl, 0.94);
   const rotation = unitValue(layer.rotation, 0.91);
   const tailFade = clamp(finite(layer.tailFade, 0.98), 0.05, 1);
-  const width = finite(options.width, 220 * scale);
-  const height = finite(options.height, 300 * scale) * length;
-  const speed = smokeSpeed(layer, 0.32);
+  const width = finite(options.width, 120 * scale);
+  const height = finite(options.height, 320 * scale) * length;
+  const speed = smokeSpeed(layer, options.thin ? 0.46 : 0.32);
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.shadowColor = tint;
-  ctx.shadowBlur = (options.thin ? 5 : 9) * scale * (0.5 + opacity);
+  ctx.shadowBlur = (options.thin ? 5 : 9) * scale * (0.45 + opacity);
   for (let i = 0; i < count; i += 1) {
-    const h = hash(i + 80);
-    const phase = t * speed * (0.6 + rotation * 0.9 + h * 0.35) + h * TAU;
+    const h = hash(`${options.name || 'wisp'}-${i}`);
+    const phase = t * speed * (0.7 + rotation * 1.0 + h * 0.4) + h * TAU;
     const baseX = x + (h - 0.5) * width;
-    const baseY = y - hash(i + 2) * height * 0.18;
-    const lineWidth = Math.max(0.5, (options.thin ? 1.3 : 3.8) * scale * widthFactor * (0.55 + h));
-    ctx.strokeStyle = withAlpha(tint, opacity * (0.18 + h * 0.28));
+    const baseY = y - hash(i + 2) * height * 0.12;
+    const lineWidth = Math.max(0.35, (options.thin ? 1.05 : 3.0) * scale * widthFactor * (0.45 + h));
+    ctx.strokeStyle = withAlpha(tint, opacity * (0.16 + h * 0.26));
     ctx.lineWidth = lineWidth;
     ctx.beginPath();
-    for (let s = 0; s <= 22; s += 1) {
-      const u = s / 22;
+    const steps = options.thin ? 34 : 24;
+    for (let s = 0; s <= steps; s += 1) {
+      const u = s / steps;
       const fade = Math.sin(Math.min(1, u / tailFade) * Math.PI);
-      const px = baseX + Math.sin(u * TAU * (1.1 + curl * 2.8) + phase) * width * 0.18 * fade;
-      const py = baseY - u * height + Math.cos(phase + u * TAU) * height * 0.04;
+      const sway = Math.sin(u * TAU * (1.0 + curl * (options.thin ? 3.6 : 2.3)) + phase) * width * (options.thin ? 0.22 : 0.14) * fade;
+      const fold = Math.cos(phase + u * TAU * (1.2 + rotation)) * height * (options.thin ? 0.018 : 0.035);
+      const px = baseX + sway;
+      const py = baseY - u * height + fold;
       if (s === 0) ctx.moveTo(px, py);
       else ctx.lineTo(px, py);
     }
     ctx.stroke();
   }
+  ctx.restore();
+}
+
+function drawHorizontalAtmosphereWisps(ctx, layer, scale, t, width, height) {
+  const tint = smokeTint(layer);
+  const opacity = clamp(finite(layer.wispBrightness, 0.09), 0, 1.5) * 0.45;
+  const count = Math.round(clamp(finite(layer.wispCount, 13), 0, 50) * 0.55);
+  if (count <= 0 || opacity <= 0) return;
+  const speed = smokeSpeed(layer, 0.18);
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  ctx.lineCap = 'round';
+  ctx.lineWidth = Math.max(0.4, finite(layer.wispWidth, 0.42) * 2.2 * scale);
+  ctx.strokeStyle = withAlpha(tint, opacity * 0.32);
+  for (let i = 0; i < count; i += 1) {
+    const h = hash(i + 500);
+    const y = height * h;
+    const phase = t * speed + i;
+    ctx.beginPath();
+    for (let s = 0; s <= 34; s += 1) {
+      const u = s / 34;
+      const x = u * width;
+      const py = y + Math.sin(u * TAU * (1.4 + h * 2) + phase) * 18 * scale;
+      if (s === 0) ctx.moveTo(x, py);
+      else ctx.lineTo(x, py);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawChimneySource(ctx, layer, x, y, width, scale) {
+  const tint = smokeTint(layer);
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  softBlob(ctx, x, y, Math.max(14 * scale, width * 0.55), '#ffca66', unitValue(layer.mistOpacity, 0.36) * 0.18);
+  softBlob(ctx, x, y - 10 * scale, Math.max(22 * scale, width * 0.8), tint, unitValue(layer.mistOpacity, 0.36) * 0.18);
   ctx.restore();
 }
 
@@ -218,7 +344,6 @@ function drawBasicPortalRing(ctx, layer, scale, t, stageWidth, stageHeight) {
   const rimAlpha = percent100(layer.rimAlpha, 58);
   const middleAlpha = percent100(layer.middleAlpha, 62);
   const cloudiness = percent100(layer.cloudiness, 70);
-  const textureStrength = percent100(layer.textureStrength, 68);
   const pulse = 1 + Math.sin(t * shimmerSpeed(layer, 0.48)) * percent100(layer.pulse, 52) * 0.13;
   const softness = percent100(layer.softness, 36);
   ctx.save();
@@ -702,7 +827,10 @@ function parseColor(color) {
 }
 
 function hash(value) {
-  const x = Math.sin((Number(value) || 0) * 127.1 + 311.7) * 43758.5453123;
+  const string = String(value);
+  let seed = 0;
+  for (let i = 0; i < string.length; i += 1) seed = (seed * 31 + string.charCodeAt(i)) >>> 0;
+  const x = Math.sin((Number.isFinite(Number(value)) ? Number(value) : seed) * 127.1 + 311.7) * 43758.5453123;
   return x - Math.floor(x);
 }
 
