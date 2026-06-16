@@ -76,6 +76,7 @@ export function normalizeLayer(layer = {}) {
   const firstStop = normalizedStops[0];
   const lastStop = normalizedStops[normalizedStops.length - 1] || firstStop;
   return {
+    ...layer,
     id: layer.id || `layer_${cryptoRandom()}`,
     name: layer.name || 'Effect Layer',
     visible: layer.visible !== false,
@@ -290,7 +291,7 @@ export function moveActiveEmitter(x, y) {
     patch.positionX = (nextX / getDesignWidth()) * 100;
     patch.positionY = (nextY / getDesignHeight()) * 100;
   }
-  if (layer.engine === 'prototype-smoke' && (layer.mode || layer.prototypeMode) === 'emission') {
+  if (layer.engine === 'prototype-smoke' && (layer.prototypeMode || layer.mode) === 'emission') {
     patch.sourceX = (nextX / getDesignWidth()) * 100;
     patch.sourceY = (nextY / getDesignHeight()) * 100;
   }
