@@ -1,7 +1,7 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
 import { OC, GROUND_Y } from './obstacle-course-state.js';
-import { ASSETS } from './obstacle-course-assets.js?v=3.0.40';
+import { ASSETS } from './obstacle-course-assets.js?v=3.0.43';
 import { clamp } from './obstacle-course-utils.js';
 
 export { THREE, GLTFLoader };
