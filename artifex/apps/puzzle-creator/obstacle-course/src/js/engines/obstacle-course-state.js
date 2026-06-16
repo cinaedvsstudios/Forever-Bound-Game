@@ -1,6 +1,6 @@
-// Obstacle Course V3.0.39 state and constants
-export const VERSION = 'V3.0.39';
-export const CACHE_VERSION = '3.0.39';
+// Obstacle Course V3.0.40 state and constants
+export const VERSION = 'V3.0.40';
+export const CACHE_VERSION = '3.0.40';
 export const ASSET_BASE = './assets/';
 export const SHARED_UI_BASE = '../../../shared/ui/';
 export const GROUND_Y = -1.62;
@@ -36,6 +36,7 @@ export const OC = {
   grid: null,
   animationFrame: 0,
   renderLoopRunning: false,
+  frameCallbacks: [],
   requiredReady: false,
   loadingDone: false,
   loadingCount: 0,
