@@ -14,7 +14,7 @@ import {
 import { toRuntimeLayer } from './physics-scale.js';
 import { drawTextParticle, isTextLayer, spawnTextParticlesForLayer } from './text-runtime.js';
 import { drawStructuredEffectLayer, isStructuredEffectLayer } from './portal-wormhole-runtime.js';
-import { drawPrototypeLayer, isPrototypeRenderableLayer } from './prototype-adapters/prototype-renderers-anchored.js';
+import { drawPrototypeLayer, isPrototypeRenderableLayer } from './prototype-adapters/prototype-renderers-source.js';
 
 let canvas;
 let ctx;
