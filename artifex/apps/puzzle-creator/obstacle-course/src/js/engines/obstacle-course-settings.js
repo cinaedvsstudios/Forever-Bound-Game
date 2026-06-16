@@ -6,7 +6,7 @@ const glbDefault = (overrides = {}) => ({ x: 0, y: 0, z: 0, ...sideDefaults, sca
 
 export const DEFAULT_SETTINGS = {
   engine: 'obstacle-course',
-  version: 'V3.0.29',
+  version: 'V3.0.31',
   templateId: 'horse_forest_easy',
   difficulty: 3,
   courseLength: 2400,
@@ -20,7 +20,7 @@ export const DEFAULT_SETTINGS = {
   layers: {
     ground: { visible: true, opacity: 1, x: 0, y: 4.1, z: 0, scale: 0.24950000000000006, order: 1, brightness: 0.58, contrast: 1.18, saturation: 0.84, tint: '#ffffff', tintStrength: 0 },
     path: { visible: false, opacity: 1, x: 0, y: 0, z: 0, scale: 1, order: 2, brightness: 1, contrast: 1, saturation: 1, tint: '#ffffff', tintStrength: 0 },
-    treeShadows: { visible: true, opacity: 0.5, x: 0.8, y: 0, z: 0, scale: 1, order: 6, brightness: 1, contrast: 1, saturation: 1, tint: '#ffffff', tintStrength: 0 },
+    treeShadows: { visible: true, opacity: 1, x: 0.8, y: 0, z: 0, scale: 1, order: 6, brightness: 1, contrast: 1, saturation: 1, tint: '#ffffff', tintStrength: 0 },
     trees: { visible: true, opacity: 1, x: 0, y: 3.3, z: 0, scale: 4, order: 20, brightness: 0.62, contrast: 1, saturation: 0.78, tint: '#ffffff', tintStrength: 0 },
     details: { visible: true, opacity: 1, x: 0, y: 3.5, z: 100, scale: 0.7435, order: 25, brightness: 0.56, contrast: 1, saturation: 1, tint: '#ffffff', tintStrength: 0 },
     obstacles: { visible: true, opacity: 1, x: 0, y: 2.8, z: 0, scale: 1, order: 16, brightness: 1, contrast: 1, saturation: 1, tint: '#ffffff', tintStrength: 0 },
@@ -48,7 +48,7 @@ function clone(value) {
 }
 
 function normalizeCriticalLayerSettings(layerSettings = {}) {
-  if (layerSettings.treeShadows) layerSettings.treeShadows.opacity = 0.5;
+  if (layerSettings.treeShadows) layerSettings.treeShadows.opacity = 1;
   return layerSettings;
 }
 

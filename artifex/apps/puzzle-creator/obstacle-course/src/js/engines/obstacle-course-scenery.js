@@ -1,5 +1,5 @@
 import { OC, COURSE_WORLD_WIDTH, GROUND_Y } from './obstacle-course-state.js';
-import { ASSETS, TEMPLATES, GLB_ASSETS } from './obstacle-course-assets.js?v=3.0.29';
+import { ASSETS, TEMPLATES, GLB_ASSETS } from './obstacle-course-assets.js?v=3.0.32';
 import { clamp, lerp } from './obstacle-course-utils.js';
 import { THREE, loadTexture } from './obstacle-course-scene.js';
 import { makeLayer, registerEntity } from './obstacle-course-layers.js';
@@ -57,11 +57,11 @@ function limitedOuterTreeScale(rng, distance) { return randFrom(rng, 0.18, 0.28)
 function localPlacementForLayer(layer, x, y, z) { const scale = layerScale(layer); return { x: (Number(x || 0) - Number(layer?.x || 0)) / scale, y, z: (Number(z || 0) - Number(layer?.z || 0)) / scale }; }
 function entityForInstance(type, layer, x, z, localX, localZ, assetUrl = '') { OC.entities.push({ type, layerId: layer.id, x, z, localX, localZ, assetUrl }); }
 
-function makeShadowMaterial(texture, opacity) {
+function makeShadowMaterial(texture) {
   const material = new THREE.MeshBasicMaterial({
     map: texture,
     transparent: true,
-    opacity: opacity ?? SHADOW_OPACITY,
+    opacity: SHADOW_OPACITY,
     depthWrite: false,
     depthTest: true,
     side: THREE.DoubleSide,
@@ -71,6 +71,7 @@ function makeShadowMaterial(texture, opacity) {
     polygonOffsetUnits: -4,
   });
   material.userData.ocSkipLayerVisual = true;
+  material.userData.ocFixedShadowMaterial = true;
   return material;
 }
 function addTreeShadow(rng, shadowLayer, x, z, scale) {
@@ -87,7 +88,7 @@ function addTreeShadow(rng, shadowLayer, x, z, scale) {
   const shadowWidth = shadowLength * randFrom(rng, 0.54, 0.74);
   const geometry = new THREE.PlaneGeometry(shadowLength / groundScale, shadowWidth / groundScale, 1, 1);
   geometry.translate(-(shadowLength / groundScale) * 0.42, 0, 0);
-  const shadow = new THREE.Mesh(geometry, makeShadowMaterial(texture, shadowLayer.opacity ?? SHADOW_OPACITY));
+  const shadow = new THREE.Mesh(geometry, makeShadowMaterial(texture));
   shadow.position.set(localX, GROUND_Y + SHADOW_Y_OFFSET, localZ + randFrom(rng, -0.2, 0.2) / groundScale);
   shadow.rotation.set(-Math.PI / 2, 0, SHADOW_LEFT_ROTATION + randFrom(rng, -0.055, 0.055));
   shadow.renderOrder = 6;
@@ -120,7 +121,7 @@ function flushPlacementQueues(queues) { queues.forEach(({ layer, asset, placemen
 export function scatterScenery() {
   const template = TEMPLATES[OC.templateId] || TEMPLATES.horse_forest_easy;
   const rng = seededRandom(`${OC.templateId}|${OC.difficulty}|${OC.courseLength}|${OC.pathSequence.map((p) => p.key).join(',') || '1'}|${OC.glbTemplates.size}`);
-  const shadowLayer = makeLayer('treeShadows', 'Tree Shadows', new THREE.Group(), { order: 6, opacity: SHADOW_OPACITY, brightness: 1, contrast: 1, saturation: 1 });
+  const shadowLayer = makeLayer('treeShadows', 'Tree Shadows', new THREE.Group(), { order: 6, opacity: 1, brightness: 1, contrast: 1, saturation: 1 });
   const treeLayer = makeLayer('trees', 'Trees', new THREE.Group(), { order: 20 });
   const detailLayer = makeLayer('details', 'Ferns / Bushes / Details', new THREE.Group(), { order: 25 });
   const groundLayer = OC.layers.get('ground');
