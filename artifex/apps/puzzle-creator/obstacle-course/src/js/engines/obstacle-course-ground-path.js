@@ -4,7 +4,11 @@ import { THREE, loadTexture } from './obstacle-course-scene.js';
 import { makeLayer, registerEntity } from './obstacle-course-layers.js';
 
 const TILE_SEAM_OVERLAP = 0.18;
-const GROUND_BUMP_SCALE = 0.055;
+const GROUND_BUMP_SCALE = 0.075;
+const GROUND_DISPLACEMENT_FILE = '1bump.jpg';
+const GROUND_DISPLACEMENT_SEGMENTS = 64;
+const GROUND_DISPLACEMENT_SCALE = 0.42;
+const GROUND_DISPLACEMENT_BIAS = -0.18;
 const ENDLESS_PATH_AHEAD_DISTANCE = 3200;
 const ENDLESS_PATH_INITIAL_DISTANCE = 6400;
 const ENDLESS_PATH_APPEND_SEGMENT_LIMIT = 160;
@@ -12,6 +16,7 @@ const ENDLESS_PATH_APPEND_SEGMENT_LIMIT = 160;
 function mapTiles() { return OC.groundPathMap?.tiles || []; }
 function tileById(id) { return mapTiles().find((tile) => String(tile.id) === String(id)) || null; }
 function fallbackTile() { return tileById('1') || mapTiles()[0] || null; }
+function groundImageRoot() { return OC.groundPathMap?.imageRoot || './assets/ground/'; }
 
 function cacheBusted(url) {
   if (!url) return '';
@@ -23,8 +28,14 @@ function imageUrlForTile(tile) {
   if (!tile) return '';
   const asset = (OC.groundTileAssets || []).find((item) => item.tile?.id === tile.id || item.tile?.file === tile.file);
   if (asset?.url) return cacheBusted(asset.url);
-  const root = OC.groundPathMap?.imageRoot || './assets/ground/';
+  const root = groundImageRoot();
   const url = /^https?:\/\//i.test(tile.file) ? tile.file : `${root}${tile.file}`;
+  return cacheBusted(url);
+}
+
+function displacementUrlForTile(tile) {
+  const file = tile?.displacementFile || tile?.bumpFile || OC.groundPathMap?.displacementFile || OC.groundPathMap?.bumpFile || GROUND_DISPLACEMENT_FILE;
+  const url = /^https?:\/\//i.test(file) ? file : `${groundImageRoot()}${file}`;
   return cacheBusted(url);
 }
 
@@ -99,13 +110,18 @@ function renderGroundSegment(seg, groundLayer) {
   const width = worldWidthForTile(seg.tile, length);
   const z = -seg.distance - (seg.worldLength || SECTION_WORLD_LENGTH) / 2 - TILE_SEAM_OVERLAP / 2;
   const tileUrl = imageUrlForTile(seg.tile);
+  const displacementUrl = displacementUrlForTile(seg.tile);
   const tileTexture = loadTexture(tileUrl, { repeat: [1, 1], repeatX: false });
+  const displacementTexture = loadTexture(displacementUrl, { repeat: [1, 1], repeatX: false });
   const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(width, length, 1, 1),
+    new THREE.PlaneGeometry(width, length, GROUND_DISPLACEMENT_SEGMENTS, GROUND_DISPLACEMENT_SEGMENTS),
     new THREE.MeshStandardMaterial({
       map: tileTexture,
-      bumpMap: tileTexture,
+      bumpMap: displacementTexture,
       bumpScale: GROUND_BUMP_SCALE,
+      displacementMap: displacementTexture,
+      displacementScale: GROUND_DISPLACEMENT_SCALE,
+      displacementBias: GROUND_DISPLACEMENT_BIAS,
       transparent: false,
       alphaTest: 0.02,
       roughness: 1,
