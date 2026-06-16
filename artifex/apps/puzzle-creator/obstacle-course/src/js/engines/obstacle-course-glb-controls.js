@@ -1,5 +1,5 @@
 import { OC } from './obstacle-course-state.js';
-import { GLB_ASSETS } from './obstacle-course-assets.js';
+import { GLB_ASSETS } from './obstacle-course-assets.js?v=3.0.41';
 import { buildSliderRow } from './obstacle-course-ui.js';
 import { selectObjects } from './obstacle-course-scene.js';
 import { signedToFactor, factorToSigned, sliderToVisualFactor, visualFactorToSlider, clamp } from './obstacle-course-utils.js';
@@ -83,7 +83,7 @@ function openGlbPicker(host) {
   modal.id = 'hf-glb-picker-modal';
   modal.className = 'hf-glb-picker-modal';
   const loaded = new Set(OC.glbInstances.map((obj) => obj.userData.glbAssetUrl).filter(Boolean));
-  modal.innerHTML = `<div class="hf-glb-picker-card"><button type="button" class="hf-glb-picker-close">Close</button><h3>GLB Asset Selector</h3><div class="hf-glb-picker-grid">${GLB_ASSETS.map((asset) => `<button type="button" class="hf-glb-tile ${loaded.has(asset.url) ? 'is-loaded' : 'is-missing'}" data-url="${asset.url}"><span class="hf-glb-thumb">${asset.type === 'rock' ? '◆' : asset.type.includes('Detail') ? '⌁' : asset.type.includes('Tree') ? '▲' : '●'}</span><strong>${asset.label}</strong><small>${asset.url.split('/').pop()} · ${loaded.has(asset.url) ? 'loaded' : 'missing'}</small></button>`).join('')}</div></div>`;
+  modal.innerHTML = `<div class="hf-glb-picker-card"><button type="button" class="hf-glb-picker-close">Close</button><h3>GLB Asset Selector</h3><div class="hf-glb-picker-grid">${GLB_ASSETS.map((asset) => `<button type="button" class="hf-glb-tile ${loaded.has(asset.url) ? 'is-loaded' : 'is-missing'}" data-url="${asset.url}"><span class="hf-glb-thumb">${asset.type === 'rock' ? '◆' : asset.type.includes('Detail') || asset.type === 'groundGrass' ? '⌁' : asset.type.includes('Tree') ? '▲' : '●'}</span><strong>${asset.label}</strong><small>${asset.url.split('/').pop()} · ${loaded.has(asset.url) ? 'loaded' : 'missing'}</small></button>`).join('')}</div></div>`;
   document.body.appendChild(modal);
   modal.querySelector('.hf-glb-picker-close')?.addEventListener('click', () => modal.remove());
   modal.querySelectorAll('.hf-glb-tile').forEach((tile) => tile.addEventListener('click', () => {
