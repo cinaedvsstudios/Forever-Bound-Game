@@ -66,12 +66,13 @@ function isLikelyFoliageMaterial(mat, node = null) {
 
 function applyFoliageCutoutRules(mat, node = null) {
   if (!isLikelyFoliageMaterial(mat, node)) return;
-  mat.alphaTest = Math.max(Number(mat.alphaTest || 0), 0.34);
+  mat.alphaTest = Math.max(Number(mat.alphaTest || 0), 0.46);
   mat.transparent = false;
   mat.opacity = 1;
   mat.depthWrite = true;
   mat.depthTest = true;
   mat.side = THREE.DoubleSide;
+  mat.blending = THREE.NormalBlending;
   mat.needsUpdate = true;
 }
 
@@ -204,13 +205,30 @@ function transformedColor(baseColor, cfg) {
   return color;
 }
 
+function forceOpaqueMaterial(mat) {
+  mat.transparent = false;
+  mat.opacity = 1;
+  mat.depthWrite = true;
+  mat.depthTest = true;
+  mat.blending = THREE.NormalBlending;
+}
+
 function applyGlbMaterialVisual(obj, cfg) {
+  const opacity = Number(cfg.opacity ?? 1);
+  const atMaxOpacity = opacity >= 0.995;
   obj.traverse?.((node) => {
     const materials = Array.isArray(node.material) ? node.material : node.material ? [node.material] : [];
     materials.forEach((mat) => {
       const isCutout = Boolean(mat.alphaTest && mat.alphaTest > 0);
-      mat.transparent = isCutout ? false : ((cfg.opacity ?? 1) < 0.995 || mat.transparent);
-      mat.opacity = isCutout ? 1 : (cfg.opacity ?? 1);
+      if (isCutout || atMaxOpacity) {
+        forceOpaqueMaterial(mat);
+        if (isCutout) mat.alphaTest = Math.max(Number(mat.alphaTest || 0), 0.46);
+      } else {
+        mat.transparent = true;
+        mat.opacity = clamp01(opacity);
+        mat.depthWrite = false;
+        mat.depthTest = true;
+      }
       if (mat.color) {
         if (!mat.userData.baseColor) mat.userData.baseColor = mat.color.clone();
         mat.color.copy(transformedColor(mat.userData.baseColor, cfg));
@@ -228,10 +246,11 @@ function sideForObject(obj) {
 export function applyAllGlbAssetControls() {
   OC.glbInstances.forEach((obj) => {
     const cfg = glbControl(obj.userData.glbAssetUrl);
+    const opacity = Number(cfg.opacity ?? 1);
     if (obj.userData.isInstancedAssetGroup) {
       obj.position.copy(obj.userData.basePosition).add(new THREE.Vector3(cfg.x || 0, cfg.y || 0, cfg.z || 0));
       obj.scale.setScalar(1);
-      obj.visible = (cfg.opacity ?? 1) > 0.01;
+      obj.visible = opacity > 0.01;
       obj.renderOrder = cfg.order || 0;
       updateInstancedGroupMatrices(obj, cfg);
       applyGlbMaterialVisual(obj, cfg);
@@ -242,7 +261,7 @@ export function applyAllGlbAssetControls() {
     obj.position.copy(obj.userData.basePosition).add(new THREE.Vector3((cfg.x || 0) + offset.x, (cfg.y || 0) + offset.y, (cfg.z || 0) + offset.z));
     const scale = (obj.userData.baseScaleValue || 1) * (cfg.scale || 1);
     obj.scale.setScalar(scale);
-    obj.visible = (cfg.opacity ?? 1) > 0.01;
+    obj.visible = opacity > 0.01;
     obj.renderOrder = cfg.order || 0;
     applyGlbMaterialVisual(obj, cfg);
   });
