@@ -1,7 +1,7 @@
 import { OC } from './obstacle-course-state.js';
 import { buildSliderRow } from './obstacle-course-ui.js';
 import { signedToFactor, factorToSigned, sliderToVisualFactor, visualFactorToSlider, clamp } from './obstacle-course-utils.js';
-import { renderOnce, selectObjects, applyBackgroundPlate } from './obstacle-course-scene.js';
+import { renderOnce, selectObjects, applyBackgroundPlate, THREE } from './obstacle-course-scene.js';
 import { getLayerDefault } from './obstacle-course-settings.js';
 
 function layerBase(id) { return getLayerDefault(id); }
@@ -14,6 +14,7 @@ export function makeLayer(id, label, group, cfg = {}) {
   const base = layerBase(id);
   const pending = OC.pendingLayerSettings?.[id] || {};
   const layer = { id, label, group, visible: true, opacity: 1, x: 0, y: 0, z: 0, scale: 1, order: 0, brightness: 1, contrast: 1, saturation: 1, tint: '#ffffff', tintStrength: 0, ...base, ...cfg, ...pending };
+  if (id === 'treeShadows') layer.opacity = 1;
   OC.layers.set(id, layer);
   return layer;
 }
@@ -55,10 +56,26 @@ function updateShaderUniforms(mat, cfg) {
   shader.uniforms.ocTint.value = hexToRgb01(cfg.tint || '#ffffff');
   shader.uniforms.ocTintStrength.value = cfg.tintStrength ?? 0;
 }
+function forceOpaqueMaterial(mat) {
+  mat.transparent = false;
+  mat.opacity = 1;
+  mat.depthWrite = true;
+  mat.depthTest = true;
+  mat.blending = THREE.NormalBlending;
+}
 function applyMaterialVisual(mat, layer) {
   if (!mat || mat.userData.ocSkipLayerVisual) return;
-  mat.transparent = (layer.opacity ?? 1) < 0.995 || mat.transparent;
-  mat.opacity = layer.opacity ?? 1;
+  const opacity = clamp(Number(layer.opacity ?? 1), 0, 1);
+  const isCutout = Boolean(Number(mat.alphaTest || 0) > 0);
+  if (opacity >= 0.995 || isCutout) {
+    forceOpaqueMaterial(mat);
+    if (isCutout) mat.alphaTest = Math.max(Number(mat.alphaTest || 0), 0.34);
+  } else {
+    mat.transparent = true;
+    mat.opacity = opacity;
+    mat.depthWrite = false;
+    mat.depthTest = true;
+  }
   if (mat.color) { if (!mat.userData.baseColor) mat.userData.baseColor = mat.color.clone(); mat.color.copy(mat.userData.baseColor); }
   const cfg = { brightness: layer.brightness ?? 1, contrast: layer.contrast ?? 1, saturation: layer.saturation ?? 1, tint: layer.tint || '#ffffff', tintStrength: layer.tintStrength || 0 };
   mat.userData.ocVisualConfig = cfg;
@@ -69,6 +86,7 @@ function applyMaterialVisual(mat, layer) {
 
 export function applyLayer(layer) {
   if (!layer?.group) return;
+  if (layer.id === 'treeShadows') layer.opacity = 1;
   layer.group.visible = layer.visible;
   layer.group.position.set(layer.x || 0, layer.y || 0, layer.z || 0);
   const scale = Math.max(0.0001, Number(layer.scale || 1));
@@ -110,7 +128,7 @@ export function createLayerSliders({ refreshOverview, createGlbAssetSliders }) {
   buildSliderRow(host, 'hf-layer', 'y', 'Y', -100, 100, 1, offsetFromBase(layer.y, base.y), (v) => { layer.y = Number(base.y || 0) + v; redraw(); });
   buildSliderRow(host, 'hf-layer', 'z', 'Z', -100, 100, 1, offsetFromBase(layer.z, base.z), (v) => { layer.z = Number(base.z || 0) + v; redraw(); });
   buildSliderRow(host, 'hf-layer', 'scaleOffset', 'Scale', -100, 100, 1, factorToSigned((layer.scale || 1) / (base.scale || 1)), (v) => { layer.scale = Number(base.scale || 1) * signedToFactor(v); redraw(); });
-  buildSliderRow(host, 'hf-layer', 'opacityOffset', 'Opacity', -100, 100, 1, opacityOffsetFromBase(layer.opacity, base.opacity), (v) => { layer.opacity = clamp(Number(base.opacity ?? 1) + (v / 100), 0, 1); redraw(); });
+  if (layer.id !== 'treeShadows') buildSliderRow(host, 'hf-layer', 'opacityOffset', 'Opacity', -100, 100, 1, opacityOffsetFromBase(layer.opacity, base.opacity), (v) => { layer.opacity = clamp(Number(base.opacity ?? 1) + (v / 100), 0, 1); redraw(); });
   buildSliderRow(host, 'hf-layer', 'brightnessOffset', 'Bright', -100, 100, 1, visualOffsetFromBase(layer.brightness, base.brightness), (v) => { layer.brightness = Number(base.brightness || 1) * sliderToVisualFactor(v); redraw(); });
   buildSliderRow(host, 'hf-layer', 'contrastOffset', 'Contrast', -100, 100, 1, visualOffsetFromBase(layer.contrast, base.contrast), (v) => { layer.contrast = Number(base.contrast || 1) * sliderToVisualFactor(v); redraw(); });
   buildSliderRow(host, 'hf-layer', 'saturationOffset', 'Saturation', -100, 100, 1, visualOffsetFromBase(layer.saturation, base.saturation), (v) => { layer.saturation = Number(base.saturation || 1) * sliderToVisualFactor(v); redraw(); });
