@@ -1,6 +1,6 @@
 import { OC, ACCEL, DECEL, BACK_SPEED, SLOW_TROT_SPEED, START_DISTANCE } from './obstacle-course-state.js';
 import { clamp } from './obstacle-course-utils.js';
-import { pathStatus, playerWorldX } from './obstacle-course-ground-path.js';
+import { pathStatus, playerWorldX, ensurePathCoverage } from './obstacle-course-ground-path.js';
 import { updateWorldTransform, applyBackgroundPlate, startRenderLoop } from './obstacle-course-scene.js';
 import { updateHorseSprite } from './obstacle-course-horse.js';
 import { updateHud, updateOffPathWarning } from './obstacle-course-hud.js';
@@ -8,7 +8,7 @@ import { checkCollectibles } from './obstacle-course-collectibles.js';
 import { checkObstacles } from './obstacle-course-obstacles.js';
 import { makeResult } from './obstacle-course-scoring.js';
 import { setResult } from './obstacle-course-ui.js';
-import { scheduleOverviewDraw } from './obstacle-course-overview.js?v=3.03';
+import { scheduleOverviewDraw } from './obstacle-course-overview.js?v=3.0.38';
 import { ensureAudio, updateAudio, playJumpSound, playLandSound } from './obstacle-course-audio.js';
 
 export function startRun() {
@@ -57,6 +57,7 @@ export function resetRun(silent = false) {
     if (obj.userData.kind === 'collectible') { obj.visible = true; obj.userData.collected = false; }
     if (obj.userData.kind === 'obstacle') obj.userData.hit = false;
   });
+  ensurePathCoverage(OC.distance);
   updateWorldTransform(playerWorldX());
   applyBackgroundPlate();
   updateHud();
@@ -121,10 +122,10 @@ export function updateMovement(dt) {
   OC.currentSpeed += clamp(OC.targetSpeed - OC.currentSpeed, -rate * dt, rate * dt);
   if (Math.abs(OC.currentSpeed) < 0.05) OC.currentSpeed = 0;
   if (OC.running && !OC.paused) OC.distance += OC.currentSpeed * dt;
+  ensurePathCoverage(OC.distance);
   updateWorldTransform(playerWorldX());
   checkCollectibles();
   checkObstacles();
-  if (OC.distance >= OC.courseLength) completeRun();
   updateHorseSprite();
   updateOffPathWarning();
   updateHud();

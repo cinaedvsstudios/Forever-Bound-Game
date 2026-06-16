@@ -14,7 +14,7 @@ import {
 import { toRuntimeLayer } from './physics-scale.js';
 import { drawTextParticle, isTextLayer, spawnTextParticlesForLayer } from './text-runtime.js';
 import { drawStructuredEffectLayer, isStructuredEffectLayer } from './portal-wormhole-runtime.js';
-import { drawPrototypeLayer, isPrototypeRenderableLayer } from './prototype-adapters/prototype-renderers.js';
+import { drawPrototypeLayer, isPrototypeRenderableLayer } from './prototype-adapters/prototype-renderers-source.js';
 
 let canvas;
 let ctx;
@@ -36,32 +36,22 @@ let lastPanPoint = null;
 export function initRenderer() {
   canvas = document.getElementById('fx-canvas');
   workspace = document.getElementById('workspace');
-  if (!canvas || !workspace) {
-    throw new Error('Renderer could not find #fx-canvas or #workspace.');
-  }
-
+  if (!canvas || !workspace) throw new Error('Renderer could not find #fx-canvas or #workspace.');
   ctx = canvas.getContext('2d', { alpha: false });
   resizeCanvas();
-
   window.addEventListener('resize', resizeCanvas);
   canvas.addEventListener('pointerdown', handlePointerDown);
   canvas.addEventListener('pointermove', (event) => {
     if (isWorkspacePanning) return;
     if (event.buttons === 1 && !targetPickCallback) handlePointer(event);
   });
-  canvas.addEventListener('auxclick', (event) => {
-    if (event.button === 1) event.preventDefault();
-  });
-  canvas.addEventListener('contextmenu', (event) => {
-    if (isWorkspacePanning) event.preventDefault();
-  });
-
+  canvas.addEventListener('auxclick', (event) => { if (event.button === 1) event.preventDefault(); });
+  canvas.addEventListener('contextmenu', (event) => { if (isWorkspacePanning) event.preventDefault(); });
   onStateChange(() => {
     const active = getActiveLayer();
     if (active) syncCanvasCursor();
     syncReferenceImage();
   });
-
   animationId = requestAnimationFrame(tick);
 }
 
@@ -80,9 +70,7 @@ export function resizeCanvas() {
   ctx = canvas.getContext('2d', { alpha: false });
 }
 
-export function clearRendererParticles() {
-  editorState.particles = [];
-}
+export function clearRendererParticles() { editorState.particles = []; }
 
 export function takeSnapshot() {
   if (!canvas) return;
@@ -94,7 +82,6 @@ export function takeSnapshot() {
 
 function tick(now) {
   if (!editorState.isPaused) renderTime = now;
-
   if (editorState.emergencyLiteMode && editorState.isPaused) {
     editorState.renderStats.fps = 0;
     editorState.renderStats.performanceMode = 'Emergency Idle';
@@ -104,12 +91,9 @@ function tick(now) {
       lastDrawFrame = now;
       draw();
     }
-    window.setTimeout(() => {
-      animationId = requestAnimationFrame(tick);
-    }, 250);
+    window.setTimeout(() => { animationId = requestAnimationFrame(tick); }, 250);
     return;
   }
-
   const delta = Math.max(1, now - lastFrame);
   lastFrame = now;
   const fps = 1000 / delta;
@@ -117,31 +101,23 @@ function tick(now) {
   editorState.renderStats.fps = Math.round(drawFpsSmoothing);
   editorState.renderStats.performanceMode = editorState.lowPerformanceMode ? 'Low · 50% redraw' : 'Full';
   editorState.renderStats.particleCap = editorState.lowPerformanceMode ? 260 : 900;
-
   if (!editorState.isPaused) {
     if (editorState.lowPerformanceMode) {
       lowPerfFrameSkip = !lowPerfFrameSkip;
       if (!lowPerfFrameSkip) updateParticles();
-    } else {
-      updateParticles();
-    }
+    } else updateParticles();
   }
-
   let shouldDraw = true;
   if (editorState.lowPerformanceMode) {
     lowPerfRedrawSkip = !lowPerfRedrawSkip;
     shouldDraw = !lowPerfRedrawSkip;
-  } else {
-    lowPerfRedrawSkip = false;
-  }
-
+  } else lowPerfRedrawSkip = false;
   if (shouldDraw) {
     const drawDelta = Math.max(1, now - lastDrawFrame);
     lastDrawFrame = now;
     drawFpsSmoothing = drawFpsSmoothing * 0.9 + (1000 / drawDelta) * 0.1;
     draw();
   }
-
   animationId = requestAnimationFrame(tick);
 }
 
@@ -157,48 +133,30 @@ function updateParticles() {
       editorState.particles.push(...spawned.map((particle) => ({ particle, layerId: layer.id, isTextParticle: isTextLayer(runtimeLayer) })));
     }
   }
-
   for (const item of editorState.particles) {
     const layer = editorState.composition.layers.find((candidate) => candidate.id === item.layerId);
     if (layer) item.particle.update(toRuntimeLayer(layer));
   }
-
   editorState.particles = editorState.particles.filter((item) => item.particle.alive);
-  if (editorState.particles.length > particleCap) {
-    editorState.particles = editorState.particles.slice(-particleCap);
-  }
+  if (editorState.particles.length > particleCap) editorState.particles = editorState.particles.slice(-particleCap);
   editorState.renderStats.particles = editorState.particles.length;
 }
 
 function draw() {
   const scale = getScale();
   const offset = getOffset(scale);
-
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = editorState.workspaceMode === 'white' ? '#f7f3ee' : '#050405';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-
   ctx.translate(offset.x, offset.y);
   ctx.scale(editorState.zoom, editorState.zoom);
-
   drawStageBackground(scale);
   drawUnderlayMedia(scale);
-
-  for (const layer of editorState.composition.layers) {
-    drawHeatDistortionLayer(ctx, toRuntimeLayer(layer), scale, renderTime);
-  }
-
+  for (const layer of editorState.composition.layers) drawHeatDistortionLayer(ctx, toRuntimeLayer(layer), scale, renderTime);
   if (editorState.showGrid) drawGrid(scale);
-
-  for (const layer of editorState.composition.layers) {
-    drawStructuredEffectLayer(ctx, toRuntimeLayer(layer), scale, renderTime);
-  }
-
-  for (const layer of editorState.composition.layers) {
-    drawPrototypeLayer(ctx, layer, scale, renderTime, { width: getDesignWidth(), height: getDesignHeight() });
-  }
-
+  for (const layer of editorState.composition.layers) drawStructuredEffectLayer(ctx, toRuntimeLayer(layer), scale, renderTime);
+  for (const layer of editorState.composition.layers) drawPrototypeLayer(ctx, layer, scale, renderTime, { width: getDesignWidth(), height: getDesignHeight() });
   for (const item of editorState.particles) {
     const layer = editorState.composition.layers.find((candidate) => candidate.id === item.layerId);
     if (layer?.visible !== false) {
@@ -207,9 +165,7 @@ function draw() {
       else drawParticle(ctx, item.particle, runtimeLayer, scale);
     }
   }
-
   if (editorState.showHelpers) drawEmitterHelpers(scale);
-
   ctx.restore();
 }
 
@@ -218,15 +174,7 @@ function drawStageBackground(scale) {
   const designHeight = getDesignHeight();
   ctx.fillStyle = editorState.workspaceMode === 'white' ? '#ffffff' : '#090708';
   ctx.fillRect(0, 0, designWidth * scale, designHeight * scale);
-
-  const gradient = ctx.createRadialGradient(
-    designWidth * scale * 0.5,
-    designHeight * scale * 0.5,
-    0,
-    designWidth * scale * 0.5,
-    designHeight * scale * 0.5,
-    designWidth * scale * 0.55
-  );
+  const gradient = ctx.createRadialGradient(designWidth * scale * 0.5, designHeight * scale * 0.5, 0, designWidth * scale * 0.5, designHeight * scale * 0.5, designWidth * scale * 0.55);
   if (editorState.workspaceMode === 'white') {
     gradient.addColorStop(0, '#ffffff');
     gradient.addColorStop(1, '#e9e3dc');
@@ -236,7 +184,6 @@ function drawStageBackground(scale) {
   }
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, designWidth * scale, designHeight * scale);
-
   ctx.strokeStyle = editorState.workspaceMode === 'white' ? '#c0b7ac' : '#382a21';
   ctx.lineWidth = Math.max(1, scale);
   ctx.strokeRect(0, 0, designWidth * scale, designHeight * scale);
@@ -244,9 +191,7 @@ function drawStageBackground(scale) {
 
 function drawUnderlayMedia(scale) {
   const reference = editorState.referenceMedia;
-  if (!reference?.visible || !reference.dataUrl || !referenceImage) return;
-  if (!referenceImage.complete) return;
-
+  if (!reference?.visible || !reference.dataUrl || !referenceImage || !referenceImage.complete) return;
   const stageW = getDesignWidth() * scale;
   const stageH = getDesignHeight() * scale;
   const imageRatio = referenceImage.naturalWidth / referenceImage.naturalHeight;
@@ -260,7 +205,6 @@ function drawUnderlayMedia(scale) {
   drawH *= underlayScale;
   const drawX = (stageW - drawW) / 2;
   const drawY = (stageH - drawH) / 2;
-
   ctx.save();
   ctx.globalAlpha = Math.max(0, Math.min(1, Number(reference.opacity) || 0.55));
   ctx.drawImage(referenceImage, drawX, drawY, drawW, drawH);
@@ -284,7 +228,6 @@ function drawGrid(scale) {
   ctx.strokeStyle = editorState.workspaceMode === 'white' ? 'rgba(56,42,33,0.22)' : 'rgba(226,204,167,0.15)';
   ctx.fillStyle = editorState.workspaceMode === 'white' ? 'rgba(56,42,33,0.7)' : 'rgba(226,204,167,0.58)';
   ctx.lineWidth = 1;
-
   for (let c = 0; c <= 16; c++) {
     const x = c * stepX * scale;
     ctx.beginPath();
@@ -293,7 +236,6 @@ function drawGrid(scale) {
     ctx.stroke();
     if (c < 16) ctx.fillText(String(c + 1), x + 6, 16);
   }
-
   for (let r = 0; r <= 9; r++) {
     const y = r * stepY * scale;
     ctx.beginPath();
@@ -308,7 +250,6 @@ function drawGrid(scale) {
 function drawEmitterHelpers(scale) {
   const active = getActiveLayer();
   if (!active) return;
-
   const x = active.emitterX * scale;
   const y = active.emitterY * scale;
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--module-accent-strong').trim() || '#00a1d7';
@@ -319,7 +260,6 @@ function drawEmitterHelpers(scale) {
   const endY = y + Math.sin(radians) * directionLength;
   const wing = 10 * scale;
   const width = Math.max(0, Number(active.emitterWidth) || 0) * scale;
-
   ctx.save();
   ctx.strokeStyle = accent;
   ctx.fillStyle = accent;
@@ -327,14 +267,12 @@ function drawEmitterHelpers(scale) {
   ctx.beginPath();
   ctx.arc(x, y, 10 * scale, 0, Math.PI * 2);
   ctx.stroke();
-
   ctx.beginPath();
   ctx.moveTo(x - 18 * scale, y);
   ctx.lineTo(x + 18 * scale, y);
   ctx.moveTo(x, y - 18 * scale);
   ctx.lineTo(x, y + 18 * scale);
   ctx.stroke();
-
   ctx.save();
   ctx.setLineDash([4 * scale, 4 * scale]);
   ctx.beginPath();
@@ -348,7 +286,6 @@ function drawEmitterHelpers(scale) {
   ctx.moveTo(endX, endY);
   ctx.lineTo(endX - Math.cos(radians + Math.PI / 4) * wing, endY - Math.sin(radians + Math.PI / 4) * wing);
   ctx.stroke();
-
   if (width > 20 * scale) {
     const left = x - width / 2;
     const right = x + width / 2;
@@ -428,21 +365,11 @@ function canvasToStage(event) {
   };
 }
 
-function getScale() {
-  return Math.min(canvas.width / getDesignWidth(), canvas.height / getDesignHeight()) * 0.82;
-}
-
+function getScale() { return Math.min(canvas.width / getDesignWidth(), canvas.height / getDesignHeight()) * 0.82; }
 function getOffset(scale) {
   const stageW = getDesignWidth() * scale * editorState.zoom;
   const stageH = getDesignHeight() * scale * editorState.zoom;
   const pan = editorState.viewOffset || { x: 0, y: 0 };
-  return {
-    x: (canvas.width - stageW) / 2 + pan.x,
-    y: (canvas.height - stageH) / 2 + pan.y
-  };
+  return { x: (canvas.width - stageW) / 2 + pan.x, y: (canvas.height - stageH) / 2 + pan.y };
 }
-
-function syncCanvasCursor() {
-  if (!canvas) return;
-  canvas.style.cursor = targetPickCallback ? 'crosshair' : 'default';
-}
+function syncCanvasCursor() { if (canvas) canvas.style.cursor = targetPickCallback ? 'crosshair' : 'default'; }

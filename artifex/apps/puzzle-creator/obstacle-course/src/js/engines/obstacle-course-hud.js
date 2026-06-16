@@ -18,10 +18,10 @@ export function updateHud() {
     clip.style.opacity = String(power);
   }
   if ($('oc-speed-state')) $('oc-speed-state').textContent = gait;
-  if ($('obstacle-distance-readout')) $('obstacle-distance-readout').textContent = `Distance ${Math.max(0, Math.round(OC.distance))} / ${Math.round(OC.courseLength)}`;
+  if ($('obstacle-distance-readout')) $('obstacle-distance-readout').textContent = `Distance ${Math.max(0, Math.round(OC.distance))} / ∞`;
   if ($('obstacle-score-readout')) $('obstacle-score-readout').textContent = `Score ${OC.score} · Collected ${OC.collected} · Hits ${OC.hits}`;
-  if ($('oc-top-info')) $('oc-top-info').textContent = `Distance ${Math.max(0, Math.round(OC.distance))}/${Math.round(OC.courseLength)} · Score ${OC.score}`;
-  if ($('obstacle-status')) $('obstacle-status').textContent = OC.complete ? 'Complete' : OC.running ? 'Running' : OC.paused ? 'Paused' : OC.requiredReady ? 'Ready' : 'Loading';
+  if ($('oc-top-info')) $('oc-top-info').textContent = `Distance ${Math.max(0, Math.round(OC.distance))} / ∞ · Score ${OC.score}`;
+  if ($('obstacle-status')) $('obstacle-status').textContent = OC.running ? 'Running' : OC.paused ? 'Paused' : OC.requiredReady ? 'Ready' : 'Loading';
   $('obstacle-start')?.classList.toggle('is-running', OC.running);
   $('obstacle-pause')?.classList.toggle('is-paused', OC.paused);
 }

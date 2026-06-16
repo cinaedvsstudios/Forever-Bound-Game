@@ -3,6 +3,7 @@ import { THREE } from './obstacle-course-scene.js';
 import { getGlbDefault } from './obstacle-course-settings.js';
 
 const GLB_LOAD_TIMEOUT_MS = 10000;
+const PLANT_ALPHA_TEST = 0.52;
 const instancedPartCache = new Map();
 const dummy = new THREE.Object3D();
 
@@ -17,10 +18,7 @@ export function loadGlbAsset(url) {
       OC.optionalAssetStatus?.set?.(url, { url, type: 'glb', status: ok ? 'loaded' : 'failed', reason });
       resolve(ok);
     };
-    const timeout = window.setTimeout(() => {
-      console.warn('[ObstacleCourse] optional GLB timed out', url);
-      done(false, 'timeout');
-    }, GLB_LOAD_TIMEOUT_MS);
+    const timeout = window.setTimeout(() => { console.warn('[ObstacleCourse] optional GLB timed out', url); done(false, 'timeout'); }, GLB_LOAD_TIMEOUT_MS);
     OC.gltfLoader.load(`${url}?v=${OC.cacheVersion}`, (gltf) => {
       window.clearTimeout(timeout);
       OC.glbTemplates.set(url, gltf);
@@ -39,34 +37,41 @@ export function cloneGlbTemplate(url) {
   if (!template) return null;
   const root = template.scene.clone(true);
   root.traverse((node) => {
-    if (node.isMesh) {
-      if (node.geometry) node.geometry = node.geometry.clone();
-      if (Array.isArray(node.material)) node.material = node.material.map((mat) => cloneMaterial(mat, node));
-      else if (node.material) node.material = cloneMaterial(node.material, node);
-      node.castShadow = true;
-      node.receiveShadow = true;
-    }
+    if (!node.isMesh) return;
+    if (node.geometry) node.geometry = node.geometry.clone();
+    if (Array.isArray(node.material)) node.material = node.material.map((mat) => cloneMaterial(mat, node, url));
+    else if (node.material) node.material = cloneMaterial(node.material, node, url);
+    node.castShadow = true;
+    node.receiveShadow = true;
   });
   return root;
 }
 
-function cloneMaterial(mat, node = null) {
+function cloneMaterial(mat, node = null, assetUrl = '') {
   const clone = mat.clone();
+  clone.userData.ocGlbAssetUrl = assetUrl || mat.userData?.ocGlbAssetUrl || '';
   if (clone.color) clone.userData.baseColor = clone.color.clone();
-  applyFoliageCutoutRules(clone, node);
+  applyPlantCutout(clone, node, clone.userData.ocGlbAssetUrl);
   return clone;
 }
 
-function isLikelyFoliageMaterial(mat, node = null) {
-  const materialName = String(mat?.name || '').toLowerCase();
-  const nodeName = String(node?.name || '').toLowerCase();
-  const foliageHint = /leaf|leaves|foliage|branch|branches|pine|spruce|bush|fern|needle|canopy|crown/.test(materialName) || /leaf|leaves|foliage|branch|branches|pine|spruce|bush|fern|needle|canopy|crown/.test(nodeName);
-  return Boolean(foliageHint || mat?.alphaMap || (mat?.map && mat?.transparent === true && !/glass|water/.test(materialName)));
+function isPlantAssetUrl(assetUrl = '') {
+  const value = String(assetUrl).toLowerCase();
+  return ['tree', 'pine', 'oak', 'fern', 'bush', 'geranium', 'leaf'].some((word) => value.includes(word));
 }
 
-function applyFoliageCutoutRules(mat, node = null) {
-  if (!isLikelyFoliageMaterial(mat, node)) return;
-  mat.alphaTest = Math.max(Number(mat.alphaTest || 0), 0.46);
+function isPlantMaterial(mat, node = null, assetUrl = '') {
+  const materialName = String(mat?.name || '').toLowerCase();
+  const nodeName = String(node?.name || '').toLowerCase();
+  const nameHit = ['leaf', 'leaves', 'plant', 'branch', 'needle', 'canopy', 'crown', 'fern', 'bush'].some((word) => materialName.includes(word) || nodeName.includes(word));
+  const hasAlphaBehaviour = Boolean(mat?.alphaMap || mat?.transparent || Number(mat?.opacity ?? 1) < 0.995 || Number(mat?.alphaTest || 0) > 0);
+  const plantTexture = isPlantAssetUrl(assetUrl) && Boolean(mat?.map);
+  return Boolean(nameHit || hasAlphaBehaviour || plantTexture);
+}
+
+function applyPlantCutout(mat, node = null, assetUrl = '') {
+  if (!isPlantMaterial(mat, node, assetUrl)) return;
+  mat.alphaTest = Math.max(Number(mat.alphaTest || 0), PLANT_ALPHA_TEST);
   mat.transparent = false;
   mat.opacity = 1;
   mat.depthWrite = true;
@@ -121,7 +126,7 @@ function getInstancedParts(asset) {
     const geometry = node.geometry.clone();
     geometry.applyMatrix4(node.matrixWorld);
     geometry.translate(0, groundShift, 0);
-    materials.forEach((mat) => parts.push({ geometry: geometry.clone(), material: cloneMaterial(mat, node) }));
+    materials.forEach((mat) => parts.push({ geometry: geometry.clone(), material: cloneMaterial(mat, node, asset.url) }));
   });
   instancedPartCache.set(asset.url, parts);
   return parts;
@@ -137,17 +142,10 @@ export function createInstancedAssetGroup(asset, placements = []) {
   group.userData.isInstancedAssetGroup = true;
   group.userData.placements = placements.map((placement) => {
     const x = Number(placement.x || 0);
-    return {
-      x,
-      y: Number(placement.y ?? GROUND_Y),
-      z: Number(placement.z || 0),
-      side: placement.side || (x < 0 ? 'left' : 'right'),
-      rotationY: Number(placement.rotationY || 0),
-      scale: Number(placement.scale || 1),
-    };
+    return { x, y: Number(placement.y ?? GROUND_Y), z: Number(placement.z || 0), side: placement.side || (x < 0 ? 'left' : 'right'), rotationY: Number(placement.rotationY || 0), scale: Number(placement.scale || 1) };
   });
   parts.forEach((part) => {
-    const mesh = new THREE.InstancedMesh(part.geometry, cloneMaterial(part.material), group.userData.placements.length);
+    const mesh = new THREE.InstancedMesh(part.geometry, cloneMaterial(part.material, null, asset.url), group.userData.placements.length);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     mesh.userData.glbAssetUrl = asset.url;
@@ -217,12 +215,14 @@ function applyGlbMaterialVisual(obj, cfg) {
   const opacity = Number(cfg.opacity ?? 1);
   const atMaxOpacity = opacity >= 0.995;
   obj.traverse?.((node) => {
+    const assetUrl = node?.userData?.glbAssetUrl || obj?.userData?.glbAssetUrl || '';
     const materials = Array.isArray(node.material) ? node.material : node.material ? [node.material] : [];
     materials.forEach((mat) => {
-      const isCutout = Boolean(mat.alphaTest && mat.alphaTest > 0);
+      const isCutout = Boolean(mat.alphaTest && mat.alphaTest > 0) || isPlantMaterial(mat, node, assetUrl);
+      if (isCutout) applyPlantCutout(mat, node, assetUrl);
       if (isCutout || atMaxOpacity) {
         forceOpaqueMaterial(mat);
-        if (isCutout) mat.alphaTest = Math.max(Number(mat.alphaTest || 0), 0.46);
+        if (isCutout) mat.alphaTest = Math.max(Number(mat.alphaTest || 0), PLANT_ALPHA_TEST);
       } else {
         mat.transparent = true;
         mat.opacity = clamp01(opacity);

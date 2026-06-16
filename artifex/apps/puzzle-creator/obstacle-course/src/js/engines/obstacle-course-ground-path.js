@@ -1,10 +1,13 @@
-import { OC, SECTION_WORLD_LENGTH, SECTION_WORLD_STEP, COURSE_WORLD_WIDTH, GROUND_Y } from './obstacle-course-state.js';
+import { OC, SECTION_WORLD_LENGTH, SECTION_WORLD_STEP, COURSE_WORLD_WIDTH, GROUND_Y, START_DISTANCE } from './obstacle-course-state.js';
 import { clamp, lerp } from './obstacle-course-utils.js';
 import { THREE, loadTexture } from './obstacle-course-scene.js';
 import { makeLayer, registerEntity } from './obstacle-course-layers.js';
 
 const TILE_SEAM_OVERLAP = 0.18;
 const GROUND_BUMP_SCALE = 0.055;
+const ENDLESS_PATH_AHEAD_DISTANCE = 3200;
+const ENDLESS_PATH_INITIAL_DISTANCE = 6400;
+const ENDLESS_PATH_APPEND_SEGMENT_LIMIT = 160;
 
 function mapTiles() { return OC.groundPathMap?.tiles || []; }
 function tileById(id) { return mapTiles().find((tile) => String(tile.id) === String(id)) || null; }
@@ -30,6 +33,18 @@ function worldWidthForTile(tile, worldLength) {
   const pixelHeight = Number(tile?.pixelHeight || OC.groundPathMap?.tilePixelHeight || 0);
   if (pixelWidth > 0 && pixelHeight > 0) return worldLength * (pixelWidth / pixelHeight);
   return Number(tile?.worldWidth || OC.groundPathMap?.defaultWorldWidth || COURSE_WORLD_WIDTH);
+}
+
+function groundVisualScale() {
+  const layerScale = Number(OC.layers?.get?.('ground')?.scale);
+  const pendingScale = Number(OC.pendingLayerSettings?.ground?.scale);
+  const defaultScale = Number(OC.defaultLayerSettings?.ground?.scale);
+  const scale = Number.isFinite(layerScale) && layerScale > 0 ? layerScale : Number.isFinite(pendingScale) && pendingScale > 0 ? pendingScale : Number.isFinite(defaultScale) && defaultScale > 0 ? defaultScale : 1;
+  return Math.max(0.0001, scale);
+}
+
+function endlessUnscaledDistanceFor(visualDistance) {
+  return Math.max(0, Number(visualDistance || 0)) / groundVisualScale();
 }
 
 function interpolatePathPoint(tile, localT) {
@@ -68,23 +83,70 @@ function segmentDistance(raw, index, baseLength) {
   return index * SECTION_WORLD_STEP;
 }
 
-export function generatePathSequence() {
+function makePathSegment(raw, index, baseLength) {
+  const rawId = typeof raw === 'string' ? raw : raw.id ?? raw.tileId ?? raw.key ?? '1';
+  const tile = tileById(legacyPathIdToTileId(rawId)) || fallbackTile();
+  if (!tile) return null;
+  const worldLength = Number(tile.worldLength || OC.groundPathMap?.defaultWorldLength || SECTION_WORLD_LENGTH);
+  const worldWidth = worldWidthForTile(tile, worldLength);
+  const distance = segmentDistance(raw, index, baseLength);
+  return { tile, key: tile.id, distance, worldLength, worldWidth, startX: 0, endX: 0 };
+}
+
+function renderGroundSegment(seg, groundLayer) {
+  if (!seg || !groundLayer) return;
+  const length = (seg.worldLength || SECTION_WORLD_LENGTH) + TILE_SEAM_OVERLAP;
+  const width = worldWidthForTile(seg.tile, length);
+  const z = -seg.distance - (seg.worldLength || SECTION_WORLD_LENGTH) / 2 - TILE_SEAM_OVERLAP / 2;
+  const tileUrl = imageUrlForTile(seg.tile);
+  const tileTexture = loadTexture(tileUrl, { repeat: [1, 1], repeatX: false });
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(width, length, 1, 1),
+    new THREE.MeshStandardMaterial({
+      map: tileTexture,
+      bumpMap: tileTexture,
+      bumpScale: GROUND_BUMP_SCALE,
+      transparent: false,
+      alphaTest: 0.02,
+      roughness: 1,
+      side: THREE.DoubleSide,
+      depthWrite: true,
+    })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.set(0, GROUND_Y, z);
+  groundLayer.add(ground);
+  registerEntity('ground', ground, { x: 0, z, visibleOnOverview: false, tile: seg.tile?.id });
+}
+
+function appendPathSegmentsUntil(unscaledDistance) {
+  const groundLayer = OC.layers?.get?.('ground')?.group;
+  if (!groundLayer) return;
   const source = segmentListFromSettings();
   const baseSource = source.length ? source : [{ id: '1', distance: 0 }];
-  const requiredCount = Math.ceil(OC.courseLength / SECTION_WORLD_STEP) + 4;
-  OC.pathSequence = [];
-
-  for (let i = 0; i < Math.max(requiredCount, baseSource.length); i += 1) {
-    const raw = baseSource[i % baseSource.length];
-    const rawId = typeof raw === 'string' ? raw : raw.id ?? raw.tileId ?? raw.key ?? '1';
-    const tile = tileById(legacyPathIdToTileId(rawId)) || fallbackTile();
-    if (!tile) continue;
-    const worldLength = Number(tile.worldLength || OC.groundPathMap?.defaultWorldLength || SECTION_WORLD_LENGTH);
-    const worldWidth = worldWidthForTile(tile, worldLength);
-    const distance = segmentDistance(raw, i, baseSource.length);
-    OC.pathSequence.push({ tile, key: tile.id, distance, worldLength, worldWidth, startX: 0, endX: 0 });
+  if (!OC.pathSequence) OC.pathSequence = [];
+  if (!Number.isInteger(OC.pathAppendIndex)) OC.pathAppendIndex = OC.pathSequence.length;
+  let appended = 0;
+  while ((OC.pathAppendIndex * SECTION_WORLD_STEP) < unscaledDistance && appended < ENDLESS_PATH_APPEND_SEGMENT_LIMIT) {
+    const raw = baseSource[OC.pathAppendIndex % baseSource.length];
+    const seg = makePathSegment(raw, OC.pathAppendIndex, baseSource.length);
+    OC.pathAppendIndex += 1;
+    appended += 1;
+    if (!seg) continue;
+    OC.pathSequence.push(seg);
+    renderGroundSegment(seg, groundLayer);
   }
-  OC.pathSequence.sort((a, b) => a.distance - b.distance);
+  if (appended) OC.pathSequence.sort((a, b) => a.distance - b.distance);
+}
+
+export function generatePathSequence() {
+  OC.pathSequence = [];
+  OC.pathAppendIndex = 0;
+}
+
+export function ensurePathCoverage(distance = OC.distance) {
+  const targetVisualDistance = Math.max(Number(OC.courseLength || 0), Number(distance || 0) + ENDLESS_PATH_AHEAD_DISTANCE, ENDLESS_PATH_INITIAL_DISTANCE);
+  appendPathSegmentsUntil(endlessUnscaledDistanceFor(targetVisualDistance));
 }
 
 export function pathSegmentAt(distance) {
@@ -141,28 +203,5 @@ export function buildGroundAndPath() {
   makeLayer('ground', 'Ground / Path Tiles', groundLayer, { order: 1 });
   makeLayer('path', 'Path Logic Guide (hidden)', pathLayer, { order: 2, visible: false });
   OC.world.add(groundLayer, pathLayer);
-  OC.pathSequence.forEach((seg) => {
-    const length = (seg.worldLength || SECTION_WORLD_LENGTH) + TILE_SEAM_OVERLAP;
-    const width = worldWidthForTile(seg.tile, length);
-    const z = -seg.distance - (seg.worldLength || SECTION_WORLD_LENGTH) / 2 - TILE_SEAM_OVERLAP / 2;
-    const tileUrl = imageUrlForTile(seg.tile);
-    const tileTexture = loadTexture(tileUrl, { repeat: [1, 1], repeatX: false });
-    const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(width, length, 1, 1),
-      new THREE.MeshStandardMaterial({
-        map: tileTexture,
-        bumpMap: tileTexture,
-        bumpScale: GROUND_BUMP_SCALE,
-        transparent: false,
-        alphaTest: 0.02,
-        roughness: 1,
-        side: THREE.DoubleSide,
-        depthWrite: true,
-      })
-    );
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.set(0, GROUND_Y, z);
-    groundLayer.add(ground);
-    registerEntity('ground', ground, { x: 0, z, visibleOnOverview: false, tile: seg.tile?.id });
-  });
+  ensurePathCoverage(START_DISTANCE);
 }

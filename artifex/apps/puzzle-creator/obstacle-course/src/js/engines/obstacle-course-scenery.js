@@ -1,7 +1,7 @@
 import { OC, COURSE_WORLD_WIDTH, GROUND_Y } from './obstacle-course-state.js';
-import { ASSETS, TEMPLATES, GLB_ASSETS } from './obstacle-course-assets.js?v=3.0.32';
+import { ASSETS, TEMPLATES, GLB_ASSETS } from './obstacle-course-assets.js?v=3.0.38';
 import { clamp, lerp } from './obstacle-course-utils.js';
-import { THREE, loadTexture } from './obstacle-course-scene.js';
+import { THREE } from './obstacle-course-scene.js';
 import { makeLayer, registerEntity } from './obstacle-course-layers.js';
 import { createInstancedAssetGroup } from './obstacle-course-glb.js';
 import { pathCenterAt, pathHalfWidthAt } from './obstacle-course-ground-path.js';
@@ -10,10 +10,13 @@ const TREE_ROOT_LIFT = 0.22;
 const TREE_OUTER_LIMIT_FROM_PATH_EDGE = 2.2;
 const DETAIL_OUTER_LIMIT_FROM_PATH_EDGE = 2.35;
 const SHADOW_Y_OFFSET = 0.055;
-const SHADOW_OPACITY = 0.5;
-const SHADOW_SCALE_MULTIPLIER = 1.55;
+const SHADOW_OPACITY = 0.35;
+const SHADOW_SCALE_MULTIPLIER = 3.10;
+const SHADOW_MIN_LENGTH = 14.4;
+const SHADOW_MAX_LENGTH = 38.0;
 const SHADOW_LEFT_ROTATION = 0;
 const DENSITY_PER_1000 = { pathEdgeTreePairs: 50, limitedOuterTreePairs: 18, tallPathBushPairs: 84, edgeDetailPairs: 24, farDetailPairs: 10 };
+const shadowMultiplyTextureCache = new Map();
 
 function hashString(value) { let hash = 2166136261; String(value || 'obstacle-course').split('').forEach((ch) => { hash ^= ch.charCodeAt(0); hash = Math.imul(hash, 16777619); }); return hash >>> 0; }
 function seededRandom(seedText) { let seed = hashString(seedText) || 1; return () => { seed += 0x6D2B79F5; let t = seed; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -57,11 +60,55 @@ function limitedOuterTreeScale(rng, distance) { return randFrom(rng, 0.18, 0.28)
 function localPlacementForLayer(layer, x, y, z) { const scale = layerScale(layer); return { x: (Number(x || 0) - Number(layer?.x || 0)) / scale, y, z: (Number(z || 0) - Number(layer?.z || 0)) / scale }; }
 function entityForInstance(type, layer, x, z, localX, localZ, assetUrl = '') { OC.entities.push({ type, layerId: layer.id, x, z, localX, localZ, assetUrl }); }
 
+function shadowUrlWithCache(url) { return `${url}${url.includes('?') ? '&' : '?'}v=${OC.cacheVersion}`; }
+function makeShadowMultiplyTexture(url) {
+  const key = `shadow-multiply:${url}:${OC.cacheVersion}`;
+  if (shadowMultiplyTextureCache.has(key)) return shadowMultiplyTextureCache.get(key);
+  const canvas = document.createElement('canvas');
+  canvas.width = 4;
+  canvas.height = 4;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.encoding = THREE.sRGBEncoding;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  const image = new Image();
+  image.crossOrigin = 'anonymous';
+  image.onload = () => {
+    canvas.width = image.naturalWidth || image.width;
+    canvas.height = image.naturalHeight || image.height;
+    const editCtx = canvas.getContext('2d', { willReadFrequently: true });
+    editCtx.clearRect(0, 0, canvas.width, canvas.height);
+    editCtx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const pixels = editCtx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = pixels.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const alpha = data[i + 3] / 255;
+      const luma = ((data[i] * 0.299) + (data[i + 1] * 0.587) + (data[i + 2] * 0.114)) / 255;
+      const shadowAmount = (1 - luma) * SHADOW_OPACITY * alpha;
+      const multiplyValue = Math.round(clamp(1 - shadowAmount, 0, 1) * 255);
+      data[i] = multiplyValue;
+      data[i + 1] = multiplyValue;
+      data[i + 2] = multiplyValue;
+      data[i + 3] = 255;
+    }
+    editCtx.putImageData(pixels, 0, 0);
+    texture.needsUpdate = true;
+  };
+  image.src = shadowUrlWithCache(url);
+  shadowMultiplyTextureCache.set(key, texture);
+  return texture;
+}
+
 function makeShadowMaterial(texture) {
   const material = new THREE.MeshBasicMaterial({
     map: texture,
-    transparent: true,
-    opacity: SHADOW_OPACITY,
+    transparent: false,
+    opacity: 1,
     depthWrite: false,
     depthTest: true,
     side: THREE.DoubleSide,
@@ -77,14 +124,14 @@ function makeShadowMaterial(texture) {
 function addTreeShadow(rng, shadowLayer, x, z, scale) {
   if (!shadowLayer?.group) return;
   const urls = ASSETS.shadows?.tree || [];
-  const texture = urls.length ? loadTexture(pickFrom(rng, urls), { repeat: [1, 1], repeatX: false, repeatY: false }) : null;
+  const texture = urls.length ? makeShadowMultiplyTexture(pickFrom(rng, urls)) : null;
   if (!texture) return;
   const groundScale = Math.max(0.0001, Number(shadowLayer.groundScale || 1));
   const layerOffsetX = Number(shadowLayer.x || 0);
   const layerOffsetZ = Number(shadowLayer.z || 0);
   const localX = ((x + layerOffsetX) / groundScale) - layerOffsetX;
   const localZ = ((z + layerOffsetZ) / groundScale) - layerOffsetZ;
-  const shadowLength = clamp(28 * Number(scale || 1) * SHADOW_SCALE_MULTIPLIER, 7.2, 19.0) * randFrom(rng, 0.95, 1.08);
+  const shadowLength = clamp(28 * Number(scale || 1) * SHADOW_SCALE_MULTIPLIER, SHADOW_MIN_LENGTH, SHADOW_MAX_LENGTH) * randFrom(rng, 0.95, 1.08);
   const shadowWidth = shadowLength * randFrom(rng, 0.54, 0.74);
   const geometry = new THREE.PlaneGeometry(shadowLength / groundScale, shadowWidth / groundScale, 1, 1);
   geometry.translate(-(shadowLength / groundScale) * 0.42, 0, 0);
