@@ -8,7 +8,7 @@ import { checkCollectibles } from './obstacle-course-collectibles.js';
 import { checkObstacles } from './obstacle-course-obstacles.js';
 import { makeResult } from './obstacle-course-scoring.js';
 import { setResult } from './obstacle-course-ui.js';
-import { scheduleOverviewDraw } from './obstacle-course-overview.js?v=3.0.42';
+import { scheduleOverviewDraw } from './obstacle-course-overview.js?v=3.0.43';
 import { ensureAudio, updateAudio, playJumpSound, playLandSound } from './obstacle-course-audio.js';
 
 export function startRun() {
