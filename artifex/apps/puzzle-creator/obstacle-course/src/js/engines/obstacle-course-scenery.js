@@ -1,5 +1,5 @@
 import { OC, COURSE_WORLD_WIDTH, GROUND_Y } from './obstacle-course-state.js';
-import { ASSETS, TEMPLATES, GLB_ASSETS } from './obstacle-course-assets.js?v=3.0.40';
+import { ASSETS, TEMPLATES, GLB_ASSETS } from './obstacle-course-assets.js?v=3.0.41';
 import { clamp, lerp } from './obstacle-course-utils.js';
 import { THREE } from './obstacle-course-scene.js';
 import { makeLayer, registerEntity } from './obstacle-course-layers.js';
@@ -16,7 +16,7 @@ const SHADOW_MIN_LENGTH = 14.4;
 const SHADOW_MAX_LENGTH = 38.0;
 const SHADOW_LEFT_ROTATION = 0;
 const TREE_SHADOW_COPIES = 2;
-const DENSITY_PER_1000 = { pathEdgeTreePairs: 50, limitedOuterTreePairs: 18, tallPathBushPairs: 84, smallGroundFernPairs: 92, edgeDetailPairs: 24, farDetailPairs: 10 };
+const DENSITY_PER_1000 = { pathEdgeTreePairs: 50, limitedOuterTreePairs: 18, tallPathBushPairs: 84, groundGrassPairs: 120, smallGroundFernPairs: 92, edgeDetailPairs: 24, farDetailPairs: 10 };
 const shadowMultiplyTextureCache = new Map();
 
 function hashString(value) { let hash = 2166136261; String(value || 'obstacle-course').split('').forEach((ch) => { hash ^= ch.charCodeAt(0); hash = Math.imul(hash, 16777619); }); return hash >>> 0; }
@@ -183,11 +183,12 @@ export function scatterScenery() {
   else OC.world.add(shadowLayer.group);
   OC.world.add(treeLayer.group, detailLayer.group);
 
-  const allTrees = loadedTreeAssets();
+  const allTrees = uniqueAssets(loadedTreeAssets());
   const nearTreeAssets = loadedAssets('nearTree');
-  const pathEdgeTreeAssets = preferredAssets(uniqueAssets([...assetsNamed(allTrees, 'pine_tree'), ...assetsNamed(allTrees, 'oak_trees'), ...assetsNamed(allTrees, 'tree_low-poly')]), nearTreeAssets);
-  const oakTreeAssets = preferredAssets(assetsNamed(allTrees, 'oak_trees'), pathEdgeTreeAssets);
+  const pathEdgeTreeAssets = preferredAssets(allTrees, nearTreeAssets);
+  const outerTreeAssets = preferredAssets(uniqueAssets([...assetsNamed(allTrees, 'oak'), ...assetsNamed(allTrees, 'dead_tree'), ...assetsNamed(allTrees, 'spruce'), ...assetsNamed(allTrees, 'tree_gn'), ...allTrees]), pathEdgeTreeAssets);
   const edgeDetailAssets = loadedAssets('edgeDetail');
+  const groundGrassAssets = loadedAssets('groundGrass');
   const farDetailAssets = GLB_ASSETS.filter((asset) => ['edgeDetail', 'farDetail'].includes(asset.type) && OC.glbTemplates.has(asset.url));
   const smallFernAssets = uniqueAssets([...assetsNamed(edgeDetailAssets, 'fern'), ...assetsNamed(farDetailAssets, 'fern')]);
   const tallBushAssets = assetsNamed(farDetailAssets, 'tall_bush');
@@ -196,8 +197,9 @@ export function scatterScenery() {
   const queues = new Map();
 
   makeDistances(rng, DENSITY_PER_1000.pathEdgeTreePairs * sections * template.treeRate, 28, end, 12).forEach((d) => [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, shadowLayer, 'tree', pathEdgeTreeAssets, fallbackTree, pathEdgeX(rng, d, side), TREE_ROOT_LIFT, -d + randFrom(rng, -4, 4), pathEdgeTreeScale(rng, d))));
-  makeDistances(rng, DENSITY_PER_1000.limitedOuterTreePairs * sections * template.treeRate, 60, end, 20).forEach((d) => [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, shadowLayer, 'tree', oakTreeAssets, fallbackTree, limitedOutsideX(rng, d, side), TREE_ROOT_LIFT, -d + randFrom(rng, -7, 7), limitedOuterTreeScale(rng, d))));
+  makeDistances(rng, DENSITY_PER_1000.limitedOuterTreePairs * sections * template.treeRate, 60, end, 20).forEach((d) => [-1, 1].forEach((side) => queuePlacement(rng, queues, treeLayer, shadowLayer, 'tree', outerTreeAssets, fallbackTree, limitedOutsideX(rng, d, side), TREE_ROOT_LIFT, -d + randFrom(rng, -7, 7), limitedOuterTreeScale(rng, d))));
   if (tallBushAssets.length) makeDistances(rng, DENSITY_PER_1000.tallPathBushPairs * sections * template.detailRate, 35, OC.courseLength + 60, 10).forEach((d) => [-1, 1].forEach((side) => queuePlacement(rng, queues, detailLayer, null, 'detail', tallBushAssets, fallbackDetail, pathEdgeBushX(rng, d, side), 0, -d + randFrom(rng, -4, 4), randFrom(rng, 4.22, 6.02))));
+  makeDistances(rng, DENSITY_PER_1000.groundGrassPairs * sections * template.detailRate, 16, OC.courseLength + 60, 7).forEach((d) => [-1, 1].forEach((side) => queuePlacement(rng, queues, detailLayer, null, 'detail', groundGrassAssets, fallbackDetail, limitedDetailX(rng, d, side, 0.02, 2.1), -0.26, -d + randFrom(rng, -2.5, 2.5), randFrom(rng, 0.42, 0.92))));
   makeDistances(rng, DENSITY_PER_1000.smallGroundFernPairs * sections * template.detailRate, 18, OC.courseLength + 60, 9).forEach((d) => [-1, 1].forEach((side) => queuePlacement(rng, queues, detailLayer, null, 'detail', smallFernAssets, fallbackDetail, limitedDetailX(rng, d, side, 0.05, 1.25), -0.18, -d + randFrom(rng, -3, 3), randFrom(rng, 0.46, 0.82))));
   makeDistances(rng, DENSITY_PER_1000.edgeDetailPairs * sections * template.detailRate, 20, OC.courseLength + 40, 14).forEach((d) => [-1, 1].forEach((side) => queuePlacement(rng, queues, detailLayer, null, 'detail', edgeDetailAssets, fallbackDetail, limitedDetailX(rng, d, side, 0.15, 1.6), 0, -d + randFrom(rng, -3, 3), randFrom(rng, 0.75, 1.15))));
   makeDistances(rng, DENSITY_PER_1000.farDetailPairs * sections * template.detailRate, 50, OC.courseLength + 60, 22).forEach((d) => [-1, 1].forEach((side) => queuePlacement(rng, queues, detailLayer, null, 'detail', farDetailAssets, fallbackDetail, limitedDetailX(rng, d, side, 1.6, DETAIL_OUTER_LIMIT_FROM_PATH_EDGE), 0, -d + randFrom(rng, -5, 5), randFrom(rng, 0.65, 1.0))));
