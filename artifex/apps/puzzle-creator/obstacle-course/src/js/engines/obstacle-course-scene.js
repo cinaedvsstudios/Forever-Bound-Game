@@ -1,7 +1,7 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
 import { OC, GROUND_Y } from './obstacle-course-state.js';
-import { ASSETS } from './obstacle-course-assets.js?v=3.0.39';
+import { ASSETS } from './obstacle-course-assets.js?v=3.0.40';
 import { clamp } from './obstacle-course-utils.js';
 
 export { THREE, GLTFLoader };
@@ -135,6 +135,11 @@ export function startRenderLoop() {
 function animateFrame() {
   if (!OC.renderLoopRunning) return;
   const dt = Math.min(0.033, OC.clock?.getDelta?.() || 0.016);
+  if (Array.isArray(OC.frameCallbacks)) {
+    OC.frameCallbacks.forEach((callback) => {
+      try { callback(dt); } catch (error) { console.warn('[ObstacleCourse] frame callback failed', error); }
+    });
+  }
   if (OC.active) OC.updateFrame?.(dt);
   renderOnce();
   OC.animationFrame = requestAnimationFrame(animateFrame);
