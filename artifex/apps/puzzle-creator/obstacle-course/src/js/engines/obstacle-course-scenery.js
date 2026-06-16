@@ -1,5 +1,5 @@
 import { OC, COURSE_WORLD_WIDTH, GROUND_Y } from './obstacle-course-state.js';
-import { ASSETS, TEMPLATES, GLB_ASSETS } from './obstacle-course-assets.js?v=3.0.28';
+import { ASSETS, TEMPLATES, GLB_ASSETS } from './obstacle-course-assets.js?v=3.0.29';
 import { clamp, lerp } from './obstacle-course-utils.js';
 import { THREE, loadTexture } from './obstacle-course-scene.js';
 import { makeLayer, registerEntity } from './obstacle-course-layers.js';
@@ -10,7 +10,9 @@ const TREE_ROOT_LIFT = 0.22;
 const TREE_OUTER_LIMIT_FROM_PATH_EDGE = 2.2;
 const DETAIL_OUTER_LIMIT_FROM_PATH_EDGE = 2.35;
 const SHADOW_Y_OFFSET = 0.055;
-const SHADOW_OPACITY = 1;
+const SHADOW_OPACITY = 0.5;
+const SHADOW_SCALE_MULTIPLIER = 1.55;
+const SHADOW_LEFT_ROTATION = 0;
 const DENSITY_PER_1000 = { pathEdgeTreePairs: 50, limitedOuterTreePairs: 18, tallPathBushPairs: 84, edgeDetailPairs: 24, farDetailPairs: 10 };
 
 function hashString(value) { let hash = 2166136261; String(value || 'obstacle-course').split('').forEach((ch) => { hash ^= ch.charCodeAt(0); hash = Math.imul(hash, 16777619); }); return hash >>> 0; }
@@ -59,7 +61,7 @@ function makeShadowMaterial(texture, opacity) {
   const material = new THREE.MeshBasicMaterial({
     map: texture,
     transparent: true,
-    opacity: opacity ?? 1,
+    opacity: opacity ?? SHADOW_OPACITY,
     depthWrite: false,
     depthTest: true,
     side: THREE.DoubleSide,
@@ -81,13 +83,13 @@ function addTreeShadow(rng, shadowLayer, x, z, scale) {
   const layerOffsetZ = Number(shadowLayer.z || 0);
   const localX = ((x + layerOffsetX) / groundScale) - layerOffsetX;
   const localZ = ((z + layerOffsetZ) / groundScale) - layerOffsetZ;
-  const shadowLength = clamp(28 * Number(scale || 1), 4.8, 12.5) * randFrom(rng, 0.88, 1.18);
-  const shadowWidth = shadowLength * randFrom(rng, 0.52, 0.72);
+  const shadowLength = clamp(28 * Number(scale || 1) * SHADOW_SCALE_MULTIPLIER, 7.2, 19.0) * randFrom(rng, 0.95, 1.08);
+  const shadowWidth = shadowLength * randFrom(rng, 0.54, 0.74);
   const geometry = new THREE.PlaneGeometry(shadowLength / groundScale, shadowWidth / groundScale, 1, 1);
   geometry.translate(-(shadowLength / groundScale) * 0.42, 0, 0);
   const shadow = new THREE.Mesh(geometry, makeShadowMaterial(texture, shadowLayer.opacity ?? SHADOW_OPACITY));
   shadow.position.set(localX, GROUND_Y + SHADOW_Y_OFFSET, localZ + randFrom(rng, -0.2, 0.2) / groundScale);
-  shadow.rotation.set(-Math.PI / 2, 0, Math.PI / 2 + randFrom(rng, -0.16, 0.16));
+  shadow.rotation.set(-Math.PI / 2, 0, SHADOW_LEFT_ROTATION + randFrom(rng, -0.055, 0.055));
   shadow.renderOrder = 6;
   shadowLayer.group.add(shadow);
   registerEntity('shadow', shadow, { x, z, visibleOnOverview: false });
