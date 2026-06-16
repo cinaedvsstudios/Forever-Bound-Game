@@ -4,11 +4,11 @@ import { THREE, loadTexture } from './obstacle-course-scene.js';
 import { makeLayer, registerEntity } from './obstacle-course-layers.js';
 
 const TILE_SEAM_OVERLAP = 0.18;
-const GROUND_BUMP_SCALE = 0.135;
+const GROUND_BUMP_SCALE = 0.405;
 const GROUND_DISPLACEMENT_FILE = '1bump.jpg';
 const GROUND_DISPLACEMENT_SEGMENTS = 64;
-const GROUND_DISPLACEMENT_SCALE = 0.62;
-const GROUND_DISPLACEMENT_BIAS = -0.27;
+const GROUND_DISPLACEMENT_SCALE = 1.86;
+const GROUND_DISPLACEMENT_BIAS = -0.81;
 const ENDLESS_PATH_AHEAD_DISTANCE = 3200;
 const ENDLESS_PATH_INITIAL_DISTANCE = 6400;
 const ENDLESS_PATH_APPEND_SEGMENT_LIMIT = 160;
