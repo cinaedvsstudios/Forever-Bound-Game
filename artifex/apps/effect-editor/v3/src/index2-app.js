@@ -5,7 +5,7 @@ import { initEditorDynamicsControls } from './editor-dynamics-controls.js';
 import { initEditorQuickEditControls } from './editor-quick-edit-controls.js';
 import { initEditorWorkspaceUI } from './editor-workspace-ui.js';
 
-const VERSION_LABEL = 'INDEX2-SMOKE-SOURCE-MAP-0.2.20';
+const VERSION_LABEL = 'INDEX2-SMOKE-ANCHOR-MAP-0.2.21';
 
 window.addEventListener('DOMContentLoaded', () => {
   initEditorCore({ versionLabel: VERSION_LABEL, showToast });
