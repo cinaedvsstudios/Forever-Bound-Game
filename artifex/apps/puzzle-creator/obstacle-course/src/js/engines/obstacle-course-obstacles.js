@@ -1,5 +1,5 @@
 import { OC, GROUND_Y, START_DISTANCE } from './obstacle-course-state.js';
-import { GLB_ASSETS } from './obstacle-course-assets.js';
+import { GLB_ASSETS } from './obstacle-course-assets.js?v=3.0.40';
 import { THREE } from './obstacle-course-scene.js';
 import { rand, pick } from './obstacle-course-utils.js';
 import { pathCenterAt, pathAlphaAtWorld } from './obstacle-course-ground-path.js';
@@ -8,9 +8,50 @@ import { makeGlbOrFallback } from './obstacle-course-glb.js';
 import { playHitSound } from './obstacle-course-audio.js';
 
 const ROCK_OBSTACLE_SCALE_MULTIPLIER = 1.5;
+let objectShadowTexture = null;
 
 function fallbackObstacle() {
   return new THREE.Mesh(new THREE.DodecahedronGeometry(rand(0.36, 0.72), 0), new THREE.MeshStandardMaterial({ color: 0x7e5d44, roughness: 1 }));
+}
+
+function getObjectShadowTexture() {
+  if (objectShadowTexture) return objectShadowTexture;
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createRadialGradient(64, 64, 4, 64, 64, 62);
+  gradient.addColorStop(0, 'rgba(0,0,0,0.32)');
+  gradient.addColorStop(0.5, 'rgba(0,0,0,0.16)');
+  gradient.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  objectShadowTexture = new THREE.CanvasTexture(canvas);
+  objectShadowTexture.minFilter = THREE.LinearFilter;
+  objectShadowTexture.magFilter = THREE.LinearFilter;
+  return objectShadowTexture;
+}
+
+function attachObjectDropShadow(obj, radius = 1.3) {
+  const shadow = new THREE.Mesh(
+    new THREE.PlaneGeometry(radius * 1.65, radius * 0.95, 1, 1),
+    new THREE.MeshBasicMaterial({
+      map: getObjectShadowTexture(),
+      transparent: true,
+      opacity: 0.7,
+      depthWrite: false,
+      depthTest: true,
+      side: THREE.DoubleSide,
+      blending: THREE.MultiplyBlending,
+    })
+  );
+  shadow.name = 'ObjectDropShadow';
+  shadow.position.set(0, -0.62, 0.12);
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.renderOrder = -1;
+  shadow.userData.ocSkipLayerVisual = true;
+  obj.add(shadow);
+  obj.userData.dropShadow = shadow;
 }
 
 function routeDistance(index, count) {
@@ -43,6 +84,7 @@ export function addObstacles(count = 12) {
     obj.position.set(x, GROUND_Y + 0.42, -d);
     obj.rotation.y = rand(0, Math.PI * 2);
     obj.scale.multiplyScalar((asset?.scale || 1) * ROCK_OBSTACLE_SCALE_MULTIPLIER);
+    attachObjectDropShadow(obj, 1.25);
     obj.userData.kind = 'obstacle';
     obj.userData.hit = false;
     if (asset) {
