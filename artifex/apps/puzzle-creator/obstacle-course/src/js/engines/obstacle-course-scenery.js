@@ -1,5 +1,5 @@
 import { OC, COURSE_WORLD_WIDTH, GROUND_Y } from './obstacle-course-state.js';
-import { ASSETS, TEMPLATES, GLB_ASSETS } from './obstacle-course-assets.js?v=3.0.42';
+import { ASSETS, TEMPLATES, GLB_ASSETS } from './obstacle-course-assets.js?v=3.0.43';
 import { clamp, lerp } from './obstacle-course-utils.js';
 import { THREE } from './obstacle-course-scene.js';
 import { makeLayer, registerEntity } from './obstacle-course-layers.js';
