@@ -31,16 +31,68 @@ function safeColor(hex) {
   try { return new THREE.Color(hex || '#ffffff'); }
   catch { return new THREE.Color('#ffffff'); }
 }
-function transformedColor(baseColor, layer) {
-  const color = baseColor.clone();
-  const hsl = { h: 0, s: 0, l: 0 };
-  color.getHSL(hsl);
-  hsl.s = clamp01(hsl.s * Number(layer.saturation ?? 1));
-  hsl.l = clamp01(((hsl.l - 0.5) * Number(layer.contrast ?? 1) + 0.5) * Number(layer.brightness ?? 1));
-  color.setHSL(hsl.h, hsl.s, hsl.l);
-  if (Number(layer.tintStrength || 0) > 0) color.lerp(safeColor(layer.tint || '#ffffff'), clamp01(layer.tintStrength));
-  return color;
+
+function getVisualUniforms(mat) {
+  if (!mat.userData.ocVisualUniforms) {
+    mat.userData.ocVisualUniforms = {
+      brightness: { value: 1 },
+      contrast: { value: 1 },
+      saturation: { value: 1 },
+      tint: { value: new THREE.Color('#ffffff') },
+      tintStrength: { value: 0 },
+    };
+  }
+  return mat.userData.ocVisualUniforms;
 }
+
+function installRgbVisualShader(mat) {
+  if (!mat || mat.userData.ocRgbVisualShaderInstalled) return;
+  const previousOnBeforeCompile = mat.onBeforeCompile;
+  mat.onBeforeCompile = (shader, renderer) => {
+    if (typeof previousOnBeforeCompile === 'function') previousOnBeforeCompile.call(mat, shader, renderer);
+    const uniforms = getVisualUniforms(mat);
+    shader.uniforms.ocVisualBrightness = uniforms.brightness;
+    shader.uniforms.ocVisualContrast = uniforms.contrast;
+    shader.uniforms.ocVisualSaturation = uniforms.saturation;
+    shader.uniforms.ocVisualTint = uniforms.tint;
+    shader.uniforms.ocVisualTintStrength = uniforms.tintStrength;
+    const header = `
+uniform float ocVisualBrightness;
+uniform float ocVisualContrast;
+uniform float ocVisualSaturation;
+uniform vec3 ocVisualTint;
+uniform float ocVisualTintStrength;
+vec3 ocApplyRgbVisual(vec3 color) {
+  float luma = dot(color, vec3(0.299, 0.587, 0.114));
+  vec3 adjusted = mix(vec3(luma), color, ocVisualSaturation);
+  adjusted = ((adjusted - vec3(0.5)) * ocVisualContrast) + vec3(0.5);
+  adjusted *= ocVisualBrightness;
+  adjusted = mix(adjusted, ocVisualTint, ocVisualTintStrength);
+  return clamp(adjusted, 0.0, 1.0);
+}
+`;
+    if (!shader.fragmentShader.includes('ocApplyRgbVisual')) shader.fragmentShader = shader.fragmentShader.replace('void main() {', `${header}\nvoid main() {`);
+    if (shader.fragmentShader.includes('#include <dithering_fragment>')) {
+      shader.fragmentShader = shader.fragmentShader.replace('#include <dithering_fragment>', 'gl_FragColor.rgb = ocApplyRgbVisual(gl_FragColor.rgb);\n#include <dithering_fragment>');
+    } else {
+      shader.fragmentShader = shader.fragmentShader.replace(/}\s*$/, '  gl_FragColor.rgb = ocApplyRgbVisual(gl_FragColor.rgb);\n}');
+    }
+  };
+  mat.customProgramCacheKey = () => 'oc-rgb-visual-v3';
+  mat.userData.ocRgbVisualShaderInstalled = true;
+  mat.needsUpdate = true;
+}
+
+function setRgbVisualUniforms(mat, layer) {
+  installRgbVisualShader(mat);
+  const uniforms = getVisualUniforms(mat);
+  uniforms.brightness.value = Number(layer.brightness ?? 1);
+  uniforms.contrast.value = Number(layer.contrast ?? 1);
+  uniforms.saturation.value = Number(layer.saturation ?? 1);
+  uniforms.tint.value.copy(safeColor(layer.tint || '#ffffff'));
+  uniforms.tintStrength.value = clamp01(layer.tintStrength || 0);
+}
+
 function forceOpaqueMaterial(mat) {
   mat.transparent = false;
   mat.opacity = 1;
@@ -66,8 +118,9 @@ function applyMaterialVisual(mat, layer) {
 
   if (mat.color) {
     if (!mat.userData.baseColor) mat.userData.baseColor = mat.color.clone();
-    mat.color.copy(transformedColor(mat.userData.baseColor, layer));
+    mat.color.copy(mat.userData.baseColor);
   }
+  setRgbVisualUniforms(mat, layer);
   mat.needsUpdate = true;
 }
 
