@@ -1,5 +1,5 @@
 import { OC, GROUND_Y } from './obstacle-course-state.js';
-import { GLB_ASSETS } from './obstacle-course-assets.js?v=3.0.40';
+import { GLB_ASSETS } from './obstacle-course-assets.js?v=3.0.43';
 import { THREE } from './obstacle-course-scene.js';
 import { rand, pick } from './obstacle-course-utils.js';
 import { pathCenterAt, pathAlphaAtWorld } from './obstacle-course-ground-path.js';
