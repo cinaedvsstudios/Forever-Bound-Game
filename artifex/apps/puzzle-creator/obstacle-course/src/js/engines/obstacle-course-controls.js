@@ -86,6 +86,7 @@ export function bindObstacleCourseControls({ rebuildCourse, refreshLayerPanel })
   });
   bindLayerButtons({ refreshOverview: scheduleOverviewDraw, createLayerSliders: refreshLayerPanel });
   createGlobalSliders();
+  updateGlobalVisuals();
 }
 
 function createGlobalSliders() {
