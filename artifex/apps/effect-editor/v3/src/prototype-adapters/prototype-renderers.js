@@ -1,4 +1,7 @@
 const TAU = Math.PI * 2;
+const SMOKE_W = 1280;
+const SMOKE_H = 720;
+const SMOKE_FX_SCALE = 0.62;
 
 export function isPrototypeRenderableLayer(layer) {
   return Boolean(layer && layer.visible !== false && (layer.engine === 'prototype-smoke' || layer.engine === 'prototype-shimmer' || layer.prototypeFolder));
@@ -17,295 +20,315 @@ export function drawPrototypeLayer(ctx, layer, scaleValue = 1, timeMs = 0, stage
 }
 
 function drawPrototypeSmoke(ctx, layer, scale, t, stageWidth, stageHeight) {
-  const mode = layer.mode || layer.prototypeMode || 'rising';
-  if (mode === 'vignette') return drawSmokeVignette(ctx, layer, scale, t, stageWidth, stageHeight);
-  if (mode === 'fullscreen') return drawFullScreenSmoke(ctx, layer, scale, t, stageWidth, stageHeight);
-  if (mode === 'emission') return drawEmissionSmoke(ctx, layer, scale, t, stageWidth, stageHeight);
-  if (mode === 'wispy') return drawWispySmoke(ctx, layer, scale, t, stageWidth, stageHeight);
-  return drawRisingSmoke(ctx, layer, scale, t, stageWidth, stageHeight);
-}
+  const state = smokeStateFromLayer(layer);
+  const width = Math.max(1, Math.round(stageWidth * scale));
+  const height = Math.max(1, Math.round(stageHeight * scale));
+  const fxCanvas = document.createElement('canvas');
+  fxCanvas.width = Math.max(1, Math.round(width * SMOKE_FX_SCALE));
+  fxCanvas.height = Math.max(1, Math.round(height * SMOKE_FX_SCALE));
+  const fx = fxCanvas.getContext('2d', { alpha: true });
+  fx.save();
+  fx.scale(SMOKE_FX_SCALE * scale, SMOKE_FX_SCALE * scale);
 
-function smokeTint(layer) {
-  return layer.colour || layer.colourHex || layer.colorA || '#dce2e7';
-}
-
-function drawRisingSmoke(ctx, layer, scale, t, stageWidth, stageHeight) {
-  const x = finite(layer.emitterX, stageWidth * 0.5) * scale;
-  const y = finite(layer.emitterY, stageHeight * 0.72) * scale;
-  const density = unitValue(layer.density, 0.86);
-  const plumeWidth = (70 + density * 125) * scale;
-  const plumeHeight = (260 + density * 240) * scale;
-  drawVerticalSmokeColumn(ctx, layer, x, y, scale, t, {
-    width: plumeWidth,
-    height: plumeHeight,
-    amountBias: 1.05,
-    alphaBias: 0.86,
-    baseGlow: true,
-    bodyName: 'rising-body'
-  });
-  drawRibbonWisps(ctx, layer, x, y, scale, t, {
-    width: plumeWidth * 0.86,
-    height: plumeHeight * 0.95,
-    countBias: 0.72,
-    thin: false,
-    vertical: true,
-    opacityBias: 0.8,
-    name: 'rising-wisp'
-  });
-}
-
-function drawWispySmoke(ctx, layer, scale, t, stageWidth, stageHeight) {
-  const x = finite(layer.emitterX, stageWidth * 0.5) * scale;
-  const y = finite(layer.emitterY, stageHeight * 0.7) * scale;
-  const density = unitValue(layer.density, 0.86);
-  const width = (45 + density * 95) * scale;
-  const height = (330 + density * 220) * scale;
-  drawRibbonWisps(ctx, layer, x, y, scale, t, {
-    width,
-    height,
-    countBias: 1.55,
-    thin: true,
-    vertical: true,
-    opacityBias: 1.25,
-    name: 'incense-main'
-  });
-  drawThreadMist(ctx, layer, x, y, scale, t, {
-    width: width * 0.55,
-    height: height * 0.92,
-    amount: Math.round(4 + density * 8),
-    alphaBias: 0.18,
-    puffScale: 0.38,
-    name: 'incense-haze'
-  });
-}
-
-function drawEmissionSmoke(ctx, layer, scale, t, stageWidth, stageHeight) {
-  const x = percentPoint(layer.sourceX, 50, stageWidth) * scale;
-  const y = percentPoint(layer.sourceY, 76, stageHeight) * scale;
-  const sourceWidth = finite(layer.sourceWidth, 34) * scale;
-  const height = finite(layer.height, 400) * scale;
-  const density = unitValue(layer.density, 0.86);
-  const width = Math.max(sourceWidth * (1.35 + density * 1.25), 42 * scale);
-  drawVerticalSmokeColumn(ctx, layer, x, y, scale, t, {
-    width,
-    height,
-    amountBias: 0.96,
-    alphaBias: 0.92,
-    baseGlow: false,
-    chimney: true,
-    bodyName: 'chimney-body'
-  });
-  drawRibbonWisps(ctx, layer, x, y, scale, t, {
-    width: width * 0.72,
-    height: height * 0.95,
-    countBias: 0.58,
-    thin: true,
-    vertical: true,
-    opacityBias: 0.72,
-    name: 'chimney-wisp'
-  });
-  drawChimneySource(ctx, layer, x, y, sourceWidth, scale);
-  if (layer.showMarker) drawSmokeOriginMarker(ctx, x, y, sourceWidth, scale);
-}
-
-function drawFullScreenSmoke(ctx, layer, scale, t, stageWidth, stageHeight) {
-  const tint = smokeTint(layer);
-  const opacity = unitValue(layer.mistOpacity, 0.36) * 0.34;
-  const density = unitValue(layer.density, 0.86);
-  const definition = unitValue(layer.definition, 0.82);
-  const turbulence = unitValue(layer.turbulence, 0.54);
-  const speed = smokeSpeed(layer, 0.026);
-  const width = stageWidth * scale;
-  const height = stageHeight * scale;
-  const amount = Math.round(12 + density * 42);
-  const puff = clamp(finite(layer.puffSize, 1.73), 0.25, 2.4) * (96 + density * 90) * scale;
-  ctx.save();
-  ctx.globalCompositeOperation = 'screen';
-  ctx.filter = `blur(${Math.max(12, puff * (0.09 + (1 - definition) * 0.08))}px)`;
-  for (let i = 0; i < amount; i += 1) {
-    const h = hash(i * 2.13);
-    const phase = (t * speed * (0.7 + h) + h) % 1;
-    const x = ((hash(i + 10) * stageWidth + Math.sin(t * 0.16 + i) * 120 * turbulence) % stageWidth) * scale;
-    const y = ((phase * stageHeight * 1.45) - stageHeight * 0.24 + hash(i + 20) * stageHeight * 0.2) * scale;
-    softBlob(ctx, x, y, puff * (0.65 + h * 1.35), tint, opacity * (0.12 + h * 0.24));
+  const instances = makeSmokeInstances(state, layer, t);
+  for (const instance of instances) {
+    fx.save();
+    fx.translate(instance.shiftX, instance.shiftY);
+    drawSmokePuffsFromSource(fx, state, instance, t);
+    drawSmokeRibbonsFromSource(fx, state, instance, t);
+    fx.restore();
   }
-  ctx.filter = 'none';
-  drawHorizontalAtmosphereWisps(ctx, layer, scale, t, width, height);
-  ctx.restore();
-}
+  if (state.mode === 'vignette') cutSmokeTransparentCentre(fx, state);
+  fx.restore();
 
-function drawSmokeVignette(ctx, layer, scale, t, stageWidth, stageHeight) {
-  const tint = smokeTint(layer);
-  const opacity = unitValue(layer.mistOpacity, 0.36) * 0.58;
-  const edge = unitValue(layer.edge, 0.64);
-  const clear = clamp(finite(layer.clear, 0.54), 0.18, 0.9);
-  const bias = clamp(finite(layer.bias, 0), -1, 1);
-  const density = unitValue(layer.density, 0.86);
-  const width = stageWidth * scale;
-  const height = stageHeight * scale;
-  const amount = Math.round(32 + edge * 76 + density * 24);
-  const puff = (56 + edge * 150 + density * 18) * scale;
-  const speed = smokeSpeed(layer, 0.2);
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
-  ctx.filter = `blur(${Math.max(10, puff * 0.09)}px)`;
-  for (let i = 0; i < amount; i += 1) {
-    const side = i % 4;
-    const h = hash(i + 31);
-    const wobble = Math.sin(t * speed + i * 1.9) * 32 * scale;
-    let x = hash(i + 4) * width;
-    let y = hash(i + 8) * height;
-    if (side === 0) y = -puff * (0.35 + h * 0.35) + wobble + bias * 95 * scale;
-    if (side === 1) x = width + puff * (0.1 + h * 0.25) + wobble;
-    if (side === 2) y = height + puff * (0.1 + h * 0.25) + wobble + bias * 95 * scale;
-    if (side === 3) x = -puff * (0.1 + h * 0.25) + wobble;
-    softBlob(ctx, x, y, puff * (0.6 + h * 1.18), tint, opacity * (0.1 + h * 0.32));
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(fxCanvas, 0, 0, width, height);
+  ctx.restore();
+
+  if (state.mode === 'emission' && state.showMarker) {
+    drawSmokeOriginMarker(ctx, state.sourceX / 100 * stageWidth * scale, state.sourceY / 100 * stageHeight * scale, state.sourceWidth * scale, scale);
   }
-  ctx.filter = 'none';
-  const holeRadius = Math.min(width, height) * clear * 0.42;
-  const veil = ctx.createRadialGradient(width / 2, height * (0.5 + bias * 0.16), holeRadius * 0.25, width / 2, height * (0.5 + bias * 0.16), Math.min(width, height) * 0.76);
-  veil.addColorStop(0, 'rgba(0,0,0,0)');
-  veil.addColorStop(Math.min(0.82, clear), withAlpha(tint, opacity * 0.06));
-  veil.addColorStop(1, withAlpha(tint, opacity * 0.24));
-  ctx.fillStyle = veil;
-  ctx.fillRect(0, 0, width, height);
-  ctx.restore();
 }
 
-function drawVerticalSmokeColumn(ctx, layer, x, y, scale, t, options = {}) {
-  const tint = smokeTint(layer);
-  const opacity = unitValue(layer.mistOpacity, 0.36) * finite(options.alphaBias, 1);
-  const density = unitValue(layer.density, 0.86);
-  const definition = unitValue(layer.definition, 0.82);
-  const amount = Math.round((7 + density * 36) * finite(options.amountBias, 1));
-  const puff = clamp(finite(layer.puffSize, 1.73), 0.25, 2.4) * (28 + density * 23) * scale;
-  const width = finite(options.width, 140 * scale);
-  const height = finite(options.height, 340 * scale);
-  const gravityAngle = finite(layer.gravityAngle, -90) * Math.PI / 180;
-  const gravity = clamp(finite(layer.gravity, 0.31), -1.5, 1.5);
-  const drift = finite(layer.drift, 0.13) * 54 * scale;
-  const turbulence = unitValue(layer.turbulence, 0.54);
-  const speed = smokeSpeed(layer, options.chimney ? 0.062 : 0.052);
-  ctx.save();
-  ctx.globalCompositeOperation = 'screen';
-  ctx.filter = `blur(${Math.max(2.2, puff * (0.05 + (1 - definition) * 0.13))}px)`;
-  if (options.baseGlow) softBlob(ctx, x, y + 8 * scale, width * 0.8, tint, opacity * 0.16);
-  for (let i = 0; i < amount; i += 1) {
-    const h = hash(`${options.bodyName || 'body'}-${i}`);
-    const life = (t * speed * (0.75 + h * 0.75) + h) % 1;
-    const rise = life * height;
-    const widening = options.chimney ? (0.22 + life * 0.58) : (0.32 + life * 0.86);
-    const angleX = Math.cos(gravityAngle) * rise * Math.max(0.15, Math.abs(gravity));
-    const angleY = Math.sin(gravityAngle) * rise * Math.max(0.18, Math.abs(gravity));
-    const wave = Math.sin(t * (0.55 + h) + i * 2.1) * width * turbulence * (options.chimney ? 0.12 : 0.25);
-    const px = x + angleX + (h - 0.5) * width * widening + wave + drift * life;
-    const py = y + angleY;
-    const alpha = opacity * (0.1 + h * 0.2) * Math.sin(life * Math.PI);
-    softBlob(ctx, px, py, puff * (0.45 + h * 1.22) * (0.62 + life * (options.chimney ? 0.7 : 1.05)), tint, alpha);
+function smokeStateFromLayer(layer) {
+  return {
+    mode: layer.mode || layer.prototypeMode || 'rising',
+    colour: layer.colour || layer.colourHex || layer.colorA || '#dce2e7',
+    mistOpacity: clamp(finite(layer.mistOpacity, 0.36), 0, 1),
+    density: clamp(finite(layer.density, 0.86), 0, 1),
+    puffSize: clamp(finite(layer.puffSize, 1.73), 0.25, 2),
+    definition: clamp(finite(layer.definition, 0.82), 0, 1),
+    wispCount: Math.round(clamp(finite(layer.wispCount, 13), 0, 50)),
+    wispBrightness: clamp(finite(layer.wispBrightness, 0.09), 0, 1.5),
+    wispLength: clamp(finite(layer.wispLength, 0.95), 0.15, 1),
+    wispWidth: clamp(finite(layer.wispWidth, 0.42), 0.05, 1),
+    tailFade: clamp(finite(layer.tailFade, 0.98), 0.05, 1),
+    curl: clamp(finite(layer.curl, 0.94), 0, 1),
+    rotation: clamp(finite(layer.rotation, 0.91), 0, 1),
+    duration: clamp(finite(layer.duration, 8.6), 1.5, 12),
+    gravity: clamp(finite(layer.gravity, 0.31), 0, 3),
+    gravityAngle: clamp(finite(layer.gravityAngle, -90), -180, 180),
+    drift: clamp(finite(layer.drift, 0.13), -1, 1),
+    turbulence: clamp(finite(layer.turbulence, 0.54), 0, 1),
+    clear: clamp(finite(layer.clear, 0.54), 0.18, 0.9),
+    edge: clamp(finite(layer.edge, 0.64), 0.1, 1),
+    bias: clamp(finite(layer.bias, 0), -1, 1),
+    sourceX: clamp(finite(layer.sourceX, 50), 0, 100),
+    sourceY: clamp(finite(layer.sourceY, 76), 0, 100),
+    sourceWidth: clamp(finite(layer.sourceWidth, 34), 4, 260),
+    height: clamp(finite(layer.height, 400), 60, 680),
+    showMarker: layer.showMarker !== false,
+    doubleLayer: layer.doubleLayer !== false,
+    seed: seedFromString(`${layer.id || layer.name || 'smoke'}|${layer.mode || layer.prototypeMode || 'rising'}`)
+  };
+}
+
+function makeSmokeInstances(state, layer, t) {
+  const passes = state.doubleLayer ? 2 : 1;
+  const instances = [];
+  for (let pass = 0; pass < passes; pass += 1) {
+    const instanceSeed = state.seed + pass * 7919;
+    const instance = {
+      puffs: [],
+      ribbons: [],
+      alpha: pass === 0 ? 1 : 0.82,
+      phase: pass === 0 ? 0 : 1.73,
+      shiftX: pass === 0 ? 0 : 8,
+      shiftY: pass === 0 ? 0 : -5
+    };
+    const basePuffs = { rising: 9, wispy: 2, vignette: 18, fullscreen: 22, emission: 6 }[state.mode] || 8;
+    const puffCount = Math.min(34, Math.round(basePuffs + state.density * (state.mode === 'wispy' ? 5 : 12)));
+    for (let index = 0; index < puffCount; index += 1) instance.puffs.push(makeSmokePuff(state, instanceSeed, index, t));
+    for (let index = 0; index < state.wispCount; index += 1) instance.ribbons.push(makeSmokeRibbon(state, instanceSeed, index, t));
+    instances.push(instance);
   }
-  ctx.restore();
+  return instances;
 }
 
-function drawThreadMist(ctx, layer, x, y, scale, t, options = {}) {
-  const tint = smokeTint(layer);
-  const opacity = unitValue(layer.mistOpacity, 0.36) * finite(options.alphaBias, 0.18);
-  const amount = Math.max(1, Math.round(finite(options.amount, 8)));
-  const puff = clamp(finite(layer.puffSize, 1.73), 0.25, 2.4) * 22 * scale * finite(options.puffScale, 0.38);
-  const width = finite(options.width, 70 * scale);
-  const height = finite(options.height, 330 * scale);
-  const speed = smokeSpeed(layer, 0.048);
-  ctx.save();
-  ctx.globalCompositeOperation = 'screen';
-  ctx.filter = `blur(${Math.max(2.5, puff * 0.4)}px)`;
-  for (let i = 0; i < amount; i += 1) {
-    const h = hash(`${options.name || 'mist'}-${i}`);
-    const life = (t * speed * (0.7 + h) + h) % 1;
-    const px = x + (h - 0.5) * width + Math.sin(t * 0.9 + i) * width * 0.12;
-    const py = y - life * height;
-    softBlob(ctx, px, py, puff * (0.6 + h), tint, opacity * Math.sin(life * Math.PI));
+function makeSmokePuff(state, seed, index, t) {
+  const lifeRand = seeded(seed + index * 101 + 17);
+  const life = 4.8 + lifeRand() * 5.4;
+  const ageSeed = lifeRand();
+  const cycle = Math.floor(ageSeed + t / life);
+  const rand = seeded(seed + index * 101 + cycle * 9973 + 31);
+  const puff = {
+    age: (ageSeed + t / life) % 1,
+    life,
+    radius: (76 + rand() * 138) * state.puffSize,
+    phase: rand() * Math.PI * 2,
+    spin: (rand() - 0.5) * 0.12,
+    alpha: 0.20 + rand() * 0.30
+  };
+  positionSmokeForMode(state, puff, rand, false);
+  return puff;
+}
+
+function makeSmokeRibbon(state, seed, index, t) {
+  const lifeRand = seeded(seed + index * 151 + 71);
+  const life = state.duration * (0.78 + lifeRand() * 0.42);
+  const ageSeed = lifeRand();
+  const cycle = Math.floor(ageSeed + t / life);
+  const rand = seeded(seed + index * 151 + cycle * 11939 + 83);
+  const ribbon = {
+    age: (ageSeed + t / life) % 1,
+    life,
+    phase: rand() * Math.PI * 2,
+    angleOffset: (rand() - 0.5) * (state.mode === 'wispy' || state.mode === 'fullscreen' ? 1.55 : 0.58),
+    swayA: (22 + rand() * 44) * (0.35 + state.curl),
+    swayB: (18 + rand() * 62) * (0.35 + state.curl),
+    turnA: rand() > 0.5 ? 1 : -1,
+    turnB: rand() > 0.5 ? 1 : -1,
+    foldSpeed: 0.45 + rand() * 0.92,
+    width: (3.5 + rand() * 7.5) * (0.32 + state.wispWidth),
+    maxLength: (180 + rand() * 320) * state.wispLength,
+    alpha: 0.48 + rand() * 0.42
+  };
+  positionSmokeForMode(state, ribbon, rand, true);
+  return ribbon;
+}
+
+function positionSmokeForMode(state, item, rand, ribbon) {
+  if (state.mode === 'emission') {
+    item.x = SMOKE_W * state.sourceX / 100 + (rand() - 0.5) * state.sourceWidth;
+    item.y = SMOKE_H * state.sourceY / 100;
+    item.plume = state.height * (0.74 + rand() * 0.28);
+  } else if (state.mode === 'vignette') {
+    const side = Math.floor(rand() * 4);
+    if (side === 0) { item.x = rand() * SMOKE_W; item.y = rand() * 102; }
+    if (side === 1) { item.x = rand() * SMOKE_W; item.y = SMOKE_H - rand() * 102; }
+    if (side === 2) { item.x = rand() * 108; item.y = rand() * SMOKE_H; }
+    if (side === 3) { item.x = SMOKE_W - rand() * 108; item.y = rand() * SMOKE_H; }
+    item.y += state.bias * 82;
+  } else if (state.mode === 'fullscreen') {
+    item.x = rand() * SMOKE_W;
+    item.y = rand() * SMOKE_H;
+  } else if (state.mode === 'wispy' && ribbon) {
+    item.x = SMOKE_W * (0.10 + rand() * 0.80);
+    item.y = SMOKE_H * (0.22 + rand() * 0.66);
+    item.plume = 230 + rand() * 370;
+  } else {
+    item.x = SMOKE_W * (0.12 + rand() * 0.76);
+    item.y = SMOKE_H * (0.62 + rand() * 0.29);
+    item.plume = 250 + rand() * 320;
   }
-  ctx.restore();
+  item.originX = item.x;
+  item.originY = item.y;
 }
 
-function drawRibbonWisps(ctx, layer, x, y, scale, t, options = {}) {
-  const count = Math.round(clamp(finite(layer.wispCount, 13), 0, 50) * finite(options.countBias, 1));
-  if (count <= 0) return;
-  const tint = smokeTint(layer);
-  const opacity = clamp(finite(layer.wispBrightness, 0.09), 0, 1.5) * finite(options.opacityBias, 1);
-  const length = clamp(finite(layer.wispLength, 0.95), 0.15, 1.2);
-  const widthFactor = clamp(finite(layer.wispWidth, 0.42), 0.05, 1.2);
-  const curl = unitValue(layer.curl, 0.94);
-  const rotation = unitValue(layer.rotation, 0.91);
-  const tailFade = clamp(finite(layer.tailFade, 0.98), 0.05, 1);
-  const width = finite(options.width, 120 * scale);
-  const height = finite(options.height, 320 * scale) * length;
-  const speed = smokeSpeed(layer, options.thin ? 0.46 : 0.32);
-  ctx.save();
-  ctx.globalCompositeOperation = 'screen';
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.shadowColor = tint;
-  ctx.shadowBlur = (options.thin ? 5 : 9) * scale * (0.45 + opacity);
-  for (let i = 0; i < count; i += 1) {
-    const h = hash(`${options.name || 'wisp'}-${i}`);
-    const phase = t * speed * (0.7 + rotation * 1.0 + h * 0.4) + h * TAU;
-    const baseX = x + (h - 0.5) * width;
-    const baseY = y - hash(i + 2) * height * 0.12;
-    const lineWidth = Math.max(0.35, (options.thin ? 1.05 : 3.0) * scale * widthFactor * (0.45 + h));
-    ctx.strokeStyle = withAlpha(tint, opacity * (0.16 + h * 0.26));
-    ctx.lineWidth = lineWidth;
-    ctx.beginPath();
-    const steps = options.thin ? 34 : 24;
-    for (let s = 0; s <= steps; s += 1) {
-      const u = s / steps;
-      const fade = Math.sin(Math.min(1, u / tailFade) * Math.PI);
-      const sway = Math.sin(u * TAU * (1.0 + curl * (options.thin ? 3.6 : 2.3)) + phase) * width * (options.thin ? 0.22 : 0.14) * fade;
-      const fold = Math.cos(phase + u * TAU * (1.2 + rotation)) * height * (options.thin ? 0.018 : 0.035);
-      const px = baseX + sway;
-      const py = baseY - u * height + fold;
-      if (s === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
+function smokeGravityVector(state, multiplier) {
+  const angle = state.gravityAngle * Math.PI / 180;
+  const strength = multiplier * (0.45 + state.gravity * 0.72);
+  return { x: Math.cos(angle) * strength, y: Math.sin(angle) * strength };
+}
+
+function drawSmokePuffsFromSource(context, state, instance, t) {
+  const modeAlpha = state.mode === 'wispy' ? 0.36 : state.mode === 'rising' ? 0.65 : 1;
+  context.save();
+  context.globalCompositeOperation = 'screen';
+  for (const puff of instance.puffs) {
+    const fade = smoothEnvelope(puff.age, 0.18, 0.32);
+    const travel = smokeGravityVector(state, puff.age * (puff.plume || 330));
+    let x = puff.originX + travel.x + state.drift * puff.age * 116 + Math.sin(puff.phase + instance.phase + t * 0.36) * state.turbulence * 17;
+    let y = puff.originY + travel.y;
+    if (state.mode === 'vignette' || state.mode === 'fullscreen') {
+      x = puff.originX + state.drift * puff.age * 90 + Math.sin(puff.phase + instance.phase + t * 0.36) * state.turbulence * 17;
+      y = puff.originY + Math.sin(t * 0.23 + instance.phase + puff.phase) * state.turbulence * 10;
     }
-    ctx.stroke();
+    const radius = puff.radius * (0.82 + puff.age * 0.72);
+    context.save();
+    context.translate(x, y);
+    context.rotate(puff.spin * (t + instance.phase));
+    context.globalAlpha = state.mistOpacity * puff.alpha * fade * modeAlpha * instance.alpha;
+    drawSmokeBrushApprox(context, state, radius);
+    context.restore();
   }
-  ctx.restore();
+  context.restore();
 }
 
-function drawHorizontalAtmosphereWisps(ctx, layer, scale, t, width, height) {
-  const tint = smokeTint(layer);
-  const opacity = clamp(finite(layer.wispBrightness, 0.09), 0, 1.5) * 0.45;
-  const count = Math.round(clamp(finite(layer.wispCount, 13), 0, 50) * 0.55);
-  if (count <= 0 || opacity <= 0) return;
-  const speed = smokeSpeed(layer, 0.18);
-  ctx.save();
-  ctx.globalCompositeOperation = 'screen';
-  ctx.lineCap = 'round';
-  ctx.lineWidth = Math.max(0.4, finite(layer.wispWidth, 0.42) * 2.2 * scale);
-  ctx.strokeStyle = withAlpha(tint, opacity * 0.32);
-  for (let i = 0; i < count; i += 1) {
-    const h = hash(i + 500);
-    const y = height * h;
-    const phase = t * speed + i;
-    ctx.beginPath();
-    for (let s = 0; s <= 34; s += 1) {
-      const u = s / 34;
-      const x = u * width;
-      const py = y + Math.sin(u * TAU * (1.4 + h * 2) + phase) * 18 * scale;
-      if (s === 0) ctx.moveTo(x, py);
-      else ctx.lineTo(x, py);
-    }
-    ctx.stroke();
+function drawSmokeBrushApprox(context, state, radius) {
+  const rand = seeded(seedFromString(`${state.colour}|${state.definition}|brush`));
+  for (let index = 0; index < 12; index += 1) {
+    const x = -radius * 0.28 + rand() * radius * 0.56;
+    const y = -radius * 0.31 + rand() * radius * 0.62;
+    const r = radius * (0.18 + rand() * 0.3);
+    const gradient = context.createRadialGradient(x, y, 1, x, y, r);
+    const alpha = 0.018 + rand() * (0.028 + state.definition * 0.032);
+    gradient.addColorStop(0, rgba(state.colour, alpha));
+    gradient.addColorStop(0.40, rgba(state.colour, alpha * 0.68));
+    gradient.addColorStop(1, rgba(state.colour, 0));
+    context.fillStyle = gradient;
+    context.beginPath();
+    context.ellipse(x, y, r, r * (0.55 + rand() * 0.34), rand() * Math.PI, 0, Math.PI * 2);
+    context.fill();
   }
-  ctx.restore();
 }
 
-function drawChimneySource(ctx, layer, x, y, width, scale) {
-  const tint = smokeTint(layer);
-  ctx.save();
-  ctx.globalCompositeOperation = 'screen';
-  softBlob(ctx, x, y, Math.max(14 * scale, width * 0.55), '#ffca66', unitValue(layer.mistOpacity, 0.36) * 0.18);
-  softBlob(ctx, x, y - 10 * scale, Math.max(22 * scale, width * 0.8), tint, unitValue(layer.mistOpacity, 0.36) * 0.18);
-  ctx.restore();
+function drawSmokeRibbonsFromSource(context, state, instance, t) {
+  if (!instance.ribbons.length) return;
+  context.save();
+  context.globalCompositeOperation = 'screen';
+  context.lineCap = 'round';
+  context.lineJoin = 'round';
+  for (const ribbon of instance.ribbons) {
+    const growth = easeOutCubic(clamp(ribbon.age / 0.42, 0, 1));
+    const lifeFade = smoothEnvelope(ribbon.age, 0.12, 0.30);
+    const length = ribbon.maxLength * growth;
+    if (length < 3 || lifeFade <= 0) continue;
+    const geometry = makeSmokeRibbonPath(state, ribbon, length, instance.phase, t);
+    const brightness = ribbon.alpha * state.wispBrightness * lifeFade * instance.alpha;
+    const gradient = context.createLinearGradient(geometry.start.x, geometry.start.y, geometry.end.x, geometry.end.y);
+    const fadeSpan = 0.12 + state.tailFade * 0.10;
+    gradient.addColorStop(0, rgba(state.colour, 0));
+    gradient.addColorStop(fadeSpan, rgba(state.colour, brightness * 0.54));
+    gradient.addColorStop(0.42, rgba(state.colour, brightness));
+    gradient.addColorStop(0.72, rgba(state.colour, brightness * 0.68));
+    gradient.addColorStop(1, rgba(state.colour, 0));
+    context.save();
+    context.strokeStyle = gradient;
+    context.globalAlpha = 0.20;
+    context.lineWidth = ribbon.width * (8.2 + state.wispWidth * 3.6);
+    context.filter = 'blur(5px)';
+    context.stroke(geometry.path);
+    context.restore();
+    context.save();
+    context.strokeStyle = gradient;
+    context.globalAlpha = 0.57;
+    context.lineWidth = ribbon.width * (2.4 + state.wispWidth * 1.5);
+    context.filter = 'blur(1.3px)';
+    context.stroke(geometry.path);
+    context.restore();
+    context.save();
+    context.strokeStyle = gradient;
+    context.globalAlpha = 0.48 + state.definition * 0.25;
+    context.lineWidth = Math.max(0.7, ribbon.width * (0.44 + state.wispWidth * 0.32));
+    context.stroke(geometry.path);
+    context.restore();
+  }
+  context.restore();
+}
+
+function makeSmokeRibbonPath(state, ribbon, length, phaseOffset, t) {
+  const motion = (t + phaseOffset) * (0.34 + state.rotation * ribbon.foldSpeed);
+  const baseAngle = state.gravityAngle * Math.PI / 180;
+  const turn = Math.sin(ribbon.phase + motion * 0.38) * state.rotation * 0.46;
+  const angle = baseAngle + ribbon.angleOffset + turn;
+  const dx = Math.cos(angle);
+  const dy = Math.sin(angle);
+  const nx = -dy;
+  const ny = dx;
+  const gravityPush = smokeGravityVector(state, ribbon.age * (ribbon.plume || 260) * 0.42);
+  const baseDrift = state.drift * ribbon.age * length * 0.33;
+  const baseWave = Math.sin(ribbon.phase + (t + phaseOffset) * 0.30) * state.turbulence * 9;
+  let start = {
+    x: ribbon.originX + gravityPush.x + baseDrift + nx * baseWave,
+    y: ribbon.originY + gravityPush.y + ny * baseWave
+  };
+  if (state.mode === 'vignette' || state.mode === 'fullscreen') {
+    start = {
+      x: ribbon.originX + baseDrift + nx * baseWave,
+      y: ribbon.originY + ny * baseWave
+    };
+  }
+  const side1 = Math.sin(ribbon.phase + motion) * ribbon.swayA * ribbon.turnA;
+  const side2 = Math.sin(ribbon.phase * 1.4 - motion * 0.72) * ribbon.swayB * ribbon.turnB;
+  const side3 = Math.cos(ribbon.phase * 0.8 + motion * 1.05) * (ribbon.swayA * 0.74);
+  const a = pointAlong(start, dx, dy, nx, ny, length * 0.32, side1);
+  const b = pointAlong(start, dx, dy, nx, ny, length * 0.67, side2);
+  const end = pointAlong(start, dx, dy, nx, ny, length, side3);
+  const c1 = pointAlong(start, dx, dy, nx, ny, length * 0.12, side1 * 0.48);
+  const c2 = pointAlong(a, dx, dy, nx, ny, -length * 0.09, side1 * 0.18);
+  const c3 = pointAlong(a, dx, dy, nx, ny, length * 0.11, side2 * 0.26);
+  const c4 = pointAlong(b, dx, dy, nx, ny, -length * 0.12, side2 * 0.20);
+  const c5 = pointAlong(b, dx, dy, nx, ny, length * 0.12, side3 * 0.30);
+  const c6 = pointAlong(end, dx, dy, nx, ny, -length * 0.11, side3 * 0.08);
+  const path = new Path2D();
+  path.moveTo(start.x, start.y);
+  path.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, a.x, a.y);
+  path.bezierCurveTo(c3.x, c3.y, c4.x, c4.y, b.x, b.y);
+  path.bezierCurveTo(c5.x, c5.y, c6.x, c6.y, end.x, end.y);
+  return { path, start, end };
+}
+
+function pointAlong(origin, dx, dy, nx, ny, longitudinal, sideways) {
+  return { x: origin.x + dx * longitudinal + nx * sideways, y: origin.y + dy * longitudinal + ny * sideways };
+}
+
+function cutSmokeTransparentCentre(context, state) {
+  const centreX = SMOKE_W / 2;
+  const centreY = SMOKE_H / 2 + state.bias * 92;
+  const inner = SMOKE_H * state.clear * 0.46;
+  const outer = inner + 80 + state.edge * 180;
+  context.save();
+  context.globalCompositeOperation = 'destination-out';
+  const mask = context.createRadialGradient(centreX, centreY, inner, centreX, centreY, outer);
+  mask.addColorStop(0, 'rgba(0,0,0,1)');
+  mask.addColorStop(0.67, 'rgba(0,0,0,0.97)');
+  mask.addColorStop(1, 'rgba(0,0,0,0)');
+  context.fillStyle = mask;
+  context.fillRect(0, 0, SMOKE_W, SMOKE_H);
+  context.restore();
 }
 
 function drawSmokeOriginMarker(ctx, x, y, width, scale) {
@@ -809,8 +832,12 @@ function percent100(value, fallback) {
 }
 
 function withAlpha(color, alpha) {
-  const rgba = parseColor(color);
-  return `rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, ${clamp(alpha, 0, 1)})`;
+  const rgbaColor = parseColor(color);
+  return `rgba(${rgbaColor.r}, ${rgbaColor.g}, ${rgbaColor.b}, ${clamp(alpha, 0, 1)})`;
+}
+
+function rgba(color, alpha) {
+  return withAlpha(color, alpha);
 }
 
 function parseColor(color) {
@@ -824,6 +851,34 @@ function parseColor(color) {
     g: parseInt(value.slice(2, 4), 16),
     b: parseInt(value.slice(4, 6), 16)
   };
+}
+
+function smoothEnvelope(age, fadeIn, fadeOut) {
+  const inValue = clamp(age / Math.max(0.0001, fadeIn), 0, 1);
+  const outValue = clamp((1 - age) / Math.max(0.0001, fadeOut), 0, 1);
+  return easeOutCubic(Math.min(inValue, outValue));
+}
+
+function easeOutCubic(value) {
+  return 1 - Math.pow(1 - clamp(value, 0, 1), 3);
+}
+
+function seeded(seed) {
+  let value = seed >>> 0;
+  return () => {
+    value = (value * 1664525 + 1013904223) >>> 0;
+    return value / 4294967296;
+  };
+}
+
+function seedFromString(value) {
+  const string = String(value || 'seed');
+  let seed = 2166136261;
+  for (let index = 0; index < string.length; index += 1) {
+    seed ^= string.charCodeAt(index);
+    seed = Math.imul(seed, 16777619) >>> 0;
+  }
+  return seed >>> 0;
 }
 
 function hash(value) {
