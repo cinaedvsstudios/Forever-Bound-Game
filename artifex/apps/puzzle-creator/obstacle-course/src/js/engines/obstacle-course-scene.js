@@ -1,13 +1,23 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
 import { OC, GROUND_Y } from './obstacle-course-state.js';
-import { ASSETS } from './obstacle-course-assets.js';
+import { ASSETS } from './obstacle-course-assets.js?v=3.0.39';
 import { clamp } from './obstacle-course-utils.js';
 
 export { THREE, GLTFLoader };
 
 function effectiveVanishY() {
   return Number(OC.vanishY || 0) + 100;
+}
+
+function stripCacheVersion(url = '') {
+  return String(url).replace(/([?&])v=[^&]+(&)?/, (match, prefix, suffix) => (prefix === '?' && suffix ? '?' : ''));
+}
+
+function textureUrlWithCache(url = '') {
+  if (!url) return '';
+  if (/[?&]v=/.test(url)) return url;
+  return `${url}${url.includes('?') ? '&' : '?'}v=${OC.cacheVersion}`;
 }
 
 export function initScene(updateFrame) {
@@ -43,8 +53,9 @@ export function initScene(updateFrame) {
 export function loadTexture(url, options = {}) {
   const key = `${url}|${JSON.stringify(options)}`;
   if (OC.textures.has(key)) return OC.textures.get(key);
-  const preloadedImage = OC.images.get(url);
-  const texture = preloadedImage ? new THREE.Texture(preloadedImage) : OC.textureLoader.load(`${url}?v=${OC.cacheVersion}`);
+  const plainUrl = stripCacheVersion(url);
+  const preloadedImage = OC.images.get(url) || OC.images.get(plainUrl);
+  const texture = preloadedImage ? new THREE.Texture(preloadedImage) : OC.textureLoader.load(textureUrlWithCache(url));
   texture.encoding = THREE.sRGBEncoding;
   texture.minFilter = THREE.LinearFilter;
   texture.magFilter = THREE.LinearFilter;
