@@ -5,7 +5,7 @@ import { initEditorDynamicsControls } from './editor-dynamics-controls.js';
 import { initEditorQuickEditControls } from './editor-quick-edit-controls.js';
 import { initEditorWorkspaceUI } from './editor-workspace-ui.js';
 
-const VERSION_LABEL = 'INDEX2-PROTO-PAUSE-SYNC-0.2.17';
+const VERSION_LABEL = 'INDEX2-PROTO-CONTROL-MAP-0.2.18';
 
 window.addEventListener('DOMContentLoaded', () => {
   initEditorCore({ versionLabel: VERSION_LABEL, showToast });
