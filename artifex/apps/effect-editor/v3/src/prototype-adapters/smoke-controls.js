@@ -90,7 +90,7 @@ export const SMOKE_CONTROL_GROUPS = [
     title: 'Smoke Mode',
     source: 'index.html identity-card',
     controls: [
-      control.select('mode', 'Smoke Mode', SMOKE_MODE_LABELS),
+      control.select('prototypeMode', 'Smoke Mode', SMOKE_MODE_LABELS),
       control.select('scene', 'Test Background', SCENE_OPTIONS),
       control.select('layer', 'Preview Layer', LAYER_OPTIONS),
       control.checkbox('doubleLayer', 'Double Layer Preview')
