@@ -6,7 +6,7 @@ const glbDefault = (overrides = {}) => ({ x: 0, y: 0, z: 0, ...sideDefaults, sca
 
 export const DEFAULT_SETTINGS = {
   engine: 'obstacle-course',
-  version: 'V3.0.40',
+  version: 'V3.0.41',
   templateId: 'horse_forest_easy',
   difficulty: 3,
   courseLength: 2400,
@@ -29,9 +29,15 @@ export const DEFAULT_SETTINGS = {
   glbControls: {
     './assets/3d/tree_low-poly.glb': glbDefault({ y: 1, scale: 4, brightness: 0.96 }),
     './assets/3d/pine_tree.glb': glbDefault({ y: 1, scale: 4, brightness: 0.96, scaleOffset: 100, opacityOffset: 9, brightnessOffset: -4, contrastOffset: 0, saturationOffset: 0 }),
-    './assets/3d/oak_trees.glb': glbDefault({ y: 1.1, rightX: 0.2, scale: 2.176, brightness: 0.96 }),
     './assets/3d/pine_tree_-_ps1_low_poly.glb': glbDefault({ y: 0.8, leftX: -1.7000000000000002, scale: 4, brightness: 0.96 }),
+    './assets/3d/pine_with_awkward_teenage_face.glb': glbDefault({ y: 0.9, scale: 3.5, brightness: 0.95 }),
+    './assets/3d/small_pine.glb': glbDefault({ y: 0.65, scale: 2.7, brightness: 0.95 }),
+    './assets/3d/spruce_tree.glb': glbDefault({ y: 1, scale: 3.8, brightness: 0.95 }),
+    './assets/3d/dead_tree.glb': glbDefault({ y: 0.8, scale: 3.2, brightness: 0.9, saturation: 0.8 }),
+    './assets/3d/tree_gn.glb': glbDefault({ y: 1, scale: 3.4, brightness: 0.94 }),
+    './assets/3d/oak_trees.glb': glbDefault({ y: 1.1, rightX: 0.2, scale: 2.176, brightness: 0.96 }),
     './assets/3d/tall_bush.glb': glbDefault({ y: -5.7, leftX: -5.5, leftY: 0.5, rightX: 6.699999999999999, scale: 1.72, saturation: 0.86 }),
+    './assets/3d/grass_patches.glb': glbDefault({ y: -0.35, scale: 0.85, brightness: 0.9, saturation: 0.9 }),
     './assets/3d/geranium.glb': glbDefault(),
     './assets/3d/bush.glb': glbDefault(),
     './assets/3d/low_poly_fern.glb': glbDefault(),
