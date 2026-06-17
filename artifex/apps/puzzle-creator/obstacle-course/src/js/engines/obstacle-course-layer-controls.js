@@ -1,9 +1,9 @@
 import { OC } from './obstacle-course-state.js';
 import { buildSliderRow } from './obstacle-course-ui.js';
 import { signedToFactor, factorToSigned, sliderToVisualFactor, visualFactorToSlider, clamp } from './obstacle-course-utils.js';
-import { renderOnce, selectObjects, applyBackgroundPlate } from './obstacle-course-scene.js';
-import { getLayerDefault } from './obstacle-course-settings.js';
-import { applyLayer } from './obstacle-course-layers.js';
+import { renderOnce, selectObjects, applyBackgroundPlate } from './obstacle-course-scene.js?v=3.0.45';
+import { getLayerDefault } from './obstacle-course-settings.js?v=3.0.45';
+import { applyLayer } from './obstacle-course-layers.js?v=3.0.45';
 
 const POSITION_SLIDER_STEP = 0.1;
 

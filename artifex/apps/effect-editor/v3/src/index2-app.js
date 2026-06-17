@@ -1,11 +1,12 @@
-import { initEditorCore } from './editor-core.js';
+import './prototype-adapters/shimmer-control-range-boosts.js?v=052-wormhole-visible-range';
+import { initEditorCore } from './editor-core.js?v=052-wormhole-visible-range';
 import { initEditorAppearanceControls } from './editor-appearance-controls.js';
 import { initBrushAssetLibrary } from './brush-asset-library.js';
 import { initEditorDynamicsControls } from './editor-dynamics-controls.js';
 import { initEditorQuickEditControls } from './editor-quick-edit-controls.js';
 import { initEditorWorkspaceUI } from './editor-workspace-ui.js';
 
-const VERSION_LABEL = 'INDEX2-SHIMMER-SOURCE-MAP-0.2.22';
+const VERSION_LABEL = 'INDEX2-SHIMMER-0.2.31';
 
 window.addEventListener('DOMContentLoaded', () => {
   initEditorCore({ versionLabel: VERSION_LABEL, showToast });

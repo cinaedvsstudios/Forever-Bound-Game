@@ -1,5 +1,5 @@
 import { OC } from './obstacle-course-state.js';
-import { ASSETS } from './obstacle-course-assets.js?v=3.0.40';
+import { ASSETS } from './obstacle-course-assets.js?v=3.0.43';
 
 const clips = new Map();
 let ctx = null;

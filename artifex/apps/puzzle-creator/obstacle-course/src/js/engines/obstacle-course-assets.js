@@ -48,6 +48,7 @@ export const GLB_ASSETS = [
   { url: `${ASSET_BASE}3d/fern.glb`, label: 'Fern', type: 'farDetail', scale: 1, targetHeight: 1.9, optional: true },
   { url: `${ASSET_BASE}3d/tall_bush.glb`, label: 'Tall Bush', type: 'farDetail', scale: 1, targetHeight: 3.1, optional: true },
   { url: `${ASSET_BASE}3d/rock_low-poly.glb`, label: 'Rock', type: 'rock', scale: 1, targetHeight: 1.9, optional: true },
+  { url: `${ASSET_BASE}3d/stone_low-poly.glb`, label: 'Stone', type: 'rock', scale: 1, targetHeight: 1.6, optional: true },
   { url: `${ASSET_BASE}3d/stylized_glowing_mushrooms.glb`, label: 'Glowing Mushrooms', type: 'collectible', scale: 1, targetHeight: 1.5, value: 10, optional: true },
   { url: `${ASSET_BASE}3d/moneysack.glb`, label: 'Money Sack', type: 'collectible', scale: 1, targetHeight: 1.5, value: 25, optional: true },
 ];

@@ -1,10 +1,12 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
 import { OC, GROUND_Y } from './obstacle-course-state.js';
-import { ASSETS } from './obstacle-course-assets.js?v=3.0.40';
+import { ASSETS } from './obstacle-course-assets.js?v=3.0.44';
 import { clamp } from './obstacle-course-utils.js';
 
 export { THREE, GLTFLoader };
+
+const MAX_INSTANCE_SELECTION_MARKERS = 140;
 
 function effectiveVanishY() {
   return Number(OC.vanishY || 0) + 100;
@@ -26,7 +28,7 @@ export function initScene(updateFrame) {
   OC.scene = new THREE.Scene();
   OC.camera = new THREE.PerspectiveCamera(55, 16 / 9, 0.1, 5000);
   OC.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  OC.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  OC.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.65));
   OC.renderer.outputEncoding = THREE.sRGBEncoding;
   OC.stage.tabIndex = 0;
   OC.renderer.domElement.tabIndex = 0;
@@ -121,7 +123,7 @@ export function updateWorldTransform(playerWorldX) {
 
 export function renderOnce() {
   if (!OC.renderer || !OC.scene || !OC.camera) return;
-  OC.selectionBoxes.forEach((box) => box.update());
+  OC.selectionBoxes.forEach((box) => box.update?.());
   OC.renderer.render(OC.scene, OC.camera);
 }
 
@@ -145,11 +147,60 @@ function animateFrame() {
   OC.animationFrame = requestAnimationFrame(animateFrame);
 }
 
+function removeSelectionObject(object) {
+  if (!object) return;
+  object.parent?.remove?.(object);
+  OC.scene?.remove?.(object);
+  object.geometry?.dispose?.();
+  object.material?.dispose?.();
+  object.children?.forEach?.((child) => {
+    child.geometry?.dispose?.();
+    child.material?.dispose?.();
+  });
+}
+
+function instanceSelectionMaterial() {
+  const mat = new THREE.LineBasicMaterial({ color: 0xeec45a, depthTest: false, transparent: false });
+  mat.userData.ocSkipLayerVisual = true;
+  return mat;
+}
+
+function addInstancedSelectionMarkers(group) {
+  const placements = Array.isArray(group?.userData?.placements) ? group.userData.placements : [];
+  if (!placements.length) return false;
+  const markerGroup = new THREE.Group();
+  markerGroup.name = 'SelectedGLBInstanceMarkers';
+  markerGroup.userData.ocSkipLayerVisual = true;
+  markerGroup.renderOrder = 999;
+  const material = instanceSelectionMaterial();
+  const sorted = [...placements].sort((a, b) => Math.abs((-a.z) - OC.distance) - Math.abs((-b.z) - OC.distance)).slice(0, MAX_INSTANCE_SELECTION_MARKERS);
+  sorted.forEach((placement) => {
+    const radius = clamp(Math.abs(Number(placement.scale || 1)) * 1.8, 0.75, 3.2);
+    const ringGeometry = new THREE.RingGeometry(radius * 0.82, radius, 24);
+    const ring = new THREE.LineLoop(new THREE.EdgesGeometry(ringGeometry), material);
+    ring.position.set(placement.x, placement.y + 0.09, placement.z);
+    ring.rotation.x = -Math.PI / 2;
+    ring.renderOrder = 999;
+    markerGroup.add(ring);
+    const poleGeometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, radius * 2.4, 0)]);
+    const pole = new THREE.Line(poleGeometry, material);
+    pole.position.set(placement.x, placement.y + 0.1, placement.z);
+    pole.renderOrder = 999;
+    markerGroup.add(pole);
+  });
+  group.add(markerGroup);
+  OC.selectionBoxes.push(markerGroup);
+  return true;
+}
+
 export function selectObjects(objects = []) {
-  OC.selectionBoxes.forEach((box) => OC.scene?.remove(box));
+  OC.selectionBoxes.forEach(removeSelectionObject);
   OC.selectionBoxes = [];
   objects.filter(Boolean).slice(0, 20).forEach((obj) => {
+    if (obj.userData?.isInstancedAssetGroup && addInstancedSelectionMarkers(obj)) return;
     const helper = new THREE.BoxHelper(obj, 0xeec45a);
+    helper.userData.ocSkipLayerVisual = true;
+    helper.renderOrder = 999;
     OC.scene.add(helper);
     OC.selectionBoxes.push(helper);
   });

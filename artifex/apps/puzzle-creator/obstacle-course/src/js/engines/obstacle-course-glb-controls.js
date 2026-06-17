@@ -1,10 +1,10 @@
 import { OC } from './obstacle-course-state.js';
-import { GLB_ASSETS } from './obstacle-course-assets.js?v=3.0.41';
+import { GLB_ASSETS } from './obstacle-course-assets.js?v=3.0.45';
 import { buildSliderRow } from './obstacle-course-ui.js';
-import { selectObjects } from './obstacle-course-scene.js';
+import { selectObjects } from './obstacle-course-scene.js?v=3.0.45';
 import { signedToFactor, factorToSigned, sliderToVisualFactor, visualFactorToSlider, clamp } from './obstacle-course-utils.js';
-import { getGlbDefault } from './obstacle-course-settings.js';
-import { applyAllGlbAssetControls } from './obstacle-course-glb.js';
+import { getGlbDefault } from './obstacle-course-settings.js?v=3.0.45';
+import { applyAllGlbAssetControls } from './obstacle-course-glb.js?v=3.0.45';
 
 const POSITION_SLIDER_STEP = 0.1;
 
@@ -14,6 +14,8 @@ function positionValueFromSlider(value, baseValue) { return Number(baseValue || 
 function visualOffsetFromBase(value, baseValue) { const base = Number(baseValue || 1); return visualFactorToSlider(Number(value || base) / base); }
 function opacityOffsetFromBase(value, baseValue) { return Math.round((Number(value ?? baseValue ?? 1) - Number(baseValue ?? 1)) * 100); }
 function tintOffsetFromBase(value, baseValue) { return Math.round((Number(value || 0) - Number(baseValue || 0)) * 100); }
+function allRegisteredGlbUrls() { return Array.from(new Set(GLB_ASSETS.map((asset) => asset.url))); }
+function loadedGlbUrls() { return new Set([...Array.from(OC.glbTemplates?.keys?.() || []), ...OC.glbInstances.map((obj) => obj.userData.glbAssetUrl).filter(Boolean)]); }
 
 function glbControl(url) {
   if (!OC.glbControls.has(url)) OC.glbControls.set(url, { ...getGlbDefault(url), ...(OC.pendingGlbControls?.[url] || {}) });
@@ -37,15 +39,16 @@ function addPositionRows(host, prefix, label, cfg, base, apply) {
 }
 
 export function createGlbAssetSliders(host) {
-  const urls = Array.from(new Set(OC.glbInstances.map((obj) => obj.userData.glbAssetUrl).filter(Boolean)));
+  const urls = allRegisteredGlbUrls();
   if (!urls.length) {
-    host.innerHTML = '<p class="hint-text">No optional GLB assets loaded yet.</p>';
+    host.innerHTML = '<p class="hint-text">No GLB assets are registered.</p>';
     return;
   }
   if (!OC.selectedGlbAssetUrl || !urls.includes(OC.selectedGlbAssetUrl)) OC.selectedGlbAssetUrl = urls[0];
+  const loaded = loadedGlbUrls();
   const row = document.createElement('label');
   row.className = 'field-block';
-  row.innerHTML = `<span>GLB Asset</span><div class="hf-glb-select-row"><select id="hf-glb-asset-select">${urls.map((url) => `<option value="${url}">${url.split('/').pop()}</option>`).join('')}</select><button id="hf-glb-open-picker" type="button">Browse</button></div>`;
+  row.innerHTML = `<span>GLB Asset</span><div class="hf-glb-select-row"><select id="hf-glb-asset-select">${urls.map((url) => `<option value="${url}">${url.split('/').pop()}${loaded.has(url) ? '' : ' · not loaded yet'}</option>`).join('')}</select><button id="hf-glb-open-picker" type="button">Browse</button></div>`;
   host.appendChild(row);
   const select = row.querySelector('select');
   select.value = OC.selectedGlbAssetUrl;
@@ -60,7 +63,7 @@ export function createGlbAssetSliders(host) {
   const base = getGlbDefault(OC.selectedGlbAssetUrl);
   const apply = () => { applyAllGlbAssetControls(); refreshGlbSelection(); };
 
-  addGroupTitle(host, 'All copies');
+  addGroupTitle(host, loaded.has(OC.selectedGlbAssetUrl) ? 'All copies' : 'Default controls for this asset');
   buildSliderRow(host, 'hf-glb-all', 'x', 'All X', -100, 100, 1, positionSliderFromBase(cfg.x, base.x), (v) => { cfg.x = positionValueFromSlider(v, base.x); apply(); });
   buildSliderRow(host, 'hf-glb-all', 'y', 'All Y', -100, 100, 1, positionSliderFromBase(cfg.y, base.y), (v) => { cfg.y = positionValueFromSlider(v, base.y); apply(); });
   buildSliderRow(host, 'hf-glb-all', 'z', 'All Z', -100, 100, 1, positionSliderFromBase(cfg.z, base.z), (v) => { cfg.z = positionValueFromSlider(v, base.z); apply(); });
@@ -82,14 +85,12 @@ function openGlbPicker(host) {
   const modal = document.createElement('section');
   modal.id = 'hf-glb-picker-modal';
   modal.className = 'hf-glb-picker-modal';
-  const loaded = new Set(OC.glbInstances.map((obj) => obj.userData.glbAssetUrl).filter(Boolean));
-  modal.innerHTML = `<div class="hf-glb-picker-card"><button type="button" class="hf-glb-picker-close">Close</button><h3>GLB Asset Selector</h3><div class="hf-glb-picker-grid">${GLB_ASSETS.map((asset) => `<button type="button" class="hf-glb-tile ${loaded.has(asset.url) ? 'is-loaded' : 'is-missing'}" data-url="${asset.url}"><span class="hf-glb-thumb">${asset.type === 'rock' ? '◆' : asset.type.includes('Detail') || asset.type === 'groundGrass' ? '⌁' : asset.type.includes('Tree') ? '▲' : '●'}</span><strong>${asset.label}</strong><small>${asset.url.split('/').pop()} · ${loaded.has(asset.url) ? 'loaded' : 'missing'}</small></button>`).join('')}</div></div>`;
+  const loaded = loadedGlbUrls();
+  modal.innerHTML = `<div class="hf-glb-picker-card"><button type="button" class="hf-glb-picker-close">Close</button><h3>GLB Asset Selector</h3><div class="hf-glb-picker-grid">${GLB_ASSETS.map((asset) => `<button type="button" class="hf-glb-tile ${loaded.has(asset.url) ? 'is-loaded' : 'is-missing'}" data-url="${asset.url}"><span class="hf-glb-thumb">${asset.type === 'rock' ? '◆' : asset.type.includes('Detail') || asset.type === 'groundGrass' ? '⌁' : asset.type.includes('Tree') ? '▲' : '●'}</span><strong>${asset.label}</strong><small>${asset.url.split('/').pop()} · ${loaded.has(asset.url) ? 'loaded' : 'registered'}</small></button>`).join('')}</div></div>`;
   document.body.appendChild(modal);
   modal.querySelector('.hf-glb-picker-close')?.addEventListener('click', () => modal.remove());
   modal.querySelectorAll('.hf-glb-tile').forEach((tile) => tile.addEventListener('click', () => {
-    const url = tile.dataset.url;
-    if (!loaded.has(url)) return;
-    OC.selectedGlbAssetUrl = url;
+    OC.selectedGlbAssetUrl = tile.dataset.url;
     host.innerHTML = '';
     createGlbAssetSliders(host);
     refreshGlbSelection();

@@ -3,7 +3,7 @@ import { THREE } from './obstacle-course-scene.js';
 import { getGlbDefault } from './obstacle-course-settings.js';
 
 const GLB_LOAD_TIMEOUT_MS = 10000;
-const PLANT_ALPHA_TEST = 0.52;
+const PLANT_ALPHA_TEST = 0.46;
 const instancedPartCache = new Map();
 const dummy = new THREE.Object3D();
 
@@ -43,6 +43,7 @@ export function cloneGlbTemplate(url) {
     else if (node.material) node.material = cloneMaterial(node.material, node, url);
     node.castShadow = true;
     node.receiveShadow = true;
+    node.frustumCulled = false;
   });
   return root;
 }
@@ -51,34 +52,115 @@ function cloneMaterial(mat, node = null, assetUrl = '') {
   const clone = mat.clone();
   clone.userData.ocGlbAssetUrl = assetUrl || mat.userData?.ocGlbAssetUrl || '';
   if (clone.color) clone.userData.baseColor = clone.color.clone();
-  applyPlantCutout(clone, node, clone.userData.ocGlbAssetUrl);
+  hardenGlbMaterial(clone, isCutoutMaterial(clone, node, clone.userData.ocGlbAssetUrl));
   return clone;
 }
 
 function isPlantAssetUrl(assetUrl = '') {
   const value = String(assetUrl).toLowerCase();
-  return ['tree', 'pine', 'oak', 'fern', 'bush', 'geranium', 'leaf'].some((word) => value.includes(word));
+  return ['tree', 'pine', 'oak', 'fern', 'bush', 'geranium', 'leaf', 'grass', 'spruce'].some((word) => value.includes(word));
 }
 
-function isPlantMaterial(mat, node = null, assetUrl = '') {
+function materialHasAlphaIntent(mat) {
+  return Boolean(mat?.alphaMap || mat?.transparent || Number(mat?.opacity ?? 1) < 0.995 || Number(mat?.alphaTest || 0) > 0);
+}
+
+function isCutoutMaterial(mat, node = null, assetUrl = '') {
   const materialName = String(mat?.name || '').toLowerCase();
   const nodeName = String(node?.name || '').toLowerCase();
-  const nameHit = ['leaf', 'leaves', 'plant', 'branch', 'needle', 'canopy', 'crown', 'fern', 'bush'].some((word) => materialName.includes(word) || nodeName.includes(word));
-  const hasAlphaBehaviour = Boolean(mat?.alphaMap || mat?.transparent || Number(mat?.opacity ?? 1) < 0.995 || Number(mat?.alphaTest || 0) > 0);
+  const nameHit = ['leaf', 'leaves', 'plant', 'branch', 'needle', 'canopy', 'crown', 'fern', 'bush', 'grass', 'foliage'].some((word) => materialName.includes(word) || nodeName.includes(word));
   const plantTexture = isPlantAssetUrl(assetUrl) && Boolean(mat?.map);
-  return Boolean(nameHit || hasAlphaBehaviour || plantTexture);
+  return Boolean(nameHit || plantTexture || materialHasAlphaIntent(mat));
 }
 
-function applyPlantCutout(mat, node = null, assetUrl = '') {
-  if (!isPlantMaterial(mat, node, assetUrl)) return;
-  mat.alphaTest = Math.max(Number(mat.alphaTest || 0), PLANT_ALPHA_TEST);
+function hardenGlbMaterial(mat, cutout = false) {
+  if (!mat) return;
+  mat.userData.ocSkipLayerVisual = true;
+  mat.userData.ocGlbSolidMaterial = true;
   mat.transparent = false;
   mat.opacity = 1;
   mat.depthWrite = true;
   mat.depthTest = true;
-  mat.side = THREE.DoubleSide;
   mat.blending = THREE.NormalBlending;
+  mat.premultipliedAlpha = false;
+  if ('alphaToCoverage' in mat) mat.alphaToCoverage = true;
+  if (cutout) {
+    mat.alphaTest = Math.max(Number(mat.alphaTest || 0), PLANT_ALPHA_TEST);
+    mat.side = THREE.DoubleSide;
+  } else {
+    mat.alphaTest = 0;
+  }
+  if (mat.map) mat.map.needsUpdate = true;
+  if (mat.alphaMap) mat.alphaMap.needsUpdate = true;
   mat.needsUpdate = true;
+}
+
+function clamp01(value) { return Math.min(1, Math.max(0, Number(value || 0))); }
+
+function safeColor(hex) {
+  try { return new THREE.Color(hex || '#ffffff'); }
+  catch { return new THREE.Color('#ffffff'); }
+}
+
+function getVisualUniforms(mat) {
+  if (!mat.userData.ocVisualUniforms) {
+    mat.userData.ocVisualUniforms = {
+      brightness: { value: 1 },
+      contrast: { value: 1 },
+      saturation: { value: 1 },
+      tint: { value: new THREE.Color('#ffffff') },
+      tintStrength: { value: 0 },
+    };
+  }
+  return mat.userData.ocVisualUniforms;
+}
+
+function installRgbVisualShader(mat) {
+  if (!mat || mat.userData.ocRgbVisualShaderInstalled) return;
+  const previousOnBeforeCompile = mat.onBeforeCompile;
+  mat.onBeforeCompile = (shader, renderer) => {
+    if (typeof previousOnBeforeCompile === 'function') previousOnBeforeCompile.call(mat, shader, renderer);
+    const uniforms = getVisualUniforms(mat);
+    shader.uniforms.ocVisualBrightness = uniforms.brightness;
+    shader.uniforms.ocVisualContrast = uniforms.contrast;
+    shader.uniforms.ocVisualSaturation = uniforms.saturation;
+    shader.uniforms.ocVisualTint = uniforms.tint;
+    shader.uniforms.ocVisualTintStrength = uniforms.tintStrength;
+    const header = `
+uniform float ocVisualBrightness;
+uniform float ocVisualContrast;
+uniform float ocVisualSaturation;
+uniform vec3 ocVisualTint;
+uniform float ocVisualTintStrength;
+vec3 ocApplyRgbVisual(vec3 color) {
+  float luma = dot(color, vec3(0.299, 0.587, 0.114));
+  vec3 adjusted = mix(vec3(luma), color, ocVisualSaturation);
+  adjusted = ((adjusted - vec3(0.5)) * ocVisualContrast) + vec3(0.5);
+  adjusted *= ocVisualBrightness;
+  adjusted = mix(adjusted, ocVisualTint, ocVisualTintStrength);
+  return clamp(adjusted, 0.0, 1.0);
+}
+`;
+    if (!shader.fragmentShader.includes('ocApplyRgbVisual')) shader.fragmentShader = shader.fragmentShader.replace('void main() {', `${header}\nvoid main() {`);
+    if (shader.fragmentShader.includes('#include <dithering_fragment>')) {
+      shader.fragmentShader = shader.fragmentShader.replace('#include <dithering_fragment>', 'gl_FragColor.rgb = ocApplyRgbVisual(gl_FragColor.rgb);\n#include <dithering_fragment>');
+    } else {
+      shader.fragmentShader = shader.fragmentShader.replace(/}\s*$/, '  gl_FragColor.rgb = ocApplyRgbVisual(gl_FragColor.rgb);\n}');
+    }
+  };
+  mat.customProgramCacheKey = () => 'oc-rgb-visual-v3';
+  mat.userData.ocRgbVisualShaderInstalled = true;
+  mat.needsUpdate = true;
+}
+
+function setRgbVisualUniforms(mat, cfg) {
+  installRgbVisualShader(mat);
+  const uniforms = getVisualUniforms(mat);
+  uniforms.brightness.value = Number(cfg.brightness ?? 1);
+  uniforms.contrast.value = Number(cfg.contrast ?? 1);
+  uniforms.saturation.value = Number(cfg.saturation ?? 1);
+  uniforms.tint.value.copy(safeColor(cfg.tint || '#ffffff'));
+  uniforms.tintStrength.value = clamp01(cfg.tintStrength || 0);
 }
 
 export function normalizeObjectToHeight(root, targetHeight = 1) {
@@ -148,6 +230,7 @@ export function createInstancedAssetGroup(asset, placements = []) {
     const mesh = new THREE.InstancedMesh(part.geometry, cloneMaterial(part.material, null, asset.url), group.userData.placements.length);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
+    mesh.frustumCulled = false;
     mesh.userData.glbAssetUrl = asset.url;
     mesh.userData.placements = group.userData.placements;
     group.add(mesh);
@@ -187,52 +270,18 @@ function glbControl(url) {
   return OC.glbControls.get(url);
 }
 
-function clamp01(value) { return Math.min(1, Math.max(0, Number(value || 0))); }
-
-function transformedColor(baseColor, cfg) {
-  const color = baseColor.clone();
-  const hsl = { h: 0, s: 0, l: 0 };
-  color.getHSL(hsl);
-  const brightness = Number(cfg.brightness ?? 1);
-  const contrast = Number(cfg.contrast ?? 1);
-  const saturation = Number(cfg.saturation ?? 1);
-  hsl.s = clamp01(hsl.s * saturation);
-  hsl.l = clamp01(((hsl.l - 0.5) * contrast + 0.5) * brightness);
-  color.setHSL(hsl.h, hsl.s, hsl.l);
-  if ((cfg.tintStrength ?? 0) > 0) color.lerp(new THREE.Color(cfg.tint || '#ffffff'), clamp01(cfg.tintStrength));
-  return color;
-}
-
-function forceOpaqueMaterial(mat) {
-  mat.transparent = false;
-  mat.opacity = 1;
-  mat.depthWrite = true;
-  mat.depthTest = true;
-  mat.blending = THREE.NormalBlending;
-}
-
 function applyGlbMaterialVisual(obj, cfg) {
-  const opacity = Number(cfg.opacity ?? 1);
-  const atMaxOpacity = opacity >= 0.995;
   obj.traverse?.((node) => {
     const assetUrl = node?.userData?.glbAssetUrl || obj?.userData?.glbAssetUrl || '';
     const materials = Array.isArray(node.material) ? node.material : node.material ? [node.material] : [];
     materials.forEach((mat) => {
-      const isCutout = Boolean(mat.alphaTest && mat.alphaTest > 0) || isPlantMaterial(mat, node, assetUrl);
-      if (isCutout) applyPlantCutout(mat, node, assetUrl);
-      if (isCutout || atMaxOpacity) {
-        forceOpaqueMaterial(mat);
-        if (isCutout) mat.alphaTest = Math.max(Number(mat.alphaTest || 0), PLANT_ALPHA_TEST);
-      } else {
-        mat.transparent = true;
-        mat.opacity = clamp01(opacity);
-        mat.depthWrite = false;
-        mat.depthTest = true;
-      }
+      const cutout = isCutoutMaterial(mat, node, assetUrl);
+      hardenGlbMaterial(mat, cutout);
       if (mat.color) {
         if (!mat.userData.baseColor) mat.userData.baseColor = mat.color.clone();
-        mat.color.copy(transformedColor(mat.userData.baseColor, cfg));
+        mat.color.copy(mat.userData.baseColor);
       }
+      setRgbVisualUniforms(mat, cfg);
       mat.needsUpdate = true;
     });
   });
