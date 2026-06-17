@@ -1,5 +1,5 @@
 import { SHIMMER_PRESETS, clonePreset } from '../../../fx-shimmer/src/presets.js?v=1.40';
-import { ShimmerDistortionEngine } from '../../../fx-shimmer/src/shimmer-engine-wormhole-range.js?v=1.41';
+import { ShimmerDistortionEngine } from '../../../fx-shimmer/src/shimmer-engine-wormhole-range.js?v=1.42';
 
 const rendererCache = new Map();
 const ASSET_ROOT = './fx-shimmer/assets/';
