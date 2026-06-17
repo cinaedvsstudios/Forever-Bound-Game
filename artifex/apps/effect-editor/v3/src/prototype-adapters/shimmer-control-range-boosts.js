@@ -6,6 +6,7 @@ const EXTENDED_WORMHOLE_CONTROL_MAX = new Map([
   ['orbitCloudSize', 200],
   ['orbitCloudSpeed', 200],
   ['particleOpacity', 200],
+  ['particleSpread', 200],
   ['emissionOpacity', 200],
   ['emissionTrailOpacity', 200]
 ]);
@@ -14,7 +15,9 @@ if (SHIMMER_PRESET_DEFAULTS?.['wormhole-tunnel']?.values) {
   Object.assign(SHIMMER_PRESET_DEFAULTS['wormhole-tunnel'].values, {
     radius: 20,
     orbitCloudScaleX: 100,
-    orbitCloudScaleY: 100
+    orbitCloudScaleY: 100,
+    particleGamma: 0,
+    emissionGamma: 0
   });
 }
 
@@ -27,6 +30,22 @@ for (const group of SHIMMER_CONTROL_GROUPS) {
         { type: 'range', field: 'orbitCloudScaleX', label: 'Cloud scale X', min: 20, max: 220, step: 1 },
         { type: 'range', field: 'orbitCloudScaleY', label: 'Cloud scale Y', min: 20, max: 220, step: 1 }
       );
+    }
+  }
+
+  if (group.id === 'particles') {
+    const controls = group.controls || [];
+    if (!controls.some((control) => control.field === 'particleGamma')) {
+      const opacityIndex = Math.max(0, controls.findIndex((control) => control.field === 'particleOpacity'));
+      controls.splice(opacityIndex + 1, 0, { type: 'range', field: 'particleGamma', label: 'Particle gamma / brightness', min: 0, max: 100, step: 1 });
+    }
+  }
+
+  if (group.id === 'emission') {
+    const controls = group.controls || [];
+    if (!controls.some((control) => control.field === 'emissionGamma')) {
+      const opacityIndex = Math.max(0, controls.findIndex((control) => control.field === 'emissionOpacity'));
+      controls.splice(opacityIndex + 1, 0, { type: 'range', field: 'emissionGamma', label: 'Emission gamma / brightness', min: 0, max: 100, step: 1 });
     }
   }
 
