@@ -17,7 +17,8 @@ if (SHIMMER_PRESET_DEFAULTS?.['wormhole-tunnel']?.values) {
     orbitCloudScaleX: 100,
     orbitCloudScaleY: 100,
     particleGamma: 0,
-    emissionGamma: 0
+    emissionGamma: 0,
+    emissionParticleSize: 24
   });
 }
 
@@ -43,6 +44,10 @@ for (const group of SHIMMER_CONTROL_GROUPS) {
 
   if (group.id === 'emission') {
     const controls = group.controls || [];
+    if (!controls.some((control) => control.field === 'emissionParticleSize')) {
+      const amountIndex = Math.max(0, controls.findIndex((control) => control.field === 'emissionAmount'));
+      controls.splice(amountIndex + 1, 0, { type: 'range', field: 'emissionParticleSize', label: 'Emission particle size', min: 0, max: 200, step: 1 });
+    }
     if (!controls.some((control) => control.field === 'emissionGamma')) {
       const opacityIndex = Math.max(0, controls.findIndex((control) => control.field === 'emissionOpacity'));
       controls.splice(opacityIndex + 1, 0, { type: 'range', field: 'emissionGamma', label: 'Emission gamma / brightness', min: 0, max: 100, step: 1 });
