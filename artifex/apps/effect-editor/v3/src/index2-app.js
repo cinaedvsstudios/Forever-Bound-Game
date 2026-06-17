@@ -1,3 +1,4 @@
+import './prototype-adapters/shimmer-control-range-boosts.js';
 import { initEditorCore } from './editor-core.js';
 import { initEditorAppearanceControls } from './editor-appearance-controls.js';
 import { initBrushAssetLibrary } from './brush-asset-library.js';
@@ -5,7 +6,7 @@ import { initEditorDynamicsControls } from './editor-dynamics-controls.js';
 import { initEditorQuickEditControls } from './editor-quick-edit-controls.js';
 import { initEditorWorkspaceUI } from './editor-workspace-ui.js';
 
-const VERSION_LABEL = 'INDEX2-WORMHOLE-BOOST-0.2.25';
+const VERSION_LABEL = 'INDEX2-WORMHOLE-RANGE-0.2.26';
 
 window.addEventListener('DOMContentLoaded', () => {
   initEditorCore({ versionLabel: VERSION_LABEL, showToast });
