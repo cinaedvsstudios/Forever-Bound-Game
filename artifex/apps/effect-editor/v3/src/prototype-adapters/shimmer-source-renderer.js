@@ -60,6 +60,7 @@ function valuesFromLayer(layer, stageWidth, stageHeight) {
     values.baseTextureEnabled = true;
     values.textureAssetPath = `${ASSET_ROOT}${DEFAULT_WORMHOLE_ARM_TEXTURE}`;
   }
+  applySourceRenderBoosts(values);
   return values;
 }
 
@@ -90,6 +91,16 @@ function migrateLayerToSourceDefaults(layer, base, stageWidth, stageHeight) {
     Object.assign(layer, base, preservedLayerFields(layer, stageWidth, stageHeight));
     delete layer.__shimmerSourceMigrationQueued;
   }, 0);
+}
+
+function applySourceRenderBoosts(values) {
+  if (values.type !== 'wormhole') return;
+  values.orbitCloudAmount = finite(values.orbitCloudAmount, 0) * 2;
+  values.orbitCloudOpacity = finite(values.orbitCloudOpacity, 0) * 2;
+  values.orbitCloudSize = finite(values.orbitCloudSize, 60) * 2;
+  values.particleOpacity = finite(values.particleOpacity, 0) * 2.35;
+  values.emissionOpacity = finite(values.emissionOpacity, 0) * 2.35;
+  values.emissionTrailOpacity = finite(values.emissionTrailOpacity, 0) * 2.35;
 }
 
 function drawHeatBackgroundWarp(ctx, values, scaleValue, stageWidth, stageHeight, t) {
