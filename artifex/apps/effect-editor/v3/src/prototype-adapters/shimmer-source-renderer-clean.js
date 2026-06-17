@@ -4,7 +4,7 @@ import { ShimmerDistortionEngine } from '../../../fx-shimmer/src/shimmer-engine-
 const rendererCache = new Map();
 const ASSET_ROOT = './fx-shimmer/assets/';
 const DEFAULT_WORMHOLE_ARM_TEXTURE = 'default1.jpg';
-const SOURCE_DEFAULTS_VERSION = 'shimmer-source-clean-0.2.31';
+const SOURCE_DEFAULTS_VERSION = 'shimmer-source-clean-0.2.32';
 
 export function isSourceShimmerLayer(layer) {
   return Boolean(layer && (layer.engine === 'prototype-shimmer' || layer.prototypeFolder === 'fx-shimmer'));
@@ -42,6 +42,7 @@ function getRendererEntry(key) {
 function valuesFromLayer(layer, stageWidth, stageHeight) {
   const preset = presetForLayer(layer);
   const base = clonePreset(preset).values;
+  if (normalizeType(base.type || typeFromMode(layer.prototypeMode)) === 'wormhole') base.radius = 20;
   const staleLayer = layer.prototypeShimmerSourceMapVersion !== SOURCE_DEFAULTS_VERSION;
   if (staleLayer) migrateLayerToSourceDefaults(layer, base, stageWidth, stageHeight);
   const values = staleLayer ? { ...base, ...preservedLayerFields(layer, stageWidth, stageHeight) } : { ...base, ...layer };
