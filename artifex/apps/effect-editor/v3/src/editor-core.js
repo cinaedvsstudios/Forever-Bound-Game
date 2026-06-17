@@ -17,7 +17,7 @@ import {
   toggleHelpers,
   updateActiveLayer
 } from './editor-state.js';
-import { initRenderer, takeSnapshot } from './editor-renderer.js';
+import { initRenderer, takeSnapshot } from './editor-renderer.js?v=052-wormhole-visible-range';
 import { cloneBasePreset, listBasePresets } from './presets/portal-wormhole-presets.js';
 import { initBottomPanel, renderLayerList, syncBottomPanelStatus } from './editor-bottom-panel.js';
 import { syncEffectControls } from './editor-effect-controls.js';
