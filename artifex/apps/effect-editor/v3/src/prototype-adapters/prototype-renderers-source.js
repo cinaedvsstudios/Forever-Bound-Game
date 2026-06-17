@@ -2,7 +2,7 @@ import {
   drawPrototypeLayer as drawAnchoredPrototypeLayer,
   isPrototypeRenderableLayer
 } from './prototype-renderers-anchored.js';
-import { drawSourceShimmerLayer, isSourceShimmerLayer } from './shimmer-source-renderer.js';
+import { drawSourceShimmerLayer, isSourceShimmerLayer } from './shimmer-source-renderer.js?v=052-wormhole-visible-range';
 
 export { isPrototypeRenderableLayer };
 
