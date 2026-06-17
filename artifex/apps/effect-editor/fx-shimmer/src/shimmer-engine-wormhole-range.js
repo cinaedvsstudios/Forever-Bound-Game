@@ -27,13 +27,14 @@ export class ShimmerDistortionEngine extends BaseShimmerDistortionEngine {
     const amountValue = clamp(Number(v.orbitCloudAmount ?? 0), 0, 200) / 200;
     const opacityValue = clamp(Number(v.orbitCloudOpacity ?? 0), 0, 200) / 200;
     const sizeValue = clamp(Number(v.orbitCloudSize ?? 60), 0, 200) / 200;
+    const gammaRatio = clamp(Number(v.orbitCloudGamma ?? 0), 0, 100) / 100;
     const speedRaw = clamp(Number(v.orbitCloudSpeed ?? 35), 0, 200);
     const speedBase = Math.pow(Math.min(speedRaw, 100) / 100, 2) * 0.48;
     const speedMultiplier = speedRaw <= 100 ? 1 : 1 + ((speedRaw - 100) / 100);
     const scaleX = clamp(Number(v.orbitCloudScaleX ?? 100), 20, 220) / 100;
     const scaleY = clamp(Number(v.orbitCloudScaleY ?? 100), 20, 220) / 100;
-    const amount = Math.round(scale(0, 128, amountValue));
-    const gammaBoost = scale(1, 3.0, (v.orbitCloudGamma ?? 0) / 100);
+    const amount = Math.round(scale(0, 128, amountValue) * scale(1, 1.75, gammaRatio));
+    const gammaBoost = scale(1, 3.0, gammaRatio);
     const opacity = scale(0, 2.24, opacityValue) * gammaBoost;
     if (amount <= 0 || opacity <= 0.001) return;
 
@@ -42,7 +43,7 @@ export class ShimmerDistortionEngine extends BaseShimmerDistortionEngine {
     const pulse = 1 + Math.sin(t * scale(0.7, 3.0, speedRaw / 100)) * scale(0, 0.55, (v.orbitCloudPulseStrength ?? 0) / 100);
     const speed = speedBase * speedMultiplier;
     const dir = (v.swirl ?? 80) >= 0 ? 1 : -1;
-    const thickness = g.base * scale(0.010, 0.220, sizeValue);
+    const thickness = g.base * scale(0.010, 0.220, sizeValue) * scale(1, 1.45, gammaRatio);
 
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -62,10 +63,18 @@ export class ShimmerDistortionEngine extends BaseShimmerDistortionEngine {
       ctx.translate(x, y);
       ctx.rotate(orbit + Math.PI / 2 + (hash1(seed + 7) - 0.5) * 0.9);
       ctx.scale(scaleX, scaleY);
+      ctx.shadowColor = colour;
+      ctx.shadowBlur = major * scale(0, 1.55, gammaRatio);
       ctx.fillStyle = rgba(colour, alpha);
       ctx.beginPath();
       ctx.ellipse(0, 0, major, minor, 0, 0, TAU);
       ctx.fill();
+      if (gammaRatio > 0.01) {
+        ctx.fillStyle = rgba(colour, alpha * gammaRatio * 0.55);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, major * 1.24, minor * 1.24, 0, 0, TAU);
+        ctx.fill();
+      }
       ctx.restore();
     }
     ctx.restore();
@@ -73,14 +82,16 @@ export class ShimmerDistortionEngine extends BaseShimmerDistortionEngine {
 
   drawWormholeParticles(ctx, g, t) {
     const v = this.values;
-    const count = Math.round(scale(0, 70, (v.particleAmount ?? 24) / 100));
-    const opacityMul = scale(0, 1.40, clamp(Number(v.particleOpacity ?? 24), 0, 200) / 200);
-    const gamma = scale(1, 3.0, (v.particleGamma ?? 0) / 100);
+    const gammaRatio = clamp(Number(v.particleGamma ?? 0), 0, 100) / 100;
+    const count = Math.round(scale(0, 70, (v.particleAmount ?? 24) / 100) * scale(1, 1.35, gammaRatio));
+    const opacityMul = scale(0, 1.40, clamp(Number(v.particleOpacity ?? 24), 0, 200) / 200) * scale(1, 2.4, gammaRatio);
     if (count <= 0 || opacityMul <= 0.001) return;
     const speed = Math.pow((v.particleSpeed ?? 28) / 100, 2) * 0.42;
-    const spread = scale(0.03, 1.52, clamp(Number(v.particleSpread ?? 48), 0, 200) / 200);
-    const sizeBase = scale(0.4, 5.0, (v.particleSize ?? 18) / 100);
-    const glow = scale(0, 5.0, (v.particleGlow ?? 20) / 100) * gamma;
+    const spreadRaw = clamp(Number(v.particleSpread ?? 48), 0, 200);
+    const radialSpread = scale(0.35, 2.2, spreadRaw / 200);
+    const angleWobble = scale(0.02, 0.34, spreadRaw / 200);
+    const sizeBase = scale(0.4, 5.0, (v.particleSize ?? 18) / 100) * scale(1, 1.45, gammaRatio);
+    const glow = scale(0, 5.0, (v.particleGlow ?? 20) / 100) * scale(1, 3.2, gammaRatio);
     const pulse = 1 + Math.sin(t * scale(0.8, 3.2, (v.particleSpeed ?? 28) / 100)) * scale(0, 0.42, (v.particlePulseStrength ?? 0) / 100);
     const turns = scale(1.0, 3.6, Math.abs(v.swirl ?? 80) / 100);
     const dir = (v.swirl ?? 80) >= 0 ? 1 : -1;
@@ -91,11 +102,13 @@ export class ShimmerDistortionEngine extends BaseShimmerDistortionEngine {
       const p = fract(t * speed * 0.36 + hash1(seed + 2.9));
       const inward = Math.pow(1 - p, 1.08);
       const start = TAU * hash1(seed + 1.1);
-      const angle = start + dir * p * TAU * turns + Math.sin(t * 0.20 + seed) * spread;
-      const x = g.cx + Math.cos(angle) * g.rx * scale(0.08, 1.08, inward);
-      const y = g.cy + Math.sin(angle) * g.ry * scale(0.06, 0.95, inward);
+      const angle = start + dir * p * TAU * turns + Math.sin(t * 0.20 + seed) * angleWobble;
+      const radialX = scale(0.08, 1.08, inward) * radialSpread;
+      const radialY = scale(0.06, 0.95, inward) * radialSpread;
+      const x = g.cx + Math.cos(angle) * g.rx * radialX;
+      const y = g.cy + Math.sin(angle) * g.ry * radialY;
       const size = sizeBase * (0.40 + inward * 0.85) * (0.65 + hash1(seed + 3.6) * 0.75) * pulse;
-      const alpha = Math.min(1, (0.10 + hash1(seed + 4.2) * 0.24) * Math.sin(p * Math.PI) * opacityMul * pulse * gamma);
+      const alpha = Math.min(1, (0.10 + hash1(seed + 4.2) * 0.24) * Math.sin(p * Math.PI) * opacityMul * pulse);
       const colour = i % 3 === 0 ? v.accentColor : (i % 2 === 0 ? v.coreColor : v.rimColor);
       ctx.fillStyle = rgba(colour, alpha);
       ctx.shadowColor = colour;
@@ -103,23 +116,30 @@ export class ShimmerDistortionEngine extends BaseShimmerDistortionEngine {
       ctx.beginPath();
       ctx.arc(x, y, size, 0, TAU);
       ctx.fill();
+      if (gammaRatio > 0.01) {
+        ctx.fillStyle = rgba(colour, alpha * gammaRatio * 0.4);
+        ctx.beginPath();
+        ctx.arc(x, y, size * 1.65, 0, TAU);
+        ctx.fill();
+      }
     }
     ctx.restore();
   }
 
   drawWormholeEmission(ctx, g, t) {
     const v = this.values;
-    const amount = Math.round(scale(0, 80, (v.emissionAmount ?? 0) / 100));
-    const opacity = scale(0, 1.24, clamp(Number(v.emissionOpacity ?? 0), 0, 200) / 200);
-    const gamma = scale(1, 3.0, (v.emissionGamma ?? 0) / 100);
+    const gammaRatio = clamp(Number(v.emissionGamma ?? 0), 0, 100) / 100;
+    const amount = Math.round(scale(0, 80, (v.emissionAmount ?? 0) / 100) * scale(1, 1.35, gammaRatio));
+    const opacity = scale(0, 1.24, clamp(Number(v.emissionOpacity ?? 0), 0, 200) / 200) * scale(1, 2.4, gammaRatio);
     if (amount <= 0 || opacity <= 0.001) return;
     const speed = scale(0.18, 2.40, (v.emissionSpeed ?? 45) / 100);
     const directionDeg = Number(v.emissionDirection ?? 0);
     const vacuum = Boolean(v.emissionVacuum);
     const trailLength = scale(0, 0.46, (v.emissionTrailLength ?? 42) / 100);
-    const trailOpacity = scale(0, 1.30, clamp(Number(v.emissionTrailOpacity ?? 48), 0, 200) / 200) * gamma;
-    const sizeBase = scale(0.9, 5.4, (v.particleSize ?? 24) / 100);
-    const glow = scale(2, 7, (v.particleGlow ?? 55) / 100) * gamma;
+    const trailOpacity = scale(0, 1.30, clamp(Number(v.emissionTrailOpacity ?? 48), 0, 200) / 200) * scale(1, 2.8, gammaRatio);
+    const emissionSize = clamp(Number(v.emissionParticleSize ?? v.particleSize ?? 24), 0, 200);
+    const sizeBase = scale(0.9, 10.8, emissionSize / 200) * scale(1, 1.35, gammaRatio);
+    const glow = scale(2, 7, (v.particleGlow ?? 55) / 100) * scale(1, 3.2, gammaRatio);
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     ctx.lineCap = 'round';
@@ -138,7 +158,7 @@ export class ShimmerDistortionEngine extends BaseShimmerDistortionEngine {
       const tx = g.cx + Math.cos(angle) * g.rx * maxD * prevDistance;
       const ty = g.cy + Math.sin(angle) * g.ry * maxD * prevDistance * 0.90;
       const colour = i % 3 === 0 ? v.coreColor : (i % 3 === 1 ? v.rimColor : v.accentColor);
-      const alpha = Math.min(1, opacity * fade * scale(0.44, 1.08, hash1(seed + 7)) * gamma);
+      const alpha = Math.min(1, opacity * fade * scale(0.44, 1.08, hash1(seed + 7)));
       const size = sizeBase * scale(0.65, 1.45, hash1(seed + 8));
       if (trailLength > 0.002 && trailOpacity > 0.001) {
         const grad = ctx.createLinearGradient(tx, ty, x, y);
@@ -157,6 +177,12 @@ export class ShimmerDistortionEngine extends BaseShimmerDistortionEngine {
       ctx.beginPath();
       ctx.arc(x, y, size, 0, TAU);
       ctx.fill();
+      if (gammaRatio > 0.01) {
+        ctx.fillStyle = rgba(colour, alpha * gammaRatio * 0.4);
+        ctx.beginPath();
+        ctx.arc(x, y, size * 1.55, 0, TAU);
+        ctx.fill();
+      }
     }
     ctx.restore();
   }
