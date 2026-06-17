@@ -17,7 +17,7 @@ import {
   toggleHelpers,
   updateActiveLayer
 } from './editor-state.js';
-import { initRenderer, takeSnapshot } from './editor-renderer.js?v=052-wormhole-visible-range';
+import { initRenderer, takeSnapshot } from './editor-renderer.js?v=057-cloud-controls';
 import { cloneBasePreset, listBasePresets } from './presets/portal-wormhole-presets.js';
 import { initBottomPanel, renderLayerList, syncBottomPanelStatus } from './editor-bottom-panel.js';
 import { syncEffectControls } from './editor-effect-controls.js';
@@ -26,7 +26,7 @@ import { initEditorPersistence, loadCompositionLocal } from './editor-persistenc
 const ZERO_SPAWN_ENGINES = new Set(['portal-ring', 'wormhole-tunnel', 'prototype-smoke', 'prototype-shimmer']);
 const ENGINES = [
   ['particles', 'Standard Particle Engine'], ['lightning', 'Lightning / Beam Engine'],
-  ['electric-arc', 'Electric Arc Engine'], ['ribbon', 'Trail / Ribbon Engine'],
+  ['electric-arc', 'Electric Arc Engine'], ['arcBranchLength', 'Branch Length', 0, 120, 1],
   ['ring', 'Ring / Shockwave Engine'], ['projectile', 'Projectile / Trail Engine'],
   ['gas', 'Gas Engine'], ['shockwave', 'Shockwave Pulse Engine'],
   ['portal-ring', 'Orb Engine'], ['wormhole-tunnel', 'Swirl Engine'],
