@@ -27,9 +27,9 @@ export class ShimmerDistortionEngine extends BaseShimmerDistortionEngine {
     const amountValue = clamp(Number(v.orbitCloudAmount ?? 0), 0, 200) / 200;
     const opacityValue = clamp(Number(v.orbitCloudOpacity ?? 0), 0, 200) / 200;
     const sizeValue = clamp(Number(v.orbitCloudSize ?? 60), 0, 200) / 200;
-    const amount = Math.round(scale(0, 92, amountValue));
+    const amount = Math.round(scale(0, 104, amountValue));
     const gammaBoost = scale(1, 3.0, (v.orbitCloudGamma ?? 0) / 100);
-    const opacity = scale(0, 0.56, opacityValue) * gammaBoost;
+    const opacity = scale(0, 1.12, opacityValue) * gammaBoost;
     if (amount <= 0 || opacity <= 0.001) return;
 
     const radiusValue = (v.orbitCloudRadius ?? 72) / 100;
@@ -37,10 +37,10 @@ export class ShimmerDistortionEngine extends BaseShimmerDistortionEngine {
     const pulse = 1 + Math.sin(t * scale(0.7, 3.0, (v.orbitCloudSpeed ?? 35) / 100)) * scale(0, 0.55, (v.orbitCloudPulseStrength ?? 0) / 100);
     const speed = Math.pow((v.orbitCloudSpeed ?? 35) / 100, 2) * 0.48;
     const dir = (v.swirl ?? 80) >= 0 ? 1 : -1;
-    const thickness = g.base * scale(0.010, 0.160, sizeValue);
+    const thickness = g.base * scale(0.010, 0.190, sizeValue);
 
     ctx.save();
-    ctx.globalCompositeOperation = 'screen';
+    ctx.globalCompositeOperation = 'lighter';
     ctx.filter = `blur(${scale(4, 13, (v.armSoftness ?? v.blur ?? 40) / 100) + scale(0, 32, (v.orbitCloudExtraBlur ?? 0) / 100)}px)`;
     for (let i = 0; i < amount; i += 1) {
       const seed = i * 15.913;
@@ -52,7 +52,7 @@ export class ShimmerDistortionEngine extends BaseShimmerDistortionEngine {
       const major = thickness * scale(1.0, 4.4, hash1(seed + 4)) * pulse;
       const minor = major * scale(0.30, 0.62, hash1(seed + 5));
       const colour = i % 4 === 0 ? v.accentColor : (i % 2 === 0 ? v.coreColor : v.rimColor);
-      const alpha = Math.min(0.82, opacity * scale(0.34, 1.1, hash1(seed + 6)));
+      const alpha = Math.min(1, opacity * scale(0.34, 1.1, hash1(seed + 6)));
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(orbit + Math.PI / 2 + (hash1(seed + 7) - 0.5) * 0.9);
