@@ -28,6 +28,9 @@
 .card.index2-effect-specific-card h2 { color: #cbf6ff; text-shadow: 0 0 13px rgba(0,174,234,.24); }
 .index2-control-empty { color: var(--gold-muted); font-size: 11px; line-height: 1.45; margin: 0; }
 .index2-control-note { color: var(--gold-muted); font-size: 10px; line-height: 1.35; margin: -2px 0 10px; }
+.index2-effect-control-group { margin: 18px 0 8px; padding-top: 12px; border-top: 1px solid rgba(0,174,234,.34); }
+.index2-effect-control-group:first-child { margin-top: 0; }
+.index2-effect-control-group h4 { margin: 0 0 12px; color: var(--module-accent-strong); text-shadow: 0 0 10px rgba(0,174,234,.34); font-weight: 900; letter-spacing: .03em; }
 .index2-effect-control { display: grid; gap: 5px; margin-bottom: 10px; }
 .index2-effect-control span { display: flex; justify-content: space-between; gap: 10px; color: var(--gold-muted); font-size: 11px; }
 .index2-effect-control textarea { min-height: 84px; resize: vertical; }
