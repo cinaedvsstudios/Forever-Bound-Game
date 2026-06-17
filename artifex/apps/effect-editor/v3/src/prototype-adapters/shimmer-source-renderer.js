@@ -4,6 +4,7 @@ import { ShimmerDistortionEngine } from '../../../fx-shimmer/src/shimmer-engine.
 const rendererCache = new Map();
 const ASSET_ROOT = './fx-shimmer/assets/';
 const DEFAULT_WORMHOLE_ARM_TEXTURE = 'default1.jpg';
+const SOURCE_DEFAULTS_VERSION = 'shimmer-source-map-0.2.22';
 
 export function isSourceShimmerLayer(layer) {
   return Boolean(layer && (layer.engine === 'prototype-shimmer' || layer.prototypeFolder === 'fx-shimmer'));
@@ -42,7 +43,11 @@ function getRendererEntry(key) {
 function valuesFromLayer(layer, stageWidth, stageHeight) {
   const preset = presetForLayer(layer);
   const base = clonePreset(preset).values;
-  const values = { ...base, ...layer };
+  const staleSourceMapLayer = layer.prototypeShimmerSourceMapVersion !== SOURCE_DEFAULTS_VERSION;
+  if (staleSourceMapLayer) migrateLayerToSourceDefaults(layer, base, stageWidth, stageHeight);
+  const values = staleSourceMapLayer
+    ? { ...base, ...preservedLayerFields(layer, stageWidth, stageHeight) }
+    : { ...base, ...layer };
   values.type = normalizeType(values.type || typeFromMode(values.prototypeMode) || base.type || 'ring');
   values.showGrid = false;
   values.showMask = false;
@@ -54,6 +59,35 @@ function valuesFromLayer(layer, stageWidth, stageHeight) {
     values.textureAssetPath = `${ASSET_ROOT}${DEFAULT_WORMHOLE_ARM_TEXTURE}`;
   }
   return values;
+}
+
+function preservedLayerFields(layer, stageWidth, stageHeight) {
+  const emitterX = finite(layer.emitterX, stageWidth * 0.5);
+  const emitterY = finite(layer.emitterY, stageHeight * 0.5);
+  return {
+    id: layer.id,
+    name: layer.name,
+    visible: layer.visible,
+    locked: layer.locked,
+    engine: layer.engine,
+    prototypeFolder: layer.prototypeFolder,
+    prototypeMode: layer.prototypeMode,
+    syncGroup: layer.syncGroup,
+    emitterX,
+    emitterY,
+    positionX: finite(layer.positionX, emitterX / stageWidth * 100),
+    positionY: finite(layer.positionY, emitterY / stageHeight * 100),
+    prototypeShimmerSourceMapVersion: SOURCE_DEFAULTS_VERSION
+  };
+}
+
+function migrateLayerToSourceDefaults(layer, base, stageWidth, stageHeight) {
+  if (!layer || layer.__shimmerSourceMigrationQueued) return;
+  layer.__shimmerSourceMigrationQueued = true;
+  window.setTimeout(() => {
+    Object.assign(layer, base, preservedLayerFields(layer, stageWidth, stageHeight));
+    delete layer.__shimmerSourceMigrationQueued;
+  }, 0);
 }
 
 function presetForLayer(layer) {
