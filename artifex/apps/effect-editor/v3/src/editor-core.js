@@ -26,7 +26,7 @@ import { initEditorPersistence, loadCompositionLocal } from './editor-persistenc
 const ZERO_SPAWN_ENGINES = new Set(['portal-ring', 'wormhole-tunnel', 'prototype-smoke', 'prototype-shimmer']);
 const ENGINES = [
   ['particles', 'Standard Particle Engine'], ['lightning', 'Lightning / Beam Engine'],
-  ['electric-arc', 'Electric Arc Engine'], ['arcBranchLength', 'Branch Length', 0, 120, 1],
+  ['electric-arc', 'Electric Arc Engine'], ['ribbon', 'Trail / Ribbon Engine'],
   ['ring', 'Ring / Shockwave Engine'], ['projectile', 'Projectile / Trail Engine'],
   ['gas', 'Gas Engine'], ['shockwave', 'Shockwave Pulse Engine'],
   ['portal-ring', 'Orb Engine'], ['wormhole-tunnel', 'Swirl Engine'],
