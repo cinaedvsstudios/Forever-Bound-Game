@@ -3,27 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Artifex Hub V1.1.4</title>
+  <title>Artifex Radial Hub V1.2.0</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg-dark: #070707;
-      --panel: rgba(18, 11, 14, 0.88);
-      --panel-strong: rgba(31, 18, 24, 0.96);
+      --neon-purple: #c300ff;
+      --neon-purple-dim: rgba(195, 0, 255, 0.42);
+      --blue-purple: #5d00ff;
+      --blue-purple-dim: rgba(93, 0, 255, 0.42);
       --gold: #f4dfc4;
       --gold-bright: #fff2cf;
-      --gold-muted: #a98f72;
-      --border: #896b49;
-      --purple: #c300ff;
-      --purple-soft: rgba(195, 0, 255, 0.20);
-      --violet: #8f6dff;
-      --cyan: #31d7ff;
-      --green: #43d36f;
-      --red: #d94a4a;
-      --yellow: #e5c84a;
-      --shadow: 0 24px 60px rgba(0,0,0,.82), 0 0 44px rgba(195,0,255,.22);
+      --copper: #a86c36;
+      --bg-dark: #070707;
+      --panel: rgba(14, 7, 10, 0.84);
+      --panel-strong: rgba(30, 15, 9, 0.96);
     }
 
     * { box-sizing: border-box; }
@@ -32,337 +27,421 @@
       margin: 0;
       width: 100vw;
       height: 100vh;
-      overflow: hidden;
       background: var(--bg-dark);
       color: var(--gold);
+      overflow: hidden;
       font-family: Inter, Arial, sans-serif;
+      user-select: none;
     }
 
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), radial-gradient(circle at 50% 45%, rgba(195,0,255,.18), transparent 38%), url('menu/menubackground.jpg');
-      background-size: 120px 120px, 120px 120px, cover, cover;
-      background-position: center, center, center, center bottom;
-      filter: saturate(.92) brightness(.78);
-      z-index: 0;
-    }
+    button, a { font: inherit; }
 
-    body::after {
-      content: '';
+    .ambient-background {
       position: fixed;
       inset: 0;
-      background: radial-gradient(circle at 50% 52%, transparent 0 280px, rgba(0,0,0,.52) 620px), linear-gradient(180deg, rgba(0,0,0,.34), rgba(0,0,0,.72));
+      background-image: radial-gradient(circle at 50% 48%, rgba(93, 0, 255, 0.18), transparent 36%), url('menu/menubackground.jpg');
+      background-size: cover, cover;
+      background-position: center, center bottom;
+      filter: saturate(0.95) brightness(0.82);
       z-index: 1;
+    }
+
+    .ambient-vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 50%, transparent 0 320px, rgba(0,0,0,0.34) 560px, rgba(0,0,0,0.76) 100%), linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.52));
+    }
+
+    #fx-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
       pointer-events: none;
     }
 
-    button, a, input, select { font: inherit; }
-
-    a, button {
-      border: 1px solid rgba(137,107,73,.78);
-      border-radius: 999px;
-      background: linear-gradient(180deg, rgba(70, 22, 100, 0.92), rgba(29, 9, 43, 0.95));
-      color: var(--gold-bright);
-      padding: 10px 15px;
-      cursor: pointer;
-      text-decoration: none;
-      box-shadow: 0 0 20px rgba(195,0,255,.18);
-      transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease, background .16s ease;
-    }
-
-    a:hover, button:hover {
-      transform: translateY(-1px);
-      border-color: var(--purple);
-      box-shadow: 0 0 26px rgba(195,0,255,.42);
-    }
-
-    .shell {
-      position: relative;
-      z-index: 2;
-      height: 100vh;
-      display: grid;
-      grid-template-rows: auto 1fr auto;
-      padding: 26px clamp(18px, 3vw, 42px);
-      gap: 18px;
-    }
-
-    .topbar {
+    .top-ui-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       gap: 18px;
-      min-height: 70px;
+      padding: 28px 38px;
+      pointer-events: none;
     }
 
-    .brand {
+    .brand-container {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 18px;
+      pointer-events: auto;
     }
 
-    .brand img.logo {
-      width: 62px;
-      filter: drop-shadow(0 0 18px rgba(93,0,255,.85));
-    }
-
-    .brand img.title {
-      height: 38px;
-      max-width: min(360px, 48vw);
+    .brand-crest {
+      width: 70px;
+      height: auto;
+      border: none;
       object-fit: contain;
-      filter: drop-shadow(0 0 16px rgba(93,0,255,.78));
+      filter: drop-shadow(0 0 17px var(--blue-purple));
     }
 
-    .top-project-pill {
-      max-width: min(520px, 45vw);
+    .brand-title {
+      height: 40px;
+      max-width: min(360px, 42vw);
+      object-fit: contain;
+      filter: drop-shadow(0 0 17px var(--blue-purple));
+    }
+
+    .top-right-stack {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      pointer-events: auto;
+    }
+
+    .active-project-chip {
+      min-width: 240px;
+      max-width: min(430px, 42vw);
       padding: 10px 14px;
-      border: 1px solid rgba(137,107,73,.65);
+      border: 1px solid rgba(168,108,54,0.78);
       border-radius: 18px;
-      background: rgba(7,7,7,.68);
-      box-shadow: 0 0 24px rgba(0,0,0,.7), inset 0 0 20px rgba(195,0,255,.08);
+      background: rgba(7, 7, 7, 0.72);
       text-align: right;
+      box-shadow: 0 0 22px rgba(0,0,0,0.72), inset 0 0 18px rgba(195,0,255,0.10);
     }
 
-    .top-project-pill span {
+    .active-project-chip span,
+    .hub-hint span {
       display: block;
-      color: var(--gold-muted);
+      color: #bd9f7d;
       font-size: 10px;
+      line-height: 1.1;
+      font-weight: 900;
+      letter-spacing: 0.15em;
       text-transform: uppercase;
-      letter-spacing: .16em;
-      font-weight: 800;
-      margin-bottom: 3px;
     }
 
-    .top-project-pill strong {
+    .active-project-chip strong {
       display: block;
+      margin-top: 5px;
       color: var(--gold-bright);
       font-family: Cinzel, Georgia, serif;
-      font-size: clamp(17px, 2vw, 26px);
-      letter-spacing: .06em;
+      font-size: clamp(15px, 1.5vw, 22px);
+      letter-spacing: 0.06em;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .main-stage {
-      min-height: 0;
-      display: grid;
-      grid-template-columns: minmax(230px, .8fr) minmax(360px, 560px) minmax(230px, .8fr);
-      align-items: center;
-      gap: clamp(16px, 3vw, 34px);
-    }
-
-    .hub-card {
-      position: relative;
-      min-height: 470px;
+    .audio-toggle-btn {
+      width: 50px;
+      height: 50px;
       display: grid;
       place-items: center;
+      border: 1px solid #896b49;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(42,25,35,.96) 0 32%, rgba(21,13,17,.92) 55%, rgba(8,5,7,.86) 72%);
-      border: 1px solid rgba(137,107,73,.8);
-      box-shadow: var(--shadow), inset 0 0 44px rgba(195,0,255,.12);
-      overflow: hidden;
-    }
-
-    .hub-card::before {
-      content: '';
-      position: absolute;
-      inset: 28px;
-      border-radius: 50%;
-      background-image: url('menu/artifexlogo.png');
-      background-size: 46%;
-      background-repeat: no-repeat;
-      background-position: center;
-      opacity: .12;
-      filter: drop-shadow(0 0 18px rgba(195,0,255,.8));
-    }
-
-    .hub-core {
-      position: relative;
-      z-index: 1;
-      width: min(360px, 78%);
-      padding: 28px;
-      border: 1px solid rgba(244,223,196,.18);
-      border-radius: 30px;
-      background: rgba(7,7,7,.72);
-      text-align: center;
-      box-shadow: 0 0 30px rgba(0,0,0,.7), inset 0 0 24px rgba(195,0,255,.08);
-    }
-
-    .hub-core .eyebrow,
-    .module-column .eyebrow {
-      margin: 0 0 8px;
-      color: #f0c7ff;
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: .16em;
-      font-weight: 900;
-    }
-
-    .hub-core h1 {
-      margin: 0;
+      background: rgba(10, 11, 10, 0.85);
       color: var(--gold-bright);
-      font-family: Cinzel, Georgia, serif;
-      font-size: clamp(32px, 5vw, 50px);
-      line-height: .98;
-      letter-spacing: .08em;
+      font-size: 24px;
+      cursor: pointer;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      box-shadow: 0 0 20px var(--blue-purple-dim);
+      animation: breatheAudio 3s infinite alternate;
     }
 
-    .active-project-box {
-      margin: 18px 0;
-      padding: 14px;
-      border-radius: 18px;
-      border: 1px solid rgba(137,107,73,.58);
-      background: rgba(16,9,12,.78);
+    .audio-toggle-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 0 30px var(--blue-purple);
     }
 
-    .active-project-box span {
-      display: block;
-      color: var(--gold-muted);
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: .13em;
-      font-weight: 800;
+    @keyframes breatheAudio {
+      0% { box-shadow: 0 0 10px var(--blue-purple-dim); }
+      100% { box-shadow: 0 0 25px var(--blue-purple); }
     }
 
-    .active-project-box strong {
-      display: block;
-      margin-top: 5px;
-      color: var(--gold-bright);
-      font-size: 18px;
-      overflow-wrap: anywhere;
-    }
-
-    .active-project-box em {
-      display: block;
-      margin-top: 5px;
-      color: #c7b8ff;
-      font-style: normal;
-      font-size: 12px;
-      overflow-wrap: anywhere;
-    }
-
-    .change-project-button {
-      width: 100%;
-      justify-content: center;
-      font-weight: 800;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-      background: linear-gradient(180deg, rgba(195,0,255,.5), rgba(58,18,78,.95));
-      border-color: rgba(195,0,255,.85);
-    }
-
-    .module-column {
-      align-self: stretch;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 12px;
-      min-width: 0;
-    }
-
-    .module-column h2 {
-      margin: 0 0 4px;
-      color: var(--gold-bright);
-      font-family: Cinzel, Georgia, serif;
-      font-size: 18px;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-    }
-
-    .module-button {
-      --accent: var(--gold-muted);
-      display: grid;
-      grid-template-columns: 36px 1fr;
-      gap: 10px;
-      align-items: center;
-      border-radius: 18px;
-      border-color: color-mix(in srgb, var(--accent) 58%, #896b49);
-      background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 22%, rgba(7,7,7,.96)), rgba(7,7,7,.82));
-      text-align: left;
-      padding: 12px;
-    }
-
-    .module-button .icon {
-      width: 36px;
-      height: 36px;
-      display: grid;
-      place-items: center;
-      border-radius: 50%;
-      border: 1px solid currentColor;
-      color: var(--accent);
-      background: rgba(0,0,0,.44);
-    }
-
-    .module-button strong {
-      display: block;
-      color: white;
-      font-size: 13px;
-    }
-
-    .module-button span:not(.icon) {
-      display: block;
-      margin-top: 3px;
-      color: var(--gold-muted);
-      font-size: 11px;
-    }
-
-    .footerbar {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: center;
-      color: rgba(244,223,196,.62);
-      font-size: 12px;
-    }
-
-    .dialog-backdrop {
+    .workspace {
       position: fixed;
       inset: 0;
-      z-index: 1000;
+      z-index: 10;
+      display: grid;
+      place-items: center;
+      padding: 108px 28px 44px;
+    }
+
+    .dial-stage {
+      position: relative;
+      width: min(760px, 86vmin);
+      aspect-ratio: 1 / 1;
+      filter: drop-shadow(0 24px 44px rgba(0,0,0,0.94));
+    }
+
+    .dial-plate {
+      position: absolute;
+      inset: 6.5%;
+      background-image: url('menu/menudial.png');
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+      opacity: 0.98;
+      pointer-events: none;
+    }
+
+    .dial-plate::after {
+      content: '';
+      position: absolute;
+      inset: 16.5%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(195,0,255,0.12), transparent 62%);
+      box-shadow: 0 0 54px rgba(195,0,255,0.32);
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .dial-stage.is-hot .dial-plate::after { opacity: 1; }
+
+    .center-hub-button {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 29%;
+      aspect-ratio: 1 / 1;
+      transform: translate(-50%, -50%);
+      border: 3px solid rgba(137,107,73,0.92);
+      border-radius: 50%;
+      padding: 0;
+      background: radial-gradient(circle at 50% 45%, rgba(255, 239, 201, 0.10), rgba(0,0,0,0.22)), url('menu/artifexlogo.png');
+      background-size: cover;
+      background-position: center;
+      cursor: pointer;
+      z-index: 5;
+      box-shadow: 0 12px 24px rgba(0,0,0,0.9), 0 0 0 1px rgba(244,223,196,0.10), 0 0 34px rgba(93,0,255,0.34);
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+    }
+
+    .center-hub-button::before {
+      content: '';
+      position: absolute;
+      inset: -12%;
+      border-radius: 50%;
+      background-image: url('menu/menudialglow.png');
+      background-size: cover;
+      background-position: center;
+      mix-blend-mode: screen;
+      opacity: 0;
+      transition: opacity 0.22s ease;
+      pointer-events: none;
+    }
+
+    .center-hub-button:hover,
+    .center-hub-button:focus-visible {
+      transform: translate(-50%, -50%) scale(1.04);
+      border-color: var(--neon-purple);
+      box-shadow: 0 14px 30px rgba(0,0,0,0.92), 0 0 42px rgba(195,0,255,0.58);
+      outline: none;
+    }
+
+    .center-hub-button:hover::before,
+    .center-hub-button:focus-visible::before,
+    .dial-stage.is-hot .center-hub-button::before {
+      opacity: 1;
+      animation: pulseWedge 1.2s infinite alternate;
+    }
+
+    @keyframes pulseWedge {
+      0% { filter: drop-shadow(0 0 15px var(--neon-purple)); opacity: 0.72; }
+      100% { filter: drop-shadow(0 0 38px var(--neon-purple)); opacity: 1; }
+    }
+
+    .module-node {
+      --accent: #c300ff;
+      position: absolute;
+      display: grid;
+      grid-template-columns: 42px minmax(128px, 1fr);
+      align-items: center;
+      gap: 9px;
+      width: min(210px, 26vw);
+      min-height: 66px;
+      padding: 8px 10px;
+      border: 1px solid color-mix(in srgb, var(--accent) 58%, #a86c36);
+      border-radius: 18px;
+      background: linear-gradient(145deg, color-mix(in srgb, var(--accent) 20%, rgba(8, 4, 7, 0.94)), rgba(8, 4, 7, 0.88));
+      color: var(--gold-bright);
+      text-decoration: none;
+      text-align: left;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.7), inset 0 0 18px rgba(255,255,255,0.035), 0 0 16px color-mix(in srgb, var(--accent) 32%, transparent);
+      cursor: pointer;
+      z-index: 6;
+      transform: translate(-50%, -50%);
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, background 0.22s ease;
+    }
+
+    .module-node:hover,
+    .module-node:focus-visible {
+      transform: translate(-50%, -50%) scale(1.055);
+      border-color: var(--neon-purple);
+      box-shadow: 0 16px 34px rgba(0,0,0,0.78), 0 0 34px color-mix(in srgb, var(--accent) 62%, transparent);
+      outline: none;
+    }
+
+    .module-node .icon {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border: 1px solid currentColor;
+      border-radius: 50%;
+      color: var(--accent);
+      background: radial-gradient(circle, rgba(255,255,255,0.08), rgba(0,0,0,0.54));
+      font-size: 23px;
+      line-height: 1;
+      text-shadow: 0 0 13px currentColor;
+    }
+
+    .module-node strong {
+      display: block;
+      color: white;
+      font-family: Cinzel, Georgia, serif;
+      font-size: 12px;
+      line-height: 1.05;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .module-node small {
+      display: block;
+      margin-top: 4px;
+      color: #c8aa88;
+      font-size: 10px;
+      line-height: 1.18;
+    }
+
+    .node-creation { left: 50%; top: 4%; --accent: #8a7465; }
+    .node-project { left: 82%; top: 18%; --accent: #e5c84a; }
+    .node-scene { left: 92%; top: 54%; --accent: #8f6dff; }
+    .node-quest { left: 72%; top: 84%; --accent: #43d36f; }
+    .node-object { left: 29%; top: 84%; --accent: #d94a4a; }
+    .node-effect { left: 9%; top: 54%; --accent: #31d7ff; }
+    .node-puzzle { left: 18%; top: 18%; --accent: #a98f72; }
+
+    .hub-hint {
+      position: absolute;
+      left: 50%;
+      bottom: 6%;
+      transform: translateX(-50%);
+      z-index: 4;
+      width: min(360px, 58%);
+      padding: 10px 14px;
+      border: 1px solid rgba(168,108,54,0.54);
+      border-radius: 999px;
+      background: rgba(7,7,7,0.62);
+      color: #bd9f7d;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    }
+
+    .hub-hint strong {
+      display: block;
+      margin-top: 2px;
+      color: var(--gold-bright);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+    }
+
+    .portal-panel-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
       display: none;
       align-items: center;
       justify-content: center;
-      padding: 22px;
+      padding: 28px;
       background: radial-gradient(circle at center, rgba(93, 0, 255, 0.22), rgba(0, 0, 0, 0.72));
       backdrop-filter: blur(5px);
     }
 
-    .dialog-backdrop.open { display: flex; }
+    .portal-panel-backdrop.is-open { display: flex; }
 
-    .dialog {
-      width: min(860px, calc(100vw - 32px));
+    .portal-panel {
+      width: min(760px, calc(100vw - 40px));
       max-height: min(86vh, 820px);
       overflow: auto;
-      border: 1px solid rgba(143,109,255,.52);
-      border-radius: 26px;
-      background: linear-gradient(145deg, rgba(32,23,34,.98), rgba(14,10,9,.98));
-      box-shadow: 0 24px 80px rgba(0,0,0,.88), 0 0 44px rgba(143,109,255,.36);
-      padding: 22px;
+      position: relative;
+      color: var(--gold);
+      background: linear-gradient(180deg, rgba(46, 22, 12, 0.97), rgba(9, 5, 8, 0.97));
+      border: 1px solid var(--copper);
+      border-radius: 24px;
+      box-shadow: 0 0 36px rgba(195,0,255,0.32), 0 24px 80px rgba(0,0,0,0.88), inset 0 0 18px rgba(255, 180, 91, 0.08);
+      padding: 24px;
     }
 
-    .dialog header {
+    .portal-panel header {
       display: flex;
       justify-content: space-between;
-      gap: 16px;
       align-items: flex-start;
-      border-bottom: 1px solid rgba(244,223,196,.14);
+      gap: 18px;
       padding-bottom: 14px;
       margin-bottom: 16px;
+      border-bottom: 1px solid rgba(244,223,196,0.16);
     }
 
-    .dialog h2 {
+    .portal-panel h2 {
       margin: 0;
-      color: var(--gold-bright);
+      color: #ffd39b;
       font-family: Cinzel, Georgia, serif;
-      letter-spacing: .08em;
-      font-size: clamp(24px, 3vw, 36px);
+      font-size: clamp(25px, 4vw, 38px);
+      letter-spacing: 0.08em;
+      text-shadow: 0 0 13px rgba(195,0,255,0.52);
     }
 
-    .dialog p {
-      color: var(--gold);
+    .portal-status {
+      display: inline-flex;
+      margin-bottom: 9px;
+      padding: 5px 10px;
+      border: 1px solid rgba(195,0,255,0.55);
+      border-radius: 999px;
+      color: #f0c7ff;
+      background: rgba(195,0,255,0.12);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .portal-panel-close,
+    .project-action {
+      border: 1px solid var(--copper);
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(70,22,100,0.95), rgba(29,9,43,0.95));
+      color: var(--gold-bright);
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 0 16px rgba(93,0,255,0.20);
+    }
+
+    .portal-panel-close {
+      flex: 0 0 auto;
+      width: 40px;
+      height: 40px;
+      font-size: 20px;
+    }
+
+    .portal-panel-close:hover,
+    .project-action:hover {
+      border-color: var(--neon-purple);
+      box-shadow: 0 0 20px var(--neon-purple-dim);
+    }
+
+    .project-panel-copy {
+      color: #f4dfc4;
       line-height: 1.55;
+      margin: 0 0 16px;
     }
 
     .project-list {
@@ -376,141 +455,169 @@
     .project-choice {
       display: grid;
       gap: 4px;
-      border-radius: 18px;
+      border: 1px solid rgba(168,108,54,0.62);
+      border-radius: 16px;
+      padding: 12px 14px;
+      background: rgba(7,7,7,0.66);
+      color: var(--gold);
       text-align: left;
-      background: rgba(7,7,7,.65);
+      cursor: pointer;
     }
 
     .project-choice.selected {
-      border-color: var(--violet);
-      box-shadow: 0 0 0 2px rgba(143,109,255,.26), 0 0 22px rgba(143,109,255,.36);
+      border-color: var(--neon-purple);
+      box-shadow: 0 0 0 2px rgba(195,0,255,0.26), 0 0 22px rgba(195,0,255,0.34);
     }
 
     .project-choice strong { color: var(--gold-bright); }
-    .project-choice span { color: var(--gold-muted); font-size: 12px; }
+    .project-choice span { color: #bd9f7d; font-size: 12px; }
 
     .dialog-actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
       justify-content: flex-end;
+      gap: 10px;
       margin-top: 18px;
+    }
+
+    .project-action {
+      padding: 9px 14px;
     }
 
     .empty-note {
       padding: 16px;
-      border: 1px dashed rgba(244,223,196,.24);
+      border: 1px dashed rgba(244,223,196,0.24);
       border-radius: 16px;
-      color: var(--gold-muted);
+      color: #bd9f7d;
+    }
+
+    .footer-note {
+      position: fixed;
+      left: 38px;
+      bottom: 20px;
+      right: 38px;
+      z-index: 50;
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      color: rgba(244,223,196,0.64);
+      font-size: 12px;
+      pointer-events: none;
     }
 
     @media (max-width: 980px) {
       html, body { overflow: auto; min-height: 100vh; }
-      .shell { min-height: 100vh; height: auto; }
-      .main-stage { grid-template-columns: 1fr; }
-      .hub-card { min-height: 430px; border-radius: 36px; }
-      .topbar, .footerbar { flex-direction: column; }
-      .top-project-pill { text-align: left; max-width: 100%; }
+      .top-ui-layer { position: absolute; padding: 18px; }
+      .brand-crest { width: 50px; }
+      .brand-title { height: 28px; }
+      .top-right-stack { flex-direction: column-reverse; align-items: flex-end; }
+      .active-project-chip { min-width: 0; max-width: 52vw; }
+      .workspace { position: relative; min-height: 100vh; padding: 116px 14px 74px; }
+      .dial-stage { width: min(900px, 106vw); }
+      .module-node { width: min(176px, 38vw); grid-template-columns: 34px 1fr; min-height: 58px; padding: 7px; }
+      .module-node .icon { width: 34px; height: 34px; font-size: 19px; }
+      .module-node strong { font-size: 10px; }
+      .module-node small { font-size: 9px; }
+      .hub-hint { bottom: 3%; width: 62%; }
+      .footer-note { left: 18px; right: 18px; bottom: 14px; flex-direction: column; }
     }
   </style>
 </head>
 <body>
-  <main class="shell">
-    <header class="topbar">
-      <section class="brand">
-        <img class="logo" src="artifexlogo.png" alt="Artifex logo" />
-        <img class="title" src="artifextitle.png" alt="Artifex" />
-      </section>
-      <section class="top-project-pill" aria-live="polite">
+  <div class="ambient-background"></div>
+  <canvas id="fx-canvas"></canvas>
+  <div class="ambient-vignette"></div>
+
+  <div class="top-ui-layer">
+    <div class="brand-container">
+      <img class="brand-crest" src="artifexlogo.png" alt="Artifex logo" />
+      <img class="brand-title" src="artifextitle.png" alt="Artifex" />
+    </div>
+
+    <div class="top-right-stack">
+      <section class="active-project-chip" aria-live="polite">
         <span>Active Project</span>
-        <strong id="top-active-project-name">No project selected</strong>
+        <strong id="top-active-project-name">No active project</strong>
       </section>
-    </header>
+      <button class="audio-toggle-btn" id="audio-btn" type="button" title="Mute portal audio" aria-label="Toggle portal audio">🔊</button>
+    </div>
+  </div>
 
-    <section class="main-stage">
-      <aside class="module-column">
-        <p class="eyebrow">Creation</p>
-        <h2>Project Tools</h2>
-        <a class="module-button" style="--accent:#8a7465" href="apps/creation-guide/?from=hub">
-          <span class="icon">📋</span><span><strong>Creation Guide</strong><span>Setup, project library, assignments</span></span>
-        </a>
-        <a class="module-button" style="--accent:#e5c84a" href="apps/project-editor/?from=hub">
-          <span class="icon">⌘</span><span><strong>Project Editor</strong><span>Manifest, flatplan, routes</span></span>
-        </a>
-        <a class="module-button" style="--accent:#8f6dff" href="apps/scene-editor/?from=hub">
-          <span class="icon">▣</span><span><strong>Scene Editor</strong><span>Screens, backgrounds, placements</span></span>
-        </a>
-        <a class="module-button" style="--accent:#43d36f" href="apps/quest-builder/?from=hub">
-          <span class="icon">✦</span><span><strong>Quest Builder</strong><span>Quests, conditions, overlays</span></span>
-        </a>
-      </aside>
+  <main class="workspace" aria-label="Artifex radial hub">
+    <section class="dial-stage" id="dial-stage">
+      <div class="dial-plate" aria-hidden="true"></div>
 
-      <section class="hub-card" aria-label="Artifex active project hub">
-        <section class="hub-core">
-          <p class="eyebrow">Artifex Hub</p>
-          <h1>Change Project</h1>
-          <div class="active-project-box">
-            <span>Currently selected</span>
-            <strong id="active-project-name">No active project</strong>
-            <em id="active-project-meta">Create or select a project in Creation Guide.</em>
-          </div>
-          <button class="change-project-button" id="change-project-button" type="button">Change Project</button>
-        </section>
+      <a class="module-node node-creation" data-hub-route="apps/creation-guide/index.html" href="apps/creation-guide/index.html?from=hub">
+        <span class="icon">📋</span><span><strong>Creation Guide</strong><small>Setup, project library, assignments</small></span>
+      </a>
+      <a class="module-node node-project" data-hub-route="apps/project-editor/index.html" href="apps/project-editor/index.html?from=hub">
+        <span class="icon">⌘</span><span><strong>Project Editor</strong><small>Manifest, flatplan, routes</small></span>
+      </a>
+      <a class="module-node node-scene" data-hub-route="apps/scene-editor/index.html" href="apps/scene-editor/index.html?from=hub">
+        <span class="icon">▣</span><span><strong>Scene Editor</strong><small>Screens, backgrounds, placements</small></span>
+      </a>
+      <a class="module-node node-quest" data-hub-route="apps/quest-builder/index.html" href="apps/quest-builder/index.html?from=hub">
+        <span class="icon">✦</span><span><strong>Quest Builder</strong><small>Quests, conditions, overlays</small></span>
+      </a>
+      <a class="module-node node-object" data-hub-route="apps/archetype-object-creator/index.html" href="apps/archetype-object-creator/index.html?from=hub">
+        <span class="icon">◆</span><span><strong>Object Creator</strong><small>Archetypes, NPCs, props</small></span>
+      </a>
+      <a class="module-node node-effect" data-hub-route="apps/effect-editor/index.html" href="apps/effect-editor/index.html?from=hub">
+        <span class="icon">✹</span><span><strong>Effect Editor</strong><small>FX, overlays, weather, magic</small></span>
+      </a>
+      <a class="module-node node-puzzle" data-hub-route="apps/puzzle-creator/index.html" href="apps/puzzle-creator/index.html?from=hub">
+        <span class="icon">▤</span><span><strong>Puzzle / Asset Tools</strong><small>Mini tools and library prep</small></span>
+      </a>
+
+      <button class="center-hub-button" id="center-hub-button" type="button" aria-label="Change active project"></button>
+
+      <section class="hub-hint" aria-live="polite">
+        <span>Project Core</span>
+        <strong id="center-active-project-name">Click the centre dial to change project</strong>
       </section>
-
-      <aside class="module-column">
-        <p class="eyebrow">Build</p>
-        <h2>Libraries + Output</h2>
-        <a class="module-button" style="--accent:#d94a4a" href="apps/object-creator/?from=hub">
-          <span class="icon">◆</span><span><strong>Object Creator</strong><span>Archetypes, NPCs, props</span></span>
-        </a>
-        <a class="module-button" style="--accent:#31d7ff" href="apps/effect-editor/index2.html?from=hub">
-          <span class="icon">✹</span><span><strong>Effect Editor</strong><span>FX, overlays, weather, magic</span></span>
-        </a>
-        <a class="module-button" style="--accent:#a98f72" href="apps/puzzle-creator/?from=hub">
-          <span class="icon">▤</span><span><strong>Puzzle / Asset Tools</strong><span>Mini tools and library prep</span></span>
-        </a>
-        <button class="module-button" style="--accent:#ff9d4d" id="build-game-button" type="button">
-          <span class="icon">▶</span><span><strong>Build Game</strong><span>Validate and export later</span></span>
-        </button>
-      </aside>
     </section>
-
-    <footer class="footerbar">
-      <span>Artifex Hub V1.1.4</span>
-      <span id="footer-project-state">Active project is shared through browser localStorage.</span>
-    </footer>
   </main>
 
-  <section class="dialog-backdrop" id="project-dialog-backdrop" aria-hidden="true">
-    <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="project-dialog-title">
+  <section class="portal-panel-backdrop" id="project-dialog-backdrop" aria-hidden="true">
+    <section class="portal-panel" role="dialog" aria-modal="true" aria-labelledby="project-dialog-title">
       <header>
         <div>
-          <p class="eyebrow">Project Library</p>
+          <span class="portal-status">Project Library</span>
           <h2 id="project-dialog-title">Change Active Project</h2>
         </div>
-        <button type="button" id="project-dialog-close">×</button>
+        <button class="portal-panel-close" type="button" id="project-dialog-close" aria-label="Close project selector">×</button>
       </header>
-      <p>Select a saved project from this browser. This updates <code>artifex.activeProjectId</code>, so Artifex tools know which project they should open. To create a new project, go to Creation Guide.</p>
+      <p class="project-panel-copy">Select a saved project from this browser. This updates <code>artifex.activeProjectId</code>, so each Artifex tool opens with the same active-project context.</p>
       <div class="project-list" id="project-list"></div>
       <footer class="dialog-actions">
-        <button type="button" id="confirm-project-button">Set Active Project</button>
-        <a href="apps/creation-guide/?fresh=hub-create-project">Create / Manage Projects</a>
-        <button type="button" id="clear-active-project-button">Clear Active Project</button>
-        <button type="button" id="cancel-project-button">Cancel</button>
+        <button class="project-action" type="button" id="confirm-project-button">Set Active Project</button>
+        <a class="project-action" href="apps/creation-guide/index.html?fresh=hub-create-project">Create / Manage Projects</a>
+        <button class="project-action" type="button" id="clear-active-project-button">Clear Active Project</button>
+        <button class="project-action" type="button" id="cancel-project-button">Cancel</button>
       </footer>
     </section>
   </section>
 
+  <footer class="footer-note">
+    <span>Artifex Radial Hub V1.2.0</span>
+    <span id="footer-project-state">Active project is shared through browser localStorage.</span>
+  </footer>
+
   <script>
     const PROJECT_LIBRARY_KEY = 'artifex.projectLibrary';
     const ACTIVE_PROJECT_KEY = 'artifex.activeProjectId';
+    const HUB_VERSION = 'hub-1.2.0';
     let selectedProjectId = null;
+    let audioEnabled = true;
+    let audioCtx = null;
+    let audioUnlocked = false;
 
     document.addEventListener('DOMContentLoaded', () => {
       renderActiveProject();
-      wireHubControls();
       patchToolLinksWithProject();
+      wireHubControls();
+      wireDialHover();
+      setupParticles();
     });
 
     function readProjectLibrary() {
@@ -528,15 +635,29 @@
       const project = getActiveProject();
       const name = project?.projectName || 'No active project';
       const id = project?.projectId || '';
-      const status = project?.status || '';
       document.getElementById('top-active-project-name').textContent = name;
-      document.getElementById('active-project-name').textContent = name;
-      document.getElementById('active-project-meta').textContent = project ? `${id} · ${status || 'setup'} · ${project.version || '0.1.0'}` : 'Create or select a project in Creation Guide.';
+      document.getElementById('center-active-project-name').textContent = project ? `${name} · ${project.version || '0.1.0'}` : 'Click the centre dial to change project';
       document.getElementById('footer-project-state').textContent = project ? `Active project: ${id}` : 'No active project selected yet.';
     }
 
+    function patchToolLinksWithProject() {
+      const active = localStorage.getItem(ACTIVE_PROJECT_KEY);
+      document.querySelectorAll('[data-hub-route]').forEach((link) => {
+        const params = new URLSearchParams();
+        params.set('from', 'hub');
+        if (active) params.set('project', active);
+        params.set('v', HUB_VERSION);
+        link.href = `${link.dataset.hubRoute}?${params.toString()}`;
+      });
+    }
+
     function wireHubControls() {
-      document.getElementById('change-project-button').addEventListener('click', openProjectDialog);
+      document.getElementById('center-hub-button').addEventListener('click', () => {
+        unlockAudio();
+        playTone('surge');
+        openProjectDialog();
+      });
+      document.getElementById('audio-btn').addEventListener('click', toggleAudio);
       document.getElementById('project-dialog-close').addEventListener('click', closeProjectDialog);
       document.getElementById('cancel-project-button').addEventListener('click', closeProjectDialog);
       document.getElementById('project-dialog-backdrop').addEventListener('click', (event) => {
@@ -550,24 +671,40 @@
         renderActiveProject();
         patchToolLinksWithProject();
       });
-      document.getElementById('build-game-button').addEventListener('click', () => {
-        alert('Build Game is a future output step. For now, set an active project first, then use Creation Guide / Project Editor to create the starter files.');
-      });
       document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') closeProjectDialog();
+      });
+      document.body.addEventListener('click', unlockAudio, { once: true });
+    }
+
+    function wireDialHover() {
+      const stage = document.getElementById('dial-stage');
+      const nodes = document.querySelectorAll('.module-node');
+      nodes.forEach((node) => {
+        node.addEventListener('mouseenter', () => {
+          stage.classList.add('is-hot');
+          playTone('hover');
+        });
+        node.addEventListener('mouseleave', () => {
+          if (!document.querySelector('.module-node:hover')) stage.classList.remove('is-hot');
+        });
+        node.addEventListener('click', () => {
+          unlockAudio();
+          playTone('surge');
+        });
       });
     }
 
     function openProjectDialog() {
       renderProjectList();
       const backdrop = document.getElementById('project-dialog-backdrop');
-      backdrop.classList.add('open');
+      backdrop.classList.add('is-open');
       backdrop.setAttribute('aria-hidden', 'false');
     }
 
     function closeProjectDialog() {
       const backdrop = document.getElementById('project-dialog-backdrop');
-      backdrop.classList.remove('open');
+      backdrop.classList.remove('is-open');
       backdrop.setAttribute('aria-hidden', 'true');
     }
 
@@ -606,22 +743,151 @@
       patchToolLinksWithProject();
     }
 
-    function patchToolLinksWithProject() {
-      const active = localStorage.getItem(ACTIVE_PROJECT_KEY);
-      document.querySelectorAll('a[href^="apps/"]').forEach((link) => {
-        const base = link.getAttribute('href').split('?')[0];
-        const params = new URLSearchParams();
-        params.set('from', 'hub');
-        if (active) params.set('project', active);
-        params.set('v', 'hub-1.1.4');
-        link.href = `${base}?${params.toString()}`;
-      });
-    }
-
     function escapeHtml(value) {
       return String(value ?? '').replace(/[&<>"']/g, (char) => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
       }[char]));
+    }
+
+    function toggleAudio() {
+      audioEnabled = !audioEnabled;
+      const btn = document.getElementById('audio-btn');
+      btn.textContent = audioEnabled ? '🔊' : '🔇';
+      btn.style.boxShadow = audioEnabled ? '' : 'none';
+      btn.style.animation = audioEnabled ? 'breatheAudio 3s infinite alternate' : 'none';
+      if (audioEnabled) {
+        unlockAudio();
+        playTone('surge');
+      }
+    }
+
+    function unlockAudio() {
+      if (!audioEnabled) return;
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      audioUnlocked = true;
+    }
+
+    function playTone(type) {
+      if (!audioEnabled || !audioUnlocked || !audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+      if (type === 'hover') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(60, now + 0.1);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      } else {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(760, now);
+        osc.frequency.exponentialRampToValueAtTime(1180, now + 0.22);
+        gain.gain.setValueAtTime(0.09, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.26);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      }
+    }
+
+    function setupParticles() {
+      const canvas = document.getElementById('fx-canvas');
+      const ctx = canvas.getContext('2d');
+      let width = 0;
+      let height = 0;
+      const particles = [];
+
+      function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      class Particle {
+        constructor(type) {
+          this.type = type;
+          this.reset(true);
+        }
+
+        reset(initial = false) {
+          if (this.type === 'mist') {
+            this.x = initial ? Math.random() * width : -150;
+            this.y = (height * 0.38) + (Math.random() * height * 0.62);
+            this.size = Math.random() * 150 + 100;
+            this.speedX = Math.random() * 1.5 + 0.8;
+            this.speedY = (Math.random() - 0.5) * 0.1;
+            this.opacity = Math.random() * 0.15 + 0.05;
+          } else {
+            const side = Math.random() > 0.5 ? width * 0.15 : width * 0.85;
+            this.x = side + (Math.random() * 150 - 75);
+            this.y = height + (Math.random() * 50);
+            this.size = Math.random() * 2.5 + 0.5;
+            this.speedX = (Math.random() - 0.5) * 1.5;
+            this.speedY = Math.random() * -2.5 - 1;
+            this.life = 0;
+            this.maxLife = Math.random() * 150 + 100;
+          }
+        }
+
+        update() {
+          this.x += this.speedX;
+          this.y += this.speedY;
+          if (this.type === 'mist') {
+            if (this.x > width + 200) this.reset();
+          } else {
+            this.x += Math.sin(this.life * 0.05) * 1.0;
+            this.life++;
+            if (this.life > this.maxLife || this.y < -50) this.reset();
+          }
+        }
+
+        draw() {
+          if (this.type === 'mist') {
+            ctx.globalCompositeOperation = 'screen';
+            const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+            gradient.addColorStop(0, `rgba(200, 210, 230, ${this.opacity})`);
+            gradient.addColorStop(1, 'rgba(200, 210, 230, 0)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            ctx.globalCompositeOperation = 'lighter';
+            const progress = this.life / this.maxLife;
+            const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 2);
+            gradient.addColorStop(0, `rgba(255, ${255 - (progress * 255)}, ${50 - (progress * 50)}, ${1 - progress})`);
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size * 2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+
+      window.addEventListener('resize', resize);
+      resize();
+      for (let i = 0; i < 40; i++) particles.push(new Particle('mist'));
+      for (let i = 0; i < 100; i++) particles.push(new Particle('fire'));
+
+      function animate() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.globalCompositeOperation = 'screen';
+        const flicker = Math.sin(Date.now() * 0.005) * 0.05 + 0.15;
+        const floorGrad = ctx.createLinearGradient(0, height, 0, height - 300);
+        floorGrad.addColorStop(0, `rgba(255, 100, 20, ${flicker + 0.08})`);
+        floorGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = floorGrad;
+        ctx.fillRect(0, height - 300, width, 300);
+        particles.forEach((particle) => { particle.update(); particle.draw(); });
+        requestAnimationFrame(animate);
+      }
+      animate();
     }
   </script>
 </body>
