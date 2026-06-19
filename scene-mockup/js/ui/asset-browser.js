@@ -2,17 +2,17 @@ const LAYOUT_SEQUENCE = ['grid', 'large', 'list'];
 
 const LAYOUT_DETAILS = {
   grid: {
-    icon: '▦',
+    icon: '🔳',
     label: 'Thumbnail grid',
     next: 'large previews'
   },
   large: {
-    icon: '▤',
+    icon: '🖼️',
     label: 'Large previews',
     next: 'list view'
   },
   list: {
-    icon: '☷',
+    icon: '📋',
     label: 'List view',
     next: 'thumbnail grid'
   }
@@ -91,7 +91,7 @@ export function syncAssetBrowser({ visibleCount, libraryView }) {
 
   if (elements.floatingWindow) {
     elements.floatingWindow.classList.toggle('is-minimised', browserState.isMinimised);
-    elements.minimiseButton.textContent = browserState.isMinimised ? '□' : '−';
+    elements.minimiseButton.textContent = browserState.isMinimised ? '🔲' : '➖';
     elements.minimiseButton.title = browserState.isMinimised ? 'Restore asset browser' : 'Minimise asset browser';
   }
 
@@ -115,11 +115,11 @@ function insertTopActionBar() {
 
   toolbar.insertAdjacentHTML('beforebegin', `
     <div class="asset-panel-actionbar" id="asset-panel-actionbar" aria-label="Asset actions">
-      <button class="icon-button compact" id="sm-import-assets" type="button" title="Choose files" aria-label="Choose files">＋</button>
-      <button class="icon-button compact" id="sm-add-placeholder" type="button" title="Add placeholder" aria-label="Add placeholder">▧</button>
-      <button class="icon-button compact" id="sm-cycle-asset-layout" type="button" title="Thumbnail grid — click for large previews" aria-label="Thumbnail grid — click for large previews">▦</button>
-      <button class="icon-button compact" id="sm-refresh-assets" type="button" title="Refresh library" aria-label="Refresh library">↻</button>
-      <button class="icon-button compact" id="sm-open-asset-browser" type="button" title="Pop out browser" aria-label="Pop out browser">↗</button>
+      <button class="icon-button compact" id="sm-import-assets" type="button" title="Choose files" aria-label="Choose files">➕</button>
+      <button class="icon-button compact" id="sm-add-placeholder" type="button" title="Add placeholder" aria-label="Add placeholder">🖼️</button>
+      <button class="icon-button compact" id="sm-cycle-asset-layout" type="button" title="Thumbnail grid — click for large previews" aria-label="Thumbnail grid — click for large previews">🔳</button>
+      <button class="icon-button compact" id="sm-refresh-assets" type="button" title="Refresh library" aria-label="Refresh library">🔄</button>
+      <button class="icon-button compact" id="sm-open-asset-browser" type="button" title="Pop out browser" aria-label="Pop out browser">↗️</button>
     </div>
   `);
 
@@ -139,14 +139,14 @@ function insertBrowserControls() {
           <span class="visually-hidden">Search assets</span>
           <input id="sm-asset-search" type="search" placeholder="Search assets…" autocomplete="off" />
         </label>
-        <button class="icon-button compact" id="sm-clear-search" type="button" title="Clear asset search" aria-label="Clear asset search">×</button>
+        <button class="icon-button compact" id="sm-clear-search" type="button" title="Clear asset search" aria-label="Clear asset search">❌</button>
       </div>
       <div class="asset-category-bar" aria-label="Asset folders">
-        <button class="asset-category-chip is-active" type="button" data-sm-category="all">All</button>
-        <button class="asset-category-chip" type="button" data-sm-category="backgrounds">Backgrounds</button>
-        <button class="asset-category-chip" type="button" data-sm-category="people">People</button>
-        <button class="asset-category-chip" type="button" data-sm-category="objects">Objects</button>
-        <button class="asset-category-chip" type="button" data-sm-category="imports">Imported</button>
+        <button class="asset-category-chip is-active" type="button" data-sm-category="all">🗂️ All</button>
+        <button class="asset-category-chip" type="button" data-sm-category="backgrounds">🌄 Backgrounds</button>
+        <button class="asset-category-chip" type="button" data-sm-category="people">🧑 People</button>
+        <button class="asset-category-chip" type="button" data-sm-category="objects">🧰 Objects</button>
+        <button class="asset-category-chip" type="button" data-sm-category="imports">📥 Imported</button>
       </div>
     </section>
   `);
@@ -161,12 +161,12 @@ function insertFloatingBrowser() {
     <section class="asset-browser-window" id="sm-floating-asset-browser" aria-label="Floating asset browser" hidden>
       <header class="asset-browser-window-header" id="sm-asset-browser-drag-handle">
         <div class="asset-browser-window-title">
-          <span class="asset-browser-window-mark" aria-hidden="true">◫</span>
+          <span class="asset-browser-window-mark" aria-hidden="true">🗂️</span>
           <div><p class="eyebrow">FLOATING LIBRARY</p><strong>Asset Browser</strong></div>
         </div>
         <div class="asset-browser-window-actions">
-          <button class="icon-button compact" id="sm-minimise-asset-browser" type="button" title="Minimise asset browser" aria-label="Minimise asset browser">−</button>
-          <button class="icon-button compact" id="sm-close-asset-browser" type="button" title="Close asset browser" aria-label="Close asset browser">×</button>
+          <button class="icon-button compact" id="sm-minimise-asset-browser" type="button" title="Minimise asset browser" aria-label="Minimise asset browser">➖</button>
+          <button class="icon-button compact" id="sm-close-asset-browser" type="button" title="Close asset browser" aria-label="Close asset browser">❌</button>
         </div>
       </header>
       <div class="asset-browser-window-body">

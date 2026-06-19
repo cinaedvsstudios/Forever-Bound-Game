@@ -103,8 +103,10 @@ export function renderPanels() {
     const lock = row.querySelector('.lock-symbol');
     visibility.dataset.layerAction = 'visibility';
     lock.dataset.layerAction = 'lock';
-    visibility.textContent = layer.visible ? '◉' : '○';
-    lock.textContent = layer.locked ? '◆' : '◇';
+    visibility.textContent = layer.visible ? '👁️' : '🙈';
+    lock.textContent = layer.locked ? '🔒' : '🔓';
+    visibility.title = layer.visible ? 'Hide layer' : 'Show layer';
+    lock.title = layer.locked ? 'Unlock layer' : 'Lock layer';
     visibility.classList.toggle('is-off', !layer.visible);
     lock.classList.toggle('is-off', !layer.locked);
     dom.layerList.append(row);
