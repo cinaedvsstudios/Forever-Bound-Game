@@ -1,0 +1,28 @@
+.workspace {
+  min-height: calc(100vh - 78px);
+}
+
+.asset-panel,
+.inspector-panel {
+  max-height: calc(100vh - 78px);
+}
+
+.stage-wrap {
+  position: relative;
+  min-height: 535px;
+  overflow: hidden;
+  cursor: default;
+}
+
+.stage-wrap.is-panning { cursor: grabbing; }
+.stage-wrap.is-panning * { cursor: grabbing !important; }
+
+.stage-viewport {
+  width: min(100%, 1090px);
+  will-change: transform;
+  transform-origin: center center;
+}
+
+.stage-viewport .scene-stage { width: 100%; }
+
+.canvas-readout { white-space: nowrap; }
