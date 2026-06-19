@@ -15,47 +15,28 @@ import { dom, toast } from './dom.js';
 
 let libraryView = 'assets';
 let catalogueLoad = null;
+let assetPanelDropDepth = 0;
 
 export function setupAssetImport() {
   mountAssetBrowser({
     onChange: renderAssets,
-    onRefresh: () => hydrateRepositoryAssets({ force: true })
+    onRefresh: () => hydrateRepositoryAssets({ force: true }),
+    onImport: openAssetImport,
+    onAddPlaceholder: addPlaceholderAsset
   });
-
-  dom.assetImportButton.addEventListener('click', openAssetImport);
-  document.querySelector('#placeholder-button').addEventListener('click', addPlaceholderToLibrary);
-  dom.importFromZoneButton.addEventListener('click', openAssetImport);
 
   dom.assetInput.addEventListener('change', async (event) => {
     await importFiles([...event.target.files]);
     event.target.value = '';
   });
 
-  for (const eventName of ['dragenter', 'dragover']) {
-    dom.assetDropZone.addEventListener(eventName, (event) => {
-      event.preventDefault();
-      dom.assetDropZone.classList.add('is-dragging');
-    });
-  }
-
-  for (const eventName of ['dragleave', 'drop']) {
-    dom.assetDropZone.addEventListener(eventName, (event) => {
-      event.preventDefault();
-      dom.assetDropZone.classList.remove('is-dragging');
-    });
-  }
-
-  dom.assetDropZone.addEventListener('drop', async (event) => importFiles([...event.dataTransfer.files]));
-  dom.assetDropZone.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') openAssetImport();
-  });
+  setupAssetPanelDropImport();
 
   document.querySelectorAll('[data-library-view]').forEach((button) => {
     button.addEventListener('click', () => {
       libraryView = button.dataset.libraryView;
       setAssetLibraryView(libraryView);
       document.querySelectorAll('[data-library-view]').forEach((item) => item.classList.toggle('is-active', item === button));
-      renderAssets();
     });
   });
 
@@ -173,7 +154,8 @@ export async function addAssetToScene(assetId, { asBackground = false } = {}) {
 export function renderAssets() {
   const state = getState();
   const browser = getAssetBrowserState();
-  const source = libraryView === 'assets'
+  const sourceView = libraryView === 'settings' ? 'assets' : libraryView;
+  const source = sourceView === 'assets'
     ? state.assets
     : state.layers.map((layer) => ({
       id: layer.id,
@@ -192,7 +174,42 @@ export function renderAssets() {
   });
 
   syncAssetBrowser({ visibleCount: assets.length, libraryView });
-  getAssetGridTargets().forEach((target) => renderAssetGrid(target, assets));
+  getAssetGridTargets().forEach((target) => renderAssetGrid(target, assets, sourceView));
+}
+
+function setupAssetPanelDropImport() {
+  const panel = dom.assetPanel;
+  if (!panel) return;
+
+  const containsFiles = (event) => [...event.dataTransfer?.types ?? []].includes('Files');
+
+  panel.addEventListener('dragenter', (event) => {
+    if (!containsFiles(event)) return;
+    event.preventDefault();
+    assetPanelDropDepth += 1;
+    panel.classList.add('is-drop-target');
+  });
+
+  panel.addEventListener('dragover', (event) => {
+    if (!containsFiles(event)) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+    panel.classList.add('is-drop-target');
+  });
+
+  panel.addEventListener('dragleave', (event) => {
+    if (!containsFiles(event)) return;
+    assetPanelDropDepth = Math.max(0, assetPanelDropDepth - 1);
+    if (!assetPanelDropDepth) panel.classList.remove('is-drop-target');
+  });
+
+  panel.addEventListener('drop', async (event) => {
+    if (!containsFiles(event)) return;
+    event.preventDefault();
+    assetPanelDropDepth = 0;
+    panel.classList.remove('is-drop-target');
+    await importFiles([...event.dataTransfer.files]);
+  });
 }
 
 async function hydrateRepositoryAssets({ force = false } = {}) {
@@ -224,12 +241,12 @@ async function hydrateRepositoryAssets({ force = false } = {}) {
   return catalogueLoad;
 }
 
-function renderAssetGrid(container, assets) {
+function renderAssetGrid(container, assets, sourceView) {
   container.innerHTML = '';
   if (!assets.length) {
     const empty = document.createElement('p');
     empty.className = 'empty-inspector asset-empty-state';
-    empty.textContent = libraryView === 'assets'
+    empty.textContent = sourceView === 'assets'
       ? 'No assets match this search. Add files to assets/backgrounds, assets/people or assets/objects, then refresh.'
       : 'No layers in this scene match the current search.';
     container.append(empty);
