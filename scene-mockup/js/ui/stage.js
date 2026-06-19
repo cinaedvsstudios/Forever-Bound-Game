@@ -24,6 +24,8 @@ function stagePoint(event) {
 }
 
 async function onStagePointerDown(event) {
+  if (event.button !== 0) return;
+
   const target = event.target.closest('[data-layer-id]');
   const state = getState();
   if (!target) {
@@ -102,10 +104,17 @@ function onPointerUp() {
   if (!drag) return;
   const state = getState();
   if (drag.mode === 'move') {
-    // A single history state after the drag avoids storing every pointer movement.
     state.history.push({ label: 'Move layer', payload: structuredClone({
-      canvas: state.canvas, title: state.title, assets: state.assets, layers: state.layers.map((layer) => ({ ...layer, x: layer.id === drag.layerId ? drag.originX : layer.x, y: layer.id === drag.layerId ? drag.originY : layer.y })),
-      selectedLayerId: state.selectedLayerId, selectedAssetId: state.selectedAssetId, activeTool: state.activeTool, showGrid: state.showGrid, showGuides: state.showGuides
+      canvas: state.canvas,
+      viewport: state.viewport,
+      title: state.title,
+      assets: state.assets,
+      layers: state.layers.map((layer) => ({ ...layer, x: layer.id === drag.layerId ? drag.originX : layer.x, y: layer.id === drag.layerId ? drag.originY : layer.y })),
+      selectedLayerId: state.selectedLayerId,
+      selectedAssetId: state.selectedAssetId,
+      activeTool: state.activeTool,
+      showGrid: state.showGrid,
+      showGuides: state.showGuides
     }) });
     state.future = [];
   }
