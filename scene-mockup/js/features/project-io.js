@@ -1,8 +1,13 @@
-import { downloadBlob } from '../core/utils.js';
+import { saveBlobWithPicker } from './file-picker.js';
 
-export function downloadProject(project) {
+export async function saveProjectFile(project) {
   const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
-  downloadBlob(blob, `${safeName(project.title)}.scene-mockup.json`);
+  return saveBlobWithPicker(blob, {
+    suggestedName: `${safeName(project.title)}.scene-mockup.json`,
+    description: 'Scene Mockup project',
+    mimeType: 'application/json',
+    extensions: ['.scene-mockup.json', '.json']
+  });
 }
 
 export function readProject(file) {
