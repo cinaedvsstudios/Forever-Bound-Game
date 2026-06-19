@@ -12,19 +12,19 @@
 }
 
 .topbar-left { min-width: 0; gap: 15px; }
-.topbar-divider { width: 1px; height: 34px; background: var(--line); box-shadow: 1px 0 rgba(255,255,255,.04); }
-.menubar { gap: 2px; }
+.topbar-divider { width: 1px; height: 38px; background: var(--line); box-shadow: 1px 0 rgba(255,255,255,.04); }
+.menubar { gap: 4px; }
 .menu-group { position: relative; }
 
 .menu-trigger {
-  min-height: 34px;
-  padding: 0 10px;
+  min-height: 40px;
+  padding: 0 12px;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 9px;
   background: transparent;
   color: var(--text-soft);
-  font-size: 12px;
-  font-weight: 720;
+  font-size: 15px;
+  font-weight: 760;
   cursor: pointer;
   transition: .16s ease;
 }
@@ -41,7 +41,7 @@
   top: calc(100% + 8px);
   left: 0;
   z-index: 90;
-  width: 230px;
+  width: 242px;
   padding: 6px;
   border: 1px solid rgba(102, 149, 200, .52);
   border-radius: 11px;
@@ -50,12 +50,12 @@
   backdrop-filter: blur(18px);
 }
 
-.menu-panel-wide { width: 282px; }
+.menu-panel-wide { width: 296px; }
 .menu-panel[hidden] { display: none; }
 
 .menu-panel button {
   width: 100%;
-  min-height: 32px;
+  min-height: 34px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -126,10 +126,10 @@
 }
 
 .canvas-panel-actions { gap: 7px; }
-.canvas-panel-actions .icon-button { width: 34px; min-height: 34px; }
+.canvas-panel-actions .icon-button { width: 38px; min-height: 38px; font-size: 16px; }
 
 @media (max-width: 1350px) {
   .topbar { padding-right: 14px; padding-left: 16px; }
   .topbar-left { gap: 10px; }
-  .menu-trigger { padding: 0 8px; }
+  .menu-trigger { padding: 0 9px; font-size: 14px; }
 }
