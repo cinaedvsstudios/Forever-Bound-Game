@@ -1,8 +1,30 @@
 import { DEFAULT_FILTERS } from './constants.js';
 import { uid, clamp } from './utils.js';
 
-export function makeAsset({ name, kind, dataUrl, sourceDataUrl = dataUrl, width = 0, height = 0 }) {
-  return { id: uid('asset'), name, kind, dataUrl, sourceDataUrl, width, height, createdAt: Date.now() };
+export function makeAsset({
+  name,
+  kind,
+  dataUrl,
+  sourceDataUrl = dataUrl,
+  width = 0,
+  height = 0,
+  category = 'imports',
+  origin = 'local',
+  sourcePath = null
+}) {
+  return {
+    id: uid('asset'),
+    name,
+    kind,
+    dataUrl,
+    sourceDataUrl,
+    width,
+    height,
+    category,
+    origin,
+    sourcePath,
+    createdAt: Date.now()
+  };
 }
 
 export function makeLayer(asset, canvas, overrides = {}) {
