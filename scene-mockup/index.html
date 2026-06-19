@@ -81,24 +81,11 @@
 
       <section class="workspace">
         <aside class="panel asset-panel" aria-label="Asset library">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">LIBRARY</p>
-              <h2>Assets</h2>
-            </div>
-            <div class="library-heading-actions"><button class="icon-button compact" id="placeholder-button" type="button" title="Add placeholder" aria-label="Add placeholder">▧</button><button class="icon-button compact" id="asset-import-button" type="button" title="Import assets" aria-label="Import assets">＋</button></div>
-          </div>
-
           <input id="asset-input" type="file" accept="image/png,image/jpeg,image/webp,model/gltf-binary,.png,.jpg,.jpeg,.webp,.glb" multiple hidden />
-          <div class="import-zone" id="asset-drop-zone" tabindex="0">
-            <strong>Drop sprites, backgrounds or GLBs</strong>
-            <span>PNG · JPG · WEBP · GLB</span>
-            <button class="link-button" id="import-from-zone-button" type="button">Choose files</button>
-          </div>
-
           <div class="asset-toolbar">
             <button class="library-tab is-active" type="button" data-library-view="assets">All assets</button>
             <button class="library-tab" type="button" data-library-view="scene">In scene</button>
+            <button class="library-tab" type="button" data-library-view="settings">Settings</button>
           </div>
           <div class="asset-grid" id="asset-grid" aria-live="polite"></div>
         </aside>
