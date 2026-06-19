@@ -1,14 +1,13 @@
 import { downloadBlob } from '../core/utils.js';
 
-export async function saveBlobWithPicker(blob, {
+export async function requestSaveDestination({
   suggestedName,
   description = 'Scene Mockup file',
-  mimeType = blob.type || 'application/octet-stream',
+  mimeType = 'application/octet-stream',
   extensions = []
 } = {}) {
   if (typeof window.showSaveFilePicker !== 'function') {
-    downloadBlob(blob, suggestedName);
-    return { saved: true, usedPicker: false };
+    return { usePicker: false, suggestedName };
   }
 
   try {
@@ -19,12 +18,27 @@ export async function saveBlobWithPicker(blob, {
         accept: { [mimeType]: extensions.length ? extensions : ['.bin'] }
       }]
     });
-    const writable = await handle.createWritable();
-    await writable.write(blob);
-    await writable.close();
-    return { saved: true, usedPicker: true };
+    return { usePicker: true, handle, suggestedName };
   } catch (error) {
-    if (error?.name === 'AbortError') return { saved: false, cancelled: true, usedPicker: true };
+    if (error?.name === 'AbortError') return { cancelled: true, usePicker: true, suggestedName };
     throw error;
   }
+}
+
+export async function writeBlobToDestination(blob, destination) {
+  if (destination.cancelled) return { saved: false, cancelled: true, usedPicker: destination.usePicker };
+  if (!destination.usePicker) {
+    downloadBlob(blob, destination.suggestedName);
+    return { saved: true, usedPicker: false };
+  }
+
+  const writable = await destination.handle.createWritable();
+  await writable.write(blob);
+  await writable.close();
+  return { saved: true, usedPicker: true };
+}
+
+export async function saveBlobWithPicker(blob, options = {}) {
+  const destination = await requestSaveDestination(options);
+  return writeBlobToDestination(blob, destination);
 }
