@@ -1,8 +1,11 @@
 import { getState, mutate, resetProject, undo, redo, serializeProject, replaceProject } from '../core/store.js';
-import { downloadProject, readProject } from '../features/project-io.js';
+import { saveProjectFile, readProject, safeName } from '../features/project-io.js';
 import { exportScene } from '../features/export.js';
-import { downloadBlob } from '../core/utils.js';
+import { saveBlobWithPicker } from '../features/file-picker.js';
 import { analyseImageColour, makeAutoMatch } from '../features/colour-match.js';
+import { openAssetImport, addPlaceholderToLibrary, refreshRepositoryAssets, openFloatingAssetBrowser } from './assets.js';
+import { closeMenus } from './menubar.js';
+import { fitCanvas, resetViewport, zoomBy } from './viewport.js';
 import { dom, toast } from './dom.js';
 
 export function setupToolbar() {
@@ -11,27 +14,44 @@ export function setupToolbar() {
       const nextTool = button.dataset.tool;
       if (nextTool === 'autoColour') {
         autoColourSelected();
-        return;
+      } else {
+        mutate('Change tool', (state) => { state.activeTool = nextTool; }, { record: false });
       }
-      mutate('Change tool', (state) => { state.activeTool = nextTool; }, { record: false });
+      closeMenus();
     });
   });
 
-  document.querySelector('#new-scene-button').addEventListener('click', () => {
-    if (getState().layers.length && !window.confirm('Start a new scene? The current unsaved scene will be cleared.')) return;
-    resetProject();
+  document.querySelectorAll('[data-menu-command]').forEach((button) => {
+    button.addEventListener('click', () => {
+      runMenuCommand(button.dataset.menuCommand);
+      closeMenus();
+    });
   });
+
+  document.querySelectorAll('[data-view-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const key = button.dataset.viewToggle;
+      mutate(`Toggle ${key === 'guides' ? 'safe frame' : 'grid'}`, (state) => {
+        if (key === 'grid') state.showGrid = !state.showGrid;
+        if (key === 'guides') state.showGuides = !state.showGuides;
+      }, { record: false });
+    });
+  });
+
+  document.querySelectorAll('[data-canvas-preset]').forEach((button) => {
+    button.addEventListener('click', () => {
+      resizeCanvas(button.dataset.canvasPreset);
+      closeMenus();
+    });
+  });
+
   document.querySelector('#undo-button').addEventListener('click', () => {
     if (!undo()) toast('Nothing to undo.');
   });
   document.querySelector('#redo-button').addEventListener('click', () => {
     if (!redo()) toast('Nothing to redo.');
   });
-  dom.canvasPreset.addEventListener('change', () => resizeCanvas(dom.canvasPreset.value));
-  dom.gridToggle.addEventListener('change', () => mutate('Toggle grid', (state) => { state.showGrid = dom.gridToggle.checked; }, { record: false }));
-  dom.guidesToggle.addEventListener('change', () => mutate('Toggle guides', (state) => { state.showGuides = dom.guidesToggle.checked; }, { record: false }));
 
-  document.querySelector('#save-project-button').addEventListener('click', () => downloadProject(serializeProject()));
   document.querySelector('#load-project-input').addEventListener('change', async (event) => {
     const [file] = event.target.files;
     if (!file) return;
@@ -46,9 +66,67 @@ export function setupToolbar() {
     event.target.value = '';
   });
 
-  document.querySelector('#export-jpeg-button').addEventListener('click', () => runExport('image/jpeg', 'jpg'));
-  document.querySelector('#export-png-button').addEventListener('click', () => runExport('image/png', 'png'));
-  document.querySelector('#export-webp-button').addEventListener('click', () => runExport('image/webp', 'webp'));
+  window.addEventListener('keydown', onKeyboardShortcut);
+}
+
+function runMenuCommand(command) {
+  const actions = {
+    'new-scene': startNewScene,
+    'save-project': saveProject,
+    'open-project': () => document.querySelector('#load-project-input').click(),
+    'export-jpeg': () => runExport('image/jpeg', 'jpg'),
+    'export-png': () => runExport('image/png', 'png'),
+    'export-webp': () => runExport('image/webp', 'webp'),
+    'zoom-in': () => zoomBy(0.1),
+    'zoom-out': () => zoomBy(-0.1),
+    'zoom-reset': resetViewport,
+    'zoom-fit': fitCanvas,
+    'import-assets': openAssetImport,
+    'add-placeholder': addPlaceholderToLibrary,
+    'refresh-assets': refreshRepositoryAssets,
+    'open-asset-browser': openFloatingAssetBrowser
+  };
+  actions[command]?.();
+}
+
+function onKeyboardShortcut(event) {
+  if (event.target.closest('input, textarea, select')) return;
+  const hasCommand = event.ctrlKey || event.metaKey;
+  if (hasCommand && event.key.toLowerCase() === 's') {
+    event.preventDefault();
+    saveProject();
+    return;
+  }
+  if (hasCommand && event.key.toLowerCase() === 'o') {
+    event.preventDefault();
+    document.querySelector('#load-project-input').click();
+    return;
+  }
+  if (hasCommand && event.key.toLowerCase() === 'n') {
+    event.preventDefault();
+    startNewScene();
+    return;
+  }
+  if (event.key === '+') zoomBy(0.1);
+  if (event.key === '-') zoomBy(-0.1);
+  if (event.key === '0') resetViewport();
+  if (event.key.toLowerCase() === 'f') fitCanvas();
+}
+
+function startNewScene() {
+  if (getState().layers.length && !window.confirm('Start a new scene? The current unsaved scene will be cleared.')) return;
+  resetProject();
+}
+
+async function saveProject() {
+  try {
+    const result = await saveProjectFile(serializeProject());
+    if (!result.saved) return;
+    toast(result.usedPicker ? 'Project saved to the selected folder.' : 'Project downloaded. Your browser does not support a save picker.');
+  } catch (error) {
+    console.error(error);
+    toast('Could not save this project.', { error: true });
+  }
 }
 
 function resizeCanvas(value) {
@@ -60,7 +138,10 @@ function resizeCanvas(value) {
     const scaleY = height / oldHeight;
     state.layers.forEach((layer) => {
       if (layer.isBackground) {
-        layer.x = 0; layer.y = 0; layer.width = width; layer.height = height;
+        layer.x = 0;
+        layer.y = 0;
+        layer.width = width;
+        layer.height = height;
         return;
       }
       layer.x = Math.round(layer.x * scaleX);
@@ -70,6 +151,7 @@ function resizeCanvas(value) {
     });
     state.canvas = { width, height };
   });
+  fitCanvas();
 }
 
 async function autoColourSelected() {
@@ -114,16 +196,18 @@ async function runExport(mime, extension) {
   try {
     const blob = await exportScene(state, mime);
     if (!blob) throw new Error('Your browser did not return an export file.');
-    downloadBlob(blob, `${safeName(state.title)}.${extension}`);
-    toast(`Exported ${extension.toUpperCase()}.`);
+    const result = await saveBlobWithPicker(blob, {
+      suggestedName: `${safeName(state.title)}.${extension}`,
+      description: `Scene Mockup ${extension.toUpperCase()} image`,
+      mimeType: mime,
+      extensions: [`.${extension}`]
+    });
+    if (!result.saved) return;
+    toast(result.usedPicker ? `Exported ${extension.toUpperCase()} to the selected folder.` : `Exported ${extension.toUpperCase()}.`);
   } catch (error) {
     console.error(error);
     toast('Could not export this scene.', { error: true });
   }
-}
-
-function safeName(name) {
-  return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'scene-mockup';
 }
 
 function validateProject(project) {
