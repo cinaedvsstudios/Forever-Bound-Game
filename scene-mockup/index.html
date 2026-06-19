@@ -8,57 +8,76 @@
     <link rel="stylesheet" href="./css/base.css" />
     <link rel="stylesheet" href="./css/layout.css" />
     <link rel="stylesheet" href="./css/components.css" />
+    <link rel="stylesheet" href="./css/menubar.css" />
+    <link rel="stylesheet" href="./css/viewport.css" />
   </head>
   <body>
     <main class="app-shell">
       <header class="topbar">
-        <div class="brand-block">
-          <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
-          <div>
-            <p class="eyebrow">FOREVER BOUND TOOLS</p>
-            <h1>Scene Mockup</h1>
+        <div class="topbar-left">
+          <div class="brand-block">
+            <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+            <div>
+              <p class="eyebrow">FOREVER BOUND TOOLS</p>
+              <h1>Scene Mockup</h1>
+            </div>
           </div>
+          <span class="topbar-divider" aria-hidden="true"></span>
+          <nav class="menubar" id="app-menubar" aria-label="Application menu">
+            <div class="menu-group">
+              <button class="menu-trigger" type="button" data-menu-trigger="file" aria-haspopup="true" aria-expanded="false">File</button>
+              <div class="menu-panel" data-menu-panel="file" role="menu" hidden>
+                <button type="button" role="menuitem" data-menu-command="new-scene">New scene <kbd>Ctrl N</kbd></button>
+                <button type="button" role="menuitem" data-menu-command="save-project">Save project <kbd>Ctrl S</kbd></button>
+                <button type="button" role="menuitem" data-menu-command="open-project">Open project <kbd>Ctrl O</kbd></button>
+                <div class="menu-separator" role="separator"></div>
+                <button type="button" role="menuitem" data-menu-command="export-jpeg">Export JPEG</button>
+                <button type="button" role="menuitem" data-menu-command="export-png">Export transparent PNG</button>
+                <button type="button" role="menuitem" data-menu-command="export-webp">Export transparent WEBP</button>
+              </div>
+            </div>
+            <div class="menu-group">
+              <button class="menu-trigger" type="button" data-menu-trigger="edit" aria-haspopup="true" aria-expanded="false">Edit</button>
+              <div class="menu-panel" data-menu-panel="edit" role="menu" hidden>
+                <button type="button" role="menuitem" data-tool="select">Select &amp; move</button>
+                <button type="button" role="menuitem" data-tool="eraser">Eraser mask</button>
+                <button type="button" role="menuitem" data-tool="chroma">Chroma key</button>
+                <div class="menu-separator" role="separator"></div>
+                <button type="button" role="menuitem" data-tool="autoColour">Auto colour</button>
+              </div>
+            </div>
+            <div class="menu-group">
+              <button class="menu-trigger" type="button" data-menu-trigger="view" aria-haspopup="true" aria-expanded="false">View</button>
+              <div class="menu-panel menu-panel-wide" data-menu-panel="view" role="menu" hidden>
+                <button type="button" role="menuitemcheckbox" data-view-toggle="grid" aria-checked="true">Grid</button>
+                <button type="button" role="menuitemcheckbox" data-view-toggle="guides" aria-checked="true">Safe frame</button>
+                <div class="menu-separator" role="separator"></div>
+                <p class="menu-label">Canvas</p>
+                <button type="button" role="menuitem" data-canvas-preset="1920x1080">16:9 Episode Frame <span>1920 × 1080</span></button>
+                <button type="button" role="menuitem" data-canvas-preset="1080x1920">9:16 Vertical <span>1080 × 1920</span></button>
+                <button type="button" role="menuitem" data-canvas-preset="1080x1080">1:1 Square <span>1080 × 1080</span></button>
+                <button type="button" role="menuitem" data-canvas-preset="2560x1280">2:1 Matte <span>2560 × 1280</span></button>
+                <div class="menu-separator" role="separator"></div>
+                <p class="menu-label">Zoom</p>
+                <button type="button" role="menuitem" data-menu-command="zoom-in">Zoom in <kbd>+</kbd></button>
+                <button type="button" role="menuitem" data-menu-command="zoom-out">Zoom out <kbd>−</kbd></button>
+                <button type="button" role="menuitem" data-menu-command="zoom-reset">Actual size <kbd>0</kbd></button>
+                <button type="button" role="menuitem" data-menu-command="zoom-fit">Fit canvas <kbd>F</kbd></button>
+              </div>
+            </div>
+            <div class="menu-group">
+              <button class="menu-trigger" type="button" data-menu-trigger="tools" aria-haspopup="true" aria-expanded="false">Tools</button>
+              <div class="menu-panel" data-menu-panel="tools" role="menu" hidden>
+                <button type="button" role="menuitem" data-menu-command="import-assets">Import local assets</button>
+                <button type="button" role="menuitem" data-menu-command="add-placeholder">Add placeholder</button>
+                <button type="button" role="menuitem" data-menu-command="refresh-assets">Refresh repository assets</button>
+                <button type="button" role="menuitem" data-menu-command="open-asset-browser">Open asset browser</button>
+              </div>
+            </div>
+          </nav>
         </div>
-
-        <nav class="top-actions" aria-label="Scene actions">
-          <button class="ghost-button" id="new-scene-button" type="button">New scene</button>
-          <button class="icon-button" id="undo-button" type="button" title="Undo" aria-label="Undo">↶</button>
-          <button class="icon-button" id="redo-button" type="button" title="Redo" aria-label="Redo">↷</button>
-          <label class="canvas-preset-control" for="canvas-preset">
-            <span>Canvas</span>
-            <select id="canvas-preset">
-              <option value="1920x1080">16:9 Episode Frame</option>
-              <option value="1080x1920">9:16 Vertical</option>
-              <option value="1080x1080">1:1 Square</option>
-              <option value="2560x1280">2:1 Matte</option>
-            </select>
-          </label>
-          <button class="primary-button" id="save-project-button" type="button">Save project</button>
-          <label class="primary-button secondary-primary" for="load-project-input">Open project</label>
-          <input id="load-project-input" type="file" accept="application/json,.scene-mockup.json" hidden />
-        </nav>
+        <input id="load-project-input" type="file" accept="application/json,.scene-mockup.json" hidden />
       </header>
-
-      <section class="tool-ribbon" aria-label="Scene tools">
-        <div class="tool-group">
-          <button class="tool-pill is-active" id="select-tool-button" type="button" data-tool="select">Select &amp; move</button>
-          <button class="tool-pill" id="eraser-tool-button" type="button" data-tool="eraser">Eraser mask</button>
-          <button class="tool-pill" id="chroma-tool-button" type="button" data-tool="chroma">Chroma key</button>
-          <button class="tool-pill" id="auto-colour-button" type="button" data-tool="autoColour">Auto colour</button>
-        </div>
-        <div class="tool-group ribbon-right">
-          <label class="switch-control">
-            <input id="grid-toggle" type="checkbox" checked />
-            <span class="switch-track"></span>
-            <span>Grid</span>
-          </label>
-          <label class="switch-control">
-            <input id="guides-toggle" type="checkbox" checked />
-            <span class="switch-track"></span>
-            <span>Safe frame</span>
-          </label>
-        </div>
-      </section>
 
       <section class="workspace">
         <aside class="panel asset-panel" aria-label="Asset library">
@@ -90,12 +109,17 @@
               <p class="eyebrow">COMPOSITION</p>
               <h2 id="scene-title">Untitled Scene</h2>
             </div>
-            <div class="canvas-readout" id="canvas-readout">1920 × 1080</div>
+            <div class="canvas-panel-actions">
+              <div class="canvas-readout" id="canvas-readout">1920 × 1080 · 100%</div>
+              <button class="icon-button" id="undo-button" type="button" title="Undo" aria-label="Undo">↶</button>
+              <button class="icon-button" id="redo-button" type="button" title="Redo" aria-label="Redo">↷</button>
+            </div>
           </div>
           <div class="stage-wrap" id="stage-wrap">
-            <div class="scene-stage has-grid has-guides" id="scene-stage" tabindex="0" aria-label="Scene composition canvas"></div>
+            <div class="stage-viewport" id="stage-viewport">
+              <div class="scene-stage has-grid has-guides" id="scene-stage" tabindex="0" aria-label="Scene composition canvas"></div>
+            </div>
           </div>
-          <p class="stage-help">Drag a layer to position it. Arrow keys nudge the selected asset; Shift + arrows moves 10 px.</p>
         </section>
 
         <aside class="panel inspector-panel" aria-label="Layer controls">
@@ -197,6 +221,10 @@
               <label>
                 <span>Tolerance <output id="chroma-tolerance-output">36</output></span>
                 <input id="chroma-tolerance-input" type="range" min="0" max="180" value="36" />
+              </label>
+              <label>
+                <span>Feather <output id="chroma-feather-output">0</output></span>
+                <input id="chroma-feather-input" type="range" min="0" max="100" value="0" />
               </label>
             </div>
             <div class="control-actions">
