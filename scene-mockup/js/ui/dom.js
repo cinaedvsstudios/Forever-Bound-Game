@@ -1,6 +1,7 @@
 export const dom = Object.freeze({
   stage: document.querySelector('#scene-stage'),
   stageWrap: document.querySelector('#stage-wrap'),
+  stageViewport: document.querySelector('#stage-viewport'),
   assetInput: document.querySelector('#asset-input'),
   assetImportButton: document.querySelector('#asset-import-button'),
   importFromZoneButton: document.querySelector('#import-from-zone-button'),
@@ -11,9 +12,6 @@ export const dom = Object.freeze({
   layerRowTemplate: document.querySelector('#layer-row-template'),
   sceneTitle: document.querySelector('#scene-title'),
   canvasReadout: document.querySelector('#canvas-readout'),
-  canvasPreset: document.querySelector('#canvas-preset'),
-  gridToggle: document.querySelector('#grid-toggle'),
-  guidesToggle: document.querySelector('#guides-toggle'),
   selectedLayerName: document.querySelector('#selected-layer-name'),
   emptyInspectorMessage: document.querySelector('#empty-inspector-message'),
   layerControls: document.querySelector('#layer-controls'),
@@ -35,6 +33,8 @@ export const dom = Object.freeze({
   chromaColour: document.querySelector('#chroma-colour-input'),
   chromaTolerance: document.querySelector('#chroma-tolerance-input'),
   chromaToleranceOutput: document.querySelector('#chroma-tolerance-output'),
+  chromaFeather: document.querySelector('#chroma-feather-input'),
+  chromaFeatherOutput: document.querySelector('#chroma-feather-output'),
   toastRegion: document.querySelector('#toast-region')
 });
 
