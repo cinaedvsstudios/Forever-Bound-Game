@@ -27,63 +27,38 @@
 .asset-toolbar {
   margin-top: 0;
   flex: 0 0 auto;
+  gap: 4px;
 }
 
-.asset-toolbar .library-tab { flex: 1 1 0; }
+.asset-toolbar .library-tab {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.asset-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding-left: 6px;
+  border-left: 1px solid var(--line-soft);
+}
+
+.asset-toolbar-actions .icon-button.compact {
+  width: 28px;
+  min-height: 28px;
+  border-radius: 7px;
+  font-size: 14px;
+}
 
 .asset-browser-controls {
   display: grid;
   flex: 0 0 auto;
-  gap: 10px;
+  gap: 8px;
   margin-top: 10px;
 }
 
-.asset-browser-controls.is-settings-open {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.asset-library-main {
-  display: grid;
-  gap: 8px;
-}
-
-.asset-settings-panel {
-  display: grid;
-  align-content: start;
-  gap: 11px;
-  min-height: 0;
-  padding: 3px 0 0;
-}
-
-.asset-settings-copy { display: grid; gap: 4px; }
-.asset-settings-copy p { margin: 0; }
-.asset-settings-copy > p:last-child { color: var(--text-soft); font-size: 12px; line-height: 1.5; }
-
-.asset-source-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 10px;
-  border: 1px solid rgba(82, 124, 171, .28);
-  border-radius: 9px;
-  color: var(--text-muted);
-  background: rgba(25, 46, 69, .28);
-  font-size: 11px;
-  line-height: 1.55;
-}
-
-.asset-source-note strong { color: var(--text-soft); font-weight: 680; }
-
-.source-indicator {
-  width: 7px;
-  height: 7px;
-  flex: 0 0 auto;
-  margin-top: 4px;
-  border-radius: 50%;
-  background: var(--success);
-  box-shadow: 0 0 12px rgba(123, 219, 158, .7);
-}
+.asset-browser-controls[hidden] { display: none; }
 
 .asset-search-row,
 .library-view-actions,
@@ -99,7 +74,7 @@
 
 .asset-search-control input {
   width: 100%;
-  min-height: 34px;
+  min-height: 32px;
   padding: 0 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -169,29 +144,6 @@
 
 .asset-category-chip:disabled { cursor: default; opacity: .35; }
 
-.asset-settings-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.asset-settings-actions .soft-button {
-  min-width: 0;
-  padding: 0 8px;
-  font-size: 11px;
-}
-
-.asset-settings-hint {
-  margin: 0;
-  padding: 9px 10px;
-  border: 1px dashed rgba(87, 137, 189, .42);
-  border-radius: 9px;
-  color: var(--text-muted);
-  background: rgba(15, 27, 42, .45);
-  font-size: 11px;
-  line-height: 1.45;
-}
-
 .asset-panel .asset-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-content: start;
@@ -229,7 +181,7 @@
 .asset-grid[data-layout="large"] .asset-meta strong { white-space: normal; font-size: 13px; line-height: 1.25; }
 .asset-grid[data-layout="large"] .asset-meta small { white-space: normal; font-size: 11px; }
 
-.asset-empty-state { grid-column: 1 / -1; margin: 0; }
+.asset-empty-state { display: none; }
 
 .asset-browser-window {
   position: fixed;

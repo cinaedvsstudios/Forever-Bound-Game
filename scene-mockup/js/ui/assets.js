@@ -36,7 +36,9 @@ export function setupAssetImport() {
     button.addEventListener('click', () => {
       libraryView = button.dataset.libraryView;
       setAssetLibraryView(libraryView);
-      document.querySelectorAll('[data-library-view]').forEach((item) => item.classList.toggle('is-active', item === button));
+      document.querySelectorAll('[data-library-view]').forEach((item) => {
+        item.classList.toggle('is-active', item === button);
+      });
     });
   });
 
@@ -174,7 +176,7 @@ export function renderAssets() {
   });
 
   syncAssetBrowser({ visibleCount: assets.length, libraryView });
-  getAssetGridTargets().forEach((target) => renderAssetGrid(target, assets, sourceView));
+  getAssetGridTargets().forEach((target) => renderAssetGrid(target, assets));
 }
 
 function setupAssetPanelDropImport() {
@@ -241,17 +243,9 @@ async function hydrateRepositoryAssets({ force = false } = {}) {
   return catalogueLoad;
 }
 
-function renderAssetGrid(container, assets, sourceView) {
+function renderAssetGrid(container, assets) {
   container.innerHTML = '';
-  if (!assets.length) {
-    const empty = document.createElement('p');
-    empty.className = 'empty-inspector asset-empty-state';
-    empty.textContent = sourceView === 'assets'
-      ? 'No assets match this search. Add files to assets/backgrounds, assets/people or assets/objects, then refresh.'
-      : 'No layers in this scene match the current search.';
-    container.append(empty);
-    return;
-  }
+  if (!assets.length) return;
 
   assets.forEach((asset) => {
     const card = dom.assetCardTemplate.content.firstElementChild.cloneNode(true);

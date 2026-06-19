@@ -20,6 +20,7 @@ export function mountAssetBrowser({ onChange, onRefresh, onImport, onAddPlacehol
   ensureStylesheet();
 
   if (!document.querySelector('#scene-mockup-asset-browser-controls')) {
+    insertToolbarActions();
     insertBrowserControls();
     insertFloatingBrowser();
     wireControls();
@@ -58,16 +59,17 @@ export function syncAssetBrowser({ visibleCount, libraryView }) {
     button.classList.toggle('is-active', isCurrent);
     button.disabled = libraryView === 'scene' && button.dataset.smCategory !== 'all';
   });
+
   document.querySelectorAll('[data-sm-layout]').forEach((button) => {
     button.classList.toggle('is-active', button.dataset.smLayout === browserState.layout);
   });
 
-  if (elements.assetBrowserControls) elements.assetBrowserControls.classList.toggle('is-settings-open', settingsOpen);
-  if (elements.assetLibraryMain) elements.assetLibraryMain.hidden = settingsOpen;
-  if (elements.assetSettings) elements.assetSettings.hidden = !settingsOpen;
+  elements.assetBrowserControls?.toggleAttribute('hidden', settingsOpen);
   document.querySelector('#asset-grid')?.toggleAttribute('hidden', settingsOpen);
 
-  getAssetGridTargets().forEach((grid) => { grid.dataset.layout = browserState.layout; });
+  getAssetGridTargets().forEach((grid) => {
+    grid.dataset.layout = browserState.layout;
+  });
 
   if (elements.floatingWindow) {
     elements.floatingWindow.classList.toggle('is-minimised', browserState.isMinimised);
@@ -89,60 +91,53 @@ function ensureStylesheet() {
   document.head.append(stylesheet);
 }
 
+function insertToolbarActions() {
+  const toolbar = document.querySelector('.asset-toolbar');
+  if (!toolbar || document.querySelector('#asset-toolbar-actions')) return;
+
+  toolbar.insertAdjacentHTML('beforeend', `
+    <div class="asset-toolbar-actions" id="asset-toolbar-actions" aria-label="Asset actions">
+      <button class="icon-button compact" id="sm-import-assets" type="button" title="Choose files" aria-label="Choose files">＋</button>
+      <button class="icon-button compact" id="sm-add-placeholder" type="button" title="Add placeholder" aria-label="Add placeholder">▧</button>
+      <button class="icon-button compact" id="sm-refresh-assets" type="button" title="Refresh library" aria-label="Refresh library">↻</button>
+      <button class="icon-button compact" id="sm-open-asset-browser" type="button" title="Pop out browser" aria-label="Pop out browser">↗</button>
+    </div>
+  `);
+
+  elements.import = document.querySelector('#sm-import-assets');
+  elements.addPlaceholder = document.querySelector('#sm-add-placeholder');
+  elements.refresh = document.querySelector('#sm-refresh-assets');
+  elements.open = document.querySelector('#sm-open-asset-browser');
+}
+
 function insertBrowserControls() {
   const toolbar = document.querySelector('.asset-toolbar');
   toolbar.insertAdjacentHTML('afterend', `
     <section class="asset-browser-controls" id="scene-mockup-asset-browser-controls" aria-label="Asset browser controls">
-      <div class="asset-library-main" id="sm-asset-library-main">
-        <div class="asset-search-row">
-          <label class="asset-search-control" for="sm-asset-search">
-            <span class="visually-hidden">Search assets</span>
-            <input id="sm-asset-search" type="search" placeholder="Search assets…" autocomplete="off" />
-          </label>
-          <button class="icon-button compact" id="sm-clear-search" type="button" title="Clear asset search" aria-label="Clear asset search">×</button>
-          <div class="library-view-actions" aria-label="Asset view">
-            <button class="view-mode-button is-active" type="button" data-sm-layout="grid" title="Small thumbnail gallery" aria-label="Small thumbnail gallery">▦</button>
-            <button class="view-mode-button" type="button" data-sm-layout="large" title="Large vertical previews" aria-label="Large vertical previews">▤</button>
-          </div>
-        </div>
-        <div class="asset-category-bar" aria-label="Asset folders">
-          <button class="asset-category-chip is-active" type="button" data-sm-category="all">All</button>
-          <button class="asset-category-chip" type="button" data-sm-category="backgrounds">Backgrounds</button>
-          <button class="asset-category-chip" type="button" data-sm-category="people">People</button>
-          <button class="asset-category-chip" type="button" data-sm-category="objects">Objects</button>
-          <button class="asset-category-chip" type="button" data-sm-category="imports">Imported</button>
+      <div class="asset-search-row">
+        <label class="asset-search-control" for="sm-asset-search">
+          <span class="visually-hidden">Search assets</span>
+          <input id="sm-asset-search" type="search" placeholder="Search assets…" autocomplete="off" />
+        </label>
+        <button class="icon-button compact" id="sm-clear-search" type="button" title="Clear asset search" aria-label="Clear asset search">×</button>
+        <div class="library-view-actions" aria-label="Asset view">
+          <button class="view-mode-button is-active" type="button" data-sm-layout="grid" title="Small thumbnail gallery" aria-label="Small thumbnail gallery">▦</button>
+          <button class="view-mode-button" type="button" data-sm-layout="large" title="Large vertical previews" aria-label="Large vertical previews">▤</button>
         </div>
       </div>
-
-      <section class="asset-settings-panel" id="sm-asset-settings" hidden>
-        <div class="asset-settings-copy">
-          <p class="eyebrow">ASSET LOCATION</p>
-          <p>Repository folders are scanned when Scene Mockup opens or when the library is refreshed.</p>
-        </div>
-        <div class="asset-source-note">
-          <span class="source-indicator" aria-hidden="true"></span>
-          <span><strong>assets/backgrounds</strong><br /><strong>assets/people</strong><br /><strong>assets/objects</strong></span>
-        </div>
-        <div class="asset-settings-actions">
-          <button class="soft-button" id="sm-import-assets" type="button">Choose files</button>
-          <button class="soft-button" id="sm-add-placeholder" type="button">Add placeholder</button>
-          <button class="soft-button" id="sm-refresh-assets" type="button">Refresh library</button>
-          <button class="soft-button" id="sm-open-asset-browser" type="button">Pop out browser</button>
-        </div>
-        <p class="asset-settings-hint">Drop PNG, JPG, WEBP or GLB files anywhere in this left panel to import them.</p>
-      </section>
+      <div class="asset-category-bar" aria-label="Asset folders">
+        <button class="asset-category-chip is-active" type="button" data-sm-category="all">All</button>
+        <button class="asset-category-chip" type="button" data-sm-category="backgrounds">Backgrounds</button>
+        <button class="asset-category-chip" type="button" data-sm-category="people">People</button>
+        <button class="asset-category-chip" type="button" data-sm-category="objects">Objects</button>
+        <button class="asset-category-chip" type="button" data-sm-category="imports">Imported</button>
+      </div>
     </section>
   `);
 
   elements.assetBrowserControls = document.querySelector('#scene-mockup-asset-browser-controls');
-  elements.assetLibraryMain = document.querySelector('#sm-asset-library-main');
-  elements.assetSettings = document.querySelector('#sm-asset-settings');
   elements.search = document.querySelector('#sm-asset-search');
   elements.clearSearch = document.querySelector('#sm-clear-search');
-  elements.refresh = document.querySelector('#sm-refresh-assets');
-  elements.open = document.querySelector('#sm-open-asset-browser');
-  elements.import = document.querySelector('#sm-import-assets');
-  elements.addPlaceholder = document.querySelector('#sm-add-placeholder');
 }
 
 function insertFloatingBrowser() {
