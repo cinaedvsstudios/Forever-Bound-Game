@@ -33,6 +33,9 @@ export function dataUrlFromFile(file) {
 export function imageFromSource(source) {
   return new Promise((resolve, reject) => {
     const image = new Image();
+    if (!source.startsWith('data:') && !source.startsWith('blob:')) {
+      image.crossOrigin = 'anonymous';
+    }
     image.onload = () => resolve(image);
     image.onerror = () => reject(new Error('Could not load image data.'));
     image.src = source;

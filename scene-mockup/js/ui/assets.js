@@ -2,14 +2,30 @@ import { dataUrlFromFile, imageFromSource, isGlbFile, isImageFile } from '../cor
 import { makeAsset, makeLayer } from '../core/scene-model.js';
 import { mutate, getState } from '../core/store.js';
 import { createGlbThumbnail } from '../features/glb-preview.js';
+import { loadRepositoryCatalogue, categoryLabel } from '../features/asset-catalogue.js';
+import {
+  getAssetBrowserState,
+  getAssetGridTargets,
+  getAssetSearchQuery,
+  mountAssetBrowser,
+  setAssetLibraryView,
+  syncAssetBrowser
+} from './asset-browser.js';
 import { dom, toast } from './dom.js';
 
 let libraryView = 'assets';
+let catalogueLoad = null;
 
 export function setupAssetImport() {
+  mountAssetBrowser({
+    onChange: renderAssets,
+    onRefresh: () => hydrateRepositoryAssets({ force: true })
+  });
+
   dom.assetImportButton.addEventListener('click', () => dom.assetInput.click());
   document.querySelector('#placeholder-button').addEventListener('click', addPlaceholderAsset);
   dom.importFromZoneButton.addEventListener('click', () => dom.assetInput.click());
+
   dom.assetInput.addEventListener('change', async (event) => {
     await importFiles([...event.target.files]);
     event.target.value = '';
@@ -21,12 +37,14 @@ export function setupAssetImport() {
       dom.assetDropZone.classList.add('is-dragging');
     });
   }
+
   for (const eventName of ['dragleave', 'drop']) {
     dom.assetDropZone.addEventListener(eventName, (event) => {
       event.preventDefault();
       dom.assetDropZone.classList.remove('is-dragging');
     });
   }
+
   dom.assetDropZone.addEventListener('drop', async (event) => importFiles([...event.dataTransfer.files]));
   dom.assetDropZone.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' || event.key === ' ') dom.assetInput.click();
@@ -35,10 +53,13 @@ export function setupAssetImport() {
   document.querySelectorAll('[data-library-view]').forEach((button) => {
     button.addEventListener('click', () => {
       libraryView = button.dataset.libraryView;
+      setAssetLibraryView(libraryView);
       document.querySelectorAll('[data-library-view]').forEach((item) => item.classList.toggle('is-active', item === button));
       renderAssets();
     });
   });
+
+  hydrateRepositoryAssets();
 }
 
 export async function importFiles(files) {
@@ -55,10 +76,27 @@ export async function importFiles(files) {
       if (isImageFile(file)) {
         const dataUrl = await dataUrlFromFile(file);
         const image = await imageFromSource(dataUrl);
-        asset = makeAsset({ name: file.name, kind: 'image', dataUrl, width: image.naturalWidth, height: image.naturalHeight });
+        asset = makeAsset({
+          name: file.name,
+          kind: 'image',
+          dataUrl,
+          width: image.naturalWidth,
+          height: image.naturalHeight,
+          category: 'imports',
+          origin: 'local'
+        });
       } else {
         const thumbnail = await createGlbThumbnail(file);
-        asset = makeAsset({ name: file.name, kind: 'glb', dataUrl: thumbnail, sourceDataUrl: thumbnail, width: 700, height: 500 });
+        asset = makeAsset({
+          name: file.name,
+          kind: 'glb',
+          dataUrl: thumbnail,
+          sourceDataUrl: thumbnail,
+          width: 700,
+          height: 500,
+          category: 'imports',
+          origin: 'local'
+        });
       }
       mutate(`Import ${file.name}`, (state) => state.assets.push(asset));
     } catch (error) {
@@ -66,42 +104,119 @@ export async function importFiles(files) {
       toast(`Could not import ${file.name}.`, { error: true });
     }
   }
+
   if (skipped) toast(`${skipped} unsupported file${skipped === 1 ? '' : 's'} skipped.`, { error: true });
   toast(`${accepted.length} asset${accepted.length === 1 ? '' : 's'} imported.`);
 }
 
-export function addAssetToScene(assetId, { asBackground = false } = {}) {
-  const state = getState();
-  const asset = state.assets.find((item) => item.id === assetId);
+export async function addAssetToScene(assetId, { asBackground = false } = {}) {
+  let asset = getState().assets.find((item) => item.id === assetId);
   if (!asset) return;
-  mutate(`Add ${asset.name}`, (nextState) => {
-    const layer = makeLayer(asset, nextState.canvas, asBackground ? {
-      isBackground: true,
-      name: `Background — ${asset.name.replace(/\.[^.]+$/, '')}`,
-      x: 0, y: 0, width: nextState.canvas.width, height: nextState.canvas.height
-    } : {});
-    if (asBackground) {
-      nextState.layers = nextState.layers.filter((item) => !item.isBackground);
-      nextState.layers.unshift(layer);
-    } else {
-      nextState.layers.push(layer);
+
+  if (asset.kind === 'image' && (!asset.width || !asset.height)) {
+    try {
+      const image = await imageFromSource(asset.dataUrl);
+      asset = { ...asset, width: image.naturalWidth, height: image.naturalHeight };
+      mutate('Read asset dimensions', (state) => {
+        const target = state.assets.find((item) => item.id === asset.id);
+        if (target) {
+          target.width = asset.width;
+          target.height = asset.height;
+        }
+      }, { record: false });
+    } catch (error) {
+      console.warn(`Could not read dimensions for ${asset.name}.`, error);
     }
-    nextState.selectedLayerId = layer.id;
-    nextState.selectedAssetId = asset.id;
+  }
+
+  mutate(`Add ${asset.name}`, (state) => {
+    const sceneAsset = state.assets.find((item) => item.id === asset.id);
+    if (!sceneAsset) return;
+
+    const layer = makeLayer(sceneAsset, state.canvas, asBackground ? {
+      isBackground: true,
+      name: `Background — ${sceneAsset.name.replace(/\.[^.]+$/, '')}`,
+      x: 0,
+      y: 0,
+      width: state.canvas.width,
+      height: state.canvas.height
+    } : {});
+
+    if (asBackground) {
+      state.layers = state.layers.filter((item) => !item.isBackground);
+      state.layers.unshift(layer);
+    } else {
+      state.layers.push(layer);
+    }
+
+    state.selectedLayerId = layer.id;
+    state.selectedAssetId = sceneAsset.id;
   });
 }
 
 export function renderAssets() {
   const state = getState();
-  const assets = libraryView === 'assets'
+  const browser = getAssetBrowserState();
+  const source = libraryView === 'assets'
     ? state.assets
-    : state.layers.map((layer) => ({ id: layer.id, name: layer.name, kind: layer.kind, dataUrl: layer.dataUrl, layer: true }));
-  dom.assetGrid.innerHTML = '';
+    : state.layers.map((layer) => ({
+      id: layer.id,
+      name: layer.name,
+      kind: layer.kind,
+      dataUrl: layer.dataUrl,
+      category: layer.isBackground ? 'backgrounds' : 'scene',
+      layer: true
+    }));
+
+  const query = getAssetSearchQuery();
+  const assets = source.filter((asset) => {
+    const matchesCategory = browser.category === 'all' || asset.category === browser.category;
+    const searchText = `${asset.name} ${asset.category ?? ''} ${asset.kind ?? ''}`.toLocaleLowerCase();
+    return matchesCategory && (!query || searchText.includes(query));
+  });
+
+  syncAssetBrowser({ visibleCount: assets.length, libraryView });
+  getAssetGridTargets().forEach((target) => renderAssetGrid(target, assets));
+}
+
+async function hydrateRepositoryAssets({ force = false } = {}) {
+  if (catalogueLoad) return catalogueLoad;
+
+  catalogueLoad = loadRepositoryCatalogue({ force })
+    .then((catalogue) => {
+      mutate('Load repository asset library', (state) => {
+        state.assets = state.assets.filter((asset) => asset.origin !== 'repository' && asset.origin !== 'manifest');
+        state.assets.push(...catalogue);
+      }, { record: false });
+
+      if (force) {
+        toast(catalogue.length
+          ? `Library refreshed: ${catalogue.length} repository asset${catalogue.length === 1 ? '' : 's'} found.`
+          : 'No supported files are in the repository asset folders yet.');
+      }
+      return catalogue;
+    })
+    .catch((error) => {
+      console.error(error);
+      toast('Could not refresh repository assets. Local imports are still available.', { error: true });
+      return [];
+    })
+    .finally(() => {
+      catalogueLoad = null;
+    });
+
+  return catalogueLoad;
+}
+
+function renderAssetGrid(container, assets) {
+  container.innerHTML = '';
   if (!assets.length) {
     const empty = document.createElement('p');
-    empty.className = 'empty-inspector';
-    empty.textContent = libraryView === 'assets' ? 'Import your first sprite, background or GLB.' : 'No layers in this scene yet.';
-    dom.assetGrid.append(empty);
+    empty.className = 'empty-inspector asset-empty-state';
+    empty.textContent = libraryView === 'assets'
+      ? 'No assets match this search. Add files to assets/backgrounds, assets/people or assets/objects, then refresh.'
+      : 'No layers in this scene match the current search.';
+    container.append(empty);
     return;
   }
 
@@ -109,22 +224,31 @@ export function renderAssets() {
     const card = dom.assetCardTemplate.content.firstElementChild.cloneNode(true);
     const image = card.querySelector('img');
     image.src = asset.dataUrl;
+    image.alt = `${asset.name} preview`;
     card.querySelector('strong').textContent = asset.name;
-    card.querySelector('small').textContent = asset.layer ? 'Scene layer' : asset.kind === 'glb' ? 'GLB render' : 'Image asset';
+    card.querySelector('small').textContent = asset.layer
+      ? 'Scene layer'
+      : asset.kind === 'glb'
+        ? `${categoryLabel(asset.category)} · GLB`
+        : `${categoryLabel(asset.category)} · Image`;
+
     card.addEventListener('click', () => {
       if (asset.layer) {
-        mutate('Select layer', (nextState) => { nextState.selectedLayerId = asset.id; });
-      } else addAssetToScene(asset.id);
+        mutate('Select layer', (state) => { state.selectedLayerId = asset.id; });
+      } else {
+        addAssetToScene(asset.id);
+      }
     });
+
     card.addEventListener('contextmenu', (event) => {
       event.preventDefault();
       if (!asset.layer) addAssetToScene(asset.id, { asBackground: true });
     });
+
     card.title = asset.layer ? 'Select layer' : 'Click to add. Right-click to set as background.';
-    dom.assetGrid.append(card);
+    container.append(card);
   });
 }
-
 
 function addPlaceholderAsset() {
   const canvas = document.createElement('canvas');
@@ -145,8 +269,17 @@ function addPlaceholderAsset() {
   context.fillStyle = '#9db9d5';
   context.font = '400 23px system-ui';
   context.fillText('Scene image or later render', canvas.width / 2, canvas.height / 2 + 38);
+
   const dataUrl = canvas.toDataURL('image/png');
-  const asset = makeAsset({ name: `Placeholder ${getState().assets.length + 1}`, kind: 'image', dataUrl, width: canvas.width, height: canvas.height });
+  const asset = makeAsset({
+    name: `Placeholder ${getState().assets.length + 1}`,
+    kind: 'image',
+    dataUrl,
+    width: canvas.width,
+    height: canvas.height,
+    category: 'imports',
+    origin: 'generated'
+  });
   mutate('Add placeholder', (state) => state.assets.push(asset));
   addAssetToScene(asset.id);
   toast('Placeholder added to the scene.');
