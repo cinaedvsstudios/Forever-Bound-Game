@@ -1,3 +1,23 @@
+const LAYOUT_SEQUENCE = ['grid', 'large', 'list'];
+
+const LAYOUT_DETAILS = {
+  grid: {
+    icon: '▦',
+    label: 'Thumbnail grid',
+    next: 'large previews'
+  },
+  large: {
+    icon: '▤',
+    label: 'Large previews',
+    next: 'list view'
+  },
+  list: {
+    icon: '☷',
+    label: 'List view',
+    next: 'thumbnail grid'
+  }
+};
+
 const browserState = {
   category: 'all',
   layout: 'grid',
@@ -20,7 +40,7 @@ export function mountAssetBrowser({ onChange, onRefresh, onImport, onAddPlacehol
   ensureStylesheet();
 
   if (!document.querySelector('#scene-mockup-asset-browser-controls')) {
-    insertToolbarActions();
+    insertTopActionBar();
     insertBrowserControls();
     insertFloatingBrowser();
     wireControls();
@@ -60,16 +80,14 @@ export function syncAssetBrowser({ visibleCount, libraryView }) {
     button.disabled = libraryView === 'scene' && button.dataset.smCategory !== 'all';
   });
 
-  document.querySelectorAll('[data-sm-layout]').forEach((button) => {
-    button.classList.toggle('is-active', button.dataset.smLayout === browserState.layout);
-  });
-
   elements.assetBrowserControls?.toggleAttribute('hidden', settingsOpen);
   document.querySelector('#asset-grid')?.toggleAttribute('hidden', settingsOpen);
 
   getAssetGridTargets().forEach((grid) => {
     grid.dataset.layout = browserState.layout;
   });
+
+  updateLayoutCycleControl();
 
   if (elements.floatingWindow) {
     elements.floatingWindow.classList.toggle('is-minimised', browserState.isMinimised);
@@ -91,14 +109,15 @@ function ensureStylesheet() {
   document.head.append(stylesheet);
 }
 
-function insertToolbarActions() {
+function insertTopActionBar() {
   const toolbar = document.querySelector('.asset-toolbar');
-  if (!toolbar || document.querySelector('#asset-toolbar-actions')) return;
+  if (!toolbar || document.querySelector('#asset-panel-actionbar')) return;
 
-  toolbar.insertAdjacentHTML('beforeend', `
-    <div class="asset-toolbar-actions" id="asset-toolbar-actions" aria-label="Asset actions">
+  toolbar.insertAdjacentHTML('beforebegin', `
+    <div class="asset-panel-actionbar" id="asset-panel-actionbar" aria-label="Asset actions">
       <button class="icon-button compact" id="sm-import-assets" type="button" title="Choose files" aria-label="Choose files">＋</button>
       <button class="icon-button compact" id="sm-add-placeholder" type="button" title="Add placeholder" aria-label="Add placeholder">▧</button>
+      <button class="icon-button compact" id="sm-cycle-asset-layout" type="button" title="Thumbnail grid — click for large previews" aria-label="Thumbnail grid — click for large previews">▦</button>
       <button class="icon-button compact" id="sm-refresh-assets" type="button" title="Refresh library" aria-label="Refresh library">↻</button>
       <button class="icon-button compact" id="sm-open-asset-browser" type="button" title="Pop out browser" aria-label="Pop out browser">↗</button>
     </div>
@@ -106,6 +125,7 @@ function insertToolbarActions() {
 
   elements.import = document.querySelector('#sm-import-assets');
   elements.addPlaceholder = document.querySelector('#sm-add-placeholder');
+  elements.layoutCycle = document.querySelector('#sm-cycle-asset-layout');
   elements.refresh = document.querySelector('#sm-refresh-assets');
   elements.open = document.querySelector('#sm-open-asset-browser');
 }
@@ -120,10 +140,6 @@ function insertBrowserControls() {
           <input id="sm-asset-search" type="search" placeholder="Search assets…" autocomplete="off" />
         </label>
         <button class="icon-button compact" id="sm-clear-search" type="button" title="Clear asset search" aria-label="Clear asset search">×</button>
-        <div class="library-view-actions" aria-label="Asset view">
-          <button class="view-mode-button is-active" type="button" data-sm-layout="grid" title="Small thumbnail gallery" aria-label="Small thumbnail gallery">▦</button>
-          <button class="view-mode-button" type="button" data-sm-layout="large" title="Large vertical previews" aria-label="Large vertical previews">▤</button>
-        </div>
       </div>
       <div class="asset-category-bar" aria-label="Asset folders">
         <button class="asset-category-chip is-active" type="button" data-sm-category="all">All</button>
@@ -179,13 +195,6 @@ function wireControls() {
     });
   });
 
-  document.querySelectorAll('[data-sm-layout]').forEach((button) => {
-    button.addEventListener('click', () => {
-      browserState.layout = button.dataset.smLayout;
-      browserState.onChange();
-    });
-  });
-
   elements.search.addEventListener('input', () => browserState.onChange());
   elements.clearSearch.addEventListener('click', () => {
     elements.search.value = '';
@@ -195,6 +204,7 @@ function wireControls() {
 
   elements.import.addEventListener('click', () => browserState.onImport());
   elements.addPlaceholder.addEventListener('click', () => browserState.onAddPlaceholder());
+  elements.layoutCycle.addEventListener('click', cycleAssetLayout);
 
   elements.refresh.addEventListener('click', async () => {
     elements.refresh.classList.add('is-loading');
@@ -224,6 +234,21 @@ function wireControls() {
   });
 
   setupWindowDragging();
+}
+
+function cycleAssetLayout() {
+  const currentIndex = LAYOUT_SEQUENCE.indexOf(browserState.layout);
+  browserState.layout = LAYOUT_SEQUENCE[(currentIndex + 1) % LAYOUT_SEQUENCE.length];
+  browserState.onChange();
+}
+
+function updateLayoutCycleControl() {
+  const details = LAYOUT_DETAILS[browserState.layout];
+  if (!elements.layoutCycle || !details) return;
+  elements.layoutCycle.textContent = details.icon;
+  const label = `${details.label} — click for ${details.next}`;
+  elements.layoutCycle.title = label;
+  elements.layoutCycle.setAttribute('aria-label', label);
 }
 
 function setupWindowDragging() {
