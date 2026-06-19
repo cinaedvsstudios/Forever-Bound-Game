@@ -92,7 +92,7 @@ export function replaceProject(project) {
     state.canvas = project.canvas;
     state.viewport = { ...DEFAULT_VIEWPORT, ...(project.viewport ?? {}) };
     state.title = project.title;
-    state.assets = project.assets;
+    state.assets = project.assets.map((asset) => ({ category: 'imports', origin: 'local', sourcePath: null, ...asset }));
     state.layers = project.layers;
     state.selectedLayerId = project.selectedLayerId ?? null;
     state.selectedAssetId = project.selectedAssetId ?? null;
