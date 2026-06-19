@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0d1422" />
+    <title>Scene Mockup</title>
+    <link rel="stylesheet" href="./css/base.css" />
+    <link rel="stylesheet" href="./css/layout.css" />
+    <link rel="stylesheet" href="./css/components.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div>
+            <p class="eyebrow">FOREVER BOUND TOOLS</p>
+            <h1>Scene Mockup</h1>
+          </div>
+        </div>
+
+        <nav class="top-actions" aria-label="Scene actions">
+          <button class="ghost-button" id="new-scene-button" type="button">New scene</button>
+          <button class="icon-button" id="undo-button" type="button" title="Undo" aria-label="Undo">↶</button>
+          <button class="icon-button" id="redo-button" type="button" title="Redo" aria-label="Redo">↷</button>
+          <label class="canvas-preset-control" for="canvas-preset">
+            <span>Canvas</span>
+            <select id="canvas-preset">
+              <option value="1920x1080">16:9 Episode Frame</option>
+              <option value="1080x1920">9:16 Vertical</option>
+              <option value="1080x1080">1:1 Square</option>
+              <option value="2560x1280">2:1 Matte</option>
+            </select>
+          </label>
+          <button class="primary-button" id="save-project-button" type="button">Save project</button>
+          <label class="primary-button secondary-primary" for="load-project-input">Open project</label>
+          <input id="load-project-input" type="file" accept="application/json,.scene-mockup.json" hidden />
+        </nav>
+      </header>
+
+      <section class="tool-ribbon" aria-label="Scene tools">
+        <div class="tool-group">
+          <button class="tool-pill is-active" id="select-tool-button" type="button" data-tool="select">Select &amp; move</button>
+          <button class="tool-pill" id="eraser-tool-button" type="button" data-tool="eraser">Eraser mask</button>
+          <button class="tool-pill" id="chroma-tool-button" type="button" data-tool="chroma">Chroma key</button>
+          <button class="tool-pill" id="auto-colour-button" type="button" data-tool="autoColour">Auto colour</button>
+        </div>
+        <div class="tool-group ribbon-right">
+          <label class="switch-control">
+            <input id="grid-toggle" type="checkbox" checked />
+            <span class="switch-track"></span>
+            <span>Grid</span>
+          </label>
+          <label class="switch-control">
+            <input id="guides-toggle" type="checkbox" checked />
+            <span class="switch-track"></span>
+            <span>Safe frame</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <aside class="panel asset-panel" aria-label="Asset library">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">LIBRARY</p>
+              <h2>Assets</h2>
+            </div>
+            <div class="library-heading-actions"><button class="icon-button compact" id="placeholder-button" type="button" title="Add placeholder" aria-label="Add placeholder">▧</button><button class="icon-button compact" id="asset-import-button" type="button" title="Import assets" aria-label="Import assets">＋</button></div>
+          </div>
+
+          <input id="asset-input" type="file" accept="image/png,image/jpeg,image/webp,model/gltf-binary,.png,.jpg,.jpeg,.webp,.glb" multiple hidden />
+          <div class="import-zone" id="asset-drop-zone" tabindex="0">
+            <strong>Drop sprites, backgrounds or GLBs</strong>
+            <span>PNG · JPG · WEBP · GLB</span>
+            <button class="link-button" id="import-from-zone-button" type="button">Choose files</button>
+          </div>
+
+          <div class="asset-toolbar">
+            <button class="library-tab is-active" type="button" data-library-view="assets">All assets</button>
+            <button class="library-tab" type="button" data-library-view="scene">In scene</button>
+          </div>
+          <div class="asset-grid" id="asset-grid" aria-live="polite"></div>
+        </aside>
+
+        <section class="canvas-panel" aria-label="Scene canvas">
+          <div class="canvas-panel-heading">
+            <div>
+              <p class="eyebrow">COMPOSITION</p>
+              <h2 id="scene-title">Untitled Scene</h2>
+            </div>
+            <div class="canvas-readout" id="canvas-readout">1920 × 1080</div>
+          </div>
+          <div class="stage-wrap" id="stage-wrap">
+            <div class="scene-stage has-grid has-guides" id="scene-stage" tabindex="0" aria-label="Scene composition canvas"></div>
+          </div>
+          <p class="stage-help">Drag a layer to position it. Arrow keys nudge the selected asset; Shift + arrows moves 10 px.</p>
+        </section>
+
+        <aside class="panel inspector-panel" aria-label="Layer controls">
+          <section class="inspector-section">
+            <div class="panel-heading split-heading">
+              <div>
+                <p class="eyebrow">STACK</p>
+                <h2>Layers</h2>
+              </div>
+              <div class="layer-order-actions">
+                <button class="icon-button compact" id="layer-down-button" type="button" title="Move backward" aria-label="Move layer backward">↓</button>
+                <button class="icon-button compact" id="layer-up-button" type="button" title="Move forward" aria-label="Move layer forward">↑</button>
+              </div>
+            </div>
+            <div class="layer-list" id="layer-list"></div>
+          </section>
+
+          <section class="inspector-section selected-layer-section" id="selected-layer-section">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">SELECTED LAYER</p>
+                <h2 id="selected-layer-name">Nothing selected</h2>
+              </div>
+            </div>
+
+            <div class="empty-inspector" id="empty-inspector-message">Select a layer in the canvas or stack to adjust it.</div>
+            <div id="layer-controls" hidden>
+              <div class="control-row two-column">
+                <label>
+                  <span>Blend mode</span>
+                  <select id="blend-mode-select">
+                    <option value="normal">Normal</option>
+                    <option value="multiply">Multiply</option>
+                    <option value="screen">Screen</option>
+                    <option value="overlay">Overlay</option>
+                    <option value="soft-light">Soft light</option>
+                    <option value="hard-light">Hard light</option>
+                    <option value="darken">Darken</option>
+                    <option value="lighten">Lighten</option>
+                    <option value="color-dodge">Colour dodge</option>
+                    <option value="color-burn">Colour burn</option>
+                    <option value="difference">Difference</option>
+                    <option value="plus-lighter">Add</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Opacity <output id="opacity-output">100%</output></span>
+                  <input id="opacity-input" type="range" min="0" max="100" value="100" />
+                </label>
+              </div>
+
+              <div class="control-row two-column numeric-row">
+                <label>
+                  <span>X</span>
+                  <input id="position-x-input" type="number" step="1" />
+                </label>
+                <label>
+                  <span>Y</span>
+                  <input id="position-y-input" type="number" step="1" />
+                </label>
+                <label>
+                  <span>Width</span>
+                  <input id="width-input" type="number" min="1" step="1" />
+                </label>
+                <label>
+                  <span>Height</span>
+                  <input id="height-input" type="number" min="1" step="1" />
+                </label>
+              </div>
+
+              <div class="subheading">Colour match</div>
+              <div class="slider-stack">
+                <label><span>Hue <output id="hue-output">0°</output></span><input id="hue-input" type="range" min="-180" max="180" value="0" /></label>
+                <label><span>Saturation <output id="saturation-output">100%</output></span><input id="saturation-input" type="range" min="0" max="220" value="100" /></label>
+                <label><span>Brightness <output id="brightness-output">100%</output></span><input id="brightness-input" type="range" min="30" max="220" value="100" /></label>
+                <label><span>Contrast <output id="contrast-output">100%</output></span><input id="contrast-input" type="range" min="30" max="220" value="100" /></label>
+              </div>
+
+              <div class="control-actions">
+                <button class="soft-button" id="duplicate-layer-button" type="button">Duplicate</button>
+                <button class="soft-button" id="reset-layer-button" type="button">Reset image</button>
+                <button class="danger-button" id="delete-layer-button" type="button">Delete</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="inspector-section chroma-section" id="chroma-section">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">KEYING</p>
+                <h2>Chroma key</h2>
+              </div>
+            </div>
+            <div class="control-row two-column chroma-controls">
+              <label>
+                <span>Key colour</span>
+                <input id="chroma-colour-input" type="color" value="#00ff00" />
+              </label>
+              <label>
+                <span>Tolerance <output id="chroma-tolerance-output">36</output></span>
+                <input id="chroma-tolerance-input" type="range" min="0" max="180" value="36" />
+              </label>
+            </div>
+            <div class="control-actions">
+              <button class="soft-button" id="apply-chroma-button" type="button">Apply to selected</button>
+              <button class="soft-button" id="clear-chroma-button" type="button">Clear key</button>
+            </div>
+          </section>
+
+          <section class="inspector-section export-section">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">EXPORT</p>
+                <h2>Scene image</h2>
+              </div>
+            </div>
+            <div class="export-actions">
+              <button class="primary-button export-button" id="export-jpeg-button" type="button">Export JPEG</button>
+              <button class="soft-button export-button" id="export-png-button" type="button">Export transparent PNG</button>
+              <button class="soft-button export-button" id="export-webp-button" type="button">Export transparent WEBP</button>
+            </div>
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <template id="asset-card-template">
+      <button class="asset-card" type="button">
+        <span class="asset-preview"><img alt="" /></span>
+        <span class="asset-meta"><strong></strong><small></small></span>
+      </button>
+    </template>
+
+    <template id="layer-row-template">
+      <button class="layer-row" type="button">
+        <span class="layer-thumb"><img alt="" /></span>
+        <span class="layer-row-copy"><strong></strong><small></small></span>
+        <span class="layer-row-actions"><span class="visibility-symbol">◉</span><span class="lock-symbol">◇</span></span>
+      </button>
+    </template>
+
+    <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+    <script type="module" src="./js/main.js"></script>
+  </body>
+</html>
