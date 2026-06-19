@@ -34,7 +34,17 @@ export function resetViewport() {
 }
 
 export function fitCanvas() {
-  resetViewport();
+  const state = getState();
+  const stageBounds = dom.stageWrap.getBoundingClientRect();
+  const availableWidth = Math.max(1, stageBounds.width - 44);
+  const availableHeight = Math.max(1, stageBounds.height - 44);
+  const nominalWidth = Math.min(availableWidth, 1090);
+  const nominalHeight = nominalWidth * (state.canvas.height / state.canvas.width);
+  const zoom = clamp(Math.min(1, availableHeight / nominalHeight), MIN_ZOOM, MAX_ZOOM);
+
+  mutate('Fit canvas view', (nextState) => {
+    nextState.viewport = { zoom: Math.round(zoom * 100) / 100, panX: 0, panY: 0 };
+  }, { record: false });
 }
 
 function setZoom(value) {
