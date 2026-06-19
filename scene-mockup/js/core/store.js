@@ -1,7 +1,10 @@
-import { DEFAULT_CANVAS, DEFAULT_FILTERS, MAX_HISTORY } from './constants.js';
+import { DEFAULT_CANVAS, MAX_HISTORY } from './constants.js';
+
+const DEFAULT_VIEWPORT = Object.freeze({ zoom: 1, panX: 0, panY: 0 });
 
 const state = {
   canvas: { ...DEFAULT_CANVAS },
+  viewport: { ...DEFAULT_VIEWPORT },
   title: 'Untitled Scene',
   assets: [],
   layers: [],
@@ -32,6 +35,7 @@ export function emit(reason = 'update') {
 function snapshot() {
   return structuredClone({
     canvas: state.canvas,
+    viewport: state.viewport,
     title: state.title,
     assets: state.assets,
     layers: state.layers,
@@ -45,6 +49,7 @@ function snapshot() {
 
 function restore(payload) {
   Object.assign(state, structuredClone(payload));
+  state.viewport = { ...DEFAULT_VIEWPORT, ...(state.viewport ?? {}) };
 }
 
 export function commit(label = 'Change') {
@@ -85,6 +90,7 @@ export function redo() {
 export function replaceProject(project) {
   mutate('Open project', () => {
     state.canvas = project.canvas;
+    state.viewport = { ...DEFAULT_VIEWPORT, ...(project.viewport ?? {}) };
     state.title = project.title;
     state.assets = project.assets;
     state.layers = project.layers;
@@ -101,6 +107,7 @@ export function replaceProject(project) {
 export function resetProject() {
   mutate('New scene', () => {
     state.canvas = { ...DEFAULT_CANVAS };
+    state.viewport = { ...DEFAULT_VIEWPORT };
     state.title = 'Untitled Scene';
     state.assets = [];
     state.layers = [];
@@ -114,7 +121,7 @@ export function resetProject() {
 
 export function serializeProject() {
   const { history, future, ...project } = state;
-  return structuredClone({ version: 1, app: 'Scene Mockup', ...project });
+  return structuredClone({ version: 2, app: 'Scene Mockup', ...project });
 }
 
 export function getSelectedLayer() {
