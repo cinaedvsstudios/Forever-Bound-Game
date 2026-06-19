@@ -23,7 +23,8 @@ export function setupPanels() {
   bindFilterControl(dom.saturation, 'saturation');
   bindFilterControl(dom.brightness, 'brightness');
   bindFilterControl(dom.contrast, 'contrast');
-  dom.chromaTolerance.addEventListener('input', () => { dom.chromaToleranceOutput.value = dom.chromaTolerance.value; });
+  bindChromaOutput(dom.chromaTolerance, dom.chromaToleranceOutput);
+  bindChromaOutput(dom.chromaFeather, dom.chromaFeatherOutput);
 }
 
 function bindLayerControl(input, key, parse) {
@@ -59,6 +60,10 @@ function bindFilterControl(input, key) {
       layer.filters[key] = Number(input.value);
     });
   });
+}
+
+function bindChromaOutput(input, output) {
+  input.addEventListener('input', () => { output.value = input.value; });
 }
 
 function onLayerListClick(event) {
@@ -125,6 +130,13 @@ export function renderPanels() {
   dom.brightnessOutput.value = `${selected.filters.brightness}%`;
   dom.contrast.value = String(selected.filters.contrast);
   dom.contrastOutput.value = `${selected.filters.contrast}%`;
+
+  const chroma = selected.chroma ?? { colour: '#00ff00', tolerance: 36, feather: 0 };
+  dom.chromaColour.value = chroma.colour;
+  dom.chromaTolerance.value = String(chroma.tolerance);
+  dom.chromaToleranceOutput.value = String(chroma.tolerance);
+  dom.chromaFeather.value = String(chroma.feather ?? 0);
+  dom.chromaFeatherOutput.value = String(chroma.feather ?? 0);
 }
 
 function moveLayer(offset) {
@@ -184,11 +196,20 @@ async function applyKeyToSelected() {
     return;
   }
   try {
-    const keyedDataUrl = await applyChromaKey({ ...selected, sourceDataUrl: selected.dataUrl }, dom.chromaColour.value, dom.chromaTolerance.value);
+    const keyedDataUrl = await applyChromaKey(
+      { ...selected, sourceDataUrl: selected.dataUrl },
+      dom.chromaColour.value,
+      dom.chromaTolerance.value,
+      dom.chromaFeather.value
+    );
     mutate('Apply chroma key', (state) => {
       const layer = state.layers.find((item) => item.id === selected.id);
       layer.dataUrl = keyedDataUrl;
-      layer.chroma = { colour: dom.chromaColour.value, tolerance: Number(dom.chromaTolerance.value) };
+      layer.chroma = {
+        colour: dom.chromaColour.value,
+        tolerance: Number(dom.chromaTolerance.value),
+        feather: Number(dom.chromaFeather.value)
+      };
     });
     toast('Chroma key applied to selected image.');
   } catch (error) {

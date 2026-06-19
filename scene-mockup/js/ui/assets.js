@@ -22,9 +22,9 @@ export function setupAssetImport() {
     onRefresh: () => hydrateRepositoryAssets({ force: true })
   });
 
-  dom.assetImportButton.addEventListener('click', () => dom.assetInput.click());
-  document.querySelector('#placeholder-button').addEventListener('click', addPlaceholderAsset);
-  dom.importFromZoneButton.addEventListener('click', () => dom.assetInput.click());
+  dom.assetImportButton.addEventListener('click', openAssetImport);
+  document.querySelector('#placeholder-button').addEventListener('click', addPlaceholderToLibrary);
+  dom.importFromZoneButton.addEventListener('click', openAssetImport);
 
   dom.assetInput.addEventListener('change', async (event) => {
     await importFiles([...event.target.files]);
@@ -47,7 +47,7 @@ export function setupAssetImport() {
 
   dom.assetDropZone.addEventListener('drop', async (event) => importFiles([...event.dataTransfer.files]));
   dom.assetDropZone.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') dom.assetInput.click();
+    if (event.key === 'Enter' || event.key === ' ') openAssetImport();
   });
 
   document.querySelectorAll('[data-library-view]').forEach((button) => {
@@ -60,6 +60,22 @@ export function setupAssetImport() {
   });
 
   hydrateRepositoryAssets();
+}
+
+export function openAssetImport() {
+  dom.assetInput.click();
+}
+
+export function addPlaceholderToLibrary() {
+  addPlaceholderAsset();
+}
+
+export async function refreshRepositoryAssets() {
+  return hydrateRepositoryAssets({ force: true });
+}
+
+export function openFloatingAssetBrowser() {
+  document.querySelector('#sm-open-asset-browser')?.click();
 }
 
 export async function importFiles(files) {
