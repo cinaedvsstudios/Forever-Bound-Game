@@ -1,26 +1,77 @@
 .asset-panel {
+  position: relative;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 140px);
+  max-height: calc(100vh - 78px);
   overflow: hidden;
 }
 
-.asset-browser-controls { display: grid; gap: 9px; margin-top: 10px; }
+.asset-panel.is-drop-target::after {
+  content: "Drop files to import";
+  position: absolute;
+  inset: 8px;
+  z-index: 25;
+  display: grid;
+  place-items: center;
+  border: 2px dashed var(--cyan);
+  border-radius: 12px;
+  background: rgba(10, 34, 54, .92);
+  color: #e6f8ff;
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: .03em;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), 0 0 26px rgba(51,199,255,.3);
+}
+
+.asset-toolbar {
+  margin-top: 0;
+  flex: 0 0 auto;
+}
+
+.asset-toolbar .library-tab { flex: 1 1 0; }
+
+.asset-browser-controls {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.asset-library-main {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.asset-settings-panel {
+  display: grid;
+  align-content: start;
+  gap: 11px;
+  min-height: 0;
+  padding: 3px 0 0;
+}
+
+.asset-settings-copy { display: grid; gap: 4px; }
+.asset-settings-copy p { margin: 0; }
+.asset-settings-copy > p:last-child { color: var(--text-soft); font-size: 12px; line-height: 1.5; }
 
 .asset-source-note {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  padding: 8px 9px;
+  padding: 10px;
   border: 1px solid rgba(82, 124, 171, .28);
   border-radius: 9px;
   color: var(--text-muted);
   background: rgba(25, 46, 69, .28);
-  font-size: 10px;
-  line-height: 1.45;
+  font-size: 11px;
+  line-height: 1.55;
 }
 
-.asset-source-note strong { color: var(--text-soft); font-weight: 650; }
+.asset-source-note strong { color: var(--text-soft); font-weight: 680; }
 
 .source-indicator {
   width: 7px;
@@ -33,8 +84,6 @@
 }
 
 .asset-search-row,
-.asset-browser-subbar,
-.asset-category-bar,
 .library-view-actions,
 .asset-browser-window-actions,
 .asset-browser-window-title,
@@ -44,7 +93,7 @@
 }
 
 .asset-search-row { gap: 7px; }
-.asset-search-control { flex: 1; }
+.asset-search-control { flex: 1; min-width: 0; }
 
 .asset-search-control input {
   width: 100%;
@@ -56,10 +105,7 @@
   color: var(--text);
 }
 
-.asset-browser-subbar { justify-content: space-between; gap: 8px; }
-.asset-category-bar { gap: 6px; overflow-x: auto; scrollbar-width: none; }
-.asset-category-bar::-webkit-scrollbar { display: none; }
-.library-view-actions { gap: 5px; }
+.library-view-actions { gap: 4px; }
 
 .view-mode-button,
 .asset-category-chip {
@@ -94,14 +140,23 @@
   color: #dcf5ff;
 }
 
+.asset-category-bar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
 .asset-category-chip {
-  min-height: 26px;
-  flex: 0 0 auto;
-  padding: 0 8px;
-  border-radius: 999px;
+  min-height: 27px;
+  width: 100%;
+  padding: 0 4px;
+  overflow: hidden;
   border-color: var(--line-soft);
+  border-radius: 999px;
   background: rgba(25, 34, 51, .66);
-  font-size: 10px;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .asset-category-chip.is-active {
@@ -112,6 +167,29 @@
 
 .asset-category-chip:disabled { cursor: default; opacity: .35; }
 
+.asset-settings-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.asset-settings-actions .soft-button {
+  min-width: 0;
+  padding: 0 8px;
+  font-size: 11px;
+}
+
+.asset-settings-hint {
+  margin: 0;
+  padding: 9px 10px;
+  border: 1px dashed rgba(87, 137, 189, .42);
+  border-radius: 9px;
+  color: var(--text-muted);
+  background: rgba(15, 27, 42, .45);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
 .asset-panel .asset-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-content: start;
@@ -119,10 +197,11 @@
   min-height: 0;
   flex: 1;
   overflow: auto;
-  margin-top: 13px;
+  margin-top: 2px;
   padding: 2px 2px 6px;
 }
 
+.asset-panel .asset-grid[hidden] { display: none; }
 .asset-grid[data-layout="large"] { grid-template-columns: minmax(0, 1fr); gap: 10px; }
 
 .asset-panel .asset-card {
