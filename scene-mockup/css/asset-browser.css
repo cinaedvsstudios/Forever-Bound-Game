@@ -32,17 +32,19 @@
 .asset-toolbar .library-tab { flex: 1 1 0; }
 
 .asset-browser-controls {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-height: 0;
+  display: grid;
+  flex: 0 0 auto;
   gap: 10px;
   margin-top: 10px;
 }
 
+.asset-browser-controls.is-settings-open {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .asset-library-main {
   display: grid;
-  flex: 0 0 auto;
   gap: 8px;
 }
 
@@ -197,7 +199,7 @@
   min-height: 0;
   flex: 1;
   overflow: auto;
-  margin-top: 2px;
+  margin-top: 10px;
   padding: 2px 2px 6px;
 }
 
