@@ -63,6 +63,7 @@ export function syncAssetBrowser({ visibleCount, libraryView }) {
     button.classList.toggle('is-active', button.dataset.smLayout === browserState.layout);
   });
 
+  if (elements.assetBrowserControls) elements.assetBrowserControls.classList.toggle('is-settings-open', settingsOpen);
   if (elements.assetLibraryMain) elements.assetLibraryMain.hidden = settingsOpen;
   if (elements.assetSettings) elements.assetSettings.hidden = !settingsOpen;
   document.querySelector('#asset-grid')?.toggleAttribute('hidden', settingsOpen);
@@ -140,6 +141,7 @@ function insertBrowserControls() {
     </section>
   `);
 
+  elements.assetBrowserControls = document.querySelector('#scene-mockup-asset-browser-controls');
   elements.assetLibraryMain = document.querySelector('#sm-asset-library-main');
   elements.assetSettings = document.querySelector('#sm-asset-settings');
   elements.search = document.querySelector('#sm-asset-search');
