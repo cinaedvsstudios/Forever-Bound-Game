@@ -181,7 +181,7 @@ function setupAssetPanelDropImport() {
   const panel = dom.assetPanel;
   if (!panel) return;
 
-  const containsFiles = (event) => [...event.dataTransfer?.types ?? []].includes('Files');
+  const containsFiles = (event) => Array.from(event.dataTransfer?.types ?? []).includes('Files');
 
   panel.addEventListener('dragenter', (event) => {
     if (!containsFiles(event)) return;
