@@ -20,7 +20,6 @@ export function mountAssetBrowser({ onChange, onRefresh, onImport, onAddPlacehol
   ensureStylesheet();
 
   if (!document.querySelector('#scene-mockup-asset-browser-controls')) {
-    removeLegacyLibraryChrome();
     insertBrowserControls();
     insertFloatingBrowser();
     wireControls();
@@ -90,14 +89,8 @@ function ensureStylesheet() {
   document.head.append(stylesheet);
 }
 
-function removeLegacyLibraryChrome() {
-  document.querySelector('.asset-panel > .panel-heading')?.remove();
-  document.querySelector('#asset-drop-zone')?.remove();
-}
-
 function insertBrowserControls() {
   const toolbar = document.querySelector('.asset-toolbar');
-  toolbar.insertAdjacentHTML('beforeend', '<button class="library-tab" type="button" data-library-view="settings">Settings</button>');
   toolbar.insertAdjacentHTML('afterend', `
     <section class="asset-browser-controls" id="scene-mockup-asset-browser-controls" aria-label="Asset browser controls">
       <div class="asset-library-main" id="sm-asset-library-main">
