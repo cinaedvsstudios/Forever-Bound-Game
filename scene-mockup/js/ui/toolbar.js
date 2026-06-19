@@ -1,7 +1,7 @@
 import { getState, mutate, resetProject, undo, redo, serializeProject, replaceProject } from '../core/store.js';
 import { saveProjectFile, readProject, safeName } from '../features/project-io.js';
 import { exportScene } from '../features/export.js';
-import { saveBlobWithPicker } from '../features/file-picker.js';
+import { requestSaveDestination, writeBlobToDestination } from '../features/file-picker.js';
 import { analyseImageColour, makeAutoMatch } from '../features/colour-match.js';
 import { openAssetImport, addPlaceholderToLibrary, refreshRepositoryAssets, openFloatingAssetBrowser } from './assets.js';
 import { closeMenus } from './menubar.js';
@@ -193,15 +193,19 @@ async function runExport(mime, extension) {
     toast('Add at least one layer before exporting.', { error: true });
     return;
   }
+
   try {
-    const blob = await exportScene(state, mime);
-    if (!blob) throw new Error('Your browser did not return an export file.');
-    const result = await saveBlobWithPicker(blob, {
+    const destination = await requestSaveDestination({
       suggestedName: `${safeName(state.title)}.${extension}`,
       description: `Scene Mockup ${extension.toUpperCase()} image`,
       mimeType: mime,
       extensions: [`.${extension}`]
     });
+    if (destination.cancelled) return;
+
+    const blob = await exportScene(state, mime);
+    if (!blob) throw new Error('Your browser did not return an export file.');
+    const result = await writeBlobToDestination(blob, destination);
     if (!result.saved) return;
     toast(result.usedPicker ? `Exported ${extension.toUpperCase()} to the selected folder.` : `Exported ${extension.toUpperCase()}.`);
   } catch (error) {
