@@ -1,7 +1,5 @@
 import { safeSlug, validateProceduralSynthAsset } from './procedural-synth-schema.js';
-
-const ASSET_INDEX_PATH = 'assets/asset-index.json';
-const ASSET_INDEX_SCHEMA = 'artifex.assets.index.v1';
+import { readAssetIndex, upsertAssetRecord, writeAssetIndex } from '../asset-library/asset-library-service.js';
 
 export function proceduralSynthToJson(record) {
   return `${JSON.stringify(record, null, 2)}\n`;
@@ -47,12 +45,19 @@ function makeAssetIndexRecord(recipeRecord) {
     id: recipeRecord.assetId,
     name: recipeRecord.name,
     type: 'sound-effect',
+    kind: 'procedural-synth',
     assetKind: 'procedural-synth',
     file: recipeRecord.resourcePath,
     playbackEngine: 'web-audio',
     category: recipeRecord.category,
     status: 'ready',
-    tags
+    tags,
+    source: {
+      createdBy: recipeRecord.source?.createdBy || 'procedural-sound-generator',
+      creationMode: recipeRecord.source?.creationMode || 'start-new',
+      generatedRecipe: true
+    },
+    updatedAt: recipeRecord.updatedAt || new Date().toISOString()
   };
 }
 
@@ -60,15 +65,10 @@ export async function saveProceduralSynthToLibrary(recipeRecord) {
   const errors = validateProceduralSynthAsset(recipeRecord);
   if (errors.length) throw new Error(errors.join(' '));
   const client = await obtainProjectClient();
-  const index = await client.readJson(ASSET_INDEX_PATH);
-  if (!index || index.schemaVersion !== ASSET_INDEX_SCHEMA || !Array.isArray(index.assets)) {
-    throw new Error(`Expected ${ASSET_INDEX_PATH} with schema ${ASSET_INDEX_SCHEMA} and an assets array.`);
-  }
+  const index = await readAssetIndex(client, { createIfMissing: true });
   const assetRecord = makeAssetIndexRecord(recipeRecord);
-  const existingIndex = index.assets.findIndex((item) => item?.id === assetRecord.id);
-  if (existingIndex >= 0) index.assets[existingIndex] = assetRecord;
-  else index.assets.push(assetRecord);
+  const nextIndex = upsertAssetRecord(index, assetRecord);
   await client.writeJson(recipeRecord.resourcePath, recipeRecord);
-  await client.writeJson(ASSET_INDEX_PATH, index);
+  await writeAssetIndex(client, nextIndex);
   return { assetId: assetRecord.id, record: assetRecord, recipe: recipeRecord };
 }

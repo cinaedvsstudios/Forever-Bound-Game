@@ -175,16 +175,17 @@ Specification: `docs/artifex/09A-effect-editor.md`
 
 Specification: `docs/artifex/10A-asset-library.md`
 
-Next step before implementation:
+Current foundation:
 
-- Run a current-main Asset Library scan to determine exactly what Asset Library code, routes, shared services, asset-index readers/writers, imported-media promotion helpers, previews, metadata editing and registered-content picker integrations already exist.
-- Do not implement the Asset Library UI until the scan confirms current repo truth and the implementation target.
-- During scan and implementation, preserve the layered model: Asset Library owns final media and generated-media `asset_` records only; it may catalogue/select object/effect/scene/puzzle/quest records through Registered Content / Project Library views but must not own those records.
+- Current-main scan completed: active docs are aligned with the layered reusable-content model.
+- Shared Asset Library foundation helper exists at `artifex/shared/asset-library/asset-library-service.js` for final media/generated-media `asset_` records only.
+- The helper can read/create/write/validate `assets/asset-index.json`, normalize records, allocate stable `asset_` IDs, reject browser `dataUrl`, `intake/` and legacy `artifex/assets-library/` final references, and promote approved staged non-audio media into final `assets/` paths.
+- During implementation, preserve the layered model: Asset Library owns final media and generated-media `asset_` records only; it may catalogue/select object/effect/scene/puzzle/quest records through Registered Content / Project Library views but must not own those records.
 
 Known work:
 
-- Create or confirm Asset Library UI/service for final `asset_` browsing, grouping, promotion and metadata editing.
-- Implement safe promotion from `intake/` to final `assets/` files and `assets/asset-index.json`.
+- Build the standalone Asset Library UI for final `asset_` browsing, grouping, promotion and metadata editing.
+- Extend safe promotion coverage beyond the foundation helper where needed, including imported audio and richer metadata workflows.
 - Keep intake references out of permanent authored content.
 - Support images, sprites, portraits, backgrounds, UI images, icons, buttons, frames, logos, textures, overlays, brushes, thumbnails, videos, animated images, imported audio, music, ambience, voice, sound files and generated/mechanical sounds.
 - Support Creation Guide logo/media readiness.
