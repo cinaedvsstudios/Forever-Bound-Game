@@ -5,10 +5,12 @@ import { initBrushAssetLibrary } from './brush-asset-library.js';
 import { initEditorDynamicsControls } from './editor-dynamics-controls.js';
 import { initEditorQuickEditControls } from './editor-quick-edit-controls.js';
 import { initEditorWorkspaceUI } from './editor-workspace-ui.js';
+import { initEditorExport } from './editor-export.js?v=060-export-menu';
 
-const VERSION_LABEL = 'INDEX2-SHIMMER-0.2.35';
+const VERSION_LABEL = 'INDEX2-EXPORT-0.2.36';
 
 window.addEventListener('DOMContentLoaded', () => {
+  initEditorExport(showToast);
   initEditorCore({ versionLabel: VERSION_LABEL, showToast });
   initEditorAppearanceControls(showToast);
   initBrushAssetLibrary(showToast);
