@@ -7,6 +7,8 @@ import { drawPrototypeLayer } from './prototype-adapters/prototype-renderers-sou
 
 const DEFAULT_VIDEO_SECONDS = 5;
 const DEFAULT_VIDEO_FPS = 30;
+const MIN_VIDEO_SECONDS = 1;
+const MAX_VIDEO_SECONDS = 60;
 const VIDEO_TIME_OFFSET_MS = 1000;
 
 let toast = () => {};
@@ -80,9 +82,11 @@ async function recordVideo({ transparent, preferMp4 }) {
     toast('Video export is already running.', 'warn');
     return;
   }
+  const seconds = askVideoDurationSeconds();
+  if (!seconds) return;
   const canvas = ensureExportCanvas();
   const fps = DEFAULT_VIDEO_FPS;
-  const durationMs = DEFAULT_VIDEO_SECONDS * 1000;
+  const durationMs = seconds * 1000;
   const mimeType = preferMp4 ? supportedMp4Type() : supportedWebmType();
   if (!mimeType) {
     toast(preferMp4 ? 'MP4 export is not supported in this browser. Use WebM.' : 'WebM export is not supported in this browser.', 'warn');
@@ -107,7 +111,7 @@ async function recordVideo({ transparent, preferMp4 }) {
   }
 
   isRecording = true;
-  toast(`Recording ${preferMp4 ? 'MP4' : 'WebM'} export...`, 'info');
+  toast(`Recording ${seconds}s ${preferMp4 ? 'MP4' : 'WebM'} export...`, 'info');
 
   recorder.ondataavailable = (event) => {
     if (event.data?.size) chunks.push(event.data);
@@ -122,7 +126,7 @@ async function recordVideo({ transparent, preferMp4 }) {
     const blob = new Blob(chunks, { type: mimeType });
     const extension = preferMp4 ? 'mp4' : 'webm';
     const suffix = transparent ? 'transparent' : 'black-bg';
-    downloadBlob(blob, `${fileBaseName()}-${suffix}.${extension}`);
+    downloadBlob(blob, `${fileBaseName()}-${suffix}-${seconds}s.${extension}`);
     toast(`${preferMp4 ? 'MP4' : 'WebM'} video exported.`, 'success');
   };
 
@@ -141,6 +145,22 @@ async function recordVideo({ transparent, preferMp4 }) {
     }, 120);
   };
   requestAnimationFrame(drawFrame);
+}
+
+function askVideoDurationSeconds() {
+  const answer = window.prompt(`Video length in seconds (${MIN_VIDEO_SECONDS}-${MAX_VIDEO_SECONDS})`, String(DEFAULT_VIDEO_SECONDS));
+  if (answer === null) return null;
+  const parsed = Number(String(answer).replace(',', '.').trim());
+  if (!Number.isFinite(parsed)) {
+    toast('Video export cancelled: enter a valid number of seconds.', 'warn');
+    return null;
+  }
+  const seconds = Math.round(parsed * 10) / 10;
+  if (seconds < MIN_VIDEO_SECONDS || seconds > MAX_VIDEO_SECONDS) {
+    toast(`Video export cancelled: choose ${MIN_VIDEO_SECONDS}-${MAX_VIDEO_SECONDS} seconds.`, 'warn');
+    return null;
+  }
+  return seconds;
 }
 
 function renderExportCanvas({ transparent, timeMs }) {
