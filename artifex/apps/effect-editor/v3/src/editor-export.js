@@ -176,6 +176,8 @@ async function recordVideo({ transparent, preferMp4 }) {
     fail(error);
     return;
   }
+  // A recorder can fail during startup; do not announce recording after it has already stopped.
+  if (finished) return;
   toast(`Recording ${seconds}s ${preferMp4 ? 'MP4' : 'WebM'} export...`, 'info');
 
   const startedAt = performance.now();
