@@ -62,7 +62,7 @@ function valuesFromLayer(layer, stageWidth, stageHeight) {
 function preservedLayerFields(layer, stageWidth, stageHeight) {
   const emitterX = finite(layer.emitterX, stageWidth * 0.5);
   const emitterY = finite(layer.emitterY, stageHeight * 0.5);
-  return {
+  const preserved = {
     id: layer.id,
     name: layer.name,
     visible: layer.visible,
@@ -90,6 +90,8 @@ function preservedLayerFields(layer, stageWidth, stageHeight) {
     outlineDataUrl: layer.outlineDataUrl,
     outlineColorMode: layer.outlineColorMode
   };
+  // Optional asset fields must not overwrite preset defaults with undefined.
+  return Object.fromEntries(Object.entries(preserved).filter(([, value]) => value !== undefined));
 }
 
 function migrateLayerToSourceDefaults(layer, base, stageWidth, stageHeight) {
