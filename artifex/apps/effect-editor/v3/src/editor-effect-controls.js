@@ -3,6 +3,14 @@ import { isPrototypeLayer } from './prototype-adapters/prototype-presets.js';
 import { cloneSmokeDefaults, getSmokeControlGroups } from './prototype-adapters/smoke-controls.js';
 import { cloneShimmerDefaults, getShimmerControlGroups, SHIMMER_PRESET_DEFAULTS } from './prototype-adapters/shimmer-controls.js';
 
+const MAX_PROTOTYPE_IMAGE_BYTES = 5 * 1024 * 1024;
+const PROTOTYPE_IMAGE_SLOTS = {
+  outlineFile: { dataField: 'outlineDataUrl', enabledField: 'outlineColorMode', enabledValue: 'image' },
+  baseTextureFile: { dataField: 'baseTextureDataUrl', enabledField: 'baseTextureEnabled', enabledValue: true, pathField: 'textureAssetPath' },
+  overlayFile: { dataField: 'overlayDataUrl', enabledField: 'overlayEnabled', enabledValue: true },
+  overlay2File: { dataField: 'overlay2DataUrl', enabledField: 'overlay2Enabled', enabledValue: true }
+};
+const OVERLAY_LAYER_POSITIONS = ['behind-effect', 'inside-aperture', 'over-clouds', 'front'];
 const PROTOTYPE_VISIBLE_CARD_IDS = new Set(['index2-card-search', 'index2-card-assets', 'effect-specific-controls-card']);
 const LAYER_POSITION_OPTIONS = [
   ['back', 'Behind aperture'], ['aperture', 'Inside aperture'], ['rim-back', 'Behind cloudy rim'],
@@ -210,10 +218,15 @@ function buildControl(control, layer) {
     if (control.accept) input.accept = control.accept;
     const fileNote = document.createElement('small');
     fileNote.className = 'index2-control-note';
-    fileNote.textContent = layer[property] ? `Selected: ${layer[property]}` : 'File picker placeholder; renderer/asset loading will be connected later.';
+    const slot = PROTOTYPE_IMAGE_SLOTS[property];
+    const hasImage = slot && Boolean(layer[slot.dataField]);
+    fileNote.textContent = hasImage
+      ? `Loaded: ${layer[property] || 'embedded image'}`
+      : layer[property] ? `Previously selected: ${layer[property]} — choose the image again to load it.`
+      : 'Choose an image to embed in this effect.';
     label.append(heading, input, fileNote);
     input.dataset.effectProperty = property;
-    input.addEventListener('change', () => updateFromInput(input));
+    input.addEventListener('change', () => loadPrototypeImage(input));
     return label;
   } else {
     input = document.createElement('input');
@@ -240,11 +253,75 @@ function buildActionControl(control) {
   const button = document.createElement('button');
   button.type = 'button';
   button.textContent = control.label;
-  button.title = 'Placeholder action; renderer behaviour will be connected later.';
-  button.addEventListener('click', () => updateActiveLayer({ prototypeLastAction: control.action, prototypeLastActionAt: Date.now() }));
+  button.dataset.prototypeAction = control.action;
+  button.title = control.action === 'regenerateSmokeForms'
+    ? 'Generate a new set of smoke shapes.'
+    : 'Move this image overlay one layer backwards or forwards.';
+  button.addEventListener('click', () => runPrototypeAction(control.action));
   wrapper.append(button);
   return wrapper;
 }
+
+function runPrototypeAction(action) {
+  const layer = getActiveLayer();
+  if (!layer || layer.locked) return;
+  if (action === 'regenerateSmokeForms') {
+    updateActiveLayer({ smokeFormRevision: (Number(layer.smokeFormRevision) || 0) + 1 });
+    return;
+  }
+  if (!['overlay-back', 'overlay-forward', 'overlay2-back', 'overlay2-forward'].includes(action)) return;
+  const overlay2 = action.startsWith('overlay2-');
+  const property = overlay2 ? 'overlay2Layer' : 'overlayLayer';
+  const fallback = overlay2 ? 'inside-aperture' : 'over-clouds';
+  const position = OVERLAY_LAYER_POSITIONS.indexOf(layer[property] || fallback);
+  const index = position >= 0 ? position : OVERLAY_LAYER_POSITIONS.indexOf(fallback);
+  const direction = action.endsWith('-forward') ? 1 : -1;
+  const nextIndex = Math.min(OVERLAY_LAYER_POSITIONS.length - 1, Math.max(0, index + direction));
+  const nextValue = OVERLAY_LAYER_POSITIONS[nextIndex];
+  if (nextValue !== layer[property]) updateActiveLayer({ [property]: nextValue });
+}
+
+function loadPrototypeImage(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  const layer = getActiveLayer();
+  const property = input.dataset.effectProperty;
+  const slot = PROTOTYPE_IMAGE_SLOTS[property];
+  const status = input.closest('label')?.querySelector('.index2-control-note');
+  if (!layer || layer.locked || !slot) return;
+  const report = (message) => { if (status) status.textContent = message; };
+  if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+    report('Unsupported image. Choose PNG, JPG or WebP.');
+    return;
+  }
+  if (file.size > MAX_PROTOTYPE_IMAGE_BYTES) {
+    report('Image is too large to embed (maximum 5 MB).');
+    return;
+  }
+  const reader = new FileReader();
+  reader.addEventListener('load', () => {
+    const dataUrl = String(reader.result || '');
+    if (!/^data:image\/(?:png|jpeg|webp);base64,/u.test(dataUrl)) {
+      report('Could not read this image. Choose PNG, JPG or WebP.');
+      return;
+    }
+    if (getActiveLayer() !== layer || layer.locked) {
+      report('Layer changed or locked. Select the image again.');
+      return;
+    }
+    const patch = {
+      [property]: file.name,
+      [slot.dataField]: dataUrl,
+      [slot.enabledField]: slot.enabledValue
+    };
+    if (slot.pathField) patch[slot.pathField] = '';
+    updateActiveLayer(patch);
+    report(`Loaded: ${file.name}`);
+  });
+  reader.addEventListener('error', () => report('Could not read this image. Please try again.'));
+  reader.readAsDataURL(file);
+}
+
 function getControlProperty(control) { return control.property || control.field; }
 function fragment(nodes) { const frag = document.createDocumentFragment(); nodes.forEach((node) => frag.append(node)); return frag; }
 function convertTextToUppercase(input) { const upper = String(input.value || '').toUpperCase(); input.value = upper; updateActiveLayer({ [input.dataset.effectProperty]: upper }); }
@@ -252,7 +329,6 @@ function updateFromInput(input) {
   let value = input.value;
   if (input.type === 'range' || input.type === 'number') value = Number(input.value);
   if (input.type === 'checkbox') value = input.checked;
-  if (input.type === 'file') value = input.files?.[0]?.name || '';
   updateActiveLayer({ [input.dataset.effectProperty]: value });
 }
 function syncValues(body, layer) {
@@ -266,6 +342,10 @@ function syncValues(body, layer) {
     }
     const output = body.querySelector(`[data-output-property="${input.dataset.effectProperty}"]`);
     if (output) output.textContent = formatDisplayValue(value, output.dataset.outputUnit || '');
+    input.disabled = Boolean(layer.locked);
+  });
+  body.querySelectorAll('[data-prototype-action]').forEach((button) => {
+    button.disabled = Boolean(layer.locked);
   });
 }
 function isTextLayer(layer) { return Boolean(layer && (layer.engine === 'text' || (layer.appearanceMode === 'shape' && layer.particleShape === 'text'))); }
