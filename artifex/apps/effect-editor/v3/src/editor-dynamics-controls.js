@@ -14,6 +14,7 @@ function setText(id, value) {
 export function initEditorDynamicsControls() {
   bindMetadataFields();
   bindGravityControls();
+  bindEmissionControls();
   onStateChange(syncDynamicsControls);
   syncDynamicsControls();
 }
@@ -61,6 +62,22 @@ function bindGravityControls() {
   }
 }
 
+function bindEmissionControls() {
+  const controls = [
+    ['emission-angle-input', 'emission-angle-output', 'angle'],
+    ['emission-spread-input', 'emission-spread-output', 'spread']
+  ];
+  controls.forEach(([inputId, outputId, field]) => {
+    const input = document.getElementById(inputId);
+    if (!input || input.dataset.dynamicsBound === 'true') return;
+    input.dataset.dynamicsBound = 'true';
+    input.addEventListener('input', () => {
+      setText(outputId, input.value);
+      updateActiveLayer({ [field]: Number(input.value) });
+    });
+  });
+}
+
 function applyGravityFromControls() {
   const gravityInput = document.getElementById('gravity-input');
   const boostInput = document.getElementById('gravity-boost-input');
@@ -75,6 +92,7 @@ function applyGravityFromControls() {
 function syncDynamicsControls() {
   bindMetadataFields();
   bindGravityControls();
+  bindEmissionControls();
   const layer = getActiveLayer();
   const idInput = document.getElementById('archetype-id-input');
   const tagsInput = document.getElementById('effect-tags-input');
@@ -82,6 +100,17 @@ function syncDynamicsControls() {
   if (tagsInput && document.activeElement !== tagsInput) {
     tagsInput.value = Array.isArray(editorState.composition.tags) ? editorState.composition.tags.join(', ') : '';
   }
+  [
+    ['emission-angle-input', 'emission-angle-output', 'angle', -90],
+    ['emission-spread-input', 'emission-spread-output', 'spread', 60]
+  ].forEach(([inputId, outputId, field, fallback]) => {
+    const input = document.getElementById(inputId);
+    if (input) {
+      input.disabled = !layer || layer.locked;
+      if (layer && document.activeElement !== input) input.value = String(finite(layer[field], fallback));
+    }
+    if (layer) setText(outputId, finite(layer[field], fallback));
+  });
   if (!layer) return;
   const gravityInput = document.getElementById('gravity-input');
   const orbitalInput = document.getElementById('orbital-force-input');
