@@ -19,8 +19,8 @@ function bindControls() {
   bindChange('texture-fit-select', (value) => updateActiveLayer({ textureFit: value }));
   const reverse = document.getElementById('reverse-toggle');
   reverse?.addEventListener('change', () => updateActiveLayer({ reverseColor: reverse.checked }));
-  bindRange('rotation-input', 'rotation-output', 'angle');
-  bindChange('rotation-mode-select', updateEmissionDirectionMode);
+  bindRotationAngle();
+  bindChange('rotation-mode-select', (value) => updateActiveLayer({ rotationMode: value }));
   bindDegreeRange();
   bindRange('edge-blur-input', 'edge-blur-output', 'edgeBlur');
   bindRange('texture-alpha-input', 'texture-alpha-output', 'textureAlpha');
@@ -45,21 +45,24 @@ function bindRange(id, outputId, property) {
     updateActiveLayer({ [property]: Number(input.value) });
   });
 }
+function bindRotationAngle() {
+  const input = document.getElementById('rotation-input');
+  input?.addEventListener('input', () => {
+    setText('rotation-output', input.value);
+    const layer = getActiveLayer();
+    if (!layer) return;
+    // A manually chosen orientation must be visible, even when the previous mode was random.
+    const patch = { rotation: Number(input.value) };
+    if (layer.rotationMode === 'random') patch.rotationMode = 'fixed';
+    updateActiveLayer(patch);
+  });
+}
 function bindDegreeRange() {
   const input = document.getElementById('rotation-jitter-input');
   input?.addEventListener('input', () => {
     setText('rotation-jitter-output', input.value);
-    if (document.getElementById('rotation-mode-select')?.value === 'range') {
-      updateActiveLayer({ spread: Number(input.value) * 2 });
-    }
+    updateActiveLayer({ rotationJitter: Number(input.value) });
   });
-}
-function updateEmissionDirectionMode(value) {
-  const input = document.getElementById('rotation-jitter-input');
-  const degreeRange = finite(input?.value, 30);
-  if (value === 'random') updateActiveLayer({ spread: 360 });
-  else if (value === 'fixed') updateActiveLayer({ spread: 0 });
-  else updateActiveLayer({ spread: degreeRange * 2 });
 }
 
 function openRenderChoice() {
@@ -145,29 +148,20 @@ function syncAppearanceControls() {
   setValue('blend-mode-select', layer.blendMode || defaultBlendMode(layer.engine));
   setValue('tint-mode-select', layer.tintMode || 'tint');
   setValue('texture-fit-select', layer.textureFit || 'contain');
-  setValue('rotation-input', finite(layer.angle, -90));
-  const directionMode = emissionDirectionModeFromSpread(layer.spread);
-  setValue('rotation-mode-select', directionMode);
-  if (directionMode === 'range') {
-    const degreeRange = Math.min(180, Math.max(0, finite(layer.spread, 60) / 2));
-    setValue('rotation-jitter-input', degreeRange);
-    setText('rotation-jitter-output', degreeRange);
-  }
+  setValue('rotation-input', finite(layer.rotation, 0));
+  const rotationMode = layer.rotationMode || 'random';
+  setValue('rotation-mode-select', rotationMode);
+  setValue('rotation-jitter-input', finite(layer.rotationJitter, 5));
+  setText('rotation-jitter-output', finite(layer.rotationJitter, 5));
   setValue('edge-blur-input', finite(layer.edgeBlur, 0));
   setValue('texture-alpha-input', finite(layer.textureAlpha, 1));
   const reverse = document.getElementById('reverse-toggle');
   if (reverse) reverse.checked = Boolean(layer.reverseColor);
-  setText('rotation-output', finite(layer.angle, -90));
-  syncDegreeRangeVisibility(directionMode);
+  setText('rotation-output', finite(layer.rotation, 0));
+  syncDegreeRangeVisibility(rotationMode);
   setText('edge-blur-output', finite(layer.edgeBlur, 0));
   setText('texture-alpha-output', finite(layer.textureAlpha, 1));
   syncChoiceButton(layer);
-}
-function emissionDirectionModeFromSpread(spread) {
-  const value = finite(spread, 60);
-  if (value <= 0) return 'fixed';
-  if (value >= 360) return 'random';
-  return 'range';
 }
 function syncDegreeRangeVisibility(mode) {
   const rangeLabel = document.getElementById('rotation-jitter-label');
