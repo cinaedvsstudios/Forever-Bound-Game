@@ -1,6 +1,10 @@
 import { Particle } from './fx-runtime.js';
 
 const textRuntimeState = new Map();
+
+export function releaseTextRuntimeState(layerId) {
+  textRuntimeState.delete(layerId);
+}
 const SAFE_FONTS = new Map([
   ['Cinzel, Georgia, serif', 'Cinzel, Georgia, serif'],
   ['Georgia, serif', 'Georgia, serif'],

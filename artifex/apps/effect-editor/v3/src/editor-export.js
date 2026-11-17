@@ -1,19 +1,21 @@
 import { editorState, getDesignHeight, getDesignWidth } from './editor-state.js';
-import { drawHeatDistortionLayer, drawParticle } from './fx-runtime.js';
+import { drawHeatDistortionLayer, drawParticle, spawnParticlesForLayer, releaseParticleRuntimeState } from './fx-runtime.js';
 import { toRuntimeLayer } from './physics-scale.js';
-import { drawStructuredEffectLayer } from './portal-wormhole-runtime.js';
-import { drawTextParticle, isTextLayer } from './text-runtime.js';
-import { drawPrototypeLayer } from './prototype-adapters/prototype-renderers-source.js';
+import { drawStructuredEffectLayer, isStructuredEffectLayer } from './portal-wormhole-runtime.js';
+import { drawTextParticle, isTextLayer, spawnTextParticlesForLayer, releaseTextRuntimeState } from './text-runtime.js';
+import { drawPrototypeLayer, isPrototypeRenderableLayer } from './prototype-adapters/prototype-renderers-source.js';
 
 const DEFAULT_VIDEO_SECONDS = 5;
 const DEFAULT_VIDEO_FPS = 30;
 const MIN_VIDEO_SECONDS = 1;
 const MAX_VIDEO_SECONDS = 60;
 const VIDEO_TIME_OFFSET_MS = 1000;
+const VIDEO_PARTICLE_CAP = 900;
 
 let toast = () => {};
 let exportCanvas = null;
 let isRecording = false;
+let videoExportSequence = 0;
 
 export function initEditorExport(showToast) {
   toast = typeof showToast === 'function' ? showToast : () => {};
@@ -84,7 +86,6 @@ async function recordVideo({ transparent, preferMp4 }) {
   }
   const seconds = askVideoDurationSeconds();
   if (!seconds) return;
-  const canvas = ensureExportCanvas();
   const fps = DEFAULT_VIDEO_FPS;
   const durationMs = seconds * 1000;
   const mimeType = preferMp4 ? supportedMp4Type() : supportedWebmType();
@@ -92,59 +93,162 @@ async function recordVideo({ transparent, preferMp4 }) {
     toast(preferMp4 ? 'MP4 export is not supported in this browser. Use WebM.' : 'WebM export is not supported in this browser.', 'warn');
     return;
   }
-  if (!canvas.captureStream || typeof MediaRecorder === 'undefined') {
+  if (typeof MediaRecorder === 'undefined') {
     toast('Video recording is not supported in this browser.', 'warn');
     return;
   }
 
-  renderCleanFrame(canvas, { transparent, timeMs: performance.now() + VIDEO_TIME_OFFSET_MS });
-  const stream = canvas.captureStream(fps);
-  const chunks = [];
+  let stream;
   let recorder;
+  let session;
   try {
+    const canvas = ensureExportCanvas();
+    if (typeof canvas.captureStream !== 'function') throw new Error('Canvas captureStream is unavailable.');
+    session = createVideoSession();
+    advanceVideoSession(session);
+    renderCleanFrame(canvas, { transparent, timeMs: VIDEO_TIME_OFFSET_MS, session });
+    stream = canvas.captureStream(fps);
     recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 12000000 });
   } catch (error) {
     console.error(error);
-    toast(preferMp4 ? 'MP4 export failed. Try WebM instead.' : 'WebM export failed in this browser.', 'warn');
-    stopStream(stream);
+    if (stream) stopStream(stream);
+    if (session) releaseVideoSession(session);
+    toast(preferMp4 ? 'MP4 export could not start. Try WebM instead.' : 'WebM export could not start in this browser.', 'warn');
     return;
   }
 
-  isRecording = true;
-  toast(`Recording ${seconds}s ${preferMp4 ? 'MP4' : 'WebM'} export...`, 'info');
+  const canvas = exportCanvas;
+  const chunks = [];
+  let recordingError = null;
+  let finished = false;
+  let animationFrameId = 0;
+  let stopTimerId = 0;
+
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    if (stopTimerId) window.clearTimeout(stopTimerId);
+    stopStream(stream);
+    releaseVideoSession(session);
+    isRecording = false;
+
+    if (recordingError || !chunks.length) {
+      toast('Video export failed; no file was saved.', 'warn');
+      return;
+    }
+    const blob = new Blob(chunks, { type: mimeType });
+    if (!blob.size) {
+      toast('Video export failed: the recording was empty.', 'warn');
+      return;
+    }
+    try {
+      const extension = preferMp4 ? 'mp4' : 'webm';
+      const suffix = transparent ? 'transparent' : 'black-bg';
+      downloadBlob(blob, `${fileBaseName()}-${suffix}-${seconds}s.${extension}`);
+      toast(`${preferMp4 ? 'MP4' : 'WebM'} video exported.`, 'success');
+    } catch (error) {
+      console.error(error);
+      toast('Video recording finished, but the file could not be saved.', 'warn');
+    }
+  };
+
+  const fail = (error) => {
+    recordingError = recordingError || error || new Error('Unknown video recording error.');
+    console.error(recordingError);
+    if (recorder.state === 'inactive') {
+      finish();
+    } else {
+      try { recorder.stop(); } catch (stopError) { console.error(stopError); finish(); }
+    }
+  };
 
   recorder.ondataavailable = (event) => {
     if (event.data?.size) chunks.push(event.data);
   };
-  recorder.onerror = (event) => {
-    console.error(event.error || event);
-    toast('Video export failed while recording.', 'warn');
-  };
-  recorder.onstop = () => {
-    isRecording = false;
-    stopStream(stream);
-    const blob = new Blob(chunks, { type: mimeType });
-    const extension = preferMp4 ? 'mp4' : 'webm';
-    const suffix = transparent ? 'transparent' : 'black-bg';
-    downloadBlob(blob, `${fileBaseName()}-${suffix}-${seconds}s.${extension}`);
-    toast(`${preferMp4 ? 'MP4' : 'WebM'} video exported.`, 'success');
-  };
+  recorder.onerror = (event) => fail(event.error || new Error('MediaRecorder reported an error.'));
+  recorder.onstop = finish;
 
-  const start = performance.now();
-  recorder.start(250);
+  isRecording = true;
+  try {
+    recorder.start(250);
+  } catch (error) {
+    fail(error);
+    return;
+  }
+  toast(`Recording ${seconds}s ${preferMp4 ? 'MP4' : 'WebM'} export...`, 'info');
 
+  const startedAt = performance.now();
+  const maximumFrame = Math.ceil(seconds * fps);
   const drawFrame = (now) => {
-    const elapsed = now - start;
-    renderCleanFrame(canvas, { transparent, timeMs: VIDEO_TIME_OFFSET_MS + elapsed });
-    if (elapsed < durationMs && recorder.state === 'recording') {
-      requestAnimationFrame(drawFrame);
-      return;
+    if (finished || recordingError || recorder.state !== 'recording') return;
+    try {
+      const elapsed = Math.min(durationMs, Math.max(0, now - startedAt));
+      // Advance at a fixed 30 simulation frames/second, even when preview is paused.
+      const targetFrame = Math.min(maximumFrame, Math.floor(elapsed * fps / 1000) + 1);
+      while (session.frame < targetFrame) advanceVideoSession(session);
+      renderCleanFrame(canvas, { transparent, timeMs: VIDEO_TIME_OFFSET_MS + elapsed, session });
+      if (elapsed < durationMs) {
+        animationFrameId = requestAnimationFrame(drawFrame);
+      } else {
+        stopTimerId = window.setTimeout(() => {
+          if (recorder.state === 'recording') {
+            try { recorder.stop(); } catch (error) { fail(error); }
+          } else if (recorder.state === 'inactive') finish();
+        }, 120);
+      }
+    } catch (error) {
+      fail(error);
     }
-    window.setTimeout(() => {
-      if (recorder.state === 'recording') recorder.stop();
-    }, 120);
   };
-  requestAnimationFrame(drawFrame);
+  animationFrameId = requestAnimationFrame(drawFrame);
+}
+
+function createVideoSession() {
+  // Unique IDs isolate one-shot ring and text runtime state from live preview and other exports.
+  const prefix = `video-export-${Date.now().toString(36)}-${++videoExportSequence}`;
+  const layers = editorState.composition.layers.map((source, index) => {
+    const layer = { ...structuredClone(source), id: `${prefix}-${index}` };
+    return {
+      layer,
+      runtimeLayer: toRuntimeLayer(layer),
+      text: isTextLayer(layer),
+      procedural: isStructuredEffectLayer(layer) || isPrototypeRenderableLayer(layer)
+    };
+  });
+  return {
+    layers,
+    layersById: new Map(layers.map((entry) => [entry.layer.id, entry])),
+    particles: [],
+    frame: 0
+  };
+}
+
+function advanceVideoSession(session) {
+  for (const entry of session.layers) {
+    if (entry.layer.visible === false || entry.procedural || session.particles.length >= VIDEO_PARTICLE_CAP) continue;
+    const spawned = entry.text
+      ? spawnTextParticlesForLayer(entry.runtimeLayer)
+      : spawnParticlesForLayer(entry.runtimeLayer);
+    session.particles.push(...spawned.map((particle) => ({
+      particle, layerId: entry.layer.id, isTextParticle: entry.text
+    })));
+  }
+  for (const item of session.particles) {
+    const entry = session.layersById.get(item.layerId);
+    if (entry) item.particle.update(entry.runtimeLayer);
+  }
+  session.particles = session.particles.filter((item) => item.particle.alive);
+  if (session.particles.length > VIDEO_PARTICLE_CAP) session.particles = session.particles.slice(-VIDEO_PARTICLE_CAP);
+  session.frame += 1;
+}
+
+function releaseVideoSession(session) {
+  for (const entry of session.layers) {
+    releaseParticleRuntimeState(entry.layer.id);
+    releaseTextRuntimeState(entry.layer.id);
+  }
+  session.particles.length = 0;
 }
 
 function askVideoDurationSeconds() {
@@ -178,11 +282,16 @@ function ensureExportCanvas() {
   return exportCanvas;
 }
 
-function renderCleanFrame(canvas, { transparent, timeMs }) {
+function renderCleanFrame(canvas, { transparent, timeMs, session = null }) {
   const ctx = canvas.getContext('2d', { alpha: true });
-  const width = getDesignWidth();
-  const height = getDesignHeight();
+  const width = canvas.width;
+  const height = canvas.height;
   const t = Number.isFinite(Number(timeMs)) ? Number(timeMs) : performance.now();
+  const layers = session?.layers || editorState.composition.layers.map((layer) => ({
+    layer, runtimeLayer: toRuntimeLayer(layer)
+  }));
+  const layersById = session?.layersById || new Map(layers.map((entry) => [entry.layer.id, entry]));
+  const particles = session?.particles || editorState.particles;
 
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -190,23 +299,22 @@ function renderCleanFrame(canvas, { transparent, timeMs }) {
   if (!transparent) {
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, width, height);
-    for (const layer of editorState.composition.layers) {
-      if (layer.visible !== false) drawHeatDistortionLayer(ctx, toRuntimeLayer(layer), 1, t);
+    for (const entry of layers) {
+      if (entry.layer.visible !== false) drawHeatDistortionLayer(ctx, entry.runtimeLayer, 1, t);
     }
   }
 
-  for (const layer of editorState.composition.layers) {
-    if (layer.visible !== false) drawStructuredEffectLayer(ctx, toRuntimeLayer(layer), 1, t);
+  for (const entry of layers) {
+    if (entry.layer.visible !== false) drawStructuredEffectLayer(ctx, entry.runtimeLayer, 1, t);
   }
-  for (const layer of editorState.composition.layers) {
-    if (layer.visible !== false) drawPrototypeLayer(ctx, layer, 1, t, { width, height });
+  for (const entry of layers) {
+    if (entry.layer.visible !== false) drawPrototypeLayer(ctx, entry.layer, 1, t, { width, height });
   }
-  for (const item of editorState.particles) {
-    const layer = editorState.composition.layers.find((candidate) => candidate.id === item.layerId);
-    if (layer?.visible === false) continue;
-    const runtimeLayer = toRuntimeLayer(layer);
-    if (item.isTextParticle || isTextLayer(runtimeLayer)) drawTextParticle(ctx, item.particle, runtimeLayer, 1);
-    else drawParticle(ctx, item.particle, runtimeLayer, 1);
+  for (const item of particles) {
+    const entry = layersById.get(item.layerId);
+    if (!entry || entry.layer.visible === false) continue;
+    if (item.isTextParticle || isTextLayer(entry.runtimeLayer)) drawTextParticle(ctx, item.particle, entry.runtimeLayer, 1);
+    else drawParticle(ctx, item.particle, entry.runtimeLayer, 1);
   }
   ctx.restore();
 }

@@ -1,6 +1,10 @@
 const textureCache = new Map();
 const layerRuntimeState = new Map();
 
+export function releaseParticleRuntimeState(layerId) {
+  layerRuntimeState.delete(layerId);
+}
+
 export class Particle {
   constructor(layer, burstAngle = null) {
     const emitterRotation = finite(layer.emitterRotation, 0);

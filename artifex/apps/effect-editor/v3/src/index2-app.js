@@ -5,9 +5,9 @@ import { initBrushAssetLibrary } from './brush-asset-library.js';
 import { initEditorDynamicsControls } from './editor-dynamics-controls.js?v=062-rotation-controls';
 import { initEditorQuickEditControls } from './editor-quick-edit-controls.js';
 import { initEditorWorkspaceUI } from './editor-workspace-ui.js';
-import { initEditorExport } from './editor-export.js?v=061-export-duration';
+import { initEditorExport } from './editor-export.js?v=063-video-export-simulation';
 
-const VERSION_LABEL = 'INDEX2-EXPORT-0.2.38';
+const VERSION_LABEL = 'INDEX2-EXPORT-0.2.39';
 
 window.addEventListener('DOMContentLoaded', () => {
   initEditorExport(showToast);
