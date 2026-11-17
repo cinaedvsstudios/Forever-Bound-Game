@@ -1,5 +1,6 @@
 import { editorState, getActiveLayer, onStateChange, updateActiveLayer } from './editor-state.js';
-import { resizeCanvas } from './editor-renderer.js';
+// Use the same renderer module as editor-core.js; importing an unversioned URL creates a separate canvas instance.
+import { resizeCanvas } from './editor-renderer.js?v=057-cloud-controls';
 
 const LAYOUT_STORAGE_KEY = 'artifex-index2-ui-layout';
 const COLLAPSE_STORAGE_KEY = 'artifex-index2-card-collapse';
