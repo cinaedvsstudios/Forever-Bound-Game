@@ -2,6 +2,7 @@ import { clearParticles, editorState, loadComposition } from './editor-state.js'
 
 const STORAGE_PREFIX = 'artifex-index2-effect:';
 const STORAGE_INDEX = 'artifex-index2-effect-index';
+const MAX_LOCAL_SAVES = 25;
 let toast = () => {};
 
 export function initEditorPersistence(showToast = () => {}) {
@@ -13,7 +14,14 @@ export function initEditorPersistence(showToast = () => {}) {
 }
 
 export function loadCompositionLocal() {
-  const index = readLocalIndex();
+  let index;
+  try {
+    index = readLocalIndex();
+  } catch (error) {
+    console.error('[Effect Editor] local save index unavailable', error);
+    toast('Local save list could not be read. Existing saves were not changed.', 'warn');
+    return;
+  }
   if (!index.length) {
     toast('No local effects saved yet.', 'info');
     return;
@@ -45,17 +53,58 @@ export function loadCompositionLocal() {
 function saveCompositionLocal() {
   const answer = window.prompt('Save effect as:', editorState.composition.name || editorState.composition.id || 'Untitled Effect');
   if (!answer) return;
-  const id = `local_${Date.now().toString(36)}`;
+
   const name = String(answer).trim() || 'Untitled Effect';
   const tags = Array.isArray(editorState.composition.tags) ? [...editorState.composition.tags] : [];
   const savedAt = new Date().toISOString();
-  const entry = { id, name, tags, savedAt, composition: { ...editorState.composition, name, tags } };
-  const index = readLocalIndex();
-  index.unshift({ id, name, tags, savedAt });
-  localStorage.setItem(`${STORAGE_PREFIX}${id}`, JSON.stringify(entry));
-  localStorage.setItem(STORAGE_INDEX, JSON.stringify(index.slice(0, 25)));
-  closeMenus();
-  toast(`Saved locally: ${name}`, 'success');
+  try {
+    const index = readLocalIndex();
+    const id = createLocalSaveId(index);
+    const key = `${STORAGE_PREFIX}${id}`;
+    const entry = { id, name, tags, savedAt, composition: { ...editorState.composition, name, tags } };
+    const newIndex = [{ id, name, tags, savedAt }, ...index];
+    const retainedIndex = newIndex.slice(0, MAX_LOCAL_SAVES);
+
+    // Write the record first. If the index cannot be updated, undo only this
+    // new record so all previous indexed saves remain available.
+    localStorage.setItem(key, JSON.stringify(entry));
+    try {
+      localStorage.setItem(STORAGE_INDEX, JSON.stringify(retainedIndex));
+    } catch (error) {
+      try { localStorage.removeItem(key); }
+      catch (rollbackError) { console.warn('[Effect Editor] could not roll back unfinished local save', rollbackError); }
+      throw error;
+    }
+
+    // Prune only the entries explicitly evicted from the previous index.
+    // Historical unindexed records may still be recoverable; leave them intact.
+    const retainedIds = new Set(retainedIndex.map((item) => item.id));
+    const prunedIds = [...new Set(index.map((item) => item.id).filter((id) => !retainedIds.has(id)))];
+    let cleanupFailed = false;
+    for (const oldId of prunedIds) {
+      try { localStorage.removeItem(`${STORAGE_PREFIX}${oldId}`); }
+      catch (error) {
+        cleanupFailed = true;
+        console.warn('[Effect Editor] could not remove an expired local save', error);
+      }
+    }
+    closeMenus();
+    toast(cleanupFailed
+      ? `Saved locally: ${name}. Some older save data could not be cleaned up.`
+      : `Saved locally: ${name}`, cleanupFailed ? 'warn' : 'success');
+  } catch (error) {
+    console.error('[Effect Editor] local save failed', error);
+    toast('Could not save locally. Browser storage may be full or unavailable; export the composition as JSON for a backup.', 'warn');
+  }
+}
+
+function createLocalSaveId(index) {
+  // Timestamp-only IDs in earlier versions could collide on rapid saves.
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const id = `local_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 12)}`;
+    if (!index.some((item) => item.id === id) && localStorage.getItem(`${STORAGE_PREFIX}${id}`) === null) return id;
+  }
+  throw new Error('Unable to allocate a unique local save ID.');
 }
 
 function exportCompositionJson() {
@@ -90,13 +139,16 @@ function importCompositionJson(event) {
 }
 
 function readLocalIndex() {
-  try {
-    const data = JSON.parse(localStorage.getItem(STORAGE_INDEX) || '[]');
-    return Array.isArray(data) ? data : [];
-  } catch {
-    return [];
-  }
+  // Never overwrite an unreadable index as though it were an empty list.
+  const raw = localStorage.getItem(STORAGE_INDEX);
+  if (raw === null) return [];
+  const data = JSON.parse(raw);
+  if (!Array.isArray(data) || !data.every((item) => (
+    item && typeof item.id === 'string' && /^local_[a-z0-9_-]+$/u.test(item.id) && typeof item.name === 'string'
+  ))) throw new Error('Local effect index is invalid.');
+  return data;
 }
+
 function closeMenus() { document.querySelectorAll('.menu-panel.open').forEach((panel) => panel.classList.remove('open')); }
 function bind(id, action) { document.getElementById(id)?.addEventListener('click', action); }
 function safeName(value) { return String(value).replace(/[^a-z0-9_-]+/gi, '-').replace(/^-|-$/g, '') || 'artifex-effect'; }
