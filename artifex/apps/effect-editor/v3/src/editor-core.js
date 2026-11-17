@@ -20,7 +20,7 @@ import {
 import { initRenderer, takeSnapshot } from './editor-renderer.js?v=057-cloud-controls';
 import { cloneBasePreset, listBasePresets } from './presets/portal-wormhole-presets.js';
 import { initBottomPanel, renderLayerList, syncBottomPanelStatus } from './editor-bottom-panel.js';
-import { syncEffectControls } from './editor-effect-controls.js';
+import { syncEffectControls } from './editor-effect-controls.js?v=066-prototype-controls';
 import { initEditorPersistence, loadCompositionLocal } from './editor-persistence.js?v=065-local-saves';
 
 const ZERO_SPAWN_ENGINES = new Set(['portal-ring', 'wormhole-tunnel', 'prototype-smoke', 'prototype-shimmer']);

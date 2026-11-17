@@ -1,7 +1,7 @@
 import {
   drawPrototypeLayer as drawAnchoredPrototypeLayer,
   isPrototypeRenderableLayer
-} from './prototype-renderers-anchored.js';
+} from './prototype-renderers-anchored.js?v=066-prototype-controls';
 import { drawSourceShimmerLayer, isSourceShimmerLayer } from './shimmer-source-renderer-clean.js';
 
 export { isPrototypeRenderableLayer };
