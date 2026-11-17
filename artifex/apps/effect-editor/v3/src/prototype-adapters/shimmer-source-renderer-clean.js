@@ -52,7 +52,7 @@ function valuesFromLayer(layer, stageWidth, stageHeight) {
   values.backdropColor = '#000000';
   values.positionX = finite(values.positionX, finite(values.emitterX, stageWidth * 0.5) / stageWidth * 100);
   values.positionY = finite(values.positionY, finite(values.emitterY, stageHeight * 0.5) / stageHeight * 100);
-  if (values.type === 'wormhole' && values.baseTextureEnabled !== false && !values.textureAssetPath && !values.textureDataUrl) {
+  if (values.type === 'wormhole' && values.baseTextureEnabled !== false && !values.baseTextureDataUrl && !values.textureAssetPath && !values.textureDataUrl) {
     values.baseTextureEnabled = true;
     values.textureAssetPath = `${ASSET_ROOT}${DEFAULT_WORMHOLE_ARM_TEXTURE}`;
   }
@@ -75,7 +75,20 @@ function preservedLayerFields(layer, stageWidth, stageHeight) {
     emitterY,
     positionX: finite(layer.positionX, emitterX / stageWidth * 100),
     positionY: finite(layer.positionY, emitterY / stageHeight * 100),
-    prototypeShimmerSourceMapVersion: SOURCE_DEFAULTS_VERSION
+    prototypeShimmerSourceMapVersion: SOURCE_DEFAULTS_VERSION,
+    baseTextureFile: layer.baseTextureFile,
+    baseTextureDataUrl: layer.baseTextureDataUrl,
+    textureAssetPath: layer.textureAssetPath,
+    baseTextureEnabled: layer.baseTextureEnabled,
+    overlayFile: layer.overlayFile,
+    overlayDataUrl: layer.overlayDataUrl,
+    overlayEnabled: layer.overlayEnabled,
+    overlay2File: layer.overlay2File,
+    overlay2DataUrl: layer.overlay2DataUrl,
+    overlay2Enabled: layer.overlay2Enabled,
+    outlineFile: layer.outlineFile,
+    outlineDataUrl: layer.outlineDataUrl,
+    outlineColorMode: layer.outlineColorMode
   };
 }
 
@@ -98,15 +111,24 @@ function presetForLayer(layer) {
 }
 
 function ensureDefaultAssets(entry, values) {
-  const texturePath = values.textureAssetPath || (values.baseTextureEnabled && values.type === 'wormhole' ? `${ASSET_ROOT}${DEFAULT_WORMHOLE_ARM_TEXTURE}` : '');
-  if (texturePath && texturePath !== entry.textureAsset) {
-    entry.textureAsset = texturePath;
-    loadImage(texturePath, (image) => entry.engine.setTextureImage(image));
-  }
-  if (!texturePath && entry.textureAsset) {
-    entry.textureAsset = '';
-    entry.engine.setTextureImage(null);
-  }
+  const texturePath = values.baseTextureDataUrl || values.textureDataUrl || values.textureAssetPath
+    || (values.baseTextureEnabled && values.type === 'wormhole' ? `${ASSET_ROOT}${DEFAULT_WORMHOLE_ARM_TEXTURE}` : '');
+  syncImageAsset(entry, 'textureAsset', texturePath, 'setTextureImage');
+  syncImageAsset(entry, 'overlayAsset', values.overlayDataUrl || '', 'setOverlayImage');
+  syncImageAsset(entry, 'overlay2Asset', values.overlay2DataUrl || '', 'setOverlay2Image');
+  syncImageAsset(entry, 'outlineAsset', values.outlineDataUrl || '', 'setOutlineImage');
+}
+
+function syncImageAsset(entry, cacheField, source, engineMethod) {
+  if (source === entry[cacheField]) return;
+  entry[cacheField] = source;
+  // Remove the previous image while its replacement is loading.
+  entry.engine[engineMethod](null);
+  if (!source) return;
+  loadImage(source, (image) => {
+    // A late image load must not replace a newer user selection.
+    if (entry[cacheField] === source) entry.engine[engineMethod](image);
+  });
 }
 
 function loadImage(path, callback) {
