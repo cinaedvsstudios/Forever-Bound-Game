@@ -76,7 +76,7 @@ function smokeState(layer, stageWidth, stageHeight) {
     height: clamp(finite(layer.height, 400), 60, 680),
     showMarker: layer.showMarker !== false,
     doubleLayer: layer.doubleLayer !== false,
-    seed: seedFromString(`${layer.id || layer.name || 'smoke'}|${mode}`)
+    seed: seedFromString(`${layer.id || layer.name || 'smoke'}|${mode}|${layer.smokeFormRevision || 0}`)
   };
 }
 
