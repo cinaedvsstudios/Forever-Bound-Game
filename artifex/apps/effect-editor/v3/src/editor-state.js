@@ -1,6 +1,128 @@
 export const DESIGN_WIDTH = 1280;
 export const DESIGN_HEIGHT = 720;
 
+// Keep imported compositions bounded while preserving legacy and prototype layer fields.
+export const MAX_COMPOSITION_IMPORT_CHARS = 64 * 1024 * 1024;
+const MAX_IMPORT_IMAGE_CHARS = 16 * 1024 * 1024;
+const MAX_IMPORT_LAYERS = 128;
+const MAX_IMPORT_NODES = 20000;
+const MAX_IMPORT_DEPTH = 16;
+const IMAGE_DATA_URL_PATTERN = /^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/]+={0,2}$/iu;
+const FORBIDDEN_JSON_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+const IMPORTED_IMAGE_FIELDS = new Set([
+  'textureDataUrl', 'flareOverlayDataUrl', 'baseTextureDataUrl',
+  'overlayDataUrl', 'overlay2DataUrl', 'outlineDataUrl'
+]);
+
+export function isSafeBitmapDataUrl(value) {
+  return typeof value === 'string'
+    && value.length <= MAX_IMPORT_IMAGE_CHARS
+    && IMAGE_DATA_URL_PATTERN.test(value);
+}
+
+export function validateCompositionImport(composition) {
+  if (!isPlainObject(composition)) throw new Error('Composition must be a JSON object.');
+  if (!Array.isArray(composition.layers)) throw new Error('Composition must contain a layers array.');
+  if (composition.layers.length > MAX_IMPORT_LAYERS) {
+    throw new Error(`Too many layers (maximum ${MAX_IMPORT_LAYERS}).`);
+  }
+  if (composition.id !== undefined && (typeof composition.id !== 'string' || composition.id.length > 300)) {
+    throw new Error('Composition ID must be text.');
+  }
+  if (composition.name !== undefined && (typeof composition.name !== 'string' || composition.name.length > 500)) {
+    throw new Error('Composition name must be text.');
+  }
+  if (composition.tags !== undefined && (!Array.isArray(composition.tags)
+      || composition.tags.length > 100
+      || !composition.tags.every((tag) => typeof tag === 'string' && tag.length <= 100))) {
+    throw new Error('Composition tags must be a list of short text values.');
+  }
+  for (const [name, min] of [['designWidth', 320], ['designHeight', 180]]) {
+    if (composition[name] === undefined) continue;
+    const value = Number(composition[name]);
+    if (!Number.isFinite(value) || value < min || value > 4096) {
+      throw new Error(`${name} must be between ${min} and 4096.`);
+    }
+  }
+
+  const ids = new Set();
+  composition.layers.forEach((layer, index) => {
+    if (!isPlainObject(layer)) throw new Error(`Layer ${index + 1} must be an object.`);
+    for (const key of ['id', 'name', 'engine']) {
+      if (layer[key] !== undefined && (typeof layer[key] !== 'string' || layer[key].length > 500)) {
+        throw new Error(`Layer ${index + 1}: ${key} must be text.`);
+      }
+    }
+    if (layer.id) {
+      if (ids.has(layer.id)) throw new Error('Layer IDs must be unique.');
+      ids.add(layer.id);
+    }
+    if (layer.appearanceStops !== undefined) {
+      if (!Array.isArray(layer.appearanceStops) || layer.appearanceStops.length > 5
+        || !layer.appearanceStops.every((stop) => isPlainObject(stop))) {
+        throw new Error(`Layer ${index + 1}: invalid appearance gradient stops.`);
+      }
+    }
+    for (const field of IMPORTED_IMAGE_FIELDS) {
+      const value = layer[field];
+      if (value !== undefined && value !== null && value !== '' && !isSafeBitmapDataUrl(value)) {
+        throw new Error(`Layer ${index + 1}: ${field} must be a PNG, JPG, WebP or GIF image data URL.`);
+      }
+    }
+    for (const field of ['textureAssetPath', 'flareOverlayUrl']) {
+      const value = layer[field];
+      if (value !== undefined && value !== null && value !== '') {
+        if (typeof value !== 'string' || value.length > 2048
+          || !/^(?:https?:\/\/|\/(?!\/)|\.\/|\.\.\/)[^<>"'\s]+$/iu.test(value)) {
+          throw new Error(`Layer ${index + 1}: invalid image asset path.`);
+        }
+      }
+    }
+  });
+
+  // Reject dangerous object keys at every nesting level; do not silently
+  // copy __proto__/constructor payloads into runtime layer objects.
+  const budget = { characters: 0, nodes: 0 };
+  walkImportedValue(composition, budget, 0);
+  return true;
+}
+
+function isPlainObject(value) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+
+function walkImportedValue(value, budget, depth) {
+  budget.nodes += 1;
+  if (budget.nodes > MAX_IMPORT_NODES || depth > MAX_IMPORT_DEPTH) {
+    throw new Error('Composition is too large or deeply nested.');
+  }
+  if (typeof value === 'string') {
+    budget.characters += value.length;
+  } else if (typeof value === 'number') {
+    if (!Number.isFinite(value)) throw new Error('Composition contains a non-finite number.');
+  } else if (value === null || typeof value === 'boolean' || value === undefined) {
+    return;
+  } else if (Array.isArray(value)) {
+    if (value.length > 4096) throw new Error('Composition contains an oversized list.');
+    value.forEach((item) => walkImportedValue(item, budget, depth + 1));
+  } else if (isPlainObject(value)) {
+    const keys = Object.keys(value);
+    if (keys.length > 1024) throw new Error('Composition contains an oversized object.');
+    for (const key of keys) {
+      if (FORBIDDEN_JSON_KEYS.has(key)) throw new Error(`Unsafe composition field: ${key}.`);
+      budget.characters += key.length;
+      walkImportedValue(value[key], budget, depth + 1);
+    }
+  } else {
+    throw new Error('Composition contains an unsupported value.');
+  }
+  if (budget.characters > MAX_COMPOSITION_IMPORT_CHARS) {
+    throw new Error('Composition exceeds the maximum import size (64 MB).');
+  }
+}
+
 export const MODULE_THEMES = {
   effects: { label: 'Effects', accent: '#00aeea', accentSoft: 'rgba(0, 174, 234, 0.18)', accentStrong: '#27d7ff', glow: 'rgba(0, 174, 234, 0.42)' },
   archetype: { label: 'Archetype', accent: '#d84545', accentSoft: 'rgba(216, 69, 69, 0.18)', accentStrong: '#ff7474', glow: 'rgba(216, 69, 69, 0.42)' },
@@ -51,8 +173,11 @@ export function resetComposition() {
   notifyChange();
 }
 export function loadComposition(composition) {
-  editorState.composition = normalizeComposition(composition);
-  editorState.activeLayerIndex = editorState.composition.layers.length ? 0 : -1;
+  validateCompositionImport(composition);
+  // Finish normalization before replacing any live editor state.
+  const normalized = normalizeComposition(composition);
+  editorState.composition = normalized;
+  editorState.activeLayerIndex = normalized.layers.length ? 0 : -1;
   editorState.particles = [];
   notifyChange();
 }
