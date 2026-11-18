@@ -1,7 +1,9 @@
-import { getActiveLayer, onStateChange, updateActiveLayer } from './editor-state.js';
+import { getActiveLayer, isSafeBitmapDataUrl, onStateChange, updateActiveLayer } from './editor-state.js';
 
 const REPO_BRUSH_API_URL = 'https://api.github.com/repos/cinaedvsstudios/Forever-Bound-Game/contents/artifex/apps/effect-editor/brushes?ref=main';
 const IMAGE_EXTENSION_RE = /\.(png|webp|jpe?g)$/iu;
+const SUPPORTED_IMAGE_TYPES = new Set(['image/png', 'image/webp', 'image/jpeg']);
+const MAX_BRUSH_FILE_BYTES = 8 * 1024 * 1024;
 
 const BUILT_IN_ASSETS = [
   { id: 'shape:circle', source: 'built-in', kind: 'shape', value: 'circle', name: 'Soft Orb', symbol: '●' },
@@ -223,22 +225,30 @@ async function readRepositoryBrush(entry) {
   const response = await fetch(url, { cache: 'force-cache' });
   if (!response.ok) return null;
   const blob = await response.blob();
+  if (blob.size > MAX_BRUSH_FILE_BYTES) return null;
   const dataUrl = await blobToDataUrl(blob);
+  if (!isSafeBitmapDataUrl(dataUrl)) return null;
   return { id: `repo:${entry.path || entry.name}:${entry.sha || blob.size}`, name: entry.name, path: entry.path || `artifex/apps/effect-editor/brushes/${entry.name}`, size: blob.size, type: blob.type || mimeFromName(entry.name), dataUrl, source: 'repo', kind: 'custom' };
 }
 
 async function loadBrushFiles(event, showToast) {
-  const files = Array.from(event.target.files || []).filter((file) => file.type.startsWith('image/') || IMAGE_EXTENSION_RE.test(file.name));
+  const files = Array.from(event.target.files || []).filter((file) =>
+    SUPPORTED_IMAGE_TYPES.has(file.type) && file.size <= MAX_BRUSH_FILE_BYTES
+      && IMAGE_EXTENSION_RE.test(file.name)
+  );
   if (!files.length) {
-    showToast('No brush image files found.', 'warn');
+    showToast('No supported PNG, WebP or JPG files under 8 MB were found.', 'warn');
     event.target.value = '';
     return;
   }
-  const loaded = await Promise.all(files.map(readBrushFile));
+  const results = await Promise.allSettled(files.map(readBrushFile));
+  const loaded = results.filter((result) =>
+    result.status === 'fulfilled' && isSafeBitmapDataUrl(result.value?.dataUrl)
+  ).map((result) => result.value);
   const added = addBrushAssets(loaded);
   event.target.value = '';
   renderBrushLibrary();
-  showToast(`${added} brush asset${added === 1 ? '' : 's'} loaded.`, added ? 'success' : 'info');
+  showToast(added ? `${added} brush asset${added === 1 ? '' : 's'} loaded.` : 'Brush images could not be read.', added ? 'success' : 'warn');
 }
 
 function addBrushAssets(assets) {
@@ -286,28 +296,41 @@ function renderBrushLibrary() {
     const haystack = `${asset.name} ${asset.path || ''} ${asset.kind || ''}`.toLowerCase();
     return !activeFilter || haystack.includes(activeFilter);
   });
+  grid.replaceChildren();
   if (!visibleAssets.length) {
-    grid.innerHTML = `<div class="brush-library-empty">No matching shapes or brush assets.</div>`;
+    const empty = document.createElement('div');
+    empty.className = 'brush-library-empty';
+    empty.textContent = 'No matching shapes or brush assets.';
+    grid.append(empty);
     return;
   }
-  grid.innerHTML = '';
   for (const asset of visibleAssets) {
     const card = document.createElement('button');
     card.type = 'button';
     card.className = 'brush-asset-card';
     card.title = `Use ${asset.name}`;
     card.classList.toggle('is-selected', isSelectedAsset(layer, asset));
-    card.innerHTML = renderAssetThumb(asset);
+    card.append(...renderAssetThumb(asset));
     card.addEventListener('click', () => applyBrushAsset(asset));
     grid.append(card);
   }
 }
 
 function renderAssetThumb(asset) {
-  if (asset.kind === 'custom') {
-    return `<span class="brush-asset-thumb"><img src="${asset.dataUrl}" alt="${escapeHtml(asset.name)}" /></span><span class="brush-asset-name">${escapeHtml(asset.name)}</span>`;
+  const thumb = document.createElement('span');
+  thumb.className = 'brush-asset-thumb';
+  if (asset.kind === 'custom' && isSafeBitmapDataUrl(asset.dataUrl)) {
+    const image = document.createElement('img');
+    image.src = asset.dataUrl;
+    image.alt = asset.name || 'Brush';
+    thumb.append(image);
+  } else {
+    thumb.textContent = asset.kind === 'custom' ? '▧' : (asset.symbol || '●');
   }
-  return `<span class="brush-asset-thumb">${escapeHtml(asset.symbol || '●')}</span><span class="brush-asset-name">${escapeHtml(asset.name)}</span>`;
+  const name = document.createElement('span');
+  name.className = 'brush-asset-name';
+  name.textContent = asset.name || 'Unnamed Brush';
+  return [thumb, name];
 }
 
 function isSelectedAsset(layer, asset) {
@@ -339,12 +362,16 @@ function renderCurrentBrushPreview() {
   const square = document.getElementById('current-brush-preview-square');
   const name = document.getElementById('current-brush-preview-name');
   if (!square || !name || !layer) return;
-  if (layer.appearanceMode === 'custom' && layer.textureDataUrl) {
-    square.innerHTML = `<img src="${layer.textureDataUrl}" alt="${escapeHtml(layer.textureName || 'Brush')}" />`;
+  if (layer.appearanceMode === 'custom' && isSafeBitmapDataUrl(layer.textureDataUrl)) {
+    const image = document.createElement('img');
+    image.src = layer.textureDataUrl;
+    image.alt = layer.textureName || 'Brush';
+    square.replaceChildren(image);
     name.textContent = layer.textureName || 'Image Brush';
     return;
   }
   const asset = BUILT_IN_ASSETS.find((item) => item.kind === (layer.appearanceMode === 'brush' ? 'brush' : 'shape') && item.value === (layer.appearanceMode === 'brush' ? layer.builtInBrush : layer.particleShape)) || BUILT_IN_ASSETS[0];
+  square.replaceChildren();
   square.textContent = asset.symbol || '●';
   name.textContent = asset.name;
 }
@@ -353,8 +380,4 @@ function mimeFromName(name) {
   if (/\.webp$/iu.test(name)) return 'image/webp';
   if (/\.jpe?g$/iu.test(name)) return 'image/jpeg';
   return 'image/png';
-}
-
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 }
