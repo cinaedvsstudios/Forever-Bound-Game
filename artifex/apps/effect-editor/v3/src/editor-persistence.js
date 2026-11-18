@@ -1,4 +1,4 @@
-import { clearParticles, editorState, loadComposition } from './editor-state.js';
+import { clearParticles, editorState, loadComposition, MAX_COMPOSITION_IMPORT_CHARS } from './editor-state.js';
 
 const STORAGE_PREFIX = 'artifex-index2-effect:';
 const STORAGE_INDEX = 'artifex-index2-effect-index';
@@ -122,6 +122,11 @@ function exportCompositionJson() {
 function importCompositionJson(event) {
   const file = event.target?.files?.[0];
   if (!file) return;
+  if (file.size > MAX_COMPOSITION_IMPORT_CHARS) {
+    toast('Import rejected: composition JSON exceeds 64 MB.', 'warn');
+    event.target.value = '';
+    return;
+  }
   const reader = new FileReader();
   reader.addEventListener('load', () => {
     try {
@@ -131,7 +136,7 @@ function importCompositionJson(event) {
       toast('Composition JSON imported.', 'success');
     } catch (error) {
       console.error('[Effect Editor] import failed', error);
-      toast('Import failed. Check the JSON file.', 'warn');
+      toast(`Import rejected: ${String(error?.message || 'invalid JSON file').slice(0, 180)}`, 'warn');
     }
     event.target.value = '';
   });
