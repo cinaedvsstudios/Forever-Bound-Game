@@ -71,11 +71,8 @@ export function validateCompositionImport(composition) {
     }
     for (const field of ['textureAssetPath', 'flareOverlayUrl']) {
       const value = layer[field];
-      if (value !== undefined && value !== null && value !== '') {
-        if (typeof value !== 'string' || value.length > 2048
-          || !/^(?:https?:\/\/|\/(?!\/)|\.\/|\.\.\/)[^<>"'\s]+$/iu.test(value)) {
-          throw new Error(`Layer ${index + 1}: invalid image asset path.`);
-        }
+      if (value !== undefined && value !== null && value !== '' && !isSafeImageAssetPath(value)) {
+        throw new Error(`Layer ${index + 1}: invalid image asset path.`);
       }
     }
   });
@@ -85,6 +82,17 @@ export function validateCompositionImport(composition) {
   const budget = { characters: 0, nodes: 0 };
   walkImportedValue(composition, budget, 0);
   return true;
+}
+
+function isSafeImageAssetPath(value) {
+  if (isSafeBitmapDataUrl(value)) return true;
+  if (typeof value !== 'string' || !value || value.length > 2048
+    || /[\s<>"'\\]/u.test(value)) return false;
+  if (/^https?:\/\//iu.test(value)) return true;
+  // Protocol-relative URLs and non-HTTP schemes must not be imported.
+  if (value.startsWith('//') || /^[a-z][a-z0-9+.-]*:/iu.test(value)) return false;
+  // Older shimmer presets sometimes store relative paths without "./".
+  return /^[a-z0-9_./%-]/iu.test(value);
 }
 
 function isPlainObject(value) {
